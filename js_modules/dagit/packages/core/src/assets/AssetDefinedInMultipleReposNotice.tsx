@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Alert, Box, ColorsWIP} from '@dagster-io/ui';
+import {Alert, Box, Colors} from '@dagster-io/ui';
 import React from 'react';
 
 import {buildRepoPath} from '../workspace/buildRepoAddress';
@@ -30,7 +30,7 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
   return (
     <Box
       padding={{vertical: 16, left: 24, right: 12}}
-      border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
     >
       <Alert
         intent="info"

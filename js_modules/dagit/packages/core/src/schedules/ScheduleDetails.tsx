@@ -1,14 +1,14 @@
 import {
   Box,
   ButtonLink,
-  ColorsWIP,
+  Colors,
   CountdownStatus,
   useCountdown,
   Group,
   MetadataTableWIP,
   PageHeader,
   RefreshableCountdown,
-  TagWIP,
+  Tag,
   Code,
   Heading,
   Mono,
@@ -90,25 +90,22 @@ export const ScheduleDetails: React.FC<{
         }
         tags={
           <>
-            <TagWIP icon="schedule">
+            <Tag icon="schedule">
               Schedule in <RepositoryLink repoAddress={repoAddress} />
-            </TagWIP>
+            </Tag>
             {futureTicks.results.length && running ? (
-              <TagWIP icon="timer">
+              <Tag icon="timer">
                 Next tick:{' '}
                 <TimestampDisplay
                   timestamp={futureTicks.results[0].timestamp}
                   timezone={executionTimezone}
                   timeFormat={TIME_FORMAT}
                 />
-              </TagWIP>
+              </Tag>
             ) : null}
             <Box flex={{display: 'inline-flex'}} margin={{top: 2}}>
               <Tooltip content={copyText}>
-                <ButtonLink
-                  color={{link: ColorsWIP.Gray400, hover: ColorsWIP.Gray600}}
-                  onClick={copyId}
-                >
+                <ButtonLink color={{link: Colors.Gray400, hover: Colors.Gray600}} onClick={copyId}>
                   <Mono>{`id: ${id.slice(0, 8)}`}</Mono>
                 </ButtonLink>
               </Tooltip>

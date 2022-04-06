@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, Checkbox, ColorsWIP, IconWIP, NonIdealState, Table, Mono} from '@dagster-io/ui';
+import {Box, Checkbox, Colors, Icon, NonIdealState, Table, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -244,7 +244,7 @@ const RunRow: React.FC<{
                     : workspacePipelinePathGuessRepo(run.pipelineName)
                 }
               >
-                <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
+                <Icon name="open_in_new" color={Colors.Blue500} />
               </Link>
             </Box>
           ) : (

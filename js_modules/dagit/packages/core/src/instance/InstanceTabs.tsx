@@ -1,8 +1,9 @@
 import {QueryResult} from '@apollo/client';
-import {Box, Tab, Tabs} from '@dagster-io/ui';
+import {Box, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
+import {TabLink} from '../ui/TabLink';
 
 import {useCanSeeConfig} from './useCanSeeConfig';
 
@@ -22,12 +23,12 @@ export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TDa
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
       <Tabs selectedTabId={tab}>
-        <Tab id="overview" title="Overview" to="/instance/overview" />
-        <Tab id="health" title={healthTitle} to="/instance/health" />
-        <Tab id="schedules" title="Schedules" to="/instance/schedules" />
-        <Tab id="sensors" title="Sensors" to="/instance/sensors" />
-        <Tab id="backfills" title="Backfills" to="/instance/backfills" />
-        {canSeeConfig ? <Tab id="config" title="Configuration" to="/instance/config" /> : null}
+        <TabLink id="overview" title="Overview" to="/instance/overview" />
+        <TabLink id="health" title={healthTitle} to="/instance/health" />
+        <TabLink id="schedules" title="Schedules" to="/instance/schedules" />
+        <TabLink id="sensors" title="Sensors" to="/instance/sensors" />
+        <TabLink id="backfills" title="Backfills" to="/instance/backfills" />
+        {canSeeConfig ? <TabLink id="config" title="Configuration" to="/instance/config" /> : null}
       </Tabs>
       {refreshState ? (
         <Box padding={{bottom: 8}}>

@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {ColorsWIP, NonIdealState, Spinner, Tooltip} from '@dagster-io/ui';
+import {Colors, NonIdealState, Spinner, Tooltip} from '@dagster-io/ui';
 import qs from 'qs';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -126,7 +126,7 @@ const StatSummaryLine = styled.div`
 `;
 
 const StatBox = styled.div`
-  border: 1px solid ${ColorsWIP.Gray100};
+  border: 1px solid ${Colors.Gray100};
   margin-left: 4px;
   padding: 1px 5px;
   font-size: 11px;

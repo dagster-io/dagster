@@ -9,7 +9,7 @@ import {
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
 import {
-  ColorsWIP,
+  Colors,
   GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
@@ -49,7 +49,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body, #root {
-    color: ${ColorsWIP.Gray800};
+    color: ${Colors.Gray800};
     width: 100vw;
     height: 100vh;
     overflow: hidden;
@@ -62,7 +62,7 @@ const GlobalStyle = createGlobalStyle`
   a,
   a:hover,
   a:active {
-    color: ${ColorsWIP.Link};
+    color: ${Colors.Link};
   }
 
   #root {
@@ -101,7 +101,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   .bp3-button:disabled .material-icons {
-    color: ${ColorsWIP.Gray300}
+    color: ${Colors.Gray300}
   }
 `;
 

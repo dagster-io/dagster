@@ -1,4 +1,4 @@
-import {ColorsWIP, CursorControlsContainer} from '@dagster-io/ui';
+import {Colors, CursorControlsContainer} from '@dagster-io/ui';
 import styled from 'styled-components/macro';
 
 export const OptionsContainer = styled.div`
@@ -6,8 +6,8 @@ export const OptionsContainer = styled.div`
   display: flex;
   align-items: center;
   padding: 5px 12px 5px 24px;
-  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
-  background: ${ColorsWIP.White};
+  border-bottom: 1px solid ${Colors.KeylineGray};
+  background: ${Colors.White};
   flex-shrink: 0;
   flex-wrap: wrap;
   z-index: 3;

@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import 'chartjs-adapter-date-fns';
-import {ButtonWIP, DialogBody, DialogFooter, DialogWIP, Group, IconWIP} from '@dagster-io/ui';
+import {Button, DialogBody, DialogFooter, Dialog, Group, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {copyValue} from '../app/DomUtils';
@@ -29,7 +29,7 @@ export const TickDetailsDialog: React.FC<{
       : undefined;
 
   return (
-    <DialogWIP
+    <Dialog
       isOpen={!!tick}
       onClose={onClose}
       style={{
@@ -57,17 +57,17 @@ export const TickDetailsDialog: React.FC<{
         </DialogBody>
       ) : null}
       <DialogFooter>
-        <ButtonWIP
-          icon={<IconWIP name="copy_to_clipboard" />}
+        <Button
+          icon={<Icon name="copy_to_clipboard" />}
           onClick={(e) => copyValue(e, window.location.href)}
         >
           Copy Link
-        </ButtonWIP>
-        <ButtonWIP intent="primary" onClick={onClose}>
+        </Button>
+        <Button intent="primary" onClick={onClose}>
           OK
-        </ButtonWIP>
+        </Button>
       </DialogFooter>
-    </DialogWIP>
+    </Dialog>
   );
 };
 

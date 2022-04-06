@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {ButtonWIP, IconWIP, FontFamily} from '@dagster-io/ui';
+import {Button, Icon, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -45,9 +45,9 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
           </>
         ) : null}
         {props.showReload && (
-          <ButtonWIP icon={<IconWIP name="refresh" />} onClick={() => window.location.reload()}>
+          <Button icon={<Icon name="refresh" />} onClick={() => window.location.reload()}>
             Reload
-          </ButtonWIP>
+          </Button>
         )}
       </Wrapper>
     </>

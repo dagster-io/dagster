@@ -1,4 +1,4 @@
-import {ColorsWIP, FontFamily} from '@dagster-io/ui';
+import {Colors, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -186,14 +186,14 @@ const TimescaleContainer = styled.div`
     text-align: center;
   }
   & .tick.duration {
-    color: ${ColorsWIP.Gray500};
-    background: ${ColorsWIP.Gray100};
+    color: ${Colors.Gray500};
+    background: ${Colors.Gray100};
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
   }
   & .tick.highlight {
     color: white;
     height: ${TICKS_ROW_HEIGHT + 2}px;
-    background: ${ColorsWIP.Gray900};
+    background: ${Colors.Gray900};
   }
   & .line {
     position: absolute;
@@ -203,14 +203,14 @@ const TimescaleContainer = styled.div`
     bottom: 0px;
   }
   & .line.highlight {
-    border-left: 2px solid ${ColorsWIP.Gray900};
+    border-left: 2px solid ${Colors.Gray900};
     z-index: 1111;
     top: -1px;
   }
 
   & .fog-of-war {
     position: absolute;
-    background: ${ColorsWIP.Gray50};
+    background: ${Colors.Gray50};
     transition: left ${CSS_DURATION}ms linear;
     top: 0px;
     bottom: 0px;
@@ -222,12 +222,12 @@ const TimescaleTicksContainer = styled.div`
   height: ${TICKS_ROW_HEIGHT}px;
   z-index: 4;
   position: relative;
-  background: ${ColorsWIP.White};
+  background: ${Colors.White};
   display: flex;
-  color: ${ColorsWIP.Gray500};
+  color: ${Colors.Gray500};
   font-size: 13px;
   font-family: ${FontFamily.monospace};
-  box-shadow: inset 0 -1px ${ColorsWIP.KeylineGray};
+  box-shadow: inset 0 -1px ${Colors.KeylineGray};
   overflow: hidden;
 `;
 

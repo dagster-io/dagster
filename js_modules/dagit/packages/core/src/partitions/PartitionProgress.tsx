@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ButtonWIP, Group, IconWIP, stringFromValue, Tooltip} from '@dagster-io/ui';
+import {Box, Button, Group, Icon, stringFromValue, Tooltip} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -220,14 +220,14 @@ export const PartitionProgress = (props: Props) => {
         </Tooltip>
         {Object.keys(unfinishedMap).length ? (
           <>
-            <ButtonWIP
+            <Button
               outlined
-              icon={<IconWIP name="cancel" />}
+              icon={<Icon name="cancel" />}
               intent="danger"
               onClick={() => setIsTerminating(true)}
             >
               Terminate
-            </ButtonWIP>
+            </Button>
             <TerminationDialog
               isOpen={isTerminating}
               onClose={() => setIsTerminating(false)}

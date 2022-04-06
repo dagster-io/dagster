@@ -219,23 +219,17 @@ class RepositoryScopedBatchLoader:
         states = self._get(RepositoryDataType.SENSOR_STATES, sensor_state, 1)
         return states[0] if states else None
 
-    def get_sensor_ticks(self, origin_id, limit):
+    def get_sensor_ticks(self, origin_id, selector_id, limit):
         check.invariant(
-            origin_id
-            in [
-                sensor.get_external_origin_id()
-                for sensor in self._repository.get_external_sensors()
-            ]
+            selector_id
+            in [sensor.selector_id for sensor in self._repository.get_external_sensors()]
         )
         return self._get(RepositoryDataType.SENSOR_TICKS, origin_id, limit)
 
-    def get_schedule_ticks(self, origin_id, limit):
+    def get_schedule_ticks(self, origin_id, selector_id, limit):
         check.invariant(
-            origin_id
-            in [
-                schedule.get_external_origin_id()
-                for schedule in self._repository.get_external_schedules()
-            ]
+            selector_id
+            in [schedule.selector_id for schedule in self._repository.get_external_schedules()]
         )
         return self._get(RepositoryDataType.SCHEDULE_TICKS, origin_id, limit)
 
