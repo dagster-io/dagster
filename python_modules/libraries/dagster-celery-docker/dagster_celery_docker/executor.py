@@ -285,15 +285,14 @@ def create_docker_task(celery_app, **task_kwargs):
 
             res = docker_response.decode("utf-8")
         except docker.errors.ContainerError as err:
+            entries = [MetadataEntry("Job image", value=docker_image)]
+            if err.stderr is not None:
+                entries.append(MetadataEntry("Docker stderr", value=err.stderr))
+
             instance.report_engine_event(
                 "Failed to run steps {} in Docker container {}".format(step_keys_str, docker_image),
                 pipeline_run,
-                EngineEventData(
-                    [
-                        MetadataEntry("Job image", value=docker_image),
-                        MetadataEntry("Docker stderr", value=err.stderr),
-                    ],
-                ),
+                EngineEventData(entries),
                 CeleryDockerExecutor,
                 step_key=execute_step_args.step_keys_to_execute[0],
             )
