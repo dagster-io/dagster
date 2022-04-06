@@ -1,7 +1,7 @@
+import hashlib
 import json
 import os
 import textwrap
-import hashlib
 from typing import AbstractSet, Any, Callable, Dict, Mapping, Optional, Sequence, Set, Tuple
 
 from dagster_dbt.cli.types import DbtCliOutput
@@ -107,7 +107,7 @@ def _dbt_nodes_to_assets(
     # prevent op name collisions between multiple dbt multi-assets
     op_name = f"run_dbt_{package_name}"
     if select != "*":
-        op_name += "_" + hashlib.md5(str(sorted(selected_unique_ids)).encode()).hexdigest()[-5:]
+        op_name += "_" + hashlib.md5(select.encode()).hexdigest()[-5:]
 
     @multi_asset(
         name=op_name,

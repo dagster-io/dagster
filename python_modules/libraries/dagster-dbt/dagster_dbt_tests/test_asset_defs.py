@@ -134,7 +134,7 @@ def test_select_from_project(
         test_project_dir, dbt_config_dir, select="sort_by_calories subdir.least_caloric"
     )
 
-    assert dbt_assets[0].op.name == "run_dbt_dagster_dbt_test_project_b5883"
+    assert dbt_assets[0].op.name == "run_dbt_dagster_dbt_test_project_e4753"
 
     result = build_assets_job(
         "test_job",
