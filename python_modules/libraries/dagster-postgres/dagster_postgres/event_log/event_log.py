@@ -161,14 +161,15 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             and (
                 event.dagster_event.is_step_materialization
                 or event.dagster_event.is_asset_observation
+                or event.dagster_event.is_asset_materialization_planned
             )
             and event.dagster_event.asset_key
         ):
-            self.store_asset(event)
+            self.store_asset_event(event)
 
     def store_asset_observation(self, event):
-        # last_materialization_timestamp is updated upon observation or materialization
-        # See store_asset method in SqlEventLogStorage for more details
+        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
+        # See SqlEventLogStorage.store_asset_event method for more details
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
             with self.index_connection() as conn:
                 conn.execute(
@@ -188,8 +189,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 )
 
     def store_asset_materialization(self, event):
-        # last_materialization_timestamp is updated upon observation or materialization
-        # See store_asset method in SqlEventLogStorage for more details
+        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
+        # See SqlEventLogStorage.store_asset_event method for more details
         materialization = event.dagster_event.step_materialization_data.materialization
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
             with self.index_connection() as conn:
@@ -238,17 +239,21 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 )
 
     def store_asset_materialization_planned(self, event):
+        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
+        # See SqlEventLogStorage.store_asset_event method for more details
         with self.index_connection() as conn:
             conn.execute(
                 db.dialects.postgresql.insert(AssetKeyTable)
                 .values(
                     asset_key=event.dagster_event.asset_key.to_string(),
+                    last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
                     last_run_id=event.run_id,
                 )
                 .on_conflict_do_update(
                     index_elements=[AssetKeyTable.c.asset_key],
                     set_=dict(
                         last_run_id=event.run_id,
+                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
                     ),
                 )
             )

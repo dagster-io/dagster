@@ -122,8 +122,8 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return MySQLEventLogStorage(conn_string)
 
     def store_asset_observation(self, event):
-        # last_materialization_timestamp is updated upon observation or materialization
-        # See store_asset method in SqlEventLogStorage for more details
+        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
+        # See SqlEventLogStorage.store_asset_event method for more details
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
             with self.index_connection() as conn:
                 conn.execute(
@@ -138,8 +138,8 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 )
 
     def store_asset_materialization(self, event):
-        # last_materialization_timestamp is updated upon observation or materialization
-        # See store_asset method in SqlEventLogStorage for more details
+        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
+        # See SqlEventLogStorage.store_asset_event method for more details
         materialization = event.dagster_event.step_materialization_data.materialization
 
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
@@ -180,15 +180,19 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 )
 
     def store_asset_materialization_planned(self, event):
+        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
+        # See SqlEventLogStorage.store_asset_event method for more details
         with self.index_connection() as conn:
             conn.execute(
                 db.dialects.mysql.insert(AssetKeyTable)
                 .values(
                     asset_key=event.dagster_event.asset_key.to_string(),
                     last_run_id=event.run_id,
+                    last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
                 )
                 .on_duplicate_key_update(
                     last_run_id=event.run_id,
+                    last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
                 )
             )
 

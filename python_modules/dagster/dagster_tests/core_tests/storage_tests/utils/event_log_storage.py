@@ -1,4 +1,5 @@
 import datetime
+import logging
 import re
 import time
 from collections import Counter
@@ -19,6 +20,8 @@ from dagster import (
     Output,
     OutputDefinition,
     RetryRequested,
+    asset,
+    build_assets_job,
     job,
     op,
     pipeline,
@@ -36,7 +39,12 @@ from dagster.core.events import (
     StepExpectationResultData,
     StepMaterializationData,
 )
-from dagster.core.events.log import EventLogEntry, construct_event_logger
+from dagster.core.events.log import (
+    EventLogEntry,
+    StructuredLoggerMessage,
+    construct_event_logger,
+    construct_event_record,
+)
 from dagster.core.execution.api import execute_run
 from dagster.core.execution.plan.handle import StepHandle
 from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
@@ -1993,3 +2001,39 @@ class TestEventLogStorage:
                     storage.store_event(event)
 
                 assert [key] == storage.all_asset_keys()
+
+    def test_last_run_id_updates_on_materialization_planned(self, storage):
+        @asset
+        def never_materializes_asset():
+            raise Exception("foo")
+
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            asset_key = AssetKey("never_materializes_asset")
+            never_materializes_job = build_assets_job("never_materializes_job", [never_materializes_asset])
+            def _execute_asset_and_store_events():
+                result = never_materializes_job.execute_in_process(instance=instance, raise_on_error=False)
+                result_run_id = result.run_id
+                events = instance.all_logs(run_id=result_run_id)
+                for event in events:
+                    storage.store_event(event)
+                return result_run_id
+
+
+            latest_run_id = _execute_asset_and_store_events()
+            last_run_ids = storage.get_last_run_ids_for_assets([asset_key])
+            assert last_run_ids
+            assert latest_run_id == last_run_ids[asset_key]
+
+            if self.can_wipe():
+                storage.wipe_asset(asset_key)
+
+                # confirm that last_run_id == None when asset is wiped
+                assert len(storage.get_last_run_ids_for_assets([asset_key])) == 0
+
+                latest_run_id = _execute_asset_and_store_events()
+                last_run_ids = storage.get_last_run_ids_for_assets([asset_key])
+                assert last_run_ids
+                assert latest_run_id == last_run_ids[asset_key]

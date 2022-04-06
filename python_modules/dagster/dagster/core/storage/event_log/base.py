@@ -271,6 +271,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         pass
 
     @abstractmethod
+    def get_last_run_ids_for_assets(self, asset_keys) -> Mapping[AssetKey, Optional[str]]:
+        pass
+
+    @abstractmethod
     def wipe_asset(self, asset_key: AssetKey):
         """Remove asset index history from event log for given asset_key"""
 

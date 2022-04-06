@@ -110,13 +110,15 @@ class SqlEventLogStorage(EventLogStorage):
 
         # The AssetKeyTable contains a `last_materialization_timestamp` column that is exclusively
         # used to determine if an asset exists (last materialization timestamp > wipe timestamp).
-        # This column is used nowhere else, and as of AssetObservation creation, we want to extend
-        # this functionality to ensure that assets with observation OR materialization timestamp
+        # This column is used nowhere else, and as of AssetObservation/AssetMaterializationPlanned
+        # event creation, we want to extend this functionality to ensure that assets with any event
+        # (observation, materialization, or materialization planned) yielded with timestamp
         # > wipe timestamp display in Dagit.
 
         # As of the following PR, we update last_materialization_timestamp to store the timestamp
-        # of the latest asset observation or materialization that has occurred.
+        # of the latest asset observation, materialization, or materialization_planned that has occurred.
         # https://github.com/dagster-io/dagster/pull/6885
+        # PR here
         if event.dagster_event.is_asset_observation:
             self.store_asset_observation(event)
         elif event.dagster_event.is_step_materialization:
@@ -125,8 +127,8 @@ class SqlEventLogStorage(EventLogStorage):
             self.store_asset_materialization_planned(event)
 
     def store_asset_observation(self, event):
-        # last_materialization_timestamp is updated upon observation or materialization
-        # See store_asset method above for more details
+        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
+        # See SqlEventLogStorage.store_asset_event method for more details
         if self.has_asset_key_index_cols():
             insert_statement = AssetKeyTable.insert().values(
                 asset_key=event.dagster_event.asset_key.to_string(),
@@ -155,8 +157,8 @@ class SqlEventLogStorage(EventLogStorage):
         #
         # https://github.com/dagster-io/dagster/issues/3945
 
-        # last_materialization_timestamp is updated upon observation or materialization
-        # See store_asset method above for more details
+        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
+        # See SqlEventLogStorage.store_asset_event method for more details
         if self.has_asset_key_index_cols():
             materialization = event.dagster_event.step_materialization_data.materialization
             insert_statement = (
@@ -206,16 +208,20 @@ class SqlEventLogStorage(EventLogStorage):
                 conn.execute(update_statement)
 
     def store_asset_materialization_planned(self, event):
+        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
+        # See SqlEventLogStorage.store_asset_event method for more details
         insert_statement = (
             AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
                 asset_key=event.dagster_event.asset_key.to_string(),
                 last_run_id=event.run_id,
+                last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
             )
         )
         update_statement = (
             AssetKeyTable.update()
             .values(
                 last_run_id=event.run_id,
+                last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
             )
             .where(
                 AssetKeyTable.c.asset_key == event.dagster_event.asset_key.to_string(),
@@ -870,6 +876,7 @@ class SqlEventLogStorage(EventLogStorage):
             AssetKeyTable.c.asset_key,
             AssetKeyTable.c.last_materialization,
             AssetKeyTable.c.asset_details,
+            AssetKeyTable.c.last_run_id
         ]
 
         is_partial_query = bool(asset_keys) or bool(prefix) or bool(limit) or bool(cursor)
@@ -1113,6 +1120,24 @@ class SqlEventLogStorage(EventLogStorage):
             results = conn.execute(query).fetchall()
 
         return [run_id for (run_id, _timestamp) in results]
+
+    def get_last_run_ids_for_assets(self, asset_keys) -> Mapping[AssetKey, Optional[str]]:
+        check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
+
+        last_run_id_by_asset_key: Dict[AssetKey, str] = {}
+        rows = self._fetch_asset_rows()
+        for row in rows:
+            asset_key = AssetKey.from_db_string(row[0])
+            last_run_id = row[3]
+            last_run_id_by_asset_key[asset_key] = last_run_id
+
+        selected_assets_map_to_last_run_id: Dict[AssetKey, str] = {}
+        for asset_key in asset_keys:
+            last_run_id = last_run_id_by_asset_key.get(asset_key)
+            if last_run_id:
+                selected_assets_map_to_last_run_id[asset_key] = last_run_id
+
+        return selected_assets_map_to_last_run_id
 
     def _asset_materialization_from_json_column(self, json_str):
         if not json_str:
