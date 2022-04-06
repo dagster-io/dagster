@@ -47,13 +47,20 @@ dagit:
 
   # Defines a workspace for Dagit. This should only be set if user deployments are enabled, but
   # the subchart is disabled to manage user deployments in a separate Helm release.
-  # In this case, Dagit will need the addresses of the servers in order to load the user code.
+  # In this case, Dagit will need the addresses of the servers in order to load the user code,
+  # or the name of an existing configmap to mount as the workspace file.
   workspace:
     enabled: false
+    # List of servers to include in the workflow file. When set,
+    # `externalConfigmap` must be empty.
     servers:
       - host: "k8s-example-user-code-1"
         port: 3030
         name: "user-code-example"
+    # Defines the name of a configmap provisioned outside of the
+    # Helm release to use as workspace file. When set, `servers`
+    # must be empty.
+    externalConfigmap: ""
 
   # Deploy a separate instance of Dagit in --read-only mode (can't launch runs, disable schedules, etc.)
   enableReadOnly: false
