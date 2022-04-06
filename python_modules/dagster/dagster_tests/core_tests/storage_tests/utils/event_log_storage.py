@@ -2012,15 +2012,19 @@ class TestEventLogStorage:
                 storage.register_instance(instance)
 
             asset_key = AssetKey("never_materializes_asset")
-            never_materializes_job = build_assets_job("never_materializes_job", [never_materializes_asset])
+            never_materializes_job = build_assets_job(
+                "never_materializes_job", [never_materializes_asset]
+            )
+
             def _execute_asset_and_store_events():
-                result = never_materializes_job.execute_in_process(instance=instance, raise_on_error=False)
+                result = never_materializes_job.execute_in_process(
+                    instance=instance, raise_on_error=False
+                )
                 result_run_id = result.run_id
                 events = instance.all_logs(run_id=result_run_id)
                 for event in events:
                     storage.store_event(event)
                 return result_run_id
-
 
             latest_run_id = _execute_asset_and_store_events()
             last_run_ids = storage.get_last_run_ids_for_assets([asset_key])

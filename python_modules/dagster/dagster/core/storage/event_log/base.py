@@ -271,7 +271,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         pass
 
     @abstractmethod
-    def get_last_run_ids_for_assets(self, asset_keys) -> Mapping[AssetKey, Optional[str]]:
+    def get_last_run_ids_for_assets(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Optional[str]]:
         pass
 
     @abstractmethod

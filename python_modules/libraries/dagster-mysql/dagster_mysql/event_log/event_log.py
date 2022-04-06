@@ -139,6 +139,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def store_asset_materialization(self, event):
         # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
+        # last_run_id column is updated upon materialization and materialization planned events.
         # See SqlEventLogStorage.store_asset_event method for more details
         materialization = event.dagster_event.step_materialization_data.materialization
 
@@ -181,6 +182,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def store_asset_materialization_planned(self, event):
         # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
+        # last_run_id column is updated upon materialization and materialization planned events.
         # See SqlEventLogStorage.store_asset_event method for more details
         with self.index_connection() as conn:
             conn.execute(

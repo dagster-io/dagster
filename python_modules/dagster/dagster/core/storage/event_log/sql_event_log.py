@@ -115,10 +115,16 @@ class SqlEventLogStorage(EventLogStorage):
         # (observation, materialization, or materialization planned) yielded with timestamp
         # > wipe timestamp display in Dagit.
 
-        # As of the following PR, we update last_materialization_timestamp to store the timestamp
+        # As of the following PRs, we update last_materialization_timestamp to store the timestamp
         # of the latest asset observation, materialization, or materialization_planned that has occurred.
         # https://github.com/dagster-io/dagster/pull/6885
-        # PR here
+        # https://github.com/dagster-io/dagster/pull/7319
+
+        # The AssetKeyTable also contains a `last_run_id` column that is updated upon asset
+        # materialization. This column was not being used until the below PR. This new change
+        # writes to the column upon `ASSET_MATERIALIZATION_PLANNED` events to fetch the last
+        # run id for a set of assets in one roundtrip call to event log storage.
+        # https://github.com/dagster-io/dagster/pull/7319
         if event.dagster_event.is_asset_observation:
             self.store_asset_observation(event)
         elif event.dagster_event.is_step_materialization:
@@ -158,6 +164,7 @@ class SqlEventLogStorage(EventLogStorage):
         # https://github.com/dagster-io/dagster/issues/3945
 
         # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
+        # last_run_id column is updated upon materialization and materialization planned events.
         # See SqlEventLogStorage.store_asset_event method for more details
         if self.has_asset_key_index_cols():
             materialization = event.dagster_event.step_materialization_data.materialization
@@ -209,13 +216,12 @@ class SqlEventLogStorage(EventLogStorage):
 
     def store_asset_materialization_planned(self, event):
         # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
+        # last_run_id column is updated upon materialization and materialization planned events.
         # See SqlEventLogStorage.store_asset_event method for more details
-        insert_statement = (
-            AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
-                asset_key=event.dagster_event.asset_key.to_string(),
-                last_run_id=event.run_id,
-                last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-            )
+        insert_statement = AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
+            asset_key=event.dagster_event.asset_key.to_string(),
+            last_run_id=event.run_id,
+            last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
         )
         update_statement = (
             AssetKeyTable.update()
@@ -232,7 +238,6 @@ class SqlEventLogStorage(EventLogStorage):
                 conn.execute(insert_statement)
             except db.exc.IntegrityError:
                 conn.execute(update_statement)
-
 
     def store_event(self, event):
         """Store an event corresponding to a pipeline run.
@@ -876,7 +881,7 @@ class SqlEventLogStorage(EventLogStorage):
             AssetKeyTable.c.asset_key,
             AssetKeyTable.c.last_materialization,
             AssetKeyTable.c.asset_details,
-            AssetKeyTable.c.last_run_id
+            AssetKeyTable.c.last_run_id,
         ]
 
         is_partial_query = bool(asset_keys) or bool(prefix) or bool(limit) or bool(cursor)
@@ -1121,7 +1126,9 @@ class SqlEventLogStorage(EventLogStorage):
 
         return [run_id for (run_id, _timestamp) in results]
 
-    def get_last_run_ids_for_assets(self, asset_keys) -> Mapping[AssetKey, Optional[str]]:
+    def get_last_run_ids_for_assets(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Optional[str]]:
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
 
         last_run_id_by_asset_key: Dict[AssetKey, str] = {}
@@ -1129,7 +1136,8 @@ class SqlEventLogStorage(EventLogStorage):
         for row in rows:
             asset_key = AssetKey.from_db_string(row[0])
             last_run_id = row[3]
-            last_run_id_by_asset_key[asset_key] = last_run_id
+            if asset_key:
+                last_run_id_by_asset_key[asset_key] = last_run_id
 
         selected_assets_map_to_last_run_id: Dict[AssetKey, str] = {}
         for asset_key in asset_keys:

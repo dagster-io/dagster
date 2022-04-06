@@ -322,7 +322,9 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
 
         return list(asset_run_ids)
 
-    def get_last_run_ids_for_assets(self, asset_keys) -> Mapping[AssetKey, Optional[str]]:
+    def get_last_run_ids_for_assets(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Optional[str]]:
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
 
         asset_records = []
@@ -335,7 +337,6 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                 and record.dagster_event.asset_key
                 and record.dagster_event.asset_key in asset_keys
             ]
-
 
         last_run_id_by_asset: Dict[AssetKey, Optional[str]] = {}
         for record in sorted(asset_records, key=lambda x: x.timestamp, reverse=True):
