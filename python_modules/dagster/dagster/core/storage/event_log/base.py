@@ -12,10 +12,12 @@ from typing import (
     Set,
     Tuple,
     Union,
+    Dict
 )
 
 from dagster import check
-from dagster.core.definitions.events import AssetKey
+from dagster.core.assets import AssetDetails
+from dagster.core.definitions.events import AssetKey, AssetMaterialization
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.stats import (
@@ -45,6 +47,45 @@ class EventLogRecord(NamedTuple):
 
     storage_id: int
     event_log_entry: EventLogEntry
+
+class AssetEntry(
+    NamedTuple(
+        "_AssetEntry",
+        [
+            ("asset_key", AssetKey),
+            ("last_materialization", Optional[Union[AssetMaterialization, EventLogEntry]]),
+            ("last_run_id", Optional[str]),
+            ("asset_details", Optional[AssetDetails]),
+            ("wipe_timestamp", Optional[datetime]),
+            ("last_materialization_timestamp", Optional[datetime]),
+            ("tags", Optional[Dict[str, str]]),
+        ]
+    )
+):
+    def __new__(
+        cls,
+        asset_key: AssetKey,
+        last_materialization: Optional[Union[AssetMaterialization, EventLogEntry]]=None,
+        last_run_id: Optional[str] = None,
+        asset_details: Optional[AssetDetails] = None,
+        wipe_timestamp: Optional[datetime] = None,
+        last_materialization_timestamp: Optional[datetime] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ):
+        return super(AssetEntry, cls).__new__(
+            cls,
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+            last_materialization=check.opt_inst_param(last_materialization, "last_materialization", (AssetMaterialization, EventLogEntry)),
+            last_run_id=check.opt_str_param(last_run_id, "last_run_id"),
+            asset_details=check.opt_inst_param(asset_details, "asset_details", AssetDetails),
+            wipe_timestamp=check.opt_inst_param(wipe_timestamp, "wipe_timestamp", datetime),
+            last_materialization_timestamp=check.opt_inst_param(last_materialization_timestamp, "last_materialization_timestamp", datetime),
+            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
+        )
+
+class AssetRecord(NamedTuple):
+    storage_id: int
+    asset_entry: AssetEntry
 
 
 @whitelist_for_serdes
@@ -213,6 +254,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Iterable[EventLogRecord]:
+        pass
+
+    @abstractmethod
+    def get_asset_records(self, asset_keys: Optional[Sequence[AssetKey]]) -> Iterable[AssetRecord]:
         pass
 
     @abstractmethod

@@ -25,6 +25,8 @@ from .base import (
     EventRecordsFilter,
     RunShardedEventsCursor,
     extract_asset_events_cursor,
+    AssetRecord,
+    AssetEntry
 )
 from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DATA_MIGRATIONS
 from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable
@@ -754,6 +756,26 @@ class SqlEventLogStorage(EventLogStorage):
 
         return event_records
 
+    def _construct_asset_record_from_row(self, row):
+        return AssetRecord(
+            storage_id=row[0],
+            asset_entry=AssetEntry(
+                asset_key=row[1],
+                last_materialization=row[2],
+                last_run_id=row[3],
+                asset_details=row[4],
+                wipe_timestamp=row[5] if row[5] else None,
+                last_materialization_timestamp=row[6] if row[6] else None,
+                tags=row[7] if row[7] else None
+            )
+        )
+
+    def get_asset_records(self, asset_keys: Optional[Sequence[AssetKey]]) -> Iterable[AssetRecord]:
+        rows, _, _ = self._fetch_asset_rows(asset_keys=asset_keys)
+        asset_records: List[AssetRecord] = [self._construct_asset_record_from_row(row) for row in rows]
+        return asset_records
+
+
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         check.inst_param(asset_key, "asset_key", AssetKey)
         rows = self._fetch_asset_rows(asset_keys=[asset_key])
@@ -761,7 +783,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def all_asset_keys(self):
         rows = self._fetch_asset_rows()
-        asset_keys = [AssetKey.from_db_string(row[0]) for row in sorted(rows, key=lambda x: x[0])]
+        asset_keys = [AssetKey.from_db_string(row[1]) for row in sorted(rows, key=lambda x: x[1])]
         return [asset_key for asset_key in asset_keys if asset_key]
 
     def get_asset_keys(
@@ -771,7 +793,7 @@ class SqlEventLogStorage(EventLogStorage):
         cursor: Optional[str] = None,
     ) -> Iterable[AssetKey]:
         rows = self._fetch_asset_rows(prefix=prefix, limit=limit, cursor=cursor)
-        asset_keys = [AssetKey.from_db_string(row[0]) for row in sorted(rows, key=lambda x: x[0])]
+        asset_keys = [AssetKey.from_db_string(row[1]) for row in sorted(rows, key=lambda x: x[1])]
         return [asset_key for asset_key in asset_keys if asset_key]
 
     def get_latest_materialization_events(
@@ -782,11 +804,11 @@ class SqlEventLogStorage(EventLogStorage):
         to_backcompat_fetch = set()
         results: Dict[AssetKey, Optional[EventLogEntry]] = {}
         for row in rows:
-            asset_key = AssetKey.from_db_string(row[0])
+            asset_key = AssetKey.from_db_string(row[1])
             if not asset_key:
                 continue
             event_or_materialization = (
-                deserialize_json_to_dagster_namedtuple(row[1]) if row[1] else None
+                deserialize_json_to_dagster_namedtuple(row[2]) if row[2] else None
             )
             if isinstance(event_or_materialization, EventLogEntry):
                 results[asset_key] = event_or_materialization
@@ -876,13 +898,22 @@ class SqlEventLogStorage(EventLogStorage):
         #
         # Returns a tuple of (rows, has_more, cursor), where each row is a tuple of serialized
         # asset_key, materialization, and asset_details
+        # TODO update comment
 
         columns = [
+            AssetKeyTable.c.id,
             AssetKeyTable.c.asset_key,
             AssetKeyTable.c.last_materialization,
-            AssetKeyTable.c.asset_details,
             AssetKeyTable.c.last_run_id,
+            AssetKeyTable.c.asset_details,
         ]
+        if self.has_asset_key_index_cols():
+            columns.extend([
+                AssetKeyTable.c.wipe_timestamp,
+                AssetKeyTable.c.last_materialization_timestamp,
+                AssetKeyTable.c.tags
+            ])
+
 
         is_partial_query = bool(asset_keys) or bool(prefix) or bool(limit) or bool(cursor)
         if self.has_asset_key_index_cols() and not is_partial_query:
@@ -913,15 +944,15 @@ class SqlEventLogStorage(EventLogStorage):
         row_by_asset_key = OrderedDict()
 
         for row in rows:
-            asset_key = AssetKey.from_db_string(row[0])
+            asset_key = AssetKey.from_db_string(row[1])
             if not asset_key:
                 continue
-            asset_details = AssetDetails.from_db_string(row[2])
+            asset_details = AssetDetails.from_db_string(row[4])
             if not asset_details or not asset_details.last_wipe_timestamp:
                 row_by_asset_key[asset_key] = row
                 continue
             materialization_or_event = (
-                deserialize_json_to_dagster_namedtuple(row[1]) if row[1] else None
+                deserialize_json_to_dagster_namedtuple(row[2]) if row[2] else None
             )
             if isinstance(materialization_or_event, EventLogEntry):
                 if asset_details.last_wipe_timestamp > materialization_or_event.timestamp:
@@ -1134,7 +1165,7 @@ class SqlEventLogStorage(EventLogStorage):
         last_run_id_by_asset_key: Dict[AssetKey, str] = {}
         rows = self._fetch_asset_rows()
         for row in rows:
-            asset_key = AssetKey.from_db_string(row[0])
+            asset_key = AssetKey.from_db_string(row[1])
             last_run_id = row[3]
             if asset_key:
                 last_run_id_by_asset_key[asset_key] = last_run_id
