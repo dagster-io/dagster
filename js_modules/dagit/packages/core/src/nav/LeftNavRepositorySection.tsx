@@ -1,4 +1,4 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -50,7 +50,7 @@ const LoadedRepositorySection: React.FC<{
 };
 
 const Container = styled.div`
-  background: ${ColorsWIP.Gray100};
+  background: ${Colors.Gray100};
   display: flex;
   flex: 1;
   overflow: none;
@@ -66,7 +66,7 @@ const ListContainer = styled.div`
 `;
 
 const EmptyState = styled.div`
-  color: ${ColorsWIP.Gray400};
+  color: ${Colors.Gray400};
   line-height: 20px;
   padding: 6px 24px 0;
 `;

@@ -1,11 +1,4 @@
-import {
-  ButtonWIP,
-  DialogBody,
-  DialogFooter,
-  DialogWIP,
-  HighlightedCodeBlock,
-  IconWIP,
-} from '@dagster-io/ui';
+import {Button, DialogBody, DialogFooter, Dialog, HighlightedCodeBlock, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {IPluginSidebarProps} from '../plugins';
@@ -27,10 +20,10 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
 
   return (
     <div>
-      <ButtonWIP icon={<IconWIP name="content_copy" />} onClick={() => setOpen(true)}>
+      <Button icon={<Icon name="content_copy" />} onClick={() => setOpen(true)}>
         View SQL
-      </ButtonWIP>
-      <DialogWIP
+      </Button>
+      <Dialog
         icon="info"
         onClose={() => setOpen(false)}
         style={{width: '80vw', maxWidth: 900, height: 615}}
@@ -50,9 +43,9 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
           />
         </DialogBody>
         <DialogFooter>
-          <ButtonWIP onClick={() => setOpen(false)}>Close</ButtonWIP>
+          <Button onClick={() => setOpen(false)}>Close</Button>
         </DialogFooter>
-      </DialogWIP>
+      </Dialog>
     </div>
   );
 };

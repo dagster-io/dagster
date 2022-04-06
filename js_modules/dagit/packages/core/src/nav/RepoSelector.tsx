@@ -1,9 +1,9 @@
 import {
   Box,
   Checkbox,
-  ColorsWIP,
+  Colors,
   Group,
-  IconWIP,
+  Icon,
   IconWrapper,
   Spinner,
   Table,
@@ -77,7 +77,7 @@ export const RepoSelector: React.FC<Props> = (props) => {
                     <Group direction="column" spacing={2}>
                       {option.repository.displayMetadata.map(({key, value}) => (
                         <Caption
-                          style={{color: ColorsWIP.Gray400, fontFamily: FontFamily.monospace}}
+                          style={{color: Colors.Gray400, fontFamily: FontFamily.monospace}}
                           key={key}
                         >{`${key}: ${value}`}</Caption>
                       ))}
@@ -126,11 +126,11 @@ const RepoLabel = styled.label`
 `;
 
 const RepoName = styled.div`
-  color: ${ColorsWIP.Gray800};
+  color: ${Colors.Gray800};
 `;
 
 const RepoLocation = styled.div`
-  color: ${ColorsWIP.Gray700};
+  color: ${Colors.Gray700};
   font-family: ${FontFamily.monospace};
 `;
 
@@ -154,7 +154,7 @@ const ReloadButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
             {reloading ? (
               <Spinner purpose="body-text" />
             ) : (
-              <IconWIP name="refresh" color={ColorsWIP.Gray200} />
+              <Icon name="refresh" color={Colors.Gray200} />
             )}
           </ReloadButtonInner>
         </Tooltip>
@@ -172,15 +172,15 @@ const ReloadButtonInner = styled.button`
   outline: none;
 
   ${IconWrapper} {
-    background-color: ${ColorsWIP.Gray600};
+    background-color: ${Colors.Gray600};
     transition: background-color 100ms;
   }
 
   :hover ${IconWrapper} {
-    background-color: ${ColorsWIP.Gray800};
+    background-color: ${Colors.Gray800};
   }
 
   :focus ${IconWrapper} {
-    background-color: ${ColorsWIP.Link};
+    background-color: ${Colors.Link};
   }
 `;

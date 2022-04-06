@@ -489,7 +489,7 @@ runLauncher:
       # Additional config options for Celery, applied to all queues.
       # These can be overridden per-queue below.
       # For available options, see:
-      # https://docs.celeryproject.org/en/stable/userguide/configuration.html
+      # https://docs.celeryq.dev/en/stable/userguide/configuration.html
       configSource: {}
 
       # Additional Celery worker queues can be configured here. When overriding, be sure to

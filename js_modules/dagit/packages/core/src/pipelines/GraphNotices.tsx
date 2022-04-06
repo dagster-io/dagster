@@ -1,11 +1,11 @@
-import {ColorsWIP, IconWIP, NonIdealState} from '@dagster-io/ui';
+import {Colors, Icon, NonIdealState} from '@dagster-io/ui';
 import {capitalize} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 export const LargeDAGNotice = ({nodeType}: {nodeType: 'op' | 'asset'}) => (
   <LargeDAGContainer>
-    <IconWIP name="arrow_upward" size={24} />
+    <Icon name="arrow_upward" size={24} />
     <LargeDAGInstructionBox>
       <p>
         This is a large DAG that may be difficult to visualize. Type <code>*</code> in the graph
@@ -89,7 +89,7 @@ const LargeDAGInstructionBox = styled.div`
   padding: 15px 20px;
   border: 1px solid #fff5c3;
   margin-top: 20px;
-  color: ${ColorsWIP.Gray800};
+  color: ${Colors.Gray800};
   background: #fffbe5;
   text-align: left;
   line-height: 1.4rem;

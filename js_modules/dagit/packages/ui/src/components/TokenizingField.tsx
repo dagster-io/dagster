@@ -1,5 +1,5 @@
 import {TagInput} from '@blueprintjs/core';
-import isEqual from 'lodash/isEqual';
+import isEqual from 'lodash.isequal';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 

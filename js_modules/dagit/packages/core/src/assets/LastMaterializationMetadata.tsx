@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, ColorsWIP, Group, IconWIP, Mono, NonIdealState, Table} from '@dagster-io/ui';
+import {Box, Colors, Group, Icon, Mono, NonIdealState, Table} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -69,7 +69,7 @@ export const LatestMaterializationMetadata: React.FC<{
                       />
                     </Box>
                     <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
-                      <IconWIP name="linear_scale" color={ColorsWIP.Gray400} />
+                      <Icon name="linear_scale" color={Colors.Gray400} />
                       <Link
                         to={`/instance/runs/${latestRun.runId}?${qs.stringify({
                           selection: latestEvent.stepKey,

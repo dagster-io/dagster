@@ -26,6 +26,7 @@ def core_execute_in_process(
     output_capturing_enabled: bool,
     raise_on_error: bool,
     run_tags: Optional[Dict[str, Any]] = None,
+    run_id: Optional[str] = None,
 ) -> ExecuteInProcessResult:
     pipeline_def = ephemeral_pipeline
     mode_def = pipeline_def.get_mode_definition()
@@ -46,6 +47,7 @@ def core_execute_in_process(
             run_config=run_config,
             mode=mode_def.name,
             tags={**pipeline_def.tags, **(run_tags or {})},
+            run_id=run_id,
         )
         run_id = pipeline_run.run_id
 

@@ -1,4 +1,4 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 import styled from 'styled-components/macro';
@@ -154,7 +154,7 @@ export const PartitionGraph = ({
             {
               label: allLabel,
               data: pipelineData,
-              borderColor: ColorsWIP.Gray500,
+              borderColor: Colors.Gray500,
               backgroundColor: 'rgba(0,0,0,0)',
             },
           ]),
@@ -201,9 +201,9 @@ const _reverseSortRunCompare = (a: PartitionGraphFragment, b: PartitionGraphFrag
 
 const PartitionGraphContainer = styled.div`
   display: flex;
-  color: ${ColorsWIP.Gray700};
-  border-left: 1px solid ${ColorsWIP.KeylineGray};
-  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+  color: ${Colors.Gray700};
+  border-left: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${Colors.KeylineGray};
   padding: 24px 12px;
   text-decoration: none;
 `;

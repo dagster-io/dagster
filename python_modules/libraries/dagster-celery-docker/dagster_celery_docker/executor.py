@@ -83,7 +83,7 @@ def celery_docker_executor(init_context):
     the ``config_source`` key. This config corresponds to the "new lowercase settings" introduced
     in Celery version 4.0 and the object constructed from config will be passed to the
     :py:class:`celery.Celery` constructor as its ``config_source`` argument.
-    (See https://docs.celeryproject.org/en/latest/userguide/configuration.html for details.)
+    (See https://docs.celeryq.dev/en/stable/userguide/configuration.html for details.)
 
     The executor also exposes the ``broker``, `backend`, and ``include`` arguments to the
     :py:class:`celery.Celery` constructor.
@@ -118,6 +118,9 @@ def celery_docker_executor(init_context):
                 username: 'my_user'
                 password: {env: 'DOCKER_PASSWORD'}
               env_vars: ["DAGSTER_HOME"] # environment vars to pass from celery worker to docker
+              container_kwargs: # keyword args to be passed to the container. example:
+                volumes: ['/home/user1/:/mnt/vol2','/var/www:/mnt/vol1']
+
             broker: 'pyamqp://guest@localhost//'  # Optional[str]: The URL of the Celery broker
             backend: 'rpc://' # Optional[str]: The URL of the Celery results backend
             include: ['my_module'] # Optional[List[str]]: Modules every worker should import
@@ -308,17 +311,14 @@ def create_docker_task(celery_app, **task_kwargs):
 
             res = docker_response.decode("utf-8")
         except docker.errors.ContainerError as err:
+            entries = [MetadataEntry("Job image", value=docker_image)]
+            if err.stderr is not None:
+                entries.append(MetadataEntry("Docker stderr", value=err.stderr))
+
             instance.report_engine_event(
                 "Failed to run steps {} in Docker container {}".format(step_keys_str, docker_image),
                 pipeline_run,
-                EngineEventData(
-                    [
-                        MetadataEntry("Job image", value=docker_image),
-                        MetadataEntry(
-                            "Docker stderr", value=err.stderr if err.stderr is not None else ""
-                        ),
-                    ],
-                ),
+                EngineEventData(entries),
                 CeleryDockerExecutor,
                 step_key=execute_step_args.step_keys_to_execute[0],
             )

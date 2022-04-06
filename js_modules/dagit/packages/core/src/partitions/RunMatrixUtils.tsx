@@ -1,13 +1,13 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 export const BOX_SIZE = 32;
 
 export const STEP_STATUS_COLORS = {
-  SUCCESS: ColorsWIP.Green500,
-  FAILURE: ColorsWIP.Red500,
-  SKIPPED: ColorsWIP.Yellow500,
+  SUCCESS: Colors.Green500,
+  FAILURE: Colors.Red500,
+  SKIPPED: Colors.Yellow500,
   IN_PROGRESS: '#eee',
 };
 
@@ -33,12 +33,12 @@ export const GridColumn = styled.div<{
     !focused &&
     !multiselectFocused &&
     `&${hovered ? '' : ':hover'} {
-      background: ${ColorsWIP.Gray100};
+      background: ${Colors.Gray100};
       cursor: default;
       ${TopLabelTiltedInner} {
-        background: ${ColorsWIP.White};
+        background: ${Colors.White};
         .tilted {
-          background: ${ColorsWIP.Gray100};
+          background: ${Colors.Gray100};
         }
       }
       .square {
@@ -50,36 +50,36 @@ export const GridColumn = styled.div<{
     disabled &&
     `
       ${TopLabelTiltedInner} {
-        color: ${ColorsWIP.Gray400}
+        color: ${Colors.Gray400}
       }
     `}
 
   ${({focused}) =>
     focused &&
-    `background: ${ColorsWIP.Blue500};
+    `background: ${Colors.Blue500};
     ${LeftLabel} {
       color: white;
     }
     ${TopLabelTiltedInner} {
-      background: ${ColorsWIP.White};
+      background: ${Colors.White};
       color: white;
       .tilted {
-        background: ${ColorsWIP.Blue500};
+        background: ${Colors.Blue500};
       }
     }
   }`}
 
   ${({multiselectFocused}) =>
     multiselectFocused &&
-    `background: ${ColorsWIP.Blue200};
+    `background: ${Colors.Blue200};
     ${LeftLabel} {
       color: white;
     }
     ${TopLabelTiltedInner} {
-      background: ${ColorsWIP.White};
+      background: ${Colors.White};
       color: white;
       .tilted {
-        background: ${ColorsWIP.Blue200};
+        background: ${Colors.Blue200};
       }
     }
   }`}
@@ -103,7 +103,7 @@ export const GridColumn = styled.div<{
     display: inline-block;
 
     &:hover:not(.empty):before {
-      box-shadow: ${ColorsWIP.Blue500} 0 0 0 3px;
+      box-shadow: ${Colors.Blue500} 0 0 0 3px;
     }
     &:before {
       content: ' ';
@@ -206,7 +206,7 @@ export const LeftLabel = styled.div<{hovered?: boolean}>`
   overflow: hidden;
   text-overflow: ellipsis;
   position: relative;
-  background: ${({hovered}) => flatGradientStack([hovered ? ColorsWIP.Gray100 : 'transparent'])};
+  background: ${({hovered}) => flatGradientStack([hovered ? Colors.Gray100 : 'transparent'])};
 `;
 
 export const TopLabel = styled.div`
@@ -262,7 +262,7 @@ const TopLabelTiltedInner = styled.div`
 
 export const GridFloatingContainer = styled.div<{floating: boolean}>`
   display: flex;
-  border-right: 1px solid ${ColorsWIP.Gray200};
+  border-right: 1px solid ${Colors.Gray200};
   padding-bottom: 16px;
   width: 330px;
   z-index: 1;
@@ -275,9 +275,9 @@ export const GridScrollContainer = styled.div`
   overflow-x: scroll;
   overscroll-behavior-x: contain;
   z-index: 0;
-  background: ${ColorsWIP.White};
+  background: ${Colors.White};
   flex: 1;
-  scrollbar-color: ${ColorsWIP.Gray500} ${ColorsWIP.Gray100};
+  scrollbar-color: ${Colors.Gray500} ${Colors.Gray100};
   scrollbar-width: thin;
 
   ::-webkit-scrollbar {
@@ -291,10 +291,10 @@ export const GridScrollContainer = styled.div`
   }
   &::-webkit-scrollbar-thumb {
     border-radius: 8px;
-    border: 2px solid ${ColorsWIP.Gray100};
-    background-color: ${ColorsWIP.Gray500};
+    border: 2px solid ${Colors.Gray100};
+    background-color: ${Colors.Gray500};
   }
   &::-webkit-scrollbar-track {
-    background-color: ${ColorsWIP.Gray100};
+    background-color: ${Colors.Gray100};
   }
 `;

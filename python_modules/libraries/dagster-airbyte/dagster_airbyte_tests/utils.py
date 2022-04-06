@@ -73,13 +73,6 @@ def get_sample_job_json(schema_prefix=""):
                             },
                         },
                         {
-                            "streamName": schema_prefix + "bar",
-                            "stats": {
-                                "bytesEmitted": 1234,
-                                "recordsCommitted": 4321,
-                            },
-                        },
-                        {
                             "streamName": schema_prefix + "baz",
                             "stats": {
                                 "bytesEmitted": 1111,

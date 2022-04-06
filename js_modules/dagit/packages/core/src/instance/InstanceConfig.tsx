@@ -1,9 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  ColorsWIP,
+  Colors,
   HighlightedCodeBlock,
-  IconWIP,
+  Icon,
   PageHeader,
   Spinner,
   Code,
@@ -27,15 +27,15 @@ const YamlShimStyle = createGlobalStyle`
 
   .config-yaml {
     .hljs-attr {
-      color: ${ColorsWIP.Blue700};
+      color: ${Colors.Blue700};
     }
 
     .hljs-string {
-      color: ${ColorsWIP.Green700};
+      color: ${Colors.Green700};
     }
 
     .hljs-number {
-      color: ${ColorsWIP.Red700};
+      color: ${Colors.Red700};
     }
   }
 `;
@@ -90,7 +90,7 @@ export const InstanceConfig = React.memo(() => {
       />
       <Box
         padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
       >
         <Subheading>
           Dagster version: <Code style={{fontSize: '16px'}}>{data.version}</Code>
@@ -109,7 +109,7 @@ export const InstanceConfig = React.memo(() => {
               id={id}
             >
               <ConfigLink to={`/instance/config${hashForSection}`} key={id}>
-                <IconWIP name="link" color={ColorsWIP.Gray300} />
+                <Icon name="link" color={Colors.Gray300} />
               </ConfigLink>
               <ConfigSection highlighted={hash === hashForSection}>
                 <HighlightedCodeBlock value={section} language="yaml" className="config-yaml" />
@@ -139,7 +139,7 @@ const ConfigSection = styled.div<{highlighted: boolean}>`
   ${({highlighted}) =>
     highlighted
       ? css`
-          background-color: ${ColorsWIP.Gray100};
+          background-color: ${Colors.Gray100};
           margin: -8px;
           padding: 8px;
         `

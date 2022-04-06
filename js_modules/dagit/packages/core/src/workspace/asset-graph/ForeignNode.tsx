@@ -1,4 +1,4 @@
-import {ColorsWIP, IconWIP, FontFamily} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily} from '@dagster-io/ui';
 import React from 'react';
 import styled from 'styled-components/macro';
 
@@ -7,7 +7,7 @@ import {displayNameForAssetKey} from '../../app/Util';
 export const ForeignNode: React.FC<{assetKey: {path: string[]}}> = React.memo(({assetKey}) => (
   <ForeignNodeLink>
     <span className="label">{displayNameForAssetKey(assetKey)}</span>
-    <IconWIP name="open_in_new" color={ColorsWIP.Gray500} />
+    <Icon name="open_in_new" color={Colors.Gray500} />
   </ForeignNodeLink>
 ));
 
@@ -16,12 +16,12 @@ const ForeignNodeLink = styled.div`
   padding: 4px 8px 6px;
   line-height: 30px;
   font-family: ${FontFamily.monospace};
-  color: ${ColorsWIP.Gray500};
+  color: ${Colors.Gray500};
   align-items: center;
   font-weight: 600;
   gap: 4px;
   &:hover .label {
-    color: ${ColorsWIP.Link};
+    color: ${Colors.Link};
     text-decoration: underline;
   }
 `;

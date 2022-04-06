@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, ColorsWIP, FontFamily, IconWIP} from '@dagster-io/ui';
+import {Box, Colors, FontFamily, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -111,7 +111,7 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
           <Box padding={{vertical: 16, horizontal: 24}}>
             {[...requiredResources].sort().map((requirement) => (
               <ResourceContainer key={requirement.resourceKey}>
-                <IconWIP name="resource" color={ColorsWIP.Gray700} />
+                <Icon name="resource" color={Colors.Gray700} />
                 <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
               </ResourceContainer>
             ))}
@@ -156,7 +156,7 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
               key={node.id}
               to={`/instance/assets/${node.assetKey.path.join('/')}`}
             >
-              <IconWIP name="asset" /> {displayNameForAssetKey(node.assetKey)}
+              <Icon name="asset" /> {displayNameForAssetKey(node.assetKey)}
             </AssetNodeListItem>
           ))}
         </SidebarSection>
@@ -283,7 +283,7 @@ const AssetNodeListItem = styled(Link)`
   user-select: none;
   padding: 12px 24px;
   cursor: pointer;
-  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+  border-bottom: 1px solid ${Colors.KeylineGray};
   display: flex;
   gap: 6px;
 
@@ -292,7 +292,7 @@ const AssetNodeListItem = styled(Link)`
   }
 
   &:hover {
-    background: ${ColorsWIP.Gray50};
+    background: ${Colors.Gray50};
   }
 
   font-family: ${FontFamily.monospace};

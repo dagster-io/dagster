@@ -1,4 +1,4 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import React from 'react';
 import styled from 'styled-components/macro';
 
@@ -16,7 +16,7 @@ export const AssetLinks: React.FC<{edges: IEdge[]}> = React.memo(({edges}) => (
         markerWidth="4"
         orient="auto"
       >
-        <path d="M 0 0 L 8 5 L 0 10 z" fill={ColorsWIP.KeylineGray} />
+        <path d="M 0 0 L 8 5 L 0 10 z" fill={Colors.KeylineGray} />
       </marker>
     </defs>
     {edges.map((edge, idx) => (
@@ -32,7 +32,7 @@ export const AssetLinks: React.FC<{edges: IEdge[]}> = React.memo(({edges}) => (
 
 const StyledPath = styled('path')<{dashed: boolean}>`
   stroke-width: 4;
-  stroke: ${ColorsWIP.KeylineGray};
+  stroke: ${Colors.KeylineGray};
   ${({dashed}) => (dashed ? `stroke-dasharray: 8 2;` : '')}
   fill: none;
 `;

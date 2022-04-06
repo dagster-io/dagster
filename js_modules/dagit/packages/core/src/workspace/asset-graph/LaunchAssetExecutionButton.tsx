@@ -1,4 +1,4 @@
-import {ButtonWIP, IconWIP, Tooltip} from '@dagster-io/ui';
+import {Button, Icon, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 
 import {AssetKey} from '../../assets/types';
@@ -71,14 +71,14 @@ export const LaunchAssetExecutionButton: React.FC<{
     <Tooltip content={disabledReason}>
       {partitionDefinition ? (
         <>
-          <ButtonWIP
-            icon={<IconWIP name="materialization" />}
+          <Button
+            icon={<Icon name="materialization" />}
             disabled={!!disabledReason}
             intent="primary"
             onClick={() => setShowingPartitionDialog(true)}
           >
             {title}
-          </ButtonWIP>
+          </Button>
           <LaunchAssetChoosePartitionsDialog
             assets={assets}
             upstreamAssetKeys={upstreamAssetKeys}

@@ -2,14 +2,14 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
-  ColorsWIP,
+  Colors,
   CursorHistoryControls,
   NonIdealState,
   Page,
   PageHeader,
   Tab,
   Tabs,
-  TagWIP,
+  Tag,
   Heading,
   TokenizingFieldValue,
 } from '@dagster-io/ui';
@@ -177,7 +177,7 @@ export const RunsRoot = () => {
         <Box
           flex={{direction: 'column', gap: 8}}
           padding={{horizontal: 24, vertical: 16}}
-          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
         >
           <Alert
             intent="info"
@@ -218,7 +218,7 @@ export const RunsRoot = () => {
                             {filterTokens
                               .filter((token) => token.token === 'status')
                               .map(({token, value}) => (
-                                <TagWIP key={token}>{`${token}:${value}`}</TagWIP>
+                                <Tag key={token}>{`${token}:${value}`}</Tag>
                               ))}
                           </Box>
                         ) : null}

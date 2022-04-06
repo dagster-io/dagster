@@ -1,13 +1,13 @@
 import {gql} from '@apollo/client';
 import {
-  ButtonWIP,
-  ColorsWIP,
+  Button,
+  Colors,
   DialogBody,
   DialogFooter,
-  DialogWIP,
+  Dialog,
   Group,
   HighlightedCodeBlock,
-  IconWIP,
+  Icon,
   MetadataTable,
   Tooltip,
 } from '@dagster-io/ui';
@@ -50,7 +50,7 @@ const LoadingOrValue: React.FC<{
   loading: boolean;
   children: () => React.ReactNode;
 }> = ({loading, children}) =>
-  loading ? <div style={{color: ColorsWIP.Gray400}}>Loading…</div> : <div>{children()}</div>;
+  loading ? <div style={{color: Colors.Gray400}}>Loading…</div> : <div>{children()}</div>;
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
@@ -71,7 +71,7 @@ export const RunDetails: React.FC<{
                   return <TimestampDisplay timestamp={run.startTime} timeFormat={TIME_FORMAT} />;
                 }
                 return (
-                  <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: Colors.Gray400}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
@@ -86,7 +86,7 @@ export const RunDetails: React.FC<{
                   return <TimestampDisplay timestamp={run.endTime} timeFormat={TIME_FORMAT} />;
                 }
                 return (
-                  <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: Colors.Gray400}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
@@ -101,7 +101,7 @@ export const RunDetails: React.FC<{
                   return <TimeElapsed startUnix={run.startTime} endUnix={run.endTime} />;
                 }
                 return (
-                  <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: Colors.Gray400}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
@@ -119,19 +119,19 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
   return (
     <div>
       <Group direction="row" spacing={8}>
-        <ButtonWIP icon={<IconWIP name="tag" />} onClick={() => setShowDialog(true)}>
+        <Button icon={<Icon name="tag" />} onClick={() => setShowDialog(true)}>
           View tags and config
-        </ButtonWIP>
+        </Button>
         <Tooltip content="Loadable in dagit-debug" position="bottom-right">
-          <ButtonWIP
-            icon={<IconWIP name="download_for_offline" />}
+          <Button
+            icon={<Icon name="download_for_offline" />}
             onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
           >
             Debug file
-          </ButtonWIP>
+          </Button>
         </Tooltip>
       </Group>
-      <DialogWIP
+      <Dialog
         isOpen={showDialog}
         onClose={() => setShowDialog(false)}
         style={{width: '800px'}}
@@ -152,11 +152,11 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
           </Group>
         </DialogBody>
         <DialogFooter>
-          <ButtonWIP onClick={() => setShowDialog(false)} intent="primary">
+          <Button onClick={() => setShowDialog(false)} intent="primary">
             OK
-          </ButtonWIP>
+          </Button>
         </DialogFooter>
-      </DialogWIP>
+      </Dialog>
     </div>
   );
 };
