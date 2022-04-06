@@ -4,8 +4,6 @@ from enum import Enum as PythonEnum
 from functools import partial
 from typing import cast
 
-from typing_compat import get_args, get_origin
-
 from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.config.config_type import Array, ConfigType
@@ -229,9 +227,9 @@ class DagsterType:
 
 
 def _validate_type_check_fn(fn: t.Callable, name: t.Optional[str]) -> bool:
-    from dagster.seven import get_args
+    from dagster.seven import get_arg_names
 
-    args = get_args(fn)
+    args = get_arg_names(fn)
 
     # py2 doesn't filter out self
     if len(args) >= 1 and args[0] == "self":
@@ -806,6 +804,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
     )
+    from dagster.seven.typing import get_args, get_origin
     from dagster.utils.typing_api import is_typing_type
 
     from .python_dict import Dict, PythonDict

@@ -839,7 +839,8 @@ def test_output_generic_correct_inner_type():
 def test_output_generic_type_mismatches():
     @op
     def the_op_annotation_type_mismatch() -> int:
-        return Output("foo")  # type: ignore[return-value]
+        # type: ignore[return-value]
+        return Output("foo")
 
     with pytest.raises(
         DagsterTypeCheckDidNotPass,
@@ -849,7 +850,8 @@ def test_output_generic_type_mismatches():
 
     @op
     def the_op_output_annotation_type_mismatch() -> Output[int]:
-        return "foo"  # type: ignore[return-value]
+        # type: ignore[return-value]
+        return "foo"
 
     with pytest.raises(
         DagsterTypeCheckDidNotPass,
