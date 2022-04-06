@@ -8,7 +8,10 @@ import {
   Group,
   HighlightedCodeBlock,
   Icon,
+  MenuItem,
+  Menu,
   MetadataTable,
+  Popover,
   Tooltip,
 } from '@dagster-io/ui';
 import * as React from 'react';
@@ -17,7 +20,7 @@ import * as yaml from 'yaml';
 import {AppContext} from '../app/AppContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
-import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
+import {workspacePathFromRunDetails} from '../workspace/workspacePath';
 
 import {RunTags} from './RunTags';
 import {TimeElapsed} from './TimeElapsed';
@@ -119,42 +122,39 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
   const {rootServerURI} = React.useContext(AppContext);
   const runConfigYaml = yaml.stringify(run.runConfig) || '';
 
-  const launchpadPath = () => {
-    const path = `/playground/setup-from-run/${run.id}`;
-
-    if (run.repositoryOrigin) {
-      return workspacePipelinePath({
-        repoName: run.repositoryOrigin.repositoryName,
-        repoLocation: run.repositoryOrigin.repositoryLocationName,
-        pipelineName: run.pipelineName,
-        isJob,
-        path,
-      });
-    }
-
-    return workspacePipelinePathGuessRepo(run.pipelineName, isJob, path);
-  };
-
   return (
     <div>
       <Group direction="row" spacing={8}>
         <Button
           icon={<Icon name="edit" />}
-          onClick={() => window.open(launchpadPath())}
+          onClick={() => window.open(workspacePathFromRunDetails({
+            id: run.id,
+            repositoryName: run.repositoryOrigin?.repositoryName,
+            repositoryLocationName: run.repositoryOrigin?.repositoryLocationName,
+            pipelineName: run.pipelineName,
+            isJob,
+          }))}
         >
-            Open in Launchpad...
+            Open in Launchpad
         </Button>
         <Button icon={<Icon name="tag" />} onClick={() => setShowDialog(true)}>
           View tags and config
         </Button>
-        <Tooltip content="Loadable in dagit-debug" position="bottom-right">
-          <Button
-            icon={<Icon name="download_for_offline" />}
-            onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
-          >
-            Debug file
-          </Button>
-        </Tooltip>
+        <Popover 
+          position="bottom-right"
+          content={
+            <Menu>
+              <Tooltip content="Loadable in dagit-debug" position="bottom-right" targetTagName="div">
+                <MenuItem
+                  text={'Debug file'}
+                  icon={<Icon name="download_for_offline" />}
+                  onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
+                />
+              </Tooltip>
+            </Menu>
+        }>
+        <Button icon={<Icon name="expand_more" />} />
+      </Popover>
       </Group>
       <Dialog
         isOpen={showDialog}
