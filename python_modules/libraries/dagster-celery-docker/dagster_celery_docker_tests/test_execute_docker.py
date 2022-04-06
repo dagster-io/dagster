@@ -28,15 +28,18 @@ def celery_docker_postgres_instance(overrides=None):
         yield instance
 
 
-def test_execute_celery_docker_image_on_executor_config():
+def test_execute_celery_docker_image_on_executor_config(aws_creds):
     docker_image = get_test_project_docker_image()
     docker_config = {
         "image": docker_image,
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
         "network": "container:test-postgres-db-celery-docker",
+        "container_kwargs": {
+            "environment": {
+                "FIND_ME": "here!",
+                "AWS_ACCESS_KEY_ID": aws_creds["aws_access_key_id"],
+                "AWS_SECRET_ACCESS_KEY": aws_creds["aws_secret_access_key"],
+            }
+        },
     }
 
     if IS_BUILDKITE:
@@ -71,16 +74,20 @@ def test_execute_celery_docker_image_on_executor_config():
             instance=instance,
         )
         assert result.success
+        assert result.result_for_solid("get_environment_solid").output_value("result") == "here!"
 
 
-def test_execute_celery_docker_image_on_pipeline_config():
+def test_execute_celery_docker_image_on_pipeline_config(aws_creds):
     docker_image = get_test_project_docker_image()
     docker_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
         "network": "container:test-postgres-db-celery-docker",
+        "container_kwargs": {
+            "environment": [
+                "FIND_ME=here!",
+                f"AWS_ACCESS_KEY_ID={aws_creds['aws_access_key_id']}",
+                f"AWS_SECRET_ACCESS_KEY={aws_creds['aws_secret_access_key']}",
+            ]
+        },
     }
 
     if IS_BUILDKITE:
@@ -115,3 +122,4 @@ def test_execute_celery_docker_image_on_pipeline_config():
             instance=instance,
         )
         assert result.success
+        assert result.result_for_solid("get_environment_solid").output_value("result") == "here!"

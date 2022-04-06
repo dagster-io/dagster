@@ -12,6 +12,7 @@ from dagster import (
     Executor,
     Field,
     MetadataEntry,
+    Permissive,
     StringSource,
     check,
     executor,
@@ -54,6 +55,11 @@ def celery_docker_config():
                     str,
                     is_required=False,
                     description="Name of the network this container will be connected to at creation time",
+                ),
+                "container_kwargs": Field(
+                    Permissive(),
+                    is_required=False,
+                    description="Additional keyword args for the docker container",
                 ),
             },
             is_required=True,
@@ -232,8 +238,6 @@ def create_docker_task(celery_app, **task_kwargs):
 
         command = "dagster api execute_step {}".format(json.dumps(input_json))
 
-        print(command)
-
         docker_image = (
             docker_config["image"]
             if docker_config.get("image")
@@ -274,15 +278,32 @@ def create_docker_task(celery_app, **task_kwargs):
         if docker_config.get("env_vars"):
             docker_env = {env_name: os.getenv(env_name) for env_name in docker_config["env_vars"]}
 
+        container_kwargs = docker_config.get("container_kwargs")
+        container_kwargs = check.opt_dict_param(container_kwargs, "container_kwargs", key_type=str)
+
+        # set defaults for detach and auto_remove
+        container_kwargs["detach"] = container_kwargs.get("detach", False)
+        container_kwargs["auto_remove"] = container_kwargs.get("auto_remove", True)
+
+        # if environment variables are provided via container_kwargs, merge with env_vars
+        if container_kwargs.get("environment") is not None:
+            e_vars = container_kwargs.get("environment")
+            if isinstance(e_vars, dict):
+                docker_env.update(e_vars)
+            else:
+                for v in e_vars:
+                    key, val = v.split("=")
+                    docker_env[key] = val
+            del container_kwargs["environment"]
+
         try:
             docker_response = client.containers.run(
                 docker_image,
                 command=command,
-                detach=False,
-                auto_remove=True,
                 # pass through this worker's environment for things like AWS creds etc.
                 environment=docker_env,
                 network=docker_config.get("network", None),
+                **container_kwargs,
             )
 
             res = docker_response.decode("utf-8")
@@ -293,7 +314,9 @@ def create_docker_task(celery_app, **task_kwargs):
                 EngineEventData(
                     [
                         MetadataEntry("Job image", value=docker_image),
-                        MetadataEntry("Docker stderr", value=err.stderr if err.stderr is not None else ""),
+                        MetadataEntry(
+                            "Docker stderr", value=err.stderr if err.stderr is not None else ""
+                        ),
                     ],
                 ),
                 CeleryDockerExecutor,
