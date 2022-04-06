@@ -124,7 +124,7 @@ def celery_docker_executor(init_context):
     different broker than the one your workers are listening to, the workers will never be able to
     pick up tasks for execution.
 
-    In deployments where the celery_k8s_job_executor is used all appropriate celery and dagster_celery
+    In deployments where the celery_docker_job_executor is used all appropriate celery and dagster_celery
     commands must be invoked with the `-A dagster_celery_docker.app` argument.
     """
 
@@ -232,6 +232,8 @@ def create_docker_task(celery_app, **task_kwargs):
 
         command = "dagster api execute_step {}".format(json.dumps(input_json))
 
+        print(command)
+
         docker_image = (
             docker_config["image"]
             if docker_config.get("image")
@@ -285,13 +287,14 @@ def create_docker_task(celery_app, **task_kwargs):
 
             res = docker_response.decode("utf-8")
         except docker.errors.ContainerError as err:
+            msg = err.stderr if err.stderr is not None else ""
             instance.report_engine_event(
                 "Failed to run steps {} in Docker container {}".format(step_keys_str, docker_image),
                 pipeline_run,
                 EngineEventData(
                     [
                         MetadataEntry("Job image", value=docker_image),
-                        MetadataEntry("Docker stderr", value=err.stderr),
+                        MetadataEntry("Docker stderr", value=msg),
                     ],
                 ),
                 CeleryDockerExecutor,
