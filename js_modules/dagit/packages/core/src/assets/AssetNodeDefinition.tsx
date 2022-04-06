@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, ColorsWIP, IconWIP, Caption, Subheading, Mono} from '@dagster-io/ui';
+import {Box, Colors, Icon, Caption, Subheading, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -41,11 +41,11 @@ export const AssetNodeDefinition: React.FC<{
         <Box
           style={{flex: 1, minWidth: 0}}
           flex={{direction: 'column'}}
-          border={{side: 'right', width: 1, color: ColorsWIP.KeylineGray}}
+          border={{side: 'right', width: 1, color: Colors.KeylineGray}}
         >
           <Box
             padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Description</Subheading>
@@ -61,7 +61,7 @@ export const AssetNodeDefinition: React.FC<{
             <>
               <Box
                 padding={{vertical: 16, horizontal: 24}}
-                border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+                border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
                 flex={{justifyContent: 'space-between', gap: 8}}
               >
                 <Subheading>Partitions</Subheading>
@@ -78,7 +78,7 @@ export const AssetNodeDefinition: React.FC<{
 
           <Box
             padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+            border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Upstream Assets ({assetNode.dependencies.length})</Subheading>
@@ -88,7 +88,7 @@ export const AssetNodeDefinition: React.FC<{
 
           <Box
             padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+            border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Downstream Assets ({assetNode.dependedBy.length})</Subheading>
@@ -99,7 +99,7 @@ export const AssetNodeDefinition: React.FC<{
         <Box style={{flex: 0.5, minWidth: 0}} flex={{direction: 'column'}}>
           <Box
             padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
           >
             <Subheading>Type</Subheading>
           </Box>
@@ -114,7 +114,7 @@ export const AssetNodeDefinition: React.FC<{
             <>
               <Box
                 padding={{vertical: 16, horizontal: 24}}
-                border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+                border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
                 flex={{justifyContent: 'space-between', gap: 8}}
               >
                 <Subheading>Metadata</Subheading>
@@ -155,7 +155,7 @@ const JobGraphLink: React.FC<{
     >
       <Box flex={{gap: 4, alignItems: 'center'}}>
         {direction === 'upstream' ? 'View upstream graph' : 'View downstream graph'}
-        <IconWIP name="open_in_new" color={ColorsWIP.Link} />
+        <Icon name="open_in_new" color={Colors.Link} />
       </Box>
     </Link>
   );
@@ -180,7 +180,7 @@ const DefinitionLocation: React.FC<{
       ))}
     {displayNameForAssetKey(assetNode.assetKey) !== assetNode.opName && assetNode.opName && (
       <Box flex={{gap: 6, alignItems: 'center'}}>
-        <IconWIP name="op" size={16} />
+        <Icon name="op" size={16} />
         <Mono>{assetNode.opName}</Mono>
       </Box>
     )}

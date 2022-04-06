@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, Heading, PageHeader} from '@dagster-io/ui';
+import {Box, Colors, Heading, PageHeader} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router';
 import {useHistory} from 'react-router-dom';
@@ -40,9 +40,9 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
     >
       <PageHeader title={<Heading>Assets</Heading>} />
       <Box
-        background={ColorsWIP.White}
+        background={Colors.White}
         padding={{horizontal: 24, vertical: 8}}
-        border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
         flex={{direction: 'row', gap: 12}}
       >
         <AssetViewModeSwitch

@@ -4,14 +4,14 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Checkbox,
-  ColorsWIP,
+  Colors,
   CursorHistoryControls,
   NonIdealState,
   Spinner,
   Table,
   Subheading,
   FontFamily,
-  IconWIP,
+  Icon,
   IconWrapper,
 } from '@dagster-io/ui';
 import {Chart} from 'chart.js';
@@ -204,7 +204,7 @@ export const TicksTable = ({
                             });
                           }}
                         >
-                          <IconWIP name="assignment" />
+                          <Icon name="assignment" />
                         </CopyButton>
                       </Box>
                     ) : (
@@ -273,7 +273,7 @@ export const TickHistoryTimeline = ({
       <>
         <Box
           padding={{top: 16, horizontal: 24}}
-          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
         >
           <Subheading>Recent ticks</Subheading>
         </Box>
@@ -313,7 +313,7 @@ export const TickHistoryTimeline = ({
       <Box padding={{vertical: 16, horizontal: 24}}>
         <Subheading>Recent ticks</Subheading>
       </Box>
-      <Box border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}>
+      <Box border={{side: 'top', width: 1, color: Colors.KeylineGray}}>
         <LiveTickTimeline
           ticks={ticks}
           nextTick={nextTick}
@@ -377,15 +377,15 @@ const CopyButton = styled.button`
   outline: none;
 
   ${IconWrapper} {
-    background-color: ${ColorsWIP.Gray600};
+    background-color: ${Colors.Gray600};
     transition: background-color 100ms;
   }
 
   :hover ${IconWrapper} {
-    background-color: ${ColorsWIP.Gray800};
+    background-color: ${Colors.Gray800};
   }
 
   :focus ${IconWrapper} {
-    background-color: ${ColorsWIP.Link};
+    background-color: ${Colors.Link};
   }
 `;

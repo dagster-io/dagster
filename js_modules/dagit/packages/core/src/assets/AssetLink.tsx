@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, IconWIP} from '@dagster-io/ui';
+import {Box, Colors, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -14,7 +14,7 @@ export const AssetLink: React.FC<{
     <Box flex={{direction: 'row', alignItems: 'center', display: 'inline-flex'}}>
       {displayIcon ? (
         <Box margin={{right: 8}}>
-          <IconWIP name="asset" color={ColorsWIP.Gray400} />
+          <Icon name="asset" color={Colors.Gray400} />
         </Box>
       ) : null}
       <Link to={linkUrl}>

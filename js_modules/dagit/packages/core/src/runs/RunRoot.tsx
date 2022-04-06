@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, NonIdealState, PageHeader, Popover, TagWIP, Heading, FontFamily} from '@dagster-io/ui';
+import {Box, NonIdealState, PageHeader, Popover, Tag, Heading, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
@@ -74,11 +74,11 @@ export const RunRoot = () => {
                     </Box>
                   }
                 >
-                  <TagWIP icon="info" />
+                  <Tag icon="info" />
                 </Popover>
                 <RunStatusTag status={run.status} />
                 {run.pipelineName !== __ASSET_GROUP ? (
-                  <TagWIP icon="run">
+                  <Tag icon="run">
                     Run of{' '}
                     <PipelineReference
                       pipelineName={run?.pipelineName}
@@ -87,7 +87,7 @@ export const RunRoot = () => {
                       size="small"
                       isJob={isJob}
                     />
-                  </TagWIP>
+                  </Tag>
                 ) : (
                   <RunStepKeysAssetList stepKeys={run.stepKeysToExecute} clickableTags />
                 )}

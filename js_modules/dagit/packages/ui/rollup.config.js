@@ -52,11 +52,8 @@ export default {
   ],
   external: [
     '@blueprintjs/core',
-    '@blueprintjs/icons',
     '@blueprintjs/popover2',
     '@blueprintjs/select',
-    '@blueprintjs/table',
-    'lodash',
     'react',
     'react-dom',
     'react-is',

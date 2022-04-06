@@ -1,5 +1,5 @@
 import {useQuery} from '@apollo/client';
-import {Box, ColorsWIP, NonIdealState, Subheading} from '@dagster-io/ui';
+import {Box, Colors, NonIdealState, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -68,7 +68,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
               <SchedulesTable schedules={repositoryOrError.schedules} repoAddress={repoAddress} />
               <Box
                 padding={{vertical: 16, horizontal: 24}}
-                border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}
+                border={{side: 'bottom', width: 1, color: Colors.Gray100}}
               >
                 <Subheading>Scheduled ticks</Subheading>
               </Box>

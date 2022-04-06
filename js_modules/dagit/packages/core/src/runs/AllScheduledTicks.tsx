@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Alert, Box, ButtonLink, ColorsWIP, Group} from '@dagster-io/ui';
+import {Alert, Box, ButtonLink, Colors, Group} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -34,7 +34,7 @@ export const AllScheduledTicks = () => {
                 <Group direction="row" spacing={4}>
                   <div>Could not load scheduled ticks.</div>
                   <ButtonLink
-                    color={ColorsWIP.Link}
+                    color={Colors.Link}
                     underline="always"
                     onClick={() => {
                       showCustomAlert({
@@ -54,7 +54,7 @@ export const AllScheduledTicks = () => {
           <div>
             <Box
               padding={{horizontal: 24, vertical: 16}}
-              border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
             >
               <SchedulerInfo daemonHealth={instance.daemonHealth} />
             </Box>

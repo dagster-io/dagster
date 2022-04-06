@@ -1,5 +1,5 @@
 import {gql, useMutation} from '@apollo/client';
-import {ButtonWIP, DialogBody, DialogFooter, DialogWIP} from '@dagster-io/ui';
+import {Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -40,7 +40,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
 
   return (
     <>
-      <DialogWIP
+      <Dialog
         isOpen={!!backfill && backfill.status !== BulkActionStatus.CANCELED && !!numUnscheduled}
         title="Cancel backfill"
         onClose={onClose}
@@ -50,20 +50,20 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
           yet to be queued or launched.
         </DialogBody>
         <DialogFooter>
-          <ButtonWIP intent="none" onClick={onClose}>
+          <Button intent="none" onClick={onClose}>
             Close
-          </ButtonWIP>
+          </Button>
           {isSubmitting ? (
-            <ButtonWIP intent="danger" disabled>
+            <Button intent="danger" disabled>
               Canceling...
-            </ButtonWIP>
+            </Button>
           ) : (
-            <ButtonWIP intent="danger" onClick={cancel}>
+            <Button intent="danger" onClick={cancel}>
               Cancel backfill
-            </ButtonWIP>
+            </Button>
           )}
         </DialogFooter>
-      </DialogWIP>
+      </Dialog>
       <TerminationDialog
         isOpen={
           !!backfill &&

@@ -3,12 +3,12 @@ import {
   Alert,
   Box,
   ButtonLink,
-  ColorsWIP,
+  Colors,
   NonIdealState,
   Spinner,
   Tab,
   Tabs,
-  TagWIP,
+  Tag,
 } from '@dagster-io/ui';
 import * as React from 'react';
 
@@ -126,11 +126,11 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         tags={
           <>
             {repoAddress ? (
-              <TagWIP icon="asset">
+              <Tag icon="asset">
                 Asset in <RepositoryLink repoAddress={repoAddress} />
-              </TagWIP>
+              </Tag>
             ) : (
-              <TagWIP icon="asset">Asset</TagWIP>
+              <Tag icon="asset">Asset</Tag>
             )}
             {definition && repoAddress && (
               <AssetNodeInstigatorTag assetNode={definition} repoAddress={repoAddress} />
@@ -180,7 +180,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         ) : params.asOf ? (
           <Box
             padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
           >
             <HistoricalViewAlert
               asOf={params.asOf}

@@ -1,13 +1,5 @@
 import {gql} from '@apollo/client';
-import {
-  ColorsWIP,
-  IconWIP,
-  markdownToPlaintext,
-  Spinner,
-  Tooltip,
-  FontFamily,
-  Box,
-} from '@dagster-io/ui';
+import {Colors, Icon, Spinner, Tooltip, FontFamily, Box} from '@dagster-io/ui';
 import {isEqual} from 'lodash';
 import qs from 'qs';
 import React, {CSSProperties} from 'react';
@@ -22,6 +14,7 @@ import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntry';
 import {titleForRun} from '../../runs/RunUtils';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
+import {markdownToPlaintext} from '../../ui/markdownToPlaintext';
 import {buildRepoAddress} from '../buildRepoAddress';
 import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
 
@@ -50,7 +43,7 @@ export const AssetNode: React.FC<{
       <AssetNodeBox>
         <Name>
           <span style={{marginTop: 1}}>
-            <IconWIP name="asset" />
+            <Icon name="asset" />
           </span>
           <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
             {displayName}
@@ -67,7 +60,7 @@ export const AssetNode: React.FC<{
           ) : liveData &&
             (liveData.runWhichFailedToMaterialize || liveData.runsSinceMaterialization) ? (
             <Tooltip content="This asset was not materialized by one or more recent runs.">
-              <IconWIP name="warning" color={ColorsWIP.Gray400} />
+              <Icon name="warning" color={Colors.Gray400} />
             </Tooltip>
           ) : undefined}
 
@@ -154,7 +147,7 @@ export const AssetNode: React.FC<{
                 flex={{gap: 4, alignItems: 'flex-end'}}
                 style={{marginLeft: -2, overflow: 'hidden'}}
               >
-                <IconWIP name="op" size={16} />
+                <Icon name="op" size={16} />
                 <div
                   style={{
                     minWidth: 0,
@@ -282,7 +275,7 @@ const RunLinkTooltipStyle = JSON.stringify({
   marginLeft: -10,
   marginTop: -8,
   fontSize: 13,
-  color: ColorsWIP.Link,
+  color: Colors.Link,
   border: 0,
   borderRadius: 4,
 } as CSSProperties);
@@ -301,19 +294,19 @@ const AssetNodeContainer = styled.div<{$selected: boolean}>`
 `;
 
 const AssetNodeBox = styled.div`
-  border: 2px solid ${ColorsWIP.Blue200};
-  background: ${ColorsWIP.White};
+  border: 2px solid ${Colors.Blue200};
+  background: ${Colors.White};
   border-radius: 5px;
   position: relative;
   &:hover {
-    box-shadow: ${ColorsWIP.Blue200} inset 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
+    box-shadow: ${Colors.Blue200} inset 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
   }
 `;
 
 const Name = styled.div`
   display: flex;
   padding: 4px 6px;
-  background: ${ColorsWIP.White};
+  background: ${Colors.White};
   font-family: ${FontFamily.monospace};
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
@@ -346,8 +339,8 @@ const StatsRow = styled.div`
 `;
 
 const UpstreamNotice = styled.div`
-  background: ${ColorsWIP.Yellow200};
-  color: ${ColorsWIP.Yellow700};
+  background: ${Colors.Yellow200};
+  color: ${Colors.Yellow700};
   line-height: 10px;
   font-size: 11px;
   text-align: right;

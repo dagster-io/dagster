@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, NonIdealState, PageHeader, Heading, Subheading} from '@dagster-io/ui';
+import {Box, Colors, NonIdealState, PageHeader, Heading, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -61,7 +61,7 @@ const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
           <React.Fragment key={repository.name}>
             <Box
               padding={{horizontal: 24, vertical: 16}}
-              border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+              border={{side: 'top', width: 1, color: Colors.KeylineGray}}
             >
               <Subheading>{`${buildRepoPath(
                 repository.name,
@@ -89,7 +89,7 @@ const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
 
   if (!sensorDefinitionsSection && !unloadableSensorsSection) {
     return (
-      <Box padding={{vertical: 64}} border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}>
+      <Box padding={{vertical: 64}} border={{side: 'top', width: 1, color: Colors.KeylineGray}}>
         <NonIdealState
           icon="sensors"
           title="No sensors found"

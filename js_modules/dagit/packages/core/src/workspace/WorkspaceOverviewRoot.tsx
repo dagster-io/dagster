@@ -1,6 +1,6 @@
 import {
   Box,
-  ColorsWIP,
+  Colors,
   Group,
   NonIdealState,
   Page,
@@ -89,7 +89,7 @@ export const WorkspaceOverviewRoot = () => {
                     {anyPipelines ? (
                       <Link to={workspacePath(name, location, '/pipelines')}>Pipelines</Link>
                     ) : (
-                      <span style={{color: ColorsWIP.Gray400}}>None</span>
+                      <span style={{color: Colors.Gray400}}>None</span>
                     )}
                   </td>
                 ) : null}
@@ -130,7 +130,7 @@ export const WorkspaceOverviewRoot = () => {
       </Box>
       <Box
         padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
       >
         <Subheading id="repository-locations">Repositories</Subheading>
       </Box>

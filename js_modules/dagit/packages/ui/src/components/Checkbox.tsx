@@ -1,4 +1,3 @@
-import {uniqueId} from 'lodash';
 import * as React from 'react';
 import {useRef} from 'react';
 import styled, {css} from 'styled-components/macro';
@@ -153,6 +152,9 @@ const CheckIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor}) => 
   </svg>
 );
 
+let counter = 0;
+const uniqueId = () => `checkbox-${counter++}`;
+
 const Base = ({
   id,
   checked,
@@ -166,7 +168,7 @@ const Base = ({
   size,
   ...rest
 }: Props) => {
-  const uid = useRef(id || uniqueId('checkbox-'));
+  const uid = useRef(id || uniqueId());
   const Component: React.FC<IconProps> = {star: StarIcon, check: CheckIcon, switch: SwitchIcon}[
     format
   ];

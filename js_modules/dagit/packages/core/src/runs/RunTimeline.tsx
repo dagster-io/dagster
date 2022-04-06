@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, Popover, Mono, FontFamily} from '@dagster-io/ui';
+import {Box, Colors, Popover, Mono, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -305,7 +305,7 @@ const TimeDividers = (props: TimeDividersProps) => {
           <DividerLine key={marker.key} style={{left: `${marker.left.toPrecision(3)}%`}} />
         ))}
         {now >= start && now <= end ? (
-          <DividerLine style={{left: nowLeft, backgroundColor: ColorsWIP.Blue500, zIndex: 1}} />
+          <DividerLine style={{left: nowLeft, backgroundColor: Colors.Blue500, zIndex: 1}} />
         ) : null}
       </DividerLines>
     </DividerContainer>
@@ -318,7 +318,7 @@ const DividerContainer = styled.div`
   left: ${LABEL_WIDTH}px;
   right: 0;
   font-family: ${FontFamily.monospace};
-  color: ${ColorsWIP.Gray400};
+  color: ${Colors.Gray400};
 `;
 
 const DividerLabels = styled.div`
@@ -340,11 +340,11 @@ const DividerLines = styled.div`
   height: 100%;
   position: relative;
   width: 100%;
-  box-shadow: inset 1px 0 0 ${ColorsWIP.KeylineGray}, inset -1px 0 0 ${ColorsWIP.KeylineGray};
+  box-shadow: inset 1px 0 0 ${Colors.KeylineGray}, inset -1px 0 0 ${Colors.KeylineGray};
 `;
 
 const DividerLine = styled.div`
-  background-color: ${ColorsWIP.KeylineGray};
+  background-color: ${Colors.KeylineGray};
   height: 100%;
   position: absolute;
   top: 0;
@@ -373,22 +373,22 @@ const mergeStatusToColor = (runs: TimelineRun[]) => {
   });
 
   if (anyQueued) {
-    return ColorsWIP.Blue200;
+    return Colors.Blue200;
   }
   if (anyInProgress) {
-    return ColorsWIP.Blue500;
+    return Colors.Blue500;
   }
   if (anyFailed) {
-    return ColorsWIP.Red500;
+    return Colors.Red500;
   }
   if (anySucceeded) {
-    return ColorsWIP.Green500;
+    return Colors.Green500;
   }
   if (anyScheduled) {
-    return ColorsWIP.Blue200;
+    return Colors.Blue200;
   }
 
-  return ColorsWIP.Gray500;
+  return Colors.Gray500;
 };
 
 const MIN_CHUNK_WIDTH = 2;
@@ -481,7 +481,7 @@ const Timeline = styled.div<{$height: number}>`
 
 const Row = styled.div<{$top: number}>`
   align-items: center;
-  box-shadow: inset 0 -1px 0 ${ColorsWIP.KeylineGray};
+  box-shadow: inset 0 -1px 0 ${Colors.KeylineGray};
   display: flex;
   flex-direction: row;
   width: 100%;
@@ -494,11 +494,11 @@ const Row = styled.div<{$top: number}>`
   ${({$top}) => `transform: translateY(${$top}px);`}
 
   :first-child, :hover {
-    box-shadow: inset 0 1px 0 ${ColorsWIP.KeylineGray}, inset 0 -1px 0 ${ColorsWIP.KeylineGray};
+    box-shadow: inset 0 1px 0 ${Colors.KeylineGray}, inset 0 -1px 0 ${Colors.KeylineGray};
   }
 
   :hover {
-    background-color: ${ColorsWIP.Gray10};
+    background-color: ${Colors.Gray10};
   }
 `;
 
@@ -543,7 +543,7 @@ const RunChunk = styled.div<ChunkProps>`
 `;
 
 const BatchCount = styled.div`
-  color: ${ColorsWIP.White};
+  color: ${Colors.White};
   cursor: default;
   font-size: 12px;
   user-select: none;
@@ -558,13 +558,13 @@ const RunHoverContent = (props: RunHoverContentProps) => {
   const {jobKey, batch} = props;
   return (
     <Box padding={4} style={{width: '260px'}}>
-      <Box padding={8} border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}>
+      <Box padding={8} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
         <HoverContentJobName>{jobKey}</HoverContentJobName>
       </Box>
       {batch.runs.map((run, ii) => (
         <Box
           key={run.id}
-          border={ii > 0 ? {side: 'top', width: 1, color: ColorsWIP.KeylineGray} : null}
+          border={ii > 0 ? {side: 'top', width: 1, color: Colors.KeylineGray} : null}
           flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
           padding={8}
         >

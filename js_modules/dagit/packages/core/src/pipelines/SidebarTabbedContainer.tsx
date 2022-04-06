@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, ColorsWIP, Tabs} from '@dagster-io/ui';
+import {Box, Colors, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
@@ -111,7 +111,7 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
     <>
       <Box
         padding={{horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
       >
         <Tabs selectedTabId={activeTab}>
           {TabDefinitions.map(({name, key}) => (

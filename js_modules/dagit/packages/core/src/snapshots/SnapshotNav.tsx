@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {PageHeader, Tabs, TagWIP, Heading, FontFamily} from '@dagster-io/ui';
+import {PageHeader, Tabs, Tag, Heading, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -45,9 +45,9 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   const tag = () => {
     if (loading) {
       return (
-        <TagWIP intent="none" minimal>
+        <Tag intent="none" minimal>
           ...
-        </TagWIP>
+        </Tag>
       );
     }
 
@@ -58,16 +58,16 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
         data?.pipelineSnapshotOrError?.parentSnapshotId !== currentSnapshotID)
     ) {
       return (
-        <TagWIP intent="warning" minimal>
+        <Tag intent="warning" minimal>
           Snapshot
-        </TagWIP>
+        </Tag>
       );
     }
 
     return (
-      <TagWIP intent="success" minimal>
+      <Tag intent="success" minimal>
         Current
-      </TagWIP>
+      </Tag>
     );
   };
 
@@ -93,12 +93,12 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
       }
       tags={
         <>
-          <TagWIP icon="schema">
+          <Tag icon="schema">
             Snapshot of{' '}
             <Link to={workspacePipelinePathGuessRepo(explorerPath.pipelineName, isJob)}>
               {explorerPath.pipelineName}
             </Link>
-          </TagWIP>
+          </Tag>
           {tag()}
         </>
       }
