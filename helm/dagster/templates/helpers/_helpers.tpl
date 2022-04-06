@@ -205,3 +205,12 @@ DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY: "{{ .Values.pipelineRun.image.pullPo
   number: {{ .servicePort }}
   {{- end }}
 {{- end }}
+
+{{- define "dagit.workspace.configmapName" -}}
+{{- $dagitWorkspace := .Values.dagit.workspace }}
+{{- if and $dagitWorkspace.enabled $dagitWorkspace.externalConfigmap }}
+{{- $dagitWorkspace.externalConfigmap -}}
+{{- else -}}
+{{ template "dagster.fullname" . }}-workspace-yaml
+{{- end -}}
+{{- end -}}
