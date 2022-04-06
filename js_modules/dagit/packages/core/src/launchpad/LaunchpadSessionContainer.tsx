@@ -170,7 +170,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
   }, [isJob, partitionSets.results, presets]);
 
   const [data, onSave] = useExecutionSessionStorage(
-    repoAddress.name || '',
+    repoAddress,
     pipeline.name,
     initialDataForMode,
   );
