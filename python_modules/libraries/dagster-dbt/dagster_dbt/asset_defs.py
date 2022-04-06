@@ -101,8 +101,11 @@ def _dbt_nodes_to_assets(
         out_name_to_node_info[node_name] = node_info
         internal_asset_deps[node_name] = asset_deps
 
+    # unique id to prevent name collisions between multiple dbt multi-assets
+    uid = hash(tuple(outs.keys())) % 10000
+
     @multi_asset(
-        name="dbt_project",
+        name=f"dbt_project_{uid}",
         non_argument_deps=sources,
         outs=outs,
         required_resource_keys={"dbt"},

@@ -7,7 +7,7 @@ from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_fr
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError
 from dagster_dbt.types import DbtOutput
 
-from dagster import AssetKey, MetadataEntry, ResourceDefinition
+from dagster import AssetKey, MetadataEntry, ResourceDefinition, repository, AssetGroup
 from dagster.core.asset_defs import build_assets_job
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 from dagster.utils import file_relative_path
@@ -149,6 +149,28 @@ def test_select_from_project(
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 2
+
+
+def test_multiple_select_from_project(
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir
+):  # pylint: disable=unused-argument
+
+    dbt_assets_a = load_assets_from_dbt_project(
+        test_project_dir, dbt_config_dir, select="sort_by_calories subdir.least_caloric"
+    )
+
+    dbt_assets_b = load_assets_from_dbt_project(
+        test_project_dir, dbt_config_dir, select="sort_by_calories"
+    )
+
+    @repository
+    def foo():
+        return [
+            AssetGroup(dbt_assets_a, resource_defs={"dbt": dbt_cli_resource}).build_job("a"),
+            AssetGroup(dbt_assets_b, resource_defs={"dbt": dbt_cli_resource}).build_job("b"),
+        ]
+
+    assert len(foo.get_all_jobs()) == 2
 
 
 def test_dbt_ls_fail_fast():
