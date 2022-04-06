@@ -6,6 +6,7 @@ from dagster import check
 from dagster.core.definitions import InputDefinition, NodeHandle, PipelineDefinition
 from dagster.core.definitions.events import AssetLineageInfo
 from dagster.core.definitions.metadata import MetadataEntry
+from dagster.core.definitions.version_strategy import ResourceVersionContext
 from dagster.core.errors import (
     DagsterExecutionLoadInputError,
     DagsterInvariantViolationError,
@@ -183,9 +184,18 @@ class FromRootInputManager(
             root_manager_key
         ]
 
+        solid_config = resolved_run_config.solids.get(solid.name)
+        input_config = solid_config.inputs.get(self.input_name)
+        resource_config = resolved_run_config.resources.get(root_manager_key).config
+
+        version_context = ResourceVersionContext(
+            resource_def=root_manager_def,
+            resource_config=resource_config,
+        )
+
         if pipeline_def.version_strategy is not None:
             root_manager_def_version = pipeline_def.version_strategy.get_resource_version(
-                root_manager_def
+                version_context
             )
         else:
             root_manager_def_version = root_manager_def.version
@@ -198,10 +208,6 @@ class FromRootInputManager(
             )
 
         check_valid_version(root_manager_def_version)
-
-        solid_config = resolved_run_config.solids.get(solid.name)
-        input_config = solid_config.inputs.get(self.input_name)
-        resource_config = resolved_run_config.resources.get(root_manager_key).config
         return join_and_hash(
             resolve_config_version(input_config),
             resolve_config_version(resource_config),
