@@ -154,7 +154,10 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     const partitionSetsForMode = partitionSets.results;
 
     if (presetsForMode.length === 1 && partitionSetsForMode.length === 0) {
-      return {runConfigYaml: presetsForMode[0].runConfigYaml};
+      return {
+        base: {presetName: presetsForMode[0].name, tags: null},
+        runConfigYaml: presetsForMode[0].runConfigYaml,
+      };
     }
 
     if (!presetsForMode.length && partitionSetsForMode.length === 1) {
