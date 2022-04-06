@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, IconWIP, IconWrapper, Slider} from '@dagster-io/ui';
+import {Box, Colors, Icon, IconWrapper, Slider} from '@dagster-io/ui';
 import animate from 'amator';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -118,7 +118,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
               viewport.adjustZoomRelativeToScreenPoint(adjusted, {x, y});
             }}
           >
-            <IconWIP size={24} name="zoom_in" color={ColorsWIP.Gray300} />
+            <Icon size={24} name="zoom_in" color={Colors.Gray300} />
           </IconButton>
         </Box>
         <Slider
@@ -143,7 +143,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
               viewport.adjustZoomRelativeToScreenPoint(scale, {x, y});
             }}
           >
-            <IconWIP size={24} name="zoom_out" color={ColorsWIP.Gray300} />
+            <Icon size={24} name="zoom_out" color={Colors.Gray300} />
           </IconButton>
         </Box>
       </ZoomSliderContainer>
@@ -168,7 +168,7 @@ const IconButton = styled.button`
   }
 
   :focus ${IconWrapper}, :hover ${IconWrapper}, :active ${IconWrapper} {
-    background-color: ${ColorsWIP.Blue500};
+    background-color: ${Colors.Blue500};
   }
 `;
 

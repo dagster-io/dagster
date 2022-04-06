@@ -1,5 +1,5 @@
 import {Text} from '@blueprintjs/core';
-import {ColorsWIP, Group, IconWIP, IconWrapper, Code, FontFamily} from '@dagster-io/ui';
+import {Colors, Group, Icon, IconWrapper, Code, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -26,7 +26,7 @@ export type OpMappingTable = {
 export const ShowAllButton = styled.button`
   background: transparent;
   border: none;
-  color: ${ColorsWIP.Blue500};
+  color: ${Colors.Blue500};
   text-decoration: underline;
   padding-top: 10px;
   font-size: 0.9rem;
@@ -57,7 +57,7 @@ export const Invocation = (props: {invocation: SidebarOpInvocationInfo; onClick:
   const handlePath = handleID.split('.');
   return (
     <InvocationContainer onClick={props.onClick}>
-      {pipelineName && <div style={{color: ColorsWIP.Blue700}}>{pipelineName}</div>}
+      {pipelineName && <div style={{color: Colors.Blue700}}>{pipelineName}</div>}
       <OpColumn stepKey={handlePath.join('.')} />
     </InvocationContainer>
   );
@@ -77,8 +77,8 @@ export const DependencyRow = ({
       <Cell>{typeof from === 'string' ? <Code>{from}</Code> : <OpLink {...from} />}</Cell>
       <td style={{whiteSpace: 'nowrap', textAlign: 'right'}}>
         <Group direction="row" spacing={2} alignItems="center">
-          {isDynamic && <IconWIP name="op_dynamic" color={ColorsWIP.Gray700} />}
-          <IconWIP name="arrow_forward" color={ColorsWIP.Gray700} />
+          {isDynamic && <Icon name="op_dynamic" color={Colors.Gray700} />}
+          <Icon name="arrow_forward" color={Colors.Gray700} />
         </Group>
       </td>
       <Cell>{typeof to === 'string' ? <Code>{to}</Code> : <OpLink {...to} />}</Cell>
@@ -126,21 +126,21 @@ export const DependencyTable = styled.table`
 
 const DependencyHeaderCell = styled.td`
   font-size: 0.7rem;
-  color: ${ColorsWIP.Gray400};
+  color: ${Colors.Gray400};
 `;
 
 const InvocationContainer = styled.div`
   user-select: none;
   padding: 12px 24px;
   cursor: pointer;
-  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+  border-bottom: 1px solid ${Colors.KeylineGray};
 
   &:last-child {
     border-bottom: none;
   }
 
   &:hover {
-    background: ${ColorsWIP.Gray50};
+    background: ${Colors.Gray50};
   }
 
   font-family: ${FontFamily.monospace};

@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {MenuItem} from '@blueprintjs/core';
-import {Box, ColorsWIP, CommonMenuItemProps, IconWrapper, iconWithColor} from '@dagster-io/ui';
+import {Box, Colors, CommonMenuItemProps, IconWrapper, iconWithColor} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link, LinkProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -53,11 +53,11 @@ const StyledMenuLink = styled(Link)`
   &&&:visited,
   &&&:hover,
   &&&:active {
-    color: ${ColorsWIP.Gray900};
+    color: ${Colors.Gray900};
     text-decoration: none;
   }
 
   &&&:hover {
-    background: ${ColorsWIP.Gray100};
+    background: ${Colors.Gray100};
   }
 `;

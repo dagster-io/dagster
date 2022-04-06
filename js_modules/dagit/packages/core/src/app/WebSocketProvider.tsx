@@ -1,4 +1,4 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -106,17 +106,15 @@ export const WebSocketStatus: React.FC = (props) => (
     {({status}) =>
       ({
         [WebSocket.CONNECTING]: (
-          <Circle style={{background: ColorsWIP.Green200}} title="Connecting..." {...props} />
+          <Circle style={{background: Colors.Green200}} title="Connecting..." {...props} />
         ),
         [WebSocket.OPEN]: (
-          <Circle style={{background: ColorsWIP.Green500}} title="Connected" {...props} />
+          <Circle style={{background: Colors.Green500}} title="Connected" {...props} />
         ),
         [WebSocket.CLOSING]: (
-          <Circle style={{background: ColorsWIP.Gray400}} title="Closing..." {...props} />
+          <Circle style={{background: Colors.Gray400}} title="Closing..." {...props} />
         ),
-      }[status] || (
-        <Circle style={{background: ColorsWIP.Gray400}} title="Disconnected" {...props} />
-      ))
+      }[status] || <Circle style={{background: Colors.Gray400}} title="Disconnected" {...props} />)
     }
   </WebSocketContext.Consumer>
 );

@@ -1,13 +1,13 @@
 import {
   Box,
-  ButtonWIP,
+  Button,
   CountdownStatus,
   useCountdown,
   Group,
   MetadataTableWIP,
   PageHeader,
   RefreshableCountdown,
-  TagWIP,
+  Tag,
   Heading,
   FontFamily,
 } from '@dagster-io/ui';
@@ -119,13 +119,13 @@ export const SensorDetails: React.FC<{
         icon="sensors"
         tags={
           <>
-            <TagWIP icon="sensors">
+            <Tag icon="sensors">
               Sensor in <RepositoryLink repoAddress={repoAddress} />
-            </TagWIP>
+            </Tag>
             {sensor.nextTick && daemonHealth && status === InstigationStatus.RUNNING ? (
-              <TagWIP icon="timer">
+              <Tag icon="timer">
                 Next tick: <TimestampDisplay timestamp={sensor.nextTick.timestamp} />
-              </TagWIP>
+              </Tag>
             ) : null}
           </>
         }
@@ -197,7 +197,7 @@ export const SensorDetails: React.FC<{
                 ) : null}
                 <Box flex={{direction: 'row', alignItems: 'center'}}>
                   <Box style={{fontFamily: FontFamily.monospace, marginRight: 10}}>{cursor}</Box>
-                  <ButtonWIP onClick={() => setCursorEditing(true)}>Edit</ButtonWIP>
+                  <Button onClick={() => setCursorEditing(true)}>Edit</Button>
                 </Box>
               </td>
             </tr>

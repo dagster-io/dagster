@@ -2,14 +2,14 @@ import {gql, useLazyQuery, useMutation, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
-  ButtonWIP,
+  Button,
   ButtonLink,
   Checkbox,
-  ColorsWIP,
+  Colors,
   DialogBody,
   DialogFooter,
   Group,
-  IconWIP,
+  Icon,
   NonIdealState,
   Spinner,
   Tooltip,
@@ -375,7 +375,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                       placement="top"
                       content="For each partition, if the most recent run failed, launch a re-execution starting from the steps that failed."
                     >
-                      <IconWIP name="info" color={ColorsWIP.Gray500} />
+                      <Icon name="info" color={Colors.Gray500} />
                     </Tooltip>
                   </Box>
                 }
@@ -397,14 +397,12 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
           />
           <strong>Tags</strong>
           {tags.length ? (
-            <div style={{border: `1px solid ${ColorsWIP.Gray300}`, borderRadius: 8, padding: 3}}>
+            <div style={{border: `1px solid ${Colors.Gray300}`, borderRadius: 8, padding: 3}}>
               <TagContainer tagsFromSession={tags} onRequestEdit={() => setTagEditorOpen(true)} />
             </div>
           ) : (
             <div>
-              <ButtonWIP onClick={() => setTagEditorOpen(true)}>
-                Add tags to backfill runs
-              </ButtonWIP>
+              <Button onClick={() => setTagEditorOpen(true)}>Add tags to backfill runs</Button>
             </div>
           )}
         </Box>
@@ -414,14 +412,14 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
             display: 'flex',
             marginTop: 20,
             paddingTop: 20,
-            borderTop: `1px solid ${ColorsWIP.Gray100}`,
+            borderTop: `1px solid ${Colors.Gray100}`,
             justifyContent: 'space-between',
           }}
         >
           <strong style={{display: 'block', marginBottom: 4}}>Preview</strong>
-          <div style={{color: ColorsWIP.Gray400}}>Click or drag to edit selected partitions</div>
+          <div style={{color: Colors.Gray400}}>Click or drag to edit selected partitions</div>
         </div>
-        <div style={{display: 'flex', border: `1px solid ${ColorsWIP.Gray200}`}}>
+        <div style={{display: 'flex', border: `1px solid ${Colors.Gray200}`}}>
           {query && (
             <GridFloatingContainer floating={true}>
               <GridColumn disabled>
@@ -502,9 +500,9 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
         ) : null}
       </DialogBody>
       <DialogFooter>
-        <ButtonWIP intent="none" onClick={onCancel}>
+        <Button intent="none" onClick={onCancel}>
           Cancel
-        </ButtonWIP>
+        </Button>
         <LaunchBackfillButton
           partitionNames={selected}
           partitionSetName={partitionSet.name}
@@ -804,7 +802,7 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfill | null | un
       <div>An unexpected error occurred. This backfill was not launched.</div>
       {errors ? (
         <ButtonLink
-          color={ColorsWIP.White}
+          color={Colors.White}
           underline="always"
           onClick={() => {
             showCustomAlert({

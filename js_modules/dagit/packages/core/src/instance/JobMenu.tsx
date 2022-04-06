@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {ButtonWIP, IconWIP, MenuWIP, MenuItemWIP, Popover, Tooltip} from '@dagster-io/ui';
+import {Button, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
@@ -39,7 +39,7 @@ export const JobMenu = (props: Props) => {
   const onLaunch = useJobReExecution(run);
 
   const reExecuteAllItem = (
-    <MenuItemWIP
+    <MenuItem
       icon="replay"
       text="Re-execute latest run"
       onClick={() => onLaunch({type: 'all'})}
@@ -48,7 +48,7 @@ export const JobMenu = (props: Props) => {
   );
 
   const reExecuteFromFailureItem = (
-    <MenuItemWIP
+    <MenuItem
       icon="sync_problem"
       text="Re-execute latest run from failure"
       onClick={() => onLaunch({type: 'from-failure'})}
@@ -60,7 +60,7 @@ export const JobMenu = (props: Props) => {
     <Popover
       onOpened={() => fetchIfPossible()}
       content={
-        <MenuWIP>
+        <Menu>
           <MenuLink
             to={workspacePipelinePath({
               repoName: repoAddress.name,
@@ -96,11 +96,11 @@ export const JobMenu = (props: Props) => {
               {reExecuteFromFailureItem}
             </Tooltip>
           )}
-        </MenuWIP>
+        </Menu>
       }
       position="bottom-right"
     >
-      <ButtonWIP icon={<IconWIP name="expand_more" />} />
+      <Button icon={<Icon name="expand_more" />} />
     </Popover>
   );
 };

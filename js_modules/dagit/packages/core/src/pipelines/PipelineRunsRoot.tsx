@@ -4,7 +4,7 @@ import {
   CursorHistoryControls,
   NonIdealState,
   Page,
-  TagWIP,
+  Tag,
   TokenizingFieldValue,
 } from '@dagster-io/ui';
 import * as React from 'react';
@@ -113,7 +113,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                 >
                   <Box flex={{direction: 'row', gap: 8}}>
                     {permanentTokens.map(({token, value}) => (
-                      <TagWIP key={token}>{`${token}:${value}`}</TagWIP>
+                      <Tag key={token}>{`${token}:${value}`}</Tag>
                     ))}
                   </Box>
                   <QueryRefreshCountdown refreshState={refreshState} />

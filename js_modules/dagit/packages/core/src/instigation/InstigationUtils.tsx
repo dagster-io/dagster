@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {ColorsWIP, Group, Mono} from '@dagster-io/ui';
+import {Colors, Group, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -17,7 +17,7 @@ export const InstigatedRunStatus: React.FC<{
   instigationState: InstigationStateFragment;
 }> = ({instigationState}) => {
   if (!instigationState.runs.length) {
-    return <span style={{color: ColorsWIP.Gray300}}>None</span>;
+    return <span style={{color: Colors.Gray300}}>None</span>;
   }
   return <RunStatusLink run={instigationState.runs[0]} />;
 };
@@ -91,6 +91,6 @@ export const StatusTable = styled.table`
   }
 
   &&&&& tbody > tr > td:first-child {
-    color: ${ColorsWIP.Gray500};
+    color: ${Colors.Gray500};
   }
 `;

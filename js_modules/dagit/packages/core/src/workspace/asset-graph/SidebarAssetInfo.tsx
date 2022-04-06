@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, IconWIP, Spinner} from '@dagster-io/ui';
+import {Box, Colors, Icon, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -67,7 +67,7 @@ export const SidebarAssetInfo: React.FC<{
         setParams={() => {}}
       />
 
-      <div style={{borderBottom: `2px solid ${ColorsWIP.Gray300}`}} />
+      <div style={{borderBottom: `2px solid ${Colors.Gray300}`}} />
 
       {(asset.description || !(asset.description || assetType || assetMetadata)) && (
         <DescriptionSidebarSection asset={asset} repoAddress={repoAddress} />
@@ -137,14 +137,14 @@ const Header: React.FC<{assetKey: AssetKey; opName?: string}> = ({assetKey, opNa
         <Box>{displayName}</Box>
         {displayName !== opName ? (
           <Box style={{opacity: 0.5}} flex={{gap: 6, alignItems: 'center'}}>
-            <IconWIP name="op" size={16} />
+            <Icon name="op" size={16} />
             {opName}
           </Box>
         ) : undefined}
       </SidebarTitle>
       <AssetCatalogLink to={`/instance/assets/${assetKey.path.join('/')}`}>
         {'View in Asset Catalog '}
-        <IconWIP name="open_in_new" color={ColorsWIP.Link} />
+        <Icon name="open_in_new" color={Colors.Link} />
       </AssetCatalogLink>
     </Box>
   );

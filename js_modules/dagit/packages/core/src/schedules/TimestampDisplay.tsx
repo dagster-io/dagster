@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, IconWIP, Tooltip} from '@dagster-io/ui';
+import {Box, Colors, Icon, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -44,7 +44,7 @@ export const TimestampDisplay = (props: Props) => {
             </TabularNums>
           }
         >
-          <IconWIP name="schedule" color={ColorsWIP.Gray400} />
+          <Icon name="schedule" color={Colors.Gray400} />
         </TimestampTooltip>
       ) : null}
     </Box>

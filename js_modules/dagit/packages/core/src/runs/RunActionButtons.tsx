@@ -1,4 +1,4 @@
-import {Box, ButtonWIP, Group, IconName, IconWIP} from '@dagster-io/ui';
+import {Box, Button, Group, IconName, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
@@ -53,14 +53,14 @@ const CancelRunButton: React.FC<{run: RunFragment | undefined; isFinalStatus: bo
   return (
     <>
       {!isFinalStatus ? (
-        <ButtonWIP
-          icon={<IconWIP name="cancel" />}
+        <Button
+          icon={<Icon name="cancel" />}
           intent="danger"
           disabled={showDialog}
           onClick={() => setShowDialog(true)}
         >
           Terminate
-        </ButtonWIP>
+        </Button>
       ) : null}
       <TerminationDialog
         isOpen={showDialog}
