@@ -153,7 +153,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
                 targetTagName="div"
               >
                 <MenuItem
-                  text={'Debug file'}
+                  text="Debug file"
                   icon={<Icon name="download_for_offline" />}
                   onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
                 />

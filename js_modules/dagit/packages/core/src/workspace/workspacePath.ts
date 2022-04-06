@@ -38,19 +38,19 @@ export const workspacePathFromAddress = (repoAddress: RepoAddress, path = '') =>
 };
 
 type RunDetails = {
-  id: string,
-  pipelineName: string,
-  repositoryName?: string,
-  repositoryLocationName?: string,
-  isJob: boolean,
-}
+  id: string;
+  pipelineName: string;
+  repositoryName?: string;
+  repositoryLocationName?: string;
+  isJob: boolean;
+};
 
 export const workspacePathFromRunDetails = ({
   id,
-  pipelineName, 
-  repositoryName, 
-  repositoryLocationName, 
-  isJob
+  pipelineName,
+  repositoryName,
+  repositoryLocationName,
+  isJob,
 }: RunDetails) => {
   const path = `/playground/setup-from-run/${id}`;
 
@@ -65,4 +65,4 @@ export const workspacePathFromRunDetails = ({
   }
 
   return workspacePipelinePathGuessRepo(pipelineName, isJob, path);
-}
+};
