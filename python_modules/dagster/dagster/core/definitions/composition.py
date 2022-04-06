@@ -605,6 +605,7 @@ class PendingNodeInvocation:
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
+        run_id: Optional[str] = None,
     ) -> "ExecuteInProcessResult":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
@@ -643,6 +644,7 @@ class PendingNodeInvocation:
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
+            run_id=run_id,
         )
 
 
