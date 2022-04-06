@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import textwrap
@@ -68,9 +69,11 @@ def _dbt_nodes_to_assets(
     sources: Set[AssetKey] = set()
     out_name_to_node_info: Dict[str, Mapping[str, Any]] = {}
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
+    package_name = None
     for unique_id in selected_unique_ids:
         asset_deps = set()
         node_info = dbt_nodes[unique_id]
+        package_name = node_info.get("package_name", package_name)
         for dep_name in node_info["depends_on"]["nodes"]:
             dep_type = dbt_nodes[dep_name]["resource_type"]
             # ignore seeds/snapshots
@@ -101,8 +104,13 @@ def _dbt_nodes_to_assets(
         out_name_to_node_info[node_name] = node_info
         internal_asset_deps[node_name] = asset_deps
 
+    # prevent op name collisions between multiple dbt multi-assets
+    op_name = f"run_dbt_{package_name}"
+    if select != "*":
+        op_name += "_" + hashlib.md5(select.encode()).hexdigest()[-5:]
+
     @multi_asset(
-        name="dbt_project",
+        name=op_name,
         non_argument_deps=sources,
         outs=outs,
         required_resource_keys={"dbt"},
