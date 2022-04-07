@@ -14,7 +14,7 @@ import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver
 const LoadedRepositorySection: React.FC<{
   allRepos: DagsterRepoOption[];
   visibleRepos: DagsterRepoOption[];
-  toggleVisible: (repoAddress: RepoAddress) => void;
+  toggleVisible: (repoAddresses: RepoAddress[]) => void;
 }> = ({allRepos, visibleRepos, toggleVisible}) => {
   const location = useLocation();
   const workspacePath = location.pathname.split('/workspace/').pop();
