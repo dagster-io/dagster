@@ -3,7 +3,9 @@ import {Box, NonIdealState, PageHeader, Popover, Tag, Heading, FontFamily} from 
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
+import {formatElapsedTime} from '../app/Util';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -65,17 +67,6 @@ export const RunRoot = () => {
           tags={
             run ? (
               <>
-                <Popover
-                  interactionKind="hover"
-                  placement="bottom"
-                  content={
-                    <Box padding={16}>
-                      <RunDetails run={run} loading={loading} />
-                    </Box>
-                  }
-                >
-                  <Tag icon="info" />
-                </Popover>
                 <RunStatusTag status={run.status} />
                 {run.pipelineName !== __ASSET_GROUP ? (
                   <Tag icon="run">
@@ -91,6 +82,45 @@ export const RunRoot = () => {
                 ) : (
                   <RunStepKeysAssetList stepKeys={run.stepKeysToExecute} clickableTags />
                 )}
+                {run?.startTime ? (
+                  <Popover
+                    interactionKind="hover"
+                    placement="bottom"
+                    content={
+                      <Box padding={16}>
+                        <RunDetails run={run} loading={loading} />
+                      </Box>
+                    }
+                  >
+                    <Tag icon="schedule">
+                      <TimestampDisplay
+                        timestamp={run.startTime}
+                        timeFormat={{showSeconds: true, showTimezone: false}}
+                      />
+                    </Tag>
+                  </Popover>
+                ) : null}
+                {run?.startTime && run?.endTime ? (
+                  <Popover
+                    interactionKind="hover"
+                    placement="bottom"
+                    content={
+                      <Box padding={16}>
+                        <RunDetails run={run} loading={loading} />
+                      </Box>
+                    }
+                  >
+                    <Tag icon="timer">
+                      <span style={{fontVariantNumeric: 'tabular-nums'}}>
+                        {run?.startTime
+                          ? formatElapsedTime(
+                              (run?.endTime * 1000 || Date.now()) - run?.startTime * 1000,
+                            )
+                          : '–'}
+                      </span>
+                    </Tag>
+                  </Popover>
+                ) : null}
               </>
             ) : null
           }
