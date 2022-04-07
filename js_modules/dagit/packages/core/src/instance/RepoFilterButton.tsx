@@ -17,17 +17,12 @@ export const RepoFilterButton: React.FC = () => {
         onClose={() => setOpen(false)}
       >
         <DialogHeader icon="repo" label="Repositories" />
-        <div>
-          <Box padding={{vertical: 8, horizontal: 24}}>
-            {`${visibleRepos.length} of ${allRepos.length} selected`}
-          </Box>
-          <RepoSelector
-            options={allRepos}
-            onBrowse={() => setOpen(false)}
-            onToggle={toggleVisible}
-            selected={visibleRepos}
-          />
-        </div>
+        <RepoSelector
+          options={allRepos}
+          onBrowse={() => setOpen(false)}
+          onToggle={toggleVisible}
+          selected={visibleRepos}
+        />
         <DialogFooter>
           <Box padding={{top: 8}}>
             <Button intent="none" onClick={() => setOpen(false)}>

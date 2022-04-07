@@ -40,7 +40,7 @@ export type WorkspaceState = {
   visibleRepos: DagsterRepoOption[];
 
   refetch: () => Promise<ApolloQueryResult<RootWorkspaceQuery>>;
-  toggleVisible: (repoAddress: RepoAddress) => void;
+  toggleVisible: (repoAddresses: RepoAddress[]) => void;
 };
 
 export const WorkspaceContext = React.createContext<WorkspaceState>(
@@ -195,17 +195,19 @@ const useVisibleRepos = (
   );
 
   const toggleVisible = React.useCallback(
-    (repoAddress: RepoAddress) => {
-      const key = `${repoAddress.name}:${repoAddress.location}`;
+    (repoAddresses: RepoAddress[]) => {
+      repoAddresses.forEach((repoAddress) => {
+        const key = `${repoAddress.name}:${repoAddress.location}`;
 
-      setHiddenKeys((current) => {
-        let nextHiddenKeys = [...(current || [])];
-        if (nextHiddenKeys.includes(key)) {
-          nextHiddenKeys = nextHiddenKeys.filter((k) => k !== key);
-        } else {
-          nextHiddenKeys = [...nextHiddenKeys, key];
-        }
-        return nextHiddenKeys;
+        setHiddenKeys((current) => {
+          let nextHiddenKeys = [...(current || [])];
+          if (nextHiddenKeys.includes(key)) {
+            nextHiddenKeys = nextHiddenKeys.filter((k) => k !== key);
+          } else {
+            nextHiddenKeys = [...nextHiddenKeys, key];
+          }
+          return nextHiddenKeys;
+        });
       });
     },
     [setHiddenKeys],
