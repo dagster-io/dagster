@@ -26,7 +26,7 @@ from .base import (
     RunShardedEventsCursor,
     extract_asset_events_cursor,
     AssetRecord,
-    AssetEntry
+    AssetEntry,
 )
 from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DATA_MIGRATIONS
 from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable
@@ -756,25 +756,98 @@ class SqlEventLogStorage(EventLogStorage):
 
         return event_records
 
-    def _construct_asset_record_from_row(self, row):
+    def _construct_asset_record_from_row(self, row, backcompat_materialization=None):
+        wipe_timestamp, last_materialization_timestamp, tags = None, None, None
+        if len(row) > 5:  # has asset key index cols
+            wipe_timestamp = row[5]
+            last_materialization_timestamp = row[6]
+            tags = row[7]
         return AssetRecord(
             storage_id=row[0],
             asset_entry=AssetEntry(
-                asset_key=row[1],
-                last_materialization=row[2],
+                asset_key=AssetKey.from_db_string(row[1]),
+                last_materialization=backcompat_materialization
+                if backcompat_materialization
+                else deserialize_json_to_dagster_namedtuple(row[2])
+                if row[2]
+                else None,
                 last_run_id=row[3],
-                asset_details=row[4],
-                wipe_timestamp=row[5] if row[5] else None,
-                last_materialization_timestamp=row[6] if row[6] else None,
-                tags=row[7] if row[7] else None
-            )
+                asset_details=AssetDetails.from_db_string(row[4]),
+                wipe_timestamp=wipe_timestamp,
+                last_materialization_timestamp=last_materialization_timestamp,
+                tags=tags,
+            ),
         )
 
-    def get_asset_records(self, asset_keys: Optional[Sequence[AssetKey]]) -> Iterable[AssetRecord]:
-        rows, _, _ = self._fetch_asset_rows(asset_keys=asset_keys)
-        asset_records: List[AssetRecord] = [self._construct_asset_record_from_row(row) for row in rows]
-        return asset_records
+    def _get_backcompat_materializations(self, raw_asset_rows):
+        to_backcompat_fetch = set()
+        for row in raw_asset_rows:
+            asset_key = AssetKey.from_db_string(row[1])
+            if not asset_key:
+                continue
+            event_or_materialization = (
+                deserialize_json_to_dagster_namedtuple(row[2]) if row[2] else None
+            )
+            if isinstance(event_or_materialization, EventLogEntry):
+                materialization_event_log_entry[asset_key] = event_or_materialization
+            else:
+                to_backcompat_fetch.add(asset_key)
 
+        materialization_by_asset = {}
+        latest_event_subquery = (
+            db.select(
+                [
+                    SqlEventLogStorageTable.c.asset_key,
+                    db.func.max(SqlEventLogStorageTable.c.timestamp).label("timestamp"),
+                ]
+            )
+            .where(
+                db.and_(
+                    SqlEventLogStorageTable.c.asset_key.in_(
+                        [asset_key.to_string() for asset_key in to_backcompat_fetch]
+                    ),
+                    SqlEventLogStorageTable.c.dagster_event_type
+                    == DagsterEventType.ASSET_MATERIALIZATION.value,
+                )
+            )
+            .group_by(SqlEventLogStorageTable.c.asset_key)
+            .alias("latest_materializations")
+        )
+        backcompat_query = db.select(
+            [SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.event]
+        ).select_from(
+            latest_event_subquery.join(
+                SqlEventLogStorageTable,
+                db.and_(
+                    SqlEventLogStorageTable.c.asset_key == latest_event_subquery.c.asset_key,
+                    SqlEventLogStorageTable.c.timestamp == latest_event_subquery.c.timestamp,
+                ),
+            )
+        )
+        with self.index_connection() as conn:
+            event_rows = conn.execute(backcompat_query).fetchall()
+
+        for row in event_rows:
+            asset_key = AssetKey.from_db_string(row[0])
+            if asset_key:
+                materialization_by_asset[asset_key] = cast(
+                    EventLogEntry, deserialize_json_to_dagster_namedtuple(row[1])
+                )
+        return materialization_by_asset
+
+    def get_asset_records(
+        self, asset_keys: Optional[Sequence[AssetKey]] = None
+    ) -> Iterable[AssetRecord]:
+        rows = self._fetch_asset_rows(asset_keys=asset_keys)
+        backcompat_materializations = self._get_backcompat_materializations(rows)
+
+        asset_records: List[AssetRecord] = [
+            self._construct_asset_record_from_row(
+                row, backcompat_materializations.get(AssetKey.from_db_string(row[1]))
+            )
+            for row in rows
+        ]
+        return asset_records
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         check.inst_param(asset_key, "asset_key", AssetKey)
@@ -801,60 +874,18 @@ class SqlEventLogStorage(EventLogStorage):
     ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
         check.list_param(asset_keys, "asset_keys", AssetKey)
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
-        to_backcompat_fetch = set()
+
         results: Dict[AssetKey, Optional[EventLogEntry]] = {}
+
+        backcompat_materializations = self._get_backcompat_materializations(rows)
         for row in rows:
             asset_key = AssetKey.from_db_string(row[1])
-            if not asset_key:
-                continue
-            event_or_materialization = (
-                deserialize_json_to_dagster_namedtuple(row[2]) if row[2] else None
+            backcompat_materialization = backcompat_materializations.get(asset_key)
+            results[asset_key] = (
+                backcompat_materialization
+                if backcompat_materialization
+                else cast(EventLogEntry, deserialize_json_to_dagster_namedtuple(row[2]))
             )
-            if isinstance(event_or_materialization, EventLogEntry):
-                results[asset_key] = event_or_materialization
-            else:
-                to_backcompat_fetch.add(asset_key)
-
-        if to_backcompat_fetch:
-            latest_event_subquery = (
-                db.select(
-                    [
-                        SqlEventLogStorageTable.c.asset_key,
-                        db.func.max(SqlEventLogStorageTable.c.timestamp).label("timestamp"),
-                    ]
-                )
-                .where(
-                    db.and_(
-                        SqlEventLogStorageTable.c.asset_key.in_(
-                            [asset_key.to_string() for asset_key in to_backcompat_fetch]
-                        ),
-                        SqlEventLogStorageTable.c.dagster_event_type
-                        == DagsterEventType.ASSET_MATERIALIZATION.value,
-                    )
-                )
-                .group_by(SqlEventLogStorageTable.c.asset_key)
-                .alias("latest_materializations")
-            )
-            backcompat_query = db.select(
-                [SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.event]
-            ).select_from(
-                latest_event_subquery.join(
-                    SqlEventLogStorageTable,
-                    db.and_(
-                        SqlEventLogStorageTable.c.asset_key == latest_event_subquery.c.asset_key,
-                        SqlEventLogStorageTable.c.timestamp == latest_event_subquery.c.timestamp,
-                    ),
-                )
-            )
-            with self.index_connection() as conn:
-                event_rows = conn.execute(backcompat_query).fetchall()
-
-            for row in event_rows:
-                asset_key = AssetKey.from_db_string(row[0])
-                if asset_key:
-                    results[asset_key] = cast(
-                        EventLogEntry, deserialize_json_to_dagster_namedtuple(row[1])
-                    )
 
         return results
 
@@ -908,12 +939,13 @@ class SqlEventLogStorage(EventLogStorage):
             AssetKeyTable.c.asset_details,
         ]
         if self.has_asset_key_index_cols():
-            columns.extend([
-                AssetKeyTable.c.wipe_timestamp,
-                AssetKeyTable.c.last_materialization_timestamp,
-                AssetKeyTable.c.tags
-            ])
-
+            columns.extend(
+                [
+                    AssetKeyTable.c.wipe_timestamp,
+                    AssetKeyTable.c.last_materialization_timestamp,
+                    AssetKeyTable.c.tags,
+                ]
+            )
 
         is_partial_query = bool(asset_keys) or bool(prefix) or bool(limit) or bool(cursor)
         if self.has_asset_key_index_cols() and not is_partial_query:
@@ -1076,7 +1108,8 @@ class SqlEventLogStorage(EventLogStorage):
         )
         for i in range(len(assets_details)):
             asset_key, asset_details = asset_keys[i], assets_details[i]
-            if asset_details and asset_details.last_wipe_timestamp:  # type: ignore[attr-defined]
+            # type: ignore[attr-defined]
+            if asset_details and asset_details.last_wipe_timestamp:
                 asset_key_in_row = db.or_(
                     SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
                     SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
@@ -1088,7 +1121,8 @@ class SqlEventLogStorage(EventLogStorage):
                         db.and_(
                             asset_key_in_row,
                             SqlEventLogStorageTable.c.timestamp
-                            > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp),  # type: ignore[attr-defined]
+                            # type: ignore[attr-defined]
+                            > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp),
                         ),
                         db.not_(asset_key_in_row),
                     )
@@ -1157,26 +1191,26 @@ class SqlEventLogStorage(EventLogStorage):
 
         return [run_id for (run_id, _timestamp) in results]
 
-    def get_last_run_ids_for_assets(
-        self, asset_keys: Sequence[AssetKey]
-    ) -> Mapping[AssetKey, Optional[str]]:
-        check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
+    # def get_last_run_ids_for_assets(
+    #     self, asset_keys: Sequence[AssetKey]
+    # ) -> Mapping[AssetKey, Optional[str]]:
+    #     check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
 
-        last_run_id_by_asset_key: Dict[AssetKey, str] = {}
-        rows = self._fetch_asset_rows()
-        for row in rows:
-            asset_key = AssetKey.from_db_string(row[1])
-            last_run_id = row[3]
-            if asset_key:
-                last_run_id_by_asset_key[asset_key] = last_run_id
+    #     last_run_id_by_asset_key: Dict[AssetKey, str] = {}
+    #     rows = self._fetch_asset_rows()
+    #     for row in rows:
+    #         asset_key = AssetKey.from_db_string(row[1])
+    #         last_run_id = row[3]
+    #         if asset_key:
+    #             last_run_id_by_asset_key[asset_key] = last_run_id
 
-        selected_assets_map_to_last_run_id: Dict[AssetKey, str] = {}
-        for asset_key in asset_keys:
-            last_run_id = last_run_id_by_asset_key.get(asset_key)
-            if last_run_id:
-                selected_assets_map_to_last_run_id[asset_key] = last_run_id
+    #     selected_assets_map_to_last_run_id: Dict[AssetKey, str] = {}
+    #     for asset_key in asset_keys:
+    #         last_run_id = last_run_id_by_asset_key.get(asset_key)
+    #         if last_run_id:
+    #             selected_assets_map_to_last_run_id[asset_key] = last_run_id
 
-        return selected_assets_map_to_last_run_id
+    #     return selected_assets_map_to_last_run_id
 
     def _asset_materialization_from_json_column(self, json_str):
         if not json_str:
@@ -1227,6 +1261,7 @@ class SqlEventLogStorage(EventLogStorage):
                             AssetDetails(last_wipe_timestamp=wipe_timestamp)
                         ),
                         wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp),
+                        last_run_id=None,
                     )
                 )
 
@@ -1244,6 +1279,7 @@ class SqlEventLogStorage(EventLogStorage):
                         asset_details=serialize_dagster_namedtuple(
                             AssetDetails(last_wipe_timestamp=wipe_timestamp)
                         ),
+                        last_run_id=None,
                     )
                 )
 

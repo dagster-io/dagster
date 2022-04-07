@@ -175,6 +175,31 @@ def test_backcompat_asset_materializations():
             _validate_materialization(c, c_mat, expected_tags={"foo": "bar"})
 
 
+def test_backcompat_get_asset_records():
+    src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
+    # should contain materialization events for asset keys a, b, c, d, e, f
+    # events a and b have been wiped, but b has been rematerialized
+
+    def _validate_materialization(asset_key, event, expected_tags):
+        assert isinstance(event, EventLogEntry)
+        assert event.dagster_event
+        assert event.dagster_event.is_step_materialization
+        assert event.dagster_event.step_materialization_data.materialization.asset_key == asset_key
+        assert event.dagster_event.step_materialization_data.materialization.tags == expected_tags
+
+    b = AssetKey("b")
+
+    with copy_directory(src_dir) as test_dir:
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            storage = instance.event_log_storage
+
+            records = storage.get_asset_records([b])
+            asset_entry = records[0].asset_entry
+            print(asset_entry)
+            assert asset_entry.asset_key == b
+            _validate_materialization(b, asset_entry.last_materialization, expected_tags={})
+
+
 def test_asset_lazy_migration():
     src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
     # should contain materialization events for asset keys a, b, c, d, e, f
