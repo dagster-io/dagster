@@ -1,4 +1,5 @@
 import {gql} from '@apollo/client';
+import {AnchorButton} from '../ui/AnchorButton';
 import {
   Button,
   Colors,
@@ -124,22 +125,18 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
   return (
     <div>
       <Group direction="row" spacing={8}>
-        <Button
+        <AnchorButton
           icon={<Icon name="edit" />}
-          onClick={() =>
-            window.open(
-              workspacePathFromRunDetails({
-                id: run.id,
-                repositoryName: run.repositoryOrigin?.repositoryName,
-                repositoryLocationName: run.repositoryOrigin?.repositoryLocationName,
-                pipelineName: run.pipelineName,
-                isJob,
-              }),
-            )
-          }
+          to={workspacePathFromRunDetails({
+            id: run.id,
+            repositoryName: run.repositoryOrigin?.repositoryName,
+            repositoryLocationName: run.repositoryOrigin?.repositoryLocationName,
+            pipelineName: run.pipelineName,
+            isJob,
+          })}
         >
           Open in Launchpad
-        </Button>
+        </AnchorButton>
         <Button icon={<Icon name="tag" />} onClick={() => setShowDialog(true)}>
           View tags and config
         </Button>
@@ -153,7 +150,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
                 targetTagName="div"
               >
                 <MenuItem
-                  text="Debug file"
+                  text="Download debug file"
                   icon={<Icon name="download_for_offline" />}
                   onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
                 />
