@@ -53,6 +53,7 @@ def test_execute_celery_docker_image_on_executor_config(aws_creds):
             [
                 os.path.join(get_test_project_environments_path(), "env.yaml"),
                 os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
+                os.path.join(get_test_project_environments_path(), "env_environment_vars.yaml"),
             ]
         ),
         {
@@ -103,6 +104,7 @@ def test_execute_celery_docker_image_on_pipeline_config(aws_creds):
             [
                 os.path.join(get_test_project_environments_path(), "env.yaml"),
                 os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
+                os.path.join(get_test_project_environments_path(), "env_environment_vars.yaml"),
             ]
         ),
         {
