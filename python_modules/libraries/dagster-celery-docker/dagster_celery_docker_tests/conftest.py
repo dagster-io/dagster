@@ -22,8 +22,8 @@ def aws_creds():
             ).get("SecretString")
         )
         return creds
-    except:
+    except Exception as e:
         raise Exception(
-            "Must have AWS credentials set in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY "
-            "to be able to run celery docker tests locally"
+            "Must have AWS credentials set to be able to run celery docker tests locally. Run "
+            f"'aws sso login' to authenticate. Original error: {e}"
         )

@@ -281,8 +281,9 @@ def create_docker_task(celery_app, **task_kwargs):
         if docker_config.get("env_vars"):
             docker_env = {env_name: os.getenv(env_name) for env_name in docker_config["env_vars"]}
 
-        container_kwargs = docker_config.get("container_kwargs")
-        container_kwargs = check.opt_dict_param(container_kwargs, "container_kwargs", key_type=str)
+        container_kwargs = check.opt_dict_param(
+            docker_config.get("container_kwargs"), "container_kwargs", key_type=str
+        )
 
         # set defaults for detach and auto_remove
         container_kwargs["detach"] = container_kwargs.get("detach", False)
