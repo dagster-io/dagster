@@ -9,6 +9,7 @@ from dagster.cli.pipeline import pipeline_execute_command
 from dagster.core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster.core.telemetry import (
     UPDATE_REPO_STATS,
+    cleanup_telemetry_logger,
     get_or_create_dir_from_dagster_home,
     hash_name,
     log_workspace_stats,
@@ -67,6 +68,9 @@ def test_dagster_telemetry_enabled(caplog):
                 assert set(message.keys()) == EXPECTED_KEYS
             assert len(caplog.records) == 5
             assert result.exit_code == 0
+        
+        # Needed to avoid file contention issues on windows with the telemetry log file
+        cleanup_telemetry_logger()
 
 
 def test_dagster_telemetry_disabled(caplog):
@@ -116,6 +120,9 @@ def test_dagster_telemetry_unset(caplog):
 
                 assert len(caplog.records) == 5
                 assert result.exit_code == 0
+            
+            # Needed to avoid file contention issues on windows with the telemetry log file
+            cleanup_telemetry_logger()
 
 
 def test_repo_stats(caplog):
@@ -153,6 +160,9 @@ def test_repo_stats(caplog):
 
                 assert len(caplog.records) == 5
                 assert result.exit_code == 0
+            
+            # Needed to avoid file contention issues on windows with the telemetry log file
+            cleanup_telemetry_logger()
 
 
 def test_log_workspace_stats(caplog):
@@ -168,6 +178,9 @@ def test_log_workspace_stats(caplog):
                 assert set(message.keys()) == EXPECTED_KEYS
 
             assert len(caplog.records) == 2
+        
+        # Needed to avoid file contention issues on windows with the telemetry log file
+        cleanup_telemetry_logger()
 
 
 # Sanity check that the hash function maps these similar names to sufficiently dissimilar strings
@@ -202,3 +215,6 @@ def test_write_telemetry_log_line_writes_to_dagster_home():
             with open(os.path.join(temp_dir, "logs/event.log"), "r") as f:
                 res = json.load(f)
                 assert res == {"foo": "bar"}
+
+        # Needed to avoid file contention issues on windows with the telemetry log file
+        cleanup_telemetry_logger()
