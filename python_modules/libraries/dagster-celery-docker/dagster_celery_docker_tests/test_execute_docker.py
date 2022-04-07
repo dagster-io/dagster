@@ -38,7 +38,8 @@ def test_execute_celery_docker_image_on_executor_config(aws_creds):
                 "FIND_ME": "here!",
                 "AWS_ACCESS_KEY_ID": aws_creds["aws_access_key_id"],
                 "AWS_SECRET_ACCESS_KEY": aws_creds["aws_secret_access_key"],
-            }
+            },
+            # "auto_remove": False # uncomment when debugging to view container logs after execution
         },
     }
 
@@ -86,7 +87,8 @@ def test_execute_celery_docker_image_on_pipeline_config(aws_creds):
                 "FIND_ME=here!",
                 f"AWS_ACCESS_KEY_ID={aws_creds['aws_access_key_id']}",
                 f"AWS_SECRET_ACCESS_KEY={aws_creds['aws_secret_access_key']}",
-            ]
+            ],
+            # "auto_remove": False # uncomment when debugging to view container logs after execution
         },
     }
 
