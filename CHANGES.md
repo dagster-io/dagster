@@ -5,13 +5,13 @@
 ### New
 
 - The MySQL storage implementations for Dagster storage is no longer marked as experimental.
-- Fixed a set of bugs where schedules and sensors would get out of sync between `dagit` and `dagster-daemon` processes. This would manifest in schedules / sensors getting marked as “Unloadable” in `dagit`, and ticks not being registered correctly. The fix involves changing how Dagster stores schedule/sensor state and requires a schema change using the CLI command `dagster instance migrate`. Users who are not running into this class of bugs may consider the migration optional.
 - `run_id` can now be provided as an argument to `execute_in_process`.
 - The text on `dagit`’s empty state no longer mentions the legacy concept “Pipelines”.
 - Now, within the `IOManager.load_input` method, you can add input metadata via `InputContext.add_input_metadata`. These metadata entries will appear on the `LOADED_INPUT` event and if the input is an asset, be attached to an `AssetObservation`. This metadata is viewable in `dagit`.
 
 ### Bugfixes
 
+- Fixed a set of bugs where schedules and sensors would get out of sync between `dagit` and `dagster-daemon` processes. This would manifest in schedules / sensors getting marked as “Unloadable” in `dagit`, and ticks not being registered correctly. The fix involves changing how Dagster stores schedule/sensor state and requires a schema change using the CLI command `dagster instance migrate`. Users who are not running into this class of bugs may consider the migration optional.
 - `root_input_manager` can now be specified without a context argument.
 - Fixed a bug that prevented `root_input_manager` from being used with `VersionStrategy`.
 - Fixed a race condition between daemon and `dagit` writing to the same telemetry logs.
