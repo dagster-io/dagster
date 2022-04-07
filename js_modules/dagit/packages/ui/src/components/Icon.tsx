@@ -31,6 +31,7 @@ import download_for_offline from '../icon-svgs/download_for_offline.svg';
 import drag_handle from '../icon-svgs/drag_handle.svg';
 import dynamic_feed from '../icon-svgs/dynamic_feed.svg';
 import edit from '../icon-svgs/edit.svg';
+import email from '../icon-svgs/email.svg';
 import error from '../icon-svgs/error.svg';
 import error_outline from '../icon-svgs/error_outline.svg';
 import expand_less from '../icon-svgs/expand_less.svg';
@@ -170,6 +171,7 @@ export const Icons = {
   dynamic_feed,
   drag_handle,
   edit,
+  email,
   error,
   error_outline,
   expand_less,
