@@ -1,6 +1,28 @@
 # Changelog
 
-# 0.14.7 Changelog
+# 0.14.8
+
+### New
+
+- The MySQL storage implementations for Dagster storage is no longer marked as experimental.
+- `run_id` can now be provided as an argument to `execute_in_process`.
+- The text on `dagit`’s empty state no longer mentions the legacy concept “Pipelines”.
+- Now, within the `IOManager.load_input` method, you can add input metadata via `InputContext.add_input_metadata`. These metadata entries will appear on the `LOADED_INPUT` event and if the input is an asset, be attached to an `AssetObservation`. This metadata is viewable in `dagit`.
+
+### Bugfixes
+
+- Fixed a set of bugs where schedules and sensors would get out of sync between `dagit` and `dagster-daemon` processes. This would manifest in schedules / sensors getting marked as “Unloadable” in `dagit`, and ticks not being registered correctly. The fix involves changing how Dagster stores schedule/sensor state and requires a schema change using the CLI command `dagster instance migrate`. Users who are not running into this class of bugs may consider the migration optional.
+- `root_input_manager` can now be specified without a context argument.
+- Fixed a bug that prevented `root_input_manager` from being used with `VersionStrategy`.
+- Fixed a race condition between daemon and `dagit` writing to the same telemetry logs.
+- [dagit] In `dagit`, using the “Open in Launchpad” feature for a run could cause server errors if the run configuration yaml was too long. Runs can now be opened from this feature regardless of config length.
+- [dagit] On the Instance Overview page in `dagit`, runs in the timeline view sometimes showed incorrect end times, especially batches that included in-progress runs. This has been fixed.
+- [dagit] In the `dagit` launchpad, reloading a repository should present the user with an option to refresh config that may have become stale. This feature was broken for jobs without partition sets, and has now been fixed.
+- Fixed issue where passing a stdlib `typing` type as `dagster_type` to input and output definition was incorrectly being rejected.
+- [dagster-airbyte] Fixed issue where AssetMaterialization events would not be generated for streams that had no updated records for a given sync.
+- [dagster-dbt] Fixed issue where including multiple sets of dbt assets in a single repository could cause a conflict with the names of the underlying ops.
+
+# 0.14.7
 
 ### New
 
