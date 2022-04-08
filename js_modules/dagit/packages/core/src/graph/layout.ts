@@ -2,28 +2,18 @@ import * as dagre from 'dagre';
 
 import {titleOfIO} from '../app/titleOfIO';
 
-type ILayoutConnectionMember = {
+type OpLayoutEdgeSide = {
   point: IPoint;
   opName: string;
   edgeName: string;
 };
 
-export type ILayoutConnection = {
-  from: ILayoutConnectionMember;
-  to: ILayoutConnectionMember;
+export type OpLayoutEdge = {
+  from: OpLayoutEdgeSide;
+  to: OpLayoutEdgeSide;
 };
 
-export type IFullPipelineLayout = {
-  width: number;
-  height: number;
-  parent: IParentOpLayout | null;
-  connections: Array<ILayoutConnection>;
-  ops: {
-    [opName: string]: IFullOpLayout;
-  };
-};
-
-export interface IFullOpLayout {
+export interface OpLayout {
   op: ILayout;
   boundingBox: ILayout;
   inputs: {
@@ -40,7 +30,17 @@ export interface IFullOpLayout {
   };
 }
 
-interface IParentOpLayout extends Omit<IFullOpLayout, 'op'> {
+export type OpGraphLayout = {
+  width: number;
+  height: number;
+  parent: ParentOpLayout | null;
+  connections: OpLayoutEdge[];
+  ops: {
+    [opName: string]: OpLayout;
+  };
+};
+
+interface ParentOpLayout extends Omit<OpLayout, 'op'> {
   mappingLeftEdge: number;
   mappingLeftSpacing: number;
   dependsOn: {[opName: string]: IPoint};
@@ -126,10 +126,7 @@ function flattenIO(arrays: OpLinkInfo[][]) {
   return Object.values(map);
 }
 
-export function layoutPipeline(
-  pipelineOps: ILayoutOp[],
-  parentOp?: ILayoutOp,
-): IFullPipelineLayout {
+export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): OpGraphLayout {
   const g = new dagre.graphlib.Graph();
 
   // First, identify how much space we need to pad the DAG by in order to show the
@@ -148,7 +145,7 @@ export function layoutPipeline(
   g.setGraph({rankdir: 'TB', marginx, marginy});
   g.setDefaultEdgeLabel(() => ({}));
 
-  const connections: Array<ILayoutConnection> = [];
+  const connections: OpLayoutEdge[] = [];
   const opNamesPresent: {[name: string]: boolean} = {};
 
   pipelineOps.forEach((op) => {
@@ -190,7 +187,7 @@ export function layoutPipeline(
 
   dagre.layout(g);
 
-  const ops: {[opName: string]: IFullOpLayout} = {};
+  const ops: {[opName: string]: OpLayout} = {};
   const nodesByOp: {[opName: string]: dagre.Node} = {};
   g.nodes().forEach(function (opName) {
     const node = g.node(opName);
@@ -308,7 +305,7 @@ export function layoutPipeline(
     }
   });
 
-  const result: IFullPipelineLayout = {
+  const result: OpGraphLayout = {
     ops,
     connections,
     width: maxWidth + marginx,
@@ -325,8 +322,8 @@ export function layoutPipeline(
   return result;
 }
 
-function layoutParentGraphOp(layout: IFullPipelineLayout, op: ILayoutOp, parentIOPadding: number) {
-  const result: IParentOpLayout = {
+function layoutParentGraphOp(layout: OpGraphLayout, op: ILayoutOp, parentIOPadding: number) {
+  const result: ParentOpLayout = {
     invocationBoundingBox: {
       x: 1,
       y: 1,
@@ -409,7 +406,7 @@ function layoutExternalConnections(links: OpLinkInfo[], y: number, layoutWidth: 
   return result;
 }
 
-export function layoutOp(op: ILayoutOp, root: IPoint): IFullOpLayout {
+export function layoutOp(op: ILayoutOp, root: IPoint): OpLayout {
   // Starting at the root (top left) X,Y, return the layout information for a solid with
   // input blocks, then the main block, then output blocks (arranged vertically)
   let accY = root.y;

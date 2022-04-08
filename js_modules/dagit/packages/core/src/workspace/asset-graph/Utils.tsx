@@ -1,11 +1,8 @@
 import {gql} from '@apollo/client';
 import {pathVerticalDiagonal} from '@vx/shape';
-import * as dagre from 'dagre';
 
 import {AssetNodeDefinitionFragment} from '../../assets/types/AssetNodeDefinitionFragment';
 
-import {getNodeDimensions} from './AssetNode';
-import {getForeignNodeDimensions} from './ForeignNode';
 import {AssetGraphLiveQuery_assetNodes_assetMaterializations} from './types/AssetGraphLiveQuery';
 import {
   AssetGraphQuery_assetNodes,
@@ -33,33 +30,17 @@ export const __ASSET_GROUP = '__ASSET_GROUP';
 export type GraphId = string;
 export const toGraphId = (key: AssetKey): GraphId => JSON.stringify(key.path);
 
-export interface Node {
+export interface GraphNode {
   id: GraphId;
   assetKey: AssetKey;
   definition: AssetNode;
 }
-interface LayoutNode {
-  id: GraphId;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+
 export interface GraphData {
-  nodes: {[assetId: GraphId]: Node};
+  nodes: {[assetId: GraphId]: GraphNode};
   downstream: {[assetId: GraphId]: {[childAssetId: GraphId]: boolean}};
   upstream: {[assetId: GraphId]: {[parentAssetId: GraphId]: boolean}};
 }
-interface IPoint {
-  x: number;
-  y: number;
-}
-export type IEdge = {
-  from: IPoint;
-  to: IPoint;
-  dashed: boolean;
-};
-
 export const isSourceAsset = (node: {jobNames: string[]; opName: string | null}) => {
   return node.jobNames.length === 0 && !node.opName;
 };
@@ -161,103 +142,6 @@ export const graphHasCycles = (graphData: GraphData) => {
     hasCycles = hasCycles || search([], nodes.values().next().value);
   }
   return hasCycles;
-};
-
-export const layoutGraph = (
-  graphData: GraphData,
-  opts: {margin: number; mini: boolean} = {
-    margin: 100,
-    mini: false,
-  },
-) => {
-  const g = new dagre.graphlib.Graph();
-
-  g.setGraph({
-    rankdir: 'TB',
-    marginx: opts.margin,
-    marginy: opts.margin,
-    nodesep: opts.mini ? 20 : 50,
-    edgesep: opts.mini ? 10 : 10,
-    ranksep: opts.mini ? 20 : 50,
-  });
-  g.setDefaultEdgeLabel(() => ({}));
-
-  const shouldRender = (node?: Node) => node && node.definition.opName;
-
-  Object.values(graphData.nodes)
-    .filter(shouldRender)
-    .forEach((node) => {
-      const {width, height} = getNodeDimensions(node.definition);
-      g.setNode(node.id, {width: opts.mini ? 230 : width, height});
-    });
-
-  const foreignNodes = {};
-  Object.keys(graphData.downstream).forEach((upstreamId) => {
-    const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
-    downstreamIds.forEach((downstreamId) => {
-      if (
-        !shouldRender(graphData.nodes[downstreamId]) &&
-        !shouldRender(graphData.nodes[upstreamId])
-      ) {
-        return;
-      }
-      g.setEdge({v: upstreamId, w: downstreamId}, {weight: 1});
-
-      if (!shouldRender(graphData.nodes[downstreamId])) {
-        foreignNodes[downstreamId] = true;
-      } else if (!shouldRender(graphData.nodes[upstreamId])) {
-        foreignNodes[upstreamId] = true;
-      }
-    });
-  });
-
-  Object.keys(foreignNodes).forEach((id) => {
-    g.setNode(id, getForeignNodeDimensions(id));
-  });
-
-  dagre.layout(g);
-
-  const dagreNodesById: {[id: string]: dagre.Node} = {};
-  g.nodes().forEach((id) => {
-    const node = g.node(id);
-    if (!node) {
-      return;
-    }
-    dagreNodesById[id] = node;
-  });
-
-  let maxWidth = 0;
-  let maxHeight = 0;
-  const nodes: LayoutNode[] = [];
-  Object.keys(dagreNodesById).forEach((id) => {
-    const dagreNode = dagreNodesById[id];
-    nodes.push({
-      id,
-      x: dagreNode.x - dagreNode.width / 2,
-      y: dagreNode.y - dagreNode.height / 2,
-      width: dagreNode.width,
-      height: dagreNode.height,
-    });
-    maxWidth = Math.max(maxWidth, dagreNode.x + dagreNode.width / 2);
-    maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height / 2);
-  });
-
-  const edges: IEdge[] = [];
-  g.edges().forEach((e) => {
-    const points = g.edge(e).points;
-    edges.push({
-      from: points[0],
-      to: points[points.length - 1],
-      dashed: false,
-    });
-  });
-
-  return {
-    nodes,
-    edges,
-    width: maxWidth + opts.margin,
-    height: maxHeight + opts.margin,
-  };
 };
 
 export const buildSVGPath = pathVerticalDiagonal({
@@ -366,6 +250,14 @@ function findComputeStatusForId(
     : upstreamIds.some((uid) => findComputeStatusForId(data, upstream, uid) !== 'good')
     ? 'old'
     : 'good';
+}
+
+export function tokenForAssetKey(key: {path: string[]}) {
+  return key.path.join('>');
+}
+
+export function displayNameForAssetKey(key: {path: string[]}) {
+  return key.path.join(' > ');
 }
 
 export const IN_PROGRESS_RUNS_FRAGMENT = gql`

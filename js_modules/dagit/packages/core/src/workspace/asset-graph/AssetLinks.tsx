@@ -2,9 +2,10 @@ import {Colors} from '@dagster-io/ui';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {buildSVGPath, IEdge} from './Utils';
+import {buildSVGPath} from './Utils';
+import {AssetLayoutEdge} from './layout';
 
-export const AssetLinks: React.FC<{edges: IEdge[]}> = React.memo(({edges}) => (
+export const AssetLinks: React.FC<{edges: AssetLayoutEdge[]}> = React.memo(({edges}) => (
   <>
     <defs>
       <marker

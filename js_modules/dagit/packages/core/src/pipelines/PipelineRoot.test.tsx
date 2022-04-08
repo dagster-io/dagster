@@ -15,7 +15,7 @@ jest.mock('./GraphExplorer', () => ({
 }));
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
-jest.mock('../graph/getFullOpLayout', () => ({}));
+jest.mock('../graph/asyncGraphLayout', () => ({}));
 
 const REPO_NAME = 'foo';
 const REPO_LOCATION = 'bar';

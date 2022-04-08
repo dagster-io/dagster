@@ -4,7 +4,6 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {displayNameForAssetKey} from '../../app/Util';
 import {AssetEvents} from '../../assets/AssetEvents';
 import {
   AssetMetadataTable,
@@ -22,7 +21,7 @@ import {pluginForMetadata} from '../../plugins';
 import {buildRepoAddress} from '../buildRepoAddress';
 import {RepoAddress} from '../types';
 
-import {LiveDataForNode} from './Utils';
+import {LiveDataForNode, displayNameForAssetKey} from './Utils';
 import {SidebarAssetFragment} from './types/SidebarAssetFragment';
 import {SidebarAssetQuery} from './types/SidebarAssetQuery';
 

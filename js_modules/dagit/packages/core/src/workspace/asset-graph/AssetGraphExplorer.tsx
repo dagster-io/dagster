@@ -10,9 +10,9 @@ import {
   QueryRefreshState,
   useQueryRefreshAtInterval,
 } from '../../app/QueryRefresh';
-import {tokenForAssetKey} from '../../app/Util';
 import {AssetKey} from '../../assets/types';
 import {SVGViewport} from '../../graph/SVGViewport';
+import {useAssetLayout} from '../../graph/asyncGraphLayout';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {
   GraphExplorerOptions,
@@ -25,6 +25,7 @@ import {
   EmptyDAGNotice,
   EntirelyFilteredDAGNotice,
   LargeDAGNotice,
+  LoadingNotice,
 } from '../../pipelines/GraphNotices';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
@@ -40,7 +41,14 @@ import {ForeignNode} from './ForeignNode';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {OmittedAssetsNotice} from './OmittedAssetsNotice';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
-import {GraphData, graphHasCycles, layoutGraph, LiveData, Node, isSourceAsset} from './Utils';
+import {
+  GraphData,
+  graphHasCycles,
+  LiveData,
+  GraphNode,
+  isSourceAsset,
+  tokenForAssetKey,
+} from './Utils';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
 import {useAssetGraphData} from './useAssetGraphData';
 import {useFindAssetInWorkspace} from './useFindAssetInWorkspace';
@@ -157,7 +165,7 @@ const AssetGraphExplorerWithData: React.FC<
     : Object.values(assetGraphData.nodes).filter((a) => !isSourceAsset(a.definition));
 
   const onSelectNode = React.useCallback(
-    async (e: React.MouseEvent<any>, assetKey: {path: string[]}, node: Node | null) => {
+    async (e: React.MouseEvent<any>, assetKey: {path: string[]}, node: GraphNode | null) => {
       e.stopPropagation();
 
       const token = tokenForAssetKey(assetKey);
@@ -204,7 +212,7 @@ const AssetGraphExplorerWithData: React.FC<
     [explorerPath, onChangeExplorerPath, findAssetInWorkspace, lastSelectedNode, assetGraphData],
   );
 
-  const layout = React.useMemo(() => layoutGraph(assetGraphData), [assetGraphData]);
+  const {layout, loading, async} = useAssetLayout(assetGraphData);
 
   const viewportEl = React.useRef<SVGViewport>();
   React.useEffect(() => {
@@ -225,67 +233,70 @@ const AssetGraphExplorerWithData: React.FC<
           ) : Object.keys(assetGraphData.nodes).length === 0 ? (
             <EntirelyFilteredDAGNotice nodeType="asset" />
           ) : undefined}
-          <SVGViewport
-            ref={(r) => (viewportEl.current = r || undefined)}
-            interactor={SVGViewport.Interactors.PanAndZoom}
-            graphWidth={layout.width}
-            graphHeight={layout.height}
-            onKeyDown={() => {}}
-            onClick={() =>
-              onChangeExplorerPath(
-                {...explorerPath, pipelineName: explorerPath.pipelineName, opNames: []},
-                'replace',
-              )
-            }
-            maxZoom={1.2}
-            maxAutocenterZoom={1.0}
-          >
-            {({scale: _scale}, bounds) => (
-              <SVGContainer width={layout.width} height={layout.height}>
-                <AssetLinks edges={layout.edges} />
+          {loading || !layout ? (
+            <LoadingNotice async={async} nodeType="asset" />
+          ) : (
+            <SVGViewport
+              ref={(r) => (viewportEl.current = r || undefined)}
+              interactor={SVGViewport.Interactors.PanAndZoom}
+              graphWidth={layout.width}
+              graphHeight={layout.height}
+              onKeyDown={() => {}}
+              onClick={() =>
+                onChangeExplorerPath(
+                  {...explorerPath, pipelineName: explorerPath.pipelineName, opNames: []},
+                  'replace',
+                )
+              }
+              maxZoom={1.2}
+              maxAutocenterZoom={1.0}
+            >
+              {({scale: _scale}, bounds) => (
+                <SVGContainer width={layout.width} height={layout.height}>
+                  <AssetLinks edges={layout.edges} />
 
-                {layout.nodes.map((layoutNode, index) => {
-                  const graphNode = assetGraphData.nodes[layoutNode.id];
-                  const path = JSON.parse(layoutNode.id);
+                  {layout.nodes.map((layoutNode, index) => {
+                    const graphNode = assetGraphData.nodes[layoutNode.id];
+                    const path = JSON.parse(layoutNode.id);
 
-                  if (isNodeOffscreen(layoutNode, bounds)) {
-                    return layoutNode.id === lastSelectedNode?.id ? (
-                      <RecenterGraph
-                        key={index}
-                        viewportRef={viewportEl}
-                        x={layoutNode.x + layoutNode.width / 2}
-                        y={layoutNode.y + layoutNode.height / 2}
-                      />
-                    ) : null;
-                  }
-
-                  return (
-                    <foreignObject
-                      {...layoutNode}
-                      key={layoutNode.id}
-                      onClick={(e) => onSelectNode(e, {path}, graphNode)}
-                      style={{overflow: 'visible'}}
-                    >
-                      {!graphNode || !graphNode.definition.opName ? (
-                        <ForeignNode assetKey={{path}} />
-                      ) : (
-                        <AssetNode
-                          definition={graphNode.definition}
-                          liveData={liveDataByNode[graphNode.id]}
-                          metadata={
-                            handles.find((h) => h.handleID === graphNode.definition.opName)?.solid
-                              .definition.metadata || []
-                          }
-                          selected={selectedGraphNodes.includes(graphNode)}
+                    if (isNodeOffscreen(layoutNode, bounds)) {
+                      return layoutNode.id === lastSelectedNode?.id ? (
+                        <RecenterGraph
+                          key={index}
+                          viewportRef={viewportEl}
+                          x={layoutNode.x + layoutNode.width / 2}
+                          y={layoutNode.y + layoutNode.height / 2}
                         />
-                      )}
-                    </foreignObject>
-                  );
-                })}
-              </SVGContainer>
-            )}
-          </SVGViewport>
+                      ) : null;
+                    }
 
+                    return (
+                      <foreignObject
+                        {...layoutNode}
+                        key={layoutNode.id}
+                        onClick={(e) => onSelectNode(e, {path}, graphNode)}
+                        style={{overflow: 'visible'}}
+                      >
+                        {!graphNode || !graphNode.definition.opName ? (
+                          <ForeignNode assetKey={{path}} />
+                        ) : (
+                          <AssetNode
+                            definition={graphNode.definition}
+                            liveData={liveDataByNode[graphNode.id]}
+                            metadata={
+                              handles.find((h) => h.handleID === graphNode.definition.opName)?.solid
+                                .definition.metadata || []
+                            }
+                            selected={selectedGraphNodes.includes(graphNode)}
+                          />
+                        )}
+                      </foreignObject>
+                    );
+                  })}
+                </SVGContainer>
+              )}
+            </SVGViewport>
+          )}
           {setOptions && (
             <OptionsOverlay>
               <Checkbox
@@ -388,7 +399,15 @@ const isNodeOffscreen = (
   );
 };
 
-const graphDirectionOf = ({graph, from, to}: {graph: GraphData; from: Node; to: Node}) => {
+const graphDirectionOf = ({
+  graph,
+  from,
+  to,
+}: {
+  graph: GraphData;
+  from: GraphNode;
+  to: GraphNode;
+}) => {
   const stack = [from];
   while (stack.length) {
     const node = stack.pop()!;
@@ -405,7 +424,7 @@ const graphDirectionOf = ({graph, from, to}: {graph: GraphData; from: Node; to: 
 };
 
 const opsInRange = (
-  {graph, from, to}: {graph: GraphData; from: Node; to: Node},
+  {graph, from, to}: {graph: GraphData; from: GraphNode; to: GraphNode},
   seen: string[] = [],
 ) => {
   if (!from) {
@@ -437,7 +456,7 @@ const opsInRange = (
   return uniq(ledToTarget);
 };
 
-const titleForLaunch = (nodes: Node[], liveDataByNode: LiveData) => {
+const titleForLaunch = (nodes: GraphNode[], liveDataByNode: LiveData) => {
   const isRematerializeForAll = (nodes.length
     ? nodes.map((n) => liveDataByNode[n.id])
     : Object.values(liveDataByNode)

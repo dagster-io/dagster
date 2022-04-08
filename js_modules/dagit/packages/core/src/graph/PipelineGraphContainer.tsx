@@ -1,16 +1,12 @@
-import {Box, Colors, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
+import {LoadingNotice} from '../pipelines/GraphNotices';
 import {GraphExplorerSolidHandleFragment} from '../pipelines/types/GraphExplorerSolidHandleFragment';
 
 import {PipelineGraph} from './PipelineGraph';
-import {asyncDagrePipelineLayout, getDagrePipelineLayout} from './getFullOpLayout';
-import {IFullPipelineLayout} from './layout';
+import {useOpLayout} from './asyncGraphLayout';
 import {PipelineGraphOpFragment} from './types/PipelineGraphOpFragment';
-
-const ASYNC_LAYOUT_SOLID_COUNT = 50;
 
 interface Props {
   pipelineName: string;
@@ -25,37 +21,6 @@ interface Props {
   onClickBackground?: () => void;
 }
 
-type State = {
-  loading: boolean;
-  layout: IFullPipelineLayout | null;
-  layoutOpKey: string;
-};
-
-type Action =
-  | {type: 'loading'}
-  | {type: 'layout'; payload: {layout: IFullPipelineLayout; layoutOpKey: string}};
-
-const reducer = (state: State, action: Action): State => {
-  switch (action.type) {
-    case 'loading':
-      return {loading: true, layout: null, layoutOpKey: ''};
-    case 'layout':
-      return {
-        loading: false,
-        layout: action.payload.layout,
-        layoutOpKey: action.payload.layoutOpKey,
-      };
-    default:
-      return state;
-  }
-};
-
-const initialState: State = {
-  loading: false,
-  layout: null,
-  layoutOpKey: '',
-};
-
 export const PipelineGraphContainer: React.FC<Props> = (props) => {
   const {
     pipelineName,
@@ -69,33 +34,11 @@ export const PipelineGraphContainer: React.FC<Props> = (props) => {
     onLeaveSubgraph,
     onClickBackground,
   } = props;
-  const [state, dispatch] = React.useReducer(reducer, initialState);
-
   const parentOp = parentHandle && parentHandle.solid;
-  const solidKey = ops.map((x) => x.name).join('|');
-  const parentOpKey = parentOp && parentOp.name;
+  const {layout, loading, async} = useOpLayout(ops, parentOp);
 
-  React.useEffect(() => {
-    async function delegateDagrePipelineLayout() {
-      dispatch({type: 'loading'});
-      const layout = await asyncDagrePipelineLayout(ops, parentOp);
-      dispatch({
-        type: 'layout',
-        payload: {layout: layout as IFullPipelineLayout, layoutOpKey: solidKey},
-      });
-    }
-
-    if (ops.length < ASYNC_LAYOUT_SOLID_COUNT) {
-      const layout = getDagrePipelineLayout(ops, parentOp);
-      dispatch({type: 'layout', payload: {layout, layoutOpKey: solidKey}});
-    } else {
-      delegateDagrePipelineLayout();
-    }
-  }, [solidKey, parentOpKey, ops, parentOp]);
-
-  const {loading, layout, layoutOpKey} = state;
-  if (loading || !layout || solidKey !== layoutOpKey) {
-    return <PipelineGraphLoading manyOps={ops.length > ASYNC_LAYOUT_SOLID_COUNT} />;
+  if (loading || !layout) {
+    return <LoadingNotice async={async} nodeType="op" />;
   }
 
   return (
@@ -116,28 +59,3 @@ export const PipelineGraphContainer: React.FC<Props> = (props) => {
     />
   );
 };
-
-const PipelineGraphLoading: React.FC<{manyOps: boolean}> = (props) => {
-  const {manyOps} = props;
-  return (
-    <LoadingContainer>
-      {manyOps ? (
-        <Box margin={{bottom: 24}}>Rendering a large number of ops, please wait…</Box>
-      ) : null}
-      <Spinner purpose="page" />
-    </LoadingContainer>
-  );
-};
-
-const LoadingContainer = styled.div`
-  background-color: ${Colors.White};
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-`;
