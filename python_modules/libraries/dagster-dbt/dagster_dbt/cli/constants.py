@@ -5,7 +5,7 @@ DEFAULT_DBT_TARGET_PATH = "target"
 
 # The set of dbt cli commands that result in the creation of a run_results.json output file
 # https://docs.getdbt.com/reference/artifacts/run-results-json
-DBT_RUN_RESULTS_COMMANDS = ["run", "test", "seed", "snapshot", "docs generate"]
+DBT_RUN_RESULTS_COMMANDS = ["run", "test", "seed", "snapshot", "docs generate", "build"]
 
 # The following config fields correspond to flags that apply to all dbt CLI commands. For details
 # on dbt CLI flags, see
