@@ -1,6 +1,6 @@
 {
   "name": "@dagster-io/eslint-config",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared eslint configuration for @dagster-io",
   "license": "Apache-2.0",
   "main": "index.js",
@@ -8,17 +8,14 @@
     "eslint": "^8.6.0",
     "prettier": "2.2.1"
   },
-  "devDependencies": {
-    "@types/eslint": "^8",
+  "dependencies": {
     "@typescript-eslint/eslint-plugin": "5.8.0",
     "@typescript-eslint/parser": "5.8.0",
     "eslint-config-prettier": "8.3.0",
-    "eslint-plugin-graphql": "^4.0.0",
     "eslint-plugin-import": "2.26.0",
     "eslint-plugin-jsx-a11y": "6.5.1",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "7.27.1",
-    "eslint-plugin-react-hooks": "4.3.0",
-    "graphql": "^15.5.0"
+    "eslint-plugin-react-hooks": "4.3.0"
   }
 }
