@@ -1,13 +1,16 @@
+import datetime
 import logging
 import time
 from collections import OrderedDict, defaultdict
+from datetime import timezone
 from typing import Dict, Iterable, Mapping, Optional, Sequence
 
 from dagster import check
+from dagster.core.assets import AssetDetails
 from dagster.core.definitions.events import AssetKey
-from dagster.core.storage.event_log.base import AssetEntry, AssetRecord
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
+from dagster.core.storage.event_log.base import AssetEntry, AssetRecord
 from dagster.serdes import ConfigurableClass
 from dagster.utils import utc_datetime_from_timestamp
 
@@ -258,22 +261,30 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         for asset_key, asset in self._assets.items():
             if asset_key in asset_keys:
                 wipe_timestamp = self._wiped_asset_keys.get(asset_key)
-                records.append(
-                    AssetRecord(
-                        storage_id=asset["id"],
-                        asset_entry=AssetEntry(
-                            asset_key=asset_key,
-                            last_materialization=asset.get("last_materialization"),
-                            last_run_id=asset.get("last_run_id"),
-                            asset_details=AssetDetails(last_wipe_timestamp=wipe_timestamp),
-                            wipe_timestamp=wipe_timestamp,
-                            last_materialization_timestamp=asset.get(
-                                "last_materialization_timestamp"
+                if (
+                    not wipe_timestamp
+                    or wipe_timestamp < asset.get("last_materialization_timestamp").timestamp()
+                ):
+                    records.append(
+                        AssetRecord(
+                            storage_id=asset["id"],
+                            asset_entry=AssetEntry(
+                                asset_key=asset_key,
+                                last_materialization=asset.get("last_materialization"),
+                                last_run_id=asset.get("last_run_id"),
+                                asset_details=AssetDetails(last_wipe_timestamp=wipe_timestamp)
+                                if wipe_timestamp
+                                else None,
+                                wipe_timestamp=datetime.datetime.fromtimestamp(wipe_timestamp)
+                                if wipe_timestamp
+                                else None,
+                                last_materialization_timestamp=asset.get(
+                                    "last_materialization_timestamp"
+                                ),
+                                tags=asset.get("tags"),
                             ),
-                            tags=asset.get("tags"),
-                        ),
+                        )
                     )
-                )
         return records
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
@@ -377,32 +388,6 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                     break
 
         return list(asset_run_ids)
-
-    # def get_last_run_ids_for_assets(
-    #     self, asset_keys: Sequence[AssetKey]
-    # ) -> Mapping[AssetKey, Optional[str]]:
-    #     check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
-
-    #     asset_records = []
-    #     for records in self._logs.values():
-    #         asset_records += [
-    #             record
-    #             for record in records
-    #             if record.is_dagster_event
-    #             and record.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
-    #             and record.dagster_event.asset_key
-    #             and record.dagster_event.asset_key in asset_keys
-    #         ]
-
-    #     last_run_id_by_asset: Dict[AssetKey, Optional[str]] = {}
-    #     for record in sorted(asset_records, key=lambda x: x.timestamp, reverse=True):
-    #         if (
-    #             self._wiped_asset_keys[record.dagster_event.asset_key] < record.timestamp
-    #             and record.dagster_event.asset_key not in last_run_id_by_asset
-    #         ):
-    #             last_run_id_by_asset[record.dagster_event.asset_key] = record.run_id
-
-    #     return last_run_id_by_asset
 
     def wipe_asset(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)

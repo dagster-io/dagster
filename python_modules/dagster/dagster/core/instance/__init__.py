@@ -1263,13 +1263,6 @@ records = instance.get_event_records(
         check.inst_param(asset_key, "asset_key", AssetKey)
         return self._event_storage.get_asset_run_ids(asset_key)
 
-    # @traced
-    # def get_last_run_ids_for_assets(
-    #     self, asset_keys: Sequence[AssetKey]
-    # ) -> Mapping[AssetKey, Optional[str]]:
-    #     check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
-    #     return self._event_storage.get_last_run_ids_for_assets(asset_keys)
-
     @traced
     def wipe_assets(self, asset_keys):
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)

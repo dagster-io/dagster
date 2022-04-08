@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import (
     Callable,
+    Dict,
     Iterable,
     List,
     Mapping,
@@ -12,7 +13,6 @@ from typing import (
     Set,
     Tuple,
     Union,
-    Dict,
 )
 
 from dagster import check
@@ -322,12 +322,6 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     @abstractmethod
     def get_asset_run_ids(self, asset_key: AssetKey) -> Iterable[str]:
         pass
-
-    # @abstractmethod
-    # def get_last_run_ids_for_assets(
-    #     self, asset_keys: Sequence[AssetKey]
-    # ) -> Mapping[AssetKey, Optional[str]]:
-    #     pass
 
     @abstractmethod
     def wipe_asset(self, asset_key: AssetKey):

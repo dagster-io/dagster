@@ -195,7 +195,6 @@ def test_backcompat_get_asset_records():
 
             records = storage.get_asset_records([b])
             asset_entry = records[0].asset_entry
-            print(asset_entry)
             assert asset_entry.asset_key == b
             _validate_materialization(b, asset_entry.last_materialization, expected_tags={})
 
