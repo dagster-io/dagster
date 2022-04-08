@@ -1,4 +1,5 @@
 import {gql} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
 import {Breadcrumbs} from '@blueprintjs/core';
 import {Checkbox, Colors, SplitPanelContainer, TextInput} from '@dagster-io/ui';
 import Color from 'color';

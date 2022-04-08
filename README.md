@@ -58,14 +58,14 @@ This installs two modules:
 
 ### Learn
 
-Next, jump right into our [tutorial](https://docs.dagster.io/tutorial/), or read our [complete
-documentation](https://docs.dagster.io). If you're actively using Dagster or have questions on
+Next, jump right into our [tutorial](https://docs.dagster.io/tutorial/), read our [complete documentation](https://docs.dagster.io), or check out our [GitHub Discussions](https://github.com/dagster-io/dagster/discussions). If you're actively using Dagster or have questions on
 getting started, we'd love to hear from you:
 
 <br />
 <p align="center">
-<a href="https://join.slack.com/t/dagster/shared_invite/enQtNjEyNjkzNTA2OTkzLTI0MzdlNjU0ODVhZjQyOTMyMGM1ZDUwZDQ1YjJmYjI3YzExZGViMDI1ZDlkNTY5OThmYWVlOWM1MWVjN2I3NjU"><img src="https://user-images.githubusercontent.com/609349/63558739-f60a7e00-c502-11e9-8434-c8a95b03ce62.png" width=160px; /></a>
+<a href="https://dagster.io/slack"><img src="https://user-images.githubusercontent.com/609349/63558739-f60a7e00-c502-11e9-8434-c8a95b03ce62.png" width=160px; /></a>
 </p>
+
 
 ## Contributing
 

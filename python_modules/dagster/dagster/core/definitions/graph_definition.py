@@ -622,6 +622,7 @@ class GraphDefinition(NodeDefinition):
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
         op_selection: Optional[List[str]] = None,
+        run_id: Optional[str] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute this graph in-process, collecting results in-memory.
@@ -677,6 +678,7 @@ class GraphDefinition(NodeDefinition):
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
+            run_id=run_id,
         )
 
     @property

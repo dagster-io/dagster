@@ -111,6 +111,7 @@ class JobDefinition(PipelineDefinition):
         partition_key: Optional[str] = None,
         raise_on_error: bool = True,
         op_selection: Optional[List[str]] = None,
+        run_id: Optional[str] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute the Job in-process, gathering results in-memory.
@@ -203,6 +204,7 @@ class JobDefinition(PipelineDefinition):
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
             run_tags=tags,
+            run_id=run_id,
         )
 
     @property

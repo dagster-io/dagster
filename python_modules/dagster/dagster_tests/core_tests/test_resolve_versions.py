@@ -920,3 +920,24 @@ def test_memoization_multiprocess_execution():
             get_version_strategy_pipeline(), instance_ref=instance.get_ref()
         )
         assert len(memoized_plan.step_keys_to_execute) == 0
+
+
+def test_source_hash_with_root_input_manager():
+    @root_input_manager
+    def my_input_manager():
+        return 5
+
+    @op(ins={"x": In(root_manager_key="manager")})
+    def the_op(x):
+        return x + 1
+
+    @job(version_strategy=SourceHashVersionStrategy(), resource_defs={"manager": my_input_manager})
+    def call_the_op():
+        the_op()
+
+    with instance_for_test() as instance:
+        result = call_the_op.execute_in_process(instance=instance)
+        assert result.success
+
+        memoized_plan = create_execution_plan(call_the_op, instance_ref=instance.get_ref())
+        assert len(memoized_plan.step_keys_to_execute) == 0
