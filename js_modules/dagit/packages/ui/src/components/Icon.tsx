@@ -254,9 +254,9 @@ export const Icon = React.memo((props: Props) => {
     // in Dagit but not in Storybook due to webpack config differences
     img = (img as {default: any}).default;
   }
-  let color: string | undefined = props.color || Colors.Dark;
+  let color: string | null = props.color || Colors.Dark;
   if (SVGS_WITH_COLORS.has(img)) {
-    color = undefined;
+    color = null;
   }
   return (
     <IconWrapper
@@ -272,7 +272,7 @@ export const Icon = React.memo((props: Props) => {
 });
 
 interface WrapperProps {
-  $color?: string;
+  $color: string | null;
   $size: number;
   $img: string;
   $rotation: string | null;
@@ -284,7 +284,7 @@ export const IconWrapper = styled.div<WrapperProps>`
   flex-shrink: 0;
   flex-grow: 0;
   ${(p) =>
-    p.$color == null
+    p.$color === null
       ? // Increased specificity so that StyledButton background-color logic doesn't apply here.
         // We could just use !important but specificity is a little more flexible
         `
