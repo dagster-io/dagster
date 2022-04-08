@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import {TagInput} from '@blueprintjs/core';
 import isEqual from 'lodash.isequal';
 import * as React from 'react';

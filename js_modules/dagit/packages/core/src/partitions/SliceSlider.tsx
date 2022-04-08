@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
 import {MultiSlider} from '@dagster-io/ui';
 import moment from 'moment-timezone';

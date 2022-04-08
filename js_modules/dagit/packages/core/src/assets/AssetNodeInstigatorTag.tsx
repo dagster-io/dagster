@@ -16,7 +16,14 @@ export const AssetNodeInstigatorTag: React.FC<{
   const schedules = flatMap(assetNode.jobs, (j) => j.schedules);
   const sensors = flatMap(assetNode.jobs, (j) => j.sensors);
 
-  return <ScheduleOrSensorTag repoAddress={repoAddress} schedules={schedules} sensors={sensors} />;
+  return (
+    <ScheduleOrSensorTag
+      repoAddress={repoAddress}
+      schedules={schedules}
+      sensors={sensors}
+      showSwitch={false}
+    />
+  );
 };
 
 export const ASSET_NODE_INSTIGATORS_FRAGMENT = gql`

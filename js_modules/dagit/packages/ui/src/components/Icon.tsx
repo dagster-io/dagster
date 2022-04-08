@@ -31,6 +31,7 @@ import download_for_offline from '../icon-svgs/download_for_offline.svg';
 import drag_handle from '../icon-svgs/drag_handle.svg';
 import dynamic_feed from '../icon-svgs/dynamic_feed.svg';
 import edit from '../icon-svgs/edit.svg';
+import email from '../icon-svgs/email.svg';
 import error from '../icon-svgs/error.svg';
 import error_outline from '../icon-svgs/error_outline.svg';
 import expand_less from '../icon-svgs/expand_less.svg';
@@ -75,6 +76,7 @@ import search from '../icon-svgs/search.svg';
 import sensors from '../icon-svgs/sensors.svg';
 import settings from '../icon-svgs/settings.svg';
 import settings_backup_restore from '../icon-svgs/settings_backup_restore.svg';
+import slack from '../icon-svgs/slack.svg';
 import sort_by_alpha from '../icon-svgs/sort_by_alpha.svg';
 import source from '../icon-svgs/source.svg';
 import speed from '../icon-svgs/speed.svg';
@@ -141,6 +143,7 @@ export const Icons = {
   open_in_new,
   folder,
   tag,
+  slack,
 
   // Material icons
   add_circle,
@@ -170,6 +173,7 @@ export const Icons = {
   dynamic_feed,
   drag_handle,
   edit,
+  email,
   error,
   error_outline,
   expand_less,
@@ -226,6 +230,8 @@ export const Icons = {
   zoom_out,
 } as const;
 
+const SVGS_WITH_COLORS = new Set([slack]);
+
 export type IconName = keyof typeof Icons;
 
 const rotations: {[key in IconName]?: string} = {
@@ -242,11 +248,15 @@ interface Props {
 }
 
 export const Icon = React.memo((props: Props) => {
-  const {color = Colors.Dark, name, size = 16, style} = props;
+  const {name, size = 16, style} = props;
   let img = Icons[name] || '';
   if (typeof img === 'object' && 'default' in img) {
     // in Dagit but not in Storybook due to webpack config differences
     img = (img as {default: any}).default;
+  }
+  let color: string | null = props.color || Colors.Dark;
+  if (SVGS_WITH_COLORS.has(img)) {
+    color = null;
   }
   return (
     <IconWrapper
@@ -262,19 +272,31 @@ export const Icon = React.memo((props: Props) => {
 });
 
 interface WrapperProps {
-  $color: string;
+  $color: string | null;
   $size: number;
   $img: string;
   $rotation: string | null;
 }
 
 export const IconWrapper = styled.div<WrapperProps>`
-  background: ${(p) => p.$color};
   width: ${(p) => p.$size}px;
   height: ${(p) => p.$size}px;
   flex-shrink: 0;
   flex-grow: 0;
-  mask-image: url(${(p) => p.$img});
+  ${(p) =>
+    p.$color === null
+      ? // Increased specificity so that StyledButton background-color logic doesn't apply here.
+        // We could just use !important but specificity is a little more flexible
+        `
+        background: url(${p.$img});
+        &[role='img'][role='img'] {
+          background-color: transparent;
+        }
+      `
+      : `
+        background: ${p.$color};
+        mask-image: url(${p.$img});
+      `}
   mask-size: cover;
   object-fit: cover;
   transition: transform 150ms linear;

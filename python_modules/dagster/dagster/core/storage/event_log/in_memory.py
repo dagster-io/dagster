@@ -257,7 +257,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> Iterable[AssetRecord]:
         records = []
         for asset_key, asset in self._assets.items():
-            if asset_keys and asset_key in asset_keys:
+            if not asset_keys or asset_key in asset_keys:
                 wipe_timestamp = self._wiped_asset_keys.get(asset_key)
                 if (
                     not wipe_timestamp

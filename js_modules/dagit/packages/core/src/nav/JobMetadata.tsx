@@ -79,10 +79,10 @@ export const JobMetadata: React.FC<Props> = (props) => {
   );
 };
 
-const JobScheduleOrSensorTag: React.FC<{job: Job; repoAddress: RepoAddress}> = ({
-  job,
-  repoAddress,
-}) => {
+const JobScheduleOrSensorTag: React.FC<{
+  job: Job;
+  repoAddress: RepoAddress;
+}> = ({job, repoAddress}) => {
   const matchingSchedules = React.useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.schedules.length) {
       return job.schedules;
@@ -110,7 +110,8 @@ export const ScheduleOrSensorTag: React.FC<{
   schedules: ScheduleSwitchFragment[];
   sensors: SensorSwitchFragment[];
   repoAddress: RepoAddress;
-}> = ({schedules, sensors, repoAddress}) => {
+  showSwitch?: boolean;
+}> = ({schedules, sensors, repoAddress, showSwitch = true}) => {
   const [open, setOpen] = React.useState(false);
 
   const scheduleCount = schedules.length;
@@ -159,7 +160,7 @@ export const ScheduleOrSensorTag: React.FC<{
                 <Table>
                   <thead>
                     <tr>
-                      <th style={{width: '80px'}} />
+                      {showSwitch ? <th style={{width: '80px'}} /> : null}
                       <th>Schedule name</th>
                       <th>Schedule</th>
                     </tr>
@@ -167,9 +168,11 @@ export const ScheduleOrSensorTag: React.FC<{
                   <tbody>
                     {schedules.map((schedule) => (
                       <tr key={schedule.name}>
-                        <td>
-                          <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
-                        </td>
+                        {showSwitch ? (
+                          <td>
+                            <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
+                          </td>
+                        ) : null}
                         <td>
                           <Link
                             to={workspacePathFromAddress(
@@ -197,16 +200,18 @@ export const ScheduleOrSensorTag: React.FC<{
                 <Table>
                   <thead>
                     <tr>
-                      <th style={{width: '80px'}} />
+                      {showSwitch ? <th style={{width: '80px'}} /> : null}
                       <th>Sensor name</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sensors.map((sensor) => (
                       <tr key={sensor.name}>
-                        <td>
-                          <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
-                        </td>
+                        {showSwitch ? (
+                          <td>
+                            <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
+                          </td>
+                        ) : null}
                         <td>
                           <Link
                             to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}
@@ -232,20 +237,23 @@ export const ScheduleOrSensorTag: React.FC<{
   }
 
   if (scheduleCount) {
-    return <MatchingSchedule schedule={schedules[0]} repoAddress={repoAddress} />;
+    return (
+      <MatchingSchedule schedule={schedules[0]} repoAddress={repoAddress} showSwitch={showSwitch} />
+    );
   }
 
   if (sensorCount) {
-    return <MatchingSensor sensor={sensors[0]} repoAddress={repoAddress} />;
+    return <MatchingSensor sensor={sensors[0]} repoAddress={repoAddress} showSwitch={showSwitch} />;
   }
 
   return null;
 };
 
-const MatchingSchedule: React.FC<{schedule: ScheduleSwitchFragment; repoAddress: RepoAddress}> = ({
-  schedule,
-  repoAddress,
-}) => {
+const MatchingSchedule: React.FC<{
+  schedule: ScheduleSwitchFragment;
+  repoAddress: RepoAddress;
+  showSwitch: boolean;
+}> = ({schedule, repoAddress, showSwitch}) => {
   const running = schedule.scheduleState.status === 'RUNNING';
   const tag = (
     <Tag intent={running ? 'primary' : 'none'} icon="schedule">
@@ -254,7 +262,9 @@ const MatchingSchedule: React.FC<{schedule: ScheduleSwitchFragment; repoAddress:
         <Link to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}>
           {humanCronString(schedule.cronSchedule)}
         </Link>
-        <ScheduleSwitch size="small" repoAddress={repoAddress} schedule={schedule} />
+        {showSwitch ? (
+          <ScheduleSwitch size="small" repoAddress={repoAddress} schedule={schedule} />
+        ) : null}
       </Box>
     </Tag>
   );
@@ -283,10 +293,11 @@ const MatchingSchedule: React.FC<{schedule: ScheduleSwitchFragment; repoAddress:
   );
 };
 
-const MatchingSensor: React.FC<{sensor: SensorSwitchFragment; repoAddress: RepoAddress}> = ({
-  sensor,
-  repoAddress,
-}) => {
+const MatchingSensor: React.FC<{
+  sensor: SensorSwitchFragment;
+  repoAddress: RepoAddress;
+  showSwitch: boolean;
+}> = ({sensor, repoAddress, showSwitch}) => {
   const running = sensor.sensorState.status === 'RUNNING';
   return (
     <Tag intent={running ? 'primary' : 'none'} icon="sensors">
@@ -295,7 +306,9 @@ const MatchingSensor: React.FC<{sensor: SensorSwitchFragment; repoAddress: RepoA
         <Link to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}>
           {sensor.name}
         </Link>
-        <SensorSwitch size="small" repoAddress={repoAddress} sensor={sensor} />
+        {showSwitch ? (
+          <SensorSwitch size="small" repoAddress={repoAddress} sensor={sensor} />
+        ) : null}
       </Box>
     </Tag>
   );

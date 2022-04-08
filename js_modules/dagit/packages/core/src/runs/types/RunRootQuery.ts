@@ -91,6 +91,7 @@ export interface RunRootQuery_pipelineRunOrError_Run {
   repositoryOrigin: RunRootQuery_pipelineRunOrError_Run_repositoryOrigin | null;
   startTime: number | null;
   endTime: number | null;
+  updateTime: number | null;
   stepStats: RunRootQuery_pipelineRunOrError_Run_stepStats[];
 }
 

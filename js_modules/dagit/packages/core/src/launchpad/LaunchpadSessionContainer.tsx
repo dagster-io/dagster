@@ -33,6 +33,7 @@ import {
   responseToYamlValidationResult,
 } from '../configeditor/ConfigEditorUtils';
 import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {DagsterTag} from '../runs/RunTag';
 import {RepositorySelector} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -81,7 +82,6 @@ interface ILaunchpadSessionState {
   previewedDocument: any | null;
   configLoading: boolean;
   editorHelpContext: ConfigEditorHelpContext | null;
-  showWhitespace: boolean;
   tagEditorOpen: boolean;
 }
 
@@ -97,8 +97,7 @@ type Action =
     }
   | {type: 'toggle-tag-editor'; payload: boolean}
   | {type: 'toggle-config-loading'; payload: boolean}
-  | {type: 'set-editor-help-context'; payload: ConfigEditorHelpContext | null}
-  | {type: 'toggle-whitepsace'; payload: boolean};
+  | {type: 'set-editor-help-context'; payload: ConfigEditorHelpContext | null};
 
 const reducer = (state: ILaunchpadSessionState, action: Action) => {
   switch (action.type) {
@@ -119,8 +118,6 @@ const reducer = (state: ILaunchpadSessionState, action: Action) => {
       return {...state, configLoading: action.payload};
     case 'set-editor-help-context':
       return {...state, editorHelpContext: action.payload};
-    case 'toggle-whitepsace':
-      return {...state, showWhitespace: action.payload};
     default:
       return state;
   }
@@ -131,7 +128,6 @@ const initialState: ILaunchpadSessionState = {
   previewLoading: false,
   previewedDocument: null,
   configLoading: false,
-  showWhitespace: true,
   editorHelpContext: null,
   tagEditorOpen: false,
 };
@@ -147,6 +143,11 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
   const editorSplitPanelContainer = React.useRef<SplitPanelContainer | null>(null);
   const previewCounter = React.useRef(0);
 
+  const [showWhitespace, setShowWhitespace] = useStateWithStorage(
+    'launchpad-whitespace',
+    (json: any) => (typeof json === 'boolean' ? json : true),
+  );
+
   const {isJob, presets} = pipeline;
 
   const initialDataForMode = React.useMemo(() => {
@@ -154,7 +155,10 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     const partitionSetsForMode = partitionSets.results;
 
     if (presetsForMode.length === 1 && partitionSetsForMode.length === 0) {
-      return {runConfigYaml: presetsForMode[0].runConfigYaml};
+      return {
+        base: {presetName: presetsForMode[0].name, tags: null},
+        runConfigYaml: presetsForMode[0].runConfigYaml,
+      };
     }
 
     if (!presetsForMode.length && partitionSetsForMode.length === 1) {
@@ -512,7 +516,6 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     previewedDocument,
     configLoading,
     editorHelpContext,
-    showWhitespace,
     tagEditorOpen,
   } = state;
 
@@ -603,7 +606,11 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
                 title="Toggle whitespace"
                 icon={<Icon name="toggle_whitespace" />}
                 active={showWhitespace}
-                onClick={() => dispatch({type: 'toggle-whitepsace', payload: !showWhitespace})}
+                onClick={() =>
+                  setShowWhitespace((current: boolean | undefined) =>
+                    current === undefined ? true : !current,
+                  )
+                }
               />
               <SessionSettingsSpacer />
               <SecondPanelToggle axis="horizontal" container={editorSplitPanelContainer} />

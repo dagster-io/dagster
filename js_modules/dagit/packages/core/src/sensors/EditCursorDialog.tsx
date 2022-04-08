@@ -1,4 +1,5 @@
 import {gql, useMutation} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
 import {TextArea} from '@blueprintjs/core';
 import {ButtonLink, Button, Colors, DialogBody, DialogFooter, Dialog, Group} from '@dagster-io/ui';
 import * as React from 'react';

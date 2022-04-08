@@ -277,34 +277,31 @@ interface RunTimeProps {
 export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
   const {startTime, updateTime} = run;
 
-  const content = () => {
-    if (startTime) {
-      return <Timestamp timestamp={{unix: startTime}} />;
-    }
-    if (run.status === RunStatus.STARTING && updateTime) {
-      return <Timestamp timestamp={{unix: updateTime}} />;
-    }
-    if (run.status === RunStatus.QUEUED && updateTime) {
-      return <Timestamp timestamp={{unix: updateTime}} />;
-    }
-
-    switch (run.status) {
-      case RunStatus.FAILURE:
-        return 'Failed to start';
-      case RunStatus.CANCELED:
-        return 'Canceled';
-      case RunStatus.CANCELING:
-        return 'Canceling…';
-      default:
-        return 'Starting…';
-    }
-  };
-
-  return <div>{content()}</div>;
+  return (
+    <div>
+      {startTime ? (
+        <Timestamp timestamp={{unix: startTime}} />
+      ) : updateTime ? (
+        <Timestamp timestamp={{unix: updateTime}} />
+      ) : null}
+    </div>
+  );
 });
 
-export const RunElapsed: React.FC<RunTimeProps> = React.memo(({run}) => {
-  return <TimeElapsed startUnix={run.startTime} endUnix={run.endTime} />;
+export const RunStateSummary: React.FC<RunTimeProps> = React.memo(({run}) => {
+  return !run.startTime && run.status === RunStatus.FAILURE ? (
+    <div>Failed to start</div>
+  ) : run.status === RunStatus.CANCELED ? (
+    <div>Canceled</div>
+  ) : run.status === RunStatus.CANCELING ? (
+    <div>Canceling…</div>
+  ) : run.status === RunStatus.QUEUED ? (
+    <div>Queued…</div>
+  ) : !run.startTime ? (
+    <div>Starting…</div>
+  ) : (
+    <TimeElapsed startUnix={run.startTime} endUnix={run.endTime} />
+  );
 });
 
 export const RUN_TIME_FRAGMENT = gql`
