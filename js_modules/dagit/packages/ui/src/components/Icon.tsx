@@ -285,8 +285,13 @@ export const IconWrapper = styled.div<WrapperProps>`
   flex-grow: 0;
   ${(p) =>
     p.$color == null
-      ? `
+      ? // Increased specificity so that StyledButton background-color logic doesn't apply here.
+        // We could just use !important but specificity is a little more flexible
+        `
         background: url(${p.$img});
+        &[role='img'][role='img'] {
+          background-color: transparent;
+        }
       `
       : `
         background: ${p.$color};
