@@ -2,7 +2,7 @@ import logging
 from abc import abstractmethod
 from collections import OrderedDict
 from datetime import datetime
-from typing import Dict, Iterable, List, Mapping, Optional, Sequence, cast
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, cast
 
 import pendulum
 import sqlalchemy as db
@@ -706,11 +706,6 @@ class SqlEventLogStorage(EventLogStorage):
         return event_records
 
     def _construct_asset_record_from_row(self, row, last_materialization: Optional[EventLogEntry]):
-        wipe_timestamp, last_materialization_timestamp, tags = None, None, None
-        if len(row) > 5:  # has asset key index cols
-            wipe_timestamp = row[5]
-            last_materialization_timestamp = row[6]
-            tags = row[7]
         asset_key = AssetKey.from_db_string(row[1])
         if asset_key:
             return AssetRecord(

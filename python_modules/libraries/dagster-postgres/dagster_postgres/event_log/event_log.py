@@ -5,7 +5,7 @@ from typing import Callable, List, MutableMapping, Optional
 
 import sqlalchemy as db
 
-from dagster import check, seven
+from dagster import check
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log import (
     AssetKeyTable,
@@ -20,9 +20,7 @@ from dagster.serdes import (
     ConfigurableClass,
     ConfigurableClassData,
     deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
 )
-from dagster.utils import utc_datetime_from_timestamp
 
 from ..pynotify import await_pg_notifications
 from ..utils import (
