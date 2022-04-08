@@ -35,6 +35,7 @@ if __name__ == "__main__":
         install_requires=[
             f"dagster{pin}",
             f"dagster-pandas{pin}",
+            "dataclasses; python_version < '3.7'",
             "pandas",
             "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27",
         ],
