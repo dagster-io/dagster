@@ -1,10 +1,9 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import _, {flatMap, uniq, uniqBy, without} from 'lodash';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {filterByQuery, GraphQueryItem} from '../../app/GraphQueryImpl';
+import {GraphQueryItem} from '../../app/GraphQueryImpl';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -36,29 +35,16 @@ import {GraphQueryInput} from '../../ui/GraphQueryInput';
 import {Loading} from '../../ui/Loading';
 
 import {AssetLinks} from './AssetLinks';
-import {AssetNode, ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
+import {AssetNode} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {OmittedAssetsNotice} from './OmittedAssetsNotice';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
-import {
-  buildGraphData,
-  buildLiveData,
-  GraphData,
-  graphHasCycles,
-  REPOSITORY_LIVE_FRAGMENT,
-  layoutGraph,
-  LiveData,
-  Node,
-  isSourceAsset,
-} from './Utils';
-import {AssetGraphLiveQuery, AssetGraphLiveQueryVariables} from './types/AssetGraphLiveQuery';
-import {
-  AssetGraphQuery,
-  AssetGraphQueryVariables,
-  AssetGraphQuery_assetNodes,
-} from './types/AssetGraphQuery';
+import {GraphData, graphHasCycles, layoutGraph, LiveData, Node, isSourceAsset} from './Utils';
+import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
+import {useAssetGraphData} from './useAssetGraphData';
 import {useFindAssetInWorkspace} from './useFindAssetInWorkspace';
+import {useLiveDataForAssetKeys} from './useLiveDataForAssetKeys';
 
 type AssetNode = AssetGraphQuery_assetNodes;
 
@@ -79,76 +65,21 @@ interface Props {
 }
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
-  const {pipelineSelector, explorerPath} = props;
-
-  const fetchResult = useQuery<AssetGraphQuery, AssetGraphQueryVariables>(ASSETS_GRAPH_QUERY, {
-    variables: {pipelineSelector},
-    notifyOnNetworkStatusChange: true,
-  });
-
-  const fetchResultFilteredNodes = React.useMemo(() => {
-    const nodes = fetchResult.data?.assetNodes;
-    if (!nodes) {
-      return undefined;
-    }
-    return props.filterNodes ? nodes.filter(props.filterNodes) : nodes;
-  }, [fetchResult.data, props.filterNodes]);
-
   const {
+    fetchResult,
     assetGraphData,
     graphQueryItems,
     graphAssetKeys,
     applyingEmptyDefault,
-  } = React.useMemo(() => {
-    if (fetchResultFilteredNodes === undefined) {
-      return {
-        graphAssetKeys: [],
-        graphQueryItems: [],
-        assetGraphData: null,
-        applyingEmptyDefault: false,
-      };
-    }
-    const graphQueryItems = buildGraphQueryItems(fetchResultFilteredNodes);
-    const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, explorerPath.opsQuery);
+  } = useAssetGraphData(props.pipelineSelector, props.explorerPath.opsQuery, props.filterNodes);
 
-    return {
-      graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
-      assetGraphData: buildGraphData(all.map((n) => n.node)),
-      graphQueryItems,
-      applyingEmptyDefault,
-    };
-  }, [fetchResultFilteredNodes, explorerPath.opsQuery]);
-
-  const liveResult = useQuery<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>(
-    ASSETS_GRAPH_LIVE_QUERY,
-    {
-      skip: graphAssetKeys.length === 0,
-      variables: {
-        assetKeys: graphAssetKeys,
-        repositorySelector: pipelineSelector
-          ? {
-              repositoryLocationName: pipelineSelector.repositoryLocationName,
-              repositoryName: pipelineSelector.repositoryName,
-            }
-          : undefined,
-      },
-      notifyOnNetworkStatusChange: true,
-    },
+  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(
+    props.pipelineSelector,
+    assetGraphData,
+    graphAssetKeys,
   );
 
   const liveDataRefreshState = useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS);
-
-  const liveDataByNode = React.useMemo(() => {
-    if (!liveResult.data || !assetGraphData) {
-      return {};
-    }
-
-    const {repositoriesOrError, assetNodes: liveAssetNodes} = liveResult.data;
-    const repos =
-      repositoriesOrError.__typename === 'RepositoryConnection' ? repositoriesOrError.nodes : [];
-
-    return buildLiveData(assetGraphData, liveAssetNodes, repos);
-  }, [assetGraphData, liveResult]);
 
   useDocumentTitle('Assets');
   useDidLaunchEvent(liveResult.refetch);
@@ -175,7 +106,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
 
         return (
           <AssetGraphExplorerWithData
-            key={explorerPath.pipelineName}
+            key={props.explorerPath.pipelineName}
             assetKeys={assetKeys}
             assetGraphData={assetGraphData}
             graphQueryItems={graphQueryItems}
@@ -438,44 +369,6 @@ const AssetGraphExplorerWithData: React.FC<
   );
 };
 
-const ASSETS_GRAPH_LIVE_QUERY = gql`
-  query AssetGraphLiveQuery($repositorySelector: RepositorySelector, $assetKeys: [AssetKeyInput!]) {
-    repositoriesOrError(repositorySelector: $repositorySelector) {
-      __typename
-      ... on RepositoryConnection {
-        nodes {
-          __typename
-          id
-          ...RepositoryLiveFragment
-        }
-      }
-    }
-    assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
-      id
-      ...AssetNodeLiveFragment
-    }
-  }
-  ${REPOSITORY_LIVE_FRAGMENT}
-  ${ASSET_NODE_LIVE_FRAGMENT}
-`;
-
-const ASSETS_GRAPH_QUERY = gql`
-  query AssetGraphQuery($pipelineSelector: PipelineSelector) {
-    assetNodes(pipeline: $pipelineSelector) {
-      id
-      ...AssetNodeFragment
-      jobNames
-      dependencyKeys {
-        path
-      }
-      dependedByKeys {
-        path
-      }
-    }
-  }
-  ${ASSET_NODE_FRAGMENT}
-`;
-
 const SVGContainer = styled.svg`
   overflow: visible;
   border-radius: 0;
@@ -542,29 +435,6 @@ const opsInRange = (
     }
   }
   return uniq(ledToTarget);
-};
-
-const buildGraphQueryItems = (nodes: AssetNode[]) => {
-  const items: {
-    [name: string]: GraphQueryItem & {
-      node: AssetNode;
-    };
-  } = {};
-
-  for (const node of nodes) {
-    const name = tokenForAssetKey(node.assetKey);
-    items[name] = {
-      node: node,
-      name: name,
-      inputs: node.dependencyKeys.map((key) => ({
-        dependsOn: [{solid: {name: tokenForAssetKey(key)}}],
-      })),
-      outputs: node.dependedByKeys.map((key) => ({
-        dependedBy: [{solid: {name: tokenForAssetKey(key)}}],
-      })),
-    };
-  }
-  return Object.values(items);
 };
 
 const titleForLaunch = (nodes: Node[], liveDataByNode: LiveData) => {
