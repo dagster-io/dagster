@@ -99,7 +99,14 @@ export const RunRoot = () => {
                       />
                     </Tag>
                   </Popover>
-                ) : null}
+                ) : run.updateTime ? (
+                  <Tag icon="schedule">
+                    <TimestampDisplay
+                      timestamp={run.updateTime}
+                      timeFormat={{showSeconds: true, showTimezone: false}}
+                    />
+                  </Tag>
+                ) : undefined}
                 {run?.startTime && run?.endTime ? (
                   <Popover
                     interactionKind="hover"

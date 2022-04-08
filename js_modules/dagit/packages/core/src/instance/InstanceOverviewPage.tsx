@@ -30,7 +30,7 @@ import {
   successStatuses,
 } from '../runs/RunStatuses';
 import {RunTimelineContainer, TimelineJob, makeJobKey, HourWindow} from '../runs/RunTimeline';
-import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {RunStateSummary, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {RunTimeFragment} from '../runs/types/RunTimeFragment';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
@@ -515,21 +515,21 @@ const JobSection = (props: JobSectionProps) => {
                     }}
                   >
                     <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 8}}>
-                      <Tag intent={intent(job.runs[0].status)}>
-                        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                          <RunStatusIndicator status={job.runs[0].status} size={10} />
-                          <RunTime run={job.runs[0]} />
-                        </Box>
-                      </Tag>
+                      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                        <Tag intent={intent(job.runs[0].status)}>
+                          <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                            <RunStatusIndicator status={job.runs[0].status} size={10} />
+                            <RunTime run={job.runs[0]} />
+                          </Box>
+                        </Tag>
+                        <RunStateSummary run={job.runs[0]} />
+                      </Box>
                       {failedStatuses.has(job.runs[0].status) ||
                       inProgressStatuses.has(job.runs[0].status) ? (
                         <StepSummaryForRun runId={job.runs[0].id} />
-                      ) : null}
+                      ) : undefined}
                     </Box>
-                    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                      <RunElapsed run={job.runs[0]} />
-                      <AnchorButton to={`/instance/runs/${job.runs[0].id}`}>View run</AnchorButton>
-                    </Box>
+                    <AnchorButton to={`/instance/runs/${job.runs[0].id}`}>View run</AnchorButton>
                   </Box>
                 </td>
                 <td>

@@ -7,7 +7,7 @@ import {SectionHeader} from '../pipelines/SidebarComponents';
 import {RunStatus} from '../types/globalTypes';
 
 import {RunStatusIndicator} from './RunStatusDots';
-import {RunTime, titleForRun} from './RunUtils';
+import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunTimeFragment} from './types/RunTimeFragment';
 
 const RUN_STATUS_COLORS = {
@@ -91,7 +91,10 @@ const RunStatusOverlay = (props: OverlayProps) => {
           <Mono>{titleForRun(props.run)}</Mono>
         </Link>
         <HorizontalSpace />
-        <RunTime run={props.run} />
+        <Box flex={{direction: 'column'}}>
+          <RunTime run={props.run} />
+          <RunStateSummary run={props.run} />
+        </Box>
       </RunRow>
     </OverlayContainer>
   );
@@ -100,7 +103,7 @@ const RunStatusOverlay = (props: OverlayProps) => {
 const OverlayContainer = styled.div`
   padding: 4px;
   font-size: 12px;
-  width: 250px;
+  width: 280px;
 `;
 
 const HorizontalSpace = styled.div`
@@ -117,7 +120,7 @@ const OverlayTitle = styled(SectionHeader)`
 `;
 
 const RunRow = styled.div`
-  align-items: center;
+  align-items: baseline;
   padding: 8px;
   font-family: ${FontFamily.monospace};
   font-size: 14px;

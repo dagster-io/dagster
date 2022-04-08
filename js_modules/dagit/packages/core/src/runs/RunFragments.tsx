@@ -45,6 +45,7 @@ export const RunFragments = {
       stepKeysToExecute
       ...RunFragmentForRepositoryMatch
       ...RunDetailsFragment
+      updateTime
       stepStats {
         stepKey
         status
