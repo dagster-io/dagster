@@ -1,4 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
 import {HTMLInputProps, InputGroupProps2, Intent} from '@blueprintjs/core';
 import {
   Box,
