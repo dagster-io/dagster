@@ -68,7 +68,7 @@ def test_dagster_telemetry_enabled(caplog):
                 assert set(message.keys()) == EXPECTED_KEYS
             assert len(caplog.records) == 5
             assert result.exit_code == 0
-        
+
         # Needed to avoid file contention issues on windows with the telemetry log file
         cleanup_telemetry_logger()
 
@@ -120,7 +120,7 @@ def test_dagster_telemetry_unset(caplog):
 
                 assert len(caplog.records) == 5
                 assert result.exit_code == 0
-            
+
             # Needed to avoid file contention issues on windows with the telemetry log file
             cleanup_telemetry_logger()
 
@@ -160,7 +160,7 @@ def test_repo_stats(caplog):
 
                 assert len(caplog.records) == 5
                 assert result.exit_code == 0
-            
+
             # Needed to avoid file contention issues on windows with the telemetry log file
             cleanup_telemetry_logger()
 
@@ -178,7 +178,7 @@ def test_log_workspace_stats(caplog):
                 assert set(message.keys()) == EXPECTED_KEYS
 
             assert len(caplog.records) == 2
-        
+
         # Needed to avoid file contention issues on windows with the telemetry log file
         cleanup_telemetry_logger()
 
@@ -207,7 +207,7 @@ def test_write_telemetry_log_line_writes_to_dagster_home():
             with open(os.path.join(temp_dir, "logs", "event.log"), "r") as f:
                 res = json.load(f)
                 assert res == {"foo": "bar"}
-            
+
             # Needed to avoid file contention issues on windows with the telemetry log file
             cleanup_telemetry_logger()
 
@@ -218,6 +218,6 @@ def test_write_telemetry_log_line_writes_to_dagster_home():
             with open(os.path.join(temp_dir, "logs", "event.log"), "r") as f:
                 res = json.load(f)
                 assert res == {"foo": "bar"}
-        
+
         # Needed to avoid file contention issues on windows with the telemetry log file
         cleanup_telemetry_logger()
