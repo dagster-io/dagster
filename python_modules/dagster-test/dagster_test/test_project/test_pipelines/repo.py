@@ -155,6 +155,11 @@ def hanging_solid(_):
         time.sleep(0.1)
 
 
+@solid(config_schema={"looking_for": str})
+def get_environment_solid(context):
+    return os.environ.get(context.solid_config["looking_for"])
+
+
 @pipeline(
     mode_defs=[
         ModeDefinition(
@@ -249,6 +254,7 @@ def define_docker_celery_pipeline():
     )
     def docker_celery_pipeline():
         count_letters(multiply_the_word())
+        get_environment_solid()
 
     return docker_celery_pipeline
 

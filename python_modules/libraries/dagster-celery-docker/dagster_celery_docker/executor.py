@@ -12,6 +12,7 @@ from dagster import (
     Executor,
     Field,
     MetadataEntry,
+    Permissive,
     StringSource,
     check,
     executor,
@@ -55,6 +56,11 @@ def celery_docker_config():
                     is_required=False,
                     description="Name of the network this container will be connected to at creation time",
                 ),
+                "container_kwargs": Field(
+                    Permissive(),
+                    is_required=False,
+                    description="Additional keyword args for the docker container",
+                ),
             },
             is_required=True,
             description="The configuration for interacting with docker in the celery worker.",
@@ -93,7 +99,7 @@ def celery_docker_executor(init_context):
     .. code-block:: python
 
         from dagster import job
-        from dagster_celery_docker.executor import celery_executor
+        from dagster_celery_docker.executor import celery_docker_executor
 
         @job(executor_def=celery_docker_executor)
         def celery_enabled_job():
@@ -112,6 +118,9 @@ def celery_docker_executor(init_context):
                 username: 'my_user'
                 password: {env: 'DOCKER_PASSWORD'}
               env_vars: ["DAGSTER_HOME"] # environment vars to pass from celery worker to docker
+              container_kwargs: # keyword args to be passed to the container. example:
+                volumes: ['/home/user1/:/mnt/vol2','/var/www:/mnt/vol1']
+
             broker: 'pyamqp://guest@localhost//'  # Optional[str]: The URL of the Celery broker
             backend: 'rpc://' # Optional[str]: The URL of the Celery results backend
             include: ['my_module'] # Optional[List[str]]: Modules every worker should import
@@ -124,7 +133,7 @@ def celery_docker_executor(init_context):
     different broker than the one your workers are listening to, the workers will never be able to
     pick up tasks for execution.
 
-    In deployments where the celery_k8s_job_executor is used all appropriate celery and dagster_celery
+    In deployments where the celery_docker_job_executor is used all appropriate celery and dagster_celery
     commands must be invoked with the `-A dagster_celery_docker.app` argument.
     """
 
@@ -272,15 +281,33 @@ def create_docker_task(celery_app, **task_kwargs):
         if docker_config.get("env_vars"):
             docker_env = {env_name: os.getenv(env_name) for env_name in docker_config["env_vars"]}
 
+        container_kwargs = check.opt_dict_param(
+            docker_config.get("container_kwargs"), "container_kwargs", key_type=str
+        )
+
+        # set defaults for detach and auto_remove
+        container_kwargs["detach"] = container_kwargs.get("detach", False)
+        container_kwargs["auto_remove"] = container_kwargs.get("auto_remove", True)
+
+        # if environment variables are provided via container_kwargs, merge with env_vars
+        if container_kwargs.get("environment") is not None:
+            e_vars = container_kwargs.get("environment")
+            if isinstance(e_vars, dict):
+                docker_env.update(e_vars)
+            else:
+                for v in e_vars:
+                    key, val = v.split("=")
+                    docker_env[key] = val
+            del container_kwargs["environment"]
+
         try:
             docker_response = client.containers.run(
                 docker_image,
                 command=command,
-                detach=False,
-                auto_remove=True,
                 # pass through this worker's environment for things like AWS creds etc.
                 environment=docker_env,
                 network=docker_config.get("network", None),
+                **container_kwargs,
             )
 
             res = docker_response.decode("utf-8")
