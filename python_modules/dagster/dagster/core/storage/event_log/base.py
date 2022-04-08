@@ -57,9 +57,6 @@ class AssetEntry(
             ("last_materialization", Optional[Union[AssetMaterialization, EventLogEntry]]),
             ("last_run_id", Optional[str]),
             ("asset_details", Optional[AssetDetails]),
-            ("wipe_timestamp", Optional[datetime]),
-            ("last_materialization_timestamp", Optional[datetime]),
-            ("tags", Optional[Dict[str, str]]),
         ],
     )
 ):
@@ -69,9 +66,6 @@ class AssetEntry(
         last_materialization: Optional[Union[AssetMaterialization, EventLogEntry]] = None,
         last_run_id: Optional[str] = None,
         asset_details: Optional[AssetDetails] = None,
-        wipe_timestamp: Optional[datetime] = None,
-        last_materialization_timestamp: Optional[datetime] = None,
-        tags: Optional[Dict[str, str]] = None,
     ):
         return super(AssetEntry, cls).__new__(
             cls,
@@ -81,11 +75,6 @@ class AssetEntry(
             ),
             last_run_id=check.opt_str_param(last_run_id, "last_run_id"),
             asset_details=check.opt_inst_param(asset_details, "asset_details", AssetDetails),
-            wipe_timestamp=check.opt_inst_param(wipe_timestamp, "wipe_timestamp", datetime),
-            last_materialization_timestamp=check.opt_inst_param(
-                last_materialization_timestamp, "last_materialization_timestamp", datetime
-            ),
-            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
         )
 
 

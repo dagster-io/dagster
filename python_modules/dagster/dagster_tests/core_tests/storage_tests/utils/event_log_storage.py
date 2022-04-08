@@ -2048,9 +2048,6 @@ class TestEventLogStorage:
             assert asset_entry.last_materialization.dagster_event == materialize_event
             assert asset_entry.last_run_id == result.run_id
             assert asset_entry.asset_details == None
-            assert asset_entry.wipe_timestamp == None
-            assert isinstance(asset_entry.last_materialization_timestamp, datetime.datetime)
-            assert asset_entry.tags == {}
 
             if self.can_wipe():
                 storage.wipe_asset(my_asset_key)
@@ -2074,7 +2071,6 @@ class TestEventLogStorage:
                 assert asset_entry.last_materialization.dagster_event == materialize_event
                 assert asset_entry.last_run_id == result.run_id
                 assert isinstance(asset_entry.asset_details, AssetDetails)
-                assert isinstance(asset_entry.wipe_timestamp, datetime.datetime)
 
     def test_asset_record_run_id_wiped(self, storage):
         asset_key = AssetKey("foo")

@@ -1,8 +1,6 @@
-import datetime
 import logging
 import time
 from collections import OrderedDict, defaultdict
-from datetime import timezone
 from typing import Dict, Iterable, Mapping, Optional, Sequence
 
 from dagster import check
@@ -275,13 +273,6 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                                 asset_details=AssetDetails(last_wipe_timestamp=wipe_timestamp)
                                 if wipe_timestamp
                                 else None,
-                                wipe_timestamp=datetime.datetime.fromtimestamp(wipe_timestamp)
-                                if wipe_timestamp
-                                else None,
-                                last_materialization_timestamp=asset.get(
-                                    "last_materialization_timestamp"
-                                ),
-                                tags=asset.get("tags"),
                             ),
                         )
                     )

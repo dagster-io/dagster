@@ -167,96 +167,52 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         ):
             self.store_asset_event(event)
 
-    def store_asset_observation(self, event):
-        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
-        # See SqlEventLogStorage.store_asset_event method for more details
-        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
-            with self.index_connection() as conn:
-                conn.execute(
-                    db.dialects.postgresql.insert(AssetKeyTable)
-                    .values(
-                        asset_key=event.dagster_event.asset_key.to_string(),
-                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-                    )
-                    .on_conflict_do_update(
-                        index_elements=[AssetKeyTable.c.asset_key],
-                        set_=dict(
-                            last_materialization_timestamp=utc_datetime_from_timestamp(
-                                event.timestamp
-                            ),
-                        ),
-                    )
-                )
+    def store_asset_event(self, event):
+        check.inst_param(event, "event", EventLogEntry)
+        if not event.is_dagster_event or not event.dagster_event.asset_key:
+            return
 
-    def store_asset_materialization(self, event):
-        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
-        # last_run_id column is updated upon materialization and materialization planned events.
-        # See SqlEventLogStorage.store_asset_event method for more details
-        materialization = event.dagster_event.step_materialization_data.materialization
-        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
-            with self.index_connection() as conn:
-                conn.execute(
-                    db.dialects.postgresql.insert(AssetKeyTable)
-                    .values(
-                        asset_key=event.dagster_event.asset_key.to_string(),
-                        last_materialization=serialize_dagster_namedtuple(materialization),
-                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-                        last_run_id=event.run_id,
-                        tags=seven.json.dumps(materialization.tags)
-                        if materialization.tags
-                        else None,
-                    )
-                    .on_conflict_do_update(
-                        index_elements=[AssetKeyTable.c.asset_key],
-                        set_=dict(
-                            last_materialization=serialize_dagster_namedtuple(materialization),
-                            last_materialization_timestamp=utc_datetime_from_timestamp(
-                                event.timestamp
-                            ),
-                            last_run_id=event.run_id,
-                            tags=seven.json.dumps(materialization.tags)
-                            if materialization.tags
-                            else None,
-                        ),
-                    )
-                )
+        # We switched to storing the entire event record of the last materialization instead of just
+        # the AssetMaterialization object, so that we have access to metadata like timestamp,
+        # pipeline, run_id, etc.
+        #
+        # This should make certain asset queries way more performant, without having to do extra
+        # queries against the event log.
+        #
+        # This should be accompanied by a schema change in 0.12.0, renaming `last_materialization`
+        # to `last_materialization_event`, for clarity.  For now, we should do some back-compat.
+        #
+        # https://github.com/dagster-io/dagster/issues/3945
 
-        else:
-            with self.index_connection() as conn:
-                conn.execute(
-                    db.dialects.postgresql.insert(AssetKeyTable)
-                    .values(
-                        asset_key=event.dagster_event.asset_key.to_string(),
-                        last_materialization=serialize_dagster_namedtuple(materialization),
-                        last_run_id=event.run_id,
-                    )
-                    .on_conflict_do_update(
-                        index_elements=[AssetKeyTable.c.asset_key],
-                        set_=dict(
-                            last_materialization=serialize_dagster_namedtuple(materialization),
-                            last_run_id=event.run_id,
-                        ),
-                    )
-                )
+        # The AssetKeyTable contains a `last_materialization_timestamp` column that is exclusively
+        # used to determine if an asset exists (last materialization timestamp > wipe timestamp).
+        # This column is used nowhere else, and as of AssetObservation/AssetMaterializationPlanned
+        # event creation, we want to extend this functionality to ensure that assets with any event
+        # (observation, materialization, or materialization planned) yielded with timestamp
+        # > wipe timestamp display in Dagit.
 
-    def store_asset_materialization_planned(self, event):
-        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
-        # last_run_id column is updated upon materialization and materialization planned events.
-        # See SqlEventLogStorage.store_asset_event method for more details
+        # As of the following PRs, we update last_materialization_timestamp to store the timestamp
+        # of the latest asset observation, materialization, or materialization_planned that has occurred.
+        # https://github.com/dagster-io/dagster/pull/6885
+        # https://github.com/dagster-io/dagster/pull/7319
+
+        # The AssetKeyTable also contains a `last_run_id` column that is updated upon asset
+        # materialization. This column was not being used until the below PR. This new change
+        # writes to the column upon `ASSET_MATERIALIZATION_PLANNED` events to fetch the last
+        # run id for a set of assets in one roundtrip call to event log storage.
+        # https://github.com/dagster-io/dagster/pull/7319
+
+        values = self._get_asset_entry_values(event, self.has_secondary_index(ASSET_KEY_INDEX_COLS))
         with self.index_connection() as conn:
             conn.execute(
                 db.dialects.postgresql.insert(AssetKeyTable)
                 .values(
                     asset_key=event.dagster_event.asset_key.to_string(),
-                    last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-                    last_run_id=event.run_id,
+                    **values,
                 )
                 .on_conflict_do_update(
                     index_elements=[AssetKeyTable.c.asset_key],
-                    set_=dict(
-                        last_run_id=event.run_id,
-                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-                    ),
+                    set_=dict(**values),
                 )
             )
 

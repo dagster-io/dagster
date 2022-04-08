@@ -110,6 +110,18 @@ class SqlEventLogStorage(EventLogStorage):
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
 
+        # We switched to storing the entire event record of the last materialization instead of just
+        # the AssetMaterialization object, so that we have access to metadata like timestamp,
+        # pipeline, run_id, etc.
+        #
+        # This should make certain asset queries way more performant, without having to do extra
+        # queries against the event log.
+        #
+        # This should be accompanied by a schema change in 0.12.0, renaming `last_materialization`
+        # to `last_materialization_event`, for clarity.  For now, we should do some back-compat.
+        #
+        # https://github.com/dagster-io/dagster/issues/3945
+
         # The AssetKeyTable contains a `last_materialization_timestamp` column that is exclusively
         # used to determine if an asset exists (last materialization timestamp > wipe timestamp).
         # This column is used nowhere else, and as of AssetObservation/AssetMaterializationPlanned
@@ -127,119 +139,56 @@ class SqlEventLogStorage(EventLogStorage):
         # writes to the column upon `ASSET_MATERIALIZATION_PLANNED` events to fetch the last
         # run id for a set of assets in one roundtrip call to event log storage.
         # https://github.com/dagster-io/dagster/pull/7319
-        if event.dagster_event.is_asset_observation:
-            self.store_asset_observation(event)
-        elif event.dagster_event.is_step_materialization:
-            self.store_asset_materialization(event)
-        elif event.dagster_event.is_asset_materialization_planned:
-            self.store_asset_materialization_planned(event)
 
-    def store_asset_observation(self, event):
-        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
-        # See SqlEventLogStorage.store_asset_event method for more details
-        if self.has_asset_key_index_cols():
-            insert_statement = AssetKeyTable.insert().values(
-                asset_key=event.dagster_event.asset_key.to_string(),
-                last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-            )
-            update_statement = AssetKeyTable.update().values(
-                last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-            )
-
-            with self.index_connection() as conn:
-                try:
-                    conn.execute(insert_statement)
-                except db.exc.IntegrityError:
-                    conn.execute(update_statement)
-
-    def store_asset_materialization(self, event):
-        # We switched to storing the entire event record of the last materialization instead of just
-        # the AssetMaterialization object, so that we have access to metadata like timestamp,
-        # pipeline, run_id, etc.
-        #
-        # This should make certain asset queries way more performant, without having to do extra
-        # queries against the event log.
-        #
-        # This should be accompanied by a schema change in 0.12.0, renaming `last_materialization`
-        # to `last_materialization_event`, for clarity.  For now, we should do some back-compat.
-        #
-        # https://github.com/dagster-io/dagster/issues/3945
-
-        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
-        # last_run_id column is updated upon materialization and materialization planned events.
-        # See SqlEventLogStorage.store_asset_event method for more details
-        if self.has_asset_key_index_cols():
-            materialization = event.dagster_event.step_materialization_data.materialization
-            insert_statement = (
-                AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    asset_key=event.dagster_event.asset_key.to_string(),
-                    last_materialization=serialize_dagster_namedtuple(event),
-                    last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-                    last_run_id=event.run_id,
-                    tags=seven.json.dumps(materialization.tags) if materialization.tags else None,
-                )
-            )
-            update_statement = (
-                AssetKeyTable.update()
-                .values(  # pylint: disable=no-value-for-parameter
-                    last_materialization=serialize_dagster_namedtuple(event),
-                    last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-                    last_run_id=event.run_id,
-                    tags=seven.json.dumps(materialization.tags) if materialization.tags else None,
-                )
-                .where(
-                    AssetKeyTable.c.asset_key == event.dagster_event.asset_key.to_string(),
-                )
-            )
-        else:
-            insert_statement = (
-                AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    asset_key=event.dagster_event.asset_key.to_string(),
-                    last_materialization=serialize_dagster_namedtuple(event),
-                    last_run_id=event.run_id,
-                )
-            )
-            update_statement = (
-                AssetKeyTable.update()
-                .values(  # pylint: disable=no-value-for-parameter
-                    last_materialization=serialize_dagster_namedtuple(event),
-                    last_run_id=event.run_id,
-                )
-                .where(
-                    AssetKeyTable.c.asset_key == event.dagster_event.asset_key.to_string(),
-                )
-            )
-
-        with self.index_connection() as conn:
-            try:
-                conn.execute(insert_statement)
-            except db.exc.IntegrityError:
-                conn.execute(update_statement)
-
-    def store_asset_materialization_planned(self, event):
-        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
-        # last_run_id column is updated upon materialization and materialization planned events.
-        # See SqlEventLogStorage.store_asset_event method for more details
-        insert_statement = AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
-            asset_key=event.dagster_event.asset_key.to_string(),
-            last_run_id=event.run_id,
-            last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
+        values = self._get_asset_entry_values(event, self.has_asset_key_index_cols())
+        insert_statement = AssetKeyTable.insert().values(
+            asset_key=event.dagster_event.asset_key.to_string(), **values
         )
         update_statement = (
             AssetKeyTable.update()
-            .values(
-                last_run_id=event.run_id,
-                last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-            )
+            .values(**values)
             .where(
                 AssetKeyTable.c.asset_key == event.dagster_event.asset_key.to_string(),
             )
         )
+
         with self.index_connection() as conn:
             try:
                 conn.execute(insert_statement)
             except db.exc.IntegrityError:
                 conn.execute(update_statement)
+
+    def _get_asset_entry_values(self, event, has_asset_key_index_cols):
+        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
+        # last_run_id column is updated upon materialization and materialization planned events.
+        # See SqlEventLogStorage.store_asset_event method for more details
+
+        entry_values: Dict[str, Any] = {}
+        if has_asset_key_index_cols:
+            entry_values.update(
+                {
+                    "last_materialization_timestamp": utc_datetime_from_timestamp(event.timestamp),
+                }
+            )
+        if event.dagster_event.is_step_materialization:
+            entry_values.update(
+                {
+                    "last_materialization": serialize_dagster_namedtuple(event),
+                    "last_run_id": event.run_id,
+                }
+            )
+            if has_asset_key_index_cols:
+                materialization = event.dagster_event.step_materialization_data.materialization
+                entry_values.update(
+                    {
+                        "tags": seven.json.dumps(materialization.tags)
+                        if materialization.tags
+                        else None
+                    }
+                )
+        elif event.dagster_event.is_asset_materialization_planned:
+            entry_values.update({"last_run_id": event.run_id})
+        return entry_values
 
     def store_event(self, event):
         """Store an event corresponding to a pipeline run.
@@ -762,18 +711,17 @@ class SqlEventLogStorage(EventLogStorage):
             wipe_timestamp = row[5]
             last_materialization_timestamp = row[6]
             tags = row[7]
-        return AssetRecord(
-            storage_id=row[0],
-            asset_entry=AssetEntry(
-                asset_key=AssetKey.from_db_string(row[1]),
-                last_materialization=last_materialization,
-                last_run_id=row[3],
-                asset_details=AssetDetails.from_db_string(row[4]),
-                wipe_timestamp=wipe_timestamp,
-                last_materialization_timestamp=last_materialization_timestamp,
-                tags=tags,
-            ),
-        )
+        asset_key = AssetKey.from_db_string(row[1])
+        if asset_key:
+            return AssetRecord(
+                storage_id=row[0],
+                asset_entry=AssetEntry(
+                    asset_key=asset_key,
+                    last_materialization=last_materialization,
+                    last_run_id=row[3],
+                    asset_details=AssetDetails.from_db_string(row[4]),
+                ),
+            )
 
     def _get_latest_materializations(
         self, raw_asset_rows
@@ -842,12 +790,16 @@ class SqlEventLogStorage(EventLogStorage):
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
         latest_materializations = self._get_latest_materializations(rows)
 
-        asset_records: List[AssetRecord] = [
-            self._construct_asset_record_from_row(
-                row, latest_materializations.get(AssetKey.from_db_string(row[1]))
-            )
-            for row in rows
-        ]
+        asset_records: List[AssetRecord] = []
+        for row in rows:
+            asset_key = AssetKey.from_db_string(row[1])
+            if asset_key:
+                asset_records.append(
+                    self._construct_asset_record_from_row(
+                        row, latest_materializations.get(asset_key)
+                    )
+                )
+
         return asset_records
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
@@ -1096,8 +1048,7 @@ class SqlEventLogStorage(EventLogStorage):
         )
         for i in range(len(assets_details)):
             asset_key, asset_details = asset_keys[i], assets_details[i]
-            # type: ignore[attr-defined]
-            if asset_details and asset_details.last_wipe_timestamp:
+            if asset_details and asset_details.last_wipe_timestamp:  # type: ignore[attr-defined]
                 asset_key_in_row = db.or_(
                     SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
                     SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
@@ -1109,8 +1060,7 @@ class SqlEventLogStorage(EventLogStorage):
                         db.and_(
                             asset_key_in_row,
                             SqlEventLogStorageTable.c.timestamp
-                            # type: ignore[attr-defined]
-                            > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp),
+                            > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp),  # type: ignore[attr-defined]
                         ),
                         db.not_(asset_key_in_row),
                     )
