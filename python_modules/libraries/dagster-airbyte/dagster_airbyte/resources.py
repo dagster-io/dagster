@@ -52,7 +52,7 @@ class AirbyteResource:
             + "/api/v1"
         )
 
-    def make_request(self, endpoint: str, data: Optional[Dict[str, Any]]):
+    def make_request(self, endpoint: str, data: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         """
         Creates and sends a request to the desired Airbyte REST API endpoint.
 
@@ -77,9 +77,9 @@ class AirbyteResource:
                     timeout=15,
                 )
                 response.raise_for_status()
-                if response.status_code != 204:
-                    response = response.json()
-                return response
+                if response.status_code == 204:
+                    return None
+                return response.json()
             except RequestException as e:
                 self._log.error("Request to Airbyte API failed: %s", e)
                 if num_retries == self._request_max_retries:
