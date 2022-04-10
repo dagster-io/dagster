@@ -1,15 +1,14 @@
 import {gql, useLazyQuery, useQuery} from '@apollo/client';
 import {
   Box,
-  AnchorButton,
-  ButtonWIP,
+  Button,
   ButtonGroup,
-  ColorsWIP,
-  IconWIP,
+  Colors,
+  Icon,
   PageHeader,
   Spinner,
   Table,
-  TagWIP,
+  Tag,
   Body,
   Heading,
   TextInput,
@@ -31,11 +30,12 @@ import {
   successStatuses,
 } from '../runs/RunStatuses';
 import {RunTimelineContainer, TimelineJob, makeJobKey, HourWindow} from '../runs/RunTimeline';
-import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {RunStateSummary, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {RunTimeFragment} from '../runs/types/RunTimeFragment';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {RunStatus} from '../types/globalTypes';
+import {AnchorButton} from '../ui/AnchorButton';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
@@ -309,7 +309,7 @@ export const InstanceOverviewPage = () => {
       <RunTimelineSection jobs={filteredJobsFlattened} loading={loading} />
       {inProgress.length ? (
         <JobSection
-          icon={<IconWIP name="hourglass_bottom" color={ColorsWIP.Blue500} size={24} />}
+          icon={<Icon name="hourglass_bottom" color={Colors.Blue500} size={24} />}
           heading={
             inProgress.length === 1 ? '1 job in progress' : `${inProgress.length} jobs in progress`
           }
@@ -318,21 +318,21 @@ export const InstanceOverviewPage = () => {
       ) : null}
       {failed.length ? (
         <JobSection
-          icon={<IconWIP name="error_outline" color={ColorsWIP.Red500} size={24} />}
+          icon={<Icon name="error_outline" color={Colors.Red500} size={24} />}
           heading={failed.length === 1 ? '1 job failed' : `${failed.length} jobs failed`}
           jobs={failed}
         />
       ) : null}
       {queued.length ? (
         <JobSection
-          icon={<IconWIP name="checklist" color={ColorsWIP.Gray500} size={24} />}
+          icon={<Icon name="checklist" color={Colors.Gray500} size={24} />}
           heading={queued.length === 1 ? '1 job queued' : `${queued.length} jobs queued`}
           jobs={queued}
         />
       ) : null}
       {succeeded.length ? (
         <JobSection
-          icon={<IconWIP name="check_circle" color={ColorsWIP.Green500} size={24} />}
+          icon={<Icon name="check_circle" color={Colors.Green500} size={24} />}
           heading={
             succeeded.length === 1 ? '1 job succeeded' : `${succeeded.length} jobs succeeded`
           }
@@ -341,7 +341,7 @@ export const InstanceOverviewPage = () => {
       ) : null}
       {neverRan.length ? (
         <JobSection
-          icon={<IconWIP name="history_toggle_off" color={ColorsWIP.Gray900} size={24} />}
+          icon={<Icon name="history_toggle_off" color={Colors.Gray900} size={24} />}
           heading={neverRan.length === 1 ? '1 job never ran' : `${neverRan.length} jobs never ran`}
           jobs={neverRan}
         />
@@ -397,10 +397,10 @@ const RunTimelineSection = ({jobs, loading}: {jobs: JobItem[]; loading: boolean}
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
         margin={{top: 16}}
         padding={{bottom: 16, horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
       >
         <Box flex={{alignItems: 'center', gap: 8}}>
-          <IconWIP name="waterfall_chart" color={ColorsWIP.Gray900} size={20} />
+          <Icon name="waterfall_chart" color={Colors.Gray900} size={20} />
           <Heading>Timeline</Heading>
         </Box>
         <Box flex={{alignItems: 'center', gap: 8}}>
@@ -416,12 +416,12 @@ const RunTimelineSection = ({jobs, loading}: {jobs: JobItem[]; loading: boolean}
               onClick={(hrWindow: HourWindow) => setHourWindow(hrWindow)}
             />
           ) : null}
-          <ButtonWIP
-            icon={<IconWIP name={shown ? 'unfold_less' : 'unfold_more'} />}
+          <Button
+            icon={<Icon name={shown ? 'unfold_less' : 'unfold_more'} />}
             onClick={() => setShown((current) => !current)}
           >
             {shown ? 'Hide' : 'Show'}
-          </ButtonWIP>
+          </Button>
         </Box>
       </Box>
       {shown ? (
@@ -481,7 +481,7 @@ const JobSection = (props: JobSectionProps) => {
                         />
                         {!job.isJob ? <LegacyPipelineTag /> : null}
                       </Box>
-                      <Body color={ColorsWIP.Gray400} style={{fontFamily: FontFamily.monospace}}>
+                      <Body color={Colors.Gray400} style={{fontFamily: FontFamily.monospace}}>
                         {repoAddressString}
                       </Body>
                     </Box>
@@ -503,7 +503,7 @@ const JobSection = (props: JobSectionProps) => {
                       {schedules.length ? <NextTick schedules={schedules} /> : null}
                     </Box>
                   ) : (
-                    <div style={{color: ColorsWIP.Gray500}}>None</div>
+                    <div style={{color: Colors.Gray500}}>None</div>
                   )}
                 </td>
                 <td>
@@ -515,21 +515,21 @@ const JobSection = (props: JobSectionProps) => {
                     }}
                   >
                     <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 8}}>
-                      <TagWIP intent={intent(job.runs[0].status)}>
-                        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                          <RunStatusIndicator status={job.runs[0].status} size={10} />
-                          <RunTime run={job.runs[0]} />
-                        </Box>
-                      </TagWIP>
+                      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                        <Tag intent={intent(job.runs[0].status)}>
+                          <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                            <RunStatusIndicator status={job.runs[0].status} size={10} />
+                            <RunTime run={job.runs[0]} />
+                          </Box>
+                        </Tag>
+                        <RunStateSummary run={job.runs[0]} />
+                      </Box>
                       {failedStatuses.has(job.runs[0].status) ||
                       inProgressStatuses.has(job.runs[0].status) ? (
                         <StepSummaryForRun runId={job.runs[0].id} />
-                      ) : null}
+                      ) : undefined}
                     </Box>
-                    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                      <RunElapsed run={job.runs[0]} />
-                      <AnchorButton to={`/instance/runs/${job.runs[0].id}`}>View run</AnchorButton>
-                    </Box>
+                    <AnchorButton to={`/instance/runs/${job.runs[0].id}`}>View run</AnchorButton>
                   </Box>
                 </td>
                 <td>

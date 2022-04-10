@@ -153,6 +153,7 @@ def _to_metadata_entries(metadata_entries):
 def from_dagster_event_record(event_record, pipeline_name):
     from ..schema.errors import GraphenePythonError
     from ..schema.logs.events import (
+        GrapheneAlertFailureEvent,
         GrapheneAlertStartEvent,
         GrapheneAlertSuccessEvent,
         GrapheneEngineEvent,
@@ -292,6 +293,8 @@ def from_dagster_event_record(event_record, pipeline_name):
         return GrapheneAlertStartEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.ALERT_SUCCESS:
         return GrapheneAlertSuccessEvent(pipelineName=pipeline_name, **basic_params)
+    elif dagster_event.event_type == DagsterEventType.ALERT_FAILURE:
+        return GrapheneAlertFailureEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.HANDLED_OUTPUT:
         return GrapheneHandledOutputEvent(
             output_name=dagster_event.event_specific_data.output_name,
@@ -307,6 +310,9 @@ def from_dagster_event_record(event_record, pipeline_name):
             manager_key=dagster_event.event_specific_data.manager_key,
             upstream_output_name=dagster_event.event_specific_data.upstream_output_name,
             upstream_step_key=dagster_event.event_specific_data.upstream_step_key,
+            metadataEntries=_to_metadata_entries(
+                dagster_event.event_specific_data.metadata_entries
+            ),
             **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.OBJECT_STORE_OPERATION:

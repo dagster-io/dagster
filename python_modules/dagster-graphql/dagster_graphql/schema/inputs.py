@@ -56,7 +56,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
         created_before = pendulum.from_timestamp(self.createdBefore) if self.createdBefore else None
 
         return RunsFilter(
-            run_ids=self.runIds,
+            run_ids=self.runIds if self.runIds else None,
             pipeline_name=self.pipelineName,
             tags=tags,
             statuses=statuses,

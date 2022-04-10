@@ -1,10 +1,10 @@
 import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {
   Box,
-  ButtonWIP,
-  ColorsWIP,
+  Button,
+  Colors,
   Group,
-  IconWIP,
+  Icon,
   SecondPanelToggle,
   SplitPanelContainer,
 } from '@dagster-io/ui';
@@ -33,6 +33,7 @@ import {
   responseToYamlValidationResult,
 } from '../configeditor/ConfigEditorUtils';
 import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {DagsterTag} from '../runs/RunTag';
 import {RepositorySelector} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -81,7 +82,6 @@ interface ILaunchpadSessionState {
   previewedDocument: any | null;
   configLoading: boolean;
   editorHelpContext: ConfigEditorHelpContext | null;
-  showWhitespace: boolean;
   tagEditorOpen: boolean;
 }
 
@@ -97,8 +97,7 @@ type Action =
     }
   | {type: 'toggle-tag-editor'; payload: boolean}
   | {type: 'toggle-config-loading'; payload: boolean}
-  | {type: 'set-editor-help-context'; payload: ConfigEditorHelpContext | null}
-  | {type: 'toggle-whitepsace'; payload: boolean};
+  | {type: 'set-editor-help-context'; payload: ConfigEditorHelpContext | null};
 
 const reducer = (state: ILaunchpadSessionState, action: Action) => {
   switch (action.type) {
@@ -119,8 +118,6 @@ const reducer = (state: ILaunchpadSessionState, action: Action) => {
       return {...state, configLoading: action.payload};
     case 'set-editor-help-context':
       return {...state, editorHelpContext: action.payload};
-    case 'toggle-whitepsace':
-      return {...state, showWhitespace: action.payload};
     default:
       return state;
   }
@@ -131,7 +128,6 @@ const initialState: ILaunchpadSessionState = {
   previewLoading: false,
   previewedDocument: null,
   configLoading: false,
-  showWhitespace: true,
   editorHelpContext: null,
   tagEditorOpen: false,
 };
@@ -147,6 +143,11 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
   const editorSplitPanelContainer = React.useRef<SplitPanelContainer | null>(null);
   const previewCounter = React.useRef(0);
 
+  const [showWhitespace, setShowWhitespace] = useStateWithStorage(
+    'launchpad-whitespace',
+    (json: any) => (typeof json === 'boolean' ? json : true),
+  );
+
   const {isJob, presets} = pipeline;
 
   const initialDataForMode = React.useMemo(() => {
@@ -154,7 +155,10 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     const partitionSetsForMode = partitionSets.results;
 
     if (presetsForMode.length === 1 && partitionSetsForMode.length === 0) {
-      return {runConfigYaml: presetsForMode[0].runConfigYaml};
+      return {
+        base: {presetName: presetsForMode[0].name, tags: null},
+        runConfigYaml: presetsForMode[0].runConfigYaml,
+      };
     }
 
     if (!presetsForMode.length && partitionSetsForMode.length === 1) {
@@ -512,7 +516,6 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     previewedDocument,
     configLoading,
     editorHelpContext,
-    showWhitespace,
     tagEditorOpen,
   } = state;
 
@@ -592,18 +595,22 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
                     shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
                     onShortcut={openTagEditor}
                   >
-                    <ButtonWIP onClick={openTagEditor} icon={<IconWIP name="add_circle" />}>
+                    <Button onClick={openTagEditor} icon={<Icon name="add_circle" />}>
                       Add tags
-                    </ButtonWIP>
+                    </Button>
                   </ShortcutHandler>
                   <SessionSettingsSpacer />
                 </>
               )}
-              <ButtonWIP
+              <Button
                 title="Toggle whitespace"
-                icon={<IconWIP name="toggle_whitespace" />}
+                icon={<Icon name="toggle_whitespace" />}
                 active={showWhitespace}
-                onClick={() => dispatch({type: 'toggle-whitepsace', payload: !showWhitespace})}
+                onClick={() =>
+                  setShowWhitespace((current: boolean | undefined) =>
+                    current === undefined ? true : !current,
+                  )
+                }
               />
               <SessionSettingsSpacer />
               <SecondPanelToggle axis="horizontal" container={editorSplitPanelContainer} />
@@ -611,7 +618,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
             {pipeline.tags.length || tagsFromSession.length ? (
               <Box
                 padding={{vertical: 8, left: 12, right: 0}}
-                border={{side: 'bottom', width: 1, color: ColorsWIP.Gray200}}
+                border={{side: 'bottom', width: 1, color: Colors.Gray200}}
               >
                 <TagContainer
                   tagsFromDefinition={pipeline.tags}
@@ -623,22 +630,22 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
             {refreshableSessionBase ? (
               <Box
                 padding={{vertical: 8, horizontal: 12}}
-                border={{side: 'bottom', width: 1, color: ColorsWIP.Gray200}}
+                border={{side: 'bottom', width: 1, color: Colors.Gray200}}
               >
                 <Group direction="row" spacing={8} alignItems="center">
-                  <IconWIP name="warning" color={ColorsWIP.Yellow500} />
+                  <Icon name="warning" color={Colors.Yellow500} />
                   <div>
                     Your repository has been manually refreshed, and this configuration may now be
                     out of date.
                   </div>
-                  <ButtonWIP
+                  <Button
                     intent="primary"
                     onClick={() => onRefreshConfig(refreshableSessionBase)}
                     disabled={state.configLoading}
                   >
                     Refresh config
-                  </ButtonWIP>
-                  <ButtonWIP onClick={onDismissRefreshWarning}>Dismiss</ButtonWIP>
+                  </Button>
+                  <Button onClick={onDismissRefreshWarning}>Dismiss</Button>
                 </Group>
               </Box>
             ) : null}

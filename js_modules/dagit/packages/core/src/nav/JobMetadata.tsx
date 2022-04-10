@@ -1,14 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  ButtonWIP,
+  Button,
   ButtonLink,
-  ColorsWIP,
+  Colors,
   DialogFooter,
-  DialogWIP,
+  Dialog,
   StyledTable,
   Table,
-  TagWIP,
+  Tag,
   Subheading,
   Tooltip,
   FontFamily,
@@ -79,10 +79,10 @@ export const JobMetadata: React.FC<Props> = (props) => {
   );
 };
 
-const JobScheduleOrSensorTag: React.FC<{job: Job; repoAddress: RepoAddress}> = ({
-  job,
-  repoAddress,
-}) => {
+const JobScheduleOrSensorTag: React.FC<{
+  job: Job;
+  repoAddress: RepoAddress;
+}> = ({job, repoAddress}) => {
   const matchingSchedules = React.useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.schedules.length) {
       return job.schedules;
@@ -110,7 +110,8 @@ export const ScheduleOrSensorTag: React.FC<{
   schedules: ScheduleSwitchFragment[];
   sensors: SensorSwitchFragment[];
   repoAddress: RepoAddress;
-}> = ({schedules, sensors, repoAddress}) => {
+  showSwitch?: boolean;
+}> = ({schedules, sensors, repoAddress, showSwitch = true}) => {
   const [open, setOpen] = React.useState(false);
 
   const scheduleCount = schedules.length;
@@ -135,12 +136,12 @@ export const ScheduleOrSensorTag: React.FC<{
 
     return (
       <>
-        <TagWIP icon={icon}>
-          <ButtonLink onClick={() => setOpen(true)} color={ColorsWIP.Link}>
+        <Tag icon={icon}>
+          <ButtonLink onClick={() => setOpen(true)} color={Colors.Link}>
             {buttonText}
           </ButtonLink>
-        </TagWIP>
-        <DialogWIP
+        </Tag>
+        <Dialog
           title={dialogTitle}
           canOutsideClickClose
           canEscapeKeyClose
@@ -159,7 +160,7 @@ export const ScheduleOrSensorTag: React.FC<{
                 <Table>
                   <thead>
                     <tr>
-                      <th style={{width: '80px'}} />
+                      {showSwitch ? <th style={{width: '80px'}} /> : null}
                       <th>Schedule name</th>
                       <th>Schedule</th>
                     </tr>
@@ -167,9 +168,11 @@ export const ScheduleOrSensorTag: React.FC<{
                   <tbody>
                     {schedules.map((schedule) => (
                       <tr key={schedule.name}>
-                        <td>
-                          <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
-                        </td>
+                        {showSwitch ? (
+                          <td>
+                            <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
+                          </td>
+                        ) : null}
                         <td>
                           <Link
                             to={workspacePathFromAddress(
@@ -197,16 +200,18 @@ export const ScheduleOrSensorTag: React.FC<{
                 <Table>
                   <thead>
                     <tr>
-                      <th style={{width: '80px'}} />
+                      {showSwitch ? <th style={{width: '80px'}} /> : null}
                       <th>Sensor name</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sensors.map((sensor) => (
                       <tr key={sensor.name}>
-                        <td>
-                          <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
-                        </td>
+                        {showSwitch ? (
+                          <td>
+                            <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
+                          </td>
+                        ) : null}
                         <td>
                           <Link
                             to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}
@@ -222,41 +227,46 @@ export const ScheduleOrSensorTag: React.FC<{
             ) : null}
           </Box>
           <DialogFooter>
-            <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+            <Button intent="primary" onClick={() => setOpen(false)}>
               OK
-            </ButtonWIP>
+            </Button>
           </DialogFooter>
-        </DialogWIP>
+        </Dialog>
       </>
     );
   }
 
   if (scheduleCount) {
-    return <MatchingSchedule schedule={schedules[0]} repoAddress={repoAddress} />;
+    return (
+      <MatchingSchedule schedule={schedules[0]} repoAddress={repoAddress} showSwitch={showSwitch} />
+    );
   }
 
   if (sensorCount) {
-    return <MatchingSensor sensor={sensors[0]} repoAddress={repoAddress} />;
+    return <MatchingSensor sensor={sensors[0]} repoAddress={repoAddress} showSwitch={showSwitch} />;
   }
 
   return null;
 };
 
-const MatchingSchedule: React.FC<{schedule: ScheduleSwitchFragment; repoAddress: RepoAddress}> = ({
-  schedule,
-  repoAddress,
-}) => {
+const MatchingSchedule: React.FC<{
+  schedule: ScheduleSwitchFragment;
+  repoAddress: RepoAddress;
+  showSwitch: boolean;
+}> = ({schedule, repoAddress, showSwitch}) => {
   const running = schedule.scheduleState.status === 'RUNNING';
   const tag = (
-    <TagWIP intent={running ? 'primary' : 'none'} icon="schedule">
+    <Tag intent={running ? 'primary' : 'none'} icon="schedule">
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
         Schedule:
         <Link to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}>
           {humanCronString(schedule.cronSchedule)}
         </Link>
-        <ScheduleSwitch size="small" repoAddress={repoAddress} schedule={schedule} />
+        {showSwitch ? (
+          <ScheduleSwitch size="small" repoAddress={repoAddress} schedule={schedule} />
+        ) : null}
       </Box>
-    </TagWIP>
+    </Tag>
   );
 
   return schedule.cronSchedule ? (
@@ -283,21 +293,24 @@ const MatchingSchedule: React.FC<{schedule: ScheduleSwitchFragment; repoAddress:
   );
 };
 
-const MatchingSensor: React.FC<{sensor: SensorSwitchFragment; repoAddress: RepoAddress}> = ({
-  sensor,
-  repoAddress,
-}) => {
+const MatchingSensor: React.FC<{
+  sensor: SensorSwitchFragment;
+  repoAddress: RepoAddress;
+  showSwitch: boolean;
+}> = ({sensor, repoAddress, showSwitch}) => {
   const running = sensor.sensorState.status === 'RUNNING';
   return (
-    <TagWIP intent={running ? 'primary' : 'none'} icon="sensors">
+    <Tag intent={running ? 'primary' : 'none'} icon="sensors">
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
         Sensor:
         <Link to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}>
           {sensor.name}
         </Link>
-        <SensorSwitch size="small" repoAddress={repoAddress} sensor={sensor} />
+        {showSwitch ? (
+          <SensorSwitch size="small" repoAddress={repoAddress} sensor={sensor} />
+        ) : null}
       </Box>
-    </TagWIP>
+    </Tag>
   );
 };
 
@@ -322,7 +335,7 @@ export const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
   };
 
   return (
-    <TagWIP intent={intent()}>
+    <Tag intent={intent()}>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
         <RunStatusIndicator status={run.status} size={10} />
         Latest run:
@@ -333,7 +346,7 @@ export const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
               <StyledTable>
                 <tbody>
                   <tr>
-                    <td style={{color: ColorsWIP.Gray300}}>
+                    <td style={{color: Colors.Gray300}}>
                       <Box padding={{right: 16}}>Started</Box>
                     </td>
                     <td>
@@ -345,7 +358,7 @@ export const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
                     </td>
                   </tr>
                   <tr>
-                    <td style={{color: ColorsWIP.Gray300}}>Ended</td>
+                    <td style={{color: Colors.Gray300}}>Ended</td>
                     <td>
                       {stats.end ? (
                         <TimestampDisplay timestamp={stats.end} timeFormat={TIME_FORMAT} />
@@ -364,7 +377,7 @@ export const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
           </Tooltip>
         ) : null}
       </Box>
-    </TagWIP>
+    </Tag>
   );
 };
 
@@ -387,21 +400,21 @@ const RelatedAssetsTag: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
   if (keys.length === 1) {
     const key = keys[0];
     return (
-      <TagWIP icon="asset">
+      <Tag icon="asset">
         Asset: <Link to={`/instance/assets/${key}`}>{key}</Link>
-      </TagWIP>
+      </Tag>
     );
   }
 
   return (
     <>
-      <TagWIP icon="asset">
+      <Tag icon="asset">
         <ButtonLink
-          color={ColorsWIP.Link}
+          color={Colors.Link}
           onClick={() => setOpen(true)}
         >{`View ${keys.length} assets`}</ButtonLink>
-      </TagWIP>
-      <DialogWIP
+      </Tag>
+      <Dialog
         title="Related assets"
         canOutsideClickClose
         canEscapeKeyClose
@@ -429,11 +442,11 @@ const RelatedAssetsTag: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
           </Table>
         </Box>
         <DialogFooter>
-          <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+          <Button intent="primary" onClick={() => setOpen(false)}>
             OK
-          </ButtonWIP>
+          </Button>
         </DialogFooter>
-      </DialogWIP>
+      </Dialog>
     </>
   );
 };

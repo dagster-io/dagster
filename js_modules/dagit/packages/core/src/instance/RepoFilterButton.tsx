@@ -1,4 +1,4 @@
-import {Box, ButtonWIP, DialogFooter, DialogHeader, DialogWIP, IconWIP} from '@dagster-io/ui';
+import {Box, Button, DialogFooter, DialogHeader, Dialog, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {RepoSelector} from '../nav/RepoSelector';
@@ -9,7 +9,7 @@ export const RepoFilterButton: React.FC = () => {
   const [open, setOpen] = React.useState(false);
   return (
     <>
-      <DialogWIP
+      <Dialog
         canOutsideClickClose
         canEscapeKeyClose
         isOpen={open}
@@ -17,33 +17,28 @@ export const RepoFilterButton: React.FC = () => {
         onClose={() => setOpen(false)}
       >
         <DialogHeader icon="repo" label="Repositories" />
-        <div>
-          <Box padding={{vertical: 8, horizontal: 24}}>
-            {`${visibleRepos.length} of ${allRepos.length} selected`}
-          </Box>
-          <RepoSelector
-            options={allRepos}
-            onBrowse={() => setOpen(false)}
-            onToggle={toggleVisible}
-            selected={visibleRepos}
-          />
-        </div>
+        <RepoSelector
+          options={allRepos}
+          onBrowse={() => setOpen(false)}
+          onToggle={toggleVisible}
+          selected={visibleRepos}
+        />
         <DialogFooter>
           <Box padding={{top: 8}}>
-            <ButtonWIP intent="none" onClick={() => setOpen(false)}>
+            <Button intent="none" onClick={() => setOpen(false)}>
               Done
-            </ButtonWIP>
+            </Button>
           </Box>
         </DialogFooter>
-      </DialogWIP>
+      </Dialog>
 
-      <ButtonWIP
-        icon={<IconWIP name="folder" />}
-        rightIcon={<IconWIP name="expand_more" />}
+      <Button
+        icon={<Icon name="folder" />}
+        rightIcon={<Icon name="expand_more" />}
         onClick={() => setOpen(true)}
       >
         {`${visibleRepos.length} of ${allRepos.length} Repositories`}
-      </ButtonWIP>
+      </Button>
     </>
   );
 };

@@ -5,6 +5,7 @@ from alembic import op
 from sqlalchemy.engine import reflection
 
 from dagster import check
+from dagster.core.storage.sql import get_current_timestamp
 
 
 def get_inspector():
@@ -245,3 +246,57 @@ def drop_run_record_start_end_timestamps():
 
     op.drop_column("runs", "start_time")
     op.drop_column("runs", "end_time")
+
+
+def create_schedule_secondary_index_table():
+    if not has_table("jobs"):
+        return
+
+    if not has_table("secondary_indexes"):
+        op.create_table(
+            "secondary_indexes",
+            db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+            db.Column("name", db.String, unique=True),
+            db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
+            db.Column("migration_completed", db.DateTime),
+        )
+
+
+def create_instigators_table():
+    if not has_table("instigators") and not has_table("jobs"):
+        # not a schedule storage db
+        return
+
+    if not has_table("instigators"):
+        op.create_table(
+            "instigators",
+            db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+            db.Column("selector_id", db.String(255), unique=True),
+            db.Column("repository_selector_id", db.String(255)),
+            db.Column("status", db.String(63)),
+            db.Column("instigator_type", db.String(63), index=True),
+            db.Column("instigator_body", db.Text),
+            db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+            db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
+        )
+
+    if not has_column("jobs", "selector_id"):
+        op.add_column("jobs", db.Column("selector_id", db.String(255)))
+
+    if not has_column("job_ticks", "selector_id"):
+        op.add_column("job_ticks", db.Column("selector_id", db.String(255)))
+
+
+def create_tick_selector_index():
+    if not has_table("job_ticks"):
+        # not a schedule storage db
+        return
+
+    indexes = [x.get("name") for x in get_inspector().get_indexes("job_ticks")]
+    if "idx_tick_selector_timestamp" in indexes:
+        # already migrated
+        return
+
+    op.create_index(
+        "idx_tick_selector_timestamp", "job_ticks", ["selector_id", "timestamp"], unique=False
+    )

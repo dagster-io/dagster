@@ -285,6 +285,7 @@ enum DagsterEventType {
   STEP_UP_FOR_RETRY
   STEP_RESTARTED
   ASSET_MATERIALIZATION
+  ASSET_MATERIALIZATION_PLANNED
   ASSET_OBSERVATION
   STEP_EXPECTATION_RESULT
   RUN_ENQUEUED
@@ -313,6 +314,7 @@ enum DagsterEventType {
   HOOK_SKIPPED
   ALERT_START
   ALERT_SUCCESS
+  ALERT_FAILURE
   LOGS_CAPTURED
 }
 
@@ -613,6 +615,7 @@ union DagsterRunEvent =
   | HookErroredEvent
   | AlertStartEvent
   | AlertSuccessEvent
+  | AlertFailureEvent
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   runId: String!
@@ -844,7 +847,7 @@ type HandledOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
   managerKey: String!
 }
 
-type LoadedInputEvent implements MessageEvent & StepEvent {
+type LoadedInputEvent implements MessageEvent & StepEvent & DisplayableEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -852,6 +855,9 @@ type LoadedInputEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
+  label: String!
+  description: String
+  metadataEntries: [MetadataEntry!]!
   inputName: String!
   managerKey: String!
   upstreamOutputName: String
@@ -966,6 +972,17 @@ type AlertStartEvent implements MessageEvent & RunEvent {
 }
 
 type AlertSuccessEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type AlertFailureEvent implements MessageEvent & RunEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -2179,13 +2196,6 @@ type ScheduleTickSuccessData {
 
 type ScheduleTickFailureData {
   error: PythonError!
-}
-
-type ScheduleTickStatsSnapshot {
-  ticksStarted: Int!
-  ticksSucceeded: Int!
-  ticksSkipped: Int!
-  ticksFailed: Int!
 }
 
 type StartScheduleMutation {

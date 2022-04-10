@@ -1,17 +1,15 @@
 import {gql, useLazyQuery, useMutation} from '@apollo/client';
 import {
-  ButtonWIP,
+  Button,
   HighlightedCodeBlock,
-  IconWIP,
-  MenuDividerWIP,
+  Icon,
+  MenuDivider,
   MenuExternalLink,
-  MenuItemWIP,
-  MenuLink,
-  MenuWIP,
+  MenuItem,
+  Menu,
   Popover,
   Tooltip,
 } from '@dagster-io/ui';
-import qs from 'qs';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 import * as yaml from 'yaml';
@@ -19,6 +17,7 @@ import * as yaml from 'yaml';
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
+import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
@@ -75,10 +74,7 @@ export const RunActionsMenu: React.FC<{
   const isJob = !!(repoMatch && isThisThingAJob(repoMatch?.match, run.pipelineName));
 
   const launchpadPath = () => {
-    const path = `/playground/setup?${qs.stringify({
-      config: runConfigYaml,
-      solidSelection: run.solidSelection,
-    })}`;
+    const path = `/playground/setup-from-run/${run.id}`;
 
     if (repoMatch) {
       return workspacePipelinePath({
@@ -98,8 +94,8 @@ export const RunActionsMenu: React.FC<{
     <>
       <Popover
         content={
-          <MenuWIP>
-            <MenuItemWIP
+          <Menu>
+            <MenuItem
               text={loading ? 'Loading Configuration...' : 'View Configuration...'}
               disabled={!runConfigYaml}
               icon="open_in_new"
@@ -110,7 +106,7 @@ export const RunActionsMenu: React.FC<{
                 })
               }
             />
-            <MenuDividerWIP />
+            <MenuDivider />
             <>
               <Tooltip
                 content={OPEN_LAUNCHPAD_UNKNOWN}
@@ -131,7 +127,7 @@ export const RunActionsMenu: React.FC<{
                 disabled={infoReady && !!repoMatch}
                 targetTagName="div"
               >
-                <MenuItemWIP
+                <MenuItem
                   text="Re-execute"
                   disabled={!infoReady || !repoMatch}
                   icon="refresh"
@@ -154,13 +150,13 @@ export const RunActionsMenu: React.FC<{
                 />
               </Tooltip>
               {isFinished || !canTerminatePipelineExecution ? null : (
-                <MenuItemWIP
+                <MenuItem
                   icon="cancel"
                   text="Terminate"
                   onClick={() => setVisibleDialog('terminate')}
                 />
               )}
-              <MenuDividerWIP />
+              <MenuDivider />
             </>
             <MenuExternalLink
               text="Download Debug File"
@@ -169,14 +165,14 @@ export const RunActionsMenu: React.FC<{
               href={`${rootServerURI}/download_debug/${run.runId}`}
             />
             {canDeletePipelineRun ? (
-              <MenuItemWIP
+              <MenuItem
                 icon="delete"
                 text="Delete"
                 intent="danger"
                 onClick={() => setVisibleDialog('delete')}
               />
             ) : null}
-          </MenuWIP>
+          </Menu>
         }
         position="bottom-right"
         onOpening={() => {
@@ -185,7 +181,7 @@ export const RunActionsMenu: React.FC<{
           }
         }}
       >
-        <ButtonWIP icon={<IconWIP name="expand_more" />} />
+        <Button icon={<Icon name="expand_more" />} />
       </Popover>
       {canTerminatePipelineExecution ? (
         <TerminationDialog
@@ -243,9 +239,9 @@ export const RunBulkActionsMenu: React.FC<{
     <>
       <Popover
         content={
-          <MenuWIP>
+          <Menu>
             {canTerminatePipelineExecution ? (
-              <MenuItemWIP
+              <MenuItem
                 icon="cancel"
                 text={`Terminate ${unfinishedIDs.length} ${
                   unfinishedIDs.length === 1 ? 'run' : 'runs'
@@ -257,7 +253,7 @@ export const RunBulkActionsMenu: React.FC<{
               />
             ) : null}
             {canDeletePipelineRun ? (
-              <MenuItemWIP
+              <MenuItem
                 icon="delete"
                 intent="danger"
                 text={`Delete ${selectedIDs.length} ${selectedIDs.length === 1 ? 'run' : 'runs'}`}
@@ -267,13 +263,13 @@ export const RunBulkActionsMenu: React.FC<{
                 }}
               />
             ) : null}
-          </MenuWIP>
+          </Menu>
         }
         position="bottom-right"
       >
-        <ButtonWIP disabled={selected.length === 0} rightIcon={<IconWIP name="expand_more" />}>
+        <Button disabled={selected.length === 0} rightIcon={<Icon name="expand_more" />}>
           Actions
-        </ButtonWIP>
+        </Button>
       </Popover>
       <TerminationDialog
         isOpen={visibleDialog === 'terminate'}

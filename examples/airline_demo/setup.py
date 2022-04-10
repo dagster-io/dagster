@@ -2,7 +2,7 @@ from setuptools import find_packages, setup  # type: ignore
 
 setup(
     name="airline_demo",
-    version="dev",
+    version="0+dev",
     author="Elementl",
     license="Apache-2.0",
     description="Dagster Examples",

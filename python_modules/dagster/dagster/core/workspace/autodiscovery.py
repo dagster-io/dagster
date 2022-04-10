@@ -1,5 +1,6 @@
 import inspect
-from typing import NamedTuple
+from types import ModuleType
+from typing import Callable, List, NamedTuple, Optional, Sequence, Type
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -11,15 +12,24 @@ from dagster import (
 from dagster.core.asset_defs import AssetGroup
 from dagster.core.code_pointer import load_python_file, load_python_module
 
-LoadableTarget = NamedTuple("LoadableTarget", [("attribute", str), ("target_definition", object)])
+
+class LoadableTarget(NamedTuple):
+    attribute: str
+    target_definition: object
 
 
-def loadable_targets_from_python_file(python_file, working_directory=None):
+def loadable_targets_from_python_file(
+    python_file: str, working_directory: Optional[str] = None
+) -> Sequence[LoadableTarget]:
     loaded_module = load_python_file(python_file, working_directory)
     return loadable_targets_from_loaded_module(loaded_module)
 
 
-def loadable_targets_from_python_module(module_name, working_directory, remove_from_path_fn=None):
+def loadable_targets_from_python_module(
+    module_name: str,
+    working_directory: Optional[str],
+    remove_from_path_fn: Callable[[], List[str]] = None,
+) -> Sequence[LoadableTarget]:
     module = load_python_module(
         module_name,
         working_directory=working_directory,
@@ -28,14 +38,18 @@ def loadable_targets_from_python_module(module_name, working_directory, remove_f
     return loadable_targets_from_loaded_module(module)
 
 
-def loadable_targets_from_python_package(package_name, working_directory, remove_from_path_fn=None):
+def loadable_targets_from_python_package(
+    package_name: str,
+    working_directory: Optional[str],
+    remove_from_path_fn: Callable[[], List[str]] = None,
+) -> Sequence[LoadableTarget]:
     module = load_python_module(
         package_name, working_directory, remove_from_path_fn=remove_from_path_fn
     )
     return loadable_targets_from_loaded_module(module)
 
 
-def loadable_targets_from_loaded_module(module):
+def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
     loadable_repos = _loadable_targets_of_type(module, RepositoryDefinition)
     if loadable_repos:
         return loadable_repos
@@ -101,7 +115,7 @@ def loadable_targets_from_loaded_module(module):
     )
 
 
-def _loadable_targets_of_type(module, klass):
+def _loadable_targets_of_type(module: ModuleType, klass: Type) -> Sequence[LoadableTarget]:
     loadable_targets = []
     for name, value in inspect.getmembers(module):
         if isinstance(value, klass):

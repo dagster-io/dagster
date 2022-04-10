@@ -58,6 +58,7 @@ def create_step_outputs(
                 is_dynamic=output_def.is_dynamic,
                 is_asset=output_def.is_asset,
                 should_materialize=output_def.name in config_output_names,
+                asset_key=output_def.hardcoded_asset_key,
             ),
         )
         for name, output_def in solid.definition.output_dict.items()

@@ -1,5 +1,6 @@
+// eslint-disable-next-line no-restricted-imports
 import {Overlay} from '@blueprintjs/core';
-import {Box, ColorsWIP, IconWIP, Spinner, FontFamily} from '@dagster-io/ui';
+import {Box, Colors, Icon, Spinner, FontFamily} from '@dagster-io/ui';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
@@ -138,7 +139,7 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
             <Box flex={{alignItems: 'center', gap: 8}}>
               <div
                 style={{
-                  background: ColorsWIP.Gray900,
+                  background: Colors.Gray900,
                   borderRadius: '12px',
                   height: '24px',
                   width: '24px',
@@ -147,7 +148,7 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
                   justifyContent: 'center',
                 }}
               >
-                <IconWIP name="search" color={ColorsWIP.Gray50} />
+                <Icon name="search" color={Colors.Gray50} />
               </div>
               <Placeholder>{searchPlaceholder}</Placeholder>
             </Box>
@@ -156,14 +157,14 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
         </SearchTrigger>
       </ShortcutHandler>
       <Overlay
-        backdropProps={{style: {backgroundColor: ColorsWIP.WashGray}}}
+        backdropProps={{style: {backgroundColor: Colors.WashGray}}}
         isOpen={shown}
         onClose={() => dispatch({type: 'hide-dialog'})}
         transitionDuration={100}
       >
         <Container>
           <SearchBox hasQueryString={!!queryString.length}>
-            <IconWIP name="search" color={ColorsWIP.Gray200} size={20} />
+            <Icon name="search" color={Colors.Gray200} size={20} />
             <SearchInput
               autoFocus
               spellCheck={false}
@@ -188,10 +189,10 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
 };
 
 const SearchTrigger = styled.button`
-  background-color: ${ColorsWIP.Gray800};
+  background-color: ${Colors.Gray800};
   border-radius: 24px;
   border: none;
-  color: ${ColorsWIP.Gray50};
+  color: ${Colors.Gray50};
   font-size: 14px;
   cursor: pointer;
   padding: 4px 16px 4px 4px;
@@ -201,7 +202,7 @@ const SearchTrigger = styled.button`
   height: 32px;
 
   :focus {
-    border-color: ${ColorsWIP.Gray100};
+    border-color: ${Colors.Gray100};
   }
 `;
 
@@ -211,7 +212,7 @@ const Placeholder = styled.div`
 `;
 
 const Container = styled.div`
-  background-color: ${ColorsWIP.White};
+  background-color: ${Colors.White};
   border-radius: 4px;
   box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
   max-height: 60vh;
@@ -227,15 +228,14 @@ interface SearchBoxProps {
 
 const SearchBox = styled.div<SearchBoxProps>`
   align-items: center;
-  border-bottom: ${({hasQueryString}) =>
-    hasQueryString ? `1px solid ${ColorsWIP.Gray100}` : 'none'};
+  border-bottom: ${({hasQueryString}) => (hasQueryString ? `1px solid ${Colors.Gray100}` : 'none')};
   display: flex;
   padding: 12px 20px 12px 12px;
 `;
 
 const SearchInput = styled.input`
   border: none;
-  color: ${ColorsWIP.Gray600};
+  color: ${Colors.Gray600};
   font-family: ${FontFamily.default};
   font-size: 18px;
   margin-left: 4px;
@@ -243,14 +243,14 @@ const SearchInput = styled.input`
   width: 100%;
 
   &::placeholder {
-    color: ${ColorsWIP.Gray200};
+    color: ${Colors.Gray200};
   }
 `;
 
 const SlashShortcut = styled.div`
-  background-color: ${ColorsWIP.Gray700};
+  background-color: ${Colors.Gray700};
   border-radius: 3px;
-  color: ${ColorsWIP.Gray100};
+  color: ${Colors.Gray100};
   font-size: 14px;
   font-family: ${FontFamily.monospace};
   padding: 2px 6px;

@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, Checkbox, ColorsWIP, IconWIP, NonIdealState, Table, Mono} from '@dagster-io/ui';
+import {Box, Checkbox, Colors, Icon, NonIdealState, Table, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -20,10 +20,9 @@ import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspac
 
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunStatusTagWithStats} from './RunStatusTag';
-import {canceledStatuses, queuedStatuses} from './RunStatuses';
 import {RunStepKeysAssetList} from './RunStepKeysAssetList';
 import {RunTags} from './RunTags';
-import {RunElapsed, RunTime, RUN_TIME_FRAGMENT, titleForRun} from './RunUtils';
+import {RunStateSummary, RunTime, RUN_TIME_FRAGMENT, titleForRun} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 
@@ -116,7 +115,7 @@ export const RunTable = (props: RunTableProps) => {
             <th style={{width: 90}}>Run ID</th>
             <th>{anyPipelines ? 'Job / Pipeline' : 'Job'}</th>
             <th style={{width: 90}}>Snapshot ID</th>
-            <th style={{width: 180}}>Timing</th>
+            <th style={{width: 190}}>Timing</th>
             {props.additionalColumnHeaders}
             <th style={{width: 52}} />
           </tr>
@@ -244,7 +243,7 @@ const RunRow: React.FC<{
                     : workspacePipelinePathGuessRepo(run.pipelineName)
                 }
               >
-                <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
+                <Icon name="open_in_new" color={Colors.Blue500} />
               </Link>
             </Box>
           ) : (
@@ -266,9 +265,7 @@ const RunRow: React.FC<{
       </td>
       <td>
         <RunTime run={run} />
-        {queuedStatuses.has(run.status) || canceledStatuses.has(run.status) ? null : (
-          <RunElapsed run={run} />
-        )}
+        <RunStateSummary run={run} />
       </td>
       {additionalColumns}
       <td>

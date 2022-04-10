@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, IconWIP} from '@dagster-io/ui';
+import {Box, Colors, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -56,7 +56,7 @@ export const PipelineReference: React.FC<Props> = ({
     <Box flex={{direction: 'row', alignItems: 'center', display: 'inline-flex'}}>
       {showIcon && (
         <Box margin={{right: 8}}>
-          <IconWIP color={ColorsWIP.Gray400} name="job" />
+          <Icon color={Colors.Gray400} name="job" />
         </Box>
       )}
       <span>

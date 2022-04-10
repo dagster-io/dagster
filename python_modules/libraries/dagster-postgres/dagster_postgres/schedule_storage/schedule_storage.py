@@ -63,6 +63,10 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
                 ScheduleStorageSqlMetadata.create_all(conn)
                 stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
+        # mark all the data migrations as applied
+        self.migrate()
+        self.optimize()
+
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold an open connection and set statement_timeout
         self._engine = create_engine(

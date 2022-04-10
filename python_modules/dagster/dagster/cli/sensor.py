@@ -33,7 +33,7 @@ def sensor_cli():
 
 def print_changes(external_repository, instance, print_fn=print, preview=False):
     sensor_states = instance.all_instigator_state(
-        external_repository.get_origin_id(), InstigatorType.SENSOR
+        external_repository.get_origin_id(), external_repository.selector_id, InstigatorType.SENSOR
     )
     external_sensors = external_repository.get_external_sensors()
     external_sensors_dict = {s.get_external_origin_id(): s for s in external_sensors}
@@ -147,7 +147,9 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
             stored_sensors_by_origin_id = {
                 stored_sensor_state.instigator_origin_id: stored_sensor_state
                 for stored_sensor_state in instance.all_instigator_state(
-                    external_repo.get_external_origin_id(), instigator_type=InstigatorType.SENSOR
+                    external_repo.get_external_origin_id(),
+                    external_repo.selector_id,
+                    instigator_type=InstigatorType.SENSOR,
                 )
             }
 
@@ -359,7 +361,9 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
             )
             check_repo_and_scheduler(external_repo, instance)
             external_sensor = external_repo.get_external_sensor(sensor_name)
-            job_state = instance.get_instigator_state(external_sensor.get_external_origin_id())
+            job_state = instance.get_instigator_state(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
             if not job_state:
                 instance.add_instigator_state(
                     InstigatorState(

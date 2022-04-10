@@ -53,7 +53,6 @@ def main(quiet):
         "-e python_modules/libraries/dagster-twilio",
         "-e python_modules/libraries/dagstermill",
         "-e integration_tests/python_modules/dagster-k8s-test-infra",
-        "-r scala_modules/scripts/requirements.txt",
         "-e python_modules/libraries/dagster-azure",
         "-e python_modules/libraries/dagster-msteams",
         "-e helm/dagster/schema[test]",
@@ -78,7 +77,7 @@ def main(quiet):
     )
     print(" ".join(cmd))
     while True:
-        output = p.stdout.readline()   # type: ignore
+        output = p.stdout.readline()  # type: ignore
         if p.poll() is not None:
             break
         if output:

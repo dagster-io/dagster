@@ -10,7 +10,7 @@ import { LogLevel, DagsterEventType, ErrorSource, ObjectStoreOperationType } fro
 // ====================================================
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent" | "AlertFailureEvent";
   runId: string;
   message: string;
   timestamp: string;
@@ -1561,6 +1561,157 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   metadataEntries: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_HandledOutputEvent_metadataEntries[];
 }
 
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries = PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_PathMetadataEntry | PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_JsonMetadataEntry | PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_UrlMetadataEntry | PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TextMetadataEntry | PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_MarkdownMetadataEntry | PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_PythonArtifactMetadataEntry | PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_FloatMetadataEntry | PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_IntMetadataEntry | PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_PipelineRunMetadataEntry | PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_AssetMetadataEntry | PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableMetadataEntry | PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry;
+
 export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent {
   __typename: "LoadedInputEvent";
   runId: string;
@@ -1573,6 +1724,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   managerKey: string;
   upstreamOutputName: string | null;
   upstreamStepKey: string | null;
+  metadataEntries: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_LoadedInputEvent_metadataEntries[];
 }
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_EngineEvent_metadataEntries_PathMetadataEntry {

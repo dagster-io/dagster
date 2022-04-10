@@ -1,5 +1,6 @@
+// eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
-import {Box, ColorsWIP, TagWIP} from '@dagster-io/ui';
+import {Box, Colors, Tag} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
@@ -156,7 +157,11 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
         </DefaultContent>
       );
     case 'LoadedInputEvent':
-      return <DefaultContent message={node.message} eventType={eventType} />;
+      return (
+        <DefaultContent message={node.message} eventType={eventType}>
+          <MetadataEntries entries={node.metadataEntries} />
+        </DefaultContent>
+      );
     case 'HookCompletedEvent':
       return <DefaultContent eventType={eventType} message={node.message} />;
     case 'HookSkippedEvent':
@@ -166,7 +171,9 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
     case 'AlertStartEvent':
       return <DefaultContent eventType={eventType} message={node.message} />;
     case 'AlertSuccessEvent':
-      return <DefaultContent eventType={eventType} message={node.message} />;
+      return <DefaultContent eventType={eventType} message={node.message} eventIntent="success" />;
+    case 'AlertFailureEvent':
+      return <DefaultContent eventType={eventType} message={node.message} eventIntent="warning" />;
     case 'RunFailureEvent':
       if (node.pipelineFailureError) {
         return (
@@ -263,7 +270,7 @@ const DefaultContent: React.FC<{
     <>
       <EventTypeColumn>
         {eventType && (
-          <TagWIP
+          <Tag
             intent={eventIntent}
             style={
               eventColor
@@ -278,7 +285,7 @@ const DefaultContent: React.FC<{
             }
           >
             {eventTypeToDisplayType(eventType)}
-          </TagWIP>
+          </Tag>
         )}
       </EventTypeColumn>
       <Box padding={{horizontal: 12}} style={{flex: 1}}>
@@ -311,22 +318,20 @@ const FailureContent: React.FC<{
   }
 
   if (error) {
-    errorMessage = <span style={{color: ColorsWIP.Red500}}>{`${error.message}`}</span>;
+    errorMessage = <span style={{color: Colors.Red500}}>{`${error.message}`}</span>;
 
     // omit the outer stack for user code errors with a cause
     // as the outer stack is just framework code
     if (!(errorSource === ErrorSource.USER_CODE_ERROR && error.cause)) {
-      errorStack = (
-        <span style={{color: ColorsWIP.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>
-      );
+      errorStack = <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>;
     }
 
     if (error.cause) {
       errorCause = (
         <>
           {`The above exception was caused by the following exception:\n`}
-          <span style={{color: ColorsWIP.Red500}}>{`${error.cause.message}`}</span>
-          <span style={{color: ColorsWIP.Red500}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
+          <span style={{color: Colors.Red500}}>{`${error.cause.message}`}</span>
+          <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
         </>
       );
     }
@@ -335,9 +340,9 @@ const FailureContent: React.FC<{
   return (
     <>
       <EventTypeColumn>
-        <TagWIP minimal intent="danger">
+        <Tag minimal intent="danger">
           {eventTypeToDisplayType(eventType)}
-        </TagWIP>
+        </Tag>
       </EventTypeColumn>
       <Box padding={{horizontal: 12}} style={{flex: 1}}>
         {contextMessage}

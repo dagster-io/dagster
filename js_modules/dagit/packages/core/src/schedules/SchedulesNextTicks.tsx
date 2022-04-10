@@ -1,18 +1,17 @@
 import {gql, useLazyQuery} from '@apollo/client';
 import {
   Box,
-  ButtonWIP,
+  Button,
   ButtonLink,
-  ColorsWIP,
+  Colors,
   DialogBody,
   DialogFooter,
-  DialogWIP,
+  Dialog,
   Group,
   HighlightedCodeBlock,
-  IconWIP,
-  MenuItemWIP,
-  MenuLink,
-  MenuWIP,
+  Icon,
+  MenuItem,
+  Menu,
   NonIdealState,
   Popover,
   Spinner,
@@ -29,6 +28,7 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';
 import {InstigationStatus} from '../types/globalTypes';
+import {MenuLink} from '../ui/MenuLink';
 import {
   findRepositoryAmongOptions,
   isThisThingAJob,
@@ -198,7 +198,7 @@ const NextTickMenu: React.FC<{
   return (
     <>
       <Popover
-        content={<MenuWIP>{menuItems}</MenuWIP>}
+        content={<Menu>{menuItems}</Menu>}
         position="bottom-right"
         onOpening={() => {
           if (!called) {
@@ -206,7 +206,7 @@ const NextTickMenu: React.FC<{
           }
         }}
       >
-        <ButtonWIP icon={<IconWIP name="expand_more" />} />
+        <Button icon={<Icon name="expand_more" />} />
       </Popover>
       <NextTickDialog
         repoAddress={repoAddress}
@@ -228,19 +228,19 @@ const NextTickMenuItems: React.FC<{
   onItemOpen: (value: boolean) => void;
 }> = ({repoAddress, schedule, evaluationResult, loading, onItemOpen}) => {
   if (!evaluationResult) {
-    return <MenuItemWIP text="Could not preview tick for this schedule" />;
+    return <MenuItem text="Could not preview tick for this schedule" />;
   }
 
   if (evaluationResult.skipReason) {
-    return <MenuItemWIP text="View skip reason..." onClick={() => onItemOpen(true)} />;
+    return <MenuItem text="View skip reason..." onClick={() => onItemOpen(true)} />;
   }
 
   if (evaluationResult.error) {
-    return <MenuItemWIP text="View error..." onClick={() => onItemOpen(true)} />;
+    return <MenuItem text="View error..." onClick={() => onItemOpen(true)} />;
   }
 
   if (!evaluationResult.runRequests || !evaluationResult.runRequests.length) {
-    return <MenuItemWIP text="No runs requested for this projected schedule tick" />;
+    return <MenuItem text="No runs requested for this projected schedule tick" />;
   }
 
   if (evaluationResult.runRequests.length === 1) {
@@ -248,7 +248,7 @@ const NextTickMenuItems: React.FC<{
     const runConfigYaml = runRequest ? runRequest.runConfigYaml : '';
     return (
       <>
-        <MenuItemWIP
+        <MenuItem
           text={loading ? 'Loading Configuration...' : 'View Configuration...'}
           icon="open_in_new"
           onClick={() => onItemOpen(true)}
@@ -271,7 +271,7 @@ const NextTickMenuItems: React.FC<{
   }
 
   return (
-    <MenuItemWIP
+    <MenuItem
       text={`View ${evaluationResult.runRequests.length} run requests...`}
       icon="edit"
       target="_blank"
@@ -372,7 +372,7 @@ const NextTickDialog: React.FC<{
                         underline={false}
                       >
                         <Group direction="row" spacing={8} alignItems="center">
-                          <IconWIP name="open_in_new" color={ColorsWIP.Gray400} />
+                          <Icon name="open_in_new" color={Colors.Gray400} />
                           <span>View config</span>
                         </Group>
                       </ButtonLink>
@@ -380,7 +380,7 @@ const NextTickDialog: React.FC<{
                     <td>
                       <Popover
                         content={
-                          <MenuWIP>
+                          <Menu>
                             <MenuLink
                               text="Open in Launchpad..."
                               icon="edit"
@@ -396,11 +396,11 @@ const NextTickDialog: React.FC<{
                                 })}`,
                               )}
                             />
-                          </MenuWIP>
+                          </Menu>
                         }
                         position="bottom"
                       >
-                        <ButtonWIP icon={<IconWIP name="expand_more" />} />
+                        <Button icon={<Icon name="expand_more" />} />
                       </Popover>
                     </td>
                   </tr>
@@ -414,7 +414,7 @@ const NextTickDialog: React.FC<{
   }
 
   return (
-    <DialogWIP
+    <Dialog
       onClose={() => close()}
       style={{width: '50vw'}}
       title={
@@ -428,20 +428,20 @@ const NextTickDialog: React.FC<{
       {body}
       <DialogFooter>
         {selectedRunRequest ? (
-          <ButtonWIP
+          <Button
             autoFocus={false}
             onClick={(e: React.MouseEvent<any, MouseEvent>) => {
               copyValue(e, configRef && configRef.current ? configRef.current.innerText : '' || '');
             }}
           >
             Copy
-          </ButtonWIP>
+          </Button>
         ) : null}
-        <ButtonWIP intent="primary" autoFocus={true} onClick={() => close()}>
+        <Button intent="primary" autoFocus={true} onClick={() => close()}>
           OK
-        </ButtonWIP>
+        </Button>
       </DialogFooter>
-    </DialogWIP>
+    </Dialog>
   );
 };
 
@@ -477,7 +477,7 @@ const ConfigBody = styled.div`
   font-family: ${FontFamily.monospace};
   font-size: 14px;
   overflow: scroll;
-  background: ${ColorsWIP.White};
+  background: ${Colors.White};
 `;
 
 const RunRequestBody = styled.div`
@@ -486,6 +486,6 @@ const RunRequestBody = styled.div`
 
 const SkipWrapper = styled.div`
   background-color: #fdfcf2;
-  border: 1px solid ${ColorsWIP.Yellow500};
+  border: 1px solid ${Colors.Yellow500};
   border-radius: 3px;
 `;

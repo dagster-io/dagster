@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {ColorsWIP, NonIdealState} from '@dagster-io/ui';
+import {Colors, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {CellMeasurer, CellMeasurerCache, List, ListRowProps, ScrollParams} from 'react-virtualized';
@@ -278,7 +278,7 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
     const isLastRow = index === this.props.filteredNodes.length - 1;
     const lastRowStyles = isLastRow
       ? {
-          borderBottom: `1px solid ${ColorsWIP.Gray100}`,
+          borderBottom: `1px solid ${Colors.Gray100}`,
         }
       : {};
 

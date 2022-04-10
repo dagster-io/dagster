@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {ButtonLink, ColorsWIP, Group, Caption} from '@dagster-io/ui';
+import {ButtonLink, Colors, Group, Caption} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -82,7 +82,7 @@ export const SchedulePartitionStatus: React.FC<{
 
   const loadable = () => {
     if (loading) {
-      return <Caption style={{color: ColorsWIP.Gray400}}>Loading…</Caption>;
+      return <Caption style={{color: Colors.Gray400}}>Loading…</Caption>;
     }
 
     if (!data) {
@@ -103,7 +103,7 @@ export const SchedulePartitionStatus: React.FC<{
       );
     }
 
-    return <Caption style={{color: ColorsWIP.Red700}}>Partition set not found!</Caption>;
+    return <Caption style={{color: Colors.Red700}}>Partition set not found!</Caption>;
   };
 
   return (
@@ -121,7 +121,7 @@ const RetrievedSchedulePartitionStatus: React.FC<{
   const {partitionSet} = schedule;
 
   if (!partitionSet || partitionSet.partitionStatusesOrError.__typename !== 'PartitionStatuses') {
-    return <span style={{color: ColorsWIP.Gray300}}>None</span>;
+    return <span style={{color: Colors.Gray300}}>None</span>;
   }
 
   const partitions = partitionSet.partitionStatusesOrError.results;
@@ -145,7 +145,7 @@ const RetrievedSchedulePartitionStatus: React.FC<{
                 {status === 'Failed' || status === 'Missing' ? (
                   <Link
                     to={`${partitionURL}?showFailuresAndGapsOnly=true`}
-                    style={{color: ColorsWIP.Gray900}}
+                    style={{color: Colors.Gray900}}
                   >
                     {partitionsByType[status].length}
                   </Link>

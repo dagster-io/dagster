@@ -1,4 +1,4 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components/macro';
@@ -189,9 +189,9 @@ const ShortcutAnnotation = styled.div`
   padding: 2px;
   z-index: 20;
   transform: translate(-90%, -10px);
-  color: ${ColorsWIP.Gray100};
-  background: ${ColorsWIP.Gray800};
-  border: 1px solid ${ColorsWIP.Gray300};
+  color: ${Colors.Gray100};
+  background: ${Colors.Gray800};
+  border: 1px solid ${Colors.Gray300};
   border-radius: 3px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 `;

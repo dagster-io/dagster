@@ -120,6 +120,12 @@ class GrapheneAlertSuccessEvent(graphene.ObjectType):
         name = "AlertSuccessEvent"
 
 
+class GrapheneAlertFailureEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        name = "AlertFailureEvent"
+
+
 class GrapheneStepEvent(graphene.Interface):
     stepKey = graphene.Field(graphene.String)
     solidHandleID = graphene.Field(graphene.String)
@@ -388,7 +394,7 @@ class GrapheneHandledOutputEvent(graphene.ObjectType):
 
 class GrapheneLoadedInputEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
+        interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneDisplayableEvent)
         name = "LoadedInputEvent"
 
     input_name = graphene.NonNull(graphene.String)
@@ -457,6 +463,7 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneHookErroredEvent,
             GrapheneAlertStartEvent,
             GrapheneAlertSuccessEvent,
+            GrapheneAlertFailureEvent,
         )
         name = "DagsterRunEvent"
 

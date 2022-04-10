@@ -1,5 +1,5 @@
 import {gql, useApolloClient} from '@apollo/client';
-import {Tooltip, Spinner, Box, ColorsWIP} from '@dagster-io/ui';
+import {Tooltip, Spinner, Box, Colors} from '@dagster-io/ui';
 import {fromPairs} from 'lodash';
 import React from 'react';
 
@@ -34,6 +34,7 @@ export function usePartitionHealthData(assetKeys: AssetKey[]) {
     const load = async () => {
       const {data} = await client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
         query: PARTITION_HEALTH_QUERY,
+        fetchPolicy: 'network-only',
         variables: {
           assetKey: {path: loadKey.path},
         },
@@ -104,7 +105,7 @@ export const PartitionHealthSummary: React.FC<{
       <Box
         flex={{justifyContent: 'space-between'}}
         margin={{bottom: 4}}
-        style={{fontSize: '0.8rem', color: ColorsWIP.Gray500}}
+        style={{fontSize: '0.8rem', color: Colors.Gray500}}
       >
         <span>
           {showAssetKey
@@ -124,7 +125,7 @@ export const PartitionHealthSummary: React.FC<{
                 position: 'absolute',
                 top: 0,
                 height: 8,
-                border: `2px solid ${ColorsWIP.Blue500}`,
+                border: `2px solid ${Colors.Blue500}`,
                 borderBottom: 0,
               }}
             />
@@ -167,7 +168,7 @@ export const PartitionHealthSummary: React.FC<{
                   width: '100%',
                   height: 14,
                   outline: 'none',
-                  background: s.status ? ColorsWIP.Green500 : ColorsWIP.Gray200,
+                  background: s.status ? Colors.Green500 : Colors.Gray200,
                 }}
               />
             </Tooltip>
@@ -177,7 +178,7 @@ export const PartitionHealthSummary: React.FC<{
       <Box
         flex={{justifyContent: 'space-between'}}
         margin={{top: 4}}
-        style={{fontSize: '0.8rem', color: ColorsWIP.Gray500}}
+        style={{fontSize: '0.8rem', color: Colors.Gray500}}
       >
         <span>{keys[0]}</span>
         <span>{keys[keys.length - 1]}</span>

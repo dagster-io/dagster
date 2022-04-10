@@ -1,4 +1,4 @@
-import {Box, ButtonWIP, Group, IconName, IconWIP} from '@dagster-io/ui';
+import {Box, Button, Group, IconName, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
@@ -53,14 +53,14 @@ const CancelRunButton: React.FC<{run: RunFragment | undefined; isFinalStatus: bo
   return (
     <>
       {!isFinalStatus ? (
-        <ButtonWIP
-          icon={<IconWIP name="cancel" />}
+        <Button
+          icon={<Icon name="cancel" />}
           intent="danger"
           disabled={showDialog}
           onClick={() => setShowDialog(true)}
         >
           Terminate
-        </ButtonWIP>
+        </Button>
       ) : null}
       <TerminationDialog
         isOpen={showDialog}
@@ -113,7 +113,11 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const pipelineError = usePipelineAvailabilityErrorForRun(run);
 
   const selection = stepSelectionWithState(props.selection, metadata);
-  const selectionOfCurrentRun = stepSelectionFromRunTags(run, graph, metadata);
+
+  const currentRunSelection = stepSelectionFromRunTags(run, graph, metadata);
+  const currentRunIsFromFailure = run.tags?.some(
+    (t) => t.key === DagsterTag.IsResumeRetry && t.value === 'true',
+  );
 
   const full: LaunchButtonConfiguration = {
     icon: 'cached',
@@ -126,21 +130,20 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
 
   const same: LaunchButtonConfiguration = {
     icon: 'linear_scale',
-    scope: selectionOfCurrentRun?.query || '*',
+    scope: currentRunSelection?.query || '*',
     title: 'Same Steps',
-    disabled:
-      !selectionOfCurrentRun || !(selectionOfCurrentRun.finished || selectionOfCurrentRun.failed),
+    disabled: !currentRunSelection || !(currentRunSelection.finished || currentRunSelection.failed),
     tooltip: (
       <div>
-        {!selectionOfCurrentRun || !selectionOfCurrentRun.present
+        {!currentRunSelection || !currentRunSelection.present
           ? 'Re-executes the same step subset used for this run if one was present.'
-          : !selectionOfCurrentRun.finished
+          : !currentRunSelection.finished
           ? 'Wait for all of the steps to finish to re-execute the same subset.'
           : 'Re-execute the same step subset used for this run:'}
-        <StepSelectionDescription selection={selectionOfCurrentRun} />
+        <StepSelectionDescription selection={currentRunSelection} />
       </div>
     ),
-    onClick: () => onLaunch({type: 'selection', selection: selectionOfCurrentRun!}),
+    onClick: () => onLaunch({type: 'selection', selection: currentRunSelection!}),
   };
 
   const selected: LaunchButtonConfiguration = {
@@ -209,9 +212,12 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const options = [full, same, selected, fromSelected, fromFailure];
   const preferredRerun = selection.present
     ? selected
-    : selectionOfCurrentRun?.present
+    : fromFailureEnabled && currentRunIsFromFailure
+    ? fromFailure
+    : currentRunSelection?.present
     ? same
     : null;
+
   const primary = artifactsPersisted && preferredRerun ? preferredRerun : full;
 
   const tooltip = () => {
@@ -228,7 +234,13 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
           runCount={1}
           primary={primary}
           options={options}
-          title={primary.scope === '*' ? `Re-execute All (*)` : `Re-execute (${primary.scope})`}
+          title={
+            primary.scope === '*'
+              ? `Re-execute All (*)`
+              : primary.scope
+              ? `Re-execute (${primary.scope})`
+              : `Re-execute ${primary.title}`
+          }
           tooltip={tooltip()}
           icon={pipelineError?.icon}
           disabled={pipelineError?.disabled || !canLaunchPipelineReexecution}

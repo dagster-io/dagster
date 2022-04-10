@@ -642,6 +642,7 @@ class DagsterInstance:
             if print_fn:
                 print_fn("Updating schedule storage...")
             self._schedule_storage.upgrade()
+            self._schedule_storage.migrate(print_fn)
 
     def optimize_for_dagit(self, statement_timeout):
         if self._schedule_storage:
@@ -654,6 +655,7 @@ class DagsterInstance:
         self._event_storage.reindex_events(print_fn)
         self._event_storage.reindex_assets(print_fn)
         self._run_storage.optimize(print_fn)
+        self._schedule_storage.optimize(print_fn)
         print_fn("Done.")
 
     def dispose(self):
@@ -932,6 +934,22 @@ class DagsterInstance:
 
         return execution_plan_snapshot_id
 
+    def _log_asset_materialization_planned_events(self, pipeline_run, execution_plan_snapshot):
+        from dagster.core.events import DagsterEvent
+        from dagster.core.execution.context_creation_pipeline import initialize_console_manager
+
+        pipeline_name = pipeline_run.pipeline_name
+
+        for step in execution_plan_snapshot.steps:
+            if step.key in execution_plan_snapshot.step_keys_to_execute:
+                for output in step.outputs:
+                    asset_key = output.properties.asset_key
+                    if asset_key:
+                        # Logs and stores asset_materialization_planned event
+                        DagsterEvent.asset_materialization_planned(
+                            pipeline_name, asset_key, initialize_console_manager(pipeline_run, self)
+                        )
+
     def create_run(
         self,
         pipeline_name,
@@ -970,7 +988,13 @@ class DagsterInstance:
             external_pipeline_origin=external_pipeline_origin,
             pipeline_code_origin=pipeline_code_origin,
         )
-        return self._run_storage.add_run(pipeline_run)
+
+        pipeline_run = self._run_storage.add_run(pipeline_run)
+
+        if execution_plan_snapshot:
+            self._log_asset_materialization_planned_events(pipeline_run, execution_plan_snapshot)
+
+        return pipeline_run
 
     def register_managed_run(
         self,
@@ -1695,7 +1719,9 @@ records = instance.get_event_records(
             SensorInstigatorData,
         )
 
-        state = self.get_instigator_state(external_sensor.get_external_origin_id())
+        state = self.get_instigator_state(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
 
         if external_sensor.get_current_instigator_state(state).is_running:
             raise Exception(
@@ -1724,7 +1750,7 @@ records = instance.get_event_records(
             SensorInstigatorData,
         )
 
-        state = self.get_instigator_state(instigator_origin_id)
+        state = self.get_instigator_state(instigator_origin_id, external_sensor.selector_id)
 
         if not state:
             return self.add_instigator_state(
@@ -1739,12 +1765,16 @@ records = instance.get_event_records(
             return self.update_instigator_state(state.with_status(InstigatorStatus.STOPPED))
 
     @traced
-    def all_instigator_state(self, repository_origin_id=None, instigator_type=None):
-        return self._schedule_storage.all_instigator_state(repository_origin_id, instigator_type)
+    def all_instigator_state(
+        self, repository_origin_id=None, repository_selector_id=None, instigator_type=None
+    ):
+        return self._schedule_storage.all_instigator_state(
+            repository_origin_id, repository_selector_id, instigator_type
+        )
 
     @traced
-    def get_instigator_state(self, origin_id):
-        return self._schedule_storage.get_instigator_state(origin_id)
+    def get_instigator_state(self, origin_id, selector_id):
+        return self._schedule_storage.get_instigator_state(origin_id, selector_id)
 
     def add_instigator_state(self, state):
         return self._schedule_storage.add_instigator_state(state)
@@ -1752,8 +1782,8 @@ records = instance.get_event_records(
     def update_instigator_state(self, state):
         return self._schedule_storage.update_instigator_state(state)
 
-    def delete_instigator_state(self, origin_id):
-        return self._schedule_storage.delete_instigator_state(origin_id)
+    def delete_instigator_state(self, origin_id, selector_id):
+        return self._schedule_storage.delete_instigator_state(origin_id, selector_id)
 
     @property
     def supports_batch_tick_queries(self):
@@ -1762,25 +1792,25 @@ records = instance.get_event_records(
     @traced
     def get_batch_ticks(
         self,
-        origin_ids: Sequence[str],
+        selector_ids: Sequence[str],
         limit: Optional[int] = None,
         statuses: Optional[Sequence["TickStatus"]] = None,
     ) -> Mapping[str, Iterable["InstigatorTick"]]:
         if not self._schedule_storage:
             return {}
-        return self._schedule_storage.get_batch_ticks(origin_ids, limit, statuses)
+        return self._schedule_storage.get_batch_ticks(selector_ids, limit, statuses)
 
     @traced
-    def get_tick(self, origin_id, timestamp):
+    def get_tick(self, origin_id, selector_id, timestamp):
         matches = self._schedule_storage.get_ticks(
-            origin_id, before=timestamp + 1, after=timestamp - 1, limit=1
+            origin_id, selector_id, before=timestamp + 1, after=timestamp - 1, limit=1
         )
         return matches[0] if len(matches) else None
 
     @traced
-    def get_ticks(self, origin_id, before=None, after=None, limit=None, statuses=None):
+    def get_ticks(self, origin_id, selector_id, before=None, after=None, limit=None, statuses=None):
         return self._schedule_storage.get_ticks(
-            origin_id, before=before, after=after, limit=limit, statuses=statuses
+            origin_id, selector_id, before=before, after=after, limit=limit, statuses=statuses
         )
 
     def create_tick(self, tick_data):
@@ -1789,12 +1819,8 @@ records = instance.get_event_records(
     def update_tick(self, tick):
         return self._schedule_storage.update_tick(tick)
 
-    @traced
-    def get_tick_stats(self, origin_id):
-        return self._schedule_storage.get_tick_stats(origin_id)
-
-    def purge_ticks(self, origin_id, tick_status, before):
-        self._schedule_storage.purge_ticks(origin_id, tick_status, before)
+    def purge_ticks(self, origin_id, selector_id, tick_status, before):
+        self._schedule_storage.purge_ticks(origin_id, selector_id, tick_status, before)
 
     def wipe_all_schedules(self):
         if self._scheduler:

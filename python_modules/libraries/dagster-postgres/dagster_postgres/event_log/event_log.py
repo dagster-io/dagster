@@ -313,18 +313,15 @@ def watcher_thread(
             with dict_lock:
                 handlers = handlers_dict.get(run_id, [])
 
-            try:
-                with engine.connect() as conn:
-                    cursor_res = conn.execute(
-                        db.select([SqlEventLogStorageTable.c.event]).where(
-                            SqlEventLogStorageTable.c.id == index
-                        ),
-                    )
-                    dagster_event: EventLogEntry = deserialize_json_to_dagster_namedtuple(
-                        cursor_res.scalar()
-                    )
-            finally:
-                engine.dispose()
+            with engine.connect() as conn:
+                cursor_res = conn.execute(
+                    db.select([SqlEventLogStorageTable.c.event]).where(
+                        SqlEventLogStorageTable.c.id == index
+                    ),
+                )
+                dagster_event: EventLogEntry = deserialize_json_to_dagster_namedtuple(
+                    cursor_res.scalar()
+                )
 
             for callback_with_cursor in handlers:
                 if callback_with_cursor.start_cursor < index:

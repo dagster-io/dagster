@@ -1,5 +1,5 @@
 import {gql, RefetchQueriesFunction, useMutation} from '@apollo/client';
-import {ButtonWIP, DialogBody, DialogFooter, DialogWIP, Group} from '@dagster-io/ui';
+import {Button, DialogBody, DialogFooter, Dialog, Group} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -30,7 +30,7 @@ export const AssetWipeDialog: React.FC<{
   };
 
   return (
-    <DialogWIP
+    <Dialog
       isOpen={isOpen}
       title={`Wipe materializations of ${
         assetKeys.length === 1 ? displayNameForAssetKey(assetKeys[0]) : 'selected assets'
@@ -49,14 +49,14 @@ export const AssetWipeDialog: React.FC<{
         </Group>
       </DialogBody>
       <DialogFooter>
-        <ButtonWIP intent="none" onClick={onClose}>
+        <Button intent="none" onClick={onClose}>
           Cancel
-        </ButtonWIP>
-        <ButtonWIP intent="danger" onClick={wipe}>
+        </Button>
+        <Button intent="danger" onClick={wipe}>
           Wipe
-        </ButtonWIP>
+        </Button>
       </DialogFooter>
-    </DialogWIP>
+    </Dialog>
   );
 };
 

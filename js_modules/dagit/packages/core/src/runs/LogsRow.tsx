@@ -190,6 +190,9 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       managerKey
       upstreamOutputName
       upstreamStepKey
+      metadataEntries {
+        ...MetadataEntryFragment
+      }
     }
     ... on EngineEvent {
       metadataEntries {

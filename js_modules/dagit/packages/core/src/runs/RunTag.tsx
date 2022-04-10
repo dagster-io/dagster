@@ -1,5 +1,6 @@
 import {Tag} from '@dagster-io/ui';
 import * as React from 'react';
+import styled from 'styled-components/macro';
 
 export enum DagsterTag {
   Namespace = 'dagster/',
@@ -34,5 +35,38 @@ export const RunTag = ({tag, onClick}: IRunTagProps) => {
     onClick && onClick(tag);
   };
 
-  return <Tag isDagsterTag={isDagsterTag} onClick={onTagClick} tag={displayTag} />;
+  return <TagDeprecated isDagsterTag={isDagsterTag} onClick={onTagClick} tag={displayTag} />;
 };
+
+interface ITagProps {
+  tag: {
+    key: string;
+    value: string;
+  };
+  onClick?: (tag: {key: string; value: string}) => void;
+  isDagsterTag?: boolean;
+}
+
+export const TagDeprecated = ({tag, onClick, isDagsterTag}: ITagProps) => {
+  const onTagClick = () => onClick && onClick(tag);
+
+  return (
+    <TagButton onClick={onTagClick}>
+      <Tag intent={isDagsterTag ? 'none' : 'primary'} interactive>
+        {`${tag.key}: ${tag.value}`}
+      </Tag>
+    </TagButton>
+  );
+};
+
+const TagButton = styled.button`
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+
+  :focus {
+    outline: none;
+  }
+`;

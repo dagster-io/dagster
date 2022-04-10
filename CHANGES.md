@@ -1,5 +1,60 @@
 # Changelog
 
+# 0.14.8
+
+### New
+
+- The MySQL storage implementations for Dagster storage is no longer marked as experimental.
+- `run_id` can now be provided as an argument to `execute_in_process`.
+- The text on `dagit`’s empty state no longer mentions the legacy concept “Pipelines”.
+- Now, within the `IOManager.load_input` method, you can add input metadata via `InputContext.add_input_metadata`. These metadata entries will appear on the `LOADED_INPUT` event and if the input is an asset, be attached to an `AssetObservation`. This metadata is viewable in `dagit`.
+
+### Bugfixes
+
+- Fixed a set of bugs where schedules and sensors would get out of sync between `dagit` and `dagster-daemon` processes. This would manifest in schedules / sensors getting marked as “Unloadable” in `dagit`, and ticks not being registered correctly. The fix involves changing how Dagster stores schedule/sensor state and requires a schema change using the CLI command `dagster instance migrate`. Users who are not running into this class of bugs may consider the migration optional.
+- `root_input_manager` can now be specified without a context argument.
+- Fixed a bug that prevented `root_input_manager` from being used with `VersionStrategy`.
+- Fixed a race condition between daemon and `dagit` writing to the same telemetry logs.
+- [dagit] In `dagit`, using the “Open in Launchpad” feature for a run could cause server errors if the run configuration yaml was too long. Runs can now be opened from this feature regardless of config length.
+- [dagit] On the Instance Overview page in `dagit`, runs in the timeline view sometimes showed incorrect end times, especially batches that included in-progress runs. This has been fixed.
+- [dagit] In the `dagit` launchpad, reloading a repository should present the user with an option to refresh config that may have become stale. This feature was broken for jobs without partition sets, and has now been fixed.
+- Fixed issue where passing a stdlib `typing` type as `dagster_type` to input and output definition was incorrectly being rejected.
+- [dagster-airbyte] Fixed issue where AssetMaterialization events would not be generated for streams that had no updated records for a given sync.
+- [dagster-dbt] Fixed issue where including multiple sets of dbt assets in a single repository could cause a conflict with the names of the underlying ops.
+
+# 0.14.7
+
+### New
+
+* [helm] Added configuration to explicitly enable or disable telemetry.
+* Added a new IO manager for materializing assets to Azure ADLS. You can specify this IO manager for your AssetGroups by using the following config:
+
+```
+`from dagster import AssetGroup
+from dagster_azure import adls2_pickle_asset_io_manager, adls2_resource
+asset_group = AssetGroup(
+    [upstream_asset, downstream_asset],
+    resource_defs={"io_manager": adls2_pickle_asset_io_manager, "adls2": adls2_resource}
+)`
+```
+
+* Added ability to set a custom start time for partitions when using `@hourly_partitioned_config` ,  `@daily_partitioned_config`, `@weekly_partitioned_config`, and `@monthly_partitioned_config`
+* Run configs generated from partitions can be retrieved using the `PartitionedConfig.get_run_config_for_partition_key` function. This will allow the use of the `validate_run_config` function in unit tests.
+* [dagit] If a run is re-executed from failure, and the run fails again, the default action will be to re-execute from the point of failure, rather than to re-execute the entire job.
+* `PartitionedConfig` now takes an argument `tags_for_partition_fn` which allows for custom run tags for a given partition.
+
+### Bugfixes
+
+* Fixed a bug in the message for reporting Kubernetes run worker failures
+* [dagit] Fixed issue where re-executing a run that materialized a single asset could end up re-executing all steps in the job.
+* [dagit] Fixed issue where the health of an asset’s partitions would not always be up to date in certain views.
+* [dagit] Fixed issue where the “Materialize All” button would be greyed out if a job had SourceAssets defined.
+
+### Documentation
+
+* Updated resource docs to reference “ops” instead of “solids” (thanks @joe-hdai!)
+* Fixed formatting issues in the ECS docs
+
 # 0.14.6
 
 ### New
@@ -4834,22 +4889,13 @@ Thank you to all of the community contributors to this release!! In alphabetical
 - New solids explorer in Dagit allows you to browse and search for solids used across the
   repository.
 
-  ![Solid Explorer](./screenshots/solid_explorer.png)
-  ![Solid Explorer](./screenshots/solid_explorer_input.png)
-
 - Enabled solid dependency selection in the Dagit search filter.
 
   - To select a solid and its upstream dependencies, search `+{solid_name}`.
   - To select a solid and its downstream dependents, search `{solid_name}+`.
   - For both search `+{solid_name}+`.
 
-  For example. In the Airline demo, searching `+join_q2_data` will get the following:
-
-  ![Screenshot](./screenshots/airline_join_parent_filter.png)
-
 - Added a terminate button in Dagit to terminate an active run.
-
-  ![Stop Button](./screenshots/stop_button.png)
 
 - Added an `--output` flag to `dagster-graphql` CLI.
 - Added confirmation step for `dagster run wipe` and `dagster schedule wipe` commands (Thanks

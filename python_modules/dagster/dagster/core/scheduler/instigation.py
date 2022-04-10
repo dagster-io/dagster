@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Type, Union
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation.origin import ExternalInstigatorOrigin
+from dagster.core.host_representation.selector import InstigatorSelector, RepositorySelector
+from dagster.serdes import create_snapshot_id
 from dagster.serdes.serdes import (
     DefaultNamedTupleSerializer,
     WhitelistMap,
@@ -198,8 +200,27 @@ class InstigatorState(
         return self.origin.external_repository_origin.get_id()
 
     @property
+    def repository_selector_id(self):
+        return create_snapshot_id(
+            RepositorySelector(
+                self.origin.external_repository_origin.repository_location_origin.location_name,
+                self.origin.external_repository_origin.repository_name,
+            )
+        )
+
+    @property
     def instigator_origin_id(self):
         return self.origin.get_id()
+
+    @property
+    def selector_id(self):
+        return create_snapshot_id(
+            InstigatorSelector(
+                self.origin.external_repository_origin.repository_location_origin.location_name,
+                self.origin.external_repository_origin.repository_name,
+                self.origin.instigator_name,
+            )
+        )
 
     def with_status(self, status):
         check.inst_param(status, "status", InstigatorStatus)
@@ -310,6 +331,10 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     @property
     def instigator_origin_id(self):
         return self.tick_data.instigator_origin_id
+
+    @property
+    def selector_id(self):
+        return self.tick_data.selector_id
 
     @property
     def instigator_name(self):
@@ -427,6 +452,7 @@ class TickData(
             ("cursor", Optional[str]),
             ("origin_run_ids", List[str]),
             ("failure_count", int),
+            ("selector_id", Optional[str]),
         ],
     )
 ):
@@ -464,6 +490,7 @@ class TickData(
         cursor: Optional[str] = None,
         origin_run_ids: Optional[List[str]] = None,
         failure_count: Optional[int] = None,
+        selector_id: Optional[str] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         return super(TickData, cls).__new__(
@@ -480,6 +507,7 @@ class TickData(
             cursor=check.opt_str_param(cursor, "cursor"),
             origin_run_ids=check.opt_list_param(origin_run_ids, "origin_run_ids", of_type=str),
             failure_count=check.opt_int_param(failure_count, "failure_count", 0),
+            selector_id=check.opt_str_param(selector_id, "selector_id"),
         )
 
     def with_status(self, status, error=None, timestamp=None, failure_count=None):
@@ -564,30 +592,3 @@ def _validate_tick_args(instigator_type, status, run_ids=None, error=None, skip_
             status == TickStatus.SKIPPED,
             "Tick status was not SKIPPED but skip_reason was provided",
         )
-
-
-class TickStatsSnapshot(
-    NamedTuple(
-        "TickStatsSnapshot",
-        [
-            ("ticks_started", int),
-            ("ticks_succeeded", int),
-            ("ticks_skipped", int),
-            ("ticks_failed", int),
-        ],
-    )
-):
-    def __new__(
-        cls, ticks_started: int, ticks_succeeded: int, ticks_skipped: int, ticks_failed: int
-    ):
-        return super(TickStatsSnapshot, cls).__new__(
-            cls,
-            ticks_started=check.int_param(ticks_started, "ticks_started"),
-            ticks_succeeded=check.int_param(ticks_succeeded, "ticks_succeeded"),
-            ticks_skipped=check.int_param(ticks_skipped, "ticks_skipped"),
-            ticks_failed=check.int_param(ticks_failed, "ticks_failed"),
-        )
-
-
-# for internal backcompat
-JobTickStatsSnapshot = TickStatsSnapshot

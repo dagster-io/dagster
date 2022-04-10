@@ -87,5 +87,6 @@ export interface RunFragment {
   repositoryOrigin: RunFragment_repositoryOrigin | null;
   startTime: number | null;
   endTime: number | null;
+  updateTime: number | null;
   stepStats: RunFragment_stepStats[];
 }

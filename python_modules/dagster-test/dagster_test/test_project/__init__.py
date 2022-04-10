@@ -16,6 +16,7 @@ from dagster.core.host_representation import (
     ExternalSchedule,
     GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
+    InstigatorSelector,
     RepositoryLocation,
 )
 from dagster.core.host_representation.origin import (
@@ -29,7 +30,7 @@ from dagster.core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster.core.test_utils import in_process_test_workspace
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes import create_snapshot_id, whitelist_for_serdes
 from dagster.utils import file_relative_path, git_repository_root
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -245,6 +246,19 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
                 repository_name="demo_execution_repo",
             ),
             instigator_name=self.name,
+        )
+
+    @property
+    def selector_id(self):
+        """
+        Hack! Inject a selector that matches the one that the k8s helm chart will use.
+        """
+        return create_snapshot_id(
+            InstigatorSelector(
+                "user-code-deployment-1",
+                "demo_execution_repo",
+                self.name,
+            )
         )
 
 

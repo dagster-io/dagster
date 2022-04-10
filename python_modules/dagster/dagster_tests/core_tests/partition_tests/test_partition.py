@@ -768,7 +768,7 @@ def test_dynamic_partitions_keys(partition_fn: Callable[[Optional[datetime]], Li
 
 def test_partitions_def_to_string():
     hourly = HourlyPartitionsDefinition(
-        "Tue Jan 11 1:30PM", "America/Los_Angeles", "%a %b %d %I:%M%p"
+        start_date="Tue Jan 11 1:30PM", timezone="America/Los_Angeles", fmt="%a %b %d %I:%M%p"
     )
     assert str(hourly) == "Hourly, starting Thu Jan 11 01:30PM America/Los_Angeles."
 

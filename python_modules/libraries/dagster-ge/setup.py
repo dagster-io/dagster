@@ -14,7 +14,7 @@ def get_version() -> str:
 if __name__ == "__main__":
     ver = get_version()
     # dont pin dev installs to avoid pip dep resolver issues
-    pin = "" if ver == "dev" else f"=={ver}"
+    pin = "" if ver == "0+dev" else f"=={ver}"
     setup(
         name="dagster-ge",
         version=ver,
@@ -35,6 +35,7 @@ if __name__ == "__main__":
         install_requires=[
             f"dagster{pin}",
             f"dagster-pandas{pin}",
+            "dataclasses; python_version < '3.7'",
             "pandas",
             "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27",
         ],

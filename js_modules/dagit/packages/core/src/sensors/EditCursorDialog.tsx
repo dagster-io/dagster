@@ -1,14 +1,7 @@
 import {gql, useMutation} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
 import {TextArea} from '@blueprintjs/core';
-import {
-  ButtonLink,
-  ButtonWIP,
-  ColorsWIP,
-  DialogBody,
-  DialogFooter,
-  DialogWIP,
-  Group,
-} from '@dagster-io/ui';
+import {ButtonLink, Button, Colors, DialogBody, DialogFooter, Dialog, Group} from '@dagster-io/ui';
 import * as React from 'react';
 
 import 'chartjs-adapter-date-fns';
@@ -42,7 +35,7 @@ export const EditCursorDialog: React.FC<{
           <Group direction="row" spacing={8}>
             <div>Could not set cursor value.</div>
             <ButtonLink
-              color={ColorsWIP.White}
+              color={Colors.White}
               underline="always"
               onClick={() => {
                 showCustomAlert({
@@ -61,7 +54,7 @@ export const EditCursorDialog: React.FC<{
   };
 
   return (
-    <DialogWIP
+    <Dialog
       isOpen={true}
       onClose={onClose}
       style={{
@@ -77,12 +70,12 @@ export const EditCursorDialog: React.FC<{
         />
       </DialogBody>
       <DialogFooter>
-        <ButtonWIP onClick={onClose}>Cancel</ButtonWIP>
-        <ButtonWIP intent="primary" onClick={onSave} disabled={isSaving}>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button intent="primary" onClick={onSave} disabled={isSaving}>
           Set cursor value
-        </ButtonWIP>
+        </Button>
       </DialogFooter>
-    </DialogWIP>
+    </Dialog>
   );
 };
 

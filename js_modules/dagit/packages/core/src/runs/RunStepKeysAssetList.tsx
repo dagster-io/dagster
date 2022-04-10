@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, IconWIP, TagWIP} from '@dagster-io/ui';
+import {Box, Colors, Icon, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -18,15 +18,15 @@ export const RunStepKeysAssetList: React.FC<{
       <Box flex={{direction: 'row', gap: 8, wrap: 'wrap', alignItems: 'center'}}>
         {displayed.map((stepKey) => (
           <Link to={`/instance/assets/${stepKey}`} key={stepKey}>
-            <TagWIP intent="none" interactive icon="asset">
+            <Tag intent="none" interactive icon="asset">
               {stepKey}
-            </TagWIP>
+            </Tag>
           </Link>
         ))}
         {hidden > 0 && (
-          <TagWIP intent="none" icon="asset">
+          <Tag intent="none" icon="asset">
             {` + ${hidden} more`}
-          </TagWIP>
+          </Tag>
         )}
       </Box>
     );
@@ -34,7 +34,7 @@ export const RunStepKeysAssetList: React.FC<{
 
   return (
     <Box flex={{direction: 'row', gap: 8, wrap: 'wrap', alignItems: 'center'}}>
-      <IconWIP color={ColorsWIP.Gray400} name="asset" size={16} />
+      <Icon color={Colors.Gray400} name="asset" size={16} />
       {`${displayed.join(', ')}${hidden > 0 ? ` + ${hidden} more` : ''}`}
     </Box>
   );

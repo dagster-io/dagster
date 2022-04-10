@@ -1,4 +1,4 @@
-import {MenuDividerWIP, MenuItemWIP, MenuWIP, SelectWIP} from '@dagster-io/ui';
+import {MenuDivider, MenuItem, Menu, Select} from '@dagster-io/ui';
 import moment from 'moment-timezone';
 import * as React from 'react';
 
@@ -55,7 +55,7 @@ export const TimezoneSelect: React.FC<Props> = ({trigger}) => {
   const [timezone, setTimezone] = React.useContext(TimezoneContext);
 
   return (
-    <SelectWIP<typeof SortedTimezoneItems[0]>
+    <Select<typeof SortedTimezoneItems[0]>
       popoverProps={{
         position: 'bottom-left',
         modifiers: {offset: {enabled: true, offset: '-12px, 8px'}},
@@ -66,9 +66,9 @@ export const TimezoneSelect: React.FC<Props> = ({trigger}) => {
       itemPredicate={(query, tz) => tz.key.toLowerCase().includes(query.toLowerCase())}
       itemRenderer={(tz, props) =>
         tz.key.startsWith('divider') ? (
-          <MenuDividerWIP key={tz.key} />
+          <MenuDivider key={tz.key} />
         ) : (
-          <MenuItemWIP
+          <MenuItem
             active={props.modifiers.active}
             onClick={props.handleClick}
             label={tz.offsetLabel}
@@ -79,12 +79,12 @@ export const TimezoneSelect: React.FC<Props> = ({trigger}) => {
       }
       itemListRenderer={({renderItem, filteredItems}) => {
         const renderedItems = filteredItems.map(renderItem).filter(Boolean);
-        return <MenuWIP>{renderedItems}</MenuWIP>;
+        return <Menu>{renderedItems}</Menu>;
       }}
-      noResults={<MenuItemWIP disabled text="No results." />}
+      noResults={<MenuItem disabled text="No results." />}
       onItemSelect={(tz) => setTimezone(tz.key)}
     >
       {trigger(timezone)}
-    </SelectWIP>
+    </Select>
   );
 };

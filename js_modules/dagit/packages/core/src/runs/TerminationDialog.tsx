@@ -1,15 +1,16 @@
 import {useMutation} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
 import {ProgressBar} from '@blueprintjs/core';
 import {
   Box,
-  ButtonWIP,
+  Button,
   Checkbox,
-  ColorsWIP,
+  Colors,
   DialogBody,
   DialogFooter,
-  DialogWIP,
+  Dialog,
   Group,
-  IconWIP,
+  Icon,
   Mono,
 } from '@dagster-io/ui';
 import * as React from 'react';
@@ -196,7 +197,7 @@ export const TerminationDialog = (props: Props) => {
                   />
                   {state.mustForce ? (
                     <Box flex={{display: 'flex', direction: 'row', gap: 8}} margin={{top: 8}}>
-                      <IconWIP name="warning" color={ColorsWIP.Yellow500} />
+                      <Icon name="warning" color={Colors.Yellow500} />
                       <div>
                         <strong>Warning:</strong> computational resources created by runs may not be
                         cleaned up.
@@ -206,7 +207,7 @@ export const TerminationDialog = (props: Props) => {
                 </>
               ) : (
                 <Group direction="row" spacing={8}>
-                  <IconWIP name="warning" color={ColorsWIP.Yellow500} />
+                  <Icon name="warning" color={Colors.Yellow500} />
                   <div>
                     <strong>Warning:</strong> computational resources created by runs may not be
                     cleaned up.
@@ -238,37 +239,37 @@ export const TerminationDialog = (props: Props) => {
       case 'initial':
         if (!count) {
           return (
-            <ButtonWIP intent="none" onClick={onClose}>
+            <Button intent="none" onClick={onClose}>
               OK
-            </ButtonWIP>
+            </Button>
           );
         }
 
         return (
           <>
-            <ButtonWIP intent="none" onClick={onClose}>
+            <Button intent="none" onClick={onClose}>
               Cancel
-            </ButtonWIP>
-            <ButtonWIP intent="danger" onClick={mutate}>
+            </Button>
+            <Button intent="danger" onClick={mutate}>
               {`${state.mustForce ? 'Force termination for' : 'Terminate'} ${`${count} ${
                 count === 1 ? 'run' : 'runs'
               }`}`}
-            </ButtonWIP>
+            </Button>
           </>
         );
       case 'terminating':
         return (
-          <ButtonWIP intent="danger" disabled>
+          <Button intent="danger" disabled>
             {state.mustForce
               ? `Forcing termination for ${`${count} ${count === 1 ? 'run' : 'runs'}...`}`
               : `Terminating ${`${count} ${count === 1 ? 'run' : 'runs'}...`}`}
-          </ButtonWIP>
+          </Button>
         );
       case 'completed':
         return (
-          <ButtonWIP intent="primary" onClick={onClose}>
+          <Button intent="primary" onClick={onClose}>
             Done
-          </ButtonWIP>
+          </Button>
         );
     }
   };
@@ -290,7 +291,7 @@ export const TerminationDialog = (props: Props) => {
       <Group direction="column" spacing={8}>
         {successCount ? (
           <Group direction="row" spacing={8} alignItems="flex-start">
-            <IconWIP name="check_circle" color={ColorsWIP.Green500} />
+            <Icon name="check_circle" color={Colors.Green500} />
             <div>
               {state.mustForce
                 ? `Successfully forced termination for ${successCount}
@@ -303,7 +304,7 @@ export const TerminationDialog = (props: Props) => {
         {errorCount ? (
           <Group direction="column" spacing={8}>
             <Group direction="row" spacing={8} alignItems="flex-start">
-              <IconWIP name="warning" color={ColorsWIP.Yellow500} />
+              <Icon name="warning" color={Colors.Yellow500} />
               <div>
                 {state.mustForce
                   ? `Could not force termination for ${errorCount} ${
@@ -333,7 +334,7 @@ export const TerminationDialog = (props: Props) => {
   const canQuicklyClose = state.step !== 'terminating';
 
   return (
-    <DialogWIP
+    <Dialog
       isOpen={isOpen}
       title="Terminate runs"
       canEscapeKeyClose={canQuicklyClose}
@@ -347,6 +348,6 @@ export const TerminationDialog = (props: Props) => {
         </Group>
       </DialogBody>
       <DialogFooter>{buttons()}</DialogFooter>
-    </DialogWIP>
+    </Dialog>
   );
 };

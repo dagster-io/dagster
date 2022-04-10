@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {Box} from './Box';
 import {ButtonLink} from './ButtonLink';
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -17,30 +17,30 @@ const Template: Story<Props> = (props) => <ButtonLink {...props} />;
 export const ColorString = Template.bind({});
 ColorString.args = {
   children: 'Hello world',
-  color: ColorsWIP.Blue500,
+  color: Colors.Blue500,
 };
 
 export const ColorMap = Template.bind({});
 ColorMap.args = {
   children: 'Hello world',
   color: {
-    link: ColorsWIP.Blue500,
-    hover: ColorsWIP.Blue700,
-    active: ColorsWIP.Yellow700,
+    link: Colors.Blue500,
+    hover: Colors.Blue700,
+    active: Colors.Yellow700,
   },
 };
 
 export const HoverUnderline = Template.bind({});
 HoverUnderline.args = {
   children: 'Hello world',
-  color: ColorsWIP.Blue500,
+  color: Colors.Blue500,
   underline: 'hover',
 };
 
 export const WhiteLinkOnBlack = () => {
   return (
-    <Box background={ColorsWIP.Dark} padding={16}>
-      <ButtonLink color={{link: ColorsWIP.White, hover: ColorsWIP.Gray200}} underline="always">
+    <Box background={Colors.Dark} padding={16}>
+      <ButtonLink color={{link: Colors.White, hover: Colors.Gray200}} underline="always">
         Hello world
       </ButtonLink>
     </Box>
@@ -51,7 +51,7 @@ export const WithinText = () => {
   return (
     <div>
       Lorem ipsum{' '}
-      <ButtonLink color={{link: ColorsWIP.Blue500, hover: ColorsWIP.Link}} underline="always">
+      <ButtonLink color={{link: Colors.Blue500, hover: Colors.Link}} underline="always">
         dolor sit
       </ButtonLink>{' '}
       amet edipiscing.

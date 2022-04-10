@@ -1,11 +1,13 @@
 import {
   FontFamily,
+  GlobalInter,
+  GlobalInconsolata,
   GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalToasterStyle,
   GlobalTooltipStyle,
-  ColorsWIP,
+  Colors,
 } from '../src';
 
 import {MemoryRouter} from 'react-router-dom';
@@ -13,13 +15,15 @@ import * as React from 'react';
 
 import {createGlobalStyle} from 'styled-components/macro';
 
+import './blueprint.css';
+
 const GlobalStyle = createGlobalStyle`
   * {
     box-sizing: border-box;
   }
 
   html, body {
-    color: ${ColorsWIP.Gray800};
+    color: ${Colors.Gray800};
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -27,7 +31,7 @@ const GlobalStyle = createGlobalStyle`
   a,
   a:hover,
   a:active {
-    color: ${ColorsWIP.Link};
+    color: ${Colors.Link};
   }
 
   body {
@@ -60,7 +64,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   .bp3-button:disabled .material-icons {
-    color: ${ColorsWIP.Gray300}
+    color: ${Colors.Gray300}
   }
 `;
 
@@ -69,6 +73,8 @@ export const decorators = [
   (Story) => (
     <MemoryRouter>
       <GlobalStyle />
+      <GlobalInter />
+      <GlobalInconsolata />
       <GlobalToasterStyle />
       <GlobalTooltipStyle />
       <GlobalPopoverStyle />

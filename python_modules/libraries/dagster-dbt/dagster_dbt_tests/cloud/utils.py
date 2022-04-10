@@ -53,6 +53,38 @@ def sample_job_details():
     }
 
 
+def sample_runs_details(include_related=None, **kwargs):
+    runs = [sample_run_details(include_related, **kwargs) for i in range(100)]
+    if include_related and "environment" in include_related:
+        for run in runs:
+            run["environment"] = {
+                "dbt_project_subdirectory": None,
+                "project_id": 50000,
+                "id": 47000,
+                "account_id": SAMPLE_ACCOUNT_ID,
+                "connection_id": 56000,
+                "repository_id": 58000,
+                "credentials_id": 52000,
+                "created_by_id": None,
+                "name": "dbt-environment",
+                "use_custom_branch": False,
+                "custom_branch": None,
+                "dbt_version": "0.21.0",
+                "supports_docs": False,
+                "state": 10,
+            }
+            run = deep_merge_dicts(run, kwargs)
+    return {
+        "status": {
+            "code": 200,
+            "is_success": True,
+            "user_message": "Success!",
+            "developer_message": "",
+        },
+        "data": runs,
+    }
+
+
 def sample_run_details(include_related=None, **kwargs):
     base_data = {
         "id": SAMPLE_RUN_ID,

@@ -1,4 +1,4 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 
 import {IRunMetadataDict, IStepAttempt, IStepState} from '../runs/RunMetadataProvider';
 
@@ -174,7 +174,7 @@ const ensureSubtreeAfterParentInArray = (
     return;
   }
   boxes.splice(boxIdx, 1);
-  boxes.push(box);
+  boxes.splice(parentIdx, 0, box);
 
   // Note: It's important that we don't cache or pass indexes during this recursion.
   // Visiting a child below could cause boxes earlier in the array to be pulled to the
@@ -235,14 +235,14 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
 };
 
 const TextColorForStates = {
-  [IStepState.RUNNING]: ColorsWIP.Blue700,
+  [IStepState.RUNNING]: Colors.Blue700,
 };
 const BackgroundColorForStates = {
-  [IStepState.RUNNING]: ColorsWIP.Blue100,
-  [IStepState.RETRY_REQUESTED]: ColorsWIP.Yellow500,
-  [IStepState.SUCCEEDED]: ColorsWIP.Green500,
-  [IStepState.FAILED]: ColorsWIP.Red500,
-  [IStepState.SKIPPED]: ColorsWIP.Gray500,
+  [IStepState.RUNNING]: Colors.Blue100,
+  [IStepState.RETRY_REQUESTED]: Colors.Yellow500,
+  [IStepState.SUCCEEDED]: Colors.Green500,
+  [IStepState.FAILED]: Colors.Red500,
+  [IStepState.SKIPPED]: Colors.Gray500,
 };
 
 export const boxStyleFor = (
@@ -264,15 +264,15 @@ export const boxStyleFor = (
   if (state && state !== IStepState.PREPARING) {
     return {
       color: TextColorForStates[state] || '#fff',
-      background: BackgroundColorForStates[state] || ColorsWIP.Gray400,
+      background: BackgroundColorForStates[state] || Colors.Gray400,
     };
   }
 
   // Step has not started, use "hypothetical dotted box".
   return {
-    color: ColorsWIP.Gray600,
-    background: ColorsWIP.White,
-    border: `1.5px dotted ${ColorsWIP.Gray500}`,
+    color: Colors.Gray600,
+    background: Colors.White,
+    border: `1.5px dotted ${Colors.Gray500}`,
   };
 };
 
@@ -399,7 +399,7 @@ export const adjustLayoutWithRunMetadata = (
     const widthForMs = ({start, end}: {start: number; end?: number}) =>
       Math.max(BOX_DOT_WIDTH_CUTOFF, ((end || nowMs) - start) * scale);
 
-    positionAndSplitBoxes(boxes, metadata, (box, run) => ({
+    positionAndSplitBoxes(boxes, metadata, (_box, run) => ({
       x: run ? xForMs(run.start) : 0,
       width: run ? widthForMs(run) : BOX_WIDTH,
     }));
@@ -442,12 +442,12 @@ export const adjustLayoutWithRunMetadata = (
       boxes = boxes.filter((b) => !!metadata.steps[b.node.name]?.state);
     }
   } else if (options.mode === GanttChartMode.WATERFALL) {
-    positionAndSplitBoxes(boxes, metadata, (box, run, runIdx) => ({
+    positionAndSplitBoxes(boxes, metadata, (box, _run, runIdx) => ({
       x: box.x + (runIdx ? (BOX_SPACING_X + BOX_WIDTH) * runIdx : 0),
       width: BOX_WIDTH,
     }));
   } else if (options.mode === GanttChartMode.FLAT) {
-    positionAndSplitBoxes(boxes, metadata, (box, run, runIdx) => ({
+    positionAndSplitBoxes(boxes, metadata, (box, _run, runIdx) => ({
       x: box.x + (runIdx ? (2 + BOX_WIDTH) * runIdx : 0),
       width: BOX_WIDTH,
     }));

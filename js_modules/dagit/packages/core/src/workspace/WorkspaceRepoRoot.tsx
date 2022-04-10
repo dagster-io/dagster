@@ -1,4 +1,4 @@
-import {Box, PageHeader, Tab, Tabs, TagWIP, Heading} from '@dagster-io/ui';
+import {Box, PageHeader, Tabs, Tag, Heading} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, Route, Switch, useParams} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -6,6 +6,7 @@ import styled from 'styled-components/macro';
 import {OpsRoot} from '../ops/OpsRoot';
 import {SchedulesRoot} from '../schedules/SchedulesRoot';
 import {SensorsRoot} from '../sensors/SensorsRoot';
+import {TabLink} from '../ui/TabLink';
 
 import {RepositoryAssetsList} from './RepositoryAssetsList';
 import {RepositoryGraphsList} from './RepositoryGraphsList';
@@ -79,11 +80,11 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
     <Box flex={{direction: 'column'}} style={{height: '100%'}}>
       <PageHeader
         title={<Heading>{path}</Heading>}
-        tags={<TagWIP icon="folder">Repository</TagWIP>}
+        tags={<Tag icon="folder">Repository</Tag>}
         tabs={
           <Tabs size="small" selectedTabId={activeTab()}>
             {tabs.map(({href, text}) => (
-              <Tab key={text} id={text} title={text} to={href} />
+              <TabLink key={text} id={text} title={text} to={href} />
             ))}
           </Tabs>
         }

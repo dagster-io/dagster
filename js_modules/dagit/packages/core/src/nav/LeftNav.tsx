@@ -1,4 +1,4 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -30,8 +30,8 @@ const LeftNavContainer = styled.div<{$open: boolean; $collapsible: boolean}>`
   flex-shrink: 0;
   flex-direction: column;
   justify-content: start;
-  background: ${ColorsWIP.Gray100};
-  box-shadow: 1px 0px 0px ${ColorsWIP.KeylineGray};
+  background: ${Colors.Gray100};
+  box-shadow: 1px 0px 0px ${Colors.KeylineGray};
 
   ${(p) =>
     p.$collapsible

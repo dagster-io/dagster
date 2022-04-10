@@ -2,7 +2,7 @@ from setuptools import setup  # type: ignore
 
 setup(
     name="run_attribution_example",
-    version="dev",
+    version="0+dev",
     author_email="hello@elementl.com",
     packages=["run_attribution_example"],  # same as name
     install_requires=["dagster"],  # external packages as dependencies

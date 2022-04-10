@@ -94,7 +94,7 @@ def do_stuff_partitioned():
     process_data_for_date()
 ```
 
-In addition to the <PyObject object="daily_partitioned_config" decorator /> decorator, Dagster also provides <PyObject object="monthly_partitioned_config" decorator />, <PyObject object="weekly_partitioned_config" decorator />, <PyObject object="hourly_partitioned_config" decorator />.
+In addition to the <PyObject object="daily_partitioned_config" decorator /> decorator, Dagster also provides <PyObject object="monthly_partitioned_config" decorator />, <PyObject object="weekly_partitioned_config" decorator />, <PyObject object="hourly_partitioned_config" decorator />. See the API docs for each of these decorators for more information on how partitions are built based on different `start_date`, `minute_offset`, `hour_offset`, and `day_offset` inputs.
 
 ### Defining a Job with Static Partitions
 
@@ -183,12 +183,79 @@ Invoking a <PyObject object="PartitionedConfig" /> object will directly invoke t
 
 If you want to check whether the generated run config is valid for the config of job, you can use the <PyObject object="validate_run_config" /> function.
 
-```python file=/concepts/partitions_schedules_sensors/partitioned_config_test.py startafter=start endbefore=end
+```python file=/concepts/partitions_schedules_sensors/partitioned_config_test.py startafter=start_partition_config endbefore=end_partition_config
 from dagster import validate_run_config, daily_partitioned_config
 from datetime import datetime
 
 
 @daily_partitioned_config(start_date=datetime(2020, 1, 1))
+def my_partitioned_config(start: datetime, _end: datetime):
+    return {
+        "ops": {
+            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
+        }
+    }
+
+
+def test_my_partitioned_config():
+    # assert that the decorated function returns the expected output
+    run_config = my_partitioned_config(datetime(2020, 1, 3), datetime(2020, 1, 4))
+    assert run_config == {
+        "ops": {"process_data_for_date": {"config": {"date": "2020-01-03"}}}
+    }
+
+    # assert that the output of the decorated function is valid configuration for the
+    # do_stuff_partitioned job
+    assert validate_run_config(do_stuff_partitioned, run_config)
+```
+
+If you want to test that your <PyObject object="PartitionedConfig" /> creates the partitions you expect, you can use the `get_partition_keys` or `get_run_config_for_partition_key` functions.
+
+```python file=/concepts/partitions_schedules_sensors/partitioned_config_test.py startafter=start_partition_keys endbefore=end_partition_keys
+@daily_partitioned_config(start_date=datetime(2020, 1, 1), minute_offset=15)
+def my_offset_partitioned_config(start: datetime, _end: datetime):
+    return {
+        "ops": {
+            "process_data": {
+                "config": {
+                    "start": start.strftime("%Y-%m-%d-%H:%M"),
+                    "end": _end.strftime("%Y-%m-%d-%H:%M"),
+                }
+            }
+        }
+    }
+
+
+@op(config_schema={"start": str, "end": str})
+def process_data(context):
+    s = context.op_config["start"]
+    e = context.op_config["end"]
+    context.log.info(f"processing data for {s} - {e}")
+
+
+@job(config=my_offset_partitioned_config)
+def do_more_stuff_partitioned():
+    process_data()
+
+
+def test_my_offset_partitioned_config():
+    # test that the partition keys are what you expect
+    keys = my_offset_partitioned_config.get_partition_keys()
+    assert keys[0] == "2020-01-01"
+    assert keys[1] == "2020-01-02"
+
+    # test that the run_config for a partition is valid for do_stuff_partitioned
+    run_config = my_offset_partitioned_config.get_run_config_for_partition_key(keys[0])
+    assert validate_run_config(do_more_stuff_partitioned, run_config)
+
+    # test that the contents of run_config are what you expect
+    assert run_config == {
+        "ops": {
+            "process_data": {
+                "config": {"start": "2020-01-01-00:15", "end": "2020-01-02-00:15"}
+            }
+        }
+    }
 ```
 
 ### Testing Partitioned Jobs
@@ -206,7 +273,7 @@ def test_do_stuff_partitioned():
 
 In Dagit, you can view runs by partition in the Partitions tab of a Job page.
 
-In the "Run Matrix", each column corresponds to one of the partitions in the job. Each row corresponds to one of the steps in the job.
+In the "Run Matrix", each column corresponds to one of the partitions in the job. The time listed corresponds to the start time of the partition. Each row corresponds to one of the steps in the job.
 
 <!-- This was generated from go/prod -->
 

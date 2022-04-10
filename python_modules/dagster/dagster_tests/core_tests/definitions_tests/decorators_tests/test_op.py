@@ -1,5 +1,5 @@
 import time
-from typing import Dict, Generator, Tuple
+from typing import Dict, Generator, List, Tuple
 
 import pytest
 
@@ -89,6 +89,14 @@ def test_ins():
     assert my_op(1, "2") == 3
 
 
+def test_ins_dagster_types():
+    assert In(dagster_type=None)
+    assert In(dagster_type=int)
+    assert In(dagster_type=List)
+    assert In(dagster_type=List[int])  # typing type
+    assert In(dagster_type=Int)  # dagster type
+
+
 def test_out():
     @op(out=Out(metadata={"x": 1}))
     def my_op() -> int:
@@ -102,6 +110,14 @@ def test_out():
     assert my_op.output_defs[0].metadata == {"x": 1}
     assert my_op.output_defs[0].name == "result"
     assert my_op() == 1
+
+
+def test_out_dagster_types():
+    assert Out(dagster_type=None)
+    assert Out(dagster_type=int)
+    assert Out(dagster_type=List)
+    assert Out(dagster_type=List[int])  # typing type
+    assert Out(dagster_type=Int)  # dagster type
 
 
 def test_multi_out():
