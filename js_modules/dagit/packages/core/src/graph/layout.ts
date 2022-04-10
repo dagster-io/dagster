@@ -34,7 +34,7 @@ export type OpGraphLayout = {
   width: number;
   height: number;
   parent: ParentOpLayout | null;
-  connections: OpLayoutEdge[];
+  edges: OpLayoutEdge[];
   ops: {
     [opName: string]: OpLayout;
   };
@@ -145,7 +145,7 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): O
   g.setGraph({rankdir: 'TB', marginx, marginy});
   g.setDefaultEdgeLabel(() => ({}));
 
-  const connections: OpLayoutEdge[] = [];
+  const edges: OpLayoutEdge[] = [];
   const opNamesPresent: {[name: string]: boolean} = {};
 
   pipelineOps.forEach((op) => {
@@ -168,7 +168,7 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): O
         if (opNamesPresent[dep.solid.name] && opNamesPresent[op.name]) {
           g.setEdge({v: dep.solid.name, w: op.name}, {weight: 1});
 
-          connections.push({
+          edges.push({
             from: {
               point: {x: 0, y: 0},
               opName: dep.solid.name,
@@ -297,7 +297,7 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): O
   // Read the Dagre layout and map "edges" back to our data model. We don't
   // currently use the "closest points on the node" Dagre suggests (but we could).
   g.edges().forEach(function (e) {
-    const conn = connections.find((c) => c.from.opName === e.v && c.to.opName === e.w);
+    const conn = edges.find((c) => c.from.opName === e.v && c.to.opName === e.w);
     const points = g.edge(e).points;
     if (conn) {
       conn.from.point = points[0];
@@ -307,7 +307,7 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): O
 
   const result: OpGraphLayout = {
     ops,
-    connections,
+    edges,
     width: maxWidth + marginx,
     height: maxHeight + marginy,
     parent: null,

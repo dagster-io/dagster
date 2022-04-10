@@ -16,33 +16,32 @@ const buildSVGPath = pathVerticalDiagonal({
   y: (s: any) => s.y,
 });
 
-const buildSVGPaths = weakmapMemoize(
-  (connections: OpLayoutEdge[], ops: {[name: string]: OpLayout}) =>
-    connections.map(({from, to}) => {
-      const sourceOutput = ops[from.opName].outputs[from.edgeName];
-      if (!sourceOutput) {
-        throw new Error(
-          `Cannot find ${from.opName}:${from.edgeName} for edge to ${to.opName}:${to.edgeName}`,
-        );
-      }
-      const targetInput = ops[to.opName].inputs[to.edgeName];
-      if (!targetInput) {
-        throw new Error(
-          `Cannot find ${to.opName}:${to.edgeName} for edge from ${from.opName}:${from.edgeName}`,
-        );
-      }
-      return {
-        // can also use from.point for the "Dagre" closest point on node
-        path: buildSVGPath({
-          source: sourceOutput.port,
-          target: targetInput.port,
-        }),
-        sourceOutput,
-        targetInput,
-        from,
-        to,
-      };
-    }),
+const buildSVGPaths = weakmapMemoize((edges: OpLayoutEdge[], ops: {[name: string]: OpLayout}) =>
+  edges.map(({from, to}) => {
+    const sourceOutput = ops[from.opName].outputs[from.edgeName];
+    if (!sourceOutput) {
+      throw new Error(
+        `Cannot find ${from.opName}:${from.edgeName} for edge to ${to.opName}:${to.edgeName}`,
+      );
+    }
+    const targetInput = ops[to.opName].inputs[to.edgeName];
+    if (!targetInput) {
+      throw new Error(
+        `Cannot find ${to.opName}:${to.edgeName} for edge from ${from.opName}:${from.edgeName}`,
+      );
+    }
+    return {
+      // can also use from.point for the "Dagre" closest point on node
+      path: buildSVGPath({
+        source: sourceOutput.port,
+        target: targetInput.port,
+      }),
+      sourceOutput,
+      targetInput,
+      from,
+      to,
+    };
+  }),
 );
 
 const outputIsDynamic = (
@@ -68,11 +67,11 @@ export const OpLinks = React.memo(
     color: string;
     ops: PipelineGraphOpFragment[];
     layout: OpGraphLayout;
-    connections: OpLayoutEdge[];
+    edges: OpLayoutEdge[];
     onHighlight: (arr: Edge[]) => void;
   }) => (
     <g>
-      {buildSVGPaths(props.connections, props.layout.ops).map(
+      {buildSVGPaths(props.edges, props.layout.ops).map(
         ({path, from, sourceOutput, targetInput, to}, idx) => (
           <g
             key={idx}
