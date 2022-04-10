@@ -35,7 +35,7 @@ export const OpCard: React.FC<OpCardProps> = (props) => {
 
   return (
     <Box padding={24}>
-      <OpCardContainer style={{height: layout.boundingBox.height}}>
+      <OpCardContainer style={{height: layout.bounds.height}}>
         <OpNode
           invocation={undefined}
           definition={props.definition}

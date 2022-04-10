@@ -4,15 +4,15 @@ import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {LoadingNotice} from '../pipelines/GraphNotices';
 import {GraphExplorerSolidHandleFragment} from '../pipelines/types/GraphExplorerSolidHandleFragment';
 
-import {PipelineGraph} from './PipelineGraph';
+import {OpGraph} from './OpGraph';
 import {useOpLayout} from './asyncGraphLayout';
-import {PipelineGraphOpFragment} from './types/PipelineGraphOpFragment';
+import {OpGraphOpFragment} from './types/OpGraphOpFragment';
 
 interface Props {
   pipelineName: string;
-  ops: PipelineGraphOpFragment[];
-  focusOps: PipelineGraphOpFragment[];
-  highlightedOps: PipelineGraphOpFragment[];
+  ops: OpGraphOpFragment[];
+  focusOps: OpGraphOpFragment[];
+  highlightedOps: OpGraphOpFragment[];
   selectedHandle?: GraphExplorerSolidHandleFragment;
   parentHandle?: GraphExplorerSolidHandleFragment;
   onClickOp?: (arg: OpNameOrPath) => void;
@@ -21,7 +21,7 @@ interface Props {
   onClickBackground?: () => void;
 }
 
-export const PipelineGraphContainer: React.FC<Props> = (props) => {
+export const OpGraphContainer: React.FC<Props> = (props) => {
   const {
     pipelineName,
     ops,
@@ -42,7 +42,7 @@ export const PipelineGraphContainer: React.FC<Props> = (props) => {
   }
 
   return (
-    <PipelineGraph
+    <OpGraph
       pipelineName={pipelineName}
       ops={ops}
       focusOps={focusOps}

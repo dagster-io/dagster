@@ -5,7 +5,7 @@ import styled from 'styled-components/macro';
 import {weakmapMemoize} from '../app/Util';
 
 import {OpGraphLayout, OpLayout, OpLayoutEdge} from './asyncGraphLayout';
-import {PipelineGraphOpFragment} from './types/PipelineGraphOpFragment';
+import {OpGraphOpFragment} from './types/OpGraphOpFragment';
 
 export type Edge = {a: string; b: string};
 
@@ -16,15 +16,15 @@ const buildSVGPath = pathVerticalDiagonal({
   y: (s: any) => s.y,
 });
 
-const buildSVGPaths = weakmapMemoize((edges: OpLayoutEdge[], ops: {[name: string]: OpLayout}) =>
+const buildSVGPaths = weakmapMemoize((edges: OpLayoutEdge[], nodes: {[name: string]: OpLayout}) =>
   edges.map(({from, to}) => {
-    const sourceOutput = ops[from.opName].outputs[from.edgeName];
+    const sourceOutput = nodes[from.opName].outputs[from.edgeName];
     if (!sourceOutput) {
       throw new Error(
         `Cannot find ${from.opName}:${from.edgeName} for edge to ${to.opName}:${to.edgeName}`,
       );
     }
-    const targetInput = ops[to.opName].inputs[to.edgeName];
+    const targetInput = nodes[to.opName].inputs[to.edgeName];
     if (!targetInput) {
       throw new Error(
         `Cannot find ${to.opName}:${to.edgeName} for edge from ${from.opName}:${from.edgeName}`,
@@ -44,17 +44,14 @@ const buildSVGPaths = weakmapMemoize((edges: OpLayoutEdge[], ops: {[name: string
   }),
 );
 
-const outputIsDynamic = (
-  ops: PipelineGraphOpFragment[],
-  from: {opName: string; edgeName: string},
-) => {
+const outputIsDynamic = (ops: OpGraphOpFragment[], from: {opName: string; edgeName: string}) => {
   const op = ops.find((s) => s.name === from.opName);
   const outDef = op?.definition.outputDefinitions.find((o) => o.name === from.edgeName);
   return outDef?.isDynamic || false;
 };
 
 const inputIsDynamicCollect = (
-  ops: PipelineGraphOpFragment[],
+  ops: OpGraphOpFragment[],
   to: {opName: string; edgeName: string},
 ) => {
   const op = ops.find((s) => s.name === to.opName);
@@ -65,13 +62,13 @@ const inputIsDynamicCollect = (
 export const OpLinks = React.memo(
   (props: {
     color: string;
-    ops: PipelineGraphOpFragment[];
+    ops: OpGraphOpFragment[];
     layout: OpGraphLayout;
     edges: OpLayoutEdge[];
     onHighlight: (arr: Edge[]) => void;
   }) => (
     <g>
-      {buildSVGPaths(props.edges, props.layout.ops).map(
+      {buildSVGPaths(props.edges, props.layout.nodes).map(
         ({path, from, sourceOutput, targetInput, to}, idx) => (
           <g
             key={idx}
