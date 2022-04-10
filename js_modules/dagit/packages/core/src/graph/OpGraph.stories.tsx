@@ -104,7 +104,7 @@ export const Basic = () => {
 
   return (
     <OpGraph
-      pipelineName="Test Pipeline"
+      jobName="Test Pipeline"
       ops={ops}
       layout={getFullOpLayout(ops)}
       interactor={SVGViewport.Interactors.PanAndZoom}
@@ -132,7 +132,7 @@ export const FanOut = () => {
 
   return (
     <OpGraph
-      pipelineName="Test Pipeline"
+      jobName="Test Pipeline"
       ops={ops}
       layout={getFullOpLayout(ops)}
       interactor={SVGViewport.Interactors.PanAndZoom}
@@ -157,7 +157,7 @@ export const Tagged = () => {
 
   return (
     <OpGraph
-      pipelineName="Test Pipeline"
+      jobName="Test Pipeline"
       ops={ops}
       layout={getFullOpLayout(ops)}
       interactor={SVGViewport.Interactors.PanAndZoom}
@@ -169,7 +169,7 @@ export const Tagged = () => {
 };
 
 export const Composite = () => {
-  const [focusOps, setsetFocusOps] = React.useState<string[]>([]);
+  const [focusOps, setFocusOps] = React.useState<string[]>([]);
   const [parentOpName, setParentOpName] = React.useState<string | undefined>();
   const ops = buildBasicDAG();
   const composite = ops.find((s) => s.name === 'C')!;
@@ -213,7 +213,7 @@ export const Composite = () => {
 
   return (
     <OpGraph
-      pipelineName="Test Pipeline"
+      jobName="Test Pipeline"
       ops={parentOp ? childOps : ops}
       parentOp={parentOp}
       parentHandleID={parentOpName}
@@ -221,7 +221,7 @@ export const Composite = () => {
       interactor={SVGViewport.Interactors.PanAndZoom}
       focusOps={ops.filter((s) => focusOps.includes(s.name))}
       highlightedOps={[]}
-      onClickOp={(nameOrPath) => setsetFocusOps([toName(nameOrPath)])}
+      onClickOp={(nameOrPath) => setFocusOps([toName(nameOrPath)])}
       onEnterSubgraph={(nameOrPath) => setParentOpName(toName(nameOrPath))}
       onLeaveSubgraph={() => setParentOpName(undefined)}
       onDoubleClickOp={(nameOrPath) => {

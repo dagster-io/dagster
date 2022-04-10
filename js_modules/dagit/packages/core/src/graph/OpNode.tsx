@@ -9,8 +9,8 @@ import {AssetKey} from '../assets/types';
 
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';
-import {OpLayout, ILayout} from './asyncGraphLayout';
-import {Edge} from './highlighting';
+import {OpLayout} from './asyncGraphLayout';
+import {Edge, IBounds} from './common';
 import {OpNodeDefinitionFragment} from './types/OpNodeDefinitionFragment';
 import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
 
@@ -404,7 +404,7 @@ const NodeContainer = styled.div<{
   }
 `;
 
-export const position = ({x, y, width, height}: ILayout) => ({
+export const position = ({x, y, width, height}: IBounds) => ({
   left: x,
   top: y,
   width,

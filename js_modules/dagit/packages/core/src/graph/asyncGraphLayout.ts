@@ -156,4 +156,4 @@ export function useAssetLayout(graphData: GraphData) {
 }
 
 export {layoutOp} from './layout';
-export type {OpGraphLayout, OpLayout, ILayout, OpLayoutEdge, IPoint} from './layout';
+export type {OpGraphLayout, OpLayout, OpLayoutEdge} from './layout';

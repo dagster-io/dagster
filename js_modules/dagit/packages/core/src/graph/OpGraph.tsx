@@ -9,14 +9,21 @@ import {OpEdges} from './OpEdges';
 import {OpNode, OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT} from './OpNode';
 import {ParentOpNode, SVGLabeledParentRect} from './ParentOpNode';
 import {DETAIL_ZOOM, SVGViewport, SVGViewportInteractor} from './SVGViewport';
-import {OpGraphLayout, OpLayout, ILayout} from './asyncGraphLayout';
-import {Edge, isHighlighted, isOpHighlighted} from './highlighting';
+import {OpGraphLayout} from './asyncGraphLayout';
+import {
+  Edge,
+  closestNodeInDirection,
+  computeNodeKeyPrefixBoundingBoxes,
+  isHighlighted,
+  isNodeOffscreen,
+  isOpHighlighted,
+} from './common';
 import {OpGraphOpFragment} from './types/OpGraphOpFragment';
 
 const NoOp = () => {};
 
 interface OpGraphProps {
-  pipelineName: string;
+  jobName: string;
   layout: OpGraphLayout;
   ops: OpGraphOpFragment[];
   focusOps: OpGraphOpFragment[];
@@ -36,48 +43,7 @@ interface OpGraphProps {
 interface OpGraphContentsProps extends OpGraphProps {
   minified: boolean;
   layout: OpGraphLayout;
-  bounds: {top: number; left: number; right: number; bottom: number};
-}
-
-/**
- * Identifies groups of ops that share a similar `prefix.` and returns
- * an array of bounding boxes and common prefixes. Used to render lightweight
- * outlines around flattened composites.
- */
-function computeOpPrefixBoundingBoxes(layout: OpGraphLayout) {
-  const groups: {[base: string]: ILayout[]} = {};
-  let maxDepth = 0;
-
-  for (const key of Object.keys(layout.nodes)) {
-    const parts = key.split('.');
-    if (parts.length === 1) {
-      continue;
-    }
-    for (let ii = 1; ii < parts.length; ii++) {
-      const base = parts.slice(0, ii).join('.');
-      groups[base] = groups[base] || [];
-      groups[base].push(layout.nodes[key].bounds);
-      maxDepth = Math.max(maxDepth, ii);
-    }
-  }
-
-  const boxes: (ILayout & {name: string})[] = [];
-  for (const base of Object.keys(groups)) {
-    const group = groups[base];
-    const depth = base.split('.').length;
-    const margin = 5 + (maxDepth - depth) * 5;
-
-    if (group.length === 1) {
-      continue;
-    }
-    const x1 = Math.min(...group.map((l) => l.x)) - margin;
-    const x2 = Math.max(...group.map((l) => l.x + l.width)) + margin;
-    const y1 = Math.min(...group.map((l) => l.y)) - margin;
-    const y2 = Math.max(...group.map((l) => l.y + l.height)) + margin;
-    boxes.push({name: base, x: x1, y: y1, width: x2 - x1, height: y2 - y1});
-  }
-
-  return boxes;
+  viewportRect: {top: number; left: number; right: number; bottom: number};
 }
 
 const OpGraphContents: React.FC<OpGraphContentsProps> = React.memo((props) => {
@@ -87,7 +53,7 @@ const OpGraphContents: React.FC<OpGraphContentsProps> = React.memo((props) => {
     layout,
     minified,
     ops,
-    bounds,
+    viewportRect,
     focusOps,
     parentOp,
     parentHandleID,
@@ -134,13 +100,10 @@ const OpGraphContents: React.FC<OpGraphContentsProps> = React.memo((props) => {
         color={Colors.Blue500}
         onHighlight={setHighlighted}
         edges={layout.edges.filter(({from, to}) =>
-          isHighlighted(highlighted, {
-            a: from.opName,
-            b: to.opName,
-          }),
+          isHighlighted(highlighted, {a: from.opName, b: to.opName}),
         )}
       />
-      {computeOpPrefixBoundingBoxes(layout).map((box, idx) => (
+      {computeNodeKeyPrefixBoundingBoxes(layout).map((box, idx) => (
         <rect
           key={idx}
           {...box}
@@ -151,15 +114,7 @@ const OpGraphContents: React.FC<OpGraphContentsProps> = React.memo((props) => {
       ))}
       <foreignObject width={layout.width} height={layout.height} style={{pointerEvents: 'none'}}>
         {ops
-          .filter((op) => {
-            const box = layout.nodes[op.name].bounds;
-            return (
-              box.x + box.width >= bounds.left &&
-              box.y + box.height >= bounds.top &&
-              box.x < bounds.right &&
-              box.y < bounds.bottom
-            );
-          })
+          .filter((op) => !isNodeOffscreen(layout.nodes[op.name].bounds, viewportRect))
           .map((op) => (
             <OpNode
               key={op.name}
@@ -193,91 +148,22 @@ const EmptyHighlightedArray: never[] = [];
 export class OpGraph extends React.Component<OpGraphProps> {
   viewportEl: React.RefObject<SVGViewport> = React.createRef();
 
-  resolveOpPosition = (
-    arg: OpNameOrPath,
-    cb: (cx: number, cy: number, layout: OpLayout) => void,
-  ) => {
+  argToOpLayout = (arg: OpNameOrPath) => {
     const lastName = 'name' in arg ? arg.name : arg.path[arg.path.length - 1];
-    const opLayout = this.props.layout.nodes[lastName];
-    if (!opLayout) {
-      return;
-    }
-    const cx = opLayout.bounds.x + opLayout.bounds.width / 2;
-    const cy = opLayout.bounds.y + opLayout.bounds.height / 2;
-    cb(cx, cy, opLayout);
+    return this.props.layout.nodes[lastName];
   };
 
   centerOp = (arg: OpNameOrPath) => {
-    this.resolveOpPosition(arg, (cx, cy) => {
-      const viewportEl = this.viewportEl.current!;
-      viewportEl.smoothZoomToSVGCoords(cx, cy, viewportEl.state.scale);
-    });
+    const opLayout = this.argToOpLayout(arg);
+    if (opLayout && this.viewportEl.current) {
+      this.viewportEl.current.smoothZoomToSVGBox(opLayout.bounds);
+    }
   };
 
   focusOnOp = (arg: OpNameOrPath) => {
-    this.resolveOpPosition(arg, (cx, cy) => {
-      this.viewportEl.current!.smoothZoomToSVGCoords(cx, cy, DETAIL_ZOOM);
-    });
-  };
-
-  closestOpInDirection = (dir: string): string | undefined => {
-    const {layout, selectedOp} = this.props;
-    if (!selectedOp) {
-      return;
-    }
-
-    const current = layout.nodes[selectedOp.name];
-    const center = (op: OpLayout): {x: number; y: number} => ({
-      x: op.bounds.x + op.bounds.width / 2,
-      y: op.bounds.y + op.bounds.height / 2,
-    });
-
-    /* Sort all the ops in the graph based on their attractiveness
-    as a jump target. We want the nearest node in the exact same row for left/right,
-    and the visually "closest" node above/below for up/down. */
-    const score = (op: OpLayout): number => {
-      const dx = center(op).x - center(current).x;
-      const dy = center(op).y - center(current).y;
-
-      if (dir === 'left' && dy === 0 && dx < 0) {
-        return -dx;
-      }
-      if (dir === 'right' && dy === 0 && dx > 0) {
-        return dx;
-      }
-      if (dir === 'up' && dy < 0) {
-        return -dy + Math.abs(dx) / 5;
-      }
-      if (dir === 'down' && dy > 0) {
-        return dy + Math.abs(dx) / 5;
-      }
-      return Number.NaN;
-    };
-
-    const closest = Object.keys(layout.nodes)
-      .map((name) => ({name, score: score(layout.nodes[name])}))
-      .filter((e) => e.name !== selectedOp.name && !Number.isNaN(e.score))
-      .sort((a, b) => b.score - a.score)
-      .pop();
-
-    return closest ? closest.name : undefined;
-  };
-
-  onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.target && (e.target as HTMLElement).nodeName === 'INPUT') {
-      return;
-    }
-
-    const dir = {37: 'left', 38: 'up', 39: 'right', 40: 'down'}[e.keyCode];
-    if (!dir) {
-      return;
-    }
-
-    const nextOp = this.closestOpInDirection(dir);
-    if (nextOp && this.props.onClickOp) {
-      e.preventDefault();
-      e.stopPropagation();
-      this.props.onClickOp({name: nextOp});
+    const opLayout = this.argToOpLayout(arg);
+    if (opLayout && this.viewportEl.current) {
+      this.viewportEl.current?.smoothZoomToSVGBox(opLayout.bounds, DETAIL_ZOOM);
     }
   };
 
@@ -299,29 +185,36 @@ export class OpGraph extends React.Component<OpGraphProps> {
     }
   }
 
+  onArrowKeyDown = (_e: React.KeyboardEvent<any>, dir: string) => {
+    const nextOp = closestNodeInDirection(this.props.layout, this.props.selectedOp?.name, dir);
+    if (nextOp && this.props.onClickOp) {
+      this.props.onClickOp({name: nextOp});
+    }
+  };
+
   render() {
-    const {layout, interactor, pipelineName, onClickBackground, onDoubleClickOp} = this.props;
+    const {layout, interactor, jobName, onClickBackground, onDoubleClickOp} = this.props;
 
     return (
       <SVGViewport
         ref={this.viewportEl}
-        key={pipelineName}
+        key={jobName}
         maxZoom={1.2}
         interactor={interactor || SVGViewport.Interactors.PanAndZoom}
         graphWidth={layout.width}
         graphHeight={layout.height}
-        onKeyDown={this.onKeyDown}
         onClick={onClickBackground}
         onDoubleClick={this.unfocus}
+        onArrowKeyDown={this.onArrowKeyDown}
       >
-        {({scale}, bounds) => (
+        {({scale}, viewportRect) => (
           <SVGContainer width={layout.width} height={layout.height + 200}>
             <OpGraphContents
               {...this.props}
               layout={layout}
               minified={scale < DETAIL_ZOOM - 0.01}
               onDoubleClickOp={onDoubleClickOp || this.focusOnOp}
-              bounds={bounds}
+              viewportRect={viewportRect}
             />
           </SVGContainer>
         )}
