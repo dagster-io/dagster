@@ -4,7 +4,7 @@ import tempfile
 
 import pytest
 
-from dagster import ModeDefinition, execute_pipeline, graph, op, pipeline, solid
+from dagster import MetadataValue, ModeDefinition, execute_pipeline, graph, op, pipeline, solid
 from dagster.core.definitions.version_strategy import VersionStrategy
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan
@@ -41,15 +41,24 @@ def test_fs_io_manager():
         assert len(handled_output_events) == 2
 
         filepath_a = os.path.join(tmpdir_path, result.run_id, "solid_a", "result")
+        result_metadata_entry_a = handled_output_events[0].event_specific_data.metadata_entries[0]
+        assert result_metadata_entry_a.label == "path"
+        assert result_metadata_entry_a.value == MetadataValue.path(filepath_a)
         assert os.path.isfile(filepath_a)
         with open(filepath_a, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
 
         loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.event_list))
+        input_metadata_entry_a = loaded_input_events[0].event_specific_data.metadata_entries[0]
+        assert input_metadata_entry_a.label == "path"
+        assert input_metadata_entry_a.value == MetadataValue.path(filepath_a)
         assert len(loaded_input_events) == 1
         assert "solid_a" == loaded_input_events[0].event_specific_data.upstream_step_key
 
         filepath_b = os.path.join(tmpdir_path, result.run_id, "solid_b", "result")
+        result_metadata_entry_b = handled_output_events[1].event_specific_data.metadata_entries[0]
+        assert result_metadata_entry_b.label == "path"
+        assert result_metadata_entry_b.value == MetadataValue.path(filepath_b)
         assert os.path.isfile(filepath_b)
         with open(filepath_b, "rb") as read_obj:
             assert pickle.load(read_obj) == 1
