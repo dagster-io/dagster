@@ -1,4 +1,3 @@
-import {IconName} from '@blueprintjs/core';
 import {Box, PageHeader, Tabs, Tag, Heading, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 import {useRouteMatch} from 'react-router-dom';
@@ -20,27 +19,23 @@ import {RepositoryLink} from './RepositoryLink';
 interface TabConfig {
   title: string;
   pathComponent: string;
-  icon: IconName;
   isAvailable?: (permissions: PermissionsMap) => boolean;
 }
 
 const pipelineTabs: {[key: string]: TabConfig} = {
-  overview: {title: 'Overview', pathComponent: '', icon: 'dashboard'},
+  overview: {title: 'Overview', pathComponent: ''},
   playground: {
     title: 'Launchpad',
     pathComponent: 'playground',
-    icon: 'manually-entered-data',
     isAvailable: (permissions: PermissionsMap) => permissions.canLaunchPipelineExecution,
   },
   runs: {
     title: 'Runs',
     pathComponent: 'runs',
-    icon: 'history',
   },
   partitions: {
     title: 'Partitions',
     pathComponent: 'partitions',
-    icon: 'multi-select',
   },
 };
 

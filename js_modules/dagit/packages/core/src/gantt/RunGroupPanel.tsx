@@ -9,7 +9,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
-import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {RunStateSummary, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 
 import {
   RunGroupPanelQuery,
@@ -123,7 +123,7 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
                   }}
                 >
                   {subsetTitleForRun(g)}
-                  <RunElapsed run={g} />
+                  <RunStateSummary run={g} />
                 </div>
               </div>
             </RunGroupRun>

@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
 import {Box, Colors, Tag} from '@dagster-io/ui';
 import qs from 'qs';

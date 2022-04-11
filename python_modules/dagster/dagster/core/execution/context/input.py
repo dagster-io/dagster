@@ -205,6 +205,9 @@ class InputContext:
 
     @property
     def asset_key(self) -> Optional[AssetKey]:
+        if not self._name:
+            return None
+
         matching_input_defs = [
             input_def
             for input_def in cast(SolidDefinition, self._solid_def).input_defs

@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import {
   Slider as BlueprintSlider,
   MultiSlider as BlueprintMultiSlider,

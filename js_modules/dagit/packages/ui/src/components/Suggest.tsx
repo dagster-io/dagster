@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import {InputGroupProps2, IPopoverProps} from '@blueprintjs/core';
 // eslint-disable-next-line no-restricted-imports
 import {isCreateNewItem, Suggest as BlueprintSuggest, SuggestProps} from '@blueprintjs/select';

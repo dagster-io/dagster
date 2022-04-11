@@ -28,7 +28,7 @@ import {RepoSelector, RepoSelectorOption} from './RepoSelector';
 interface Props {
   allRepos: RepoSelectorOption[];
   selected: RepoSelectorOption[];
-  onToggle: (repoAddress: RepoAddress) => void;
+  onToggle: (repoAddresses: RepoAddress[]) => void;
 }
 
 export const RepoNavItem: React.FC<Props> = (props) => {
@@ -70,17 +70,12 @@ export const RepoNavItem: React.FC<Props> = (props) => {
               onClose={() => setOpen(false)}
             >
               <DialogHeader icon="repo" label="Repositories" />
-              <div>
-                <Box padding={{vertical: 8, horizontal: 24}}>
-                  {`${selected.length} of ${allRepos.length} selected`}
-                </Box>
-                <RepoSelector
-                  options={allRepos}
-                  onBrowse={() => setOpen(false)}
-                  onToggle={onToggle}
-                  selected={selected}
-                />
-              </div>
+              <RepoSelector
+                options={allRepos}
+                onBrowse={() => setOpen(false)}
+                onToggle={onToggle}
+                selected={selected}
+              />
               <DialogFooter>
                 <Box padding={{top: 8}}>
                   <Button intent="none" onClick={() => setOpen(false)}>
