@@ -2,12 +2,12 @@
 
 from typing import Tuple
 
-from dagster import Output
-from dagster.core.asset_defs import asset
 from hacker_news_assets.partitions import hourly_partitions
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql.types import ArrayType, DoubleType, LongType, StringType, StructField, StructType
+
+from dagster import Output, asset
 
 HN_ITEMS_SCHEMA = StructType(
     [
@@ -31,14 +31,10 @@ ITEM_FIELD_NAMES = [field.name for field in HN_ITEMS_SCHEMA.fields]
 @asset(
     io_manager_key="parquet_io_manager",
     required_resource_keys={"hn_client"},
-    description="Items from the Hacker News API: each is a story or a comment on a story.",
     partitions_def=hourly_partitions,
 )
 def items(context, id_range_for_time: Tuple[int, int]):
-    """
-    Downloads all of the items for the id range passed in as input and creates a DataFrame with
-    all the entries.
-    """
+    """Items from the Hacker News API: each is a story or a comment on a story."""
     start_id, end_id = id_range_for_time
 
     context.log.info(f"Downloading range {start_id} up to {end_id}: {end_id - start_id} items.")
@@ -66,4 +62,4 @@ def comments(items: SparkDF) -> SparkDF:
 
 @asset(io_manager_key="warehouse_io_manager", partitions_def=hourly_partitions)
 def stories(items: SparkDF) -> SparkDF:
-    return items.where(items["type"] == "stories")
+    return items.where(items["type"] == "story")

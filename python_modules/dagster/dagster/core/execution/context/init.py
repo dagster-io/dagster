@@ -128,8 +128,8 @@ class UnboundInitResourceContext(InitResourceContext):
         resources: Optional[Union[Resources, Dict[str, Any]]],
         instance: Optional[DagsterInstance],
     ):
-        from dagster.core.execution.build_resources import build_resources
         from dagster.core.execution.api import ephemeral_instance_if_missing
+        from dagster.core.execution.build_resources import build_resources
         from dagster.core.execution.context_creation_pipeline import initialize_console_manager
 
         self._instance_provided = (

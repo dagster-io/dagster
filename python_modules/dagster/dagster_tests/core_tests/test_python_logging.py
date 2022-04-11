@@ -4,6 +4,7 @@ import logging
 
 import mock
 import pytest
+
 from dagster import (
     ModeDefinition,
     execute_pipeline,

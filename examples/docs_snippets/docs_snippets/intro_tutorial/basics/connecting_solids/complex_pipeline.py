@@ -1,6 +1,7 @@
 import csv
 
 import requests
+
 from dagster import get_dagster_logger, job, op
 
 
@@ -13,17 +14,13 @@ def download_cereals():
 
 @op
 def find_highest_calorie_cereal(cereals):
-    sorted_cereals = list(
-        sorted(cereals, key=lambda cereal: cereal["calories"])
-    )
+    sorted_cereals = list(sorted(cereals, key=lambda cereal: cereal["calories"]))
     return sorted_cereals[-1]["name"]
 
 
 @op
 def find_highest_protein_cereal(cereals):
-    sorted_cereals = list(
-        sorted(cereals, key=lambda cereal: cereal["protein"])
-    )
+    sorted_cereals = list(sorted(cereals, key=lambda cereal: cereal["protein"]))
     return sorted_cereals[-1]["name"]
 
 

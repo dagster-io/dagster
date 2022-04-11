@@ -6,9 +6,10 @@ from contextlib import contextmanager
 import packaging
 import pytest
 import requests
+from dagster_graphql import DagsterGraphQLClient
+
 from dagster import file_relative_path
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster_graphql import DagsterGraphQLClient
 
 DAGSTER_CURRENT_BRANCH = "current_branch"
 MAX_TIMEOUT_SECONDS = 20

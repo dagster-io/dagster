@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 
 import numpy as np
-from dagster.core.asset_defs import asset
 from pandas import DataFrame, Series
 from scipy.sparse import coo_matrix
+
+from dagster import Output, asset
 
 
 @dataclass
@@ -22,7 +23,7 @@ class IndexedCooMatrix:
 
 
 @asset
-def user_story_matrix(comment_stories: DataFrame) -> IndexedCooMatrix:
+def user_story_matrix(comment_stories: DataFrame):
     """
     A sparse matrix where the rows are users, the columns are stories, and the values
     are whether the user commented on the story.
@@ -38,10 +39,13 @@ def user_story_matrix(comment_stories: DataFrame) -> IndexedCooMatrix:
     sparse_cols = story_col_indices[deduplicated["story_id"]]
     sparse_data = np.ones(len(sparse_rows))
 
-    return IndexedCooMatrix(
-        matrix=coo_matrix(
-            (sparse_data, (sparse_rows, sparse_cols)), shape=(len(users), len(stories))
+    return Output(
+        IndexedCooMatrix(
+            matrix=coo_matrix(
+                (sparse_data, (sparse_rows, sparse_cols)), shape=(len(users), len(stories))
+            ),
+            row_index=Series(user_row_indices.index.values, index=user_row_indices),
+            col_index=Series(story_col_indices.index.values, index=story_col_indices),
         ),
-        row_index=Series(user_row_indices.index.values, index=user_row_indices),
-        col_index=Series(story_col_indices.index.values, index=story_col_indices),
+        metadata={"# Rows (users)": len(users), "# Cols (stories)": len(stories)},
     )

@@ -39,24 +39,22 @@ def slack_on_failure(
         .. code-block:: python
 
             @slack_on_failure("#foo", dagit_base_url="http://localhost:3000")
-            @pipeline(...)
-            def my_pipeline():
+            @job(...)
+            def my_job():
                 pass
 
         .. code-block:: python
 
             def my_message_fn(context: HookContext) -> str:
-                return "Solid {solid_name} failed!".format(
-                    solid_name=context.solid
-                )
+                return f"Op {context.op} failed!"
 
-            @solid
-            def a_solid(context):
+            @op
+            def an_op(context):
                 pass
 
-            @pipeline(...)
-            def my_pipeline():
-                a_solid.with_hooks(hook_defs={slack_on_failure("#foo", my_message_fn)})
+            @job(...)
+            def my_job():
+                an_op.with_hooks(hook_defs={slack_on_failure("#foo", my_message_fn)})
 
     """
 
@@ -91,24 +89,22 @@ def slack_on_success(
         .. code-block:: python
 
             @slack_on_success("#foo", dagit_base_url="http://localhost:3000")
-            @pipeline(...)
-            def my_pipeline():
+            @job(...)
+            def my_job():
                 pass
 
         .. code-block:: python
 
             def my_message_fn(context: HookContext) -> str:
-                return "Solid {solid_name} worked!".format(
-                    solid_name=context.solid
-                )
+                return f"Op {context.solid} worked!"
 
-            @solid
-            def a_solid(context):
+            @op
+            def an_op(context):
                 pass
 
-            @pipeline(...)
-            def my_pipeline():
-                a_solid.with_hooks(hook_defs={slack_on_success("#foo", my_message_fn)})
+            @job(...)
+            def my_job():
+                an_op.with_hooks(hook_defs={slack_on_success("#foo", my_message_fn)})
 
     """
 

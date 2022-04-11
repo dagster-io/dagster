@@ -14,7 +14,7 @@ description: Executors are responsible for executing steps within a job run.
 
 ## Overview
 
-Executors are responsible for executing steps within a job run. Once a run has launched and the process for the run, or run worker, has been allocated and started, the executor assumes responsibility for execution. Executors can range from single-process serial executors all the way to managing per-step computational resources with a sophisticated control plane.
+Executors are responsible for executing steps within a job run. Once a run has launched and the process for the run (the [run worker](/deployment/overview#job-execution-flow)) has been allocated and started, the executor assumes responsibility for execution. Executors can range from single-process serial executors all the way to managing per-step computational resources with a sophisticated control plane.
 
 Every job has an executor. The default executor is the <PyObject object="multiprocess_executor" />, which executes each step in its own process. You can choose the executor for a job by supplying an <PyObject object="ExecutorDefinition" /> to the `executor_def` parameter of <PyObject object="job" decorator /> or <PyObject object="GraphDefinition" method="to_job" />.
 
@@ -23,7 +23,8 @@ Executing a job via <PyObject object="JobDefinition" method="execute_in_process"
 Example executors include:
 
 - <PyObject module="dagster" object="in_process_executor" />: Execution plan
-  executes serially within the run worker itself.
+  executes serially within the [run
+  worker](/deployment/overview#job-execution-flow) itself.
 - <PyObject module="dagster" object="multiprocess_executor" />: Each step
   executes within its own spawned process. Has configurable level of
   parallelism.

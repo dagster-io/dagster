@@ -4,13 +4,17 @@ from typing import Iterator, Optional
 import pendulum
 import pytz
 from croniter import croniter
+
 from dagster import check
 from dagster.seven.compat.pendulum import to_timezone
 
 
 def is_valid_cron_string(cron_string: str) -> bool:
-    # dagster only recognizes standard cron strings that contains 5 parts
-    return croniter.is_valid(cron_string) and len(cron_string.split(" ")) == 5
+    if not croniter.is_valid(cron_string):
+        return False
+    expanded, _ = croniter.expand(cron_string)
+    # dagster only recognizes cron strings that resolve to 5 parts (e.g. not seconds resolution)
+    return len(expanded) == 5
 
 
 def schedule_execution_time_iterator(
@@ -27,30 +31,33 @@ def schedule_execution_time_iterator(
     # and matches the cron schedule
     next_date = date_iter.get_prev(datetime.datetime)
 
-    cron_parts = cron_schedule.split(" ")
-
     check.invariant(is_valid_cron_string(cron_schedule))
 
-    is_numeric = [part.isnumeric() for part in cron_parts]
+    cron_parts, _ = croniter.expand(cron_schedule)
+
+    is_numeric = [len(part) == 1 and part[0] != "*" for part in cron_parts]
+    is_wildcard = [len(part) == 1 and part[0] == "*" for part in cron_parts]
 
     delta_fn = None
+    should_hour_change = False
 
     # Special-case common intervals (hourly/daily/weekly/monthly) since croniter iteration can be
     # much slower than adding a fixed interval
-    if cron_schedule.endswith(" * *") and all(is_numeric[0:3]):  # monthly
+    if all(is_numeric[0:3]) and all(is_wildcard[3:]):  # monthly
         delta_fn = lambda d, num: d.add(months=num)
         should_hour_change = False
-    elif (
-        all(is_numeric[0:2]) and is_numeric[4] and cron_parts[2] == "*" and cron_parts[3] == "*"
-    ):  # weekly
+    elif all(is_numeric[0:2]) and is_numeric[4] and all(is_wildcard[2:4]):  # weekly
         delta_fn = lambda d, num: d.add(weeks=num)
         should_hour_change = False
-    elif all(is_numeric[0:2]) and cron_schedule.endswith(" * * *"):  # daily
+    elif all(is_numeric[0:2]) and all(is_wildcard[2:]):  # daily
         delta_fn = lambda d, num: d.add(days=num)
         should_hour_change = False
-    elif is_numeric[0] and cron_schedule.endswith(" * * * *"):  # hourly
+    elif is_numeric[0] and all(is_wildcard[1:]):  # hourly
         delta_fn = lambda d, num: d.add(hours=num)
         should_hour_change = True
+    else:
+        delta_fn = None
+        should_hour_change = False
 
     if delta_fn:
         # Use pendulums for intervals when possible

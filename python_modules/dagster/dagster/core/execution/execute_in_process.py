@@ -26,6 +26,7 @@ def core_execute_in_process(
     output_capturing_enabled: bool,
     raise_on_error: bool,
     run_tags: Optional[Dict[str, Any]] = None,
+    run_id: Optional[str] = None,
 ) -> ExecuteInProcessResult:
     pipeline_def = ephemeral_pipeline
     mode_def = pipeline_def.get_mode_definition()
@@ -46,9 +47,11 @@ def core_execute_in_process(
             run_config=run_config,
             mode=mode_def.name,
             tags={**pipeline_def.tags, **(run_tags or {})},
+            run_id=run_id,
         )
+        run_id = pipeline_run.run_id
 
-        _execute_run_iterable = ExecuteRunWithPlanIterable(
+        execute_run_iterable = ExecuteRunWithPlanIterable(
             execution_plan=execution_plan,
             iterator=pipeline_execution_iterator,
             execution_context_manager=PlanOrchestrationContextManager(
@@ -63,6 +66,15 @@ def core_execute_in_process(
                 raise_on_error=raise_on_error,
             ),
         )
-        event_list = list(_execute_run_iterable)
 
-    return ExecuteInProcessResult(node, event_list, pipeline_run.run_id, output_capture)
+        event_list = []
+
+        for event in execute_run_iterable:
+            event_list.append(event)
+
+            if event.is_pipeline_event:
+                execute_instance.handle_run_event(run_id, event)
+
+    return ExecuteInProcessResult(
+        node, event_list, execute_instance.get_run_by_id(run_id), output_capture
+    )

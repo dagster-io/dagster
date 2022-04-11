@@ -1,11 +1,11 @@
 import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {
-  DialogWIP,
+  Dialog,
   DialogHeader,
   DialogBody,
   Box,
   Subheading,
-  ButtonWIP,
+  Button,
   ButtonLink,
   DialogFooter,
   Alert,
@@ -15,8 +15,8 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 import * as yaml from 'yaml';
 
-import {AppContext} from '../../app/AppContext';
-import {SharedToaster} from '../../app/DomUtils';
+import {showCustomAlert} from '../../app/CustomAlertProvider';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../../app/Util';
 import {PartitionHealthSummary, usePartitionHealthData} from '../../assets/PartitionHealthSummary';
 import {AssetKey} from '../../assets/types';
@@ -32,12 +32,14 @@ import {
 } from '../../partitions/PartitionRangeInput';
 import {
   LAUNCH_PARTITION_BACKFILL_MUTATION,
-  messageForLaunchBackfillError,
+  showBackfillErrorToast,
+  showBackfillSuccessToast,
 } from '../../partitions/PartitionsBackfill';
 import {
   LaunchPartitionBackfill,
   LaunchPartitionBackfillVariables,
 } from '../../partitions/types/LaunchPartitionBackfill';
+import {DagsterTag} from '../../runs/RunTag';
 import {handleLaunchResult, LAUNCH_PIPELINE_EXECUTION_MUTATION} from '../../runs/RunUtils';
 import {
   LaunchPipelineExecution,
@@ -51,14 +53,50 @@ import {
   AssetJobPartitionSetsQueryVariables,
 } from './types/AssetJobPartitionSetsQuery';
 
-export const LaunchAssetChoosePartitionsDialog: React.FC<{
+interface Props {
   open: boolean;
   setOpen: (open: boolean) => void;
   repoAddress: RepoAddress;
   assetJobName: string;
   assets: {assetKey: AssetKey; opName: string | null; partitionDefinition: string | null}[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
-}> = ({open, setOpen, assets, repoAddress, assetJobName, upstreamAssetKeys}) => {
+}
+
+export const LaunchAssetChoosePartitionsDialog: React.FC<Props> = (props) => {
+  const title = `Launch runs to materialize ${
+    props.assets.length > 1
+      ? `${props.assets.length} assets`
+      : displayNameForAssetKey(props.assets[0].assetKey)
+  }`;
+
+  return (
+    <Dialog
+      style={{width: 700}}
+      isOpen={props.open}
+      canEscapeKeyClose
+      canOutsideClickClose
+      onClose={() => props.setOpen(false)}
+    >
+      <DialogHeader icon="layers" label={title} />
+      <LaunchAssetChoosePartitionsDialogBody {...props} />
+    </Dialog>
+  );
+};
+
+// Note: This dialog loads a lot of data - the body is broken into a separate
+// component so we can be *sure* the hooks won't load data until it's opened.
+// (<Dialog> does not render it's children until open=true)
+//
+// Additionally, we want the dialog to reset when it's closed and re-opened so
+// that partition health, etc. is up-to-date.
+//
+const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
+  setOpen,
+  assets,
+  repoAddress,
+  assetJobName,
+  upstreamAssetKeys,
+}) => {
   const data = usePartitionHealthData(assets.map((a) => a.assetKey));
   const upstreamData = usePartitionHealthData(upstreamAssetKeys);
 
@@ -78,12 +116,7 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
     setSelected([mostRecentKey]);
   }, [mostRecentKey]);
 
-  const title = `Launch runs to materialize ${
-    assets.length > 1 ? `${assets.length} assets` : displayNameForAssetKey(assets[0].assetKey)
-  }`;
-
   const client = useApolloClient();
-  const {basePath} = React.useContext(AppContext);
   const history = useHistory();
 
   // Find the partition set name. This seems like a bit of a hack, unclear
@@ -108,10 +141,15 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
     setLaunching(true);
 
     if (!partitionSet) {
-      SharedToaster.show({
-        message: 'No partition set was found on the job for this asset graph',
-        icon: 'error',
-        intent: 'danger',
+      const error =
+        partitionSetsData?.partitionSetsOrError.__typename === 'PythonError'
+          ? partitionSetsData.partitionSetsOrError
+          : {message: 'No details provided.'};
+
+      setLaunching(false);
+      showCustomAlert({
+        title: `Unable to find partition set on ${assetJobName}`,
+        body: <PythonErrorInfo error={error} />,
       });
       return;
     }
@@ -122,6 +160,7 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
         ConfigPartitionSelectionQueryVariables
       >({
         query: CONFIG_PARTITION_SELECTION_QUERY,
+        fetchPolicy: 'network-only',
         variables: {
           repositorySelector: {
             repositoryLocationName: repoAddress.location,
@@ -143,14 +182,26 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
 
       const {partition} = tagAndConfigData.partitionSetOrError;
 
-      let tags: {key: string; value: string}[] = [];
-      if (partition.tagsOrError.__typename !== 'PythonError') {
-        tags = [...partition.tagsOrError.results];
+      if (partition.tagsOrError.__typename === 'PythonError') {
+        setLaunching(false);
+        showCustomAlert({
+          title: 'Unable to load tags',
+          body: <PythonErrorInfo error={partition.tagsOrError} />,
+        });
+        return;
       }
-      let runConfigData = {};
-      if (partition.runConfigOrError.__typename !== 'PythonError') {
-        runConfigData = yaml.parse(partition.runConfigOrError.yaml || '') || {};
+      if (partition.runConfigOrError.__typename === 'PythonError') {
+        setLaunching(false);
+        showCustomAlert({
+          title: 'Unable to load tags',
+          body: <PythonErrorInfo error={partition.runConfigOrError} />,
+        });
+        return;
       }
+
+      const tags = [...partition.tagsOrError.results];
+      const runConfigData = yaml.parse(partition.runConfigOrError.yaml || '') || {};
+      const stepKeys = assets.map((a) => a.opName!);
 
       const launchResult = await client.mutate<
         LaunchPipelineExecution,
@@ -161,22 +212,30 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
           executionParams: {
             runConfigData,
             mode: partition.mode,
-            stepKeys: assets.map((a) => a.opName!),
+            stepKeys: stepKeys,
             selector: {
               repositoryLocationName: repoAddress.location,
               repositoryName: repoAddress.name,
               jobName: assetJobName,
             },
             executionMetadata: {
-              tags: tags.map((t) => pick(t, ['key', 'value'])),
+              tags: [
+                ...tags.map((t) => pick(t, ['key', 'value'])),
+                {key: DagsterTag.StepSelection, value: stepKeys.join(',')},
+              ],
             },
           },
         },
       });
 
-      handleLaunchResult(basePath, assetJobName, launchResult, {});
+      setLaunching(false);
+      handleLaunchResult(assetJobName, launchResult, history, {behavior: 'toast'});
+
+      if (launchResult.data?.launchPipelineExecution.__typename === 'LaunchRunSuccess') {
+        setOpen(false);
+      }
     } else {
-      const launchBackfillResult = await client.mutate<
+      const {data: launchBackfillData} = await client.mutate<
         LaunchPartitionBackfill,
         LaunchPartitionBackfillVariables
       >({
@@ -198,17 +257,13 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
         },
       });
 
-      if (
-        launchBackfillResult.data?.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess'
-      ) {
-        history.push('/instance/backfills');
+      setLaunching(false);
+
+      if (launchBackfillData?.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess') {
+        showBackfillSuccessToast(history, launchBackfillData?.launchPartitionBackfill.backfillId);
+        setOpen(false);
       } else {
-        setLaunching(false);
-        SharedToaster.show({
-          message: messageForLaunchBackfillError(launchBackfillResult.data),
-          icon: 'error',
-          intent: 'danger',
-        });
+        showBackfillErrorToast(launchBackfillData);
       }
     }
   };
@@ -225,14 +280,7 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
   };
 
   return (
-    <DialogWIP
-      style={{width: 700}}
-      isOpen={open}
-      canEscapeKeyClose
-      canOutsideClickClose
-      onClose={() => setOpen(false)}
-    >
-      <DialogHeader icon="layers" label={title} />
+    <>
       <DialogBody>
         <Box flex={{direction: 'column', gap: 8}}>
           <Subheading style={{flex: 1}}>Partition Keys</Subheading>
@@ -244,15 +292,15 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
                 partitionNames={allKeys}
               />
             </Box>
-            <ButtonWIP small onClick={setMostRecent}>
+            <Button small onClick={setMostRecent}>
               Most Recent
-            </ButtonWIP>
-            <ButtonWIP small onClick={setMissing}>
+            </Button>
+            <Button small onClick={setMissing}>
               Missing
-            </ButtonWIP>
-            <ButtonWIP small onClick={setAll}>
+            </Button>
+            <Button small onClick={setAll}>
               All
-            </ButtonWIP>
+            </Button>
           </Box>
         </Box>
         <Box
@@ -298,18 +346,18 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
       <DialogFooter
         left={partitionSet && <RunningBackfillsNotice partitionSetName={partitionSet.name} />}
       >
-        <ButtonWIP intent="none" onClick={() => setOpen(false)}>
+        <Button intent="none" onClick={() => setOpen(false)}>
           Cancel
-        </ButtonWIP>
-        <ButtonWIP intent="primary" onClick={onLaunch}>
+        </Button>
+        <Button intent="primary" onClick={onLaunch}>
           {launching
             ? 'Launching...'
             : selected.length !== 1
             ? `Launch ${selected.length}-Run Backfill`
             : `Launch 1 Run`}
-        </ButtonWIP>
+        </Button>
       </DialogFooter>
-    </DialogWIP>
+    </>
   );
 };
 
@@ -327,6 +375,7 @@ const ASSET_JOB_PARTITION_SETS_QUERY = gql`
       }
     ) {
       __typename
+      ...PythonErrorFragment
       ... on PartitionSets {
         __typename
         results {
@@ -338,4 +387,6 @@ const ASSET_JOB_PARTITION_SETS_QUERY = gql`
       }
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;

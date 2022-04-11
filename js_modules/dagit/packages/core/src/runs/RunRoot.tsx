@@ -1,10 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, NonIdealState, PageHeader, Popover, TagWIP, Heading, FontFamily} from '@dagster-io/ui';
+import {Box, NonIdealState, PageHeader, Popover, Tag, Heading, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
+import {formatElapsedTime} from '../app/Util';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
@@ -12,6 +15,7 @@ import {Run} from './Run';
 import {RunConfigDialog, RunDetails} from './RunDetails';
 import {RunFragments} from './RunFragments';
 import {RunStatusTag} from './RunStatusTag';
+import {RunStepKeysAssetList} from './RunStepKeysAssetList';
 import {RunRootQuery} from './types/RunRootQuery';
 
 export const RunRoot = () => {
@@ -63,28 +67,67 @@ export const RunRoot = () => {
           tags={
             run ? (
               <>
-                <Popover
-                  interactionKind="hover"
-                  placement="bottom"
-                  content={
-                    <Box padding={16}>
-                      <RunDetails run={run} loading={loading} />
-                    </Box>
-                  }
-                >
-                  <TagWIP icon="info" />
-                </Popover>
-                <TagWIP icon="run">
-                  Run of{' '}
-                  <PipelineReference
-                    pipelineName={run?.pipelineName}
-                    pipelineHrefContext={repoAddress || 'repo-unknown'}
-                    snapshotId={snapshotID}
-                    size="small"
-                    isJob={isJob}
-                  />
-                </TagWIP>
                 <RunStatusTag status={run.status} />
+                {run.pipelineName !== __ASSET_GROUP ? (
+                  <Tag icon="run">
+                    Run of{' '}
+                    <PipelineReference
+                      pipelineName={run?.pipelineName}
+                      pipelineHrefContext={repoAddress || 'repo-unknown'}
+                      snapshotId={snapshotID}
+                      size="small"
+                      isJob={isJob}
+                    />
+                  </Tag>
+                ) : (
+                  <RunStepKeysAssetList stepKeys={run.stepKeysToExecute} clickableTags />
+                )}
+                {run?.startTime ? (
+                  <Popover
+                    interactionKind="hover"
+                    placement="bottom"
+                    content={
+                      <Box padding={16}>
+                        <RunDetails run={run} loading={loading} />
+                      </Box>
+                    }
+                  >
+                    <Tag icon="schedule">
+                      <TimestampDisplay
+                        timestamp={run.startTime}
+                        timeFormat={{showSeconds: true, showTimezone: false}}
+                      />
+                    </Tag>
+                  </Popover>
+                ) : run.updateTime ? (
+                  <Tag icon="schedule">
+                    <TimestampDisplay
+                      timestamp={run.updateTime}
+                      timeFormat={{showSeconds: true, showTimezone: false}}
+                    />
+                  </Tag>
+                ) : undefined}
+                {run?.startTime && run?.endTime ? (
+                  <Popover
+                    interactionKind="hover"
+                    placement="bottom"
+                    content={
+                      <Box padding={16}>
+                        <RunDetails run={run} loading={loading} />
+                      </Box>
+                    }
+                  >
+                    <Tag icon="timer">
+                      <span style={{fontVariantNumeric: 'tabular-nums'}}>
+                        {run?.startTime
+                          ? formatElapsedTime(
+                              (run?.endTime * 1000 || Date.now()) - run?.startTime * 1000,
+                            )
+                          : '–'}
+                      </span>
+                    </Tag>
+                  </Popover>
+                ) : null}
               </>
             ) : null
           }

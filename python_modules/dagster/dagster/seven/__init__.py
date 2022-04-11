@@ -1,7 +1,6 @@
 """Internal py2/3 compatibility library. A little more than six."""
 import datetime
 import inspect
-import multiprocessing
 import os
 import shlex
 import signal
@@ -11,7 +10,7 @@ import threading
 import time
 from contextlib import contextmanager
 from datetime import timezone
-from types import MethodType
+from types import MethodType, ModuleType
 
 import pendulum
 
@@ -23,14 +22,12 @@ IS_WINDOWS = os.name == "nt"
 
 funcsigs = inspect
 
-multiprocessing = multiprocessing.get_context("spawn")  # type: ignore[assignment]
-
 IS_WINDOWS = os.name == "nt"
 
 # TODO implement a generic import by name -- see https://stackoverflow.com/questions/301134/how-to-import-a-module-given-its-name
 
 # https://stackoverflow.com/a/67692/324449
-def import_module_from_path(module_name, path_to_file):
+def import_module_from_path(module_name: str, path_to_file: str) -> ModuleType:
     import importlib.util
 
     spec = importlib.util.spec_from_file_location(module_name, path_to_file)
@@ -100,6 +97,8 @@ def wait_for_process(process, timeout=30):
 
 
 def kill_process(process):
+    import multiprocessing
+
     if not isinstance(process, multiprocessing.Process):
         raise Exception("invalid process argument passed to kill_process")
 

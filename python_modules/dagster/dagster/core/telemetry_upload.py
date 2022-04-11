@@ -4,9 +4,11 @@ import threading
 import zlib
 from contextlib import contextmanager
 
-from .telemetry import MAX_BYTES, get_dir_from_dagster_home
+from .telemetry import MAX_BYTES, get_or_create_dir_from_dagster_home
 
-DAGSTER_TELEMETRY_URL = "http://telemetry.dagster.io/actions"
+
+def get_dagster_telemetry_url():
+    return os.getenv("DAGSTER_TELEMETRY_URL", default="http://telemetry.dagster.io/actions")
 
 
 def is_running_in_test():
@@ -43,8 +45,8 @@ def upload_logs(stop_event, raise_errors=False):
 
     try:
         last_run = datetime.datetime.now() - datetime.timedelta(minutes=120)
-        dagster_log_dir = get_dir_from_dagster_home("logs")
-        dagster_log_queue_dir = get_dir_from_dagster_home(".logs_queue")
+        dagster_log_dir = get_or_create_dir_from_dagster_home("logs")
+        dagster_log_queue_dir = get_or_create_dir_from_dagster_home(".logs_queue")
         in_progress = False
         while not stop_event.is_set():
             log_size = 0
@@ -73,8 +75,8 @@ def upload_logs(stop_event, raise_errors=False):
             ):
                 in_progress = True  # Prevent concurrent _upload_logs invocations
                 last_run = datetime.datetime.now()
-                dagster_log_dir = get_dir_from_dagster_home("logs")
-                dagster_log_queue_dir = get_dir_from_dagster_home(".logs_queue")
+                dagster_log_dir = get_or_create_dir_from_dagster_home("logs")
+                dagster_log_queue_dir = get_or_create_dir_from_dagster_home(".logs_queue")
                 _upload_logs(
                     dagster_log_dir, log_size, dagster_log_queue_dir, raise_errors=raise_errors
                 )
@@ -116,7 +118,7 @@ def _upload_logs(dagster_log_dir, log_size, dagster_log_queue_dir, raise_errors)
 
                     data = zlib.compress(byte, zlib.Z_BEST_COMPRESSION)
                     headers = {"content-encoding": "gzip"}
-                    r = requests.post(DAGSTER_TELEMETRY_URL, data=data, headers=headers)
+                    r = requests.post(get_dagster_telemetry_url(), data=data, headers=headers)
                     if r.status_code == 200:
                         success = True
                     retry_num += 1

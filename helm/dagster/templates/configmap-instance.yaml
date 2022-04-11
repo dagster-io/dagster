@@ -116,3 +116,6 @@ data:
       {{- end }}
       poll_interval_seconds: {{ $runMonitoring.pollIntervalSeconds }}
     {{- end }}
+
+    telemetry:
+      enabled: {{ .Values.telemetry.enabled }}

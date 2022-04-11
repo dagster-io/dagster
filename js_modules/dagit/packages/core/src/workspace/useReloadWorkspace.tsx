@@ -2,7 +2,7 @@ import {gql, useApolloClient, useMutation} from '@apollo/client';
 import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
-import {useInvalidateConfigsForRepo} from '../app/LocalStorage';
+import {useInvalidateConfigsForRepo} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT, UNAUTHORIZED_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 
 import {
@@ -81,9 +81,7 @@ const RELOAD_WORKSPACE_MUTATION = gql`
                 }
               }
             }
-            ... on PythonError {
-              message
-            }
+            ...PythonErrorFragment
           }
         }
       }

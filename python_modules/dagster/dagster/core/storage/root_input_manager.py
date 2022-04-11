@@ -1,4 +1,4 @@
-from abc import abstractmethod, abstractproperty
+from abc import abstractmethod
 from functools import update_wrapper
 
 from dagster import check
@@ -6,13 +6,16 @@ from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
-from dagster.core.definitions.resource_definition import ResourceDefinition
+from dagster.core.definitions.resource_definition import ResourceDefinition, is_context_provided
 from dagster.core.storage.input_manager import InputManager
 from dagster.utils.backcompat import experimental
 
+from ..decorator_utils import get_function_params
+
 
 class IInputManagerDefinition:
-    @abstractproperty
+    @property
+    @abstractmethod
     def input_config_schema(self):
         """The schema for per-input configuration for inputs that are managed by this
         input manager"""
@@ -158,7 +161,11 @@ class RootInputManagerWrapper(RootInputManager):
         self._load_fn = load_fn
 
     def load_input(self, context):
-        return self._load_fn(context)
+        return (
+            self._load_fn(context)
+            if is_context_provided(get_function_params(self._load_fn))
+            else self._load_fn()
+        )
 
 
 class _InputManagerDecoratorCallable:

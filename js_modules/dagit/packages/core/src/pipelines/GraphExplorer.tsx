@@ -1,6 +1,7 @@
 import {gql} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
 import {Breadcrumbs} from '@blueprintjs/core';
-import {Checkbox, ColorsWIP, SplitPanelContainer, TextInput} from '@dagster-io/ui';
+import {Checkbox, Colors, SplitPanelContainer, TextInput} from '@dagster-io/ui';
 import Color from 'color';
 import qs from 'qs';
 import * as React from 'react';
@@ -14,8 +15,7 @@ import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {RepoAddress} from '../workspace/types';
 
-import {EmptyDAGNotice, LargeDAGNotice} from './GraphNotices';
-import {NodeJumpBar} from './NodeJumpBar';
+import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LargeDAGNotice} from './GraphNotices';
 import {ExplorerPath} from './PipelinePathUtils';
 import {
   SidebarTabbedContainer,
@@ -26,6 +26,7 @@ import {GraphExplorerSolidHandleFragment} from './types/GraphExplorerSolidHandle
 
 export interface GraphExplorerOptions {
   explodeComposites: boolean;
+  preferAssetRendering: boolean;
 }
 
 interface GraphExplorerProps {
@@ -65,7 +66,9 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
       const opNames = [...explorerPath.opNames];
       const retValue = fn(opNames);
       if (retValue !== undefined) {
-        throw new Error('handleAdjustPath function is expected to mutate the array');
+        throw new Error(
+          'handleAdjustPath function is expected to mutate the array and return nothing',
+        );
       }
       onChangeExplorerPath({...explorerPath, opNames}, 'push');
     },
@@ -136,12 +139,15 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
 
   React.useEffect(() => {
     if (invalidSelection || invalidParent) {
-      handleAdjustPath((opNames) => opNames.pop());
+      handleAdjustPath((opNames) => {
+        opNames.pop();
+      });
     }
   }, [handleAdjustPath, invalidSelection, invalidParent]);
 
   const solids = React.useMemo(() => handles.map((h) => h.solid), [handles]);
   const solidsQueryEnabled = !parentHandle && !explorerPath.snapshotId;
+  const showAssetRenderingOption = solids.some((s) => s.definition.assetNodes.length > 0);
   const explodeCompositesEnabled =
     !parentHandle &&
     (options.explodeComposites ||
@@ -160,48 +166,74 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
     [nameMatch, queryResultOps.all],
   );
 
-  const backgroundColor = parentHandle ? ColorsWIP.White : ColorsWIP.White;
-  const backgroundTranslucent = Color(backgroundColor).fade(0.6).toString();
-
   return (
     <SplitPanelContainer
       identifier="explorer"
       firstInitialPercent={70}
       first={
         <>
-          <PathOverlay style={{background: backgroundTranslucent}}>
-            <Breadcrumbs
-              items={explorerPath.opNames.map((name, idx) => ({
-                text: name,
-                onClick: () =>
-                  onChangeExplorerPath(
-                    {...explorerPath, opNames: explorerPath.opNames.slice(0, idx + 1)},
-                    'push',
-                  ),
-              }))}
-              currentBreadcrumbRenderer={() => (
-                <NodeJumpBar
-                  nodes={queryResultOps.all}
-                  nodeType="op"
-                  selectedNode={selectedHandle && selectedHandle.solid}
-                  onChange={handleClickOp}
-                />
-              )}
-            />
-          </PathOverlay>
-
-          {solidsQueryEnabled && (
-            <PipelineGraphQueryInputContainer>
+          {solidsQueryEnabled ? (
+            <QueryOverlay>
               <GraphQueryInput
                 items={solids}
                 value={explorerPath.opsQuery}
                 placeholder="Type an op subset…"
+                popoverPosition="bottom-left"
                 onChange={handleQueryChange}
               />
-            </PipelineGraphQueryInputContainer>
+            </QueryOverlay>
+          ) : explorerPath.opNames.length > 1 ? (
+            <BreadcrumbsOverlay>
+              <Breadcrumbs
+                currentBreadcrumbRenderer={() => <span />}
+                items={explorerPath.opNames.map((name, idx) => ({
+                  text: name,
+                  onClick: () =>
+                    onChangeExplorerPath(
+                      {...explorerPath, opNames: explorerPath.opNames.slice(0, idx + 1)},
+                      'push',
+                    ),
+                }))}
+              />
+            </BreadcrumbsOverlay>
+          ) : null}
+
+          {(showAssetRenderingOption || explodeCompositesEnabled) && (
+            <OptionsOverlay>
+              {showAssetRenderingOption && (
+                <Checkbox
+                  format="switch"
+                  label="View as Asset Graph"
+                  checked={options.preferAssetRendering}
+                  onChange={() => {
+                    onChangeExplorerPath({...explorerPath, opNames: []}, 'replace');
+                    setOptions({
+                      ...options,
+                      preferAssetRendering: !options.preferAssetRendering,
+                    });
+                  }}
+                />
+              )}
+              {explodeCompositesEnabled && (
+                <OptionsOverlay>
+                  <Checkbox
+                    format="switch"
+                    label="Explode graphs"
+                    checked={options.explodeComposites}
+                    onChange={() => {
+                      handleQueryChange('');
+                      setOptions({
+                        ...options,
+                        explodeComposites: !options.explodeComposites,
+                      });
+                    }}
+                  />
+                </OptionsOverlay>
+              )}
+            </OptionsOverlay>
           )}
 
-          <SearchOverlay style={{background: backgroundTranslucent}}>
+          <HighlightOverlay>
             <TextInput
               name="highlighted"
               icon="search"
@@ -209,30 +241,18 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
               placeholder="Highlight…"
               onChange={(e) => setNameMatch(e.target.value)}
             />
-          </SearchOverlay>
-          {explodeCompositesEnabled && (
-            <OptionsOverlay>
-              <Checkbox
-                label="Explode graphs"
-                checked={options.explodeComposites}
-                onChange={() => {
-                  handleQueryChange('');
-                  setOptions({
-                    ...options,
-                    explodeComposites: !options.explodeComposites,
-                  });
-                }}
-              />
-            </OptionsOverlay>
-          )}
+          </HighlightOverlay>
+
           {solids.length === 0 ? (
             <EmptyDAGNotice nodeType="op" isGraph={isGraph} />
           ) : queryResultOps.applyingEmptyDefault ? (
             <LargeDAGNotice nodeType="op" />
+          ) : Object.keys(queryResultOps.all).length === 0 ? (
+            <EntirelyFilteredDAGNotice nodeType="op" />
           ) : undefined}
+
           <PipelineGraphContainer
             pipelineName={pipelineOrGraph.name}
-            backgroundColor={backgroundColor}
             ops={queryResultOps.all}
             focusOps={queryResultOps.focus}
             highlightedOps={highlightedOps}
@@ -280,6 +300,16 @@ export const GRAPH_EXPLORER_FRAGMENT = gql`
   ${SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT}
 `;
 
+export const GRAPH_EXPLORER_ASSET_NODE_FRAGMENT = gql`
+  fragment GraphExplorerAssetNodeFragment on AssetNode {
+    id
+    opName
+    assetKey {
+      path
+    }
+  }
+`;
+
 export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
   fragment GraphExplorerSolidHandleFragment on SolidHandle {
     handleID
@@ -302,7 +332,7 @@ export const RightInfoPanel = styled.div`
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: ${ColorsWIP.White};
+  background: ${Colors.White};
 `;
 
 export const RightInfoPanelContent = styled.div`
@@ -310,17 +340,21 @@ export const RightInfoPanelContent = styled.div`
   overflow-y: auto;
 `;
 
-const OptionsOverlay = styled.div`
+export const OptionsOverlay = styled.div`
+  background-color: ${Color(Colors.White).fade(0.6).toString()};
   z-index: 2;
-  padding: 5px 15px;
+  padding: 15px 15px;
   display: inline-flex;
   align-items: stretch;
+  white-space: nowrap;
   position: absolute;
   bottom: 0;
   left: 0;
+  gap: 8px;
 `;
 
-export const SearchOverlay = styled.div`
+export const HighlightOverlay = styled.div`
+  background-color: ${Color(Colors.White).fade(0.6).toString()};
   z-index: 2;
   padding: 12px 12px 0 0;
   display: inline-flex;
@@ -330,21 +364,23 @@ export const SearchOverlay = styled.div`
   right: 0;
 `;
 
-const PathOverlay = styled.div`
+export const QueryOverlay = styled.div`
+  z-index: 2;
+  position: absolute;
+  top: 10px;
+  left: 20px;
+  white-space: nowrap;
+`;
+
+export const BreadcrumbsOverlay = styled.div`
+  background-color: ${Color(Colors.White).fade(0.6).toString()};
   z-index: 2;
   padding: 12px 0 0 20px;
+  height: 42px;
   max-width: calc(100% - 250px);
   display: inline-flex;
   align-items: center;
   position: absolute;
+  top: 0;
   left: 0;
-`;
-
-const PipelineGraphQueryInputContainer = styled.div`
-  z-index: 2;
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
 `;

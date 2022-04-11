@@ -1,9 +1,11 @@
 import graphene
 import yaml
+
 from dagster import check
+from dagster.core.events import DagsterEventType
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter, RunRecord
+from dagster.core.storage.pipeline_run import PipelineRunStatus, RunRecord, RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 from dagster.utils import datetime_as_float
 
@@ -357,19 +359,26 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_events(self, graphene_info, after=-1):
         events = graphene_info.context.instance.logs_after(self.run_id, cursor=after)
+        events = [
+            event
+            for event in events
+            if event.dagster_event_type != DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+        ]
         return [from_event_record(event, self._pipeline_run.pipeline_name) for event in events]
 
     def _get_run_record(self, instance):
         if not self._run_record:
-            self._run_record = instance.get_run_records(PipelineRunsFilter(run_ids=[self.run_id]))[
-                0
-            ]
+            self._run_record = instance.get_run_records(RunsFilter(run_ids=[self.run_id]))[0]
         return self._run_record
 
     def resolve_startTime(self, graphene_info):
         run_record = self._get_run_record(graphene_info.context.instance)
         # If a user has not migrated in 0.13.15, then run_record will not have start_time and end_time. So it will be necessary to fill this data using the run_stats. Since we potentially make this call multiple times, we cache the result.
         if run_record.start_time is None and self._pipeline_run.status in STARTED_STATUSES:
+            # Short-circuit if pipeline failed to start, so it has an end time but no start time
+            if run_record.end_time is not None:
+                return None
+
             if self._run_stats is None or self._run_stats.start_time is None:
                 self._run_stats = graphene_info.context.instance.get_run_stats(self.runId)
             return self._run_stats.start_time
@@ -520,7 +529,7 @@ class GrapheneIPipelineSnapshotMixin:
         return self.get_represented_pipeline().solid_selection
 
     def resolve_runs(self, graphene_info, **kwargs):
-        runs_filter = PipelineRunsFilter(pipeline_name=self.get_represented_pipeline().name)
+        runs_filter = RunsFilter(pipeline_name=self.get_represented_pipeline().name)
         return get_runs(graphene_info, runs_filter, kwargs.get("cursor"), kwargs.get("limit"))
 
     def resolve_schedules(self, graphene_info):
@@ -775,3 +784,27 @@ class GrapheneInProgressRunsByStep(graphene.ObjectType):
 
     class Meta:
         name = "InProgressRunsByStep"
+
+
+class GrapheneJobRunsCount(graphene.ObjectType):
+    stepKey = graphene.NonNull(graphene.String)
+    jobNames = non_null_list(graphene.String)
+    count = graphene.NonNull(graphene.Int)
+    sinceLatestMaterialization = graphene.NonNull(graphene.Boolean)
+
+    class Meta:
+        name = "JobRunsCount"
+
+
+class GrapheneLatestRun(graphene.ObjectType):
+    stepKey = graphene.NonNull(graphene.String)
+    run = graphene.Field(GrapheneRun)
+
+    class Meta:
+        name = "LatestRun"
+
+
+class GrapheneRunStatsByStep(graphene.Union):
+    class Meta:
+        types = (GrapheneLatestRun, GrapheneJobRunsCount)
+        name = "RunStatsByStep"

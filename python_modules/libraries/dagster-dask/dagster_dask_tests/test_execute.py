@@ -5,6 +5,9 @@ from threading import Thread
 
 import dagster_pandas as dagster_pd
 import pytest
+from dagster_dask import DataFrame, dask_executor
+from dask.distributed import Scheduler, Worker
+
 from dagster import (
     DagsterUnmetExecutorRequirementsError,
     InputDefinition,
@@ -21,12 +24,10 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.executor_definition import default_executors
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.events import DagsterEventType
 from dagster.core.test_utils import instance_for_test, nesting_composite_pipeline
 from dagster.utils import send_interrupt
-from dagster_dask import DataFrame, dask_executor
-from dask.distributed import Scheduler, Worker
 
 
 @solid

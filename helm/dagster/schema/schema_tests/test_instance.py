@@ -1,6 +1,5 @@
 import pytest
 import yaml
-from dagster.core.run_coordinator import QueuedRunCoordinator
 from dagster_aws.s3.compute_log_manager import S3ComputeLogManager
 from dagster_azure.blob.compute_log_manager import AzureBlobComputeLogManager
 from dagster_gcp.gcs.compute_log_manager import GCSComputeLogManager
@@ -37,8 +36,11 @@ from schema.charts.dagster.subschema.run_launcher import (
     RunLauncherConfig,
     RunLauncherType,
 )
+from schema.charts.dagster.subschema.telemetry import Telemetry
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
+
+from dagster.core.run_coordinator import QueuedRunCoordinator
 
 
 def to_camel_case(s: str) -> str:
@@ -589,6 +591,17 @@ def test_custom_python_logs_missing_config(template: HelmTemplate):
     assert python_logs_config["python_log_level"] == "INFO"
     assert "managed_python_loggers" not in python_logs_config
     assert "dagster_handler_config" not in python_logs_config
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_telemetry(template: HelmTemplate, enabled: bool):
+    helm_values = DagsterHelmValues.construct(telemetry=Telemetry.construct(enabled=enabled))
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    telemetry_config = instance.get("telemetry")
+
+    assert telemetry_config["enabled"] == enabled
 
 
 @pytest.mark.parametrize(

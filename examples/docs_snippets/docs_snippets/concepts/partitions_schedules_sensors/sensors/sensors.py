@@ -1,6 +1,6 @@
 """isort:skip_file"""
 
-from dagster import repository, SkipReason
+from dagster import repository, DefaultSensorStatus, SkipReason
 
 
 # start_sensor_job_marker
@@ -34,11 +34,21 @@ def my_directory_sensor():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
+                run_config={
+                    "ops": {"process_file": {"config": {"filename": filename}}}
+                },
             )
 
 
 # end_directory_sensor_marker
+
+# start_running_in_code
+@sensor(job=log_file_job, default_status=DefaultSensorStatus.RUNNING)
+def my_running_sensor():
+    ...
+
+
+# end_running_in_code
 
 
 # start_sensor_testing_no
@@ -59,19 +69,6 @@ def test_sensor():
 
 
 # end_sensor_testing_no
-
-
-def isolated_run_request():
-    filename = "placeholder"
-
-    # start_run_request_marker
-
-    yield RunRequest(
-        run_key=filename,
-        run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
-    )
-
-    # end_run_request_marker
 
 
 @job
@@ -142,7 +139,9 @@ def my_directory_sensor_with_skip_reasons():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
+                run_config={
+                    "ops": {"process_file": {"config": {"filename": filename}}}
+                },
             )
             has_files = True
     if not has_files:

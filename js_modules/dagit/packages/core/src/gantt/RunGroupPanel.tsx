@@ -1,14 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ButtonLink, ColorsWIP, Group, IconWIP, FontFamily} from '@dagster-io/ui';
+import {Box, ButtonLink, Colors, Group, Icon, FontFamily} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
-import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {RunStateSummary, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 
 import {
   RunGroupPanelQuery,
@@ -51,11 +52,11 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
   if (group.__typename === 'PythonError') {
     return (
       <Group direction="row" spacing={8} padding={8}>
-        <IconWIP name="warning" color={ColorsWIP.Yellow500} />
+        <Icon name="warning" color={Colors.Yellow500} />
         <div style={{fontSize: '13px'}}>
           The run group for this run could not be loaded.{' '}
           <ButtonLink
-            color={ColorsWIP.Blue500}
+            color={Colors.Blue500}
             underline="always"
             onClick={() => {
               showCustomAlert({
@@ -104,7 +105,7 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
                   flex: 1,
                   marginLeft: 5,
                   minWidth: 0,
-                  color: ColorsWIP.Gray700,
+                  color: Colors.Gray700,
                 }}
               >
                 <div style={{display: 'flex', justifyContent: 'space-between'}}>
@@ -117,12 +118,12 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
                 <div
                   style={{
                     display: 'flex',
-                    color: ColorsWIP.Gray700,
+                    color: Colors.Gray700,
                     justifyContent: 'space-between',
                   }}
                 >
                   {subsetTitleForRun(g)}
-                  <RunElapsed run={g} />
+                  <RunStateSummary run={g} />
                 </div>
               </div>
             </RunGroupRun>
@@ -137,9 +138,7 @@ const RUN_GROUP_PANEL_QUERY = gql`
   query RunGroupPanelQuery($runId: ID!) {
     runGroupOrError(runId: $runId) {
       __typename
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
       ... on RunGroup {
         rootRunId
         runs {
@@ -159,11 +158,12 @@ const RUN_GROUP_PANEL_QUERY = gql`
     }
   }
   ${RUN_TIME_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 const RunGroupRun = styled(Link)<{selected: boolean}>`
   align-items: flex-start;
-  background: ${({selected}) => (selected ? ColorsWIP.Gray100 : ColorsWIP.White)};
+  background: ${({selected}) => (selected ? Colors.Gray100 : Colors.White)};
   padding: 4px 6px 4px 24px;
   font-family: ${FontFamily.monospace};
   font-size: 14px;
@@ -172,7 +172,7 @@ const RunGroupRun = styled(Link)<{selected: boolean}>`
   position: relative;
   &:hover {
     text-decoration: none;
-    background: ${({selected}) => (selected ? ColorsWIP.Gray100 : ColorsWIP.Gray50)};
+    background: ${({selected}) => (selected ? Colors.Gray100 : Colors.Gray50)};
   }
 `;
 
@@ -180,13 +180,13 @@ const ThinLine = styled.div`
   position: absolute;
   top: 20px;
   width: 1px;
-  background: ${ColorsWIP.Gray200};
+  background: ${Colors.Gray200};
   left: 29px;
   z-index: 2;
 `;
 
 const RunTitle = styled.span`
-  color: ${ColorsWIP.Dark};
+  color: ${Colors.Dark};
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -200,8 +200,8 @@ const RootTag = (
       borderRadius: 2,
       fontSize: 12,
       lineHeight: '14px',
-      background: ColorsWIP.Gray300,
-      color: ColorsWIP.White,
+      background: Colors.Gray300,
+      color: Colors.White,
       padding: '0 4px',
       fontWeight: 400,
       userSelect: 'none',

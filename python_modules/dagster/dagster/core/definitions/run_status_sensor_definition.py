@@ -3,13 +3,16 @@ from datetime import datetime
 from typing import Any, Callable, List, NamedTuple, Optional, Union, cast
 
 import pendulum
+
 from dagster import check
 from dagster.core.definitions import GraphDefinition, PipelineDefinition
 from dagster.core.definitions.sensor_definition import (
+    DefaultSensorStatus,
     PipelineRunReaction,
     SensorDefinition,
     SensorEvaluationContext,
     SkipReason,
+    is_context_provided,
 )
 from dagster.core.errors import (
     DagsterInvalidInvocationError,
@@ -18,12 +21,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import (
-    DagsterRun,
-    PipelineRun,
-    PipelineRunStatus,
-    PipelineRunsFilter,
-)
+from dagster.core.storage.pipeline_run import DagsterRun, PipelineRun, PipelineRunStatus, RunsFilter
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
@@ -34,6 +32,8 @@ from dagster.serdes.serdes import register_serdes_tuple_fallbacks
 from dagster.seven import JSONDecodeError
 from dagster.utils import utc_datetime_from_timestamp
 from dagster.utils.error import serializable_error_info_from_exc_info
+
+from ..decorator_utils import get_function_params
 
 
 @whitelist_for_serdes
@@ -110,6 +110,7 @@ class RunStatusSensorContext(
         )
 
     def for_run_failure(self):
+        """Converts RunStatusSensorContext to RunFailureSensorContext."""
         return RunFailureSensorContext(
             sensor_name=self.sensor_name,
             dagster_run=self.dagster_run,
@@ -154,11 +155,57 @@ class RunFailureSensorContext(RunStatusSensorContext):
         return self.dagster_event
 
 
+def build_run_status_sensor_context(
+    sensor_name: str,
+    dagster_event: DagsterEvent,
+    dagster_instance: DagsterInstance,
+    dagster_run: DagsterRun,
+) -> RunStatusSensorContext:
+    """
+    Builds run status sensor context from provided parameters.
+
+    This function can be used to provide the context argument when directly invoking a function
+    decorated with `@run_status_sensor` or `@run_failure_sensor`, such as when writing unit tests.
+
+    Args:
+        sensor_name (str): The name of the sensor the context is being constructed for.
+        dagster_event (DagsterEvent): A DagsterEvent with the same event type as the one that
+            triggers the run_status_sensor
+        dagster_instance (DagsterInstance): The dagster instance configured for the context.
+        dagster_run (DagsterRun): DagsterRun object from running a job
+
+    Examples:
+        .. code-block:: python
+
+            instance = DagsterInstance.ephemeral()
+            result = my_job.execute_in_process(instance=instance)
+
+            dagster_run = result.dagster_run
+            dagster_event = result.get_job_success_event() # or get_job_failure_event()
+
+            context = build_run_status_sensor_context(
+                sensor_name="run_status_sensor_to_invoke",
+                dagster_instance=instance,
+                dagster_run=dagster_run,
+                dagster_event=dagster_event,
+            )
+            run_status_sensor_to_invoke(context)
+    """
+
+    return RunStatusSensorContext(
+        sensor_name=sensor_name,
+        instance=dagster_instance,
+        dagster_run=dagster_run,
+        dagster_event=dagster_event,
+    )
+
+
 def pipeline_failure_sensor(
-    name: Union[Callable[..., Any], Optional[str]] = None,
+    name: Optional[Union[Callable[..., Any], str]] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     pipeline_selection: Optional[List[str]] = None,
+    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[
     [Callable[[PipelineFailureSensorContext], Union[SkipReason, PipelineRunReaction]]],
     SensorDefinition,
@@ -178,6 +225,8 @@ def pipeline_failure_sensor(
         pipeline_selection (Optional[List[str]]): Names of the pipelines that will be monitored by
             this failure sensor. Defaults to None, which means the alert will be sent when any
             pipeline in the repository fails.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def inner(
@@ -195,6 +244,7 @@ def pipeline_failure_sensor(
             name=sensor_name,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
+            default_status=default_status,
         )
         def _pipeline_failure_sensor(context: RunStatusSensorContext):
             fn(context.for_pipeline_failure())
@@ -209,11 +259,12 @@ def pipeline_failure_sensor(
 
 
 def run_failure_sensor(
-    name: Union[Callable[..., Any], Optional[str]] = None,
+    name: Optional[Union[Callable[..., Any], str]] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
     pipeline_selection: Optional[List[str]] = None,
+    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[
     [Callable[[RunFailureSensorContext], Union[SkipReason, PipelineRunReaction]]],
     SensorDefinition,
@@ -236,6 +287,8 @@ def run_failure_sensor(
         pipeline_selection (Optional[List[str]]): (legacy) Names of the pipelines that will be monitored by
             this sensor. Defaults to None, which means the alert will be sent when any pipeline in
             the repository fails.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def inner(
@@ -254,6 +307,7 @@ def run_failure_sensor(
             description=description,
             job_selection=job_selection,
             pipeline_selection=pipeline_selection,
+            default_status=default_status,
         )
         def _run_failure_sensor(context: RunStatusSensorContext):
             fn(context.for_run_failure())
@@ -287,6 +341,8 @@ class RunStatusSensorDefinition(SensorDefinition):
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition]]]): The jobs that
             will be monitored by this sensor. Defaults to None, which means the alert will be sent
             when any job in the repository fails.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def __init__(
@@ -300,9 +356,10 @@ class RunStatusSensorDefinition(SensorDefinition):
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
+        default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
 
-        from dagster.core.storage.event_log.base import RunShardedEventsCursor, EventRecordsFilter
+        from dagster.core.storage.event_log.base import EventRecordsFilter, RunShardedEventsCursor
 
         check.str_param(name, "name")
         check.inst_param(pipeline_run_status, "pipeline_run_status", PipelineRunStatus)
@@ -311,6 +368,11 @@ class RunStatusSensorDefinition(SensorDefinition):
         check.opt_int_param(minimum_interval_seconds, "minimum_interval_seconds")
         check.opt_str_param(description, "description")
         check.opt_list_param(job_selection, "job_selection", (PipelineDefinition, GraphDefinition))
+        check.inst_param(default_status, "default_status", DefaultSensorStatus)
+
+        self._run_status_sensor_fn = check.callable_param(
+            run_status_sensor_fn, "run_status_sensor_fn"
+        )
 
         def _wrapped_fn(context: SensorEvaluationContext):
             # initiate the cursor to (most recent event id, current timestamp) when:
@@ -359,7 +421,7 @@ class RunStatusSensorDefinition(SensorDefinition):
 
                 # get run info
                 run_records = context.instance.get_run_records(
-                    filters=PipelineRunsFilter(run_ids=[event_log_entry.run_id])
+                    filters=RunsFilter(run_ids=[event_log_entry.run_id])
                 )
 
                 # skip if we couldn't find the right run
@@ -439,6 +501,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                 # * update cursor and job state
                 yield PipelineRunReaction(
                     pipeline_run=pipeline_run,
+                    run_status=pipeline_run_status,
                     error=serializable_error,
                 )
 
@@ -447,12 +510,52 @@ class RunStatusSensorDefinition(SensorDefinition):
             evaluation_fn=_wrapped_fn,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
+            default_status=default_status,
         )
 
     def __call__(self, *args, **kwargs):
-        raise DagsterInvalidInvocationError(
-            "Direct invocation of RunStatusSensors is not yet supported."
-        )
+        context_provided = is_context_provided(get_function_params(self._run_status_sensor_fn))
+
+        if context_provided:
+            if len(args) + len(kwargs) == 0:
+                raise DagsterInvalidInvocationError(
+                    "Run status sensor function expected context argument, but no context argument "
+                    "was provided when invoking."
+                )
+            if len(args) + len(kwargs) > 1:
+                raise DagsterInvalidInvocationError(
+                    "Run status sensor invocation received multiple arguments. Only a first "
+                    "positional context parameter should be provided when invoking."
+                )
+
+            context_param_name = get_function_params(self._run_status_sensor_fn)[0].name
+
+            if args:
+                context = check.opt_inst_param(args[0], context_param_name, RunStatusSensorContext)
+            else:
+                if context_param_name not in kwargs:
+                    raise DagsterInvalidInvocationError(
+                        f"Run status sensor invocation expected argument '{context_param_name}'."
+                    )
+                context = check.opt_inst_param(
+                    kwargs[context_param_name], context_param_name, RunStatusSensorContext
+                )
+
+            if not context:
+                raise DagsterInvalidInvocationError(
+                    "Context must be provided for direct invocation of run status sensor."
+                )
+
+            return self._run_status_sensor_fn(context)
+
+        else:
+            if len(args) + len(kwargs) > 0:
+                raise DagsterInvalidInvocationError(
+                    "Run status sensor decorated function has no arguments, but arguments were "
+                    "provided to invocation."
+                )
+
+            return self._run_status_sensor_fn()
 
 
 def run_status_sensor(
@@ -462,6 +565,7 @@ def run_status_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
+    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[
     [Callable[[RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]]],
     RunStatusSensorDefinition,
@@ -485,6 +589,8 @@ def run_status_sensor(
         job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): Jobs that will
             be monitored by this sensor. Defaults to None, which means the alert will be sent when
             any job in the repository fails.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def inner(
@@ -505,6 +611,7 @@ def run_status_sensor(
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job_selection=job_selection,
+            default_status=default_status,
         )
 
     return inner

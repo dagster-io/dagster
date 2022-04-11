@@ -1,10 +1,15 @@
 import datetime
 
 import great_expectations as ge
+from dagster_pandas import DataFrame
+from great_expectations.render.renderer import ValidationResultsPageRenderer
+from great_expectations.render.view import DefaultMarkdownPageView
+
 from dagster import (
-    EventMetadataEntry,
     ExpectationResult,
     InputDefinition,
+    MetadataEntry,
+    MetadataValue,
     Noneable,
     Output,
     OutputDefinition,
@@ -14,9 +19,6 @@ from dagster import (
     resource,
     solid,
 )
-from dagster_pandas import DataFrame
-from great_expectations.render.renderer import ValidationResultsPageRenderer
-from great_expectations.render.view import DefaultMarkdownPageView
 
 try:
     # ge < v0.13.0
@@ -99,7 +101,7 @@ def core_ge_validation_factory(
         )
         md_str = " ".join(DefaultMarkdownPageView().render(rendered_document_content_list))
 
-        meta_stats = EventMetadataEntry.md(md_str=md_str, label="Expectation Results")
+        meta_stats = MetadataEntry("Expectation Results", value=MetadataValue.md(md_str))
         yield ExpectationResult(
             success=res["success"],
             metadata_entries=[
@@ -252,7 +254,7 @@ def core_ge_validation_factory_v3(
         )
         md_str = "".join(DefaultMarkdownPageView().render(rendered_document_content_list))
 
-        meta_stats = EventMetadataEntry.md(md_str=md_str, label="Expectation Results")
+        meta_stats = MetadataEntry("Expectation Results", value=MetadataValue.md(md_str))
         yield ExpectationResult(
             success=bool(results["success"]),
             metadata_entries=[meta_stats],

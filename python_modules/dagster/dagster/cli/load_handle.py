@@ -1,9 +1,11 @@
 import os
+from typing import Dict, cast
 
 from click import UsageError
+
 from dagster import check
 from dagster.cli.workspace.cli_target import get_working_directory_from_kwargs
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.definitions.reconstruct import ReconstructableRepository
 
 
 def _cli_load_invariant(condition, msg=None):
@@ -15,7 +17,7 @@ def _cli_load_invariant(condition, msg=None):
         raise UsageError(msg)
 
 
-def recon_repo_for_cli_args(kwargs):
+def recon_repo_for_cli_args(kwargs: Dict[str, str]):
     """Builds a ReconstructableRepository for CLI arguments, which can be any of the combinations
     for repo loading above.
     """
@@ -38,7 +40,7 @@ def recon_repo_for_cli_args(kwargs):
         _cli_load_invariant(kwargs.get("repository_yaml") is None)
         _cli_load_invariant(kwargs.get("module_name") is None)
         return ReconstructableRepository.for_file(
-            os.path.abspath(kwargs["python_file"]),
+            os.path.abspath(cast(str, kwargs["python_file"])),
             kwargs["fn_name"],
             get_working_directory_from_kwargs(kwargs),
         )

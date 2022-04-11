@@ -4,6 +4,7 @@ from collections import defaultdict
 from typing import Callable, List, MutableMapping, Optional
 
 import sqlalchemy as db
+
 from dagster import check, seven
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log import (
@@ -66,12 +67,14 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         self._disposed = False
 
-        self._event_watcher = PostgresEventWatcher(self.postgres_url)
-
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
         )
+
+        # lazy init
+        self._event_watcher: Optional[PostgresEventWatcher] = None
+
         self._secondary_index_cache = {}
 
         table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
@@ -155,19 +158,38 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         if (
             event.is_dagster_event
-            and event.dagster_event.is_step_materialization
+            and (
+                event.dagster_event.is_step_materialization
+                or event.dagster_event.is_asset_observation
+            )
             and event.dagster_event.asset_key
         ):
-            # Currently, only materializations are stored in the asset catalog.
-            # We will store observations after adding a column migration to
-            # store latest asset observation timestamp in the asset key table.
             self.store_asset(event)
 
-    def store_asset(self, event):
-        check.inst_param(event, "event", EventLogEntry)
-        if not event.is_dagster_event or not event.dagster_event.asset_key:
-            return
+    def store_asset_observation(self, event):
+        # last_materialization_timestamp is updated upon observation or materialization
+        # See store_asset method in SqlEventLogStorage for more details
+        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+            with self.index_connection() as conn:
+                conn.execute(
+                    db.dialects.postgresql.insert(AssetKeyTable)
+                    .values(
+                        asset_key=event.dagster_event.asset_key.to_string(),
+                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
+                    )
+                    .on_conflict_do_update(
+                        index_elements=[AssetKeyTable.c.asset_key],
+                        set_=dict(
+                            last_materialization_timestamp=utc_datetime_from_timestamp(
+                                event.timestamp
+                            ),
+                        ),
+                    )
+                )
 
+    def store_asset_materialization(self, event):
+        # last_materialization_timestamp is updated upon observation or materialization
+        # See store_asset method in SqlEventLogStorage for more details
         materialization = event.dagster_event.step_materialization_data.materialization
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
             with self.index_connection() as conn:
@@ -237,9 +259,15 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             del self._secondary_index_cache[name]
 
     def watch(self, run_id, start_cursor, callback):
+        if self._event_watcher is None:
+            self._event_watcher = PostgresEventWatcher(self.postgres_url, self._engine)
+
         self._event_watcher.watch_run(run_id, start_cursor, callback)
 
     def end_watch(self, run_id, handler):
+        if self._event_watcher is None:
+            return
+
         self._event_watcher.unwatch_run(run_id, handler)
 
     def __del__(self):
@@ -249,7 +277,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def dispose(self):
         if not self._disposed:
             self._disposed = True
-            self._event_watcher.close()
+            if self._event_watcher:
+                self._event_watcher.close()
 
 
 POLLING_CADENCE = 0.25
@@ -257,6 +286,7 @@ POLLING_CADENCE = 0.25
 
 def watcher_thread(
     conn_string: str,
+    engine: db.engine.Engine,
     handlers_dict: MutableMapping[str, List[CallbackAfterCursor]],
     dict_lock: threading.Lock,
     watcher_thread_exit: threading.Event,
@@ -283,21 +313,15 @@ def watcher_thread(
             with dict_lock:
                 handlers = handlers_dict.get(run_id, [])
 
-            engine = create_engine(
-                conn_string, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
-            )
-            try:
-                with engine.connect() as conn:
-                    cursor_res = conn.execute(
-                        db.select([SqlEventLogStorageTable.c.event]).where(
-                            SqlEventLogStorageTable.c.id == index
-                        ),
-                    )
-                    dagster_event: EventLogEntry = deserialize_json_to_dagster_namedtuple(
-                        cursor_res.scalar()
-                    )
-            finally:
-                engine.dispose()
+            with engine.connect() as conn:
+                cursor_res = conn.execute(
+                    db.select([SqlEventLogStorageTable.c.event]).where(
+                        SqlEventLogStorageTable.c.id == index
+                    ),
+                )
+                dagster_event: EventLogEntry = deserialize_json_to_dagster_namedtuple(
+                    cursor_res.scalar()
+                )
 
             for callback_with_cursor in handlers:
                 if callback_with_cursor.start_cursor < index:
@@ -310,8 +334,9 @@ def watcher_thread(
 
 
 class PostgresEventWatcher:
-    def __init__(self, conn_string: str):
+    def __init__(self, conn_string: str, engine: db.engine.Engine):
         self._conn_string: str = check.str_param(conn_string, "conn_string")
+        self._engine = engine
         self._handlers_dict: MutableMapping[str, List[CallbackAfterCursor]] = defaultdict(list)
         self._dict_lock: threading.Lock = threading.Lock()
         self._watcher_thread_exit: Optional[threading.Event] = None
@@ -336,6 +361,7 @@ class PostgresEventWatcher:
                 target=watcher_thread,
                 args=(
                     self._conn_string,
+                    self._engine,
                     self._handlers_dict,
                     self._dict_lock,
                     self._watcher_thread_exit,

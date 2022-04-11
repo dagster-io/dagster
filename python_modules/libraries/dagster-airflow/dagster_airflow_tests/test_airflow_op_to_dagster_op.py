@@ -8,9 +8,10 @@ from airflow.operators.bash_operator import BashOperator
 from airflow.operators.http_operator import SimpleHttpOperator
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.sqlite_operator import SqliteOperator
+from dagster_airflow import airflow_operator_to_op
+
 from dagster import job, op
 from dagster.core.test_utils import instance_for_test
-from dagster_airflow import airflow_operator_to_op
 
 
 def test_simple_bash_task():

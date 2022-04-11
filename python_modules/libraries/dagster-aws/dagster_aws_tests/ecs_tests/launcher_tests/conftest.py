@@ -4,8 +4,9 @@ from contextlib import contextmanager
 
 import boto3
 import pytest
+
 from dagster import ExperimentalWarning
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.test_utils import in_process_test_workspace, instance_for_test
 
 from . import repo
@@ -20,7 +21,12 @@ def ignore_experimental_warning():
 
 @pytest.fixture
 def image():
-    return "dagster:latest"
+    return "dagster:first"
+
+
+@pytest.fixture
+def other_image():
+    return "dagster:second"
 
 
 @pytest.fixture
@@ -33,7 +39,23 @@ def task_definition(ecs, image, environment):
     return ecs.register_task_definition(
         family="dagster",
         containerDefinitions=[
-            {"name": "dagster", "image": image, "environment": environment, "entryPoint": ["ls"]}
+            {
+                "name": "dagster",
+                "image": image,
+                "environment": environment,
+                "entryPoint": ["ls"],
+                "dependsOn": [
+                    {
+                        "containerName": "other",
+                        "condition": "SUCCESS",
+                    },
+                ],
+            },
+            {
+                "name": "other",
+                "image": image,
+                "entryPoint": ["ls"],
+            },
         ],
         networkMode="awsvpc",
         memory="512",
@@ -113,6 +135,28 @@ def instance(instance_cm):
 
 
 @pytest.fixture
+def workspace(instance, image):
+    with in_process_test_workspace(
+        instance,
+        ReconstructableRepository.for_file(
+            repo.__file__, repo.repository.__name__, container_image=image
+        ),
+    ) as workspace:
+        yield workspace
+
+
+@pytest.fixture
+def other_workspace(instance, other_image):
+    with in_process_test_workspace(
+        instance,
+        ReconstructableRepository.for_file(
+            repo.__file__, repo.repository.__name__, container_image=other_image
+        ),
+    ) as workspace:
+        yield workspace
+
+
+@pytest.fixture
 def pipeline():
     return repo.pipeline
 
@@ -126,14 +170,11 @@ def external_pipeline(workspace):
 
 
 @pytest.fixture
-def workspace(instance, image):
-    with in_process_test_workspace(
-        instance,
-        ReconstructableRepository.for_file(
-            repo.__file__, repo.repository.__name__, container_image=image
-        ),
-    ) as workspace:
-        yield workspace
+def other_external_pipeline(other_workspace):
+    location = other_workspace.get_repository_location(other_workspace.repository_location_names[0])
+    return location.get_repository(repo.repository.__name__).get_full_external_pipeline(
+        repo.pipeline.__name__
+    )
 
 
 @pytest.fixture
@@ -143,3 +184,25 @@ def run(instance, pipeline, external_pipeline):
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
     )
+
+
+@pytest.fixture
+def other_run(instance, pipeline, other_external_pipeline):
+    return instance.create_run_for_pipeline(
+        pipeline,
+        external_pipeline_origin=other_external_pipeline.get_external_origin(),
+        pipeline_code_origin=other_external_pipeline.get_python_origin(),
+    )
+
+
+@pytest.fixture
+def launch_run(pipeline, external_pipeline, workspace):
+    def _launch_run(instance):
+        run = instance.create_run_for_pipeline(
+            pipeline,
+            external_pipeline_origin=external_pipeline.get_external_origin(),
+            pipeline_code_origin=external_pipeline.get_python_origin(),
+        )
+        instance.launch_run(run.run_id, workspace)
+
+    return _launch_run

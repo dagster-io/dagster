@@ -1,19 +1,19 @@
-from collections import namedtuple
-from typing import List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.definitions import NodeHandle
 from dagster.core.execution.plan.inputs import (
     StepInput,
-    StepInputSourceTypes,
+    StepInputSourceUnion,
     UnresolvedCollectStepInput,
     UnresolvedMappedStepInput,
 )
 from dagster.core.execution.plan.outputs import StepOutput, StepOutputHandle, StepOutputProperties
-from dagster.core.execution.plan.plan import ExecutionPlan, StepHandleTypes
+from dagster.core.execution.plan.plan import ExecutionPlan, StepHandleTypes, StepHandleUnion
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.plan.step import (
     ExecutionStep,
+    IExecutionStep,
     StepKind,
     UnresolvedCollectExecutionStep,
     UnresolvedMappedExecutionStep,
@@ -57,7 +57,7 @@ class ExecutionPlanSnapshot(
     # removed step_output_versions
     def __new__(
         cls,
-        steps: List[str],
+        steps: List["ExecutionStepSnap"],
         artifacts_persisted: bool,
         pipeline_snapshot_id: str,
         step_keys_to_execute: Optional[List[str]] = None,
@@ -100,8 +100,10 @@ class ExecutionPlanSnapshot(
 
 
 @whitelist_for_serdes
-class ExecutionPlanSnapshotErrorData(namedtuple("_ExecutionPlanSnapshotErrorData", "error")):
-    def __new__(cls, error):
+class ExecutionPlanSnapshotErrorData(
+    NamedTuple("_ExecutionPlanSnapshotErrorData", [("error", Optional[SerializableErrorInfo])])
+):
+    def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExecutionPlanSnapshotErrorData, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -110,21 +112,30 @@ class ExecutionPlanSnapshotErrorData(namedtuple("_ExecutionPlanSnapshotErrorData
 
 @whitelist_for_serdes
 class ExecutionStepSnap(
-    namedtuple(
+    NamedTuple(
         "_ExecutionStepSnap",
-        "key inputs outputs solid_handle_id kind metadata_items tags step_handle",
+        [
+            ("key", str),
+            ("inputs", List["ExecutionStepInputSnap"]),
+            ("outputs", List["ExecutionStepOutputSnap"]),
+            ("solid_handle_id", str),
+            ("kind", StepKind),
+            ("metadata_items", List["ExecutionPlanMetadataItemSnap"]),
+            ("tags", Optional[Dict[str, str]]),
+            ("step_handle", Optional[StepHandleUnion]),
+        ],
     )
 ):
     def __new__(
         cls,
-        key,
-        inputs,
-        outputs,
-        solid_handle_id,
-        kind,
-        metadata_items,
-        tags=None,
-        step_handle=None,
+        key: str,
+        inputs: List["ExecutionStepInputSnap"],
+        outputs: List["ExecutionStepOutputSnap"],
+        solid_handle_id: str,
+        kind: StepKind,
+        metadata_items: List["ExecutionPlanMetadataItemSnap"],
+        tags: Optional[Dict[str, str]] = None,
+        step_handle: Optional[StepHandleUnion] = None,
     ):
         return super(ExecutionStepSnap, cls).__new__(
             cls,
@@ -136,16 +147,30 @@ class ExecutionStepSnap(
             metadata_items=check.list_param(
                 metadata_items, "metadata_items", ExecutionPlanMetadataItemSnap
             ),
-            tags=check.opt_nullable_dict_param(tags, "tags", key_type=str),
+            tags=check.opt_nullable_dict_param(tags, "tags", key_type=str, value_type=str),
             step_handle=check.opt_inst_param(step_handle, "step_handle", StepHandleTypes),
         )
 
 
 @whitelist_for_serdes
 class ExecutionStepInputSnap(
-    namedtuple("_ExecutionStepInputSnap", "name dagster_type_key upstream_output_handles source")
+    NamedTuple(
+        "_ExecutionStepInputSnap",
+        [
+            ("name", str),
+            ("dagster_type_key", str),
+            ("upstream_output_handles", List[StepOutputHandle]),
+            ("source", Optional[StepInputSourceUnion]),
+        ],
+    )
 ):
-    def __new__(cls, name, dagster_type_key, upstream_output_handles, source=None):
+    def __new__(
+        cls,
+        name: str,
+        dagster_type_key: str,
+        upstream_output_handles: List[StepOutputHandle],
+        source: Optional[StepInputSourceUnion] = None,
+    ):
         return super(ExecutionStepInputSnap, cls).__new__(
             cls,
             check.str_param(name, "name"),
@@ -153,7 +178,7 @@ class ExecutionStepInputSnap(
             check.list_param(
                 upstream_output_handles, "upstream_output_handles", of_type=StepOutputHandle
             ),
-            check.opt_inst_param(source, "source", StepInputSourceTypes),
+            check.opt_inst_param(source, "source", StepInputSourceUnion.__args__),  # type: ignore
         )
 
     @property
@@ -163,17 +188,22 @@ class ExecutionStepInputSnap(
 
 @whitelist_for_serdes
 class ExecutionStepOutputSnap(
-    namedtuple(
+    NamedTuple(
         "_ExecutionStepOutputSnap",
-        "name dagster_type_key solid_handle properties",
+        [
+            ("name", str),
+            ("dagster_type_key", str),
+            ("solid_handle", Optional[NodeHandle]),
+            ("properties", Optional[StepOutputProperties]),
+        ],
     )
 ):
     def __new__(
         cls,
-        name,
-        dagster_type_key,
-        solid_handle=None,
-        properties=None,
+        name: str,
+        dagster_type_key: str,
+        solid_handle: Optional[NodeHandle] = None,
+        properties: Optional[StepOutputProperties] = None,
     ):
         return super(ExecutionStepOutputSnap, cls).__new__(
             cls,
@@ -185,8 +215,10 @@ class ExecutionStepOutputSnap(
 
 
 @whitelist_for_serdes
-class ExecutionPlanMetadataItemSnap(namedtuple("_ExecutionPlanMetadataItemSnap", "key value")):
-    def __new__(cls, key, value):
+class ExecutionPlanMetadataItemSnap(
+    NamedTuple("_ExecutionPlanMetadataItemSnap", [("key", str), ("value", str)])
+):
+    def __new__(cls, key: str, value: str):
         return super(ExecutionPlanMetadataItemSnap, cls).__new__(
             cls,
             check.str_param(key, "key"),
@@ -220,7 +252,8 @@ def _snapshot_from_step_output(step_output):
     )
 
 
-def _snapshot_from_execution_step(execution_step):
+# def _snapshot_from_execution_step(execution_step: Union[ExecutionStep, UnresolvedMappedExecutionStep, UnresolvedCollectExecutionStep]) -> ExecutionStepSnap:
+def _snapshot_from_execution_step(execution_step: IExecutionStep) -> ExecutionStepSnap:
     check.inst_param(
         execution_step,
         "execution_step",
@@ -251,7 +284,9 @@ def _snapshot_from_execution_step(execution_step):
     )
 
 
-def snapshot_from_execution_plan(execution_plan, pipeline_snapshot_id):
+def snapshot_from_execution_plan(
+    execution_plan: ExecutionPlan, pipeline_snapshot_id: str
+) -> ExecutionPlanSnapshot:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
 

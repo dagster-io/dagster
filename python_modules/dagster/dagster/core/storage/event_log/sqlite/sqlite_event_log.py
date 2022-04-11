@@ -10,12 +10,17 @@ from contextlib import contextmanager
 from typing import Iterable, Optional
 
 import sqlalchemy as db
+from sqlalchemy.pool import NullPool
+from tqdm import tqdm
+from watchdog.events import PatternMatchingEventHandler
+from watchdog.observers import Observer
+
 from dagster import check, seven
 from dagster.config.source import StringSource
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log.base import EventLogRecord, EventRecordsFilter
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -31,10 +36,6 @@ from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
 )
 from dagster.utils import mkdir_p
-from sqlalchemy.pool import NullPool
-from tqdm import tqdm
-from watchdog.events import PatternMatchingEventHandler
-from watchdog.observers import Observer
 
 from ..schema import SqlEventLogStorageMetadata, SqlEventLogStorageTable
 from ..sql_event_log import RunShardedEventsCursor, SqlEventLogStorage
@@ -199,11 +200,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             conn = engine.connect()
 
             try:
-                with handle_schema_errors(
-                    conn,
-                    get_alembic_config(__file__),
-                    msg="SqliteEventLogStorage for shard {shard}".format(shard=shard),
-                ):
+                with handle_schema_errors(conn, get_alembic_config(__file__)):
                     yield conn
             finally:
                 conn.close()
@@ -233,17 +230,19 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if event.is_dagster_event and event.dagster_event.asset_key:
             check.invariant(
                 event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
-                or event.dagster_event_type == DagsterEventType.ASSET_OBSERVATION,
-                "Can only store asset materializations and observations in index database",
+                or event.dagster_event_type == DagsterEventType.ASSET_OBSERVATION
+                or event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                "Can only store asset materializations, materialization_planned, and observations in index database",
             )
+
             # mirror the event in the cross-run index database
             with self.index_connection() as conn:
                 conn.execute(insert_event_statement)
 
-            if event.dagster_event.is_step_materialization:
-                # Currently, only materializations are stored in the asset catalog.
-                # We will store observations after adding a column migration to
-                # store latest asset observation timestamp in the asset key table.
+            if (
+                event.dagster_event.is_step_materialization
+                or event.dagster_event.is_asset_observation
+            ):
                 self.store_asset(event)
 
     def get_event_records(
@@ -313,7 +312,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             else None
         )
         run_records = self._instance.get_run_records(
-            filters=PipelineRunsFilter(updated_after=run_updated_after),
+            filters=RunsFilter(updated_after=run_updated_after),
             order_by="update_timestamp",
             ascending=ascending,
         )

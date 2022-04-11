@@ -1,12 +1,12 @@
 import {
   Box,
-  ButtonWIP,
-  ColorsWIP,
+  Button,
+  Colors,
   DialogFooter,
   DialogHeader,
-  DialogWIP,
+  Dialog,
   Group,
-  IconWIP,
+  Icon,
   IconWrapper,
   Spinner,
   Tooltip,
@@ -17,17 +17,18 @@ import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
 import {ShortcutHandler} from '../app/ShortcutHandler';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
-import {RepoDetails, RepoSelector} from './RepoSelector';
+import {RepoSelector, RepoSelectorOption} from './RepoSelector';
 
 interface Props {
-  allRepos: RepoDetails[];
-  selected: Set<RepoDetails>;
-  onToggle: (repoAddress: RepoDetails) => void;
+  allRepos: RepoSelectorOption[];
+  selected: RepoSelectorOption[];
+  onToggle: (repoAddresses: RepoAddress[]) => void;
 }
 
 export const RepoNavItem: React.FC<Props> = (props) => {
@@ -36,32 +37,32 @@ export const RepoNavItem: React.FC<Props> = (props) => {
 
   const summary = () => {
     if (allRepos.length === 0) {
-      return <span style={{color: ColorsWIP.Gray700}}>No repositories</span>;
+      return <span style={{color: Colors.Gray700}}>No repositories</span>;
     }
     if (allRepos.length === 1) {
-      return <SingleRepoSummary repoAddress={allRepos[0].repoAddress} />;
+      return <SingleRepoSummary repo={allRepos[0]} />;
     }
-    if (selected.size === 1) {
+    if (selected.length === 1) {
       const selectedRepo = Array.from(selected)[0];
-      return <SingleRepoSummary repoAddress={selectedRepo.repoAddress} />;
+      return <SingleRepoSummary repo={selectedRepo} />;
     }
-    return <span>{`${selected.size} of ${allRepos.length} shown`}</span>;
+    return <span>{`${selected.length} of ${allRepos.length} shown`}</span>;
   };
 
   return (
     <Box
-      background={ColorsWIP.Gray50}
+      background={Colors.Gray50}
       padding={{vertical: 12, left: 24, right: 20}}
-      border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+      border={{side: 'top', width: 1, color: Colors.KeylineGray}}
     >
       <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-          <IconWIP name="folder" />
+          <Icon name="folder" />
           <SummaryText>{summary()}</SummaryText>
         </Box>
         {allRepos.length > 1 ? (
           <>
-            <DialogWIP
+            <Dialog
               canOutsideClickClose
               canEscapeKeyClose
               isOpen={open}
@@ -69,26 +70,21 @@ export const RepoNavItem: React.FC<Props> = (props) => {
               onClose={() => setOpen(false)}
             >
               <DialogHeader icon="repo" label="Repositories" />
-              <div>
-                <Box padding={{vertical: 8, horizontal: 24}}>
-                  {`${selected.size} of ${allRepos.length} selected`}
-                </Box>
-                <RepoSelector
-                  options={allRepos}
-                  onBrowse={() => setOpen(false)}
-                  onToggle={onToggle}
-                  selected={selected}
-                />
-              </div>
+              <RepoSelector
+                options={allRepos}
+                onBrowse={() => setOpen(false)}
+                onToggle={onToggle}
+                selected={selected}
+              />
               <DialogFooter>
                 <Box padding={{top: 8}}>
-                  <ButtonWIP intent="none" onClick={() => setOpen(false)}>
+                  <Button intent="none" onClick={() => setOpen(false)}>
                     Done
-                  </ButtonWIP>
+                  </Button>
                 </Box>
               </DialogFooter>
-            </DialogWIP>
-            <ButtonWIP onClick={() => setOpen(true)}>Filter</ButtonWIP>
+            </Dialog>
+            <Button onClick={() => setOpen(true)}>Filter</Button>
           </>
         ) : null}
       </Box>
@@ -96,7 +92,8 @@ export const RepoNavItem: React.FC<Props> = (props) => {
   );
 };
 
-const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
+const SingleRepoSummary: React.FC<{repo: RepoSelectorOption}> = ({repo}) => {
+  const repoAddress = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
   const {canReloadRepositoryLocation} = usePermissions();
   return (
     <Group direction="row" spacing={4} alignItems="center">
@@ -132,7 +129,7 @@ const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
                   <Spinner purpose="body-text" />
                 ) : (
                   <ReloadButton onClick={tryReload}>
-                    <IconWIP name="refresh" color={ColorsWIP.Gray900} />
+                    <Icon name="refresh" color={Colors.Gray900} />
                   </ReloadButton>
                 )}
               </ReloadTooltip>
@@ -152,7 +149,7 @@ const SummaryText = styled.div`
 `;
 
 const SingleRepoNameLink = styled(Link)`
-  color: ${ColorsWIP.Gray900};
+  color: ${Colors.Gray900};
   display: block;
   max-width: 234px;
   overflow-x: hidden;
@@ -160,12 +157,12 @@ const SingleRepoNameLink = styled(Link)`
   transition: color 100ms linear;
 
   && {
-    color: ${ColorsWIP.Gray900};
+    color: ${Colors.Gray900};
   }
 
   &&:hover,
   &&:active {
-    color: ${ColorsWIP.Gray800};
+    color: ${Colors.Gray800};
     text-decoration: none;
   }
 `;
@@ -194,7 +191,7 @@ const ReloadButton = styled.button`
   }
 
   :hover ${IconWrapper} {
-    color: ${ColorsWIP.Blue200};
+    color: ${Colors.Blue200};
   }
 `;
 

@@ -1,5 +1,6 @@
-from dagster import Array, Field, Permissive, StringSource, check
 from docker_image import reference
+
+from dagster import Array, Field, Permissive, StringSource, check
 
 DOCKER_CONFIG_SCHEMA = {
     "image": Field(

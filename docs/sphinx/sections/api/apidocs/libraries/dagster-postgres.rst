@@ -3,8 +3,8 @@ PostgreSQL (dagster-postgres)
 
 .. currentmodule:: dagster_postgres
 
-.. autoclass:: PostgresEventLogStorage
+.. autoconfigurable:: PostgresEventLogStorage
 
-.. autoclass:: PostgresRunStorage
+.. autoconfigurable:: PostgresRunStorage
 
-.. autoclass:: PostgresScheduleStorage
+.. autoconfigurable:: PostgresScheduleStorage

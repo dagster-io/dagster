@@ -1,4 +1,27 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
+
+import boto3
+
+from dagster import check
+
+from ..utils import construct_boto_client_retry_config
+
+
+def construct_secretsmanager_client(
+    max_attempts: int, region_name: Optional[str] = None, profile_name: Optional[str] = None
+):
+    check.int_param(max_attempts, "max_attempts")
+    check.opt_str_param(region_name, "region_name")
+    check.opt_str_param(profile_name, "profile_name")
+
+    client_session = boto3.session.Session(profile_name=profile_name)
+    secrets_manager = client_session.client(
+        "secretsmanager",
+        region_name=region_name,
+        config=construct_boto_client_retry_config(max_attempts),
+    )
+
+    return secrets_manager
 
 
 def get_tagged_secrets(secrets_manager, secrets_tag: str) -> Dict[str, str]:
@@ -17,7 +40,6 @@ def get_tagged_secrets(secrets_manager, secrets_tag: str) -> Dict[str, str]:
             },
         ],
     ):
-
         for secret in page["SecretList"]:
             secrets[secret["Name"]] = secret["ARN"]
 

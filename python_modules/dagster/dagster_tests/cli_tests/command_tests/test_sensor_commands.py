@@ -4,6 +4,7 @@ import click
 import mock
 import pytest
 from click.testing import CliRunner
+
 from dagster.cli.sensor import (
     check_repo_and_scheduler,
     sensor_cursor_command,

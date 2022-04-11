@@ -6,7 +6,7 @@ import * as React from 'react';
 import rgbHex from 'rgb-hex';
 
 import {Box} from './Box';
-import {ColorsWIP as Colors} from './Colors';
+import {Colors} from './Colors';
 
 const ColorExample: React.FC<{name: string; color: string}> = ({color, name}) => (
   <Box background={color} padding={12} style={{width: 120}}>

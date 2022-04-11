@@ -38,7 +38,7 @@ from .handle import PipelineHandle, RepositoryHandle
 from .historical import HistoricalPipeline
 from .origin import (
     IN_PROCESS_NAME,
-    ExternalJobOrigin,
+    ExternalInstigatorOrigin,
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
     GrpcServerRepositoryLocationOrigin,
@@ -55,7 +55,7 @@ from .repository_location import (
 from .represented import RepresentedPipeline
 from .selector import (
     GraphSelector,
-    InstigationSelector,
+    InstigatorSelector,
     PipelineSelector,
     RepositorySelector,
     ScheduleSelector,

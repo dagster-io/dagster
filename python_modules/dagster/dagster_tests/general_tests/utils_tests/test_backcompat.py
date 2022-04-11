@@ -2,6 +2,8 @@ import re
 from typing import NamedTuple
 
 import pytest
+from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
+
 from dagster.check import CheckError
 from dagster.utils.backcompat import (
     ExperimentalWarning,
@@ -11,7 +13,6 @@ from dagster.utils.backcompat import (
     experimental_class_warning,
     experimental_fn_warning,
 )
-from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 
 
 def is_new(old_flag=None, new_flag=None, include_additional_warn_txt=True):
@@ -38,9 +39,9 @@ def test_backcompat_new_flag():
 
 def test_backcompat_old_flag():
     with pytest.warns(
-        UserWarning,
+        DeprecationWarning,
         match=re.escape(
-            '"old_flag" is deprecated and will be removed in 0.9.0, use "new_flag" instead. Will '
+            '"old_flag" is deprecated and will be removed in 0.9.0. Use "new_flag" instead. Will '
             "remove at next release."
         ),
     ):
@@ -49,9 +50,9 @@ def test_backcompat_old_flag():
 
 def test_backcompat_no_additional_warn_text():
     with pytest.warns(
-        UserWarning,
+        DeprecationWarning,
         match=re.escape(
-            '"old_flag" is deprecated and will be removed in 0.9.0, use "new_flag" instead.'
+            '"old_flag" is deprecated and will be removed in 0.9.0. Use "new_flag" instead.'
         ),
     ):
         assert is_new(old_flag=False, include_additional_warn_txt=False) is True

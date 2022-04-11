@@ -5,7 +5,6 @@ from typing import Optional
 
 from dagster.core.run_coordinator import QueuedRunCoordinator, SubmitRunContext
 from dagster.core.storage.pipeline_run import PipelineRun
-from flask import has_request_context, request
 
 
 class CustomRunCoordinator(QueuedRunCoordinator):
@@ -31,9 +30,7 @@ class CustomRunCoordinator(QueuedRunCoordinator):
     # start_submit_marker
     def submit_run(self, context: SubmitRunContext) -> PipelineRun:
         pipeline_run = context.pipeline_run
-        jwt_claims_header = (
-            request.headers.get("X-Amzn-Oidc-Data", None) if has_request_context() else None
-        )
+        jwt_claims_header = context.get_request_header("X-Amzn-Oidc-Data")
         email = self.get_email(jwt_claims_header)
         if email:
             self._instance.add_run_tags(pipeline_run.run_id, {"user": email})

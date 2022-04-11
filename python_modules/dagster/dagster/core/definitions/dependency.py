@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -80,8 +80,8 @@ class NodeInvocation(
         cls,
         name: str,
         alias: Optional[str] = None,
-        tags: Dict[str, str] = None,
-        hook_defs: AbstractSet[HookDefinition] = None,
+        tags: Optional[Dict[str, str]] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):
         return super().__new__(
@@ -109,7 +109,7 @@ class Node:
         name: str,
         definition: "NodeDefinition",
         graph_definition: "GraphDefinition",
-        tags: Dict[str, str] = None,
+        tags: Optional[Dict[str, str]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):
@@ -172,8 +172,8 @@ class Node:
         return isinstance(self.definition, GraphDefinition)
 
     def describe_node(self) -> str:
-        from .solid_definition import CompositeSolidDefinition, SolidDefinition
         from .op_definition import OpDefinition
+        from .solid_definition import CompositeSolidDefinition, SolidDefinition
 
         if isinstance(self.definition, CompositeSolidDefinition):
             return f"composite solid '{self.name}'"
@@ -262,7 +262,8 @@ class NodeHandleSerializer(DefaultNamedTupleSerializer):
 @whitelist_for_serdes(serializer=NodeHandleSerializer)
 class NodeHandle(
     # mypy does not yet support recursive types
-    namedtuple("_NodeHandle", "name parent")
+    # NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["NodeHandle"])])
+    NamedTuple("_NodeHandle", [("name", str), ("parent", Any)])
 ):
     """
     A structured object to identify nodes in the potentially recursive graph structure.

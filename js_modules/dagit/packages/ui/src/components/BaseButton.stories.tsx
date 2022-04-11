@@ -3,9 +3,9 @@ import * as React from 'react';
 
 import {BaseButton} from './BaseButton';
 import {Box} from './Box';
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {Group} from './Group';
-import {IconWIP as Icon} from './Icon';
+import {Icon} from './Icon';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -32,35 +32,35 @@ export const Default = () => {
 export const Fill = () => {
   return (
     <Group direction="column" spacing={8}>
-      <BaseButton label="Button" fillColor={ColorsWIP.Dark} textColor={ColorsWIP.White} />
+      <BaseButton label="Button" fillColor={Colors.Dark} textColor={Colors.White} />
       <BaseButton
         label="Button"
-        fillColor={ColorsWIP.Blue500}
-        textColor={ColorsWIP.White}
+        fillColor={Colors.Blue500}
+        textColor={Colors.White}
         icon={<Icon name="star" />}
       />
       <BaseButton
         label="Button"
-        fillColor={ColorsWIP.Green500}
-        textColor={ColorsWIP.White}
+        fillColor={Colors.Green500}
+        textColor={Colors.White}
         rightIcon={<Icon name="close" />}
       />
       <BaseButton
         label="Button"
-        fillColor={ColorsWIP.Red500}
-        textColor={ColorsWIP.White}
+        fillColor={Colors.Red500}
+        textColor={Colors.White}
         icon={<Icon name="source" />}
         rightIcon={<Icon name="expand_more" />}
       />
       <BaseButton
         label="Button"
-        fillColor={ColorsWIP.Olive500}
-        textColor={ColorsWIP.White}
+        fillColor={Colors.Olive500}
+        textColor={Colors.White}
         icon={<Icon name="folder_open" />}
       />
       <BaseButton
-        fillColor={ColorsWIP.Yellow500}
-        textColor={ColorsWIP.White}
+        fillColor={Colors.Yellow500}
+        textColor={Colors.White}
         icon={<Icon name="cached" />}
       />
     </Group>
@@ -69,33 +69,29 @@ export const Fill = () => {
 
 export const Transparent = () => {
   return (
-    <Box padding={12} background={ColorsWIP.Gray200}>
+    <Box padding={12} background={Colors.Gray200}>
       <Group direction="column" spacing={8}>
-        <BaseButton textColor={ColorsWIP.Dark} label="Button" fillColor="transparent" />
+        <BaseButton textColor={Colors.Dark} label="Button" fillColor="transparent" />
         <BaseButton
-          textColor={ColorsWIP.Dark}
+          textColor={Colors.Dark}
           label="Button"
           fillColor="transparent"
           icon={<Icon name="star" />}
         />
         <BaseButton
-          textColor={ColorsWIP.Dark}
+          textColor={Colors.Dark}
           label="Button"
           fillColor="transparent"
           rightIcon={<Icon name="close" />}
         />
         <BaseButton
-          textColor={ColorsWIP.Dark}
+          textColor={Colors.Dark}
           label="Button"
           fillColor="transparent"
           icon={<Icon name="source" />}
           rightIcon={<Icon name="expand_more" />}
         />
-        <BaseButton
-          textColor={ColorsWIP.Dark}
-          fillColor="transparent"
-          icon={<Icon name="cached" />}
-        />
+        <BaseButton textColor={Colors.Dark} fillColor="transparent" icon={<Icon name="cached" />} />
       </Group>
     </Box>
   );
@@ -105,8 +101,8 @@ export const Disabled = () => {
   return (
     <Group direction="column" spacing={8}>
       <BaseButton label="Button" icon={<Icon name="star" />} disabled />
-      <BaseButton label="Button" fillColor={ColorsWIP.Dark} textColor={ColorsWIP.White} disabled />
-      <BaseButton textColor={ColorsWIP.Dark} label="Button" fillColor="transparent" disabled />
+      <BaseButton label="Button" fillColor={Colors.Dark} textColor={Colors.White} disabled />
+      <BaseButton textColor={Colors.Dark} label="Button" fillColor="transparent" disabled />
     </Group>
   );
 };

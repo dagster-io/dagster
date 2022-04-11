@@ -46,6 +46,12 @@ dagit -h 0.0.0.0 -p {{ .Values.dagit.service.port }}
 {{- if .dagitReadOnly }} --read-only {{- end -}}
 {{- end -}}
 
+{{- define "dagster.dagsterDaemon.daemonCommand" -}}
+{{- $userDeployments := index .Values "dagster-user-deployments" -}}
+dagster-daemon run
+{{- if $userDeployments.enabled }} -w /dagster-workspace/workspace.yaml {{- end -}}
+{{- end -}}
+
 {{- define "dagster.dagit.fullname" -}}
 {{- $name := default "dagit" .Values.dagit.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
@@ -189,3 +195,13 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
 DAGSTER_K8S_PIPELINE_RUN_IMAGE: {{ include "dagster.dagsterImage.name" (list $ .Values.pipelineRun.image) | quote }}
 DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY: "{{ .Values.pipelineRun.image.pullPolicy }}"
 {{- end -}}
+
+{{/* Assigns an ingress path port to the correct key based on its type */}}
+{{- define "ingress.service.port" -}}
+  {{- $portType := typeOf .servicePort }}
+  {{- if eq $portType "string" }}
+  name: {{ .servicePort }}
+  {{- else }}
+  number: {{ .servicePort }}
+  {{- end }}
+{{- end }}

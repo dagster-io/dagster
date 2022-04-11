@@ -8,11 +8,15 @@ from .partition import (
     Partition,
     PartitionSetDefinition,
     PartitionedConfig,
-    ScheduleTimeBasedPartitionsDefinition,
     ScheduleType,
+    get_cron_schedule,
 )
 from .run_request import SkipReason
-from .schedule_definition import ScheduleDefinition, ScheduleEvaluationContext
+from .schedule_definition import (
+    DefaultScheduleStatus,
+    ScheduleDefinition,
+    ScheduleEvaluationContext,
+)
 from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
 
 
@@ -24,6 +28,7 @@ def build_schedule_from_partitioned_job(
     hour_of_day: Optional[int] = None,
     day_of_week: Optional[int] = None,
     day_of_month: Optional[int] = None,
+    default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
 ) -> ScheduleDefinition:
     """
     Creates a schedule from a time window-partitioned job.
@@ -62,27 +67,24 @@ def build_schedule_from_partitioned_job(
         )
 
     if partitions_def.schedule_type == ScheduleType.MONTHLY:
-        execution_day = check.opt_int_param(day_of_month, "day_of_month", default=1)
+        default = partitions_def.day_offset or 1
+        execution_day = check.opt_int_param(day_of_month, "day_of_month", default=default)
     elif partitions_def.schedule_type == ScheduleType.WEEKLY:
-        execution_day = check.opt_int_param(day_of_week, "day_of_week", default=0)
+        default = partitions_def.day_offset or 0
+        execution_day = check.opt_int_param(day_of_week, "day_of_week", default=default)
     else:
         execution_day = 0
 
-    schedule_partitions = ScheduleTimeBasedPartitionsDefinition(
-        schedule_type=partitions_def.schedule_type,
-        start=partitions_def.start,
-        execution_time=execution_time,
-        execution_day=execution_day,
-        offset=1,
-    )
+    cron_schedule = get_cron_schedule(partitions_def.schedule_type, execution_time, execution_day)
 
     schedule_def = partition_set.create_schedule_definition(
         schedule_name=check.opt_str_param(name, "name", f"{job.name}_schedule"),
-        cron_schedule=schedule_partitions.get_cron_schedule(),
+        cron_schedule=cron_schedule,
         partition_selector=latest_window_partition_selector,
         execution_timezone=partitions_def.timezone,
         description=description,
         job=job,
+        default_status=default_status,
     )
 
     return schedule_def

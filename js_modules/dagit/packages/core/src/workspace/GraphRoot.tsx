@@ -1,8 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, NonIdealState, PageHeader, TagWIP, Heading} from '@dagster-io/ui';
+import {Box, Colors, NonIdealState, PageHeader, Tag, Heading} from '@dagster-io/ui';
 import React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
@@ -41,13 +42,13 @@ export const GraphRoot: React.FC<Props> = (props) => {
       <PageHeader
         title={<Heading>{title}</Heading>}
         tags={
-          <TagWIP icon="schema">
+          <Tag icon="schema">
             Graph in <RepositoryLink repoAddress={repoAddress} />
-          </TagWIP>
+          </Tag>
         }
       />
       <Box
-        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
         style={{minHeight: 0, flex: 1, display: 'flex'}}
       >
         <GraphExplorerRoot repoAddress={repoAddress} />
@@ -64,6 +65,7 @@ const GraphExplorerRoot: React.FC<Props> = (props) => {
   const history = useHistory();
   const [options, setOptions] = React.useState<GraphExplorerOptions>({
     explodeComposites: false,
+    preferAssetRendering: true,
   });
 
   useDocumentTitle(`Graph: ${explorerPath.pipelineName}`);
@@ -159,12 +161,10 @@ const GRAPH_EXPLORER_ROOT_QUERY = gql`
       ... on GraphNotFoundError {
         message
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
   }
   ${GRAPH_EXPLORER_FRAGMENT}
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

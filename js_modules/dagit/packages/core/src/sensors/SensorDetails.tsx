@@ -1,13 +1,15 @@
 import {
   Box,
+  Button,
   CountdownStatus,
   useCountdown,
   Group,
   MetadataTableWIP,
   PageHeader,
   RefreshableCountdown,
-  TagWIP,
+  Tag,
   Heading,
+  FontFamily,
 } from '@dagster-io/ui';
 import * as React from 'react';
 
@@ -20,6 +22,7 @@ import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
+import {EditCursorDialog} from './EditCursorDialog';
 import {SensorSwitch} from './SensorSwitch';
 import {SensorFragment} from './types/SensorFragment';
 
@@ -61,6 +64,12 @@ export const SensorDetails: React.FC<{
     metadata,
   } = sensor;
 
+  const [isCursorEditing, setCursorEditing] = React.useState(false);
+  const sensorSelector = {
+    sensorName: sensor.name,
+    repositoryName: repoAddress.name,
+    repositoryLocationName: repoAddress.location,
+  };
   const repo = useRepository(repoAddress);
   const pipelinesAndJobs = repo?.repository.pipelines;
 
@@ -93,6 +102,11 @@ export const SensorDetails: React.FC<{
     return targetCount > 1 ? 'Jobs' : 'Job';
   }, [anyPipelines, targetCount]);
 
+  const cursor =
+    sensor.sensorState.typeSpecificData &&
+    sensor.sensorState.typeSpecificData.__typename === 'SensorData' &&
+    sensor.sensorState.typeSpecificData.lastCursor;
+
   return (
     <>
       <PageHeader
@@ -105,13 +119,13 @@ export const SensorDetails: React.FC<{
         icon="sensors"
         tags={
           <>
-            <TagWIP icon="sensors">
+            <Tag icon="sensors">
               Sensor in <RepositoryLink repoAddress={repoAddress} />
-            </TagWIP>
+            </Tag>
             {sensor.nextTick && daemonHealth && status === InstigationStatus.RUNNING ? (
-              <TagWIP icon="timer">
+              <Tag icon="timer">
                 Next tick: <TimestampDisplay timestamp={sensor.nextTick.timestamp} />
-              </TagWIP>
+              </Tag>
             ) : null}
           </>
         }
@@ -137,13 +151,15 @@ export const SensorDetails: React.FC<{
             <td>Latest tick</td>
             <td>
               {latestTick ? (
-                <Box
-                  flex={{direction: 'row', gap: 8, alignItems: 'center'}}
-                  style={{marginTop: '-2px'}}
-                >
-                  <TimestampDisplay timestamp={latestTick.timestamp} />
-                  <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
-                </Box>
+                <>
+                  <Box
+                    flex={{direction: 'row', gap: 8, alignItems: 'center'}}
+                    style={{marginTop: '-2px'}}
+                  >
+                    <TimestampDisplay timestamp={latestTick.timestamp} />
+                    <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
+                  </Box>
+                </>
               ) : (
                 'Sensor has never run'
               )}
@@ -165,6 +181,24 @@ export const SensorDetails: React.FC<{
                     ) : null,
                   )}
                 </Group>
+              </td>
+            </tr>
+          ) : null}
+          {cursor ? (
+            <tr>
+              <td>Cursor</td>
+              <td>
+                {isCursorEditing ? (
+                  <EditCursorDialog
+                    sensorSelector={sensorSelector}
+                    cursor={cursor}
+                    onClose={() => setCursorEditing(false)}
+                  />
+                ) : null}
+                <Box flex={{direction: 'row', alignItems: 'center'}}>
+                  <Box style={{fontFamily: FontFamily.monospace, marginRight: 10}}>{cursor}</Box>
+                  <Button onClick={() => setCursorEditing(true)}>Edit</Button>
+                </Box>
               </td>
             </tr>
           ) : null}

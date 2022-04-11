@@ -26,6 +26,7 @@ export interface InstigationStateFragment_repositoryOrigin {
 export interface InstigationStateFragment_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface InstigationStateFragment_typeSpecificData_ScheduleData {
@@ -58,10 +59,12 @@ export interface InstigationStateFragment_ticks_error {
 export interface InstigationStateFragment_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: InstigationStateFragment_ticks_error | null;
 }
 

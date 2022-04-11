@@ -1,4 +1,4 @@
-import {BaseTag, Box, ColorsWIP, Spinner} from '@dagster-io/ui';
+import {BaseTag, Box, Colors, Spinner} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -12,11 +12,11 @@ export const CurrentRunsBanner: React.FC<{liveData?: LiveDataForNode}> = ({liveD
   }
   return (
     <Box
-      background={ColorsWIP.Blue50}
+      background={Colors.Blue50}
       flex={{direction: 'column', gap: 4}}
-      border={{side: 'bottom', width: 1, color: ColorsWIP.Blue100}}
+      border={{side: 'bottom', width: 1, color: Colors.Blue100}}
       padding={{vertical: 12, left: 24, right: 12}}
-      style={{color: ColorsWIP.Blue700, fontSize: 12, fontWeight: 700}}
+      style={{color: Colors.Blue700, fontSize: 12, fontWeight: 700}}
     >
       {inProgressRunIds.length > 0 && (
         <Box flex={{gap: 4, alignItems: 'center', wrap: 'wrap'}}>
@@ -47,8 +47,8 @@ export const CurrentRunsBanner: React.FC<{liveData?: LiveDataForNode}> = ({liveD
 const RunIDTag: React.FC<{runId: string}> = ({runId}) => (
   <BaseTag
     key={runId}
-    textColor={ColorsWIP.Blue700}
-    fillColor={ColorsWIP.Blue50}
+    textColor={Colors.Blue700}
+    fillColor={Colors.Blue50}
     label={
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         <Spinner purpose="caption-text" />

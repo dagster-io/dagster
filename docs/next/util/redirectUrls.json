@@ -270,6 +270,11 @@
     "permanent": true
   },
   {
+    "source": "/deploying/guides/ecs",
+    "destination": "/deployment/guides/aws",
+    "permanent": true
+  },
+  {
     "source": "/deploying/gcp",
     "destination": "/deployment/guides/gcp",
     "permanent": true
@@ -495,6 +500,11 @@
   {
     "source": "/concepts/modes-resources",
     "destination": "/concepts/resources",
+    "permanent": true
+  },
+  {
+    "source": "/deployment/guides/ecs",
+    "destination": "/deployment/guides/aws#deploying-in-ecs",
     "permanent": true
   }
 ]

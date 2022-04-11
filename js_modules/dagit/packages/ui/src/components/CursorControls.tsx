@@ -1,8 +1,8 @@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ButtonWIP} from './Button';
-import {IconWIP} from './Icon';
+import {Button} from './Button';
+import {Icon} from './Icon';
 
 export interface CursorPaginationProps {
   hasPrevCursor: boolean;
@@ -12,7 +12,7 @@ export interface CursorPaginationProps {
   reset: () => void;
 }
 
-export const CursorPaginationControls: React.FunctionComponent<CursorPaginationProps> = ({
+export const CursorPaginationControls: React.FC<CursorPaginationProps> = ({
   hasPrevCursor,
   hasNextCursor,
   popCursor,
@@ -20,21 +20,21 @@ export const CursorPaginationControls: React.FunctionComponent<CursorPaginationP
 }) => {
   return (
     <CursorControlsContainer>
-      <ButtonWIP disabled={!hasPrevCursor} icon={<IconWIP name="arrow_back" />} onClick={popCursor}>
+      <Button disabled={!hasPrevCursor} icon={<Icon name="arrow_back" />} onClick={popCursor}>
         Previous
-      </ButtonWIP>
-      <ButtonWIP
+      </Button>
+      <Button
         disabled={!hasNextCursor}
-        icon={<IconWIP name="arrow_forward" />}
+        icon={<Icon name="arrow_forward" />}
         onClick={advanceCursor}
       >
         Next
-      </ButtonWIP>
+      </Button>
     </CursorControlsContainer>
   );
 };
 
-export const CursorHistoryControls: React.FunctionComponent<CursorPaginationProps> = ({
+export const CursorHistoryControls: React.FC<CursorPaginationProps> = ({
   hasPrevCursor,
   hasNextCursor,
   popCursor,
@@ -42,20 +42,16 @@ export const CursorHistoryControls: React.FunctionComponent<CursorPaginationProp
 }) => {
   return (
     <CursorControlsContainer>
-      <ButtonWIP
-        icon={<IconWIP name="arrow_back" />}
-        disabled={!hasNextCursor}
-        onClick={advanceCursor}
-      >
+      <Button icon={<Icon name="arrow_back" />} disabled={!hasNextCursor} onClick={advanceCursor}>
         <span className="hideable-button-text">Older</span>
-      </ButtonWIP>
-      <ButtonWIP
-        rightIcon={<IconWIP name="arrow_forward" />}
+      </Button>
+      <Button
+        rightIcon={<Icon name="arrow_forward" />}
         disabled={!hasPrevCursor}
         onClick={popCursor}
       >
         <span className="hideable-button-text">Newer</span>
-      </ButtonWIP>
+      </Button>
     </CursorControlsContainer>
   );
 };

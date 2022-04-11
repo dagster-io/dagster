@@ -1,4 +1,5 @@
 import yaml
+
 from dagster.utils import file_relative_path
 from docs_snippets.concepts.logging.custom_logger import (
     demo_job,
@@ -10,7 +11,8 @@ from docs_snippets.concepts.logging.custom_logger import (
 def test_json_logger():
     with open(
         file_relative_path(
-            __file__, "../../../docs_snippets/concepts/logging/config_custom_logger.yaml"
+            __file__,
+            "../../../docs_snippets/concepts/logging/config_custom_logger.yaml",
         ),
         "r",
     ) as fd:

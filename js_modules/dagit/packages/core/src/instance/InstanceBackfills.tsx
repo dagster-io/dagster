@@ -2,19 +2,18 @@ import {gql, useQuery, useMutation} from '@apollo/client';
 import {
   Alert,
   Box,
-  ButtonWIP,
-  ButtonLink,
-  ColorsWIP,
+  Button,
+  Colors,
   CursorPaginationControls,
   Group,
-  IconWIP,
-  MenuItemWIP,
-  MenuWIP,
+  Icon,
+  MenuItem,
+  Menu,
   NonIdealState,
   PageHeader,
   Popover,
   Table,
-  TagWIP,
+  Tag,
   Heading,
   Mono,
   stringFromValue,
@@ -28,6 +27,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {
@@ -38,6 +38,7 @@ import {
   successStatuses,
 } from '../runs/RunStatuses';
 import {DagsterTag} from '../runs/RunTag';
+import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -84,13 +85,14 @@ export const InstanceBackfills = () => {
         ? result.partitionBackfillsOrError.results
         : [],
   });
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   useDocumentTitle('Backfills');
 
   return (
     <>
       <PageHeader
         title={<Heading>Instance status</Heading>}
-        tabs={<InstanceTabs tab="backfills" queryData={queryData} />}
+        tabs={<InstanceTabs tab="backfills" refreshState={refreshState} />}
       />
       <Loading queryResult={queryResult} allowStaleData={true}>
         {({partitionBackfillsOrError}) => {
@@ -200,24 +202,16 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
     } else {
       const error = data.resumePartitionBackfill;
       SharedToaster.show({
-        message: (
-          <Group direction="column" spacing={4}>
-            <div>An unexpected error occurred. This backfill was not retried.</div>
-            <ButtonLink
-              color={ColorsWIP.White}
-              underline="always"
-              onClick={() => {
-                showCustomAlert({
-                  body: <PythonErrorInfo error={error} />,
-                });
-              }}
-            >
-              View error
-            </ButtonLink>
-          </Group>
-        ),
+        message: <div>An unexpected error occurred. This backfill was not retried.</div>,
         icon: 'error',
         intent: 'danger',
+        action: {
+          text: 'View error',
+          onClick: () =>
+            showCustomAlert({
+              body: <PythonErrorInfo error={error} />,
+            }),
+        },
       });
     }
   };
@@ -281,9 +275,12 @@ const BackfillRow = ({
   const history = useHistory();
   const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissions();
   const counts = React.useMemo(() => getProgressCounts(backfill), [backfill]);
-  const runsUrl = `/instance/runs?${qs.stringify({
-    q: [stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}])],
-  })}`;
+  const runsUrl = runsPathWithFilters([
+    {
+      token: 'tag',
+      value: `dagster/backfill=${backfill.backfillId}`,
+    },
+  ]);
 
   const repoAddress = backfill.partitionSet
     ? buildRepoAddress(
@@ -343,9 +340,9 @@ const BackfillRow = ({
                 showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
               }
             >
-              <TagWIP intent="danger" interactive>
+              <Tag intent="danger" interactive>
                 {backfill.status}
-              </TagWIP>
+              </Tag>
             </TagButton>
           </Box>
         ) : null}
@@ -355,11 +352,11 @@ const BackfillRow = ({
       <td>
         <Popover
           content={
-            <MenuWIP>
+            <Menu>
               {canCancelPartitionBackfill ? (
                 <>
                   {counts.numUnscheduled && backfill.status === BulkActionStatus.REQUESTED ? (
-                    <MenuItemWIP
+                    <MenuItem
                       text="Cancel backfill submission"
                       icon="cancel"
                       intent="danger"
@@ -367,7 +364,7 @@ const BackfillRow = ({
                     />
                   ) : null}
                   {canCancel ? (
-                    <MenuItemWIP
+                    <MenuItem
                       text="Terminate unfinished runs"
                       icon="cancel"
                       intent="danger"
@@ -379,7 +376,7 @@ const BackfillRow = ({
               {canLaunchPartitionBackfill &&
               backfill.status === BulkActionStatus.FAILED &&
               backfill.partitionSet ? (
-                <MenuItemWIP
+                <MenuItem
                   text="Resume failed backfill"
                   title="Submits runs for all partitions in the backfill that do not have a corresponding run. Does not retry failed runs."
                   icon="refresh"
@@ -387,22 +384,22 @@ const BackfillRow = ({
                 />
               ) : null}
               {partitionSetBackfillUrl ? (
-                <MenuItemWIP
+                <MenuItem
                   text="View Partition Matrix"
                   icon="view_list"
                   onClick={() => history.push(partitionSetBackfillUrl)}
                 />
               ) : null}
-              <MenuItemWIP
+              <MenuItem
                 text="View Backfill Runs"
                 icon="settings_backup_restore"
                 onClick={() => history.push(runsUrl)}
               />
-            </MenuWIP>
+            </Menu>
           }
           position="bottom-right"
         >
-          <ButtonWIP icon={<IconWIP name="expand_more" />} />
+          <Button icon={<Icon name="expand_more" />} />
         </Popover>
       </td>
     </tr>
@@ -470,7 +467,7 @@ const BackfillProgress = ({backfill}: {backfill: Backfill}) => {
         lineHeight: '32px',
         fontSize: '36px',
         fontWeight: 600,
-        color: ColorsWIP.Gray600,
+        color: Colors.Gray600,
       }}
     >
       {numTotal ? Math.floor((100 * numCompleted) / numTotal) : '-'}%
@@ -478,7 +475,7 @@ const BackfillProgress = ({backfill}: {backfill: Backfill}) => {
   );
 };
 
-const PartitionSetReference: React.FunctionComponent<{
+const PartitionSetReference: React.FC<{
   partitionSet: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet;
 }> = ({partitionSet}) => {
   const repoAddress = buildRepoAddress(
@@ -502,7 +499,7 @@ const PartitionSetReference: React.FunctionComponent<{
         {partitionSet.name}
       </Link>
       <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-        <IconWIP name="repo" color={ColorsWIP.Gray400} />
+        <Icon name="repo" color={Colors.Gray400} />
         <Link to={workspacePathFromAddress(repoAddress)}>{repoAddressAsString(repoAddress)}</Link>
       </Box>
       <PipelineReference
@@ -641,9 +638,9 @@ const RESUME_BACKFILL_MUTATION = gql`
       ... on UnauthorizedError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;

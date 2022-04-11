@@ -1,68 +1,96 @@
 ---
 title: Customizing Helm | Dagster
-description: We go over common ways to customize your Dagster Helm deployment. This includes adding Kubernetes configuration at the job and op level, and configuring your Helm release to use external resources.
+description: This section covers common ways to customize your Dagster Helm deployment.
 ---
 
 # Customizing your Kubernetes Deployment
 
-## Overview
+This section covers common ways to customize your Dagster Helm deployment.
 
-We go over common ways to customize your Dagster Helm deployment, including adding Kubernetes configuration at the job and op level, and configuring your Helm release to use external resources.
+## Job or Op Kubernetes Configuration
 
-## Walkthrough
+The `dagster-k8s/config` tag allows users to pass custom configuration through to the Kubernetes Jobs and Pods created by Dagster during execution.
 
-### Job or Op Kubernetes Configuration
+`dagster-k8s/config` is a dictionary with the following keys:
 
-The `dagster-k8s/config` allows users to pass custom configuration to the Kubernetes Job, Job metadata, JobSpec, PodSpec, and PodTemplateSpec metadata. We can specify this information in an op or job's tags.
+- `container_config`: The Pod's [Container](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#container-v1-core).
+- `pod_spec_config`: The Pod's [PodSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#podspec-v1-core).
+- `pod_template_spec_metadata`: The Pod's [Metadata](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta).
+- `job_spec_config`: The Job's [JobSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#jobspec-v1-batch).
+- `job_metadata`: The Job's [Metadata](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta).
 
-```python
-@op(
-  tags = {
-    'dagster-k8s/config': {
-      'container_config': {
-        'resources': {
-          'requests': { 'cpu': '250m', 'memory': '64Mi' },
-          'limits': { 'cpu': '500m', 'memory': '2560Mi' },
-        }
-      },
-      'pod_template_spec_metadata': {
-        'annotations': { "cluster-autoscaler.kubernetes.io/safe-to-evict": "true"}
-      },
-      'pod_spec_config': {
-        'affinity': {
-          'nodeAffinity': {
-            'requiredDuringSchedulingIgnoredDuringExecution': {
-              'nodeSelectorTerms': [{
-                'matchExpressions': [{
-                  'key': 'beta.kubernetes.io/os', 'operator': 'In', 'values': ['windows', 'linux'],
-                }]
-              }]
-            }
-          }
-        }
-      },
-    },
-  },
-)
-def my_op(context):
-  context.log.info('running')
+The values for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`).
 
+If your instance is using the <PyObject module="dagster_k8s" object="K8sRunLauncher" /> or <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, you can use the `dagster-k8s/config` tag on a Dagster job. For example:
+
+```python file=/deploying/kubernetes/k8s_config_tag_job.py startafter=start_k8s_config endbefore=end_k8s_config
 @job(
-  tags = {
-    'dagster-k8s/config': {
-      'container_config': {
-        'resources': {
-          'requests': { 'cpu': '200m', 'memory': '32Mi' },
-        }
-      },
-    }
-  }
+    tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "250m", "memory": "64Mi"},
+                    "limits": {"cpu": "500m", "memory": "2560Mi"},
+                },
+                "volume_mounts": [
+                    {"name": "volume1", "mount_path": "foo/bar", "sub_path": "file.txt"}
+                ],
+            },
+            "pod_template_spec_metadata": {
+                "annotations": {"cluster-autoscaler.kubernetes.io/safe-to-evict": "true"}
+            },
+            "pod_spec_config": {
+                "volumes": [{"name": "volume1", "secret": {"secret_name": "volume_secret_name"}}],
+                "affinity": {
+                    "node_affinity": {
+                        "required_during_scheduling_ignored_during_execution": {
+                            "node_selector_terms": [
+                                {
+                                    "match_expressions": [
+                                        {
+                                            "key": "beta.kubernetes.io/os",
+                                            "operator": "In",
+                                            "values": ["windows", "linux"],
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                },
+            },
+        },
+    },
 )
 def my_job():
-  my_op()
+    my_op()
 ```
 
-### Configuring an External Database
+If your Dagster job is configured with an executor that runs each op in its own pod, like the <PyObject module="dagster_k8s" object="k8s_job_executor" /> or <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />, you can also use the `dagster-k8s/config` tag on a Dagster op to control the Kubernetes configuration for that specific op. For example:
+
+```python file=/deploying/kubernetes/k8s_config_tag_op.py startafter=start_k8s_config endbefore=end_k8s_config
+@op(
+    tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "200m", "memory": "32Mi"},
+                }
+            },
+        }
+    }
+)
+def my_op(context):
+    context.log.info("running")
+
+@job(executor_def=k8s_job_executor)
+def my_job():
+    my_op()
+```
+
+Non-k8s run launchers and executors will ignore the `dagster-k8s/config` tag.
+
+## Configuring an External Database
 
 In a real deployment, users will likely want to set up an external PostgreSQL database and configure the `postgresql` section of `values.yaml`.
 
@@ -88,13 +116,13 @@ global:
 generatePostgresqlPasswordSecret: false
 ```
 
-### Security
+## Security
 
 Users will likely want to permission a ServiceAccount bound to a properly scoped Role to launch Jobs and create other Kubernetes resources.
 
 Users will likely want to use [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/) for managing secure information such as database logins.
 
-### Separately Deploying Dagster infrastructure and User Code
+### Separately Deploying Dagster Infrastructure and User Code
 
 It may be desirable to manage two Helm releases for your Dagster deployment: one release for the Dagster infrastructure, which consists of Dagit and the Daemon, and another release for your User Code, which contains the definitions of your pipelines written in Dagster. This way, changes to User Code can be decoupled from upgrades to core Dagster infrastructure.
 
@@ -128,7 +156,7 @@ Finally, the `dagster-user-deployments` subchart can now be managed in its own r
 
     helm upgrade --install user-code dagster/dagster-user-deployments -f /path/to/values.yaml
 
-### Kubernetes Job and Pod TTL management
+## Kubernetes Job and Pod TTL management
 
 If you use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then `Completed` and `Failed` [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) (and their associated [Pods](https://kubernetes.io/docs/concepts/workloads/pods/)) will be deleted after 1 day. The TTL value can be modified in your job tags:
 
@@ -150,11 +178,11 @@ If you do not use a Kubernetes distribution that supports the [TTL Controller](h
 
 Delete dagster [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) older than one day
 
-    kubectl get job | grep -e dagster-run -e dagster-job | awk 'match($4,/[0-9]+d/) {print $1}' | xargs kubectl delete job
+    kubectl get job | grep -e dagster-run -e dagster-step | awk 'match($4,/[0-9]+d/) {print $1}' | xargs kubectl delete job
 
 Delete completed [Pods](https://kubernetes.io/docs/concepts/workloads/pods/) older than one day
 
-    kubectl get pod | grep -e dagster-run -e dagster-job | awk 'match($3,/Completed/) {print $0}' | awk 'match($5,/[0-9]+d/) {print $1}' | xargs kubectl delete pod
+    kubectl get pod | grep -e dagster-run -e dagster-step | awk 'match($3,/Completed/) {print $0}' | awk 'match($5,/[0-9]+d/) {print $1}' | xargs kubectl delete pod
 
 ## Conclusion
 

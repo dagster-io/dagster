@@ -1,6 +1,8 @@
-from dagster import Field, In, Noneable, Nothing, Out, Output, op
 from dagster_airbyte.resources import DEFAULT_POLL_INTERVAL_SECONDS
 from dagster_airbyte.types import AirbyteOutput
+from dagster_airbyte.utils import generate_materializations
+
+from dagster import Array, Bool, Field, In, Noneable, Nothing, Out, Output, op
 
 
 @op(
@@ -30,6 +32,22 @@ from dagster_airbyte.types import AirbyteOutput
             default_value=None,
             description="The maximum time that will waited before this operation is timed out. By "
             "default, this will never time out.",
+        ),
+        "yield_materializations": Field(
+            config=Bool,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the Airbyte sync will "
+                "be yielded when the op executes."
+            ),
+        ),
+        "asset_key_prefix": Field(
+            config=Array(str),
+            default_value=["airbyte"],
+            description=(
+                "If provided and yield_materializations is True, these components will be used to "
+                "prefix the generated asset keys."
+            ),
         ),
     },
     tags={"kind": "airbyte"},
@@ -74,4 +92,15 @@ def airbyte_sync_op(context):
         poll_interval=context.op_config["poll_interval"],
         poll_timeout=context.op_config["poll_timeout"],
     )
-    yield Output(airbyte_output)
+    if context.op_config["yield_materializations"]:
+        yield from generate_materializations(
+            airbyte_output, asset_key_prefix=context.op_config["asset_key_prefix"]
+        )
+    yield Output(
+        airbyte_output,
+        metadata={
+            **airbyte_output.job_details.get("attempts", [{}])[-1]
+            .get("attempt", {})
+            .get("totalStats", {})
+        },
+    )

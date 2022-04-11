@@ -1,10 +1,10 @@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ButtonWIP} from './Button';
+import {Button} from './Button';
 import {ButtonGroup} from './ButtonGroup';
-import {ColorsWIP} from './Colors';
-import {IconWIP} from './Icon';
+import {Colors} from './Colors';
+import {Icon} from './Icon';
 
 const DIVIDER_THICKNESS = 2;
 
@@ -14,7 +14,7 @@ interface SplitPanelContainerProps {
   first: React.ReactNode;
   firstInitialPercent: number;
   firstMinSize?: number;
-  second: React.ReactNode;
+  second: React.ReactNode | null; // Note: pass null to hide / animate away the second panel
 }
 
 interface SplitPanelContainerState {
@@ -47,19 +47,20 @@ export class SplitPanelContainer extends React.Component<
 
   render() {
     const {firstMinSize, first, second} = this.props;
-    const {size, resizing} = this.state;
+    const {size: _size, resizing} = this.state;
     const axis = this.props.axis || 'horizontal';
 
     const firstPaneStyles: React.CSSProperties = {flexShrink: 0};
+    const firstSize = second ? _size : 100;
 
     // Note: The divider appears after the first panel, so making the first panel 100% wide
     // hides the divider offscreen. To prevent this, we subtract the divider depth.
     if (axis === 'horizontal') {
       firstPaneStyles.minWidth = firstMinSize;
-      firstPaneStyles.width = `calc(${size}% - ${DIVIDER_THICKNESS}px)`;
+      firstPaneStyles.width = `calc(${firstSize}% - ${DIVIDER_THICKNESS}px)`;
     } else {
       firstPaneStyles.minHeight = firstMinSize;
-      firstPaneStyles.height = `calc(${size}% - ${DIVIDER_THICKNESS}px)`;
+      firstPaneStyles.height = `calc(${firstSize}% - ${DIVIDER_THICKNESS}px)`;
     }
 
     return (
@@ -184,11 +185,11 @@ export const SecondPanelToggle = ({container, axis}: PanelToggleProps) => {
   React.useEffect(() => setOpen(initialIsOpen), [initialIsOpen]);
 
   return (
-    <ButtonWIP
+    <Button
       active={open}
       title="Toggle second pane"
       icon={
-        <IconWIP
+        <Icon
           name={
             axis === 'horizontal'
               ? open
@@ -225,7 +226,7 @@ const DividerWrapper = {
   horizontal: styled.div<{resizing: boolean}>`
     width: ${DIVIDER_THICKNESS}px;
     z-index: 1;
-    background: ${(p) => (p.resizing ? ColorsWIP.Gray400 : ColorsWIP.KeylineGray)};
+    background: ${(p) => (p.resizing ? Colors.Gray400 : Colors.KeylineGray)};
     margin-left: -1px;
     overflow: visible;
     position: relative;
@@ -233,7 +234,7 @@ const DividerWrapper = {
   vertical: styled.div<{resizing: boolean}>`
     height: ${DIVIDER_THICKNESS}px;
     z-index: 1;
-    background: ${(p) => (p.resizing ? ColorsWIP.Gray400 : ColorsWIP.KeylineGray)};
+    background: ${(p) => (p.resizing ? Colors.Gray400 : Colors.KeylineGray)};
     margin-top: -1px;
     overflow: visible;
     position: relative;
@@ -264,6 +265,7 @@ const Container = styled.div<{
   resizing: boolean;
 }>`
   display: flex;
+  overflow: hidden;
   flex-direction: ${({axis}) => (axis === 'vertical' ? 'column' : 'row')};
   flex: 1 1;
   width: 100%;

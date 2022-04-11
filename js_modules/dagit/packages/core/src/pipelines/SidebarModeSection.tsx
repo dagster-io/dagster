@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {ColorsWIP, IconWIP, IconWrapper} from '@dagster-io/ui';
+import {Colors, Icon, IconWrapper} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -11,7 +11,7 @@ import {SidebarModeInfoFragment} from './types/SidebarModeInfoFragment';
 
 const NO_DESCRIPTION = '';
 
-export const SidebarModeSection: React.FunctionComponent<{
+export const SidebarModeSection: React.FC<{
   mode: SidebarModeInfoFragment;
 }> = ({mode}) => {
   return (
@@ -20,7 +20,7 @@ export const SidebarModeSection: React.FunctionComponent<{
       <Description description={mode.description || NO_DESCRIPTION} />
       {mode.resources.map((resource) => (
         <ContextResourceContainer key={resource.name}>
-          <IconWIP name="resource" color={ColorsWIP.Gray700} />
+          <Icon name="resource" color={Colors.Gray700} />
           <div>
             <ContextResourceHeader>{resource.name}</ContextResourceHeader>
             <Description description={resource.description || NO_DESCRIPTION} />
@@ -35,7 +35,7 @@ export const SidebarModeSection: React.FunctionComponent<{
       ))}
       {mode.loggers.map((logger) => (
         <ContextLoggerContainer key={logger.name}>
-          <IconWIP name="resource" color={ColorsWIP.Gray700} />
+          <Icon name="resource" color={Colors.Gray700} />
           <div>
             <ContextLoggerHeader>{logger.name}</ContextLoggerHeader>
             <Description description={logger.description || NO_DESCRIPTION} />

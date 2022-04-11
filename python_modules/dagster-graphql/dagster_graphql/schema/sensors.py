@@ -1,12 +1,18 @@
 import graphene
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
+from dagster_graphql.implementation.utils import capture_error, check_permission
+
 from dagster import check
 from dagster.core.host_representation import ExternalSensor, ExternalTargetData, SensorSelector
 from dagster.core.scheduler.instigation import InstigatorState
 from dagster.core.workspace.permissions import Permissions
-from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
-from dagster_graphql.implementation.utils import capture_error, check_permission
 
-from ..implementation.fetch_sensors import get_sensor_next_tick, start_sensor, stop_sensor
+from ..implementation.fetch_sensors import (
+    get_sensor_next_tick,
+    set_sensor_cursor,
+    start_sensor,
+    stop_sensor,
+)
 from .asset_key import GrapheneAssetKey
 from .errors import (
     GraphenePythonError,
@@ -61,16 +67,13 @@ class GrapheneSensor(graphene.ObjectType):
 
     def __init__(self, external_sensor, sensor_state, batch_loader=None):
         self._external_sensor = check.inst_param(external_sensor, "external_sensor", ExternalSensor)
-        self._sensor_state = check.opt_inst_param(sensor_state, "sensor_state", InstigatorState)
 
         # optional run loader, provided by a parent GrapheneRepository object that instantiates
         # multiple sensors
         self._batch_loader = check.opt_inst_param(
             batch_loader, "batch_loader", RepositoryScopedBatchLoader
         )
-
-        if not self._sensor_state:
-            self._sensor_state = self._external_sensor.get_default_instigation_state()
+        self._sensor_state = self._external_sensor.get_current_instigator_state(sensor_state)
 
         super().__init__(
             name=external_sensor.name,
@@ -128,7 +131,7 @@ class GrapheneStartSensorMutation(graphene.Mutation):
         name = "StartSensorMutation"
 
     @capture_error
-    @check_permission(Permissions.START_SENSOR)
+    @check_permission(Permissions.EDIT_SENSOR)
     def mutate(self, graphene_info, sensor_selector):
         return start_sensor(graphene_info, SensorSelector.from_graphql_input(sensor_selector))
 
@@ -139,15 +142,17 @@ class GrapheneStopSensorMutationResult(graphene.ObjectType):
     class Meta:
         name = "StopSensorMutationResult"
 
-    def __init__(self, job_state):
+    def __init__(self, instigator_state):
         super().__init__()
-        self._job_state = check.inst_param(job_state, "job_state", InstigatorState)
+        self._instigator_state = check.inst_param(
+            instigator_state, "instigator_state", InstigatorState
+        )
 
     def resolve_instigationState(self, _graphene_info):
-        if not self._job_state:
+        if not self._instigator_state:
             return None
 
-        return GrapheneInstigationState(job_state=self._job_state)
+        return GrapheneInstigationState(instigator_state=self._instigator_state)
 
 
 class GrapheneStopSensorMutationResultOrError(graphene.Union):
@@ -166,9 +171,27 @@ class GrapheneStopSensorMutation(graphene.Mutation):
         name = "StopSensorMutation"
 
     @capture_error
-    @check_permission(Permissions.STOP_SENSOR)
+    @check_permission(Permissions.EDIT_SENSOR)
     def mutate(self, graphene_info, job_origin_id):
         return stop_sensor(graphene_info, job_origin_id)
+
+
+class GrapheneSetSensorCursorMutation(graphene.Mutation):
+    Output = graphene.NonNull(GrapheneSensorOrError)
+
+    class Arguments:
+        sensor_selector = graphene.NonNull(GrapheneSensorSelector)
+        cursor = graphene.String()
+
+    class Meta:
+        name = "SetSensorCursorMutation"
+
+    @capture_error
+    @check_permission(Permissions.EDIT_SENSOR)
+    def mutate(self, graphene_info, sensor_selector, cursor=None):
+        return set_sensor_cursor(
+            graphene_info, SensorSelector.from_graphql_input(sensor_selector), cursor
+        )
 
 
 types = [
@@ -180,4 +203,5 @@ types = [
     GrapheneStopSensorMutationResult,
     GrapheneStopSensorMutationResultOrError,
     GrapheneStopSensorMutation,
+    GrapheneSetSensorCursorMutation,
 ]

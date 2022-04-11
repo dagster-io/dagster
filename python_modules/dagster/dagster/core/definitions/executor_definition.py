@@ -1,23 +1,22 @@
-from enum import Enum
+from enum import Enum as PyEnum
 from functools import update_wrapper
 from typing import Any, Dict, Optional
 
 from dagster import check
 from dagster.builtins import Int
-from dagster.config.field import Field
-from dagster.config.field_utils import Selector
+from dagster.config import Field, Selector
 from dagster.core.definitions.configurable import (
     ConfiguredDefinitionConfigSchema,
     NamedConfigurableDefinition,
 )
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.retries import RetryMode, get_retries_config
 
 from .definition_config_schema import convert_user_facing_definition_config_schema
 
 
-class ExecutorRequirement(Enum):
+class ExecutorRequirement(PyEnum):
     """
     An ExecutorDefinition can include a list of requirements that the system uses to
     check whether the executor will be able to work for a particular job/pipeline execution.
@@ -200,22 +199,25 @@ class _ExecutorDecoratorCallable:
         return executor_def
 
 
-def _core_in_process_executor_creation(retries_config, marker_to_close):
+def _core_in_process_executor_creation(config: Dict[str, Any]):
     from dagster.core.executor.in_process import InProcessExecutor
 
     return InProcessExecutor(
         # shouldn't need to .get() here - issue with defaults in config setup
-        retries=RetryMode.from_config(retries_config),
-        marker_to_close=marker_to_close,
+        retries=RetryMode.from_config(config["retries"]),
+        marker_to_close=config.get("marker_to_close"),
     )
+
+
+IN_PROC_CONFIG = {
+    "retries": get_retries_config(),
+    "marker_to_close": Field(str, is_required=False),
+}
 
 
 @executor(
     name="in_process",
-    config_schema={
-        "retries": get_retries_config(),
-        "marker_to_close": Field(str, is_required=False),
-    },
+    config_schema=IN_PROC_CONFIG,
 )
 def in_process_executor(init_context):
     """The in-process executor executes all steps in a single process.
@@ -232,11 +234,7 @@ def in_process_executor(init_context):
     where the higher the number the higher the priority. 0 is the default and both positive
     and negative numbers can be used.
     """
-    retries_config = init_context.executor_config["retries"]
-    marker_to_close = init_context.executor_config.get("marker_to_close")
-    return _core_in_process_executor_creation(
-        retries_config=retries_config, marker_to_close=marker_to_close
-    )
+    return _core_in_process_executor_creation(init_context.executor_config)
 
 
 @executor(name="execute_in_process_executor")
@@ -255,21 +253,57 @@ def execute_in_process_executor(_):
     )
 
 
-def _core_multiprocess_executor_creation(max_concurrent, retries_config):
+def _core_multiprocess_executor_creation(config: Dict[str, Any]):
     from dagster.core.executor.multiprocess import MultiprocessExecutor
 
+    # unpack optional selector
+    start_method = None
+    start_cfg = {}
+    start_selector = config.get("start_method")
+    if start_selector:
+        start_method, start_cfg = list(start_selector.items())[0]
+
     return MultiprocessExecutor(
-        max_concurrent=max_concurrent,
-        retries=RetryMode.from_config(retries_config),
+        max_concurrent=config["max_concurrent"],
+        retries=RetryMode.from_config(config["retries"]),
+        start_method=start_method,
+        explicit_forkserver_preload=start_cfg.get("preload_modules"),
     )
+
+
+MULTI_PROC_CONFIG = {
+    "max_concurrent": Field(Int, is_required=False, default_value=0),
+    "start_method": Field(
+        Selector(
+            {
+                "spawn": {},
+                "forkserver": {
+                    "preload_modules": Field(
+                        [str],
+                        is_required=False,
+                        description="Explicit modules to preload in the forkserver.",
+                    ),
+                },
+                # fork currently unsupported due to threads usage
+            }
+        ),
+        is_required=False,
+        description=(
+            "Select how subprocesses are created. Defaults to spawn.\n"
+            "When forkserver is selected, set_forkserver_preload will be called with either:\n"
+            "* the preload_modules list if provided by config\n"
+            "* the module containing the Job if it was loaded from a module\n"
+            "* dagster\n"
+            "https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods"
+        ),
+    ),
+    "retries": get_retries_config(),
+}
 
 
 @executor(
     name="multiprocess",
-    config_schema={
-        "max_concurrent": Field(Int, is_required=False, default_value=0),
-        "retries": get_retries_config(),
-    },
+    config_schema=MULTI_PROC_CONFIG,
     requirements=multiple_process_executor_requirements(),
 )
 def multiprocess_executor(init_context):
@@ -294,10 +328,7 @@ def multiprocess_executor(init_context):
     where the higher the number the higher the priority. 0 is the default and both positive
     and negative numbers can be used.
     """
-    return _core_multiprocess_executor_creation(
-        max_concurrent=init_context.executor_config["max_concurrent"],
-        retries_config=init_context.executor_config["retries"],
-    )
+    return _core_multiprocess_executor_creation(init_context.executor_config)
 
 
 default_executors = [in_process_executor, multiprocess_executor]
@@ -352,16 +383,7 @@ def _get_default_executor_requirements(executor_config):
     name="multi_or_in_process_executor",
     config_schema=Field(
         Selector(
-            {
-                "multiprocess": {
-                    "max_concurrent": Field(Int, is_required=False, default_value=0),
-                    "retries": get_retries_config(),
-                },
-                "in_process": {
-                    "retries": get_retries_config(),
-                    "marker_to_close": Field(str, is_required=False),
-                },
-            },
+            {"multiprocess": MULTI_PROC_CONFIG, "in_process": IN_PROC_CONFIG},
         ),
         default_value={"multiprocess": {}},
     ),
@@ -406,15 +428,6 @@ def multi_or_in_process_executor(init_context):
     and negative numbers can be used.
     """
     if "multiprocess" in init_context.executor_config:
-        max_concurrent = init_context.executor_config["multiprocess"]["max_concurrent"]
-        retries = init_context.executor_config["multiprocess"]["retries"]
-        return _core_multiprocess_executor_creation(
-            max_concurrent=max_concurrent, retries_config=retries
-        )
-
+        return _core_multiprocess_executor_creation(init_context.executor_config["multiprocess"])
     else:
-        retries_config = init_context.executor_config["in_process"]["retries"]
-        marker_to_close = init_context.executor_config.get("marker_to_close")
-        return _core_in_process_executor_creation(
-            retries_config=retries_config, marker_to_close=marker_to_close
-        )
+        return _core_in_process_executor_creation(init_context.executor_config["in_process"])

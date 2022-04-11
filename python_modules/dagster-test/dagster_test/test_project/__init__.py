@@ -7,21 +7,20 @@ from contextlib import contextmanager
 
 from dagster import check
 from dagster.core.code_pointer import FileCodePointer
-from dagster.core.definitions.reconstructable import (
-    ReconstructablePipeline,
-    ReconstructableRepository,
-)
+from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.build_resources import build_resources
 from dagster.core.execution.context.output import build_output_context
 from dagster.core.host_representation import (
     ExternalPipeline,
     ExternalSchedule,
+    GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
+    InstigatorSelector,
     RepositoryLocation,
 )
 from dagster.core.host_representation.origin import (
-    ExternalJobOrigin,
+    ExternalInstigatorOrigin,
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
 )
@@ -31,7 +30,7 @@ from dagster.core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster.core.test_utils import in_process_test_workspace
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes import create_snapshot_id, whitelist_for_serdes
 from dagster.utils import file_relative_path, git_repository_root
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -39,7 +38,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 def cleanup_memoized_results(pipeline_def, mode_str, instance, run_config):
     # Clean up any memoized outputs from the s3 bucket
-    from dagster_aws.s3 import s3_resource, s3_pickle_io_manager
+    from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
     execution_plan = create_execution_plan(
         pipeline_def, run_config=run_config, instance_ref=instance.get_ref(), mode=mode_str
@@ -232,28 +231,34 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
 
     def get_external_origin(self):
         """
-        Hack! Inject origin that the k8s images will use. The BK image uses a different directory
-        structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
-        inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
-        work, we need to inject this one.
+        Hack! Inject origin that the k8s images will use. The k8s helm chart workspace uses a
+        gRPC server repo location origin. As a result the normal origin won't work, we need to
+        inject this one.
         """
 
-        return ExternalJobOrigin(
+        return ExternalInstigatorOrigin(
             external_repository_origin=ExternalRepositoryOrigin(
-                repository_location_origin=InProcessRepositoryLocationOrigin(
-                    recon_repo=ReconstructableRepository(
-                        pointer=FileCodePointer(
-                            python_file="/dagster_test/test_project/test_pipelines/repo.py",
-                            fn_name="define_demo_execution_repo",
-                        ),
-                        container_image=self._container_image,
-                        executable_path="python",
-                        entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
-                    )
+                repository_location_origin=GrpcServerRepositoryLocationOrigin(
+                    host="user-code-deployment-1",
+                    port=3030,
+                    location_name="user-code-deployment-1",
                 ),
                 repository_name="demo_execution_repo",
             ),
-            job_name=self.name,
+            instigator_name=self.name,
+        )
+
+    @property
+    def selector_id(self):
+        """
+        Hack! Inject a selector that matches the one that the k8s helm chart will use.
+        """
+        return create_snapshot_id(
+            InstigatorSelector(
+                "user-code-deployment-1",
+                "demo_execution_repo",
+                self.name,
+            )
         )
 
 

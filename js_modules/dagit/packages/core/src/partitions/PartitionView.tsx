@@ -1,12 +1,4 @@
-import {
-  Box,
-  ButtonWIP,
-  CursorHistoryControls,
-  DialogWIP,
-  IconWIP,
-  Spinner,
-  Tooltip,
-} from '@dagster-io/ui';
+import {Box, Button, CursorHistoryControls, Dialog, Icon, Spinner, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -44,7 +36,7 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
   onChangePartitionSet,
   repoAddress,
 }) => {
-  const [runTags, setRunTags] = useQueryPersistedRunFilters(RunTagsSupportedTokens);
+  const [runFilters, setRunFilters] = useQueryPersistedRunFilters(RunTagsSupportedTokens);
   const [stepQuery = '', setStepQuery] = useQueryPersistedState<string>({queryKey: 'stepQuery'});
   const [showBackfillSetup, setShowBackfillSetup] = React.useState(false);
   const [blockDialog, setBlockDialog] = React.useState(false);
@@ -60,7 +52,7 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
     setPageSize,
   } = useChunkedPartitionsQuery(
     partitionSet.name,
-    runTags,
+    runFilters,
     repoAddress,
     // only query by job name if there is only one partition set
     isJob && partitionSets.length === 1 ? pipelineName : undefined,
@@ -79,27 +71,27 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
     if (!canLaunchPartitionBackfill) {
       return (
         <Tooltip content={DISABLED_MESSAGE}>
-          <ButtonWIP icon={<IconWIP name="add_circle" />} disabled>
+          <Button icon={<Icon name="add_circle" />} disabled>
             Launch backfill
-          </ButtonWIP>
+          </Button>
         </Tooltip>
       );
     }
 
     return (
-      <ButtonWIP
+      <Button
         onClick={() => setShowBackfillSetup(!showBackfillSetup)}
-        icon={<IconWIP name="add_circle" />}
+        icon={<Icon name="add_circle" />}
         active={showBackfillSetup}
       >
         Launch backfill
-      </ButtonWIP>
+      </Button>
     );
   };
 
   return (
     <div>
-      <DialogWIP
+      <Dialog
         canEscapeKeyClose={!blockDialog}
         canOutsideClickClose={!blockDialog}
         onClose={() => setShowBackfillSetup(false)}
@@ -114,14 +106,14 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
             onCancel={() => setShowBackfillSetup(false)}
             onLaunch={(backfillId, stepQuery) => {
               setStepQuery(stepQuery);
-              setRunTags([{token: 'tag', value: `dagster/backfill=${backfillId}`}]);
+              setRunFilters([{token: 'tag', value: `dagster/backfill=${backfillId}`}]);
               setShowBackfillSetup(false);
             }}
             onSubmit={onSubmit}
             repoAddress={repoAddress}
           />
         )}
-      </DialogWIP>
+      </Dialog>
       <OptionsContainer style={{gap: 12}}>
         {partitionSets.length <= 1 ? null : (
           <PartitionSetSelector
@@ -155,8 +147,8 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
           partitions={partitions}
           pipelineName={pipelineName}
           repoAddress={repoAddress}
-          runTags={runTags}
-          setRunTags={setRunTags}
+          runFilters={runFilters}
+          setRunFilters={setRunFilters}
           stepQuery={stepQuery}
           setStepQuery={setStepQuery}
         />

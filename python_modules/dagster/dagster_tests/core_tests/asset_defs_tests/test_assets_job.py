@@ -1,6 +1,7 @@
 import os
 
 import pytest
+
 from dagster import (
     AssetKey,
     DagsterInvalidDefinitionError,
@@ -8,7 +9,7 @@ from dagster import (
     IOManager,
     io_manager,
 )
-from dagster.core.asset_defs import AssetIn, ForeignAsset, asset, build_assets_job
+from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
 from dagster.core.snap import DependencyStructureIndex
 from dagster.core.snap.dep_snapshot import (
     OutputHandleSnap,
@@ -193,7 +194,7 @@ def test_asset_key_for_asset_with_namespace_str():
     assert result.output_for_node("success_asset") == "foo"
 
 
-def test_foreign_asset():
+def test_source_asset():
     @asset
     def asset1(source1):
         assert source1 == 5
@@ -204,17 +205,18 @@ def test_foreign_asset():
             pass
 
         def load_input(self, context):
+            assert context.resource_config["a"] == 7
             return 5
 
-    @io_manager
+    @io_manager(config_schema={"a": int})
     def my_io_manager(_):
         return MyIOManager()
 
     job = build_assets_job(
         "a",
         [asset1],
-        source_assets=[ForeignAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
-        resource_defs={"special_io_manager": my_io_manager},
+        source_assets=[SourceAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
+        resource_defs={"special_io_manager": my_io_manager.configured({"a": 7})},
     )
     assert job.graph.node_defs == [asset1.op]
     assert job.execute_in_process().success
@@ -291,13 +293,15 @@ def test_multiple_non_argument_deps():
     index = DependencyStructureIndex(dep_structure_snapshot)
 
     assert index.get_invocation("foo")
-    assert index.get_invocation("bar")
+    assert index.get_invocation("namespace__bar")
     assert index.get_invocation("baz")
 
     assert index.get_upstream_outputs("qux", "foo") == [
         OutputHandleSnap("foo", "result"),
     ]
-    assert index.get_upstream_outputs("qux", "namespace_bar") == [OutputHandleSnap("bar", "result")]
+    assert index.get_upstream_outputs("qux", "namespace_bar") == [
+        OutputHandleSnap("namespace__bar", "result")
+    ]
     assert index.get_upstream_outputs("qux", "baz") == [OutputHandleSnap("baz", "result")]
 
     result = job.execute_in_process()

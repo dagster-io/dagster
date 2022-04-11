@@ -1023,6 +1023,17 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_def
   value: string;
 }
 
+export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_assetNodes_assetKey;
+}
+
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_inputDefinitions_type {
   __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
@@ -1062,6 +1073,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_def
   name: string;
   description: string | null;
   metadata: GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_metadata[];
+  assetNodes: GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_assetNodes[];
   inputDefinitions: GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_inputDefinitions[];
   outputDefinitions: GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_outputDefinitions[];
   configField: GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_configField | null;
@@ -1071,6 +1083,17 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_def
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
+}
+
+export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_assetNodes_assetKey;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_inputDefinitions_type {
@@ -1155,6 +1178,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_def
   name: string;
   description: string | null;
   metadata: GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_metadata[];
+  assetNodes: GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_assetNodes[];
   inputDefinitions: GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_outputDefinitions[];
   id: string;
@@ -1252,6 +1276,17 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_de
   value: string;
 }
 
+export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_SolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_SolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_SolidDefinition_assetNodes_assetKey;
+}
+
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_SolidDefinition_inputDefinitions_type {
   __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
@@ -1291,6 +1326,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_de
   name: string;
   description: string | null;
   metadata: GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_SolidDefinition_metadata[];
+  assetNodes: GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_SolidDefinition_assetNodes[];
   inputDefinitions: GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_SolidDefinition_inputDefinitions[];
   outputDefinitions: GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_SolidDefinition_outputDefinitions[];
   configField: GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_SolidDefinition_configField | null;
@@ -1300,6 +1336,17 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_de
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
+}
+
+export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_CompositeSolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_CompositeSolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_CompositeSolidDefinition_assetNodes_assetKey;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions_type {
@@ -1384,6 +1431,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_de
   name: string;
   description: string | null;
   metadata: GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_CompositeSolidDefinition_metadata[];
+  assetNodes: GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_CompositeSolidDefinition_assetNodes[];
   inputDefinitions: GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions[];
   id: string;
@@ -1423,10 +1471,17 @@ export interface GraphExplorerRootQuery_graphOrError_GraphNotFoundError {
   message: string;
 }
 
+export interface GraphExplorerRootQuery_graphOrError_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface GraphExplorerRootQuery_graphOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
+  cause: GraphExplorerRootQuery_graphOrError_PythonError_cause | null;
 }
 
 export type GraphExplorerRootQuery_graphOrError = GraphExplorerRootQuery_graphOrError_Graph | GraphExplorerRootQuery_graphOrError_GraphNotFoundError | GraphExplorerRootQuery_graphOrError_PythonError;

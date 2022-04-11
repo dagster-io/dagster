@@ -1,4 +1,11 @@
 import graphene
+from dagster_graphql.implementation.fetch_runs import (
+    get_asset_run_stats_by_step,
+    get_in_progress_runs_by_step,
+)
+from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
+
 from dagster import DagsterInstance, check
 from dagster.core.host_representation import (
     ExternalRepository,
@@ -7,14 +14,16 @@ from dagster.core.host_representation import (
     RepositoryLocation,
 )
 from dagster.core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
-from dagster_graphql.implementation.fetch_runs import get_in_progress_runs_by_step
-from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
-from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 
 from .asset_graph import GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
 from .partition_sets import GraphenePartitionSet
-from .pipelines.pipeline import GrapheneInProgressRunsByStep, GrapheneJob, GraphenePipeline
+from .pipelines.pipeline import (
+    GrapheneInProgressRunsByStep,
+    GrapheneJob,
+    GraphenePipeline,
+    GrapheneRunStatsByStep,
+)
 from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
 from .schedules import GrapheneSchedule
 from .sensors import GrapheneSensor
@@ -160,6 +169,7 @@ class GrapheneRepository(graphene.ObjectType):
     assetNodes = non_null_list(GrapheneAssetNode)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     inProgressRunsByStep = non_null_list(GrapheneInProgressRunsByStep)
+    latestRunByStep = non_null_list(GrapheneRunStatsByStep)
 
     class Meta:
         name = "Repository"
@@ -248,7 +258,7 @@ class GrapheneRepository(graphene.ObjectType):
 
     def resolve_assetNodes(self, _graphene_info):
         return [
-            GrapheneAssetNode(self._repository, external_asset_node)
+            GrapheneAssetNode(self._repository_location, self._repository, external_asset_node)
             for external_asset_node in self._repository.get_external_asset_nodes()
         ]
 
@@ -262,6 +272,19 @@ class GrapheneRepository(graphene.ObjectType):
         ]
 
         return get_in_progress_runs_by_step(graphene_info, job_names, asset_node_keys)
+
+    def resolve_latestRunByStep(self, graphene_info):
+        job_names = [
+            job.name for job in self._repository.get_all_external_pipelines() if job.is_job
+        ]
+
+        asset_node = [node for node in self._repository.get_external_asset_nodes() if node.op_name]
+
+        return get_asset_run_stats_by_step(
+            graphene_info,
+            job_names,
+            asset_node,
+        )
 
 
 class GrapheneRepositoryConnection(graphene.ObjectType):

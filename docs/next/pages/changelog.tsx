@@ -97,13 +97,8 @@ function MDXRenderer({ data }: { data: MDXData }) {
   const { query } = useRouter();
   const { editMode } = query;
 
-  const {
-    mdxSource,
-    frontMatter,
-    searchIndex,
-    tableOfContents,
-    githubLink,
-  } = data;
+  const { mdxSource, frontMatter, searchIndex, tableOfContents, githubLink } =
+    data;
 
   const content = hydrate(mdxSource, {
     components,
@@ -112,6 +107,8 @@ function MDXRenderer({ data }: { data: MDXData }) {
       props: { value: searchIndex },
     },
   });
+
+  const navigationItems = tableOfContents.items.filter((item) => item?.items);
 
   return (
     <>
@@ -140,8 +137,8 @@ function MDXRenderer({ data }: { data: MDXData }) {
                 On this page
               </div>
               <div className="mt-6 ">
-                {tableOfContents.items[0].items && (
-                  <SidebarNavigation items={tableOfContents.items[0].items} />
+                {navigationItems && (
+                  <SidebarNavigation items={navigationItems} />
                 )}
               </div>
             </div>
@@ -220,10 +217,10 @@ function getItems(node, current) {
   } else if (node.type === `paragraph`) {
     visit(node, (item) => {
       if (item.type === `link`) {
-        current.url = item.url;
+        current.url = item["url"];
       }
       if (item.type === `text`) {
-        current.title = item.value;
+        current.title = item["value"];
       }
     });
     return current;

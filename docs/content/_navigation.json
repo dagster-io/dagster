@@ -109,12 +109,20 @@
             "path": "/concepts/ops-jobs-graphs/nesting-graphs"
           },
           {
+            "title": "Dynamic Graphs",
+            "path": "/concepts/ops-jobs-graphs/dynamic-graphs"
+          },
+          {
             "title": "Op Events",
             "path": "/concepts/ops-jobs-graphs/op-events"
           },
           {
             "title": "Op Hooks",
             "path": "/concepts/ops-jobs-graphs/op-hooks"
+          },
+          {
+            "title": "Op Retries",
+            "path": "/concepts/ops-jobs-graphs/op-retries"
           }
         ]
       },
@@ -239,8 +247,16 @@
         "title": "Assets",
         "children": [
           {
+            "title": "Software-Defined Assets",
+            "path": "/concepts/assets/software-defined-assets"
+          },
+          {
             "title": "Asset Materializations",
             "path": "/concepts/assets/asset-materializations"
+          },
+          {
+            "title": "Asset Observations",
+            "path": "/concepts/assets/asset-observations"
           }
         ]
       }
@@ -277,6 +293,10 @@
           {
             "title": "Run Coordinators - Limiting Run Concurrency",
             "path": "/deployment/run-coordinator"
+          },
+          {
+            "title": "Run Monitoring - Handling Failures",
+            "path": "/deployment/run-monitoring"
           }
         ]
       },
@@ -359,6 +379,10 @@
           {
             "title": "Dagster with Pandas",
             "path": "/integrations/pandas"
+          },
+          {
+            "title": "Dagster with Pandera",
+            "path": "/integrations/pandera"
           },
           {
             "title": "Dagster with Jupyter/Papermill",

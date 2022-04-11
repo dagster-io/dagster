@@ -1,20 +1,22 @@
 import warnings
-from collections import namedtuple
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, NamedTuple, Optional, Type
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, NamedTuple, Optional, Type
 
 from dagster import check
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
-from dagster.serdes import (
+from dagster.serdes.serdes import (
     DefaultNamedTupleSerializer,
+    EnumSerializer,
+    WhitelistMap,
+    register_serdes_enum_fallbacks,
     register_serdes_tuple_fallbacks,
+    replace_storage_keys,
     unpack_inner_value,
     whitelist_for_serdes,
 )
-from dagster.serdes.serdes import EnumSerializer, WhitelistMap, register_serdes_enum_fallbacks
 
 from .tags import (
     BACKFILL_ID_TAG,
@@ -24,6 +26,9 @@ from .tags import (
     SCHEDULE_NAME_TAG,
     SENSOR_NAME_TAG,
 )
+
+if TYPE_CHECKING:
+    from dagster.core.host_representation.origin import ExternalPipelineOrigin
 
 
 class DagsterRunStatusSerializer(EnumSerializer):
@@ -80,25 +85,32 @@ NON_IN_PROGRESS_RUN_STATUSES = [
 
 @whitelist_for_serdes
 class PipelineRunStatsSnapshot(
-    namedtuple(
+    NamedTuple(
         "_PipelineRunStatsSnapshot",
-        (
-            "run_id steps_succeeded steps_failed materializations "
-            "expectations enqueued_time launch_time start_time end_time"
-        ),
+        [
+            ("run_id", str),
+            ("steps_succeeded", int),
+            ("steps_failed", int),
+            ("materializations", int),
+            ("expectations", int),
+            ("enqueued_time", Optional[float]),
+            ("launch_time", Optional[float]),
+            ("start_time", Optional[float]),
+            ("end_time", Optional[float]),
+        ],
     )
 ):
     def __new__(
         cls,
-        run_id,
-        steps_succeeded,
-        steps_failed,
-        materializations,
-        expectations,
-        enqueued_time,
-        launch_time,
-        start_time,
-        end_time,
+        run_id: str,
+        steps_succeeded: int,
+        steps_failed: int,
+        materializations: int,
+        expectations: int,
+        enqueued_time: Optional[float],
+        launch_time: Optional[float],
+        start_time: Optional[float],
+        end_time: Optional[float],
     ):
         return super(PipelineRunStatsSnapshot, cls).__new__(
             cls,
@@ -256,14 +268,25 @@ def pipeline_run_from_storage(
 
 
 class PipelineRun(
-    namedtuple(
+    NamedTuple(
         "_PipelineRun",
-        (
-            "pipeline_name run_id run_config mode solid_selection solids_to_execute "
-            "step_keys_to_execute status tags root_run_id parent_run_id "
-            "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
-            "pipeline_code_origin"
-        ),
+        [
+            ("pipeline_name", str),
+            ("run_id", str),
+            ("run_config", Dict[str, object]),
+            ("mode", Optional[str]),
+            ("solid_selection", Optional[List[str]]),
+            ("solids_to_execute", Optional[AbstractSet[str]]),
+            ("step_keys_to_execute", Optional[List[str]]),
+            ("status", PipelineRunStatus),
+            ("tags", Dict[str, str]),
+            ("root_run_id", Optional[str]),
+            ("parent_run_id", Optional[str]),
+            ("pipeline_snapshot_id", Optional[str]),
+            ("execution_plan_snapshot_id", Optional[str]),
+            ("external_pipeline_origin", Optional["ExternalPipelineOrigin"]),
+            ("pipeline_code_origin", Optional[PipelinePythonOrigin]),
+        ],
     )
 ):
     """Serializable internal representation of a pipeline run, as stored in a
@@ -272,25 +295,21 @@ class PipelineRun(
 
     def __new__(
         cls,
-        pipeline_name=None,
-        run_id=None,
-        run_config=None,
-        mode=None,
-        solid_selection=None,
-        solids_to_execute=None,
-        step_keys_to_execute=None,
-        status=None,
-        tags=None,
-        root_run_id=None,
-        parent_run_id=None,
-        pipeline_snapshot_id=None,
-        execution_plan_snapshot_id=None,
-        # An ExternalPipelineOrigin that can be used to recreate the RepositoryLocation and
-        # ExternalPipeline that was used to submit this run
-        external_pipeline_origin=None,
-        # A PipelinePythonOrigin with information about where to find the pipeline definition in
-        # code. Most run launchers will pass this origin as an argument to the run worker process.
-        pipeline_code_origin=None,
+        pipeline_name: str,
+        run_id: Optional[str] = None,
+        run_config: Optional[Dict[str, object]] = None,
+        mode: Optional[str] = None,
+        solid_selection: Optional[List[str]] = None,
+        solids_to_execute: Optional[AbstractSet[str]] = None,
+        step_keys_to_execute: Optional[List[str]] = None,
+        status: Optional[PipelineRunStatus] = None,
+        tags: Optional[Dict[str, str]] = None,
+        root_run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        pipeline_snapshot_id: Optional[str] = None,
+        execution_plan_snapshot_id: Optional[str] = None,
+        external_pipeline_origin: Optional["ExternalPipelineOrigin"] = None,
+        pipeline_code_origin: Optional[PipelinePythonOrigin] = None,
     ):
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -301,10 +320,14 @@ class PipelineRun(
             ),
         )
         # a frozenset which contains the names of the solids to execute
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+        solids_to_execute = check.opt_nullable_set_param(
+            solids_to_execute, "solids_to_execute", of_type=str
+        )
         # a list of solid queries provided by the user
         # possible to be None when only solids_to_execute is set by the user directly
-        check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+        solid_selection = check.opt_nullable_list_param(
+            solid_selection, "solid_selection", of_type=str
+        )
         check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
         # Placing this with the other imports causes a cyclic import
@@ -324,7 +347,7 @@ class PipelineRun(
 
         return super(PipelineRun, cls).__new__(
             cls,
-            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             run_id=check.str_param(run_id, "run_id"),
             run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
             mode=check.opt_str_param(mode, "mode"),
@@ -389,6 +412,10 @@ class PipelineRun(
 
     @property
     def is_failure(self):
+        return self.status == PipelineRunStatus.FAILURE
+
+    @property
+    def is_failure_or_canceled(self):
         return self.status == PipelineRunStatus.FAILURE or self.status == PipelineRunStatus.CANCELED
 
     @property
@@ -431,28 +458,60 @@ class DagsterRun(PipelineRun):
 register_serdes_tuple_fallbacks({"PipelineRun": DagsterRun})
 
 
-@whitelist_for_serdes
-class PipelineRunsFilter(
-    namedtuple(
-        "_PipelineRunsFilter",
-        "run_ids pipeline_name statuses tags snapshot_id updated_after mode created_before",
+class RunsFilterSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        storage = super().value_to_storage_dict(
+            value,
+            whitelist_map,
+            descent_path,
+        )
+        # For backcompat, we store:
+        # job_name as pipeline_name
+        return replace_storage_keys(storage, {"job_name": "pipeline_name"})
+
+
+@whitelist_for_serdes(serializer=RunsFilterSerializer)
+class RunsFilter(
+    NamedTuple(
+        "_RunsFilter",
+        [
+            ("run_ids", List[str]),
+            ("job_name", Optional[str]),
+            ("statuses", List[PipelineRunStatus]),
+            ("tags", Dict[str, str]),
+            ("snapshot_id", Optional[str]),
+            ("updated_after", Optional[datetime]),
+            ("mode", Optional[str]),
+            ("created_before", Optional[datetime]),
+        ],
     )
 ):
     def __new__(
         cls,
-        run_ids=None,
-        pipeline_name=None,
-        statuses=None,
-        tags=None,
-        snapshot_id=None,
-        updated_after=None,
-        mode=None,
-        created_before=None,
+        run_ids: Optional[List[str]] = None,
+        job_name: Optional[str] = None,
+        statuses: Optional[List[PipelineRunStatus]] = None,
+        tags: Optional[Dict[str, str]] = None,
+        snapshot_id: Optional[str] = None,
+        updated_after: Optional[datetime] = None,
+        mode: Optional[str] = None,
+        created_before: Optional[datetime] = None,
+        pipeline_name: Optional[str] = None,  # for backcompat purposes
     ):
-        return super(PipelineRunsFilter, cls).__new__(
+        job_name = job_name or pipeline_name
+
+        check.invariant(run_ids != [], "When filtering on run ids, a non-empty list must be used.")
+
+        return super(RunsFilter, cls).__new__(
             cls,
             run_ids=check.opt_list_param(run_ids, "run_ids", of_type=str),
-            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
+            job_name=check.opt_str_param(job_name, "job_name"),
             statuses=check.opt_list_param(statuses, "statuses", of_type=PipelineRunStatus),
             tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
             snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
@@ -461,21 +520,30 @@ class PipelineRunsFilter(
             created_before=check.opt_inst_param(created_before, "created_before", datetime),
         )
 
+    @property
+    def pipeline_name(self):
+        return self.job_name
+
     @staticmethod
     def for_schedule(schedule):
-        return PipelineRunsFilter(tags=PipelineRun.tags_for_schedule(schedule))
+        return RunsFilter(tags=PipelineRun.tags_for_schedule(schedule))
 
     @staticmethod
     def for_partition(partition_set, partition):
-        return PipelineRunsFilter(tags=PipelineRun.tags_for_partition_set(partition_set, partition))
+        return RunsFilter(tags=PipelineRun.tags_for_partition_set(partition_set, partition))
 
     @staticmethod
     def for_sensor(sensor):
-        return PipelineRunsFilter(tags=PipelineRun.tags_for_sensor(sensor))
+        return RunsFilter(tags=PipelineRun.tags_for_sensor(sensor))
 
     @staticmethod
     def for_backfill(backfill_id):
-        return PipelineRunsFilter(tags=PipelineRun.tags_for_backfill_id(backfill_id))
+        return RunsFilter(tags=PipelineRun.tags_for_backfill_id(backfill_id))
+
+
+register_serdes_tuple_fallbacks({"PipelineRunsFilter": RunsFilter})
+# DEPRECATED - keeping around for backcompat reasons (some folks might have imported directly)
+PipelineRunsFilter = RunsFilter
 
 
 class JobBucket(NamedTuple):
@@ -544,12 +612,14 @@ class RunRecord(
 
 
 @whitelist_for_serdes
-class ExecutionSelector(namedtuple("_ExecutionSelector", "name solid_subset")):
+class ExecutionSelector(
+    NamedTuple("_ExecutionSelector", [("name", str), ("solid_subset", Optional[List[str]])])
+):
     """
     Kept here to maintain loading of PipelineRuns from when it was still alive.
     """
 
-    def __new__(cls, name, solid_subset=None):
+    def __new__(cls, name: str, solid_subset: Optional[List[str]] = None):
         return super(ExecutionSelector, cls).__new__(
             cls,
             name=check.str_param(name, "name"),

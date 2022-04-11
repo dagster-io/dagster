@@ -9,6 +9,7 @@ from contextlib import ExitStack, contextmanager
 
 import pendulum
 import yaml
+
 from dagster import ModeDefinition, Shape, check, composite_solid, fs_io_manager, pipeline, solid
 from dagster.config import Field
 from dagster.config.config_type import Array
@@ -19,11 +20,11 @@ from dagster.core.host_representation.origin import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.run_coordinator import RunCoordinator, SubmitRunContext
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster.core.workspace.context import WorkspaceProcessContext
-from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.workspace.load_target import WorkspaceLoadTarget
 from dagster.daemon.controller import create_daemon_grpc_server_registry
+from dagster.daemon.workspace import DaemonWorkspace
 from dagster.serdes import ConfigurableClass
 from dagster.seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster.utils import Counter, merge_dicts, traced, traced_counter
@@ -144,9 +145,12 @@ def cleanup_test_instance(instance):
     instance.run_launcher.join()
 
 
+TEST_PIPELINE_NAME = "_test_pipeline_"
+
+
 def create_run_for_test(
     instance,
-    pipeline_name=None,
+    pipeline_name=TEST_PIPELINE_NAME,
     run_id=None,
     run_config=None,
     mode=None,
@@ -183,7 +187,7 @@ def create_run_for_test(
 
 def register_managed_run_for_test(
     instance,
-    pipeline_name=None,
+    pipeline_name=TEST_PIPELINE_NAME,
     run_id=None,
     run_config=None,
     mode=None,
@@ -216,7 +220,7 @@ def poll_for_finished_run(instance, run_id=None, timeout=20, run_tags=None):
     total_time = 0
     interval = 0.01
 
-    filters = PipelineRunsFilter(
+    filters = RunsFilter(
         run_ids=[run_id] if run_id else None,
         tags=run_tags,
         statuses=[PipelineRunStatus.SUCCESS, PipelineRunStatus.FAILURE, PipelineRunStatus.CANCELED],
@@ -443,11 +447,11 @@ def in_process_test_workspace(instance, recon_repo):
 
 
 @contextmanager
-def create_test_daemon_workspace():
+def create_test_daemon_workspace(workspace_load_target):
     """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
     configure_loggers()
     with create_daemon_grpc_server_registry() as grpc_server_registry:
-        with DynamicWorkspace(grpc_server_registry) as workspace:
+        with DaemonWorkspace(grpc_server_registry, workspace_load_target) as workspace:
             yield workspace
 
 

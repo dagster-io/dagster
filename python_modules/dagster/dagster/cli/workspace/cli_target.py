@@ -5,9 +5,11 @@ from typing import TYPE_CHECKING, Dict, Generator, Iterable, List, Optional, Tup
 
 import click
 from click import UsageError
+
 from dagster import check
 from dagster.core.code_pointer import CodePointer
-from dagster.core.definitions.reconstructable import repository_def_from_target_def
+from dagster.core.definitions.reconstruct import repository_def_from_target_def
+from dagster.core.definitions.repository_definition import RepositoryDefinition
 from dagster.core.host_representation.external import ExternalRepository
 from dagster.core.host_representation.repository_location import RepositoryLocation
 from dagster.core.instance import DagsterInstance
@@ -24,13 +26,13 @@ from dagster.core.workspace.load_target import (
     PackageTarget,
     PythonFileTarget,
     WorkspaceFileTarget,
-    WorkspaceLoadTarget,
 )
 from dagster.grpc.utils import get_loadable_targets
 from dagster.utils.hosted_user_process import recon_repository_from_origin
 
 if TYPE_CHECKING:
     from dagster.core.workspace.context import WorkspaceProcessContext
+from dagster.core.host_representation.external import ExternalPipeline
 
 WORKSPACE_TARGET_WARNING = "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port, --grpc-socket."
 
@@ -44,12 +46,12 @@ def _cli_load_invariant(condition: object, msg=None) -> None:
         raise UsageError(msg)
 
 
-def _check_cli_arguments_none(kwargs: Dict[str, object], *keys: str) -> None:
+def _check_cli_arguments_none(kwargs: Dict[str, str], *keys: str) -> None:
     for key in keys:
         _cli_load_invariant(not kwargs.get(key))
 
 
-def are_all_keys_empty(kwargs: Dict[str, object], keys: Iterable[str]) -> bool:
+def are_all_keys_empty(kwargs: Dict[str, str], keys: Iterable[str]) -> bool:
     for key in keys:
         if kwargs.get(key):
             return False
@@ -71,7 +73,7 @@ WORKSPACE_CLI_ARGS = (
 )
 
 
-def created_workspace_load_target(kwargs: Dict[str, object]) -> WorkspaceLoadTarget:
+def get_workspace_load_target(kwargs: Dict[str, str]):
     check.dict_param(kwargs, "kwargs")
     if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
         if kwargs.get("empty_workspace"):
@@ -170,18 +172,18 @@ def created_workspace_load_target(kwargs: Dict[str, object]) -> WorkspaceLoadTar
 
 
 def get_workspace_process_context_from_kwargs(
-    instance: DagsterInstance, version: str, read_only: bool, kwargs: Dict[str, object]
+    instance: DagsterInstance, version: str, read_only: bool, kwargs: Dict[str, str]
 ) -> "WorkspaceProcessContext":
     from dagster.core.workspace import WorkspaceProcessContext
 
     return WorkspaceProcessContext(
-        instance, created_workspace_load_target(kwargs), version=version, read_only=read_only
+        instance, get_workspace_load_target(kwargs), version=version, read_only=read_only
     )
 
 
 @contextmanager
 def get_workspace_from_kwargs(
-    instance: DagsterInstance, version: str, kwargs: Dict[str, object]
+    instance: DagsterInstance, version: str, kwargs: Dict[str, str]
 ) -> Generator[WorkspaceRequestContext, None, None]:
     with get_workspace_process_context_from_kwargs(
         instance, version, read_only=False, kwargs=kwargs
@@ -474,7 +476,7 @@ def get_pipeline_or_job_python_origin_from_kwargs(kwargs, using_job_op_graph_api
     return PipelinePythonOrigin(pipeline_name, repository_origin=repository_origin)
 
 
-def _get_code_pointer_dict_from_kwargs(kwargs):
+def _get_code_pointer_dict_from_kwargs(kwargs: Dict[str, str]) -> Dict[str, CodePointer]:
     python_file = kwargs.get("python_file")
     module_name = kwargs.get("module_name")
     package_name = kwargs.get("package_name")
@@ -483,8 +485,9 @@ def _get_code_pointer_dict_from_kwargs(kwargs):
     if python_file:
         _check_cli_arguments_none(kwargs, "module_name", "package_name")
         return {
-            repository_def_from_target_def(
-                loadable_target.target_definition
+            cast(
+                RepositoryDefinition,
+                repository_def_from_target_def(loadable_target.target_definition),
             ).name: CodePointer.from_python_file(
                 python_file, loadable_target.attribute, working_directory
             )
@@ -495,8 +498,9 @@ def _get_code_pointer_dict_from_kwargs(kwargs):
     elif module_name:
         _check_cli_arguments_none(kwargs, "python_file", "package_name")
         return {
-            repository_def_from_target_def(
-                loadable_target.target_definition
+            cast(
+                RepositoryDefinition,
+                repository_def_from_target_def(loadable_target.target_definition),
             ).name: CodePointer.from_module(
                 module_name, loadable_target.attribute, working_directory
             )
@@ -507,8 +511,9 @@ def _get_code_pointer_dict_from_kwargs(kwargs):
     elif package_name:
         _check_cli_arguments_none(kwargs, "module_name", "python_file")
         return {
-            repository_def_from_target_def(
-                loadable_target.target_definition
+            cast(
+                RepositoryDefinition,
+                repository_def_from_target_def(loadable_target.target_definition),
             ).name: CodePointer.from_python_package(
                 package_name, loadable_target.attribute, working_directory
             )
@@ -520,12 +525,12 @@ def _get_code_pointer_dict_from_kwargs(kwargs):
         check.failed("Must specify a Python file or module name")
 
 
-def get_working_directory_from_kwargs(kwargs: Dict[str, object]) -> Optional[str]:
+def get_working_directory_from_kwargs(kwargs: Dict[str, str]) -> Optional[str]:
     return check.opt_str_elem(kwargs, "working_directory") or os.getcwd()
 
 
-def get_repository_python_origin_from_kwargs(kwargs):
-    provided_repo_name = kwargs.get("repository")
+def get_repository_python_origin_from_kwargs(kwargs: Dict[str, str]) -> RepositoryPythonOrigin:
+    provided_repo_name = cast(str, kwargs.get("repository"))
 
     if not (kwargs.get("python_file") or kwargs.get("module_name") or kwargs.get("package_name")):
         raise click.UsageError("Must specify a python file or module name")
@@ -537,23 +542,23 @@ def get_repository_python_origin_from_kwargs(kwargs):
     if kwargs.get("attribute") and not provided_repo_name:
         if kwargs.get("python_file"):
             _check_cli_arguments_none(kwargs, "module_name", "package_name")
-            code_pointer = CodePointer.from_python_file(
-                kwargs.get("python_file"),
-                kwargs.get("attribute"),
+            code_pointer: CodePointer = CodePointer.from_python_file(
+                kwargs["python_file"],
+                kwargs["attribute"],
                 get_working_directory_from_kwargs(kwargs),
             )
         elif kwargs.get("module_name"):
             _check_cli_arguments_none(kwargs, "python_file", "package_name")
             code_pointer = CodePointer.from_module(
-                kwargs.get("module_name"),
-                kwargs.get("attribute"),
+                kwargs["module_name"],
+                kwargs["attribute"],
                 get_working_directory_from_kwargs(kwargs),
             )
         elif kwargs.get("package_name"):
             _check_cli_arguments_none(kwargs, "python_file", "module_name")
             code_pointer = CodePointer.from_python_package(
-                kwargs.get("package_name"),
-                kwargs.get("attribute"),
+                kwargs["package_name"],
+                kwargs["attribute"],
                 get_working_directory_from_kwargs(kwargs),
             )
         else:
@@ -565,21 +570,19 @@ def get_repository_python_origin_from_kwargs(kwargs):
         )
 
     code_pointer_dict = _get_code_pointer_dict_from_kwargs(kwargs)
+    found_repo_names = _sorted_quoted(code_pointer_dict.keys())
     if provided_repo_name is None and len(code_pointer_dict) == 1:
         code_pointer = next(iter(code_pointer_dict.values()))
     elif provided_repo_name is None:
         raise click.UsageError(
             (
                 "Must provide --repository as there is more than one repository. "
-                "Options are: {repos}."
-            ).format(repos=_sorted_quoted(code_pointer_dict.keys()))
+                f"Options are: {found_repo_names}."
+            )
         )
     elif not provided_repo_name in code_pointer_dict:
         raise click.UsageError(
-            'Repository "{provided_repo_name}" not found. Found {found_names} instead.'.format(
-                provided_repo_name=provided_repo_name,
-                found_names=_sorted_quoted(code_pointer_dict.keys()),
-            )
+            f'Repository "{provided_repo_name}" not found. Found {found_repo_names} instead.'
         )
     else:
         code_pointer = code_pointer_dict[provided_repo_name]
@@ -637,7 +640,9 @@ def get_repository_location_from_workspace(
     return workspace.get_repository_location(provided_location_name)
 
 
-def get_external_repository_from_repo_location(repo_location, provided_repo_name):
+def get_external_repository_from_repo_location(
+    repo_location: RepositoryLocation, provided_repo_name: Optional[str]
+) -> ExternalRepository:
     check.inst_param(repo_location, "repo_location", RepositoryLocation)
     check.opt_str_param(provided_repo_name, "provided_repo_name")
 
@@ -681,8 +686,10 @@ def get_external_repository_from_kwargs(instance, version, kwargs):
 
 
 def get_external_pipeline_or_job_from_external_repo(
-    external_repo, provided_pipeline_or_job_name, using_job_op_graph_apis=False
-):
+    external_repo: ExternalRepository,
+    provided_pipeline_or_job_name: Optional[str],
+    using_job_op_graph_apis: bool = False,
+) -> ExternalPipeline:
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.opt_str_param(provided_pipeline_or_job_name, "provided_pipeline_or_job_name")
 

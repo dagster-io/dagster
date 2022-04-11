@@ -87,10 +87,13 @@ Note that you can pass in any keyword to these functions that you wish, and they
 One common way to use this integration is to have the a step in your job run all of the models in a dbt project. For this case, the easiest method is to configure the resource so it knows where your dbt project is, and import the `dbt_run_op` to use in your job.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_run endbefore=end_marker_dbt_cli_run dedent=4
-from dagster import job
 from dagster_dbt import dbt_cli_resource, dbt_run_op
 
-my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/project"})
+from dagster import job
+
+my_dbt_resource = dbt_cli_resource.configured(
+    {"project_dir": "path/to/dbt/project"}
+)
 
 @job(resource_defs={"dbt": my_dbt_resource})
 def my_dbt_job():
@@ -108,8 +111,9 @@ Note that in both cases, the `models` option takes in a list of strings. The str
 If you know what models you want to select ahead of time, you might prefer specifying this while configuring your resource. Because you aren't specifying any specific arguments at runtime, you can use the prebuilt `dbt_run_op`, instead of writing your own.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_run_specific_models_preconfig endbefore=end_marker_dbt_cli_run_specific_models_preconfig dedent=4
-from dagster import job
 from dagster_dbt import dbt_cli_resource, dbt_run_op
+
+from dagster import job
 
 my_dbt_resource = dbt_cli_resource.configured(
     {"project_dir": "path/to/dbt/project", "models": ["tag:staging"]}
@@ -140,8 +144,9 @@ def run_models(context, some_condition: bool):
 Dagster supports creating [multiple jobs from the same graph](/concepts/ops-jobs-graphs/jobs-graphs#from-a-graph). dbt has a similar concept, [profiles](https://docs.getdbt.com/dbt-cli/configure-your-profile). You might want to run a dev version of your graph that targets the development-specific dbt profile, and then have a prod version that runs using the prod dbt profile. This example shows how to accomplish this.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_profile_modes endbefore=end_marker_dbt_cli_profile_modes dedent=4
-from dagster import graph
 from dagster_dbt import dbt_cli_resource, dbt_run_op
+
+from dagster import graph
 
 @graph
 def my_dbt():
@@ -171,10 +176,13 @@ Sometimes, you'll want to run multiple different dbt commands in the same job. T
 One common use case would be to first run `dbt run` to update all of your models, and then run `dbt test` to check that they all are working as expected, seen below.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_run_after_another_op endbefore=end_marker_dbt_cli_run_after_another_op dedent=4
-from dagster import job
 from dagster_dbt import dbt_cli_resource, dbt_run_op, dbt_test_op
 
-my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/project"})
+from dagster import job
+
+my_dbt_resource = dbt_cli_resource.configured(
+    {"project_dir": "path/to/dbt/project"}
+)
 
 @job(resource_defs={"dbt": my_dbt_resource})
 def my_dbt_job():
@@ -208,8 +216,9 @@ For convenience during local development, you may also use `dagster_dbt.local_db
 All of the prebuilt dbt ops in this library are compatible with the `dbt_rpc_resource` (which sends requests and then exists immediately) and the `dbt_rpc_sync_resource` (which sends requests and waits for the task to complete). Therefore, we can use the same ops as in the CLI examples as long as we provide the correct resource to the job.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_rpc_run endbefore=end_marker_dbt_rpc_run dedent=4
-from dagster import job
 from dagster_dbt import dbt_run_op
+
+from dagster import job
 
 @job(resource_defs={"dbt": my_remote_rpc})
 def my_dbt_job():
@@ -221,8 +230,9 @@ def my_dbt_job():
 This is similar to having `"params": {"models": "tag:staging"}` in your dbt RPC request body.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_rpc_run_specific_models endbefore=end_marker_dbt_rpc_run_specific_models dedent=4
-from dagster import job, op
 from dagster_dbt import dbt_rpc_resource
+
+from dagster import job, op
 
 my_remote_rpc = dbt_rpc_resource.configured({"host": "80.80.80.80", "port": 8080})
 
@@ -240,10 +250,13 @@ Note that the job above will NOT wait until the dbt RPC server has finished exec
 #### Running a dbt project and polling the RPC server until it has finished executing
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_rpc_run_and_wait endbefore=end_marker_dbt_rpc_run_and_wait dedent=4
-from dagster import job, op
 from dagster_dbt import dbt_rpc_sync_resource
 
-my_remote_sync_rpc = dbt_rpc_sync_resource.configured({"host": "80.80.80.80", "port": 8080})
+from dagster import job, op
+
+my_remote_sync_rpc = dbt_rpc_sync_resource.configured(
+    {"host": "80.80.80.80", "port": 8080}
+)
 
 @op(required_resource_keys={"dbt_sync"})
 def run_staging_models_and_wait(context):
@@ -263,24 +276,28 @@ For full documentation on all available config, [visit the API docs for dagster-
 `dagster_dbt` is configured to automatically create [Asset Materializations](/concepts/assets/asset-materializations) for each of your dbt models when you run the `run` command (via either the CLI or over RPC). These materializations are populated with metadata that is automatically parsed from the dbt response. The available metadata differs between dbt versions. If there's anything you would like to add to these materializations, you can explicitly invoke the underlying <PyObject module='dagster_dbt.utils' object='generate_materializations'/> utility function, and modify each of the resulting materializations like so:
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_asset_mats endbefore=end_marker_dbt_asset_mats dedent=4
-from dagster import op, Output
 from dagster_dbt.utils import generate_materializations
+
+from dagster import op
 
 @op(required_resource_keys={"dbt"})
 def dbt_run_with_custom_assets(context):
     dbt_result = context.resources.dbt.run()
     for materialization in generate_materializations(dbt_result):
-        yield materialization._replace(
-            metadata_entries=[...]  # insert whatever metadata you want here
+        context.log_event(
+            materialization._replace(
+                metadata_entries=[...]  # insert whatever metadata you want here
+            )
         )
-    yield Output(dbt_result)
+    return dbt_result
 ```
 
 **dbt CLI: Set the dbt profile and target to load**
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_config_profile_and_target endbefore=end_marker_dbt_cli_config_profile_and_target dedent=4
-from dagster import job
 from dagster_dbt import dbt_cli_resource
+
+from dagster import job
 
 config = {"profile": PROFILE_NAME, "target": TARGET_NAME}
 
@@ -292,8 +309,9 @@ def my_job():
 **dbt CLI: Set the path to the dbt executable**
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_config_executable endbefore=end_marker_dbt_cli_config_executable dedent=4
-from dagster import job
 from dagster_dbt import dbt_cli_resource
+
+from dagster import job
 
 config = {"dbt_executable": "path/to/dbt/executable"}
 
@@ -305,8 +323,9 @@ def my_job():
 **dbt CLI: Select specific models to run**
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_config_select_models endbefore=end_marker_dbt_cli_config_select_models dedent=4
-from dagster import job
 from dagster_dbt import dbt_cli_resource
+
+from dagster import job
 
 config = {"models": ["my_dbt_model+", "path.to.models", "tag:nightly"]}
 
@@ -320,8 +339,9 @@ For more details, [visit the official documentation on dbt's node selection synt
 **dbt CLI: Exclude specific models**
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_config_exclude_models endbefore=end_marker_dbt_cli_config_exclude_models dedent=4
-from dagster import job
 from dagster_dbt import dbt_cli_resource
+
+from dagster import job
 
 config = {"exclude": ["my_dbt_model+", "path.to.models", "tag:nightly"]}
 
@@ -335,8 +355,9 @@ For more details, [visit the official documentation on dbt's node selection synt
 **dbt CLI: Set key-values for dbt vars**
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_config_vars endbefore=end_marker_dbt_cli_config_vars dedent=4
-from dagster import job
 from dagster_dbt import dbt_cli_resource
+
+from dagster import job
 
 config = {"vars": {"key": "value"}}
 

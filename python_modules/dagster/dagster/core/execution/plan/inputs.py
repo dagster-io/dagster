@@ -1,10 +1,12 @@
 import hashlib
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, NamedTuple, Optional, Set, Union, cast
 
 from dagster import check
 from dagster.core.definitions import InputDefinition, NodeHandle, PipelineDefinition
 from dagster.core.definitions.events import AssetLineageInfo
+from dagster.core.definitions.metadata import MetadataEntry
+from dagster.core.definitions.version_strategy import ResourceVersionContext
 from dagster.core.errors import (
     DagsterExecutionLoadInputError,
     DagsterInvariantViolationError,
@@ -21,11 +23,11 @@ from .outputs import StepOutputHandle, UnresolvedStepOutputHandle
 from .utils import build_resources_for_manager, solid_execution_error_boundary
 
 if TYPE_CHECKING:
-    from dagster.core.types.dagster_type import DagsterType
-    from dagster.core.storage.input_manager import InputManager
     from dagster.core.events import DagsterEvent
-    from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.execution.context.input import InputContext
+    from dagster.core.execution.context.system import StepExecutionContext
+    from dagster.core.storage.input_manager import InputManager
+    from dagster.core.types.dagster_type import DagsterType
 
 
 def _get_asset_lineage_from_fns(
@@ -102,11 +104,13 @@ class StepInputSource(ABC):
     def get_input_def(self, pipeline_def: PipelineDefinition) -> InputDefinition:
         return pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def solid_handle(self) -> NodeHandle:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def input_name(self) -> str:
         pass
 
@@ -158,15 +162,21 @@ class FromRootInputManager(
             ].config,
             resources=build_resources_for_manager(input_def.root_manager_key, step_context),
         )
-        yield _load_input_with_input_manager(loader, load_input_context)
+        yield from _load_input_with_input_manager(loader, load_input_context)
+
+        metadata_entries = load_input_context.consume_metadata_entries()
+
         yield DagsterEvent.loaded_input(
             step_context,
             input_name=input_def.name,
             manager_key=input_def.root_manager_key,
+            metadata_entries=[
+                entry for entry in metadata_entries if isinstance(entry, MetadataEntry)
+            ],
         )
 
     def compute_version(self, step_versions, pipeline_def, resolved_run_config) -> Optional[str]:
-        from ..resolve_versions import resolve_config_version, check_valid_version
+        from ..resolve_versions import check_valid_version, resolve_config_version
 
         solid = pipeline_def.get_solid(self.solid_handle)
         root_manager_key = solid.input_def_named(self.input_name).root_manager_key
@@ -174,9 +184,18 @@ class FromRootInputManager(
             root_manager_key
         ]
 
+        solid_config = resolved_run_config.solids.get(solid.name)
+        input_config = solid_config.inputs.get(self.input_name)
+        resource_config = resolved_run_config.resources.get(root_manager_key).config
+
+        version_context = ResourceVersionContext(
+            resource_def=root_manager_def,
+            resource_config=resource_config,
+        )
+
         if pipeline_def.version_strategy is not None:
             root_manager_def_version = pipeline_def.version_strategy.get_resource_version(
-                root_manager_def
+                version_context
             )
         else:
             root_manager_def_version = root_manager_def.version
@@ -189,10 +208,6 @@ class FromRootInputManager(
             )
 
         check_valid_version(root_manager_def_version)
-
-        solid_config = resolved_run_config.solids.get(solid.name)
-        input_config = solid_config.inputs.get(self.input_name)
-        resource_config = resolved_run_config.resources.get(root_manager_key).config
         return join_and_hash(
             resolve_config_version(input_config),
             resolve_config_version(resource_config),
@@ -276,13 +291,20 @@ class FromStepOutput(
             f"Please ensure that the resource returned for resource key "
             f'"{manager_key}" is an IOManager.',
         )
-        yield _load_input_with_input_manager(input_manager, self.get_load_context(step_context))
+        load_input_context = self.get_load_context(step_context)
+        yield from _load_input_with_input_manager(input_manager, load_input_context)
+
+        metadata_entries = load_input_context.consume_metadata_entries()
+
         yield DagsterEvent.loaded_input(
             step_context,
             input_name=self.input_name,
             manager_key=manager_key,
             upstream_output_name=source_handle.output_name,
             upstream_step_key=source_handle.step_key,
+            metadata_entries=[
+                entry for entry in metadata_entries if isinstance(entry, MetadataEntry)
+            ],
         )
 
     def compute_version(
@@ -525,6 +547,7 @@ class FromMultipleSources(
         from dagster.core.events import DagsterEvent
 
         values = []
+
         # some upstream steps may have skipped and we allow fan-in to continue in their absence
         source_handles_to_skip = list(
             filter(lambda x: not step_context.can_load(x), self.step_output_handle_dependencies)
@@ -583,7 +606,10 @@ def _load_input_with_input_manager(input_manager: "InputManager", context: "Inpu
     ):
         value = input_manager.load_input(context)
     # close user code boundary before returning value
-    return value
+    for event in context.consume_events():
+        yield event
+
+    yield value
 
 
 @whitelist_for_serdes
@@ -804,9 +830,11 @@ class UnresolvedCollectStepInput(NamedTuple):
         return [self.source.get_step_output_handle_dep_with_placeholder()]
 
 
-StepInputSourceTypes = (
+StepInputSourceUnion = Union[
     StepInputSource,
     FromDynamicCollect,
     FromUnresolvedStepOutput,
     FromPendingDynamicStepOutput,
-)
+]
+
+StepInputSourceTypes = StepInputSourceUnion.__args__  # type: ignore

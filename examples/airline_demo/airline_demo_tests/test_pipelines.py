@@ -3,8 +3,9 @@ import tempfile
 
 # pylint: disable=unused-argument
 import pytest
+
 from dagster import execute_pipeline, file_relative_path
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import load_yaml_from_globs
 

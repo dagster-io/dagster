@@ -2,7 +2,7 @@ import {
   Box,
   ButtonLink,
   Checkbox,
-  ColorsWIP,
+  Colors,
   MetadataTable,
   PageHeader,
   Heading,
@@ -55,7 +55,7 @@ const SettingsRoot = () => {
       </Box>
       <Box
         padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
       >
         <Box padding={{bottom: 8}}>
           <Subheading>Experimental features</Subheading>
@@ -73,32 +73,12 @@ const SettingsRoot = () => {
               ),
             },
             {
-              key: 'Experimental Asset APIs',
+              key: 'Always collapse left navigation',
               value: (
                 <Checkbox
                   format="switch"
-                  checked={flags.includes(FeatureFlag.flagAssetGraph)}
-                  onChange={() => toggleFlag(FeatureFlag.flagAssetGraph)}
-                />
-              ),
-            },
-            {
-              key: 'Instance overview page',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(FeatureFlag.flagInstanceOverview)}
-                  onChange={() => toggleFlag(FeatureFlag.flagInstanceOverview)}
-                />
-              ),
-            },
-            {
-              key: 'Collapse sidebar on instance pages',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(FeatureFlag.flagCollapseInstancePagesSidebar)}
-                  onChange={() => toggleFlag(FeatureFlag.flagCollapseInstancePagesSidebar)}
+                  checked={flags.includes(FeatureFlag.flagAlwaysCollapseNavigation)}
+                  onChange={() => toggleFlag(FeatureFlag.flagAlwaysCollapseNavigation)}
                 />
               ),
             },

@@ -3,7 +3,7 @@
 Ops
 ===
 
-The foo foundational unit of computation in Dagster.
+The foundational unit of computation in Dagster.
 
 -----
 
@@ -72,44 +72,70 @@ Event types
 Event metadata
 ^^^^^^^^^^^^^^
 
-Dagster uses event metadata to communicate arbitrary user-specified metadata about structured
+Dagster uses metadata to communicate arbitrary user-specified metadata about structured
 events.
 
-.. autoclass:: EventMetadata
+.. autoclass:: MetadataValue
     :members:
 
-.. autoclass:: EventMetadataEntry
+.. autoclass:: MetadataEntry
     :members:
 
 Metadata types
 ^^^^^^^^^^^^^^
 
-The type alias for the union of the structured event metadata types is `EventMetadataEntryData`.
-This consists of the following data types:
+All metadata types inherit from `MetadataValue`. The following types are defined:
 
-.. autoclass:: JsonMetadataEntryData
+.. autoclass:: DagsterAssetMetadataValue
     :members:
 
-.. autoclass:: MarkdownMetadataEntryData
+.. autoclass:: DagsterPipelineRunMetadataValue
     :members:
 
-.. autoclass:: PathMetadataEntryData
+.. autoclass:: FloatMetadataValue
     :members:
 
-.. autoclass:: TextMetadataEntryData
+.. autoclass:: IntMetadataValue
     :members:
 
-.. autoclass:: UrlMetadataEntryData
+.. autoclass:: JsonMetadataValue
     :members:
 
-.. autoclass:: FloatMetadataEntryData
+.. autoclass:: MarkdownMetadataValue
     :members:
 
-.. autoclass:: IntMetadataEntryData
+.. autoclass:: PathMetadataValue
     :members:
 
-.. autoclass:: PythonArtifactMetadataEntryData
+.. autoclass:: PythonArtifactMetadataValue
     :members:
+
+.. autoclass:: TableMetadataValue
+    :members:
+
+.. autoclass:: TableSchemaMetadataValue
+    :members:
+
+.. autoclass:: TextMetadataValue
+    :members:
+
+.. autoclass:: UrlMetadataValue
+    :members:
+
+Tables
+^^^^^^
+
+These APIs provide the ability to express table schemas (`TableSchema`) and table rows/records (`TableRecord`) in Dagster. Currently the only use case for `TableSchemas` and `TableRecords` is to wrap them in their corresponding metadata classes :py:class:`TableMetadataValue` and :py:class:`TableSchemaMetadataValue` for attachment to events or Dagster types.
+
+.. autoclass:: TableRecord
+
+.. autoclass:: TableSchema
+
+.. autoclass:: TableConstraints
+
+.. autoclass:: TableColumn
+
+.. autoclass:: TableColumnConstraints
 
 -------
 

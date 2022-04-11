@@ -1,6 +1,8 @@
 from collections import namedtuple
 
 import graphene
+from graphene.types.generic import GenericScalar
+
 from dagster import check
 from dagster.config.errors import EvaluationError as DagsterEvaluationError
 from dagster.config.errors import (
@@ -20,7 +22,6 @@ from dagster.config.stack import (
 )
 from dagster.core.host_representation.represented import RepresentedPipeline
 from dagster.utils.error import SerializableErrorInfo
-from graphene.types.generic import GenericScalar
 
 from ..config_types import GrapheneConfigTypeField
 from ..util import non_null_list

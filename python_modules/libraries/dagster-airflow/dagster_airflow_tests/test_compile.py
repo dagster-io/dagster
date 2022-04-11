@@ -1,8 +1,9 @@
+from dagster_airflow.compile import coalesce_execution_steps
+from dagster_test.toys.composition import composition
+
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster_airflow.compile import coalesce_execution_steps
-from dagster_test.toys.composition import composition
 
 
 def test_compile():

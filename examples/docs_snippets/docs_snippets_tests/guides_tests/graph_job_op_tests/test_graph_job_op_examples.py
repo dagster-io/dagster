@@ -136,7 +136,9 @@ def test_job_schedules():
         try:
             assert schedule.has_loadable_target()
             job = schedule.load_target()
-            context = build_schedule_context(scheduled_execution_time=scheduled_execution_time)
+            context = build_schedule_context(
+                scheduled_execution_time=scheduled_execution_time
+            )
             run_config = schedule.evaluate_tick(context).run_requests[0].run_config
             assert job.execute_in_process(run_config=run_config).success
         except Exception as ex:
@@ -146,11 +148,17 @@ def test_job_schedules():
 
 
 def test_pipeline_schedules():
-    for module, (schedule_name, pipeline_name), scheduled_execution_time in pipeline_schedules:
+    for (
+        module,
+        (schedule_name, pipeline_name),
+        scheduled_execution_time,
+    ) in pipeline_schedules:
         schedule = getattr(module, schedule_name)
         the_pipeline = getattr(module, pipeline_name)
         try:
-            context = build_schedule_context(scheduled_execution_time=scheduled_execution_time)
+            context = build_schedule_context(
+                scheduled_execution_time=scheduled_execution_time
+            )
             run_config = schedule.evaluate_tick(context).run_requests[0].run_config
             assert execute_pipeline(the_pipeline, run_config=run_config).success
         except Exception as ex:

@@ -1,10 +1,11 @@
 import os
 from collections import Counter
 
-from dagster import In, config_from_files, file_relative_path, graph, op, repository
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_celery_k8s import celery_k8s_job_executor
 from dagster_k8s import k8s_job_executor
+
+from dagster import In, config_from_files, file_relative_path, graph, op, repository
 
 
 @op(ins={"word": In(str)}, config_schema={"factor": int})

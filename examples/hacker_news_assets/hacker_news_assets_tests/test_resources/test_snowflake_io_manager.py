@@ -4,8 +4,6 @@ import uuid
 from contextlib import contextmanager
 
 import pytest
-from dagster import build_init_resource_context, build_input_context, build_output_context
-from dagster.core.asset_defs import asset
 from hacker_news_assets.resources.snowflake_io_manager import (
     DB_SCHEMA,
     SHARED_SNOWFLAKE_CONF,
@@ -16,6 +14,8 @@ from hacker_news_assets.resources.snowflake_io_manager import (
 from pandas import DataFrame as PandasDataFrame
 from pyspark.sql import Row, SparkSession
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
+
+from dagster import asset, build_init_resource_context, build_input_context, build_output_context
 
 
 def mock_output_context(table_name):

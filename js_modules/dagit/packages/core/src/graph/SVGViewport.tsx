@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, IconWIP, IconWrapper, Slider} from '@dagster-io/ui';
+import {Box, Colors, Icon, IconWrapper, Slider} from '@dagster-io/ui';
 import animate from 'amator';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -118,7 +118,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
               viewport.adjustZoomRelativeToScreenPoint(adjusted, {x, y});
             }}
           >
-            <IconWIP size={24} name="zoom_in" color={ColorsWIP.Gray300} />
+            <Icon size={24} name="zoom_in" color={Colors.Gray300} />
           </IconButton>
         </Box>
         <Slider
@@ -143,7 +143,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
               viewport.adjustZoomRelativeToScreenPoint(scale, {x, y});
             }}
           >
-            <IconWIP size={24} name="zoom_out" color={ColorsWIP.Gray300} />
+            <Icon size={24} name="zoom_out" color={Colors.Gray300} />
           </IconButton>
         </Box>
       </ZoomSliderContainer>
@@ -168,7 +168,7 @@ const IconButton = styled.button`
   }
 
   :focus ${IconWrapper}, :hover ${IconWrapper}, :active ${IconWrapper} {
-    background-color: ${ColorsWIP.Blue500};
+    background-color: ${Colors.Blue500};
   }
 `;
 
@@ -212,14 +212,35 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     minScale: 0,
   };
 
+  resizeObserver: any | undefined;
+
   componentDidMount() {
     this.autocenter();
+
     // The wheel event cannot be prevented via the `onWheel` handler.
     document.addEventListener('wheel', this.onWheel, {passive: false});
+
+    // The op/asset graphs clip rendered nodes to the visible region, so changes to the
+    // size of the viewport need to cause re-renders. Otherwise you expand the window
+    // and see nothing in the newly visible areas.
+    if (
+      this.element.current &&
+      this.element.current instanceof HTMLElement &&
+      'ResizeObserver' in window
+    ) {
+      const RO = window['ResizeObserver'] as any;
+      this.resizeObserver = new RO(() => {
+        window.requestAnimationFrame(() => {
+          this.forceUpdate();
+        });
+      });
+      this.resizeObserver.observe(this.element.current);
+    }
   }
 
   componentWillUnmount() {
     document.removeEventListener('wheel', this.onWheel);
+    this.resizeObserver?.disconnect();
   }
 
   onWheel = (e: WheelEvent) => {
@@ -336,6 +357,21 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     return this.props.maxZoom;
   }
 
+  public getViewport() {
+    let viewport = {top: 0, left: 0, right: 0, bottom: 0};
+    if (this.element.current) {
+      const el = this.element.current!;
+      const {width, height} = el.getBoundingClientRect();
+      viewport = {
+        left: -this.state.x / this.state.scale,
+        top: -this.state.y / this.state.scale,
+        right: (-this.state.x + width) / this.state.scale,
+        bottom: (-this.state.y + height) / this.state.scale,
+      };
+    }
+    return viewport;
+  }
+
   onZoomAndCenter = (event: React.MouseEvent<HTMLDivElement>) => {
     const offsetXY = this.getOffsetXY(event);
     if (!offsetXY) {
@@ -363,18 +399,6 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     const {children, onKeyDown, onClick, interactor, backgroundColor} = this.props;
     const {x, y, scale} = this.state;
 
-    let viewport = {top: 0, left: 0, right: 0, bottom: 0};
-    if (this.element.current) {
-      const el = this.element.current!;
-      const {width, height} = el.getBoundingClientRect();
-      viewport = {
-        left: -this.state.x / this.state.scale,
-        top: -this.state.y / this.state.scale,
-        right: (-this.state.x + width) / this.state.scale,
-        bottom: (-this.state.y + height) / this.state.scale,
-      };
-    }
-
     return (
       <div
         ref={this.element}
@@ -391,7 +415,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
             transform: `matrix(${scale}, 0, 0, ${scale}, ${x}, ${y})`,
           }}
         >
-          {children(this.state, viewport)}
+          {children(this.state, this.getViewport())}
         </div>
         {interactor.render && interactor.render(this)}
       </div>

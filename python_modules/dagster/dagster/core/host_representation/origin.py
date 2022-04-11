@@ -1,20 +1,43 @@
 import os
 import sys
 from abc import ABC, abstractmethod
-from collections import namedtuple
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Dict, NamedTuple, NoReturn, Optional, Set, cast
+from inspect import Parameter
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generator,
+    Mapping,
+    NamedTuple,
+    NoReturn,
+    Optional,
+    Set,
+    Type,
+    cast,
+)
 
 from dagster import check
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id, whitelist_for_serdes
+from dagster.serdes import (
+    DefaultNamedTupleSerializer,
+    create_snapshot_id,
+    register_serdes_tuple_fallbacks,
+    whitelist_for_serdes,
+)
+from dagster.serdes.serdes import WhitelistMap, unpack_inner_value
+
+from .selector import RepositorySelector
 
 if TYPE_CHECKING:
     from dagster.core.host_representation.repository_location import (
         GrpcServerRepositoryLocation,
+        InProcessRepositoryLocation,
+        RepositoryLocation,
     )
+    from dagster.grpc.client import DagsterGrpcClient
 
 # This is a hard-coded name for the special "in-process" location.
 # This is typically only used for test, although we may allow
@@ -58,27 +81,27 @@ def _assign_loadable_target_origin_name(loadable_target_origin: LoadableTargetOr
     )
 
 
-class RepositoryLocationOrigin(ABC):
+class RepositoryLocationOrigin(ABC, tuple):
     """Serializable representation of a RepositoryLocation that can be used to
     uniquely identify the location or reload it in across process boundaries.
     """
 
     @property
-    def is_reload_supported(self):
+    def is_reload_supported(self) -> bool:
         return True
 
     @property
-    def is_shutdown_supported(self):
+    def is_shutdown_supported(self) -> bool:
         return False
 
-    def shutdown_server(self):
+    def shutdown_server(self) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def get_display_metadata(self):
+    def get_display_metadata(self) -> Dict[str, Any]:
         pass
 
-    def get_id(self):
+    def get_id(self) -> str:
         return create_snapshot_id(self)
 
     @property
@@ -87,7 +110,7 @@ class RepositoryLocationOrigin(ABC):
         pass
 
     @abstractmethod
-    def create_location(self):
+    def create_location(self) -> "RepositoryLocation":
         pass
 
     @property
@@ -105,13 +128,13 @@ class RegisteredRepositoryLocationOrigin(
     its own mapping from location name to repository location metadata.
     """
 
-    def __new__(cls, location_name):
+    def __new__(cls, location_name: str):
         return super(RegisteredRepositoryLocationOrigin, cls).__new__(cls, location_name)
 
-    def get_display_metadata(self):
+    def get_display_metadata(self) -> Dict[str, Any]:
         return {}
 
-    def create_location(self):
+    def create_location(self) -> NoReturn:
         raise DagsterInvariantViolationError(
             "A RegisteredRepositoryLocationOrigin does not have enough information to load its "
             "repository location on its own."
@@ -127,7 +150,7 @@ class InProcessRepositoryLocationOrigin(
     used in tests.
     """
 
-    def __new__(cls, recon_repo):
+    def __new__(cls, recon_repo: ReconstructableRepository):
         return super(InProcessRepositoryLocationOrigin, cls).__new__(
             cls, check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
         )
@@ -137,15 +160,15 @@ class InProcessRepositoryLocationOrigin(
         return IN_PROCESS_NAME
 
     @property
-    def is_reload_supported(self):
+    def is_reload_supported(self) -> bool:
         return False
 
-    def get_display_metadata(self):
+    def get_display_metadata(self) -> Dict[str, Any]:
         return {
             "in_process_code_pointer": self.recon_repo.pointer.describe(),
         }
 
-    def create_location(self):
+    def create_location(self) -> "InProcessRepositoryLocation":
         from dagster.core.host_representation.repository_location import InProcessRepositoryLocation
 
         return InProcessRepositoryLocation(self)
@@ -163,7 +186,9 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
     for these repository locations on startup.
     """
 
-    def __new__(cls, loadable_target_origin, location_name=None):
+    def __new__(
+        cls, loadable_target_origin: LoadableTargetOrigin, location_name: Optional[str] = None
+    ):
         return super(ManagedGrpcPythonEnvRepositoryLocationOrigin, cls).__new__(
             cls,
             check.inst_param(
@@ -196,22 +221,32 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         )
 
     @contextmanager
-    def create_test_location(self):
-        from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
-        from .grpc_server_registry import ProcessGrpcServerRegistry
+    def create_single_location(self) -> Generator["RepositoryLocation", None, None]:
         from dagster.core.workspace.context import (
             DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
             DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
         )
+
+        from .grpc_server_registry import ProcessGrpcServerRegistry
+        from .repository_location import GrpcServerRepositoryLocation
 
         with ProcessGrpcServerRegistry(
             reload_interval=0,
             heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
             startup_timeout=DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
         ) as grpc_server_registry:
-            with DynamicWorkspace(grpc_server_registry) as workspace:
-                with workspace.get_location(self) as location:
-                    yield location
+            endpoint = grpc_server_registry.get_grpc_endpoint(self)
+            with GrpcServerRepositoryLocation(
+                origin=self,
+                server_id=endpoint.server_id,
+                port=endpoint.port,
+                socket=endpoint.socket,
+                host=endpoint.host,
+                heartbeat=True,
+                watch_server=False,
+                grpc_server_registry=grpc_server_registry,
+            ) as location:
+                yield location
 
 
 class GrpcServerOriginSerializer(DefaultNamedTupleSerializer):
@@ -238,7 +273,14 @@ class GrpcServerRepositoryLocationOrigin(
     is not responsible for managing the lifecycle of the server.
     """
 
-    def __new__(cls, host, port=None, socket=None, location_name=None, use_ssl=None):
+    def __new__(
+        cls,
+        host: str,
+        port: Optional[int] = None,
+        socket: Optional[str] = None,
+        location_name: Optional[str] = None,
+        use_ssl: Optional[bool] = None,
+    ):
         return super(GrpcServerRepositoryLocationOrigin, cls).__new__(
             cls,
             check.str_param(host, "host"),
@@ -266,10 +308,10 @@ class GrpcServerRepositoryLocationOrigin(
         return GrpcServerRepositoryLocation(self)
 
     @property
-    def supports_server_watch(self):
+    def supports_server_watch(self) -> bool:
         return True
 
-    def create_client(self):
+    def create_client(self) -> "DagsterGrpcClient":
         from dagster.grpc.client import DagsterGrpcClient
 
         return DagsterGrpcClient(
@@ -280,10 +322,10 @@ class GrpcServerRepositoryLocationOrigin(
         )
 
     @property
-    def is_shutdown_supported(self):
+    def is_shutdown_supported(self) -> bool:
         return True
 
-    def shutdown_server(self):
+    def shutdown_server(self) -> None:
         try:
             self.create_client().shutdown_server()
         except DagsterUserCodeUnreachableError:
@@ -293,13 +335,16 @@ class GrpcServerRepositoryLocationOrigin(
 
 @whitelist_for_serdes
 class ExternalRepositoryOrigin(
-    namedtuple("_ExternalRepositoryOrigin", "repository_location_origin repository_name")
+    NamedTuple(
+        "_ExternalRepositoryOrigin",
+        [("repository_location_origin", RepositoryLocationOrigin), ("repository_name", str)],
+    )
 ):
     """Serializable representation of an ExternalRepository that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, repository_location_origin, repository_name):
+    def __new__(cls, repository_location_origin: RepositoryLocationOrigin, repository_name: str):
         return super(ExternalRepositoryOrigin, cls).__new__(
             cls,
             check.inst_param(
@@ -308,28 +353,36 @@ class ExternalRepositoryOrigin(
             check.str_param(repository_name, "repository_name"),
         )
 
-    def get_id(self):
+    def get_id(self) -> str:
         return create_snapshot_id(self)
 
-    def get_pipeline_origin(self, pipeline_name):
+    def get_selector_id(self) -> str:
+        return create_snapshot_id(
+            RepositorySelector(self.repository_location_origin.location_name, self.repository_name)
+        )
+
+    def get_pipeline_origin(self, pipeline_name: str) -> "ExternalPipelineOrigin":
         return ExternalPipelineOrigin(self, pipeline_name)
 
-    def get_job_origin(self, job_name):
-        return ExternalJobOrigin(self, job_name)
+    def get_instigator_origin(self, instigator_name: str) -> "ExternalInstigatorOrigin":
+        return ExternalInstigatorOrigin(self, instigator_name)
 
-    def get_partition_set_origin(self, partition_set_name):
+    def get_partition_set_origin(self, partition_set_name: str) -> "ExternalPartitionSetOrigin":
         return ExternalPartitionSetOrigin(self, partition_set_name)
 
 
 @whitelist_for_serdes
 class ExternalPipelineOrigin(
-    namedtuple("_ExternalPipelineOrigin", "external_repository_origin pipeline_name")
+    NamedTuple(
+        "_ExternalPipelineOrigin",
+        [("external_repository_origin", ExternalRepositoryOrigin), ("pipeline_name", str)],
+    )
 ):
     """Serializable representation of an ExternalPipeline that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, external_repository_origin, pipeline_name):
+    def __new__(cls, external_repository_origin: ExternalRepositoryOrigin, pipeline_name: str):
         return super(ExternalPipelineOrigin, cls).__new__(
             cls,
             check.inst_param(
@@ -340,40 +393,103 @@ class ExternalPipelineOrigin(
             check.str_param(pipeline_name, "pipeline_name"),
         )
 
-    def get_id(self):
+    def get_id(self) -> str:
         return create_snapshot_id(self)
 
 
-@whitelist_for_serdes
-class ExternalJobOrigin(namedtuple("_ExternalJobOrigin", "external_repository_origin job_name")):
+class ExternalInstigatorOriginSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_from_storage_dict(
+        cls,
+        storage_dict: Dict[str, Any],
+        klass: Type,
+        args_for_class: Mapping[str, Parameter],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> NamedTuple:
+        raw_dict = {
+            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            for key, value in storage_dict.items()
+        }
+        # the stored key for the instigator name should always be `job_name`, for backcompat
+        # and origin id stability (hash of the serialized tuple).  Make sure we fetch it from the
+        # raw storage dict and pass it in as instigator_name to ExternalInstigatorOrigin
+        instigator_name = raw_dict.get("job_name")
+        return klass(
+            **{key: value for key, value in raw_dict.items() if key in args_for_class},
+            instigator_name=instigator_name,
+        )
+
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        storage = super().value_to_storage_dict(
+            value,
+            whitelist_map,
+            descent_path,
+        )
+        instigator_name = storage.get("instigator_name") or storage.get("job_name")
+        if "instigator_name" in storage:
+            del storage["instigator_name"]
+        # the stored key for the instigator name should always be `job_name`, for backcompat
+        # and origin id stability (hash of the serialized tuple).  Make sure we fetch it from the
+        # raw storage dict and pass it in as instigator_name to ExternalInstigatorOrigin
+        storage["job_name"] = instigator_name
+        # persist using legacy name
+        storage["__class__"] = "ExternalJobOrigin"
+        return storage
+
+
+@whitelist_for_serdes(serializer=ExternalInstigatorOriginSerializer)
+class ExternalInstigatorOrigin(
+    NamedTuple(
+        "_ExternalInstigatorOrigin",
+        [("external_repository_origin", ExternalRepositoryOrigin), ("instigator_name", str)],
+    )
+):
     """Serializable representation of an ExternalJob that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, external_repository_origin, job_name):
-        return super(ExternalJobOrigin, cls).__new__(
+    def __new__(cls, external_repository_origin: ExternalRepositoryOrigin, instigator_name: str):
+        return super(ExternalInstigatorOrigin, cls).__new__(
             cls,
             check.inst_param(
                 external_repository_origin,
                 "external_repository_origin",
                 ExternalRepositoryOrigin,
             ),
-            check.str_param(job_name, "job_name"),
+            check.str_param(instigator_name, "instigator_name"),
         )
 
-    def get_id(self):
+    def get_id(self) -> str:
         return create_snapshot_id(self)
+
+
+# ExternalInstigatorOrigin used to be called ExternalJobOrigin, before the concept of "job" was
+# introduced in 0.12.0. For clarity, we changed the name of the namedtuple with `0.14.0`, but we
+# need to maintain the serialized format in order to avoid changing the origin id that is stored in
+# our schedule storage.  This registers the serialized ExternalJobOrigin named tuple class to be
+# deserialized as an ExternalInstigatorOrigin, using its corresponding serializer for serdes.
+register_serdes_tuple_fallbacks({"ExternalJobOrigin": ExternalInstigatorOrigin})
 
 
 @whitelist_for_serdes
 class ExternalPartitionSetOrigin(
-    namedtuple("_PartitionSetOrigin", "external_repository_origin partition_set_name")
+    NamedTuple(
+        "_PartitionSetOrigin",
+        [("external_repository_origin", ExternalRepositoryOrigin), ("partition_set_name", str)],
+    )
 ):
     """Serializable representation of an ExternalPartitionSet that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, external_repository_origin, partition_set_name):
+    def __new__(cls, external_repository_origin: ExternalRepositoryOrigin, partition_set_name: str):
         return super(ExternalPartitionSetOrigin, cls).__new__(
             cls,
             check.inst_param(
@@ -384,5 +500,5 @@ class ExternalPartitionSetOrigin(
             check.str_param(partition_set_name, "partition_set_name"),
         )
 
-    def get_id(self):
+    def get_id(self) -> str:
         return create_snapshot_id(self)

@@ -3,6 +3,7 @@ import faker from 'faker';
 import * as React from 'react';
 
 import {RunTimeline} from '../runs/RunTimeline';
+import {generateRunMocks} from '../testing/generateRunMocks';
 import {RunStatus} from '../types/globalTypes';
 
 // eslint-disable-next-line import/no-default-export
@@ -11,48 +12,32 @@ export default {
   component: RunTimeline,
 } as Meta;
 
-const generateRuns = (runCount: number, range: [number, number]) => {
-  const [start, end] = range;
-  const now = Date.now();
-  return [...new Array(6)]
-    .map(() => faker.date.between(new Date(start), new Date(end)))
-    .map((startDate) => {
-      const endTime = Math.min(startDate.getTime() + faker.datatype.number() * 10, now);
-      const status =
-        endTime === now
-          ? RunStatus.STARTED
-          : faker.random.arrayElement([RunStatus.SUCCESS, RunStatus.FAILURE]);
-
-      return {
-        id: faker.datatype.uuid(),
-        status,
-        startTime: startDate.getTime(),
-        endTime,
-      };
-    });
-};
-
 export const OneRow = () => {
-  const twoHoursAgo = React.useMemo(() => Date.now() - 6 * 60 * 60 * 1000, []);
+  const sixHoursAgo = React.useMemo(() => Date.now() - 6 * 60 * 60 * 1000, []);
   const now = React.useMemo(() => Date.now(), []);
 
   const jobs = React.useMemo(() => {
     const jobKey = faker.random.words(2).split(' ').join('-').toLowerCase();
     return [
-      {key: jobKey, jobName: jobKey, path: `/${jobKey}`, runs: generateRuns(6, [twoHoursAgo, now])},
+      {
+        key: jobKey,
+        jobName: jobKey,
+        path: `/${jobKey}`,
+        runs: generateRunMocks(6, [sixHoursAgo, now]),
+      },
     ];
-  }, [twoHoursAgo, now]);
+  }, [sixHoursAgo, now]);
 
-  return <RunTimeline jobs={jobs} range={[twoHoursAgo, now]} />;
+  return <RunTimeline jobs={jobs} range={[sixHoursAgo, now]} />;
 };
 
 export const RowWithOverlappingRuns = () => {
-  const twoHoursAgo = React.useMemo(() => Date.now() - 6 * 60 * 60 * 1000, []);
+  const sixHoursAgo = React.useMemo(() => Date.now() - 6 * 60 * 60 * 1000, []);
   const now = React.useMemo(() => Date.now(), []);
 
   const jobs = React.useMemo(() => {
     const jobKey = faker.random.words(2).split(' ').join('-').toLowerCase();
-    const [first, second, third] = generateRuns(3, [twoHoursAgo, now]);
+    const [first, second, third] = generateRunMocks(3, [sixHoursAgo, now]);
     return [
       {
         key: jobKey,
@@ -61,13 +46,51 @@ export const RowWithOverlappingRuns = () => {
         runs: [{...first}, {...first}, {...second}, {...second}, {...second}, third],
       },
     ];
+  }, [sixHoursAgo, now]);
+
+  return <RunTimeline jobs={jobs} range={[sixHoursAgo, now]} />;
+};
+
+export const OverlapWithRunning = () => {
+  const twoHoursAgo = React.useMemo(() => Date.now() - 2 * 60 * 60 * 1000, []);
+  const now = React.useMemo(() => Date.now(), []);
+
+  const jobs = React.useMemo(() => {
+    const jobKey = faker.random.words(2).split(' ').join('-').toLowerCase();
+    return [
+      {
+        key: jobKey,
+        jobName: jobKey,
+        path: `/${jobKey}`,
+        runs: [
+          {
+            id: faker.datatype.uuid(),
+            status: RunStatus.SUCCESS,
+            startTime: twoHoursAgo + 20 * 60 * 1000,
+            endTime: twoHoursAgo + 95 * 60 * 1000,
+          },
+          {
+            id: faker.datatype.uuid(),
+            status: RunStatus.SUCCESS,
+            startTime: twoHoursAgo + 90 * 60 * 1000,
+            endTime: twoHoursAgo + 110 * 60 * 1000,
+          },
+          {
+            id: faker.datatype.uuid(),
+            status: RunStatus.STARTED,
+            startTime: twoHoursAgo + 60 * 60 * 1000,
+            endTime: now,
+          },
+        ],
+      },
+    ];
   }, [twoHoursAgo, now]);
 
-  return <RunTimeline jobs={jobs} range={[twoHoursAgo, now]} />;
+  return <RunTimeline jobs={jobs} range={[twoHoursAgo, now + 60 * 6000]} />;
 };
 
 export const ManyRows = () => {
-  const twoHoursAgo = React.useMemo(() => Date.now() - 6 * 60 * 60 * 1000, []);
+  const sixHoursAgo = React.useMemo(() => Date.now() - 6 * 60 * 60 * 1000, []);
   const now = React.useMemo(() => Date.now(), []);
 
   const jobs = React.useMemo(() => {
@@ -79,18 +102,18 @@ export const ManyRows = () => {
           key: jobKey,
           jobName: jobKey,
           path: `/${jobKey}`,
-          runs: generateRuns(6, [twoHoursAgo, now]),
+          runs: generateRunMocks(6, [sixHoursAgo, now]),
         },
       ];
     }, []);
-  }, [twoHoursAgo, now]);
+  }, [sixHoursAgo, now]);
 
-  return <RunTimeline jobs={jobs} range={[twoHoursAgo, now]} />;
+  return <RunTimeline jobs={jobs} range={[sixHoursAgo, now]} />;
 };
 
 export const VeryLongRunning = () => {
   const fourHoursAgo = React.useMemo(() => Date.now() - 4 * 60 * 60 * 1000, []);
-  const twoHoursAgo = React.useMemo(() => Date.now() - 2 * 60 * 60 * 1000, []);
+  const sixHoursAgo = React.useMemo(() => Date.now() - 2 * 60 * 60 * 1000, []);
   const twoDaysAgo = React.useMemo(() => Date.now() - 48 * 60 * 60 * 1000, []);
   const future = React.useMemo(() => Date.now() + 1 * 60 * 60 * 1000, []);
 
@@ -107,7 +130,7 @@ export const VeryLongRunning = () => {
             id: faker.datatype.uuid(),
             status: RunStatus.FAILURE,
             startTime: twoDaysAgo,
-            endTime: twoHoursAgo,
+            endTime: sixHoursAgo,
           },
         ],
       },
@@ -125,7 +148,7 @@ export const VeryLongRunning = () => {
         ],
       },
     ];
-  }, [twoDaysAgo, twoHoursAgo]);
+  }, [twoDaysAgo, sixHoursAgo]);
 
   return <RunTimeline jobs={jobs} range={[fourHoursAgo, future]} />;
 };

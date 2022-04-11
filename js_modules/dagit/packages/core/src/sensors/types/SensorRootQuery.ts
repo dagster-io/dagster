@@ -35,6 +35,7 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrig
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_ScheduleData {
@@ -67,10 +68,12 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks_error {
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: SensorRootQuery_sensorOrError_Sensor_sensorState_ticks_error | null;
 }
 

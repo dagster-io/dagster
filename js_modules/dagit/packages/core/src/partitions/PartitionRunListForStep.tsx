@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {ColorsWIP, NonIdealState, Spinner, Tooltip} from '@dagster-io/ui';
+import {Colors, NonIdealState, Spinner, Tooltip} from '@dagster-io/ui';
 import qs from 'qs';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -33,9 +33,7 @@ interface PartitionRunListForStepProps {
   };
 }
 
-export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListForStepProps> = (
-  props,
-) => {
+export const PartitionRunListForStep: React.FC<PartitionRunListForStepProps> = (props) => {
   const {data, loading} = useQuery<
     PartitionRunListForStepQuery,
     PartitionRunListForStepQueryVariables
@@ -86,7 +84,7 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
   );
 };
 
-const StepStatsColumn: React.FunctionComponent<{
+const StepStatsColumn: React.FC<{
   stats: StepStats | null;
   linkToLogs: string;
 }> = ({stats, linkToLogs}) => {
@@ -128,7 +126,7 @@ const StatSummaryLine = styled.div`
 `;
 
 const StatBox = styled.div`
-  border: 1px solid ${ColorsWIP.Gray100};
+  border: 1px solid ${Colors.Gray100};
   margin-left: 4px;
   padding: 1px 5px;
   font-size: 11px;
@@ -148,9 +146,7 @@ const PARTITION_RUN_LIST_FOR_STEP_QUERY = gql`
       ... on InvalidPipelineRunsFilterError {
         message
       }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
     }
   }
   ${RUN_TABLE_RUN_FRAGMENT}

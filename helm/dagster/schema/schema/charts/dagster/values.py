@@ -27,5 +27,6 @@ class DagsterHelmValues(BaseModel):
     dagsterDaemon: subschema.Daemon
     busybox: subschema.Busybox
     migrate: subschema.Migrate
+    telemetry: subschema.Telemetry
     serviceAccount: subschema.ServiceAccount
     global_: subschema.Global = Field(..., alias="global")

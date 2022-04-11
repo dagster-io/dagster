@@ -41,12 +41,13 @@ from .utils import validate_tags
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-    from .run_config_schema import RunConfigSchema
-    from dagster.core.snap import PipelineSnapshot, ConfigSchemaSnapshot
-    from dagster.core.host_representation import PipelineIndex
-    from dagster.core.instance import DagsterInstance
     from dagster.core.definitions.partition import PartitionSetDefinition
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+    from dagster.core.host_representation import PipelineIndex
+    from dagster.core.instance import DagsterInstance
+    from dagster.core.snap import ConfigSchemaSnapshot, PipelineSnapshot
+
+    from .run_config_schema import RunConfigSchema
 
 
 class PipelineDefinition:
@@ -149,7 +150,7 @@ class PipelineDefinition:
         ] = None,
         mode_defs: Optional[List[ModeDefinition]] = None,
         preset_defs: Optional[List[PresetDefinition]] = None,
-        tags: Dict[str, Any] = None,
+        tags: Optional[Dict[str, Any]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         solid_retry_policy: Optional[RetryPolicy] = None,
         graph_def=None,
@@ -454,8 +455,8 @@ class PipelineDefinition:
         return self.get_pipeline_index().pipeline_snapshot_id
 
     def get_pipeline_index(self) -> "PipelineIndex":
-        from dagster.core.snap import PipelineSnapshot
         from dagster.core.host_representation import PipelineIndex
+        from dagster.core.snap import PipelineSnapshot
 
         return PipelineIndex(
             PipelineSnapshot.from_pipeline_def(self), self.get_parent_pipeline_snapshot()
@@ -943,6 +944,7 @@ def _checked_input_resource_reqs_for_mode(
                     not input_def.dagster_type.loader
                     and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
                     and not input_def.root_manager_key
+                    and not input_def.has_default_value
                 ):
                     raise DagsterInvalidDefinitionError(
                         "Input '{input_name}' in {described_node} is not connected to "

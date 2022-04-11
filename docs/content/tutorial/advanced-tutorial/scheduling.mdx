@@ -18,6 +18,7 @@ import csv
 from datetime import datetime
 
 import requests
+
 from dagster import get_dagster_logger, job, op, repository, schedule
 
 
@@ -27,9 +28,7 @@ def hello_cereal(context):
     lines = response.text.split("\n")
     cereals = [row for row in csv.DictReader(lines)]
     date = context.op_config["date"]
-    get_dagster_logger().info(
-        f"Today is {date}. Found {len(cereals)} cereals."
-    )
+    get_dagster_logger().info(f"Today is {date}. Found {len(cereals)} cereals.")
 
 
 @job
@@ -90,7 +89,7 @@ height={2184}
 
 ### Running the schedule
 
-Dagster's default scheduler requires you to launch a long-running `dagster-daemon` process in addition to Dagit.
+Scheduled runs are launched from a long-running [dagster-daemon process](/deployment/dagster-daemon). To start the `dagster-daemon` process, run the following command in the same folder as your `workspace.yaml` file:
 
 ```bash
 dagster-daemon run

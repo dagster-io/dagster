@@ -55,5 +55,5 @@ class DirectTarget(NamedTuple("_DirectTarget", [("pipeline", PipelineDefinition)
         # open question on how to direct target subset pipeline
         return None
 
-    def load(self):
+    def load(self) -> PipelineDefinition:
         return self.pipeline

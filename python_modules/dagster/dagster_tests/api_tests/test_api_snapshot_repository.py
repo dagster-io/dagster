@@ -1,6 +1,8 @@
 import sys
 from contextlib import contextmanager
 
+import pytest
+
 from dagster import lambda_solid, pipeline, repository
 from dagster.api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster.core.host_representation import (
@@ -57,10 +59,11 @@ def get_giant_repo_grpc_repository_location():
             module_name="dagster_tests.api_tests.test_api_snapshot_repository",
         ),
         location_name="giant_repo_location",
-    ).create_test_location() as location:
+    ).create_single_location() as location:
         yield location
 
 
+@pytest.mark.skip("https://github.com/dagster-io/dagster/issues/6940")
 def test_giant_external_repository_streaming_grpc():
     with get_giant_repo_grpc_repository_location() as repository_location:
         # Using streaming allows the giant repo to load

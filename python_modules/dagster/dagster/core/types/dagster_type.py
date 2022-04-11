@@ -8,12 +8,8 @@ from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.config.config_type import Array, ConfigType
 from dagster.config.config_type import Noneable as ConfigNoneable
-from dagster.core.definitions.event_metadata import (
-    EventMetadataEntry,
-    ParseableMetadataEntryData,
-    parse_metadata,
-)
 from dagster.core.definitions.events import TypeCheck
+from dagster.core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.serdes import whitelist_for_serdes
 
@@ -94,11 +90,11 @@ class DagsterType:
         description: t.Optional[str] = None,
         loader: t.Optional[DagsterTypeLoader] = None,
         materializer: t.Optional[DagsterTypeMaterializer] = None,
-        required_resource_keys: t.Set[str] = None,
+        required_resource_keys: t.Optional[t.Set[str]] = None,
         kind: DagsterTypeKind = DagsterTypeKind.REGULAR,
         typing_type: t.Any = None,
-        metadata_entries: t.Optional[t.List[EventMetadataEntry]] = None,
-        metadata: t.Optional[t.Dict[str, ParseableMetadataEntryData]] = None,
+        metadata_entries: t.Optional[t.List[MetadataEntry]] = None,
+        metadata: t.Optional[t.Dict[str, RawMetadataValue]] = None,
     ):
         check.opt_str_param(key, "key")
         check.opt_str_param(name, "name")
@@ -145,10 +141,10 @@ class DagsterType:
         self.typing_type = typing_type
 
         metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        self._metadata_entries = parse_metadata(metadata, metadata_entries)
+        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
 
     def type_check(self, context: "TypeCheckContext", value: object) -> TypeCheck:
         retval = self._type_check_fn(context, value)
@@ -176,7 +172,7 @@ class DagsterType:
         return _RUNTIME_MAP[builtin_enum]
 
     @property
-    def metadata_entries(self) -> t.List[EventMetadataEntry]:
+    def metadata_entries(self) -> t.List[MetadataEntry]:
         return self._metadata_entries  # type: ignore
 
     @property
@@ -523,7 +519,7 @@ class PythonObjectDagsterType(DagsterType):
             typing_type = t.Union[python_type]  # type: ignore
 
         else:
-            self.python_type = check.type_param(python_type, "python_type")  # type: ignore
+            self.python_type = check.class_param(python_type, "python_type")  # type: ignore
             self.type_str = cast(str, python_type.__name__)
             typing_type = self.python_type  # type: ignore
         name = check.opt_str_param(name, "name", self.type_str)
@@ -804,15 +800,16 @@ class TypeHintInferredDagsterType(DagsterType):
 
 def resolve_dagster_type(dagster_type: object) -> DagsterType:
     # circular dep
-    from .python_dict import PythonDict, Dict
-    from .python_set import PythonSet, DagsterSetApi
-    from .python_tuple import PythonTuple, DagsterTupleApi
-    from .transform_typing import transform_typing_type
     from dagster.primitive_mapping import (
-        remap_python_builtin_for_runtime,
         is_supported_runtime_python_builtin,
+        remap_python_builtin_for_runtime,
     )
     from dagster.utils.typing_api import is_typing_type
+
+    from .python_dict import Dict, PythonDict
+    from .python_set import DagsterSetApi, PythonSet
+    from .python_tuple import DagsterTupleApi, PythonTuple
+    from .transform_typing import transform_typing_type
 
     check.invariant(
         not (isinstance(dagster_type, type) and issubclass(dagster_type, ConfigType)),

@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, IconWIP, Tooltip} from '@dagster-io/ui';
+import {Box, Colors, Icon, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -10,6 +10,7 @@ import {
   WorkspaceRepositorySchedule,
   WorkspaceRepositorySensor,
 } from '../workspace/WorkspaceContext';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -54,6 +55,10 @@ export const FlatContentList: React.FC<Props> = (props) => {
 
       const {schedules, sensors} = repository;
       for (const pipeline of repository.pipelines) {
+        if (pipeline.name === __ASSET_GROUP) {
+          continue;
+        }
+
         const {isJob, name} = pipeline;
         const schedule = schedules.find((schedule) => schedule.pipelineName === name) || null;
         const sensor =
@@ -92,7 +97,7 @@ export const FlatContentList: React.FC<Props> = (props) => {
         flex={{direction: 'row', alignItems: 'center', gap: 8}}
         padding={{horizontal: 24, bottom: 12}}
       >
-        <IconWIP name="job" />
+        <Icon name="job" />
         <span style={{fontSize: '16px', fontWeight: 600}}>{title}</span>
       </Box>
       <Items style={{height: 'calc(100% - 226px)'}}>
@@ -142,9 +147,9 @@ const JobItem: React.FC<JobItemProps> = (props) => {
     return (
       <IconWithTooltip content={tooltipContent}>
         <Link to={workspacePathFromAddress(repoAddress, path)}>
-          <IconWIP
+          <Icon
             name={whichIcon}
-            color={status === InstigationStatus.RUNNING ? ColorsWIP.Green500 : ColorsWIP.Gray600}
+            color={status === InstigationStatus.RUNNING ? Colors.Green500 : Colors.Gray600}
           />
         </Link>
       </IconWithTooltip>
@@ -175,9 +180,9 @@ const Label = styled.div<{$hasIcon: boolean}>`
 `;
 
 const LabelTooltipStyles = JSON.stringify({
-  background: ColorsWIP.Gray100,
+  background: Colors.Gray100,
   filter: `brightness(97%)`,
-  color: ColorsWIP.Gray900,
+  color: Colors.Gray900,
   border: 'none',
   borderRadius: 7,
   overflow: 'hidden',

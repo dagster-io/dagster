@@ -16,7 +16,6 @@ Dagster runtime.
 """
 
 import sys
-import traceback
 from contextlib import contextmanager
 
 from dagster import check
@@ -176,7 +175,7 @@ def user_code_error_boundary(error_cls, msg_fn, log_manager=None, **kwargs):
 
     """
     check.callable_param(msg_fn, "msg_fn")
-    check.subclass_param(error_cls, "error_cls", DagsterUserCodeExecutionError)
+    check.class_param(error_cls, "error_cls", superclass=DagsterUserCodeExecutionError)
 
     with raise_execution_interrupts():
         if log_manager:
@@ -430,25 +429,17 @@ class DagsterBackfillFailedError(DagsterError):
         super(DagsterBackfillFailedError, self).__init__(*args, **kwargs)
 
 
-class DagsterInstanceMigrationRequired(DagsterError):
+class DagsterInstanceSchemaOutdated(DagsterError):
     """Indicates that the dagster instance must be migrated."""
 
-    def __init__(self, msg=None, db_revision=None, head_revision=None, original_exc_info=None):
-        super(DagsterInstanceMigrationRequired, self).__init__(
-            "Instance is out of date and must be migrated{additional_msg}."
-            "{revision_clause} Please run `dagster instance migrate`.{original_exception_clause}".format(
-                additional_msg=" ({msg})".format(msg=msg) if msg else "",
+    def __init__(self, db_revision=None, head_revision=None):
+        super(DagsterInstanceSchemaOutdated, self).__init__(
+            "Raised an exception that may indicate that the Dagster database needs to be be migrated."
+            "{revision_clause} To migrate, run `dagster instance migrate`.".format(
                 revision_clause=(
                     " Database is at revision {db_revision}, head is "
                     "{head_revision}.".format(db_revision=db_revision, head_revision=head_revision)
                     if db_revision or head_revision
-                    else ""
-                ),
-                original_exception_clause=(
-                    "\n\nOriginal exception:\n\n{original_exception}".format(
-                        original_exception="".join(traceback.format_exception(*original_exc_info))
-                    )
-                    if original_exc_info
                     else ""
                 ),
             )
@@ -477,12 +468,12 @@ class DagsterTypeCheckDidNotPass(DagsterError):
     """
 
     def __init__(self, description=None, metadata_entries=None, dagster_type=None):
-        from dagster import EventMetadataEntry, DagsterType
+        from dagster import DagsterType, MetadataEntry
 
         super(DagsterTypeCheckDidNotPass, self).__init__(description)
         self.description = check.opt_str_param(description, "description")
         self.metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
         self.dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
 
@@ -513,8 +504,8 @@ class DagsterInvalidAssetKey(DagsterError):
     """Error raised by invalid asset key"""
 
 
-class DagsterInvalidEventMetadata(DagsterError):
-    """Error raised by invalid event metadata parameters"""
+class DagsterInvalidMetadata(DagsterError):
+    """Error raised by invalid metadata parameters"""
 
 
 class HookExecutionError(DagsterUserCodeExecutionError):

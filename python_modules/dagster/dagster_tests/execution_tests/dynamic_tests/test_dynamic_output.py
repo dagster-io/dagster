@@ -3,6 +3,7 @@ from typing import NamedTuple
 
 import objgraph
 import pytest
+
 from dagster import (
     DynamicOut,
     DynamicOutput,
@@ -259,3 +260,27 @@ def test_dealloc_prev_outputs():
 
         # there may be 1 still referenced by outer iteration frames
         assert result.output_for_solid("spawn", "refs") <= 1
+
+
+def test_collect_and_map():
+    @op(out=DynamicOut())
+    def dyn_vals():
+        for i in range(3):
+            yield DynamicOutput(i, mapping_key=f"num_{i}")
+
+    @op
+    def echo(x):
+        return x
+
+    @op
+    def add_each(vals, x):
+        return [v + x for v in vals]
+
+    @graph
+    def both_w_echo():
+        d1 = dyn_vals()
+        r = d1.map(lambda x: add_each(echo(d1.collect()), x))
+        echo.alias("final")(r.collect())
+
+    result = both_w_echo.execute_in_process()
+    assert result.output_for_node("final") == [[0, 1, 2], [1, 2, 3], [2, 3, 4]]

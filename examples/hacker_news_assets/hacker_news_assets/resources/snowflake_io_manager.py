@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import Optional, Sequence, Tuple, Union
 
-from dagster import EventMetadataEntry, IOManager, InputContext, OutputContext, io_manager
 from pandas import DataFrame as PandasDataFrame
 from pandas import read_sql
 from pyspark.sql import DataFrame as SparkDataFrame
@@ -12,6 +11,8 @@ from pyspark.sql.types import StructField, StructType
 from snowflake.connector.pandas_tools import pd_writer
 from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
 from sqlalchemy import create_engine
+
+from dagster import IOManager, InputContext, MetadataEntry, OutputContext, io_manager
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 DB_SCHEMA = "hackernews"
@@ -72,7 +73,7 @@ class SnowflakeIOManager(IOManager):
         self._config = config
 
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
-        schema, table = "hackernews", context.asset_key.path[-1]
+        schema, table = DB_SCHEMA, context.asset_key.path[-1]
 
         time_window = context.asset_partitions_time_window if context.has_asset_partitions else None
         with connect_snowflake(config=self._config, schema=schema) as con:
@@ -82,12 +83,21 @@ class SnowflakeIOManager(IOManager):
             yield from self._handle_spark_output(obj, schema, table)
         elif isinstance(obj, PandasDataFrame):
             yield from self._handle_pandas_output(obj, schema, table)
+        elif obj is None:  # dbt
+            config = dict(SHARED_SNOWFLAKE_CONF)
+            config["schema"] = DB_SCHEMA
+            with connect_snowflake(config=config) as con:
+                df = read_sql(f"SELECT * FROM {context.name} LIMIT 5", con=con)
+                num_rows = con.execute(f"SELECT COUNT(*) FROM {context.name}").fetchone()
+
+            yield MetadataEntry.md(df.to_markdown(), "Data sample")
+            yield MetadataEntry.int(num_rows, "Rows")
         else:
             raise Exception(
                 "SnowflakeIOManager only supports pandas DataFrames and spark DataFrames"
             )
 
-        yield EventMetadataEntry.text(
+        yield MetadataEntry.text(
             self._get_select_statement(
                 table,
                 schema,
@@ -100,8 +110,8 @@ class SnowflakeIOManager(IOManager):
     def _handle_pandas_output(self, obj: PandasDataFrame, schema: str, table: str):
         from snowflake import connector  # pylint: disable=no-name-in-module
 
-        yield EventMetadataEntry.int(obj.shape[0], "Rows")
-        yield EventMetadataEntry.md(pandas_columns_to_markdown(obj), "DataFrame columns")
+        yield MetadataEntry.int(obj.shape[0], "Rows")
+        yield MetadataEntry.md(pandas_columns_to_markdown(obj), "DataFrame columns")
 
         connector.paramstyle = "pyformat"
         with connect_snowflake(config=self._config, schema=schema) as con:
@@ -124,7 +134,7 @@ class SnowflakeIOManager(IOManager):
             "sfWarehouse": self._config["warehouse"],
             "dbtable": table,
         }
-        yield EventMetadataEntry.md(spark_columns_to_markdown(df.schema), "DataFrame columns")
+        yield MetadataEntry.md(spark_columns_to_markdown(df.schema), "DataFrame columns")
 
         df.write.format("net.snowflake.spark.snowflake").options(**options).mode("append").save()
 

@@ -2,6 +2,7 @@ import enum
 import json
 
 import pytest
+
 from dagster import (
     ConfigMapping,
     DagsterInstance,
@@ -33,6 +34,7 @@ from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
 )
+from dagster.core.test_utils import instance_for_test
 from dagster.loggers import json_console_logger
 
 
@@ -1007,3 +1009,22 @@ def test_nothing_inputs_graph():
     the_job = my_pipeline.to_job()
     result = the_job.execute_in_process()
     assert result.success
+
+
+def test_run_id_execute_in_process():
+    @graph
+    def blank():
+        pass
+
+    with instance_for_test() as instance:
+        result = blank.execute_in_process(instance=instance, run_id="foo")
+        assert result.success
+        assert instance.get_run_by_id("foo")
+
+        result = blank.to_job().execute_in_process(instance=instance, run_id="bar")
+        assert result.success
+        assert instance.get_run_by_id("bar")
+
+        result = blank.alias("some_name").execute_in_process(instance=instance, run_id="baz")
+        assert result.success
+        assert instance.get_run_by_id("baz")

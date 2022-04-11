@@ -6,6 +6,8 @@ import subprocess
 import tempfile
 
 import pytest
+from sqlalchemy import create_engine
+
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -16,12 +18,11 @@ from dagster import (
     reconstructable,
     solid,
 )
-from dagster.core.errors import DagsterInstanceMigrationRequired
+from dagster.core.errors import DagsterInstanceSchemaOutdated
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster.utils import file_relative_path
-from sqlalchemy import create_engine
 
 
 def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
@@ -52,7 +53,7 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
             noop_solid()
 
         with pytest.raises(
-            DagsterInstanceMigrationRequired, match=_migration_regex("run", current_revision=None)
+            DagsterInstanceSchemaOutdated, match=_migration_regex(current_revision=None)
         ):
             execute_pipeline(noop_pipeline, instance=instance)
 
@@ -110,8 +111,8 @@ def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
             asset_solid()
 
         with pytest.raises(
-            DagsterInstanceMigrationRequired,
-            match=_migration_regex("run", current_revision="c9159e740d7e"),
+            DagsterInstanceSchemaOutdated,
+            match=_migration_regex(current_revision="c9159e740d7e"),
         ):
             execute_pipeline(asset_pipeline, instance=instance)
 
@@ -147,8 +148,8 @@ def test_0_9_22_postgres_pre_run_partition(hostname, conn_string):
         tags = {PARTITION_NAME_TAG: "my_partition", PARTITION_SET_TAG: "my_partition_set"}
 
         with pytest.raises(
-            DagsterInstanceMigrationRequired,
-            match=_migration_regex("run", current_revision="3e0770016702"),
+            DagsterInstanceSchemaOutdated,
+            match=_migration_regex(current_revision="3e0770016702"),
         ):
             execute_pipeline(simple_pipeline, tags=tags, instance=instance)
 
@@ -175,7 +176,7 @@ def test_0_10_0_schedule_wipe(hostname, conn_string):
             instance.upgrade()
 
         with DagsterInstance.from_config(tempdir) as upgraded_instance:
-            assert len(upgraded_instance.all_stored_job_state()) == 0
+            assert len(upgraded_instance.all_instigator_state()) == 0
 
 
 def test_0_10_6_add_bulk_actions_table(hostname, conn_string):
@@ -190,7 +191,7 @@ def test_0_10_6_add_bulk_actions_table(hostname, conn_string):
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
-        with pytest.raises(DagsterInstanceMigrationRequired):
+        with pytest.raises(DagsterInstanceSchemaOutdated):
             with DagsterInstance.from_config(tempdir) as instance:
                 instance.get_backfills()
 
@@ -217,8 +218,8 @@ def test_0_11_0_add_asset_details(hostname, conn_string):
         with DagsterInstance.from_config(tempdir) as instance:
             storage = instance._event_storage
             with pytest.raises(
-                DagsterInstanceMigrationRequired,
-                match=_migration_regex("event log", current_revision="3e71cf573ba6"),
+                DagsterInstanceSchemaOutdated,
+                match=_migration_regex(current_revision="3e71cf573ba6"),
             ):
                 storage.all_asset_keys()
             instance.upgrade()
@@ -261,10 +262,10 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
         # Ensure that migration required exception throws, since you are trying to use the
         # migration-required column.
         with pytest.raises(
-            DagsterInstanceMigrationRequired,
-            match=_migration_regex("run", current_revision="7cba9eeaaf1d"),
+            DagsterInstanceSchemaOutdated,
+            match=_migration_regex(current_revision="7cba9eeaaf1d"),
         ):
-            instance.get_runs(filters=PipelineRunsFilter(mode="the_mode"))
+            instance.get_runs(filters=RunsFilter(mode="the_mode"))
 
         instance.upgrade()
 
@@ -337,11 +338,9 @@ def _reconstruct_from_file(hostname, conn_string, path, username="test", passwor
     )
 
 
-def _migration_regex(storage_name, current_revision, expected_revision=None):
+def _migration_regex(current_revision, expected_revision=None):
     warning = re.escape(
-        "Instance is out of date and must be migrated (Postgres {} storage requires migration).".format(
-            storage_name
-        )
+        "Raised an exception that may indicate that the Dagster database needs to be be migrated."
     )
 
     if expected_revision:
@@ -350,7 +349,7 @@ def _migration_regex(storage_name, current_revision, expected_revision=None):
         )
     else:
         revision = "Database is at revision {}, head is [a-z0-9]+.".format(current_revision)
-    instruction = re.escape("Please run `dagster instance migrate`.")
+    instruction = re.escape("To migrate, run `dagster instance migrate`.")
 
     return "{} {} {}".format(warning, revision, instruction)
 
@@ -402,3 +401,116 @@ def test_0_13_12_add_start_time_end_time(hostname, conn_string):
         # Verify that historical records also get updated via data migration
         earliest_run_record = instance.get_run_records()[-1]
         assert earliest_run_record.end_time > earliest_run_record.start_time
+
+
+def test_schedule_secondary_index_table_backcompat(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__, "snapshot_0_14_6_schedule_migration_table/postgres/pg_dump.txt"
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        instance = DagsterInstance.from_config(tempdir)
+
+        # secondary indexes should exist because it's colocated in this database from the run
+        # storage
+        assert instance.schedule_storage.has_secondary_index_table()
+
+        # this should succeed without raising any issues
+        instance.upgrade()
+
+        # no-op
+        assert instance.schedule_storage.has_secondary_index_table()
+
+
+def test_instigators_table_backcompat(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(__file__, "snapshot_0_14_6_instigators_table/postgres/pg_dump.txt"),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        instance = DagsterInstance.from_config(tempdir)
+
+        assert not instance.schedule_storage.has_instigators_table()
+
+        instance.upgrade()
+
+        assert instance.schedule_storage.has_instigators_table()
+
+
+def test_jobs_selector_id_migration(hostname, conn_string):
+    import sqlalchemy as db
+
+    from dagster.core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
+    from dagster.core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
+
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__, "snapshot_0_14_6_post_schema_pre_data_migration/postgres/pg_dump.txt"
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+
+            # runs the required data migrations
+            instance.upgrade()
+
+            assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)
+            legacy_count = len(instance.all_instigator_state())
+            migrated_instigator_count = instance.schedule_storage.execute(
+                db.select([db.func.count()]).select_from(InstigatorsTable)
+            )[0][0]
+            assert migrated_instigator_count == legacy_count
+
+            migrated_job_count = instance.schedule_storage.execute(
+                db.select([db.func.count()])
+                .select_from(JobTable)
+                .where(JobTable.c.selector_id.isnot(None))
+            )[0][0]
+            assert migrated_job_count == legacy_count
+
+            legacy_tick_count = instance.schedule_storage.execute(
+                db.select([db.func.count()]).select_from(JobTickTable)
+            )[0][0]
+            assert legacy_tick_count > 0
+
+            # tick migrations are optional
+            migrated_tick_count = instance.schedule_storage.execute(
+                db.select([db.func.count()])
+                .select_from(JobTickTable)
+                .where(JobTickTable.c.selector_id.isnot(None))
+            )[0][0]
+            assert migrated_tick_count == 0
+
+            # run the optional migrations
+            instance.reindex()
+
+            migrated_tick_count = instance.schedule_storage.execute(
+                db.select([db.func.count()])
+                .select_from(JobTickTable)
+                .where(JobTickTable.c.selector_id.isnot(None))
+            )[0][0]
+            assert migrated_tick_count == legacy_tick_count

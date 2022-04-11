@@ -80,7 +80,9 @@ An op only starts to execute once all of its inputs have been resolved. Inputs c
 You can use a [Dagster Type](/concepts/types) to provide a function that validates an op's input every time the op runs. In this case, you use a dictionary of <PyObject object="In" pluralize /> corresponding to the decorated function arguments.
 
 ```python file=/concepts/solids_pipelines/solids.py startafter=start_typed_input_op_marker endbefore=end_typed_input_op_marker
-MyDagsterType = DagsterType(type_check_fn=lambda _, value: value % 2 == 0, name="MyDagsterType")
+MyDagsterType = DagsterType(
+    type_check_fn=lambda _, value: value % 2 == 0, name="MyDagsterType"
+)
 
 
 @op(ins={"abc": In(dagster_type=MyDagsterType)})
@@ -131,7 +133,7 @@ All definitions in dagster expose a `config_schema`, making them configurable an
 
 Op definitions can specify a `config_schema` for the op's configuration. The configuration is accessible through the [op context](#op-context) at runtime. Therefore, op configuration can be used to specify op behavior at runtime, making ops more flexible and reusable.
 
-For example, we can define an op where the API endpoint it queries is define through it's configuration:
+For example, we can define an op where the API endpoint it queries is defined through its configuration:
 
 ```python file=/concepts/solids_pipelines/solids.py startafter=start_configured_op_marker endbefore=end_configured_op_marker
 @op(config_schema={"api_endpoint": str})
@@ -154,15 +156,13 @@ You may find the need to create utilities that help generate ops. In most cases,
 To create an op factory, you define a function that returns an <PyObject object="OpDefinition"/>, either directly or by decorating a function with the op decorator.
 
 ```python file=/concepts/solids_pipelines/solids.py startafter=start_op_factory_pattern_marker endbefore=end_op_factory_pattern_marker
-def x_op(
-    arg,
+def my_op_factory(
     name="default_name",
     ins=None,
     **kwargs,
 ):
     """
     Args:
-        args (any): One or more arguments used to generate the nwe op
         name (str): The name of the new op.
         ins (Dict[str, In]): Any Ins for the new op. Default: None.
 
@@ -171,9 +171,9 @@ def x_op(
     """
 
     @op(name=name, ins=ins or {"start": In(Nothing)}, **kwargs)
-    def _x_op():
+    def my_inner_op(**kwargs):
         # Op logic here
         pass
 
-    return _x_op
+    return my_inner_op
 ```

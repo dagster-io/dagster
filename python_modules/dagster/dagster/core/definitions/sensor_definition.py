@@ -1,5 +1,6 @@
 import inspect
 from contextlib import ExitStack
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -30,12 +31,20 @@ from .events import AssetKey
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .mode import DEFAULT_MODE_NAME
-from .run_request import InstigatorType, PipelineRunReaction, RunRequest, SkipReason
+from .pipeline_definition import PipelineDefinition
+from .run_request import PipelineRunReaction, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster.core.events.log import EventLogEntry
+
+
+@whitelist_for_serdes
+class DefaultSensorStatus(Enum):
+    RUNNING = "RUNNING"
+    STOPPED = "STOPPED"
+
 
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30
 
@@ -139,13 +148,13 @@ class SensorDefinition:
     """Define a sensor that initiates a set of runs based on some external state
 
     Args:
-        name (str): The name of the sensor to create.
         evaluation_fn (Callable[[SensorEvaluationContext]]): The core evaluation function for the
             sensor, which is run at an interval to determine whether a run should be launched or
             not. Takes a :py:class:`~dagster.SensorEvaluationContext`.
 
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
+        name (Optional[str]): The name of the sensor to create. Defaults to name of evaluation_fn
         pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the sensor
             fires. Cannot be used in conjunction with `job` or `jobs` parameters.
         solid_selection (Optional[List[str]]): (legacy) A list of solid subselection (including single
@@ -159,15 +168,19 @@ class SensorDefinition:
         description (Optional[str]): A human-readable description of the sensor.
         job (Optional[GraphDefinition, JobDefinition]): The job to execute when this sensor fires.
         jobs (Optional[Sequence[GraphDefinition, JobDefinition]]): (experimental) A list of jobs to execute when this sensor fires.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def __init__(
         self,
-        name: str,
-        evaluation_fn: Callable[
-            ["SensorEvaluationContext"],
-            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
-        ],
+        name: Optional[str] = None,
+        evaluation_fn: Optional[
+            Callable[
+                ["SensorEvaluationContext"],
+                Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+            ]
+        ] = None,
         pipeline_name: Optional[str] = None,
         solid_selection: Optional[List[Any]] = None,
         mode: Optional[str] = None,
@@ -175,7 +188,10 @@ class SensorDefinition:
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+        default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
+        if evaluation_fn is None:
+            raise DagsterInvalidDefinitionError("Must provide evaluation_fn to SensorDefinition.")
 
         if job and jobs:
             raise DagsterInvalidDefinitionError(
@@ -218,16 +234,23 @@ class SensorDefinition:
         elif jobs:
             targets = [DirectTarget(job) for job in jobs]
 
-        self._name = check_valid_name(name)
+        if name:
+            self._name = check_valid_name(name)
+        else:
+            self._name = evaluation_fn.__name__
+
         self._raw_fn = check.callable_param(evaluation_fn, "evaluation_fn")
         self._evaluation_fn: Callable[
             [SensorEvaluationContext], Generator[Union[RunRequest, SkipReason], None, None]
-        ] = wrap_sensor_evaluation(name, evaluation_fn)
+        ] = wrap_sensor_evaluation(self._name, evaluation_fn)
         self._min_interval = check.opt_int_param(
             minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
         )
         self._description = check.opt_str_param(description, "description")
         self._targets = check.opt_list_param(targets, "targets", (DirectTarget, RepoRelativeTarget))
+        self._default_status = check.inst_param(
+            default_status, "default_status", DefaultSensorStatus
+        )
 
     def __call__(self, *args, **kwargs):
         context_provided = is_context_provided(get_function_params(self._raw_fn))
@@ -275,10 +298,6 @@ class SensorDefinition:
         return self._name
 
     @property
-    def job_type(self) -> InstigatorType:
-        return InstigatorType.SENSOR
-
-    @property
     def description(self) -> Optional[str]:
         return self._description
 
@@ -287,8 +306,19 @@ class SensorDefinition:
         return self._min_interval
 
     @property
-    def targets(self) -> Optional[List[Union[DirectTarget, RepoRelativeTarget]]]:
+    def targets(self) -> List[Union[DirectTarget, RepoRelativeTarget]]:
         return self._targets
+
+    @property
+    def job(self) -> PipelineDefinition:
+        if self._targets:
+            if len(self._targets) == 1 and isinstance(self._targets[0], DirectTarget):
+                return self._targets[0].pipeline
+            elif len(self._targets) > 1:
+                raise DagsterInvalidDefinitionError(
+                    "Job property not available when SensorDefinition has multiple jobs."
+                )
+        raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
 
     def evaluate_tick(self, context: "SensorEvaluationContext") -> "SensorExecutionData":
         """Evaluate sensor using the provided context.
@@ -363,7 +393,7 @@ class SensorDefinition:
                 return True
         return False
 
-    def load_targets(self) -> List[DirectTarget]:
+    def load_targets(self) -> List[PipelineDefinition]:
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):
@@ -377,8 +407,9 @@ class SensorDefinition:
         if run_requests and not self._targets:
             raise Exception(
                 f"Error in sensor {self._name}: Sensor evaluation function returned a RunRequest "
-                "for a sensor without a specified target. Targets can be specified by providing "
-                "a job or pipeline_name."
+                "for a sensor lacking a specified target (pipeline_name, job, or jobs). Targets "
+                "can be specified by providing job, jobs, or pipeline_name to the @sensor "
+                "decorator."
             )
 
         for run_request in run_requests:
@@ -408,6 +439,10 @@ class SensorDefinition:
     @property
     def mode(self) -> Optional[str]:
         return self._target.mode if self._target else None
+
+    @property
+    def default_status(self) -> DefaultSensorStatus:
+        return self._default_status
 
 
 @whitelist_for_serdes
@@ -538,7 +573,8 @@ class AssetSensorDefinition(SensorDefinition):
         description (Optional[str]): A human-readable description of the sensor.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job object to target with this sensor.
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental) A list of jobs to be executed when the sensor fires.
-
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def __init__(
@@ -556,6 +592,7 @@ class AssetSensorDefinition(SensorDefinition):
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+        default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
         self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
 
@@ -602,6 +639,7 @@ class AssetSensorDefinition(SensorDefinition):
             description=description,
             job=job,
             jobs=jobs,
+            default_status=default_status,
         )
 
     @property

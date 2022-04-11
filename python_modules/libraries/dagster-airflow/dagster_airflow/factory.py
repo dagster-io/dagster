@@ -4,15 +4,16 @@ import re
 from collections import namedtuple
 
 from airflow import DAG
-from airflow.operators import BaseOperator
+from airflow.models.baseoperator import BaseOperator
+from dagster_airflow.operators.util import check_storage_specified
+
 from dagster import check, seven
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance, is_dagster_home_set
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot, snapshot_from_execution_plan
 from dagster.utils.backcompat import canonicalize_backcompat_args
-from dagster_airflow.operators.util import check_storage_specified
 
 from .compile import coalesce_execution_steps
 from .operators.docker_operator import DagsterDockerOperator
@@ -187,7 +188,7 @@ def _make_airflow_dag(
     dag_description = check.opt_str_param(
         dag_description, "dag_description", _make_dag_description(job_name)
     )
-    check.subclass_param(operator, "operator", BaseOperator)
+    check.class_param(operator, "operator", superclass=BaseOperator)
 
     dag_kwargs = dict(
         {"default_args": DEFAULT_ARGS},
@@ -361,7 +362,7 @@ def make_airflow_dag_for_operator(
         (airflow.models.DAG, List[airflow.models.BaseOperator]): The generated Airflow DAG, and a
         list of its constituent tasks.
     """
-    check.subclass_param(operator, "operator", BaseOperator)
+    check.class_param(operator, "operator", superclass=BaseOperator)
 
     job_name = canonicalize_backcompat_args(
         new_val=job_name,

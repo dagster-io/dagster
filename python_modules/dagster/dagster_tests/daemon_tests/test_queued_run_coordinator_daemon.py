@@ -3,6 +3,8 @@
 from contextlib import contextmanager
 
 import pytest
+from dagster_tests.api_tests.utils import get_foo_pipeline_handle
+
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, PipelineRunStatus
 from dagster.core.storage.tags import PRIORITY_TAG
@@ -11,8 +13,8 @@ from dagster.core.test_utils import (
     create_test_daemon_workspace,
     instance_for_test,
 )
+from dagster.core.workspace.load_target import EmptyWorkspaceTarget
 from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
-from dagster_tests.api_tests.utils import get_foo_pipeline_handle
 
 
 @contextmanager
@@ -53,7 +55,7 @@ def daemon_fixture():
 
 @pytest.fixture(name="workspace")
 def workspace_fixture():
-    with create_test_daemon_workspace() as workspace:
+    with create_test_daemon_workspace(workspace_load_target=EmptyWorkspaceTarget()) as workspace:
         yield workspace
 
 

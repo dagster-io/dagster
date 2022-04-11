@@ -1,7 +1,8 @@
 import json
 
-from dagster import build_solid_context, solid
 from dagster_dbt import dbt_cli_resource
+
+from dagster import build_solid_context, solid
 
 
 def get_dbt_resource(project_dir, profiles_dir, **kwargs):
@@ -51,7 +52,7 @@ def test_ls(conn_string, test_project_dir, dbt_config_dir):  # pylint: disable=u
 
     context = get_dbt_solid_context(test_project_dir, dbt_config_dir)
     dbt_result = my_dbt_solid(context)
-    assert len(dbt_result.raw_output.split("\n\n")) == 20
+    assert len(dbt_result.raw_output.split("\n\n")) == 22
 
 
 def test_ls_resource_type(
@@ -63,7 +64,7 @@ def test_ls_resource_type(
 
     context = get_dbt_solid_context(test_project_dir, dbt_config_dir)
     dbt_result = my_dbt_solid(context)
-    assert len(dbt_result.raw_output.split("\n\n")) == 4
+    assert len(dbt_result.raw_output.split("\n\n")) == 6
 
 
 def test_test(
@@ -77,8 +78,6 @@ def test_test(
     context = get_dbt_solid_context(test_project_dir, dbt_config_dir)
     dbt_result = my_dbt_solid(context)
     assert len(dbt_result.result["results"]) == 15
-    assert "data" not in dbt_result.command
-    assert "schema" not in dbt_result.command
 
 
 def test_basic_run(

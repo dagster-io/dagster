@@ -1,8 +1,9 @@
 import json
 
 import graphene
-from dagster import check
 from graphene.types.generic import GenericScalar
+
+from dagster import check
 
 from ..implementation.fetch_runs import get_runs, get_runs_count
 from .errors import (
@@ -143,7 +144,7 @@ class GrapheneRunConfigData(GenericScalar, graphene.Scalar):
 
 
 def parse_run_config_input(run_config):
-    return json.loads(run_config) if isinstance(run_config, str) else run_config
+    return json.loads(run_config) if (run_config and isinstance(run_config, str)) else run_config
 
 
 types = [

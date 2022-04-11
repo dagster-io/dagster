@@ -1,8 +1,9 @@
 import pytest
 import responses
+from dagster_dbt import dbt_cloud_resource, dbt_cloud_run_op
+
 from dagster import Failure, job
 from dagster.check import CheckError
-from dagster_dbt import dbt_cloud_resource, dbt_cloud_run_op
 
 from .utils import (
     SAMPLE_ACCOUNT_ID,

@@ -584,6 +584,19 @@ local_artifact_storage:
 
 # end_marker_local_artifact_storage
 
+# start_run_monitoring
+
+# Opt in to the experimental Monitoring Daemon
+run_monitoring:
+  enabled: true
+  # values below are the defaults, and don't need to be specified execpt to override them
+  start_timeout_seconds: 180
+  max_resume_run_attempts: 3 # experimental if above 0
+  poll_interval_seconds: 120
+
+# end_run_monitoring
+
+
 # start_marker_telemetry
 
 # Allows opting out of Dagster collecting usage statistics.

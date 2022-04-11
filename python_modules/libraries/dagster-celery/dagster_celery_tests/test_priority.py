@@ -5,11 +5,12 @@ import threading
 import time
 from collections import OrderedDict
 
-from dagster import ModeDefinition, default_executors
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
-from dagster.core.test_utils import instance_for_test
 from dagster_celery import celery_executor
 from dagster_celery.tags import DAGSTER_CELERY_RUN_PRIORITY_TAG
+
+from dagster import ModeDefinition, default_executors
+from dagster.core.storage.pipeline_run import RunsFilter
+from dagster.core.test_utils import instance_for_test
 
 from .utils import execute_eagerly_on_celery, execute_on_thread, start_celery_worker
 
@@ -66,13 +67,11 @@ def test_run_priority_pipeline(rabbitmq):
                 while not low_done.is_set() or not hi_done.is_set():
                     time.sleep(1)
 
-                low_runs = instance.get_runs(
-                    filters=PipelineRunsFilter(pipeline_name="low_pipeline")
-                )
+                low_runs = instance.get_runs(filters=RunsFilter(pipeline_name="low_pipeline"))
                 assert len(low_runs) == 1
                 low_run = low_runs[0]
                 lowstats = instance.get_run_stats(low_run.run_id)
-                hi_runs = instance.get_runs(filters=PipelineRunsFilter(pipeline_name="hi_pipeline"))
+                hi_runs = instance.get_runs(filters=RunsFilter(pipeline_name="hi_pipeline"))
                 assert len(hi_runs) == 1
                 hi_run = hi_runs[0]
                 histats = instance.get_run_stats(hi_run.run_id)

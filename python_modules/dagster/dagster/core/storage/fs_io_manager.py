@@ -4,8 +4,9 @@ import pickle
 from dagster import check
 from dagster.config import Field
 from dagster.config.source import StringSource
-from dagster.core.definitions.event_metadata import EventMetadataEntry
 from dagster.core.definitions.events import AssetKey, AssetMaterialization
+from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.input import InputContext
 from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.io_manager import IOManager, io_manager
@@ -113,20 +114,42 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         check.inst_param(context, "context", OutputContext)
 
         filepath = self._get_path(context)
-        context.log.debug(f"Writing file at: {filepath}")
 
         # Ensure path exists
         mkdir_p(os.path.dirname(filepath))
 
         with open(filepath, self.write_mode) as write_obj:
-            pickle.dump(obj, write_obj, PICKLE_PROTOCOL)
+            try:
+                pickle.dump(obj, write_obj, PICKLE_PROTOCOL)
+            except (AttributeError, RecursionError, ImportError, pickle.PicklingError) as e:
+                executor = context.step_context.pipeline_def.mode_definitions[0].executor_defs[0]
+
+                if isinstance(e, RecursionError):
+                    # if obj can't be pickled because of RecursionError then __str__() will also
+                    # throw a RecursionError
+                    obj_repr = f"{obj.__class__} exceeds recursion limit and"
+                else:
+                    obj_repr = obj.__str__()
+
+                raise DagsterInvariantViolationError(
+                    f"Object {obj_repr} is not picklable. You are currently using the "
+                    f"fs_io_manager and the {executor.name}. You will need to use a different "
+                    "io manager to continue using this output. For example, you can use the "
+                    "mem_io_manager with the in_process_executor.\n"
+                    "For more information on io managers, visit "
+                    "https://docs.dagster.io/concepts/io-management/io-managers \n"
+                    "For more information on executors, vist "
+                    "https://docs.dagster.io/deployment/executors#overview"
+                )
+
+        context.add_output_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
 
     def load_input(self, context):
         """Unpickle the file and Load it to a data object."""
         check.inst_param(context, "context", InputContext)
 
         filepath = self._get_path(context.upstream_output)
-        context.log.debug(f"Loading file from: {filepath}")
+        context.add_input_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
 
         with open(filepath, self.read_mode) as read_obj:
             return pickle.load(read_obj)
@@ -170,7 +193,9 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
 
         return AssetMaterialization(
             asset_key=AssetKey([context.pipeline_name, context.step_key, context.name]),
-            metadata_entries=[EventMetadataEntry.fspath(os.path.abspath(filepath))],
+            metadata_entries=[
+                MetadataEntry("path", value=MetadataValue.path(os.path.abspath(filepath)))
+            ],
         )
 
     def load_input(self, context):

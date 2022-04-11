@@ -1,5 +1,5 @@
-from collections import namedtuple
 from enum import Enum
+from typing import Dict, List, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.execution.plan.resume_retry import get_retry_steps_from_parent_run
@@ -15,7 +15,7 @@ from dagster.core.host_representation.external_data import (
 )
 from dagster.core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster.core.storage.tags import (
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
@@ -45,26 +45,34 @@ class BulkActionStatus(Enum):
 
 @whitelist_for_serdes
 class PartitionBackfill(
-    namedtuple(
+    NamedTuple(
         "_PartitionBackfill",
-        (
-            "backfill_id partition_set_origin status partition_names from_failure "
-            "reexecution_steps tags backfill_timestamp last_submitted_partition_name error"
-        ),
+        [
+            ("backfill_id", str),
+            ("partition_set_origin", ExternalPartitionSetOrigin),
+            ("status", BulkActionStatus),
+            ("partition_names", List[str]),
+            ("from_failure", bool),
+            ("reexecution_steps", List[str]),
+            ("tags", Dict[str, str]),
+            ("backfill_timestamp", float),
+            ("last_submitted_partition_name", Optional[str]),
+            ("error", Optional[SerializableErrorInfo]),
+        ],
     ),
 ):
     def __new__(
         cls,
-        backfill_id,
-        partition_set_origin,
-        status,
-        partition_names,
-        from_failure,
-        reexecution_steps,
-        tags,
-        backfill_timestamp,
-        last_submitted_partition_name=None,
-        error=None,
+        backfill_id: str,
+        partition_set_origin: ExternalPartitionSetOrigin,
+        status: BulkActionStatus,
+        partition_names: List[str],
+        from_failure: bool,
+        reexecution_steps: List[str],
+        tags: Dict[str, str],
+        backfill_timestamp: float,
+        last_submitted_partition_name: Optional[str] = None,
+        error: Optional[SerializableErrorInfo] = None,
     ):
         return super(PartitionBackfill, cls).__new__(
             cls,
@@ -291,7 +299,7 @@ def _fetch_last_run(instance, external_partition_set, partition_name):
     check.str_param(partition_name, "partition_name")
 
     runs = instance.get_runs(
-        PipelineRunsFilter(
+        RunsFilter(
             pipeline_name=external_partition_set.pipeline_name,
             tags={
                 PARTITION_SET_TAG: external_partition_set.name,

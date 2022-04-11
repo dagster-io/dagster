@@ -10,7 +10,7 @@ from dagster.core.definitions.executor_definition import (
     check_cross_process_constraints,
     default_executors,
 )
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.definitions.run_config import selector_for_named_defs
 from dagster.core.errors import (
     DagsterError,
@@ -186,7 +186,7 @@ def execute_run_host_mode(
 
     if pipeline_run.solids_to_execute:
         pipeline = pipeline.subset_for_execution_from_existing_pipeline(
-            pipeline_run.solids_to_execute
+            frozenset(pipeline_run.solids_to_execute)
         )
 
     execution_plan_snapshot = instance.get_execution_plan_snapshot(

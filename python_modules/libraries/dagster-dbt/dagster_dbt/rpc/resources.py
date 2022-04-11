@@ -7,6 +7,7 @@ from base64 import standard_b64encode as b64
 from typing import Any, Dict, List, Optional
 
 import requests
+
 from dagster import Failure, Field, IntSource, RetryRequested, StringSource, check, resource
 from dagster.core.utils import coerce_valid_log_level
 
@@ -77,7 +78,7 @@ class DbtRpcResource(DbtResource):
         headers["Accept"] = "application/json"
         return headers
 
-    def _post(self, data: str = None) -> DbtRpcOutput:
+    def _post(self, data: Optional[str] = None) -> DbtRpcOutput:
         """Constructs and sends a POST request to the dbt RPC server.
 
         Returns:
@@ -94,7 +95,7 @@ class DbtRpcResource(DbtResource):
                 raise RetryRequested(max_retries=5, seconds_to_wait=30)
         return DbtRpcOutput(response)
 
-    def _get_result(self, data: str = None) -> DbtRpcOutput:
+    def _get_result(self, data: Optional[str] = None) -> DbtRpcOutput:
         """Constructs and sends a POST request to the dbt RPC server.
 
         Returns:
@@ -102,7 +103,9 @@ class DbtRpcResource(DbtResource):
         """
         return self._post(data)
 
-    def _default_request(self, method: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
+    def _default_request(
+        self, method: str, params: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Constructs a standard HTTP request body, to be sent to a dbt RPC server.
 
         Args:
@@ -157,9 +160,9 @@ class DbtRpcResource(DbtResource):
 
     def ls(
         self,
-        select: List[str] = None,
-        models: List[str] = None,
-        exclude: List[str] = None,
+        select: Optional[List[str]] = None,
+        models: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
         **kwargs,
     ) -> DbtRpcOutput:
         """Sends a request with the method ``list`` to the dbt RPC server, and returns the
@@ -245,7 +248,7 @@ class DbtRpcResource(DbtResource):
         return self._get_result(data=json.dumps(data))
 
     def compile(
-        self, models: List[str] = None, exclude: List[str] = None, **kwargs
+        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
     ) -> DbtRpcOutput:
         """Sends a request with the method ``compile`` to the dbt RPC server, and returns the
         response. For more details, see the dbt docs for `compiling projects via RPC
@@ -265,7 +268,9 @@ class DbtRpcResource(DbtResource):
 
         return self._get_result(data=json.dumps(data))
 
-    def run(self, models: List[str] = None, exclude: List[str] = None, **kwargs) -> DbtRpcOutput:
+    def run(
+        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+    ) -> DbtRpcOutput:
         """Sends a request with the method ``run`` to the dbt RPC server, and returns the response.
         For more details, see the dbt docs for the RPC method `run
         <https://docs.getdbt.com/reference/commands/rpc/#run-models>`_.
@@ -284,7 +289,7 @@ class DbtRpcResource(DbtResource):
         return self._get_result(data=json.dumps(data))
 
     def snapshot(
-        self, select: List[str] = None, exclude: List[str] = None, **kwargs
+        self, select: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
     ) -> DbtRpcOutput:
         """Sends a request with the method ``snapshot`` to the dbt RPC server, and returns the
         response. For more details, see the dbt docs for the command `snapshot
@@ -305,8 +310,8 @@ class DbtRpcResource(DbtResource):
 
     def test(
         self,
-        models: List[str] = None,
-        exclude: List[str] = None,
+        models: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
         data: bool = True,
         schema: bool = True,
         **kwargs,
@@ -331,7 +336,11 @@ class DbtRpcResource(DbtResource):
         return self._get_result(data=json.dumps(data))
 
     def seed(
-        self, show: bool = False, select: List[str] = None, exclude: List[str] = None, **kwargs
+        self,
+        show: bool = False,
+        select: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+        **kwargs,
     ) -> DbtRpcOutput:
         """Sends a request with the method ``seed`` to the dbt RPC server, and returns the response.
         For more details, see the dbt docs for the RPC method `seed
@@ -471,7 +480,7 @@ class DbtRpcSyncResource(DbtRpcResource):
         super().__init__(host, port, jsonrpc_version, logger)
         self.poll_interval = poll_interval
 
-    def _get_result(self, data: str = None) -> DbtRpcOutput:
+    def _get_result(self, data: Optional[str] = None) -> DbtRpcOutput:
         """Sends a request to the dbt RPC server and continuously polls for the status of a request until the state is ``success``."""
 
         out = super()._get_result(data)

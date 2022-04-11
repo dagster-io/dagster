@@ -1,9 +1,4 @@
 import pytest
-from dagster import DagsterResourceFunctionError, DagsterTypeCheckDidNotPass, multiprocess_executor
-from dagster.core.events import DagsterEventType
-from dagster.core.storage.fs_io_manager import fs_io_manager
-from dagster.utils import file_relative_path
-from dagster.utils.temp_file import get_temp_dir
 from dagster_test.graph_job_op_toys.asset_lineage import asset_lineage_job
 from dagster_test.graph_job_op_toys.branches import branch
 from dagster_test.graph_job_op_toys.composition import composition_job
@@ -17,6 +12,7 @@ from dagster_test.graph_job_op_toys.hammer import hammer
 from dagster_test.graph_job_op_toys.log_spew import log_spew
 from dagster_test.graph_job_op_toys.longitudinal import IntentionalRandomFailure, longitudinal
 from dagster_test.graph_job_op_toys.many_events import many_events
+from dagster_test.graph_job_op_toys.partitioned_assets import partitioned_asset_group
 from dagster_test.graph_job_op_toys.pyspark_assets.pyspark_assets_job import (
     dir_resources,
     pyspark_assets,
@@ -26,10 +22,16 @@ from dagster_test.graph_job_op_toys.resources import lots_of_resources, resource
 from dagster_test.graph_job_op_toys.retries import retry
 from dagster_test.graph_job_op_toys.schedules import longitudinal_schedule
 from dagster_test.graph_job_op_toys.sleepy import sleepy
-from dagster_test.graph_job_op_toys.software_defined_assets import software_defined_assets_job
+from dagster_test.graph_job_op_toys.software_defined_assets import software_defined_assets
 from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
     test_step_delegating_executor,
 )
+
+from dagster import DagsterResourceFunctionError, DagsterTypeCheckDidNotPass, multiprocess_executor
+from dagster.core.events import DagsterEventType
+from dagster.core.storage.fs_io_manager import fs_io_manager
+from dagster.utils import file_relative_path
+from dagster.utils.temp_file import get_temp_dir
 
 
 @pytest.fixture(name="executor_def", params=[multiprocess_executor, test_step_delegating_executor])
@@ -297,4 +299,12 @@ def test_retry_job(executor_def):
 
 
 def test_software_defined_assets_job():
-    assert software_defined_assets_job.execute_in_process().success
+    assert software_defined_assets.build_job("all_assets").execute_in_process().success
+
+
+def test_partitioned_assets():
+    assert (
+        partitioned_asset_group.build_job("all_assets")
+        .execute_in_process(partition_key="2020-02-01")
+        .success
+    )

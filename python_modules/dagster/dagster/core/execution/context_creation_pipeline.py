@@ -1,6 +1,6 @@
 import logging
 import sys
-from abc import ABC, abstractproperty
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING,
@@ -53,11 +53,13 @@ from .context.system import (
 )
 
 if TYPE_CHECKING:
-    from dagster.core.executor.base import Executor
     from dagster.core.execution.plan.outputs import StepOutputHandle
+    from dagster.core.executor.base import Executor
 
 
-def initialize_console_manager(pipeline_run: Optional[PipelineRun]) -> DagsterLogManager:
+def initialize_console_manager(
+    pipeline_run: Optional[PipelineRun], instance: Optional[DagsterInstance] = None
+) -> DagsterLogManager:
     # initialize default colored console logger
     loggers = []
     for logger_def, logger_config in default_system_loggers():
@@ -68,7 +70,7 @@ def initialize_console_manager(pipeline_run: Optional[PipelineRun]) -> DagsterLo
                 )
             )
         )
-    return DagsterLogManager.create(loggers=loggers, pipeline_run=pipeline_run)
+    return DagsterLogManager.create(loggers=loggers, pipeline_run=pipeline_run, instance=instance)
 
 
 def executor_def_from_config(
@@ -181,7 +183,8 @@ class ExecutionContextManager(Generic[TContextType], ABC):
             generator=event_generator, object_cls=self.context_type, require_object=raise_on_error
         )
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def context_type(self) -> Type[TContextType]:
         pass
 

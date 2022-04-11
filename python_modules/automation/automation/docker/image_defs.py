@@ -2,9 +2,9 @@
 import contextlib
 import os
 import shutil
-import subprocess
 
 from automation.git import git_repo_root
+
 from dagster import check
 
 from .dagster_docker import DagsterDockerImage
@@ -44,31 +44,6 @@ def copy_directories(paths, cwd, destination="build_cache"):
 
     finally:
         shutil.rmtree(build_cache_dir)
-
-
-@contextlib.contextmanager
-def buildkite_integration_cm(cwd):
-    """For the buildkite integration base image, we first copy over scala_modules into the image
-    build directory.
-    """
-    scala_modules_dir = os.path.join(get_dagster_repo(), "scala_modules")
-    try:
-        cmd = [
-            "rsync",
-            "-av",
-            "--exclude='*target*'",
-            "--exclude='*.idea*'",
-            "--exclude='*.class'",
-            scala_modules_dir,
-            ".",
-        ]
-        print("Syncing scala_modules to build dir...")
-        print(cmd)
-        subprocess.call(cmd, cwd=cwd)
-        yield
-
-    finally:
-        shutil.rmtree(os.path.join(cwd, "scala_modules"))
 
 
 @contextlib.contextmanager
@@ -210,7 +185,6 @@ def dagster_celery_k8s_editable_cm(cwd):
 
 # Some images have custom build context manager functions, listed here
 CUSTOM_BUILD_CONTEXTMANAGERS = {
-    "buildkite-integration-base": buildkite_integration_cm,
     "k8s-example": k8s_example_cm,
     "k8s-example-editable": k8s_example_editable_cm,
     "k8s-dagit-editable": k8s_dagit_editable_cm,

@@ -1,24 +1,16 @@
+// eslint-disable-next-line no-restricted-imports
 import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
-import {Box, ColorsWIP, PageHeader, TagWIP, Heading} from '@dagster-io/ui';
+import {Box, Colors, PageHeader, Heading} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {RepositoryLink} from '../nav/RepositoryLink';
-import {RepoAddress} from '../workspace/types';
+type Props = {assetKey: {path: string[]}} & Partial<React.ComponentProps<typeof PageHeader>>;
 
-import {useAssetView} from './useAssetView';
-
-type Props = {assetKey: {path: string[]}; repoAddress: RepoAddress | null} & Partial<
-  React.ComponentProps<typeof PageHeader>
->;
-
-export const AssetPageHeader: React.FC<Props> = ({assetKey, repoAddress, ...extra}) => {
-  const [view] = useAssetView();
-
+export const AssetPageHeader: React.FC<Props> = ({assetKey, ...extra}) => {
   const breadcrumbs = React.useMemo(() => {
-    if (assetKey.path.length === 1 || view !== 'directory') {
-      return null;
+    if (assetKey.path.length === 1) {
+      return [{text: assetKey.path[0], href: '/instance/assets'}];
     }
 
     const list: BreadcrumbProps[] = [];
@@ -29,38 +21,22 @@ export const AssetPageHeader: React.FC<Props> = ({assetKey, repoAddress, ...extr
     }, '/instance/assets');
 
     return list;
-  }, [assetKey.path, view]);
+  }, [assetKey.path]);
 
   return (
     <PageHeader
       title={
-        view !== 'directory' || !breadcrumbs ? (
-          <Heading>{assetKey.path[assetKey.path.length - 1]}</Heading>
-        ) : (
-          <Box
-            flex={{alignItems: 'center', gap: 4}}
-            style={{maxWidth: '600px', overflow: 'hidden'}}
-          >
-            <Breadcrumbs
-              items={breadcrumbs}
-              breadcrumbRenderer={({text, href}) => (
-                <Heading>
-                  <BreadcrumbLink to={href || '#'}>{text}</BreadcrumbLink>
-                </Heading>
-              )}
-              currentBreadcrumbRenderer={({text}) => <Heading>{text}</Heading>}
-            />
-          </Box>
-        )
-      }
-      tags={
-        repoAddress ? (
-          <TagWIP icon="asset">
-            Asset in <RepositoryLink repoAddress={repoAddress} />
-          </TagWIP>
-        ) : (
-          <TagWIP icon="asset">Asset</TagWIP>
-        )
+        <Box flex={{alignItems: 'center', gap: 4}} style={{maxWidth: '600px', overflow: 'hidden'}}>
+          <Breadcrumbs
+            items={breadcrumbs}
+            breadcrumbRenderer={({text, href}) => (
+              <Heading>
+                <BreadcrumbLink to={href || '#'}>{text}</BreadcrumbLink>
+              </Heading>
+            )}
+            currentBreadcrumbRenderer={({text}) => <Heading>{text}</Heading>}
+          />
+        </Box>
       }
       {...extra}
     />
@@ -68,10 +44,10 @@ export const AssetPageHeader: React.FC<Props> = ({assetKey, repoAddress, ...extr
 };
 
 const BreadcrumbLink = styled(Link)`
-  color: ${ColorsWIP.Gray800};
+  color: ${Colors.Gray800};
 
   :hover,
   :active {
-    color: ${ColorsWIP.Gray800};
+    color: ${Colors.Gray800};
   }
 `;

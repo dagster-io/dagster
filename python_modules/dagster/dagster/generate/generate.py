@@ -2,6 +2,7 @@ import os
 import posixpath
 
 import jinja2
+
 from dagster.version import __version__ as dagster_version
 
 NEW_PROJECT_PLACEHOLDER = "new_project"

@@ -1,4 +1,5 @@
 import pytest
+
 from dagster import (
     DagsterInvalidDefinitionError,
     DynamicOutput,
@@ -234,6 +235,6 @@ def test_collect_and_dep():
     ):
 
         @pipeline
-        def _bad():
+        def _bad_other():
             x = dynamic_solid()
             x.map(lambda y: add(x.collect(), y))

@@ -43,8 +43,19 @@ Dagster CLI
 
 .. currentmodule:: dagster
 
+.. click:: dagster.daemon.cli:run_command
+   :prog: dagster-daemon run
+   :nested:
+
+.. click:: dagster.daemon.cli:wipe_command
+   :prog: dagster-daemon wipe
+
+.. click:: dagster.daemon.cli:debug_heartbeat_dump_command
+   :prog: dagster-daemon debug heartbeat-dump
+
 .. click:: dagster.cli.api:grpc_command
    :prog: dagster api grpc
+
 
 Legacy APIs
 -----------

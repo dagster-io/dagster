@@ -90,6 +90,22 @@ dagit:
   #   - name: secret
   envSecrets: []
 
+  # Additional labels that should be included on the deployment. See:
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+  #
+  # Example:
+  # labels:
+  #   my-label-key: my_label-value
+  deploymentLabels: {}
+
+  # Additional labels that should be included on the pod. See:
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+  #
+  # Example:
+  # labels:
+  #   my-label-key: my_label-value
+  labels: {}
+
   # Support Node, affinity and tolerations for Dagit pod assignment. See:
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
@@ -109,32 +125,22 @@ dagit:
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
-  # Liveness probe detects when to restart dagit.
+  # Readiness probe detects when the pod is ready to serve requests.
   # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
-  livenessProbe:
+  readinessProbe:
     httpGet:
       path: "/dagit_info"
       port: 80
-    # initialDelaySeconds: 60
     periodSeconds: 20
     timeoutSeconds: 3
     successThreshold: 1
     failureThreshold: 3
-  # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
-  # then liveness probe takes over. Current delay is 2 min (10 sec * 12) but can be increased based
-  # on workspace load times.
-  # If on kubernetes < v1.16, then disable `startupProbe` and comment in
-  # `initialDelaySeconds: 60` under `livenessProbe`
+
+  # As of 0.14.0, liveness probes are disabled by default. If you want to enable them, it's recommended to also
+  # enable startup probes.
+  livenessProbe: {}
   startupProbe:
-    enabled: true
-    httpGet:
-      path: "/dagit_info"
-      port: 80
-    initialDelaySeconds: 1
-    periodSeconds: 10
-    timeoutSeconds: 3
-    successThreshold: 1
-    failureThreshold: 12
+    enabled: false
 
 ####################################################################################################
 # Compute Log Manager: Configuration for the compute log manager
@@ -306,33 +312,22 @@ dagster-user-deployments:
       podSecurityContext: {}
       securityContext: {}
       resources: {}
-      # Liveness Probe and Startup Probe are optional. For more configuration docs, see:
+      # Readiness probe detects when the pod is ready to serve requests.
       # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
-      # Note that Startup Probe is only available as a kubernetes v1.16+ feature.
-      livenessProbe:
-        # If `livenessProbe` has no `exec` field, then the following default will be used:
+      readinessProbe:
+        # If `readinessProbe` has no `exec` field, then the following default will be used:
         # exec:
         #   command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
-        initialDelaySeconds: 0
         periodSeconds: 20
         timeoutSeconds: 3
         successThreshold: 1
         failureThreshold: 3
 
-      # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
-      # then liveness probe takes over.
-      # If on kubernetes < v1.16, then disable `startupProbe` and comment in
-      # `initialDelaySeconds: 60` under `livenessProbe`
+      # As of 0.14.0, liveness probes are disabled by default. If you want to enable them, it's recommended to also
+      # enable startup probes.
+      livenessProbe: {}
       startupProbe:
-        enabled: true
-        # If `startupProbe` has no `exec` field, then the following default will be used:
-        # exec:
-        #   command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
-        initialDelaySeconds: 0
-        periodSeconds: 10
-        timeoutSeconds: 3
-        successThreshold: 1
-        failureThreshold: 3
+        enabled: false
 
       service:
         annotations: {}
@@ -494,7 +489,7 @@ runLauncher:
       # Additional config options for Celery, applied to all queues.
       # These can be overridden per-queue below.
       # For available options, see:
-      # https://docs.celeryproject.org/en/stable/userguide/configuration.html
+      # https://docs.celeryq.dev/en/stable/userguide/configuration.html
       configSource: {}
 
       # Additional Celery worker queues can be configured here. When overriding, be sure to
@@ -637,7 +632,6 @@ postgresql:
 
   # Used by init container to check that db is running. (Even if enabled:false)
   image:
-    registry: "docker.io"
     repository: "library/postgres"
     tag: "9.6.21"
     pullPolicy: IfNotPresent
@@ -680,7 +674,6 @@ rabbitmq:
   enabled: false
 
   image:
-    registry: "docker.io"
     repository: "bitnami/rabbitmq"
     tag: "3.8.12"
     pullPolicy: IfNotPresent
@@ -696,7 +689,6 @@ rabbitmq:
   volumePermissions:
     enabled: true
     image:
-      registry: docker.io
       repository: bitnami/minideb
       tag: stretch
       pullPolicy: IfNotPresent
@@ -796,12 +788,18 @@ ingress:
 
   annotations: {}
 
+  # Specify the IngressClass used to implement this ingress.
+  #
+  # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+  ingressClassName: ~
+
   dagit:
     # Ingress hostname for Dagit e.g. dagit.mycompany.com
     # This variable allows customizing the route pattern in the ingress. Some
     # ingress controllers may only support "/", whereas some may need "/*".
     # NOTE: Dagit doesn't yet support hosting on a path, e.g. mycompany.com/dagit.
     path: "/*"
+    pathType: ImplementationSpecific
     # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
     # See: https://github.com/dagster-io/dagster/issues/2073
     host: ""
@@ -815,6 +813,7 @@ ingress:
     #
     # precedingPaths:
     #   - path: "/*"
+    #     pathType: ImplementationSpecific
     #     serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
     precedingPaths: []
@@ -824,6 +823,7 @@ ingress:
     #
     # succeedingPaths:
     #   - path: "/*"
+    #     pathType: ImplementationSpecific
     #     serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
     succeedingPaths: []
@@ -834,6 +834,7 @@ ingress:
     # ingress controllers may only support "/", whereas some may need "/*".
     # NOTE: Dagit doesn't yet support hosting on a path, e.g. mycompany.com/dagit.
     path: "/*"
+    pathType: ImplementationSpecific
     # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
     # See: https://github.com/dagster-io/dagster/issues/2073
     host: ""
@@ -847,6 +848,7 @@ ingress:
     #
     # precedingPaths:
     #   - path: "/*"
+    #     pathType: ImplementationSpecific
     #     serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
     precedingPaths: []
@@ -856,6 +858,7 @@ ingress:
     #
     # succeedingPaths:
     #   - path: "/*"
+    #     pathType: ImplementationSpecific
     #     serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
     succeedingPaths: []
@@ -866,6 +869,7 @@ ingress:
     # if path is '/flower', Flower will be accessible at 'mycompany.com/flower'
     # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
     path: ""
+    pathType: ImplementationSpecific
 
     tls:
       enabled: false
@@ -876,6 +880,7 @@ ingress:
     #
     # precedingPaths:
     #   - path: "/*"
+    #     pathType: ImplementationSpecific
     #     serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
     precedingPaths: []
@@ -885,6 +890,7 @@ ingress:
     #
     # succeedingPaths:
     #   - path: "/*"
+    #     pathType: ImplementationSpecific
     #     serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
     succeedingPaths: []
@@ -980,6 +986,22 @@ dagsterDaemon:
   #   - name: secret
   envSecrets: []
 
+  # Additional labels that should be included on the deployment. See:
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+  #
+  # Example:
+  # deploymentLabels:
+  #   my-label-key: my_label-value
+  deploymentLabels: {}
+
+  # Additional labels that should be included on the pod. See:
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+  #
+  # Example:
+  # labels:
+  #   my-label-key: my_label-value
+  labels: {}
+
   annotations: {}
   nodeSelector: {}
   affinity: {}
@@ -988,30 +1010,11 @@ dagsterDaemon:
   securityContext: {}
   resources: {}
 
-  livenessProbe:
-    exec:
-      command:
-        - "dagster-daemon"
-        - "liveness-check"
-    # initialDelaySeconds: 60
-    periodSeconds: 30
-    failureThreshold: 3
-    timeoutSeconds: 3
-
-  # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
-  # then liveness probe takes over. Current delay is 2 min (10 sec * 12) but can be increased based
-  # on workspace load times.
-  # If on kubernetes < v1.16, then disable `startupProbe` and comment in
-  # `initialDelaySeconds: 60` under `livenessProbe`
-  startupProbe:
-    enabled: true
-    exec:
-      command:
-        - "dagster-daemon"
-        - "liveness-check"
-    periodSeconds: 10
-    failureThreshold: 12
-    timeoutSeconds: 3
+  # As of 0.14.0, liveness probes are disabled by default. If you want to enable them, it's recommended to also
+  # enable startup probes.
+  livenessProbe: {}
+  readinessProbe: {}
+  startupProbe: {}
 
 ####################################################################################################
 # busybox: Configuration for the busybox image used to check connections
@@ -1064,6 +1067,19 @@ extraManifests:
 ####################################################################################################
 migrate:
   enabled: false
+
+####################################################################################################
+# As an open source project, we collect usage statistics to better understand how users engage
+# with Dagster and to inform development priorities.
+#
+# Telemetry data will motivate projects such as adding functionality in frequently-used parts of
+# the product and will help us understand adoption of new features.
+#
+# For more details, see:
+# https://docs.dagster.io/getting-started/telemetry
+####################################################################################################
+telemetry:
+  enabled: true
 
 serviceAccount:
   create: true

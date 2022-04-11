@@ -1,4 +1,4 @@
-import {ColorsWIP, FontFamily} from '@dagster-io/ui';
+import {Colors, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -35,7 +35,7 @@ interface OpIOBoxProps extends OpIORenderMetadata {
   onHighlightEdges: (edges: Edge[]) => void;
 }
 
-export const OpIOBox: React.FunctionComponent<OpIOBoxProps> = ({
+export const OpIOBox: React.FC<OpIOBoxProps> = ({
   minified,
   title,
   jumpTargetOp,
@@ -87,7 +87,7 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: ${(p) => (p.$highlighted ? ColorsWIP.Blue500 : ColorsWIP.Gray500)};
+    background: ${(p) => (p.$highlighted ? Colors.Blue500 : Colors.Gray500)};
     display: inline-block;
     margin: 6px;
   }
@@ -103,7 +103,7 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
     padding: 1px 6px;
     background: #e7e6f0;
     margin-right: 4px;
-    color: ${ColorsWIP.Blue500};
+    color: ${Colors.Blue500};
     font-family: ${FontFamily.monospace};
     font-weight: 700;
     border-radius: 4px;

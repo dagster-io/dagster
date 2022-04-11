@@ -1,4 +1,4 @@
-.. currentmodule:: dagster.core.asset_defs
+.. currentmodule:: dagster
 
 Software-Defined Assets (Experimental)
 ======================================
@@ -14,11 +14,16 @@ A software-defined asset combines:
 
 .. autodecorator:: asset
 
+.. autoclass:: AssetGroup
+   :members:
+
 .. autodecorator:: multi_asset
 
 .. autofunction:: build_assets_job
 
 .. autoclass:: AssetIn
 
-.. autoclass:: ForeignAsset
+.. autoclass:: SourceAsset
 
+.. autoconfigurable:: fs_asset_io_manager
+  :annotation: IOManagerDefinition

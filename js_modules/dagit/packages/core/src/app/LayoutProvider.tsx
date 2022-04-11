@@ -39,10 +39,11 @@ export const LayoutContext = React.createContext<LayoutContextValue>({
 
 export const LayoutProvider: React.FC = (props) => {
   const [navOpen, setNavOpen] = React.useState(false);
-  const {flagCollapseInstancePagesSidebar} = useFeatureFlags();
+  const flags = useFeatureFlags();
   const location = useLocation();
   const isSmallScreen = useMatchMedia('(max-width: 1440px)');
   const isInstancePage = location.pathname.startsWith('/instance');
+  const isCollapsible = flags.flagAlwaysCollapseNavigation || isInstancePage || isSmallScreen;
 
   React.useEffect(() => {
     setNavOpen(false);
@@ -52,12 +53,12 @@ export const LayoutProvider: React.FC = (props) => {
     () => ({
       nav: {
         isOpen: navOpen,
-        isCollapsible: (flagCollapseInstancePagesSidebar && isInstancePage) || isSmallScreen,
+        isCollapsible: isCollapsible,
         open: () => setNavOpen(true),
         close: () => setNavOpen(false),
       },
     }),
-    [navOpen, isInstancePage, isSmallScreen, flagCollapseInstancePagesSidebar],
+    [navOpen, isCollapsible],
   );
 
   return <LayoutContext.Provider value={value}>{props.children}</LayoutContext.Provider>;

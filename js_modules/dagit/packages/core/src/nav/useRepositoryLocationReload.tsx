@@ -1,9 +1,10 @@
 import {gql, useApolloClient, useMutation, useQuery} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
-import {useInvalidateConfigsForRepo} from '../app/LocalStorage';
+import {useInvalidateConfigsForRepo} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {RepositoryLocationLoadStatus} from '../types/globalTypes';
@@ -183,9 +184,7 @@ const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
       ... on RepositoryLocationNotFound {
         message
       }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
@@ -212,15 +211,11 @@ const REPOSITORY_LOCATION_STATUS_QUERY = gql`
                 }
               }
             }
-            ... on PythonError {
-              ...PythonErrorFragment
-            }
+            ...PythonErrorFragment
           }
         }
       }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
     }
   }
   ${PYTHON_ERROR_FRAGMENT}

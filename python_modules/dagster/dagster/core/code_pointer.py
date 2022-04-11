@@ -3,7 +3,8 @@ import inspect
 import os
 import sys
 from abc import ABC, abstractmethod
-from collections import namedtuple
+from types import ModuleType
+from typing import Callable, List, NamedTuple, Optional, cast
 
 from dagster import check
 from dagster.core.errors import DagsterImportError, DagsterInvariantViolationError
@@ -14,29 +15,35 @@ from dagster.utils import alter_sys_path, frozenlist
 
 class CodePointer(ABC):
     @abstractmethod
-    def load_target(self):
+    def load_target(self) -> object:
         pass
 
     @abstractmethod
-    def describe(self):
+    def describe(self) -> str:
         pass
 
     @staticmethod
-    def from_module(module_name, definition, working_directory):
+    def from_module(
+        module_name: str, definition: str, working_directory: Optional[str]
+    ) -> "ModuleCodePointer":
         check.str_param(module_name, "module_name")
         check.str_param(definition, "definition")
         check.opt_str_param(working_directory, "working_directory")
         return ModuleCodePointer(module_name, definition, working_directory)
 
     @staticmethod
-    def from_python_package(module_name, attribute, working_directory):
+    def from_python_package(
+        module_name: str, attribute: str, working_directory: Optional[str]
+    ) -> "PackageCodePointer":
         check.str_param(module_name, "module_name")
         check.str_param(attribute, "attribute")
         check.opt_str_param(working_directory, "working_directory")
         return PackageCodePointer(module_name, attribute, working_directory)
 
     @staticmethod
-    def from_python_file(python_file, definition, working_directory):
+    def from_python_file(
+        python_file: str, definition: str, working_directory: Optional[str]
+    ) -> "FileCodePointer":
         check.str_param(python_file, "python_file")
         check.str_param(definition, "definition")
         check.opt_str_param(working_directory, "working_directory")
@@ -45,7 +52,7 @@ class CodePointer(ABC):
         )
 
 
-def rebase_file(relative_path_in_file, file_path_resides_in):
+def rebase_file(relative_path_in_file: str, file_path_resides_in: str) -> str:
     """
     In config files, you often put file paths that are meant to be relative
     to the location of that config file. This does that calculation.
@@ -57,7 +64,7 @@ def rebase_file(relative_path_in_file, file_path_resides_in):
     )
 
 
-def load_python_file(python_file, working_directory):
+def load_python_file(python_file: str, working_directory: Optional[str]) -> ModuleType:
     """
     Takes a path to a python file and returns a loaded module
     """
@@ -108,14 +115,18 @@ def load_python_file(python_file, working_directory):
             ) from ie
 
 
-def load_python_module(module_name, working_directory, remove_from_path_fn=None):
+def load_python_module(
+    module_name: str,
+    working_directory: Optional[str],
+    remove_from_path_fn: Callable[[], List[str]] = None,
+) -> ModuleType:
     check.str_param(module_name, "module_name")
     check.opt_str_param(working_directory, "working_directory")
     check.opt_callable_param(remove_from_path_fn, "remove_from_path_fn")
 
     # Use the passed in working directory for local imports (sys.path[0] isn't
     # consistently set in the different entry points that Dagster uses to import code)
-    remove_paths = remove_from_path_fn() if remove_from_path_fn else []  # hook for tests
+    remove_paths: List[str] = remove_from_path_fn() if remove_from_path_fn else []  # hook for tests
     remove_paths.insert(0, sys.path[0])  # remove the script path
 
     with alter_sys_path(
@@ -147,18 +158,21 @@ def load_python_module(module_name, working_directory, remove_from_path_fn=None)
 
 @whitelist_for_serdes
 class FileCodePointer(
-    namedtuple("_FileCodePointer", "python_file fn_name working_directory"), CodePointer
+    NamedTuple(
+        "_FileCodePointer",
+        [("python_file", str), ("fn_name", str), ("working_directory", Optional[str])],
+    ),
+    CodePointer,
 ):
-    def __new__(cls, python_file, fn_name, working_directory=None):
-        check.opt_str_param(working_directory, "working_directory")
+    def __new__(cls, python_file: str, fn_name: str, working_directory: Optional[str] = None):
         return super(FileCodePointer, cls).__new__(
             cls,
             check.str_param(python_file, "python_file"),
             check.str_param(fn_name, "fn_name"),
-            working_directory,
+            check.opt_str_param(working_directory, "working_directory"),
         )
 
-    def load_target(self):
+    def load_target(self) -> object:
         module = load_python_file(self.python_file, self.working_directory)
         if not hasattr(module, self.fn_name):
             raise DagsterInvariantViolationError(
@@ -169,7 +183,7 @@ class FileCodePointer(
 
         return getattr(module, self.fn_name)
 
-    def describe(self):
+    def describe(self) -> str:
         if self.working_directory:
             return "{self.python_file}::{self.fn_name} -- [dir {self.working_directory}]".format(
                 self=self
@@ -180,9 +194,13 @@ class FileCodePointer(
 
 @whitelist_for_serdes
 class ModuleCodePointer(
-    namedtuple("_ModuleCodePointer", "module fn_name working_directory"), CodePointer
+    NamedTuple(
+        "_ModuleCodePointer",
+        [("module", str), ("fn_name", str), ("working_directory", Optional[str])],
+    ),
+    CodePointer,
 ):
-    def __new__(cls, module, fn_name, working_directory=None):
+    def __new__(cls, module: str, fn_name: str, working_directory: Optional[str] = None):
         return super(ModuleCodePointer, cls).__new__(
             cls,
             check.str_param(module, "module"),
@@ -190,7 +208,7 @@ class ModuleCodePointer(
             check.opt_str_param(working_directory, "working_directory"),
         )
 
-    def load_target(self):
+    def load_target(self) -> object:
         module = load_python_module(self.module, self.working_directory)
 
         if not hasattr(module, self.fn_name):
@@ -201,15 +219,19 @@ class ModuleCodePointer(
             )
         return getattr(module, self.fn_name)
 
-    def describe(self):
+    def describe(self) -> str:
         return "from {self.module} import {self.fn_name}".format(self=self)
 
 
 @whitelist_for_serdes
 class PackageCodePointer(
-    namedtuple("_PackageCodePointer", "module attribute working_directory"), CodePointer
+    NamedTuple(
+        "_PackageCodePointer",
+        [("module", str), ("attribute", str), ("working_directory", Optional[str])],
+    ),
+    CodePointer,
 ):
-    def __new__(cls, module, attribute, working_directory=None):
+    def __new__(cls, module: str, attribute: str, working_directory: Optional[str] = None):
         return super(PackageCodePointer, cls).__new__(
             cls,
             check.str_param(module, "module"),
@@ -217,7 +239,7 @@ class PackageCodePointer(
             check.opt_str_param(working_directory, "working_directory"),
         )
 
-    def load_target(self):
+    def load_target(self) -> object:
         module = load_python_module(self.module, self.working_directory)
 
         if not hasattr(module, self.attribute):
@@ -228,11 +250,11 @@ class PackageCodePointer(
             )
         return getattr(module, self.attribute)
 
-    def describe(self):
+    def describe(self) -> str:
         return "from {self.module} import {self.attribute}".format(self=self)
 
 
-def get_python_file_from_target(target):
+def get_python_file_from_target(target: object) -> Optional[str]:
     module = inspect.getmodule(target)
     python_file = getattr(module, "__file__", None)
 
@@ -244,12 +266,22 @@ def get_python_file_from_target(target):
 
 @whitelist_for_serdes
 class CustomPointer(
-    namedtuple(
-        "_CustomPointer", "reconstructor_pointer reconstructable_args reconstructable_kwargs"
+    NamedTuple(
+        "_CustomPointer",
+        [
+            ("reconstructor_pointer", ModuleCodePointer),
+            ("reconstructable_args", List[object]),
+            ("reconstructable_kwargs", List[List]),
+        ],
     ),
     CodePointer,
 ):
-    def __new__(cls, reconstructor_pointer, reconstructable_args, reconstructable_kwargs):
+    def __new__(
+        cls,
+        reconstructor_pointer: ModuleCodePointer,
+        reconstructable_args: List[object],
+        reconstructable_kwargs: List[List],
+    ):
         check.inst_param(reconstructor_pointer, "reconstructor_pointer", ModuleCodePointer)
         # These are lists rather than tuples to circumvent the tuple serdes machinery -- since these
         # are user-provided, they aren't whitelisted for serdes.
@@ -279,14 +311,14 @@ class CustomPointer(
             reconstructable_kwargs,
         )
 
-    def load_target(self):
-        reconstructor = self.reconstructor_pointer.load_target()
+    def load_target(self) -> object:
+        reconstructor = cast(Callable, self.reconstructor_pointer.load_target())
 
         return reconstructor(
             *self.reconstructable_args, **{key: value for key, value in self.reconstructable_kwargs}
         )
 
-    def describe(self):
+    def describe(self) -> str:
         return "reconstructable using {module}.{fn_name}".format(
             module=self.reconstructor_pointer.module, fn_name=self.reconstructor_pointer.fn_name
         )

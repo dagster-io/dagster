@@ -78,6 +78,10 @@ Run storage
 
 .. autoclass:: PipelineRun
 
+.. autoclass:: DagsterRunStatus
+   :members:
+   :undoc-members:
+
 .. autoclass:: PipelineRunStatus
    :members:
    :undoc-members:
@@ -143,10 +147,6 @@ Run launcher
 
 .. autoclass:: DefaultRunLauncher
 
-.. currentmodule:: dagster_graphql.launcher
-
-See also: :py:class:`dagster_k8s.K8sRunLauncher`.
-
 ----
 
 Run coordinator
@@ -156,7 +156,8 @@ Run coordinator
 
 .. autoclass:: DefaultRunCoordinator
 
-.. autoclass:: QueuedRunCoordinator
+.. autoconfigurable:: QueuedRunCoordinator
+  :annotation: RunCoordinator
 
 ----
 

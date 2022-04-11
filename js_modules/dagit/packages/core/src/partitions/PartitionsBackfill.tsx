@@ -2,25 +2,27 @@ import {gql, useLazyQuery, useMutation, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
-  ButtonWIP,
+  Button,
   ButtonLink,
   Checkbox,
-  ColorsWIP,
+  Colors,
   DialogBody,
   DialogFooter,
   Group,
-  IconWIP,
+  Icon,
   NonIdealState,
   Spinner,
   Tooltip,
+  Mono,
 } from '@dagster-io/ui';
+import {History} from 'history';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import {useHistory} from 'react-router';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
+import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {filterByQuery} from '../app/GraphQueryImpl';
-import {PipelineRunTag} from '../app/LocalStorage';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
@@ -69,6 +71,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   onSubmit: () => void;
   repoAddress: RepoAddress;
 }> = ({partitionSetName, pipelineName, onLaunch, onCancel, onSubmit, repoAddress}) => {
+  const history = useHistory();
   const repositorySelector = repoAddressToSelector(repoAddress);
   const [currentSelectionRange, setCurrentSelectionRange] = React.useState<
     SelectionRange | undefined
@@ -196,24 +199,12 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   }
 
   const onSuccess = (backfillId: string) => {
-    SharedToaster.show({
-      message: (
-        <div>
-          Created backfill job:{' '}
-          <FilteredRunsLink href="/instance/backfills">{backfillId}</FilteredRunsLink>
-        </div>
-      ),
-      intent: 'success',
-    });
+    showBackfillSuccessToast(history, backfillId);
     onLaunch?.(backfillId, query);
   };
 
   const onError = (data: LaunchPartitionBackfill | null | undefined) => {
-    SharedToaster.show({
-      message: messageForLaunchBackfillError(data),
-      icon: 'error',
-      intent: 'danger',
-    });
+    showBackfillErrorToast(data);
   };
 
   const {
@@ -384,7 +375,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                       placement="top"
                       content="For each partition, if the most recent run failed, launch a re-execution starting from the steps that failed."
                     >
-                      <IconWIP name="info" color={ColorsWIP.Gray500} />
+                      <Icon name="info" color={Colors.Gray500} />
                     </Tooltip>
                   </Box>
                 }
@@ -406,17 +397,12 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
           />
           <strong>Tags</strong>
           {tags.length ? (
-            <div style={{border: `1px solid ${ColorsWIP.Gray300}`, borderRadius: 8, padding: 3}}>
-              <TagContainer
-                tags={{fromSession: tags}}
-                onRequestEdit={() => setTagEditorOpen(true)}
-              />
+            <div style={{border: `1px solid ${Colors.Gray300}`, borderRadius: 8, padding: 3}}>
+              <TagContainer tagsFromSession={tags} onRequestEdit={() => setTagEditorOpen(true)} />
             </div>
           ) : (
             <div>
-              <ButtonWIP onClick={() => setTagEditorOpen(true)}>
-                Add tags to backfill runs
-              </ButtonWIP>
+              <Button onClick={() => setTagEditorOpen(true)}>Add tags to backfill runs</Button>
             </div>
           )}
         </Box>
@@ -426,14 +412,14 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
             display: 'flex',
             marginTop: 20,
             paddingTop: 20,
-            borderTop: `1px solid ${ColorsWIP.Gray100}`,
+            borderTop: `1px solid ${Colors.Gray100}`,
             justifyContent: 'space-between',
           }}
         >
           <strong style={{display: 'block', marginBottom: 4}}>Preview</strong>
-          <div style={{color: ColorsWIP.Gray400}}>Click or drag to edit selected partitions</div>
+          <div style={{color: Colors.Gray400}}>Click or drag to edit selected partitions</div>
         </div>
-        <div style={{display: 'flex', border: `1px solid ${ColorsWIP.Gray200}`}}>
+        <div style={{display: 'flex', border: `1px solid ${Colors.Gray200}`}}>
           {query && (
             <GridFloatingContainer floating={true}>
               <GridColumn disabled>
@@ -514,9 +500,9 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
         ) : null}
       </DialogBody>
       <DialogFooter>
-        <ButtonWIP intent="none" onClick={onCancel}>
+        <Button intent="none" onClick={onCancel}>
           Cancel
-        </ButtonWIP>
+        </Button>
         <LaunchBackfillButton
           partitionNames={selected}
           partitionSetName={partitionSet.name}
@@ -634,10 +620,6 @@ const LaunchBackfillButton: React.FC<{
     />
   );
 };
-
-const FilteredRunsLink = styled.a`
-  text-decoration: underline;
-`;
 
 const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
   query PartitionsBackfillSelectorQuery(
@@ -795,7 +777,7 @@ export const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-export function messageForLaunchBackfillError(data: LaunchPartitionBackfill | null | undefined) {
+function messageForLaunchBackfillError(data: LaunchPartitionBackfill | null | undefined) {
   const result = data?.launchPartitionBackfill;
 
   let errors = <></>;
@@ -820,7 +802,7 @@ export function messageForLaunchBackfillError(data: LaunchPartitionBackfill | nu
       <div>An unexpected error occurred. This backfill was not launched.</div>
       {errors ? (
         <ButtonLink
-          color={ColorsWIP.White}
+          color={Colors.White}
           underline="always"
           onClick={() => {
             showCustomAlert({
@@ -833,6 +815,29 @@ export function messageForLaunchBackfillError(data: LaunchPartitionBackfill | nu
       ) : null}
     </Group>
   );
+}
+
+export function showBackfillErrorToast(data: LaunchPartitionBackfill | null | undefined) {
+  SharedToaster.show({
+    message: messageForLaunchBackfillError(data),
+    icon: 'error',
+    intent: 'danger',
+  });
+}
+
+export function showBackfillSuccessToast(history: History<unknown>, backfillId: string) {
+  SharedToaster.show({
+    intent: 'success',
+    message: (
+      <div>
+        Created backfill <Mono>{backfillId}</Mono>
+      </div>
+    ),
+    action: {
+      text: 'View',
+      onClick: () => history.push(`/instance/backfills`),
+    },
+  });
 }
 
 const DaemonNotRunningAlert: React.FC = () => (

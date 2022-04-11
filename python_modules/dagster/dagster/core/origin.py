@@ -1,4 +1,3 @@
-from collections import namedtuple
 from typing import List, NamedTuple, Optional
 
 from dagster import check
@@ -52,29 +51,37 @@ class RepositoryPythonOrigin(
             ),
         )
 
-    def get_id(self):
+    def get_id(self) -> str:
         return create_snapshot_id(self)
 
-    def get_pipeline_origin(self, pipeline_name):
+    def get_pipeline_origin(self, pipeline_name: str) -> "PipelinePythonOrigin":
         check.str_param(pipeline_name, "pipeline_name")
         return PipelinePythonOrigin(pipeline_name, self)
 
 
 @whitelist_for_serdes
-class PipelinePythonOrigin(namedtuple("_PipelinePythonOrigin", "pipeline_name repository_origin")):
-    def __new__(cls, pipeline_name, repository_origin):
+class PipelinePythonOrigin(
+    NamedTuple(
+        "_PipelinePythonOrigin",
+        [
+            ("pipeline_name", str),
+            ("repository_origin", RepositoryPythonOrigin),
+        ],
+    )
+):
+    def __new__(cls, pipeline_name: str, repository_origin: RepositoryPythonOrigin):
         return super(PipelinePythonOrigin, cls).__new__(
             cls,
             check.str_param(pipeline_name, "pipeline_name"),
             check.inst_param(repository_origin, "repository_origin", RepositoryPythonOrigin),
         )
 
-    def get_id(self):
+    def get_id(self) -> str:
         return create_snapshot_id(self)
 
     @property
-    def executable_path(self):
+    def executable_path(self) -> str:
         return self.repository_origin.executable_path
 
-    def get_repo_pointer(self):
+    def get_repo_pointer(self) -> CodePointer:
         return self.repository_origin.code_pointer

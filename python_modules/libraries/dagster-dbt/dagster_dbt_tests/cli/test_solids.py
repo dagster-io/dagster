@@ -1,5 +1,4 @@
 import pytest
-from dagster import configured, execute_solid
 from dagster_dbt import (
     dbt_cli_compile,
     dbt_cli_docs_generate,
@@ -11,6 +10,8 @@ from dagster_dbt import (
     dbt_cli_test,
 )
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError
+
+from dagster import configured, execute_solid
 
 
 class TestDbtCliSolids:
@@ -26,7 +27,11 @@ class TestDbtCliSolids:
             execute_solid(test_solid)
 
         failure: DagsterDbtCliFatalRuntimeError = exc.value
-        assert "Env var required but not provided:" in failure.metadata_entries[1].entry_data.text
+        expected_str = "Env var required but not provided:"
+        assert (
+            expected_str in str(failure.metadata_entries[0].entry_data.data)
+            or expected_str in failure.metadata_entries[1].entry_data.text
+        )
 
     def test_dbt_cli_run(
         self, dbt_seed, test_project_dir, dbt_config_dir
@@ -145,7 +150,7 @@ class TestDbtCliSolids:
         result = execute_solid(test_solid)
         assert result.success
         assert any(
-            "Log macro: <<test succeded!>>" in log["message"]
+            "Log macro: <<test succeded!>>" in log.get("message", log.get("msg", []))
             for log in result.output_value("dbt_cli_output").logs
         )
 

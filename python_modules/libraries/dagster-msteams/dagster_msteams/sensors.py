@@ -1,11 +1,13 @@
 from typing import Callable, Optional
 
+from dagster_msteams.card import Card
+from dagster_msteams.client import TeamsClient
+
+from dagster import DefaultSensorStatus
 from dagster.core.definitions.run_status_sensor_definition import (
     PipelineFailureSensorContext,
     pipeline_failure_sensor,
 )
-from dagster_msteams.card import Card
-from dagster_msteams.client import TeamsClient
 
 
 def _default_failure_message(context: PipelineFailureSensorContext) -> str:
@@ -28,6 +30,7 @@ def make_teams_on_pipeline_failure_sensor(
     verify: Optional[bool] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
+    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
     """Create a sensor on pipeline failures that will message the given MS Teams webhook URL.
 
@@ -43,6 +46,8 @@ def make_teams_on_pipeline_failure_sensor(
         name: (Optional[str]): The name of the sensor. Defaults to "teams_on_pipeline_failure".
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
             messages to include deeplinks to the failed pipeline run.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
 
     Examples:
 
@@ -81,7 +86,7 @@ def make_teams_on_pipeline_failure_sensor(
         verify=verify,
     )
 
-    @pipeline_failure_sensor(name=name)
+    @pipeline_failure_sensor(name=name, default_status=default_status)
     def teams_on_pipeline_failure(context: PipelineFailureSensorContext):
 
         text = message_fn(context)

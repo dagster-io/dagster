@@ -1,4 +1,4 @@
-from collections import namedtuple
+from typing import NamedTuple, Optional
 
 from dagster import check
 from dagster.config.evaluate_value_result import EvaluateValueResult
@@ -18,8 +18,10 @@ from dagster.core.system_config.objects import SolidConfig
 from dagster.utils.merger import merge_dicts
 
 
-class SolidConfigEntry(namedtuple("_SolidConfigEntry", "handle solid_config")):
-    def __new__(cls, handle, solid_config):
+class SolidConfigEntry(
+    NamedTuple("_SolidConfigEntry", [("handle", NodeHandle), ("solid_config", SolidConfig)])
+):
+    def __new__(cls, handle: NodeHandle, solid_config: SolidConfig):
         return super(SolidConfigEntry, cls).__new__(
             cls,
             check.inst_param(handle, "handle", NodeHandle),
@@ -27,8 +29,12 @@ class SolidConfigEntry(namedtuple("_SolidConfigEntry", "handle solid_config")):
         )
 
 
-class DescentStack(namedtuple("_DescentStack", "pipeline_def handle")):
-    def __new__(cls, pipeline_def, handle):
+class DescentStack(
+    NamedTuple(
+        "_DescentStack", [("pipeline_def", PipelineDefinition), ("handle", Optional[NodeHandle])]
+    )
+):
+    def __new__(cls, pipeline_def: PipelineDefinition, handle: Optional[NodeHandle]):
         return super(DescentStack, cls).__new__(
             cls,
             pipeline_def=check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition),
@@ -46,8 +52,7 @@ class DescentStack(namedtuple("_DescentStack", "pipeline_def handle")):
 
     @property
     def current_handle_str(self):
-        check.invariant(self.handle)
-        return self.handle.to_string()
+        return check.not_none(self.handle).to_string()
 
     def descend(self, solid):
         return self._replace(handle=NodeHandle(solid.name, parent=self.handle))

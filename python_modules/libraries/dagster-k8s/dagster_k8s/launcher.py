@@ -1,7 +1,8 @@
 import sys
 
 import kubernetes
-from dagster import EventMetadataEntry, Field, StringSource, check
+
+from dagster import Field, MetadataEntry, StringSource, check
 from dagster.cli.api import ExecuteRunArgs
 from dagster.core.events import EngineEventData
 from dagster.core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
@@ -27,78 +28,20 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
     Encapsulates each run in a separate, isolated invocation of ``dagster-graphql``.
 
-    You may configure a Dagster instance to use this RunLauncher by adding a section to your
+    You can configure a Dagster instance to use this RunLauncher by adding a section to your
     ``dagster.yaml`` like the following:
 
     .. code-block:: yaml
 
         run_launcher:
-            module: dagster_k8s.launcher
-            class: K8sRunLauncher
-            config:
-                service_account_name: your_service_account
-                job_image: my_project/dagster_image:latest
-                instance_config_map: dagster-instance
-                postgres_password_secret: dagster-postgresql-secret
+          module: dagster_k8s.launcher
+          class: K8sRunLauncher
+          config:
+            service_account_name: your_service_account
+            job_image: my_project/dagster_image:latest
+            instance_config_map: dagster-instance
+            postgres_password_secret: dagster-postgresql-secret
 
-    As always when using a :py:class:`~dagster.serdes.ConfigurableClass`, the values
-    under the ``config`` key of this YAML block will be passed to the constructor. The full list
-    of acceptable values is given below by the constructor args.
-
-    Args:
-        service_account_name (str): The name of the Kubernetes service account under which to run
-            the Job. Defaults to "default"
-        job_image (Optional[str]): The ``name`` of the image to use for the Job's Dagster container.
-            This image will be run with the command
-            ``dagster api execute_run``.
-            When using user code deployments, the image should not be specified.
-        instance_config_map (str): The ``name`` of an existing Volume to mount into the pod in
-            order to provide a ConfigMap for the Dagster instance. This Volume should contain a
-            ``dagster.yaml`` with appropriate values for run storage, event log storage, etc.
-        postgres_password_secret (Optional[str]): The name of the Kubernetes Secret where the postgres
-            password can be retrieved. Will be mounted and supplied as an environment variable to
-            the Job Pod.
-        dagster_home (str): The location of DAGSTER_HOME in the Job container; this is where the
-            ``dagster.yaml`` file will be mounted from the instance ConfigMap specified above.
-        load_incluster_config (Optional[bool]):  Set this value if you are running the launcher
-            within a k8s cluster. If ``True``, we assume the launcher is running within the target
-            cluster and load config using ``kubernetes.config.load_incluster_config``. Otherwise,
-            we will use the k8s config specified in ``kubeconfig_file`` (using
-            ``kubernetes.config.load_kube_config``) or fall back to the default kubeconfig. Default:
-            ``True``.
-        kubeconfig_file (Optional[str]): The kubeconfig file from which to load config. Defaults to
-            None (using the default kubeconfig).
-        image_pull_secrets (Optional[List[Dict[str, str]]]): Optionally, a list of dicts, each of
-            which corresponds to a Kubernetes ``LocalObjectReference`` (e.g.,
-            ``{'name': 'myRegistryName'}``). This allows you to specify the ```imagePullSecrets`` on
-            a pod basis. Typically, these will be provided through the service account, when needed,
-            and you will not need to pass this argument.
-            See:
-            https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod
-            and https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#podspec-v1-core.
-        image_pull_policy (Optional[str]): Allows the image pull policy to be overridden, e.g. to
-            facilitate local testing with `kind <https://kind.sigs.k8s.io/>`_. Default:
-            ``"IfNotPresent"``. See: https://kubernetes.io/docs/concepts/containers/images/#updating-images.
-        job_namespace (Optional[str]): The namespace into which to launch new jobs. Note that any
-            other Kubernetes resources the Job requires (such as the service account) must be
-            present in this namespace. Default: ``"default"``
-        env_config_maps (Optional[List[str]]): A list of custom ConfigMapEnvSource names from which to
-            draw environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:
-            https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container
-        env_secrets (Optional[List[str]]): A list of custom Secret names from which to
-            draw environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:
-            https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
-        env_vars (Optional[List[str]]): A list of environment variables to inject into the Job.
-            Default: ``[]``. See: https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
-        volume_mounts (Optional[List[Permissive]]): A list of volume mounts to include in the job's
-            container. Default: ``[]``. See:
-            https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
-        volumes (Optional[List[Permissive]]): A list of volumes to include in the Job's Pod. Default: ``[]``. See:
-            https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
-        labels (Optional[Dict[str, str]]): Additional labels that should be included in the Job's Pod. See:
-            https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
-        fail_pod_on_run_failure (Optional[bool): Whether the launched Kubernetes Jobs and Pods
-            should fail if the Dagster run fails. Default: False
     """
 
     def __init__(
@@ -195,6 +138,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     @property
     def volumes(self):
         return self._volumes
+
+    @property
+    def env_vars(self):
+        return self._env_vars
 
     @property
     def labels(self):
@@ -310,6 +257,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             user_defined_k8s_config=user_defined_k8s_config,
             labels={
                 "dagster/job": pipeline_origin.pipeline_name,
+                "dagster/run-id": run.run_id,
             },
         )
 
@@ -318,9 +266,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             run,
             EngineEventData(
                 [
-                    EventMetadataEntry.text(job_name, "Kubernetes Job name"),
-                    EventMetadataEntry.text(self.job_namespace, "Kubernetes Namespace"),
-                    EventMetadataEntry.text(run.run_id, "Run ID"),
+                    MetadataEntry("Kubernetes Job name", value=job_name),
+                    MetadataEntry("Kubernetes Namespace", value=self.job_namespace),
+                    MetadataEntry("Run ID", value=run.run_id),
                 ]
             ),
             cls=self.__class__,
@@ -330,13 +278,6 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._instance.report_engine_event(
             "Kubernetes run worker job created",
             run,
-            EngineEventData(
-                [
-                    EventMetadataEntry.text(job_name, "Kubernetes Job name"),
-                    EventMetadataEntry.text(self.job_namespace, "Kubernetes Namespace"),
-                    EventMetadataEntry.text(run.run_id, "Run ID"),
-                ]
-            ),
             cls=self.__class__,
         )
 
@@ -450,4 +391,6 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             )
         if job.status.failed:
             return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
+        if job.status.succeeded:
+            return CheckRunHealthResult(WorkerStatus.SUCCESS)
         return CheckRunHealthResult(WorkerStatus.RUNNING)

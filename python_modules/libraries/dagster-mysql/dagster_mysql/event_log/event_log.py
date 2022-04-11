@@ -1,6 +1,6 @@
 import sqlalchemy as db
+
 from dagster import check, seven
-from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log import (
     AssetKeyTable,
     SqlEventLogStorage,
@@ -12,7 +12,6 @@ from dagster.core.storage.sql import stamp_alembic_rev  # pylint: disable=unused
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
-from dagster.utils.backcompat import experimental_class_warning
 
 from ..utils import (
     MYSQL_POOL_RECYCLE,
@@ -46,7 +45,6 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """
 
     def __init__(self, mysql_url, inst_data=None):
-        experimental_class_warning("MySQLEventLogStorage")
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.mysql_url = check.str_param(mysql_url, "mysql_url")
         self._disposed = False
@@ -121,11 +119,25 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         MySQLEventLogStorage.wipe_storage(conn_string)
         return MySQLEventLogStorage(conn_string)
 
-    def store_asset(self, event):
-        check.inst_param(event, "event", EventLogEntry)
-        if not event.is_dagster_event or not event.dagster_event.asset_key:
-            return
+    def store_asset_observation(self, event):
+        # last_materialization_timestamp is updated upon observation or materialization
+        # See store_asset method in SqlEventLogStorage for more details
+        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+            with self.index_connection() as conn:
+                conn.execute(
+                    db.dialects.mysql.insert(AssetKeyTable)
+                    .values(
+                        asset_key=event.dagster_event.asset_key.to_string(),
+                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
+                    )
+                    .on_duplicate_key_update(
+                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
+                    )
+                )
 
+    def store_asset_materialization(self, event):
+        # last_materialization_timestamp is updated upon observation or materialization
+        # See store_asset method in SqlEventLogStorage for more details
         materialization = event.dagster_event.step_materialization_data.materialization
 
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):

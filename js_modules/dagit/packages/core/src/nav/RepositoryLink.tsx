@@ -1,28 +1,39 @@
-import {Box, ColorsWIP, IconWIP, IconWrapper, Spinner, Tooltip} from '@dagster-io/ui';
+import {Box, Colors, Icon, IconWrapper, Spinner, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
+import {withMiddleTruncation} from '../app/Util';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
 
-export const RepositoryLink: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
+export const RepositoryLink: React.FC<{
+  repoAddress: RepoAddress;
+  showIcon?: boolean;
+  showRefresh?: boolean;
+}> = ({repoAddress, showIcon = false, showRefresh = true}) => {
   const {location} = repoAddress;
   const {canReloadRepositoryLocation} = usePermissions();
 
+  const repoAddressTruncated = [
+    withMiddleTruncation(repoAddress.name, {maxLength: 19}),
+    withMiddleTruncation(repoAddress.location, {maxLength: 19}),
+  ].join('@');
+
   return (
-    <Box flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}>
-      <RepositoryName
-        to={workspacePathFromAddress(repoAddress)}
-        title={repoAddressAsString(repoAddress)}
-      >
-        {repoAddressAsString(repoAddress)}
+    <Box
+      flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}
+      title={repoAddressAsString(repoAddress)}
+    >
+      {showIcon && <Icon name="folder" style={{marginRight: 8}} color={Colors.Gray400} />}
+      <RepositoryName to={workspacePathFromAddress(repoAddress)}>
+        {repoAddressTruncated}
       </RepositoryName>
-      {canReloadRepositoryLocation ? (
+      {canReloadRepositoryLocation && showRefresh ? (
         <ReloadRepositoryLocationButton location={location}>
           {({tryReload, reloading}) => (
             <ReloadTooltip
@@ -40,7 +51,7 @@ export const RepositoryLink: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
                 <Spinner purpose="body-text" />
               ) : (
                 <StyledButton onClick={tryReload}>
-                  <IconWIP name="refresh" color={ColorsWIP.Gray400} />
+                  <Icon name="refresh" color={Colors.Gray400} />
                 </StyledButton>
               )}
             </ReloadTooltip>
@@ -83,6 +94,6 @@ const StyledButton = styled.button`
   }
 
   :hover ${IconWrapper} {
-    color: ${ColorsWIP.Blue500};
+    color: ${Colors.Blue500};
   }
 `;

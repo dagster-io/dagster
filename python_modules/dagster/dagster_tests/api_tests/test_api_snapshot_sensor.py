@@ -1,4 +1,5 @@
 import pytest
+
 from dagster.api.snapshot_sensor import sync_get_external_sensor_execution_data_ephemeral_grpc
 from dagster.core.definitions.sensor_definition import SensorExecutionData
 from dagster.core.errors import DagsterUserCodeProcessError
@@ -26,4 +27,13 @@ def test_external_sensor_error():
             with pytest.raises(DagsterUserCodeProcessError, match="womp womp"):
                 sync_get_external_sensor_execution_data_ephemeral_grpc(
                     instance, repository_handle, "sensor_error", None, None, None
+                )
+
+
+def test_external_sensor_raises_dagster_error():
+    with get_bar_repo_handle() as repository_handle:
+        with instance_for_test() as instance:
+            with pytest.raises(DagsterUserCodeProcessError, match="Dagster error"):
+                sync_get_external_sensor_execution_data_ephemeral_grpc(
+                    instance, repository_handle, "sensor_raises_dagster_error", None, None, None
                 )

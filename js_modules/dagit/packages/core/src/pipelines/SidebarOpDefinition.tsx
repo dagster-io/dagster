@@ -1,12 +1,15 @@
 import {gql} from '@apollo/client';
-import {Box, ColorsWIP, IconWIP} from '@dagster-io/ui';
+import {Box, Colors, FontFamily, Icon} from '@dagster-io/ui';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
-import {breakOnUnderscores} from '../app/Util';
+import {breakOnUnderscores, displayNameForAssetKey} from '../app/Util';
 import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignature';
 import {pluginForMetadata} from '../plugins';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {RepoAddress} from '../workspace/types';
 
 import {Description} from './Description';
@@ -108,7 +111,7 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
           <Box padding={{vertical: 16, horizontal: 24}}>
             {[...requiredResources].sort().map((requirement) => (
               <ResourceContainer key={requirement.resourceKey}>
-                <IconWIP name="resource" color={ColorsWIP.Gray700} />
+                <Icon name="resource" color={Colors.Gray700} />
                 <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
               </ResourceContainer>
             ))}
@@ -146,6 +149,18 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
           ))}
         </Box>
       </SidebarSection>
+      {definition.assetNodes.length > 0 && (
+        <SidebarSection title="Yielded Assets">
+          {definition.assetNodes.map((node) => (
+            <AssetNodeListItem
+              key={node.id}
+              to={`/instance/assets/${node.assetKey.path.join('/')}`}
+            >
+              <Icon name="asset" /> {displayNameForAssetKey(node.assetKey)}
+            </AssetNodeListItem>
+          ))}
+        </SidebarSection>
+      )}
       {getInvocations && (
         <SidebarSection title="All Invocations">
           <InvocationList
@@ -167,6 +182,12 @@ export const SIDEBAR_SOLID_DEFINITION_FRAGMENT = gql`
     metadata {
       key
       value
+    }
+    assetNodes {
+      id
+      assetKey {
+        path
+      }
     }
     outputDefinitions {
       name
@@ -237,22 +258,42 @@ const InvocationList: React.FC<{
   onClickInvocation: (arg: SidebarOpInvocationInfo) => void;
 }> = ({invocations, onClickInvocation}) => {
   const [showAll, setShowAll] = React.useState<boolean>(false);
-  const displayed = showAll ? invocations : invocations.slice(0, DEFAULT_INVOCATIONS_SHOWN);
+  const visible = invocations.filter((i) => i.pipelineName !== __ASSET_GROUP);
+  const clipped = showAll ? visible : visible.slice(0, DEFAULT_INVOCATIONS_SHOWN);
 
   return (
     <>
-      {displayed.map((invocation, idx) => (
+      {clipped.map((invocation, idx) => (
         <Invocation
           key={idx}
           invocation={invocation}
           onClick={() => onClickInvocation(invocation)}
         />
       ))}
-      {displayed.length < invocations.length && (
+      {clipped.length < visible.length && (
         <ShowAllButton onClick={() => setShowAll(true)}>
-          {`Show ${invocations.length - displayed.length} More Invocations`}
+          {`Show ${invocations.length - clipped.length} More Invocations`}
         </ShowAllButton>
       )}
     </>
   );
 };
+
+const AssetNodeListItem = styled(Link)`
+  user-select: none;
+  padding: 12px 24px;
+  cursor: pointer;
+  border-bottom: 1px solid ${Colors.KeylineGray};
+  display: flex;
+  gap: 6px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: ${Colors.Gray50};
+  }
+
+  font-family: ${FontFamily.monospace};
+`;

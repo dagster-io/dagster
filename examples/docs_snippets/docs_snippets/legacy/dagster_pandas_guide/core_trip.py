@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from dagster import Out, job, op
-from dagster.utils import script_relative_path
 from dagster_pandas import PandasColumn, create_dagster_pandas_dataframe_type
 from pandas import DataFrame, read_csv
+
+from dagster import Out, job, op
+from dagster.utils import script_relative_path
 
 # start_core_trip_marker_0
 TripDataFrame = create_dagster_pandas_dataframe_type(
@@ -14,7 +15,9 @@ TripDataFrame = create_dagster_pandas_dataframe_type(
         PandasColumn.datetime_column(
             "start_time", min_datetime=datetime(year=2020, month=2, day=10)
         ),
-        PandasColumn.datetime_column("end_time", min_datetime=datetime(year=2020, month=2, day=10)),
+        PandasColumn.datetime_column(
+            "end_time", min_datetime=datetime(year=2020, month=2, day=10)
+        ),
         PandasColumn.string_column("station"),
         PandasColumn.exists("amount_paid"),
         PandasColumn.boolean_column("was_member"),

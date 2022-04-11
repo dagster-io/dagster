@@ -2,9 +2,6 @@ import json
 import time
 import uuid
 
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
-from dagster.utils import file_relative_path
-from dagster.utils.test import get_temp_file_name
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     RUN_EVENTS_QUERY,
@@ -12,6 +9,10 @@ from dagster_graphql.client.query import (
 )
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import parse
+
+from dagster.core.storage.pipeline_run import RunsFilter
+from dagster.utils import file_relative_path
+from dagster.utils.test import get_temp_file_name
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -306,16 +307,13 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             "ExecutionStepStartEvent",
             "ExecutionStepInputEvent",
             "ExecutionStepOutputEvent",
-            "LogMessageEvent",
             "HandledOutputEvent",
             "ExecutionStepSuccessEvent",
             "LogsCapturedEvent",
             "ExecutionStepStartEvent",
-            "LogMessageEvent",
             "LoadedInputEvent",
             "ExecutionStepInputEvent",
             "ExecutionStepOutputEvent",
-            "LogMessageEvent",
             "HandledOutputEvent",
             "ExecutionStepSuccessEvent",
             "RunSuccessEvent",
@@ -570,7 +568,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         # Check run storage
         runs_with_tag = graphql_context.instance.get_runs(
-            filters=PipelineRunsFilter(tags={"dagster/test_key": "test_value"})
+            filters=RunsFilter(tags={"dagster/test_key": "test_value"})
         )
         assert len(runs_with_tag) == 1
         assert runs_with_tag[0].run_id == run_id

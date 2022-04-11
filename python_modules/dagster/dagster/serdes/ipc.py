@@ -2,9 +2,9 @@ import os
 import signal
 import subprocess
 import sys
-from collections import namedtuple
 from contextlib import contextmanager
 from time import sleep
+from typing import NamedTuple, Optional
 
 from dagster import check
 from dagster.core.errors import DagsterError
@@ -42,20 +42,25 @@ def read_unary_response(output_file, timeout=30, ipc_process=None):
 
 
 @whitelist_for_serdes
-class IPCStartMessage(namedtuple("_IPCStartMessage", "")):
+class IPCStartMessage(NamedTuple("_IPCStartMessage", [])):
     def __new__(cls):
         return super(IPCStartMessage, cls).__new__(cls)
 
 
 @whitelist_for_serdes
-class IPCErrorMessage(namedtuple("_IPCErrorMessage", "serializable_error_info message")):
+class IPCErrorMessage(
+    NamedTuple(
+        "_IPCErrorMessage",
+        [("serializable_error_info", SerializableErrorInfo), ("message", Optional[str])],
+    )
+):
     """
     This represents a user error encountered during the IPC call. This indicates a business
     logic error, rather than a protocol. Consider this a "task failed successfully"
     use case.
     """
 
-    def __new__(cls, serializable_error_info, message):
+    def __new__(cls, serializable_error_info: SerializableErrorInfo, message: Optional[str]):
         return super(IPCErrorMessage, cls).__new__(
             cls,
             serializable_error_info=check.inst_param(
@@ -66,7 +71,7 @@ class IPCErrorMessage(namedtuple("_IPCErrorMessage", "serializable_error_info me
 
 
 @whitelist_for_serdes
-class IPCEndMessage(namedtuple("_IPCEndMessage", "")):
+class IPCEndMessage(NamedTuple("_IPCEndMessage", [])):
     def __new__(cls):
         return super(IPCEndMessage, cls).__new__(cls)
 

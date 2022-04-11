@@ -4,8 +4,9 @@ import uuid
 from unittest import mock
 
 import httplib2
-from dagster import job, seven
 from dagster_gcp import dataproc_op, dataproc_resource
+
+from dagster import job, seven
 
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "default_project")
 CLUSTER_NAME = "test-%s" % uuid.uuid4().hex

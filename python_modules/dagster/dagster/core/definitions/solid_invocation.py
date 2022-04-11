@@ -12,14 +12,14 @@ from .events import AssetMaterialization, DynamicOutput, ExpectationResult, Mate
 from .output import DynamicOutputDefinition
 
 if TYPE_CHECKING:
-    from .solid_definition import SolidDefinition
-    from .decorators.solid import DecoratedSolidFunction
-    from .output import OutputDefinition
-    from .composition import PendingNodeInvocation
     from ..execution.context.invocation import (
         BoundSolidExecutionContext,
         UnboundSolidExecutionContext,
     )
+    from .composition import PendingNodeInvocation
+    from .decorators.solid_decorator import DecoratedSolidFunction
+    from .output import OutputDefinition
+    from .solid_definition import SolidDefinition
 
 
 def solid_invocation_result(
@@ -28,8 +28,9 @@ def solid_invocation_result(
     *args,
     **kwargs,
 ) -> Any:
+    from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
     from dagster.core.execution.context.invocation import build_solid_context
-    from dagster.core.definitions.decorators.solid import DecoratedSolidFunction
+
     from .composition import PendingNodeInvocation
 
     solid_def = (
@@ -127,7 +128,12 @@ def _resolve_inputs(
             f"Too many input arguments were provided for {node_label} '{context.alias}'. {suggestion}"
         )
 
+    # If more args were provided than the function has positional args, then fail early.
     positional_inputs = cast("DecoratedSolidFunction", solid_def.compute_fn).positional_inputs()
+    if len(args) > len(positional_inputs):
+        raise DagsterInvalidInvocationError(
+            f"{solid_def.node_type_str} '{solid_def.name}' has {len(positional_inputs)} positional inputs, but {len(args)} positional inputs were provided."
+        )
 
     input_dict = {}
 
@@ -145,6 +151,12 @@ def _resolve_inputs(
         input_dict[positional_input] = (
             kwargs[positional_input] if positional_input in kwargs else input_def.default_value
         )
+
+    unassigned_kwargs = {k: v for k, v in kwargs.items() if k not in input_dict}
+    # If there are unassigned inputs, then they may be intended for use with a variadic keyword argument.
+    if unassigned_kwargs and cast("DecoratedSolidFunction", solid_def.compute_fn).has_var_kwargs():
+        for k, v in unassigned_kwargs.items():
+            input_dict[k] = v
 
     # Type check inputs
     op_label = context.describe_op()
@@ -187,7 +199,6 @@ def _type_check_output_wrapper(
 
             async for event in async_gen:
                 if isinstance(event, (AssetMaterialization, Materialization, ExpectationResult)):
-                    context.log_event(event)
                     yield event
                 else:
                     if not isinstance(event, (Output, DynamicOutput)):
@@ -229,7 +240,6 @@ def _type_check_output_wrapper(
             outputs_seen = set()
             for event in gen:
                 if isinstance(event, (AssetMaterialization, Materialization, ExpectationResult)):
-                    context.log_event(event)
                     yield event
                 else:
                     if not isinstance(event, (Output, DynamicOutput)):
@@ -343,6 +353,10 @@ def _type_check_output(
                 metadata_entries=type_check.metadata_entries,
                 dagster_type=dagster_type,
             )
+
+        context.observe_output(
+            output.output_name, output.mapping_key if isinstance(output, DynamicOutput) else None
+        )
         return output
     else:
         dagster_type = output_def.dagster_type

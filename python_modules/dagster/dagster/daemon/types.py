@@ -1,5 +1,5 @@
-from collections import namedtuple
 from enum import Enum
+from typing import List, NamedTuple, Optional, cast
 
 from dagster import check
 from dagster.serdes import DefaultNamedTupleSerializer, unpack_inner_value, whitelist_for_serdes
@@ -31,9 +31,9 @@ class DaemonBackcompat(DefaultNamedTupleSerializer):
             descent_path=f"{descent_path}.daemon_type",
         )
         return DaemonHeartbeat(
-            timestamp=storage_dict.get("timestamp"),
+            timestamp=cast(float, storage_dict.get("timestamp")),
             daemon_type=(daemon_type.value if isinstance(daemon_type, DaemonType) else daemon_type),
-            daemon_id=storage_dict.get("daemon_id"),
+            daemon_id=cast(str, storage_dict.get("daemon_id")),
             errors=[
                 unpack_inner_value(
                     storage_dict.get("error"),
@@ -52,27 +52,57 @@ class DaemonBackcompat(DefaultNamedTupleSerializer):
 
 @whitelist_for_serdes(serializer=DaemonBackcompat)
 class DaemonHeartbeat(
-    namedtuple("_DaemonHeartbeat", "timestamp daemon_type daemon_id errors"),
+    NamedTuple(
+        "_DaemonHeartbeat",
+        [
+            ("timestamp", float),
+            ("daemon_type", str),
+            ("daemon_id", Optional[str]),
+            ("errors", Optional[List[SerializableErrorInfo]]),
+        ],
+    ),
 ):
-    def __new__(cls, timestamp, daemon_type, daemon_id, errors=None):
+    def __new__(
+        cls,
+        timestamp: float,
+        daemon_type: str,
+        daemon_id: str,
+        errors: Optional[List[SerializableErrorInfo]] = None,
+    ):
         errors = check.opt_list_param(errors, "errors", of_type=SerializableErrorInfo)
 
         return super(DaemonHeartbeat, cls).__new__(
             cls,
             timestamp=check.float_param(timestamp, "timestamp"),
             daemon_type=check.str_param(daemon_type, "daemon_type"),
-            daemon_id=daemon_id,
+            daemon_id=check.opt_str_param(daemon_id, "daemon_id"),
             errors=errors,
         )
 
 
-class DaemonStatus(namedtuple("_DaemonStatus", "daemon_type required healthy last_heartbeat")):
+class DaemonStatus(
+    NamedTuple(
+        "_DaemonStatus",
+        [
+            ("daemon_type", str),
+            ("required", bool),
+            ("healthy", Optional[bool]),
+            ("last_heartbeat", Optional[DaemonHeartbeat]),
+        ],
+    )
+):
     """
     Daemon statuses are derived from daemon heartbeats and instance configuration to provide an
     overview about the daemon's liveness.
     """
 
-    def __new__(cls, daemon_type, required, healthy, last_heartbeat):
+    def __new__(
+        cls,
+        daemon_type: str,
+        required: bool,
+        healthy: Optional[bool],
+        last_heartbeat: Optional[DaemonHeartbeat],
+    ):
         return super(DaemonStatus, cls).__new__(
             cls,
             daemon_type=check.str_param(daemon_type, "daemon_type"),

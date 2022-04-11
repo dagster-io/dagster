@@ -157,7 +157,7 @@ def test_aggregate_constraint():
         raise_or_typecheck=False,
     )
     val = aggregate_val.validate(df, *df.columns).metadata_entries[0].entry_data.data
-    assert {"foo"} == val["offending"]
+    assert ["foo"] == val["offending"]
     assert [1, 2] == val["actual"]["foo"]
 
 

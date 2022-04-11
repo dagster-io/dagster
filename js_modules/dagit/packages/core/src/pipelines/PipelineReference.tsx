@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, IconWIP} from '@dagster-io/ui';
+import {Box, Colors, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -13,10 +13,11 @@ export interface Props {
   isJob: boolean;
   snapshotId?: string | null;
   showIcon?: boolean;
+  truncationThreshold?: number;
   size?: 'small' | 'normal';
 }
 
-const TRUNCATION_THRESHOLD = 40;
+const DEFAULT_TRUNCATION_THRESHOLD = 40;
 const TRUNCATION_BUFFER = 5;
 
 export const PipelineReference: React.FC<Props> = ({
@@ -25,11 +26,12 @@ export const PipelineReference: React.FC<Props> = ({
   isJob,
   snapshotId,
   showIcon,
+  truncationThreshold = DEFAULT_TRUNCATION_THRESHOLD,
   size = 'normal',
 }) => {
   const truncatedName =
-    pipelineName.length > TRUNCATION_THRESHOLD
-      ? `${pipelineName.slice(0, TRUNCATION_THRESHOLD - TRUNCATION_BUFFER)}…`
+    truncationThreshold > 0 && pipelineName.length > truncationThreshold
+      ? `${pipelineName.slice(0, truncationThreshold - TRUNCATION_BUFFER)}…`
       : pipelineName;
 
   const pipeline =
@@ -54,7 +56,7 @@ export const PipelineReference: React.FC<Props> = ({
     <Box flex={{direction: 'row', alignItems: 'center', display: 'inline-flex'}}>
       {showIcon && (
         <Box margin={{right: 8}}>
-          <IconWIP color={ColorsWIP.Gray400} name="job" />
+          <Icon color={Colors.Gray400} name="job" />
         </Box>
       )}
       <span>

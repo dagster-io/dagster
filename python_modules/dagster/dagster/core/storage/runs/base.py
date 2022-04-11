@@ -8,8 +8,8 @@ from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 from dagster.core.storage.pipeline_run import (
     JobBucket,
     PipelineRun,
-    PipelineRunsFilter,
     RunRecord,
+    RunsFilter,
     TagBucket,
 )
 from dagster.daemon.types import DaemonHeartbeat
@@ -50,16 +50,16 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     @abstractmethod
     def get_runs(
         self,
-        filters: PipelineRunsFilter = None,
-        cursor: str = None,
-        limit: int = None,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> Iterable[PipelineRun]:
         """Return all the runs present in the storage that match the given filters.
 
         Args:
-            filters (Optional[PipelineRunsFilter]) -- The
-                :py:class:`~dagster.core.storage.pipeline_run.PipelineRunsFilter` by which to filter
+            filters (Optional[RunsFilter]) -- The
+                :py:class:`~dagster.core.storage.pipeline_run.RunsFilter` by which to filter
                 runs
             cursor (Optional[str]): Starting cursor (run_id) of range of runs
             limit (Optional[int]): Number of results to get. Defaults to infinite.
@@ -69,11 +69,11 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
+    def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
         """Return the number of runs present in the storage that match the given filters.
 
         Args:
-            filters (Optional[PipelineRunsFilter]) -- The
+            filters (Optional[RunsFilter]) -- The
                 :py:class:`~dagster.core.storage.pipeline_run.PipelineRunFilter` by which to filter
                 runs
 
@@ -99,14 +99,17 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def get_run_groups(
-        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
+        self,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         """Return all of the run groups present in the storage that include rows matching the
         given filter.
 
         Args:
-            filter (Optional[PipelineRunsFilter]) -- The
-                :py:class:`~dagster.core.storage.pipeline_run.PipelineRunsFilter` by which to filter
+            filter (Optional[RunsFilter]) -- The
+                :py:class:`~dagster.core.storage.pipeline_run.RunsFilter` by which to filter
                 runs
             cursor (Optional[str]): Starting cursor (run_id) of range of runs
             limit (Optional[int]): Number of results to get. Defaults to infinite.
@@ -147,17 +150,17 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     @abstractmethod
     def get_run_records(
         self,
-        filters: PipelineRunsFilter = None,
-        limit: int = None,
-        order_by: str = None,
+        filters: Optional[RunsFilter] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[str] = None,
         ascending: bool = False,
-        cursor: str = None,
+        cursor: Optional[str] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 
         Args:
-            filters (Optional[PipelineRunsFilter]): the filter by which to filter runs.
+            filters (Optional[RunsFilter]): the filter by which to filter runs.
             limit (Optional[int]): Number of results to get. Defaults to infinite.
             order_by (Optional[str]): Name of the column to sort by. Defaults to id.
             ascending (Optional[bool]): Sort the result in ascending order if True, descending
@@ -315,10 +318,14 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     def delete_run(self, run_id: str):
         """Remove a run from storage"""
 
-    def migrate(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+    @property
+    def supports_bucket_queries(self):
+        return True
+
+    def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
         """Call this method to run any required data migrations"""
 
-    def optimize(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+    def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
         """Call this method to run any optional data migrations for optimized reads"""
 
     def dispose(self):
@@ -349,7 +356,10 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     # Backfill storage
     @abstractmethod
     def get_backfills(
-        self, status: BulkActionStatus = None, cursor: str = None, limit: int = None
+        self,
+        status: Optional[BulkActionStatus] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> List[PartitionBackfill]:
         """Get a list of partition backfills"""
 

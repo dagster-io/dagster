@@ -1,6 +1,14 @@
 from dagster import job, op, static_partitioned_config
 
-CONTINENTS = ["Africa", "Antarctica", "Asia", "Europe", "North America", "Oceania", "South America"]
+CONTINENTS = [
+    "Africa",
+    "Antarctica",
+    "Asia",
+    "Europe",
+    "North America",
+    "Oceania",
+    "South America",
+]
 
 
 @static_partitioned_config(partition_keys=CONTINENTS)

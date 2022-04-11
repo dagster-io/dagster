@@ -35,7 +35,7 @@ from .output import OutputDefinition, OutputMapping
 from .solid_invocation import solid_invocation_result
 
 if TYPE_CHECKING:
-    from .decorators.solid import DecoratedSolidFunction
+    from .decorators.solid_decorator import DecoratedSolidFunction
 
 
 class SolidDefinition(NodeDefinition):
@@ -105,7 +105,7 @@ class SolidDefinition(NodeDefinition):
         version: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):
-        from .decorators.solid import DecoratedSolidFunction
+        from .decorators.solid_decorator import DecoratedSolidFunction
 
         if isinstance(compute_fn, DecoratedSolidFunction):
             self._compute_fn: Union[Callable[..., Any], DecoratedSolidFunction] = compute_fn
@@ -137,9 +137,9 @@ class SolidDefinition(NodeDefinition):
         )
 
     def __call__(self, *args, **kwargs) -> Any:
-        from .composition import is_in_composition
-        from .decorators.solid import DecoratedSolidFunction
         from ..execution.context.invocation import UnboundSolidExecutionContext
+        from .composition import is_in_composition
+        from .decorators.solid_decorator import DecoratedSolidFunction
 
         if is_in_composition():
             return super(SolidDefinition, self).__call__(*args, **kwargs)

@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -17,7 +17,6 @@ const NoOp = () => {};
 
 interface IPipelineGraphProps {
   pipelineName: string;
-  backgroundColor: string;
   layout: IFullPipelineLayout;
   ops: PipelineGraphOpFragment[];
   focusOps: PipelineGraphOpFragment[];
@@ -106,7 +105,7 @@ const PipelineGraphContents: React.FC<IPipelineContentsProps> = React.memo((prop
           {...layout.parent.invocationBoundingBox}
           key={`composite-rect-${parentHandleID}`}
           label=""
-          fill={ColorsWIP.Yellow50}
+          fill={Colors.Yellow50}
           minified={minified}
         />
       )}
@@ -119,7 +118,7 @@ const PipelineGraphContents: React.FC<IPipelineContentsProps> = React.memo((prop
           {...layout.ops[selectedOp.name].op}
           key={`composite-rect-${selectedHandleID}`}
           label={''}
-          fill={ColorsWIP.Gray50}
+          fill={Colors.Gray50}
           minified={true}
         />
       )} */}
@@ -139,14 +138,14 @@ const PipelineGraphContents: React.FC<IPipelineContentsProps> = React.memo((prop
       <OpLinks
         ops={ops}
         layout={layout}
-        color={ColorsWIP.KeylineGray}
+        color={Colors.KeylineGray}
         connections={layout.connections}
         onHighlight={setHighlighted}
       />
       <OpLinks
         ops={ops}
         layout={layout}
-        color={ColorsWIP.Blue500}
+        color={Colors.Blue500}
         onHighlight={setHighlighted}
         connections={layout.connections.filter(({from, to}) =>
           isHighlighted(highlighted, {
@@ -315,14 +314,7 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
   }
 
   render() {
-    const {
-      layout,
-      interactor,
-      pipelineName,
-      backgroundColor,
-      onClickBackground,
-      onDoubleClickOp,
-    } = this.props;
+    const {layout, interactor, pipelineName, onClickBackground, onDoubleClickOp} = this.props;
 
     return (
       <SVGViewport
@@ -330,7 +322,6 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
         key={pipelineName}
         maxZoom={1.2}
         interactor={interactor || SVGViewport.Interactors.PanAndZoom}
-        backgroundColor={backgroundColor}
         graphWidth={layout.width}
         graphHeight={layout.height}
         onKeyDown={this.onKeyDown}

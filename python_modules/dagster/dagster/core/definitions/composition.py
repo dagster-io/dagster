@@ -24,7 +24,7 @@ from dagster.core.errors import (
 from dagster.utils import frozentags
 
 from .config import ConfigMapping
-from .decorators.solid import (
+from .decorators.solid_decorator import (
     DecoratedSolidFunction,
     NoContextDecoratedSolidFunction,
     resolve_checked_solid_fn_inputs,
@@ -49,11 +49,12 @@ from .utils import check_valid_name, validate_tags
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
+    from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster.core.instance import DagsterInstance
-    from .partition import PartitionedConfig, PartitionsDefinition
+
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
-    from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+    from .partition import PartitionedConfig, PartitionsDefinition
 
 
 _composition_stack: List["InProgressCompositionContext"] = []
@@ -303,8 +304,8 @@ class PendingNodeInvocation:
             current_context().add_pending_invocation(self)
 
     def __call__(self, *args, **kwargs):
-        from .solid_invocation import solid_invocation_result
         from ..execution.context.invocation import UnboundSolidExecutionContext
+        from .solid_invocation import solid_invocation_result
 
         node_name = self.given_alias if self.given_alias else self.node_def.name
 
@@ -563,7 +564,7 @@ class PendingNodeInvocation:
         name: Optional[str] = None,
         description: Optional[str] = None,
         resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
-        config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
+        config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
         tags: Optional[Dict[str, Any]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
@@ -600,10 +601,11 @@ class PendingNodeInvocation:
 
     def execute_in_process(
         self,
-        run_config: Any = None,
+        run_config: Optional[Any] = None,
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
+        run_id: Optional[str] = None,
     ) -> "ExecuteInProcessResult":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
@@ -613,9 +615,10 @@ class PendingNodeInvocation:
 
         from dagster.core.execution.build_resources import wrap_resources_for_execution
         from dagster.core.execution.execute_in_process import core_execute_in_process
-        from .mode import ModeDefinition
-        from .job_definition import JobDefinition
+
         from .executor_definition import execute_in_process_executor
+        from .job_definition import JobDefinition
+        from .mode import ModeDefinition
 
         if len(self.node_def.input_defs) > 0:
             raise DagsterInvariantViolationError(
@@ -641,6 +644,7 @@ class PendingNodeInvocation:
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
+            run_id=run_id,
         )
 
 
@@ -1039,10 +1043,17 @@ def do_composition(
         ]
 
         if len(mappings) == 0:
+            if decorator_name in {"@op", "@graph"}:
+                invocation_name = "op/graph"
+            else:
+                invocation_name = "solid"
             raise DagsterInvalidDefinitionError(
                 "{decorator_name} '{graph_name}' has unmapped input '{input_name}'. "
-                "Remove it or pass it to the appropriate solid invocation.".format(
-                    decorator_name=decorator_name, graph_name=graph_name, input_name=defn.name
+                "Remove it or pass it to the appropriate {invocation_name} invocation.".format(
+                    decorator_name=decorator_name,
+                    graph_name=graph_name,
+                    input_name=defn.name,
+                    invocation_name=invocation_name,
                 )
             )
 

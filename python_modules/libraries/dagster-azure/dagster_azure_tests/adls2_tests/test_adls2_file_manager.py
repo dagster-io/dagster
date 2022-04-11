@@ -1,6 +1,13 @@
 import uuid
 from unittest import mock
 
+from dagster_azure.adls2 import (
+    ADLS2FileHandle,
+    ADLS2FileManager,
+    FakeADLS2Resource,
+    adls2_file_manager,
+)
+
 from dagster import (
     InputDefinition,
     ModeDefinition,
@@ -12,12 +19,6 @@ from dagster import (
     op,
     pipeline,
     solid,
-)
-from dagster_azure.adls2 import (
-    ADLS2FileHandle,
-    ADLS2FileManager,
-    FakeADLS2Resource,
-    adls2_file_manager,
 )
 
 # For deps

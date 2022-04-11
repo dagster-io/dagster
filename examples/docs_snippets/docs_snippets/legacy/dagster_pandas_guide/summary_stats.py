@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from dagster import Out, job, op
-from dagster.utils import script_relative_path
 from dagster_pandas import create_dagster_pandas_dataframe_type
 from pandas import DataFrame, read_csv
+
+from dagster import Out, job, op
+from dagster.utils import script_relative_path
 
 
 # start_summary
@@ -18,7 +19,8 @@ def compute_trip_dataframe_summary_statistics(dataframe):
 
 
 SummaryStatsTripDataFrame = create_dagster_pandas_dataframe_type(
-    name="SummaryStatsTripDataFrame", event_metadata_fn=compute_trip_dataframe_summary_statistics
+    name="SummaryStatsTripDataFrame",
+    event_metadata_fn=compute_trip_dataframe_summary_statistics,
 )
 # end_summary
 

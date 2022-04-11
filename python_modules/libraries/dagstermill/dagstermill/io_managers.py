@@ -4,8 +4,8 @@ from typing import Any, List, Optional
 
 from dagster import check
 from dagster.config.field import Field
-from dagster.core.definitions.event_metadata import EventMetadataEntry
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster.core.execution.context.input import InputContext
 from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.io_manager import IOManager, io_manager
@@ -49,7 +49,7 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
         mkdir_p(os.path.dirname(output_notebook_path))
         with open(output_notebook_path, self.write_mode) as dest_file_obj:
             dest_file_obj.write(obj)
-        yield EventMetadataEntry.fspath(path=output_notebook_path, label="path")
+        yield MetadataEntry("path", value=MetadataValue.path(output_notebook_path))
 
     def load_input(self, context) -> bytes:
         check.inst_param(context, "context", InputContext)

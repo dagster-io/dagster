@@ -1,10 +1,11 @@
 from unittest import mock
 
-import dagster
 import pytest
-from dagster.utils.test import create_test_pipeline_execution_context
 from dagster_databricks.databricks import DatabricksError, DatabricksJobRunner, DatabricksRunState
 from dagster_databricks.types import DatabricksRunLifeCycleState, DatabricksRunResultState
+
+import dagster
+from dagster.utils.test import create_test_pipeline_execution_context
 
 HOST = "https://uksouth.azuredatabricks.net"
 TOKEN = "super-secret-token"

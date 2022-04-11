@@ -1,4 +1,5 @@
 import graphene
+
 from dagster import check
 from dagster.core.snap import ConfigSchemaSnapshot, ModeDefSnap
 

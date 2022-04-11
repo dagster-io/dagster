@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="dbt_example",
-    version="dev",
+    version="0+dev",
     author_email="hello@elementl.com",
     packages=["dbt_example"],
     include_package_data=True,
@@ -14,7 +14,8 @@ setup(
         "dagster-postgres",
         "dagster-slack",
         "dagstermill",
-        "dbt",
+        "dbt-core",
+        "dbt-postgres",
     ],
     author="Elementl",
     license="Apache-2.0",

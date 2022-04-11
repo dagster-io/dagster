@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { InstigationSelector, InstigationType, InstigationTickStatus } from "./../../types/globalTypes";
+import { InstigationSelector, InstigationTickStatus, InstigationType, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: TickHistoryQuery
@@ -12,6 +12,13 @@ import { InstigationSelector, InstigationType, InstigationTickStatus } from "./.
 export interface TickHistoryQuery_instigationStateOrError_InstigationState_nextTick {
   __typename: "FutureInstigationTick";
   timestamp: number;
+}
+
+export interface TickHistoryQuery_instigationStateOrError_InstigationState_ticks_runs {
+  __typename: "Run";
+  id: string;
+  status: RunStatus;
+  runId: string;
 }
 
 export interface TickHistoryQuery_instigationStateOrError_InstigationState_ticks_error_cause {
@@ -32,10 +39,13 @@ export interface TickHistoryQuery_instigationStateOrError_InstigationState_ticks
   id: string;
   status: InstigationTickStatus;
   timestamp: number;
+  cursor: string | null;
   skipReason: string | null;
   runIds: string[];
+  runs: TickHistoryQuery_instigationStateOrError_InstigationState_ticks_runs[];
   originRunIds: string[];
   error: TickHistoryQuery_instigationStateOrError_InstigationState_ticks_error | null;
+  runKeys: string[];
 }
 
 export interface TickHistoryQuery_instigationStateOrError_InstigationState {
@@ -69,4 +79,6 @@ export interface TickHistoryQueryVariables {
   instigationSelector: InstigationSelector;
   dayRange?: number | null;
   limit?: number | null;
+  cursor?: string | null;
+  statuses?: InstigationTickStatus[] | null;
 }

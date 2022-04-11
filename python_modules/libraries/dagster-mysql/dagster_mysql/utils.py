@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 import mysql.connector as mysql
 import sqlalchemy as db
+
 from dagster import Field, IntSource, Selector, StringSource, check
 from dagster.core.storage.sql import get_alembic_config, handle_schema_errors
 
@@ -161,11 +162,7 @@ def create_mysql_connection(engine, dunder_file, storage_type_desc=None):
     try:
         # Retry connection to gracefully handle transient connection issues
         conn = retry_mysql_connection_fn(engine.connect)
-        with handle_schema_errors(
-            conn,
-            mysql_alembic_config(dunder_file),
-            msg="MySQL {}storage requires migration".format(storage_type_desc),
-        ):
+        with handle_schema_errors(conn, mysql_alembic_config(dunder_file)):
             yield conn
     finally:
         if conn:

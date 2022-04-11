@@ -21,7 +21,8 @@ For example, imagine you have the following code:
 
 ```python file=/concepts/logging/python_logger.py startafter=start_python_logger endbefore=end_python_logger dedent=4
 import logging
-from dagster import op
+
+from dagster import graph, op
 
 @op
 def ambitious_op():
@@ -39,7 +40,7 @@ With the default behavior, because this code uses a custom python logger (instea
 
 This can be accomplished by setting the `managed_python_loggers` key in your dagster.yaml file to a list of python logger names that you would like to capture:
 
-```yaml file=/concepts/logging/python_logging_managed_loggers_config2.yaml
+```yaml file=/concepts/logging/python_logging_managed_loggers_config.yaml
 python_logs:
   managed_python_loggers:
     - my_logger
@@ -64,7 +65,7 @@ Note: if a `python_log_level` is set (see: [Configuring A Python Log Level](#con
 If you would like to create a logger that is captured by Dagster without modifying your `dagster.yaml` file, you can use the provided <PyObject module="dagster" object="get_dagster_logger"/> utility function. This pattern is useful when logging from inside of nested functions, or other cases where it would be inconvenient to thread through the context parameter to enable calls to `context.log`.
 
 ```python file=/concepts/logging/python_logger.py startafter=start_get_logger endbefore=end_get_logger dedent=4
-from dagster import get_dagster_logger, op
+from dagster import get_dagster_logger, graph, op
 
 @op
 def ambitious_op():
@@ -79,16 +80,6 @@ def ambitious_op():
 ```
 
 Note: The logging module retains global state, meaning the logger returned by this function will be identical if this function is called multiple times with the same arguments in the same process. This means that there may be unpredictable or unituitive results if you set the level of the returned python logger to different values in different parts of your code.
-
-### Example: Capturing logs from all python loggers
-
-If you would like to capture logs from ALL python loggers, you can simply include `root` in your list, as python loggers are arranged in a hierarchy, with `root` as the parent of all other loggers:
-
-```yaml file=/concepts/logging/python_logging_managed_loggers_config.yaml
-python_logs:
-  managed_python_loggers:
-    - root
-```
 
 ## Configuring A Python Log Level <Experimental />
 

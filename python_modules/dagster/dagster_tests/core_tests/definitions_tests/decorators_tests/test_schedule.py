@@ -4,6 +4,8 @@ from datetime import datetime, time
 
 import pendulum
 import pytest
+from dateutil.relativedelta import relativedelta
+
 from dagster import (
     DagsterInvalidDefinitionError,
     RunRequest,
@@ -27,7 +29,6 @@ from dagster.utils.partitions import (
     DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,
     DEFAULT_MONTHLY_FORMAT,
 )
-from dateutil.relativedelta import relativedelta
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
 # pylint: disable=unused-variable, unused-argument, redefined-outer-name
@@ -734,7 +735,7 @@ def test_schedule_decorators_bad():
 
     with pytest.raises(DagsterInvalidDefinitionError, match="invalid cron schedule"):
 
-        @schedule(cron_schedule="@daily", pipeline_name="foo_pipeline")
+        @schedule(cron_schedule="* * * * * *", pipeline_name="foo_pipeline")
         def bad_cron_string_three(context):
             return {}
 
@@ -994,3 +995,26 @@ def test_request_based_schedule_generator_no_context():
     assert len(requests) == 1
     assert requests[0].run_config == FOO_CONFIG
     assert requests[0].tags.get("foo") == "FOO"
+
+
+def test_vixie_cronstring_schedule():
+    context_without_time = build_schedule_context()
+    start_date = datetime(year=2019, month=1, day=1)
+
+    @op
+    def foo_op(context):
+        pass
+
+    @job
+    def foo_job():
+        foo_op()
+
+    @schedule(cron_schedule="@daily", job=foo_job)
+    def foo_schedule():
+        yield RunRequest(run_key=None, run_config={}, tags={"foo": "FOO"})
+
+    # evaluate tick
+    execution_data = foo_schedule.evaluate_tick(context_without_time)
+    assert execution_data.run_requests
+    assert len(execution_data.run_requests) == 1
+    assert execution_data.run_requests[0].tags.get("foo") == "FOO"

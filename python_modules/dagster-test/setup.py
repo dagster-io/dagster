@@ -1,9 +1,9 @@
-from setuptools import find_packages, setup  # type: ignore
+from setuptools import find_packages, setup
 
 if __name__ == "__main__":
     setup(
         name="dagster-test",
-        version="dev",
+        version="0+dev",
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
@@ -17,7 +17,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=find_packages(exclude=["test"]),
+        packages=find_packages(exclude=["dagster_test_tests*"]),
         install_requires=[
             "dagster",
             "pyspark",

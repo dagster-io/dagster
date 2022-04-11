@@ -1,9 +1,9 @@
-import {TokenizingFieldValue} from '@dagster-io/ui';
 import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import moment from 'moment';
 import * as React from 'react';
 
+import {RunFilterToken} from '../runs/RunsFilterInput';
 import {StorybookProvider} from '../testing/StorybookProvider';
 import {RunStatus, StepEventStatus} from '../types/globalTypes';
 
@@ -34,10 +34,10 @@ interface ISolidHandle {
 // to make them work just filter our sample data.
 function simulateTagFilteringInQuery(
   runs: PartitionSetLoaderRunFragment[],
-  runTags: TokenizingFieldValue[],
+  runFilters: RunFilterToken[],
 ) {
   return runs.filter((r) =>
-    runTags.every((t) => r.tags.some((rt) => `${rt.key}=${rt.value}` === t.value)),
+    runFilters.every((t) => r.tags.some((rt) => `${rt.key}=${rt.value}` === t.value)),
   );
 }
 
@@ -123,7 +123,7 @@ const PipelineMocks = {
 };
 
 export const BasicTestCases = () => {
-  const [runTags, setRunTags] = React.useState<TokenizingFieldValue[]>([]);
+  const [runFilters, setRunFilters] = React.useState<RunFilterToken[]>([]);
   const [stepQuery, setStepQuery] = React.useState('');
   const partitions: {name: string; runs: PartitionSetLoaderRunFragment[]}[] = [];
 
@@ -230,14 +230,14 @@ export const BasicTestCases = () => {
       <PartitionRunMatrix
         pipelineName="TestPipeline"
         repoAddress={{name: 'Test', location: 'TestLocation'}}
-        runTags={runTags}
-        setRunTags={setRunTags}
+        runFilters={runFilters}
+        setRunFilters={setRunFilters}
         stepQuery={stepQuery}
         setStepQuery={setStepQuery}
         partitions={partitions.map((p) => ({
           ...p,
           runsLoaded: true,
-          runs: simulateTagFilteringInQuery(p.runs, runTags),
+          runs: simulateTagFilteringInQuery(p.runs, runFilters),
         }))}
       />
     </StorybookProvider>
@@ -245,7 +245,7 @@ export const BasicTestCases = () => {
 };
 
 export const LargeDataset = () => {
-  const [runTags, setRunTags] = React.useState<TokenizingFieldValue[]>([]);
+  const [runFilters, setRunFilters] = React.useState<RunFilterToken[]>([]);
   const [stepQuery, setStepQuery] = React.useState('');
   const partitions = React.useMemo(() => {
     const results: {name: string; runs: PartitionSetLoaderRunFragment[]}[] = [];
@@ -277,14 +277,14 @@ export const LargeDataset = () => {
       <PartitionRunMatrix
         pipelineName="TestPipeline"
         repoAddress={{name: 'Test', location: 'TestLocation'}}
-        runTags={runTags}
-        setRunTags={setRunTags}
+        runFilters={runFilters}
+        setRunFilters={setRunFilters}
         stepQuery={stepQuery}
         setStepQuery={setStepQuery}
         partitions={partitions.map((p) => ({
           ...p,
           runsLoaded: true,
-          runs: simulateTagFilteringInQuery(p.runs, runTags),
+          runs: simulateTagFilteringInQuery(p.runs, runFilters),
         }))}
       />
     </StorybookProvider>

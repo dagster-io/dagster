@@ -1,7 +1,8 @@
 import {useMutation} from '@apollo/client';
 import * as React from 'react';
+import {useHistory} from 'react-router';
 
-import {AppContext} from '../app/AppContext';
+import {IconName} from '../../../ui/src';
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {TelemetryAction, useTelemetryAction} from '../app/Telemetry';
 import {LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult} from '../runs/RunUtils';
@@ -16,19 +17,19 @@ import {showLaunchError} from './showLaunchError';
 interface LaunchRootExecutionButtonProps {
   disabled: boolean;
   getVariables: () => undefined | LaunchPipelineExecutionVariables;
+  behavior: 'open' | 'open-in-new-tab' | 'toast';
   pipelineName: string;
   title?: string;
+  icon?: IconName;
 }
 
-export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecutionButtonProps> = (
-  props,
-) => {
+export const LaunchRootExecutionButton: React.FC<LaunchRootExecutionButtonProps> = (props) => {
   const {canLaunchPipelineExecution} = usePermissions();
   const [launchPipelineExecution] = useMutation<LaunchPipelineExecution>(
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
   );
-  const {basePath} = React.useContext(AppContext);
   const logTelemetry = useTelemetryAction();
+  const history = useHistory();
 
   const onLaunch = async () => {
     const variables = props.getVariables();
@@ -47,7 +48,7 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
     try {
       const result = await launchPipelineExecution({variables});
       logTelemetry(TelemetryAction.LAUNCH_RUN, metadata);
-      handleLaunchResult(basePath, props.pipelineName, result, {});
+      handleLaunchResult(props.pipelineName, result, history, {behavior: props.behavior});
     } catch (error) {
       showLaunchError(error as Error);
     }
@@ -57,8 +58,8 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
     <LaunchButton
       runCount={1}
       config={{
-        icon: 'open_in_new',
         onClick: onLaunch,
+        icon: props.icon || 'open_in_new',
         title: props.title || 'Launch Run',
         disabled: props.disabled || !canLaunchPipelineExecution,
         tooltip: !canLaunchPipelineExecution ? DISABLED_MESSAGE : undefined,

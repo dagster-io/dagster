@@ -1,5 +1,6 @@
 import inspect
-from collections import namedtuple
+from types import ModuleType
+from typing import Callable, List, NamedTuple, Optional, Sequence, Type
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -8,17 +9,27 @@ from dagster import (
     PipelineDefinition,
     RepositoryDefinition,
 )
+from dagster.core.asset_defs import AssetGroup
 from dagster.core.code_pointer import load_python_file, load_python_module
 
-LoadableTarget = namedtuple("LoadableTarget", "attribute target_definition")
+
+class LoadableTarget(NamedTuple):
+    attribute: str
+    target_definition: object
 
 
-def loadable_targets_from_python_file(python_file, working_directory=None):
+def loadable_targets_from_python_file(
+    python_file: str, working_directory: Optional[str] = None
+) -> Sequence[LoadableTarget]:
     loaded_module = load_python_file(python_file, working_directory)
     return loadable_targets_from_loaded_module(loaded_module)
 
 
-def loadable_targets_from_python_module(module_name, working_directory, remove_from_path_fn=None):
+def loadable_targets_from_python_module(
+    module_name: str,
+    working_directory: Optional[str],
+    remove_from_path_fn: Callable[[], List[str]] = None,
+) -> Sequence[LoadableTarget]:
     module = load_python_module(
         module_name,
         working_directory=working_directory,
@@ -27,14 +38,18 @@ def loadable_targets_from_python_module(module_name, working_directory, remove_f
     return loadable_targets_from_loaded_module(module)
 
 
-def loadable_targets_from_python_package(package_name, working_directory, remove_from_path_fn=None):
+def loadable_targets_from_python_package(
+    package_name: str,
+    working_directory: Optional[str],
+    remove_from_path_fn: Callable[[], List[str]] = None,
+) -> Sequence[LoadableTarget]:
     module = load_python_module(
         package_name, working_directory, remove_from_path_fn=remove_from_path_fn
     )
     return loadable_targets_from_loaded_module(module)
 
 
-def loadable_targets_from_loaded_module(module):
+def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
     loadable_repos = _loadable_targets_of_type(module, RepositoryDefinition)
     if loadable_repos:
         return loadable_repos
@@ -78,13 +93,29 @@ def loadable_targets_from_loaded_module(module):
             )
         )
 
-    else:
+    loadable_asset_groups = _loadable_targets_of_type(module, AssetGroup)
+    if len(loadable_asset_groups) == 1:
+        return loadable_asset_groups
+
+    elif len(loadable_asset_groups) > 1:
+        var_names = repr([a.attribute for a in loadable_asset_groups])
         raise DagsterInvariantViolationError(
-            'No jobs, pipelines, graphs, or repositories found in "{}".'.format(module.__name__)
+            (
+                f'More than one asset collection found in "{module.__name__}". '
+                "If you load a file or module directly it must either have one repository, one "
+                "job, one pipeline, one graph, or one asset collection scope. Found asset "
+                f"collections defined in variables: {var_names}."
+            )
         )
 
+    raise DagsterInvariantViolationError(
+        'No jobs, pipelines, graphs, asset collections, or repositories found in "{}".'.format(
+            module.__name__
+        )
+    )
 
-def _loadable_targets_of_type(module, klass):
+
+def _loadable_targets_of_type(module: ModuleType, klass: Type) -> Sequence[LoadableTarget]:
     loadable_targets = []
     for name, value in inspect.getmembers(module):
         if isinstance(value, klass):

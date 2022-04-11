@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel  # pylint: disable=no-name-in-module
+from pydantic import BaseModel, Extra  # pylint: disable=no-name-in-module
 
 
 class PythonLogLevel(str, Enum):
@@ -19,3 +19,6 @@ class PythonLogs(BaseModel):
     pythonLogLevel: Optional[PythonLogLevel]
     managedPythonLoggers: Optional[List[str]]
     dagsterHandlerConfig: Optional[Dict[str, Any]]
+
+    class Config:
+        extra = Extra.forbid

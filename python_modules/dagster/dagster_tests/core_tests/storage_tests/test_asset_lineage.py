@@ -1,4 +1,5 @@
 import pytest
+
 from dagster import (
     AssetKey,
     DynamicOutput,
@@ -12,8 +13,8 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.definitions.event_metadata import EventMetadataEntry, PartitionMetadataEntry
 from dagster.core.definitions.events import AssetLineageInfo
+from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.storage.io_manager import IOManager
 
@@ -125,10 +126,10 @@ def test_multiple_definition_fails():
 
 def test_input_definition_multiple_partition_lineage():
 
-    entry1 = EventMetadataEntry.int(123, "nrows")
-    entry2 = EventMetadataEntry.float(3.21, "some value")
+    entry1 = MetadataEntry("nrows", value=123)
+    entry2 = MetadataEntry("some value", value=3.21)
 
-    partition_entries = [EventMetadataEntry.int(123 * i * i, "partition count") for i in range(3)]
+    partition_entries = [MetadataEntry("partition count", value=123 * i * i) for i in range(3)]
 
     @solid(
         output_defs=[
@@ -270,8 +271,8 @@ def test_mixed_asset_definition_lineage():
 
 def test_dynamic_output_definition_single_partition_materialization():
 
-    entry1 = EventMetadataEntry.int(123, "nrows")
-    entry2 = EventMetadataEntry.float(3.21, "some value")
+    entry1 = MetadataEntry("nrows", value=123)
+    entry2 = MetadataEntry("some value", value=3.21)
 
     @solid(output_defs=[OutputDefinition(name="output1", asset_key=AssetKey("table1"))])
     def solid1(_):

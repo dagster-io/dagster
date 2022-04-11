@@ -1,4 +1,5 @@
 import yaml
+
 from dagster import graph, op
 from dagster.utils import file_relative_path
 from docs_snippets.concepts.configuration.config_map_example import unsigned_s3_session
@@ -12,7 +13,8 @@ from docs_snippets.concepts.configuration.configured_example import (
 
 def test_config_map_example():
     execute_job_with_resource_def(
-        unsigned_s3_session, run_config={"resources": {"key": {"config": {"region": "us-east-1"}}}}
+        unsigned_s3_session,
+        run_config={"resources": {"key": {"config": {"region": "us-east-1"}}}},
     )
 
 
@@ -40,7 +42,8 @@ def test_configured_example():
 def test_configured_example_yaml():
     with open(
         file_relative_path(
-            __file__, "../../../docs_snippets/concepts/configuration/configured_example.yaml"
+            __file__,
+            "../../../docs_snippets/concepts/configuration/configured_example.yaml",
         ),
         "r",
     ) as fd:

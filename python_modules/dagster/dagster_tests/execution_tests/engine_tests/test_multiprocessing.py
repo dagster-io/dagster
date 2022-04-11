@@ -3,11 +3,12 @@ import sys
 import time
 
 import pytest
+
 from dagster import (
-    EventMetadataEntry,
     Failure,
     Field,
     InputDefinition,
+    MetadataEntry,
     Nothing,
     Output,
     OutputDefinition,
@@ -50,13 +51,56 @@ def test_diamond_multi_execution():
 
         assert result.result_for_solid("adder").output_value() == 11
 
-        # https://github.com/dagster-io/dagster/issues/1875
-        # pids_by_solid = {}
-        # for solid in pipeline.solids:
-        #     pids_by_solid[solid.name] = compute_event(result, solid.name).logging_tags['pid']
 
-        # # guarantee that all solids ran in their own process
-        # assert len(set(pids_by_solid.values())) == len(pipeline.solids)
+def test_explicit_spawn():
+    with instance_for_test() as instance:
+        pipe = reconstructable(define_diamond_pipeline)
+        result = execute_pipeline(
+            pipe,
+            run_config={
+                "execution": {"multiprocess": {"config": {"start_method": {"spawn": {}}}}},
+            },
+            instance=instance,
+        )
+        assert result.success
+
+        assert result.result_for_solid("adder").output_value() == 11
+
+
+@pytest.mark.skipif(os.name == "nt", reason="No forkserver on windows")
+def test_forkserver_execution():
+    with instance_for_test() as instance:
+        pipe = reconstructable(define_diamond_pipeline)
+        result = execute_pipeline(
+            pipe,
+            run_config={
+                "execution": {"multiprocess": {"config": {"start_method": {"forkserver": {}}}}},
+            },
+            instance=instance,
+        )
+        assert result.success
+
+        assert result.result_for_solid("adder").output_value() == 11
+
+
+@pytest.mark.skipif(os.name == "nt", reason="No forkserver on windows")
+def test_forkserver_preload():
+    with instance_for_test() as instance:
+        pipe = reconstructable(define_diamond_pipeline)
+        result = execute_pipeline(
+            pipe,
+            run_config={
+                "execution": {
+                    "multiprocess": {
+                        "config": {"start_method": {"forkserver": {"preload_modules": []}}}
+                    }
+                },
+            },
+            instance=instance,
+        )
+        assert result.success
+
+        assert result.result_for_solid("adder").output_value() == 11
 
 
 def define_diamond_pipeline():
@@ -338,9 +382,7 @@ def test_optional_outputs():
 def throw():
     raise Failure(
         description="it Failure",
-        metadata_entries=[
-            EventMetadataEntry.text(label="label", text="text", description="description")
-        ],
+        metadata_entries=[MetadataEntry("label", value="text")],
     )
 
 
@@ -370,7 +412,6 @@ def test_failure_multiprocessing():
         assert failure_data.user_failure_data.description == "it Failure"
         assert failure_data.user_failure_data.metadata_entries[0].label == "label"
         assert failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
-        assert failure_data.user_failure_data.metadata_entries[0].description == "description"
 
 
 @solid

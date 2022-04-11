@@ -7,7 +7,7 @@ from dagster.core.launcher import WorkerStatus
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     PipelineRunStatus,
-    PipelineRunsFilter,
+    RunsFilter,
 )
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -77,7 +77,7 @@ def execute_monitoring_iteration(instance, workspace, logger, _debug_crash_flags
     )
 
     # TODO: consider limiting number of runs to fetch
-    runs = instance.get_runs(filters=PipelineRunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
+    runs = instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
 
     logger.info(f"Collected {len(runs)} runs for monitoring")
 

@@ -1,11 +1,13 @@
 import logging
+import sys
 import time
 from typing import Any, Dict, Optional
 
 import requests
-from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource
 from dagster_airbyte.types import AirbyteOutput
 from requests.exceptions import RequestException
+
+from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 
@@ -72,6 +74,7 @@ class AirbyteResource:
                     url=self.api_base_url + endpoint,
                     headers=headers,
                     json=data,
+                    timeout=15,
                 )
                 response.raise_for_status()
                 return response.json()
@@ -90,11 +93,14 @@ class AirbyteResource:
     def get_job_status(self, job_id: int) -> dict:
         return self.make_request(endpoint="/jobs/get", data={"id": job_id})
 
+    def get_connection_details(self, connection_id: str) -> dict:
+        return self.make_request(endpoint="/connections/get", data={"connectionId": connection_id})
+
     def sync_and_poll(
         self,
         connection_id: str,
         poll_interval: float = DEFAULT_POLL_INTERVAL_SECONDS,
-        poll_timeout: float = None,
+        poll_timeout: Optional[float] = None,
     ):
         """
         Initializes a sync operation for the given connector, and polls until it completes.
@@ -110,10 +116,13 @@ class AirbyteResource:
             :py:class:`~AirbyteOutput`:
                 Details of the sync job.
         """
+        connection_details = self.get_connection_details(connection_id)
         job_details = self.start_sync(connection_id)
         job_id = job_details.get("job", {}).get("id")
         self._log.info(f"Job {job_id} initialized for connection_id={connection_id}.")
         start = time.monotonic()
+        logged_attempts = 0
+        logged_lines = 0
 
         while True:
             if poll_timeout and start + poll_timeout < time.monotonic():
@@ -122,6 +131,23 @@ class AirbyteResource:
                 )
             time.sleep(poll_interval)
             job_details = self.get_job_status(job_id)
+            cur_attempt = len(job_details.get("attempts", []))
+            # spit out the available Airbyte log info
+            if cur_attempt:
+                log_lines = (
+                    job_details["attempts"][logged_attempts].get("logs", {}).get("logLines", [])
+                )
+
+                for line in log_lines[logged_lines:]:
+                    sys.stdout.write(line + "\n")
+                    sys.stdout.flush()
+                logged_lines = len(log_lines)
+
+                # if there's a next attempt, this one will have no more log messages
+                if logged_attempts < cur_attempt - 1:
+                    logged_lines = 0
+                    logged_attempts += 1
+
             state = job_details.get("job", {}).get("status")
 
             if state in (AirbyteState.RUNNING, AirbyteState.PENDING, AirbyteState.INCOMPLETE):
@@ -135,7 +161,7 @@ class AirbyteResource:
             else:
                 raise Failure(f"Encountered unexpected state `{state}` for job_id {job_id}")
 
-        return AirbyteOutput(job_details=job_details.get("job", {}))
+        return AirbyteOutput(job_details=job_details, connection_details=connection_details)
 
 
 @resource(

@@ -1,14 +1,15 @@
 import copy
 import os
 import subprocess
-from typing import Dict
+from typing import Dict, Optional
 
 import click
 import nbformat
+from papermill.iorw import load_notebook_node, write_ipynb
+
 from dagster import check
 from dagster.seven.json import loads
 from dagster.utils import mkdir_p, safe_isfile
-from papermill.iorw import load_notebook_node, write_ipynb
 
 
 def get_import_cell():
@@ -21,21 +22,18 @@ def get_parameters_cell():
     return parameters_cell
 
 
-def get_kernelspec(kernel: str = None):
+def get_kernelspec(kernel: Optional[str] = None):
     kernelspecs = loads(subprocess.check_output(["jupyter", "kernelspec", "list", "--json"]))
 
     check.invariant(len(kernelspecs["kernelspecs"]) > 0, "No available Jupyter kernelspecs!")
 
     if kernel is None:
-        preferred_kernels = (
-            list(
-                filter(
-                    lambda kernel_name: kernel_name in kernelspecs["kernelspecs"],
-                    ["dagster", "python3", "python"],
-                )
+        preferred_kernels = list(
+            filter(
+                lambda kernel_name: kernel_name in kernelspecs["kernelspecs"],
+                ["dagster", "python3", "python"],
             )
-            + list(kernelspecs["kernelspecs"].keys())
-        )
+        ) + list(kernelspecs["kernelspecs"].keys())
         kernel = preferred_kernels[0]
         print(  # pylint: disable=print-call
             "No kernel specified, defaulting to '{kernel}'".format(kernel=kernel)

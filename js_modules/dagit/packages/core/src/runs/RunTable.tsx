@@ -1,14 +1,5 @@
 import {gql} from '@apollo/client';
-import {
-  Box,
-  Checkbox,
-  ColorsWIP,
-  IconWIP,
-  NonIdealState,
-  Table,
-  Mono,
-  TokenizingFieldValue,
-} from '@dagster-io/ui';
+import {Box, Checkbox, Colors, Icon, NonIdealState, Table, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -22,20 +13,22 @@ import {
   isThisThingAJob,
   useRepositoryOptions,
 } from '../workspace/WorkspaceContext';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunStatusTagWithStats} from './RunStatusTag';
-import {canceledStatuses, queuedStatuses} from './RunStatuses';
+import {RunStepKeysAssetList} from './RunStepKeysAssetList';
 import {RunTags} from './RunTags';
-import {RunElapsed, RunTime, RUN_TIME_FRAGMENT, titleForRun} from './RunUtils';
+import {RunStateSummary, RunTime, RUN_TIME_FRAGMENT, titleForRun} from './RunUtils';
+import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 interface RunTableProps {
   runs: RunTableRunFragment[];
-  onSetFilter: (search: TokenizingFieldValue[]) => void;
+  onSetFilter: (search: RunFilterToken[]) => void;
   nonIdealState?: React.ReactNode;
   actionBarComponents?: React.ReactNode;
   highlightedIds?: string[];
@@ -122,7 +115,7 @@ export const RunTable = (props: RunTableProps) => {
             <th style={{width: 90}}>Run ID</th>
             <th>{anyPipelines ? 'Job / Pipeline' : 'Job'}</th>
             <th style={{width: 90}}>Snapshot ID</th>
-            <th style={{width: 180}}>Timing</th>
+            <th style={{width: 190}}>Timing</th>
             {props.additionalColumnHeaders}
             <th style={{width: 52}} />
           </tr>
@@ -178,7 +171,7 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
 const RunRow: React.FC<{
   run: RunTableRunFragment;
   canTerminateOrDelete: boolean;
-  onSetFilter: (search: TokenizingFieldValue[]) => void;
+  onSetFilter: (search: RunFilterToken[]) => void;
   checked?: boolean;
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
   additionalColumns?: React.ReactNode[];
@@ -230,27 +223,32 @@ const RunRow: React.FC<{
       </td>
       <td>
         <Box flex={{direction: 'column', gap: 5}}>
-          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-            <PipelineReference
-              isJob={isJob}
-              pipelineName={run.pipelineName}
-              pipelineHrefContext="no-link"
-            />
-            <Link
-              to={
-                repo
-                  ? workspacePipelinePath({
-                      repoName: repo.match.repository.name,
-                      repoLocation: repo.match.repositoryLocation.name,
-                      pipelineName: run.pipelineName,
-                      isJob,
-                    })
-                  : workspacePipelinePathGuessRepo(run.pipelineName)
-              }
-            >
-              <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
-            </Link>
-          </Box>
+          {run.pipelineName !== __ASSET_GROUP ? (
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+              <PipelineReference
+                isJob={isJob}
+                showIcon
+                pipelineName={run.pipelineName}
+                pipelineHrefContext="no-link"
+              />
+              <Link
+                to={
+                  repo
+                    ? workspacePipelinePath({
+                        repoName: repo.match.repository.name,
+                        repoLocation: repo.match.repositoryLocation.name,
+                        pipelineName: run.pipelineName,
+                        isJob,
+                      })
+                    : workspacePipelinePathGuessRepo(run.pipelineName)
+                }
+              >
+                <Icon name="open_in_new" color={Colors.Blue500} />
+              </Link>
+            </Box>
+          ) : (
+            <RunStepKeysAssetList stepKeys={run.stepKeysToExecute} />
+          )}
           <RunTags
             tags={run.tags}
             mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
@@ -267,9 +265,7 @@ const RunRow: React.FC<{
       </td>
       <td>
         <RunTime run={run} />
-        {queuedStatuses.has(run.status) || canceledStatuses.has(run.status) ? null : (
-          <RunElapsed run={run} />
-        )}
+        <RunStateSummary run={run} />
       </td>
       {additionalColumns}
       <td>

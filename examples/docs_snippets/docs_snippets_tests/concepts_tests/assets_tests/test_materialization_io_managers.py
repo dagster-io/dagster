@@ -1,4 +1,5 @@
 import pandas as pd
+
 from dagster import ModeDefinition, execute_pipeline, io_manager, pipeline, solid
 from docs_snippets.concepts.assets.materialization_io_managers import (
     PandasCsvIOManager,
@@ -22,7 +23,9 @@ def _generate_pipeline_for_io_manager(manager, config_schema=None):
     def dummy_solid():
         return DummyClass.from_dict({"some_column": [2]})
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": custom_io_manager})])
+    @pipeline(
+        mode_defs=[ModeDefinition(resource_defs={"io_manager": custom_io_manager})]
+    )
     def dummy_pipeline():
         dummy_solid()
 
@@ -49,7 +52,11 @@ def test_partition_pipelines_compile_and_execute():
         dummy_pipeline = _generate_pipeline_for_io_manager(
             manager, config_schema={"partitions": str}
         )
-        config = {"solids": {"dummy_solid": {"outputs": {"result": {"partitions": "2020-01-01"}}}}}
+        config = {
+            "solids": {
+                "dummy_solid": {"outputs": {"result": {"partitions": "2020-01-01"}}}
+            }
+        }
         result = execute_pipeline(dummy_pipeline, run_config=config)
         assert result
         assert result.success

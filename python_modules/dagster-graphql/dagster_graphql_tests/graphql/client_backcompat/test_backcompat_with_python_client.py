@@ -2,9 +2,10 @@ import os
 from typing import Iterator
 
 import pytest
-from dagster.utils import file_relative_path
 from dagster_graphql.schema import create_schema
 from gql import Client, gql
+
+from dagster.utils import file_relative_path
 
 
 @pytest.fixture(scope="session", name="validator_client")

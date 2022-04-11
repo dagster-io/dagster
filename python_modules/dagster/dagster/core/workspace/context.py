@@ -2,7 +2,7 @@ import sys
 import threading
 import time
 import warnings
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from collections import OrderedDict
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
@@ -39,11 +39,12 @@ from .workspace import IWorkspace, WorkspaceLocationEntry, WorkspaceLocationLoad
 
 if TYPE_CHECKING:
     from rx.subjects import Subject
+
     from dagster.core.host_representation import (
-        ExternalPartitionSetExecutionParamData,
+        ExternalPartitionConfigData,
         ExternalPartitionExecutionErrorData,
         ExternalPartitionNamesData,
-        ExternalPartitionConfigData,
+        ExternalPartitionSetExecutionParamData,
         ExternalPartitionTagsData,
     )
 
@@ -100,8 +101,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def show_instance_config(self) -> bool:
         return True
 
-    def get_location(self, origin):
-        location_name = origin.location_name
+    def get_location(self, location_name: str):
         location_entry = self.get_location_entry(location_name)
         if not location_entry:
             raise DagsterInvariantViolationError(
@@ -111,7 +111,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         if location_entry.repository_location:
             return location_entry.repository_location
 
-        error_info = location_entry.load_error
+        error_info = cast(SerializableErrorInfo, location_entry.load_error)
         raise DagsterRepositoryLocationLoadError(
             f"Failure loading {location_name}: {error_info.to_string()}",
             load_error_infos=[error_info],
@@ -269,11 +269,13 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         workspace_snapshot: Dict[str, WorkspaceLocationEntry],
         process_context: "WorkspaceProcessContext",
         version: Optional[str],
+        source: Optional[object],
     ):
         self._instance = instance
         self._workspace_snapshot = workspace_snapshot
         self._process_context = process_context
         self._version = version
+        self._source = source
 
     @property
     def instance(self) -> DagsterInstance:
@@ -308,6 +310,15 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         )
         return permissions[permission]
 
+    @property
+    def source(self) -> Optional[object]:
+        """
+        The source of the request this WorkspaceRequestContext originated from.
+        For example in Dagit this object represents the web request.
+        """
+
+        return self._source
+
 
 class IWorkspaceProcessContext(ABC):
     """
@@ -332,7 +343,8 @@ class IWorkspaceProcessContext(ABC):
     def version(self) -> str:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def location_state_events(self) -> "Subject":
         pass
 
@@ -347,7 +359,8 @@ class IWorkspaceProcessContext(ABC):
     def reload_workspace(self) -> None:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def instance(self):
         pass
 
@@ -427,6 +440,10 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
         with self._lock:
             self._load_workspace()
+
+    @property
+    def workspace_load_target(self):
+        return self._workspace_load_target
 
     def add_state_subscriber(self, subscriber):
         self._state_subscribers.append(subscriber)
@@ -627,6 +644,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             workspace_snapshot=self.create_snapshot(),
             process_context=self,
             version=self.version,
+            source=source,
         )
 
     @property

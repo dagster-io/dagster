@@ -9,10 +9,6 @@ import { RunsFilter, RunStatus } from "./../../types/globalTypes";
 // GraphQL query operation: PreviousRunsForScheduleQuery
 // ====================================================
 
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError {
-  __typename: "InvalidPipelineRunsFilterError" | "PythonError";
-}
-
 export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
@@ -51,7 +47,12 @@ export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs {
   results: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results[];
 }
 
-export type PreviousRunsForScheduleQuery_pipelineRunsOrError = PreviousRunsForScheduleQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs;
+export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError {
+  __typename: "InvalidPipelineRunsFilterError" | "PythonError";
+  message: string;
+}
+
+export type PreviousRunsForScheduleQuery_pipelineRunsOrError = PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs | PreviousRunsForScheduleQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError;
 
 export interface PreviousRunsForScheduleQuery {
   pipelineRunsOrError: PreviousRunsForScheduleQuery_pipelineRunsOrError;

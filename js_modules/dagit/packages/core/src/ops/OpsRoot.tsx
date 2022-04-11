@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  ColorsWIP,
+  Colors,
   NonIdealState,
   SplitPanelContainer,
   SuggestionProvider,
@@ -203,7 +203,7 @@ const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = 
           <OpListColumnContainer>
             <Box
               padding={{vertical: 12, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
             >
               <TokenizingField
                 values={search}
@@ -261,7 +261,7 @@ interface OpListProps {
   onClickOp: (name: string) => void;
 }
 
-const OpList: React.FunctionComponent<OpListProps> = (props) => {
+const OpList: React.FC<OpListProps> = (props) => {
   const {items, selected} = props;
   const cache = React.useRef(new CellMeasurerCache({defaultHeight: 60, fixedWidth: true}));
 
@@ -338,10 +338,10 @@ const OPS_ROOT_QUERY = gql`
 `;
 
 const OpListItem = styled.div<{selected: boolean}>`
-  background: ${({selected}) => (selected ? ColorsWIP.Gray100 : ColorsWIP.White)};
-  box-shadow: ${({selected}) => (selected ? ColorsWIP.HighlightGreen : 'transparent')} 4px 0 0 inset,
-    ${ColorsWIP.KeylineGray} 0 -1px 0 inset;
-  color: ${ColorsWIP.Gray800};
+  background: ${({selected}) => (selected ? Colors.Gray100 : Colors.White)};
+  box-shadow: ${({selected}) => (selected ? Colors.HighlightGreen : 'transparent')} 4px 0 0 inset,
+    ${Colors.KeylineGray} 0 -1px 0 inset;
+  color: ${Colors.Gray800};
   cursor: pointer;
   font-size: 14px;
   display: flex;
@@ -350,7 +350,7 @@ const OpListItem = styled.div<{selected: boolean}>`
   user-select: none;
 
   & > code.bp3-code {
-    color: ${ColorsWIP.Gray800};
+    color: ${Colors.Gray800};
     background: transparent;
     font-family: ${FontFamily.monospace};
     padding: 5px 0 0 0;

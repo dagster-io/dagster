@@ -1,11 +1,20 @@
 import pytest
+from dagster_pandas.constraints import (
+    ColumnDTypeInSetConstraint,
+    InRangeColumnConstraint,
+    NonNullableColumnConstraint,
+)
+from dagster_pandas.data_frame import _execute_summary_stats, create_dagster_pandas_dataframe_type
+from dagster_pandas.validation import PandasColumn
+from pandas import DataFrame, read_csv
+
 from dagster import (
     AssetMaterialization,
     DagsterInvariantViolationError,
     DagsterType,
-    EventMetadataEntry,
     Field,
     In,
+    MetadataEntry,
     Out,
     Output,
     Selector,
@@ -16,14 +25,6 @@ from dagster import (
     op,
 )
 from dagster.utils import safe_tempfile_path
-from dagster_pandas.constraints import (
-    ColumnDTypeInSetConstraint,
-    InRangeColumnConstraint,
-    NonNullableColumnConstraint,
-)
-from dagster_pandas.data_frame import _execute_summary_stats, create_dagster_pandas_dataframe_type
-from dagster_pandas.validation import PandasColumn
-from pandas import DataFrame, read_csv
 
 
 def test_create_pandas_dataframe_dagster_type():
@@ -139,11 +140,10 @@ def test_execute_summary_stats_null_function():
     metadata_entries = _execute_summary_stats(
         "foo",
         DataFrame({"bar": [1, 2, 3]}),
-        lambda value: [EventMetadataEntry.text("baz", "qux", "quux")],
+        lambda value: [MetadataEntry("qux", value="baz")],
     )
     assert len(metadata_entries) == 1
     assert metadata_entries[0].label == "qux"
-    assert metadata_entries[0].description == "quux"
     assert metadata_entries[0].entry_data.text == "baz"
 
 
@@ -155,7 +155,7 @@ def test_execute_summary_stats_error():
         assert _execute_summary_stats(
             "foo",
             DataFrame({}),
-            lambda value: [EventMetadataEntry.text("baz", "qux", "quux"), "rofl"],
+            lambda value: [MetadataEntry("qux", value="baz"), "rofl"],
         )
 
 
@@ -276,7 +276,7 @@ def test_custom_dagster_dataframe_parametrizable_input():
 def test_basic_pipeline_with_pandas_dataframe_dagster_type_metadata_entries():
     def compute_event_metadata(dataframe):
         return [
-            EventMetadataEntry.text(str(max(dataframe["pid"])), "max_pid", "maximum pid"),
+            MetadataEntry("max_pid", value=str(max(dataframe["pid"]))),
         ]
 
     BasicDF = create_dagster_pandas_dataframe_type(

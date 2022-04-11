@@ -7,6 +7,157 @@
 // GraphQL fragment: TypeExplorerFragment
 // ====================================================
 
+export interface TypeExplorerFragment_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface TypeExplorerFragment_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface TypeExplorerFragment_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface TypeExplorerFragment_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface TypeExplorerFragment_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface TypeExplorerFragment_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface TypeExplorerFragment_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface TypeExplorerFragment_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface TypeExplorerFragment_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface TypeExplorerFragment_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface TypeExplorerFragment_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: TypeExplorerFragment_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface TypeExplorerFragment_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface TypeExplorerFragment_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: TypeExplorerFragment_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface TypeExplorerFragment_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface TypeExplorerFragment_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: TypeExplorerFragment_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: TypeExplorerFragment_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface TypeExplorerFragment_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: TypeExplorerFragment_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface TypeExplorerFragment_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: TypeExplorerFragment_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type TypeExplorerFragment_metadataEntries = TypeExplorerFragment_metadataEntries_PathMetadataEntry | TypeExplorerFragment_metadataEntries_JsonMetadataEntry | TypeExplorerFragment_metadataEntries_UrlMetadataEntry | TypeExplorerFragment_metadataEntries_TextMetadataEntry | TypeExplorerFragment_metadataEntries_MarkdownMetadataEntry | TypeExplorerFragment_metadataEntries_PythonArtifactMetadataEntry | TypeExplorerFragment_metadataEntries_FloatMetadataEntry | TypeExplorerFragment_metadataEntries_IntMetadataEntry | TypeExplorerFragment_metadataEntries_PipelineRunMetadataEntry | TypeExplorerFragment_metadataEntries_AssetMetadataEntry | TypeExplorerFragment_metadataEntries_TableMetadataEntry | TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry;
+
 export interface TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
@@ -919,6 +1070,7 @@ export interface TypeExplorerFragment {
   __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   name: string | null;
   description: string | null;
+  metadataEntries: TypeExplorerFragment_metadataEntries[];
   inputSchemaType: TypeExplorerFragment_inputSchemaType | null;
   outputSchemaType: TypeExplorerFragment_outputSchemaType | null;
 }

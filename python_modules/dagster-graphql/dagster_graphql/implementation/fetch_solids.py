@@ -17,10 +17,7 @@ def get_solids(repo):
 def get_used_solid_map(repo):
     from ..schema.pipelines.pipeline import GraphenePipeline
     from ..schema.solids import build_solid_handles
-    from ..schema.used_solid import (
-        GrapheneNodeInvocationSite,
-        GrapheneUsedSolid,
-    )
+    from ..schema.used_solid import GrapheneNodeInvocationSite, GrapheneUsedSolid
 
     check.inst_param(repo, "repo", ExternalRepository)
 

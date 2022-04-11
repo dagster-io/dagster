@@ -1,4 +1,3 @@
-import logging
 import sys
 from contextlib import ExitStack
 from typing import Iterator, List, cast
@@ -12,7 +11,7 @@ from dagster.core.errors import (
     HookExecutionError,
     user_code_error_boundary,
 )
-from dagster.core.events import DagsterEvent
+from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
 from dagster.core.execution.plan.objects import (
@@ -70,20 +69,22 @@ def inner_plan_execution_iterator(
                         )
                     )
                 except Exception as e:
-                    log_capture_error = e
-                    logging.exception(
-                        "Exception while setting up compute log capture for step %s in run %s: %s",
-                        step_context.step.key,
-                        step_context.pipeline_run.run_id,
-                        e,
+                    yield DagsterEvent.engine_event(
+                        pipeline_context=pipeline_context,
+                        message="Exception while setting up compute log capture",
+                        event_specific_data=EngineEventData(
+                            error=serializable_error_info_from_exc_info(sys.exc_info())
+                        ),
+                        step_handle=step_context.step.handle,
                     )
+                    log_capture_error = e
 
                 if not log_capture_error:
                     yield DagsterEvent.capture_logs(
                         step_context, log_key=step_context.step.key, steps=[step_context.step]
                     )
 
-                for step_event in check.generator(_dagster_event_sequence_for_step(step_context)):
+                for step_event in check.generator(dagster_event_sequence_for_step(step_context)):
                     check.inst(step_event, DagsterEvent)
                     step_event_list.append(step_event)
                     yield step_event
@@ -93,12 +94,14 @@ def inner_plan_execution_iterator(
 
                 try:
                     stack.close()
-                except Exception as e:
-                    logging.exception(
-                        "Exception while cleaning up compute log capture for step %s in run %s: %s",
-                        step_context.step.key,
-                        step_context.pipeline_run.run_id,
-                        e,
+                except Exception:
+                    yield DagsterEvent.engine_event(
+                        pipeline_context=pipeline_context,
+                        message="Exception while cleaning up compute log capture",
+                        event_specific_data=EngineEventData(
+                            error=serializable_error_info_from_exc_info(sys.exc_info())
+                        ),
+                        step_handle=step_context.step.handle,
                     )
 
             # process skips from failures or uncovered inputs
@@ -161,7 +164,9 @@ def _trigger_hook(
             yield DagsterEvent.hook_completed(step_context, hook_def)
 
 
-def _dagster_event_sequence_for_step(step_context: StepExecutionContext) -> Iterator[DagsterEvent]:
+def dagster_event_sequence_for_step(
+    step_context: StepExecutionContext, force_local_execution: bool = False
+) -> Iterator[DagsterEvent]:
     """
     Yield a sequence of dagster events for the given step with the step context.
 
@@ -206,12 +211,17 @@ def _dagster_event_sequence_for_step(step_context: StepExecutionContext) -> Iter
 
     For tools, however, this option should be false, and a sensible error message
     signaled to the user within that tool.
+
+    When we launch a step that has a step launcher, we use this function on both the host process
+    and the remote process. When we run the step in the remote process, to prevent an infinite loop
+    of launching steps that then launch steps, and so on, the remote process will run this with
+    the force_local_execution argument set to True.
     """
 
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
     try:
-        if step_context.step_launcher:
+        if step_context.step_launcher and not force_local_execution:
             # info all on step_context - should deprecate second arg
             step_events = step_context.step_launcher.launch_step(
                 step_context, step_context.previous_attempt_count
@@ -242,7 +252,7 @@ def _dagster_event_sequence_for_step(step_context: StepExecutionContext) -> Iter
             prev_attempts = step_context.previous_attempt_count
             if prev_attempts >= retry_request.max_retries:
                 fail_err = SerializableErrorInfo(
-                    message="Exceeded max_retries of {}".format(retry_request.max_retries),
+                    message=f"Exceeded max_retries of {retry_request.max_retries}\n",
                     stack=retry_err_info.stack,
                     cls_name=retry_err_info.cls_name,
                     cause=retry_err_info.cause,
@@ -250,7 +260,12 @@ def _dagster_event_sequence_for_step(step_context: StepExecutionContext) -> Iter
                 step_context.capture_step_exception(retry_request)
                 yield DagsterEvent.step_failure_event(
                     step_context=step_context,
-                    step_failure_data=StepFailureData(error=fail_err, user_failure_data=None),
+                    step_failure_data=StepFailureData(
+                        error=fail_err,
+                        user_failure_data=None,
+                        # set the flag to omit the outer stack if we have a cause to show
+                        error_source=ErrorSource.USER_CODE_ERROR if fail_err.cause else None,
+                    ),
                 )
             else:
                 yield DagsterEvent.step_retry_event(

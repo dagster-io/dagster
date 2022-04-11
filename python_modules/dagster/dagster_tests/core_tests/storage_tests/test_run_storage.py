@@ -1,25 +1,33 @@
 import tempfile
 from contextlib import contextmanager
 
-import pendulum
+import mock
 import pytest
-from dagster import job, op
-from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
-from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster.core.run_coordinator import DefaultRunCoordinator
-from dagster.core.storage.event_log import InMemoryEventLogStorage
-from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
-from dagster.core.storage.root import LocalArtifactStorage
-from dagster.core.storage.runs import InMemoryRunStorage, SqliteRunStorage
-from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster_tests.core_tests.storage_tests.utils.run_storage import TestRunStorage
+
+from dagster.core.storage.runs import InMemoryRunStorage, SqliteRunStorage
 
 
 @contextmanager
 def create_sqlite_run_storage():
     with tempfile.TemporaryDirectory() as tempdir:
         yield SqliteRunStorage.from_local(tempdir)
+
+
+@contextmanager
+def create_non_bucket_sqlite_run_storage():
+    with tempfile.TemporaryDirectory() as tempdir:
+        yield NonBucketQuerySqliteRunStorage.from_local(tempdir)
+
+
+class NonBucketQuerySqliteRunStorage(SqliteRunStorage):
+    @property
+    def supports_bucket_queries(self):
+        return False
+
+    @staticmethod
+    def from_config_value(inst_data, config_value):
+        return NonBucketQuerySqliteRunStorage.from_local(inst_data=inst_data, **config_value)
 
 
 @contextmanager
@@ -35,6 +43,34 @@ class TestSqliteImplementation(TestRunStorage):
         with request.param() as s:
             yield s
 
+    def test_bucket_gating(self, storage):
+        with mock.patch(
+            "dagster.core.storage.runs.sqlite.sqlite_run_storage.get_sqlite_version",
+            return_value="3.7.17",
+        ):
+            assert not storage.supports_bucket_queries
+
+        with mock.patch(
+            "dagster.core.storage.runs.sqlite.sqlite_run_storage.get_sqlite_version",
+            return_value="3.25.1",
+        ):
+            assert storage.supports_bucket_queries
+
+        with mock.patch(
+            "dagster.core.storage.runs.sqlite.sqlite_run_storage.get_sqlite_version",
+            return_value="3.25.19",
+        ):
+            assert storage.supports_bucket_queries
+
+
+class TestNonBucketQuerySqliteImplementation(TestRunStorage):
+    __test__ = True
+
+    @pytest.fixture(name="storage", params=[create_non_bucket_sqlite_run_storage])
+    def run_storage(self, request):
+        with request.param() as s:
+            yield s
+
 
 class TestInMemoryImplementation(TestRunStorage):
     __test__ = True
@@ -46,42 +82,3 @@ class TestInMemoryImplementation(TestRunStorage):
 
     def test_storage_telemetry(self, storage):
         pass
-
-
-@contextmanager
-def get_instance():
-    with tempfile.TemporaryDirectory() as temp_dir:
-        yield DagsterInstance(
-            instance_type=InstanceType.EPHEMERAL,
-            local_artifact_storage=LocalArtifactStorage(temp_dir),
-            run_storage=SqliteRunStorage.from_local(temp_dir),
-            event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(),
-            run_coordinator=DefaultRunCoordinator(),
-            run_launcher=SyncInMemoryRunLauncher(),
-        )
-
-
-@op
-def a():
-    pass
-
-
-@job
-def my_job():
-    a()
-
-
-def test_run_record_timestamps():
-    with get_instance() as instance:
-        freeze_datetime = to_timezone(
-            create_pendulum_time(2019, 11, 2, 0, 0, 0, tz="US/Central"), "US/Pacific"
-        )
-
-        with pendulum.test(freeze_datetime):
-            result = my_job.execute_in_process(instance=instance)
-            records = instance.get_run_records(filters=PipelineRunsFilter(run_ids=[result.run_id]))
-            assert len(records) == 1
-            record = records[0]
-            assert record.start_time == 1572670800.0
-            assert record.end_time == 1572670800.0

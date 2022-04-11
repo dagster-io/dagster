@@ -1,5 +1,17 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from dagster import check
 from dagster.core.definitions.composition import MappedInputPlaceholder
@@ -21,7 +33,7 @@ from dagster.core.selector.subset_selector import (
     OpSelectionData,
     parse_op_selection,
 )
-from dagster.core.storage.tags import PARTITION_NAME_TAG
+from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.utils import str_format_set
 
 from .executor_definition import ExecutorDefinition
@@ -32,11 +44,12 @@ from .partition import PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
+from .run_request import RunRequest
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-    from dagster.core.instance import DagsterInstance
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+    from dagster.core.instance import DagsterInstance
     from dagster.core.snap import PipelineSnapshot
 
 
@@ -48,7 +61,7 @@ class JobDefinition(PipelineDefinition):
         name: Optional[str] = None,
         description: Optional[str] = None,
         preset_defs: Optional[List[PresetDefinition]] = None,
-        tags: Dict[str, Any] = None,
+        tags: Optional[Dict[str, Any]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
@@ -87,6 +100,10 @@ class JobDefinition(PipelineDefinition):
     def executor_def(self) -> ExecutorDefinition:
         return self.mode_definitions[0].executor_defs[0]
 
+    @property
+    def resource_defs(self) -> Mapping[str, ResourceDefinition]:
+        return self.mode_definitions[0].resource_defs
+
     def execute_in_process(
         self,
         run_config: Optional[Dict[str, Any]] = None,
@@ -94,6 +111,7 @@ class JobDefinition(PipelineDefinition):
         partition_key: Optional[str] = None,
         raise_on_error: bool = True,
         op_selection: Optional[List[str]] = None,
+        run_id: Optional[str] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute the Job in-process, gathering results in-memory.
@@ -158,6 +176,7 @@ class JobDefinition(PipelineDefinition):
             version_strategy=self.version_strategy,
         ).get_job_def_for_op_selection(op_selection)
 
+        tags = None
         if partition_key:
             if not base_mode.partitioned_config:
                 check.failed(
@@ -167,7 +186,15 @@ class JobDefinition(PipelineDefinition):
                 not run_config,
                 "Cannot provide both run_config and partition_key arguments to `execute_in_process`",
             )
-            run_config = base_mode.partitioned_config.get_run_config(partition_key)
+            partition_set = self.get_partition_set_def()
+            if not partition_set:
+                check.failed(
+                    f"Provided partition key `{partition_key}` for job `{self._name}` without a partitioned config"
+                )
+
+            partition = partition_set.get_partition(partition_key)
+            run_config = partition_set.run_config_for_partition(partition)
+            tags = partition_set.tags_for_partition(partition)
 
         return core_execute_in_process(
             node=self._graph_def,
@@ -176,7 +203,8 @@ class JobDefinition(PipelineDefinition):
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
-            run_tags={PARTITION_NAME_TAG: partition_key} if partition_key else None,
+            run_tags=tags,
+            run_id=run_id,
         )
 
     @property
@@ -194,7 +222,7 @@ class JobDefinition(PipelineDefinition):
 
         resolved_op_selection_dict = parse_op_selection(self, op_selection)
 
-        sub_graph = _get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
+        sub_graph = get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
 
         return JobDefinition(
             name=self.name,
@@ -225,15 +253,29 @@ class JobDefinition(PipelineDefinition):
 
         if not self._cached_partition_set:
 
+            tags_fn = mode.partitioned_config.tags_for_partition_fn
+            if not tags_fn:
+                tags_fn = lambda _: {}
             self._cached_partition_set = PartitionSetDefinition(
                 job_name=self.name,
                 name=f"{self.name}_partition_set",
                 partitions_def=mode.partitioned_config.partitions_def,
                 run_config_fn_for_partition=mode.partitioned_config.run_config_for_partition_fn,
+                tags_fn_for_partition=tags_fn,
                 mode=mode.name,
             )
 
         return self._cached_partition_set
+
+    def run_request_for_partition(self, partition_key: str, run_key: Optional[str]) -> RunRequest:
+        partition_set = self.get_partition_set_def()
+        if not partition_set:
+            check.failed("Called run_request_for_partition on a non-partitioned job")
+
+        partition = partition_set.get_partition(partition_key)
+        run_config = partition_set.run_config_for_partition(partition)
+        tags = partition_set.tags_for_partition(partition)
+        return RunRequest(run_key=run_key, run_config=run_config, tags=tags)
 
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "JobDefinition":
         """Apply a set of hooks to all op instances within the job."""
@@ -270,11 +312,12 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: Pipeline
     switching to in-memory when using execute_in_process.
     """
     from dagster.core.storage.mem_io_manager import mem_io_manager
+
     from .graph_definition import default_job_io_manager
 
     if (
         # pylint: disable=comparison-with-callable
-        resources.get("io_manager") == default_job_io_manager
+        resources.get("io_manager") in [default_job_io_manager, fs_asset_io_manager]
         and job.version_strategy is None
     ):
         updated_resources = dict(resources)
@@ -294,7 +337,7 @@ def _dep_key_of(node: Node) -> NodeInvocation:
     )
 
 
-def _get_subselected_graph_definition(
+def get_subselected_graph_definition(
     graph: GraphDefinition,
     resolved_op_selection_dict: Dict,
     parent_handle: Optional[NodeHandle] = None,
@@ -314,7 +357,7 @@ def _get_subselected_graph_definition(
 
         # rebuild graph if any nodes inside the graph are selected
         if node.is_graph and resolved_op_selection_dict[node.name] is not LeafNodeSelection:
-            definition = _get_subselected_graph_definition(
+            definition = get_subselected_graph_definition(
                 node.definition,
                 resolved_op_selection_dict[node.name],
                 parent_handle=node_handle,

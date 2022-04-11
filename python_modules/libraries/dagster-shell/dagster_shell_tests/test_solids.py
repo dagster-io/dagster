@@ -1,7 +1,6 @@
 import os
 
 import pytest
-from dagster import Failure, OutputDefinition, composite_solid, execute_solid
 from dagster_shell import (
     create_shell_command_op,
     create_shell_command_solid,
@@ -10,6 +9,8 @@ from dagster_shell import (
     shell_op,
     shell_solid,
 )
+
+from dagster import Failure, OutputDefinition, composite_solid, execute_solid
 
 
 @pytest.mark.parametrize("factory", [create_shell_command_solid, create_shell_command_op])

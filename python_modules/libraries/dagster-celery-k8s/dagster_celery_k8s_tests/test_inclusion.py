@@ -1,6 +1,7 @@
-from dagster import ExecutorDefinition
 from dagster_celery_k8s import CeleryK8sRunLauncher, celery_k8s_job_executor
 from dagster_celery_k8s_tests.example_celery_mode_def import celery_enabled_job
+
+from dagster import ExecutorDefinition
 
 
 def test_include_launcher_works():

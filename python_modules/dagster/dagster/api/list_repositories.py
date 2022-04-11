@@ -1,17 +1,22 @@
+from typing import TYPE_CHECKING, Optional
+
 from dagster import check
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.grpc.types import ListRepositoriesResponse
+from dagster.serdes import deserialize_as
 from dagster.utils.error import SerializableErrorInfo
 
-
-def sync_list_repositories_grpc(api_client):
+if TYPE_CHECKING:
     from dagster.grpc.client import DagsterGrpcClient
-    from dagster.grpc.types import ListRepositoriesResponse
+
+
+def sync_list_repositories_grpc(api_client: "DagsterGrpcClient") -> ListRepositoriesResponse:
+    from dagster.grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
-    result = check.inst(
-        deserialize_json_to_dagster_namedtuple(api_client.list_repositories()),
+    result = deserialize_as(
+        api_client.list_repositories(),
         (ListRepositoriesResponse, SerializableErrorInfo),
     )
     if isinstance(result, SerializableErrorInfo):
@@ -23,12 +28,12 @@ def sync_list_repositories_grpc(api_client):
 
 
 def sync_list_repositories_ephemeral_grpc(
-    executable_path,
-    python_file,
-    module_name,
-    working_directory,
-    attribute,
-    package_name,
+    executable_path: str,
+    python_file: Optional[str],
+    module_name: Optional[str],
+    working_directory: Optional[str],
+    attribute: Optional[str],
+    package_name: Optional[str],
 ):
     from dagster.grpc.client import ephemeral_grpc_api_client
 
@@ -36,6 +41,7 @@ def sync_list_repositories_ephemeral_grpc(
     check.opt_str_param(python_file, "python_file")
     check.opt_str_param(module_name, "module_name")
     check.opt_str_param(working_directory, "working_directory")
+    check.opt_str_param(attribute, "attribute")
     check.opt_str_param(package_name, "package_name")
 
     with ephemeral_grpc_api_client(

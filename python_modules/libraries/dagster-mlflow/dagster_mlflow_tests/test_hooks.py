@@ -1,5 +1,7 @@
 from unittest.mock import Mock
 
+from dagster_mlflow.hooks import _cleanup_on_success, end_mlflow_run_on_pipeline_finished
+
 from dagster import (
     InputDefinition,
     ModeDefinition,
@@ -9,7 +11,6 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster_mlflow.hooks import _cleanup_on_success, end_mlflow_run_on_pipeline_finished
 
 
 def test_cleanup_on_success():

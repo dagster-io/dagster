@@ -1,8 +1,9 @@
-from collections import namedtuple
-from typing import NamedTuple, Optional, Set
+from types import FunctionType
+from typing import TYPE_CHECKING, Any, Callable, Mapping, NamedTuple, Optional, Set, Type, Union
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.metadata import MetadataEntry, normalize_metadata
 from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import (
     BuiltinScalarDagsterType,
@@ -13,6 +14,9 @@ from dagster.utils.backcompat import experimental_arg_warning
 
 from .inference import InferredInputProps
 from .utils import NoValueSentinel, check_valid_name
+
+if TYPE_CHECKING:
+    from dagster.core.execution.context.input import InputContext
 
 
 # unfortunately since type_check functions need TypeCheckContext which is only available
@@ -96,6 +100,9 @@ class InputDefinition:
         self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
 
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        self._metadata_entries = check.is_list(
+            normalize_metadata(self._metadata, [], allow_invalid=True), MetadataEntry
+        )
 
         if asset_key:
             experimental_arg_warning("asset_key", "InputDefinition.__init__")
@@ -152,6 +159,10 @@ class InputDefinition:
     @property
     def is_asset(self):
         return self._asset_key is not None
+
+    @property
+    def metadata_entries(self):
+        return self._metadata_entries
 
     @property
     def hardcoded_asset_key(self) -> Optional[AssetKey]:
@@ -216,15 +227,19 @@ class InputDefinition:
         return InputMapping(self, maps_to)
 
     @staticmethod
-    def create_from_inferred(inferred: InferredInputProps) -> "InputDefinition":
+    def create_from_inferred(
+        inferred: InferredInputProps, decorator_name: str
+    ) -> "InputDefinition":
         return InputDefinition(
             name=inferred.name,
-            dagster_type=_checked_inferred_type(inferred),
+            dagster_type=_checked_inferred_type(inferred, decorator_name),
             description=inferred.description,
             default_value=inferred.default_value,
         )
 
-    def combine_with_inferred(self, inferred: InferredInputProps) -> "InputDefinition":
+    def combine_with_inferred(
+        self, inferred: InferredInputProps, decorator_name: str
+    ) -> "InputDefinition":
         """
         Return a new InputDefinition that merges this ones properties with those inferred from type signature.
         This can update: dagster_type, description, and default_value if they are not set.
@@ -237,7 +252,7 @@ class InputDefinition:
 
         dagster_type = self._dagster_type
         if self._type_not_set:
-            dagster_type = _checked_inferred_type(inferred)
+            dagster_type = _checked_inferred_type(inferred, decorator_name=decorator_name)
 
         description = self._description
         if description is None and inferred.description is not None:
@@ -259,7 +274,7 @@ class InputDefinition:
         )
 
 
-def _checked_inferred_type(inferred: InferredInputProps) -> DagsterType:
+def _checked_inferred_type(inferred: InferredInputProps, decorator_name: str) -> DagsterType:
     try:
         resolved_type = resolve_dagster_type(inferred.annotation)
     except DagsterError as e:
@@ -273,13 +288,13 @@ def _checked_inferred_type(inferred: InferredInputProps) -> DagsterType:
         raise DagsterInvalidDefinitionError(
             f"Input parameter {inferred.name} is annotated with {resolved_type.display_name} "
             "which is a type that represents passing no data. This type must be used "
-            "via InputDefinition and no parameter should be included in the solid function."
+            f"via InputDefinition and no parameter should be included in the {decorator_name} decorated function."
         )
     return resolved_type
 
 
-class InputPointer(namedtuple("_InputPointer", "solid_name input_name")):
-    def __new__(cls, solid_name, input_name):
+class InputPointer(NamedTuple("_InputPointer", [("solid_name", str), ("input_name", str)])):
+    def __new__(cls, solid_name: str, input_name: str):
         return super(InputPointer, cls).__new__(
             cls,
             check.str_param(solid_name, "solid_name"),
@@ -287,8 +302,12 @@ class InputPointer(namedtuple("_InputPointer", "solid_name input_name")):
         )
 
 
-class FanInInputPointer(namedtuple("_FanInInputPointer", "solid_name input_name fan_in_index")):
-    def __new__(cls, solid_name, input_name, fan_in_index):
+class FanInInputPointer(
+    NamedTuple(
+        "_FanInInputPointer", [("solid_name", str), ("input_name", str), ("fan_in_index", int)]
+    )
+):
+    def __new__(cls, solid_name: str, input_name: str, fan_in_index: int):
         return super(FanInInputPointer, cls).__new__(
             cls,
             check.str_param(solid_name, "solid_name"),
@@ -297,7 +316,12 @@ class FanInInputPointer(namedtuple("_FanInInputPointer", "solid_name input_name 
         )
 
 
-class InputMapping(namedtuple("_InputMapping", "definition maps_to")):
+class InputMapping(
+    NamedTuple(
+        "_InputMapping",
+        [("definition", InputDefinition), ("maps_to", Union[InputPointer, FanInInputPointer])],
+    )
+):
     """Defines an input mapping for a composite solid.
 
     Args:
@@ -306,7 +330,7 @@ class InputMapping(namedtuple("_InputMapping", "definition maps_to")):
         input_name (str): The name of the input to the child solid onto which to map the input.
     """
 
-    def __new__(cls, definition, maps_to):
+    def __new__(cls, definition: InputDefinition, maps_to: Union[InputPointer, FanInInputPointer]):
         return super(InputMapping, cls).__new__(
             cls,
             check.inst_param(definition, "definition", InputDefinition),
@@ -323,10 +347,17 @@ class InputMapping(namedtuple("_InputMapping", "definition maps_to")):
 
 
 class In(
-    namedtuple(
+    NamedTuple(
         "_In",
-        "dagster_type description default_value root_manager_key metadata "
-        "asset_key asset_partitions",
+        [
+            ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
+            ("description", Optional[str]),
+            ("default_value", Any),
+            ("root_manager_key", Optional[str]),
+            ("metadata", Optional[Mapping[str, Any]]),
+            ("asset_key", Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]),
+            ("asset_partitions", Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]]),
+        ],
     )
 ):
     """
@@ -355,23 +386,27 @@ class In(
 
     def __new__(
         cls,
-        dagster_type=NoValueSentinel,
-        description=None,
-        default_value=NoValueSentinel,
-        root_manager_key=None,
-        metadata=None,
-        asset_key=None,
-        asset_partitions=None,
+        dagster_type: Union[Type, DagsterType] = NoValueSentinel,
+        description: Optional[str] = None,
+        default_value: Any = NoValueSentinel,
+        root_manager_key: Optional[str] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
+        asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
+        asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
     ):
         return super(In, cls).__new__(
             cls,
-            dagster_type=dagster_type,
-            description=description,
+            dagster_type=NoValueSentinel
+            if dagster_type is NoValueSentinel
+            else resolve_dagster_type(dagster_type),
+            description=check.opt_str_param(description, "description"),
             default_value=default_value,
-            root_manager_key=root_manager_key,
-            metadata=metadata,
-            asset_key=asset_key,
-            asset_partitions=asset_partitions,
+            root_manager_key=check.opt_str_param(root_manager_key, "root_manager_key"),
+            metadata=check.opt_dict_param(metadata, "metadata", key_type=str),
+            asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),
+            asset_partitions=check.opt_inst_param(
+                asset_partitions, "asset_partitions", (Set[str], FunctionType)
+            ),
         )
 
     @staticmethod

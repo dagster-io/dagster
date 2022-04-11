@@ -77,7 +77,9 @@ export const SensorSwitch: React.FC<Props> = (props) => {
   );
 
   return lacksPermission ? (
-    <Tooltip content={DISABLED_MESSAGE}>{switchElement}</Tooltip>
+    <Tooltip content={DISABLED_MESSAGE} display="flex">
+      {switchElement}
+    </Tooltip>
   ) : (
     switchElement
   );

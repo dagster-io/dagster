@@ -2,11 +2,12 @@ import copy
 import logging
 import sys
 import traceback
-from collections import namedtuple
 from contextlib import contextmanager
+from typing import Dict, NamedTuple, Optional
 
 import coloredlogs
 import pendulum
+
 from dagster import check, seven
 from dagster.config import Enum, EnumValue
 from dagster.core.definitions.logger_definition import logger
@@ -49,9 +50,25 @@ class JsonFileHandler(logging.Handler):
 
 
 class StructuredLoggerMessage(
-    namedtuple("_StructuredLoggerMessage", "name message level meta record")
+    NamedTuple(
+        "_StructuredLoggerMessage",
+        [
+            ("name", str),
+            ("message", str),
+            ("level", int),
+            ("meta", Dict[object, object]),
+            ("record", logging.LogRecord),
+        ],
+    )
 ):
-    def __new__(cls, name, message, level, meta, record):
+    def __new__(
+        cls,
+        name: str,
+        message: str,
+        level: int,
+        meta: Dict[object, object],
+        record: logging.LogRecord,
+    ):
         return super(StructuredLoggerMessage, cls).__new__(
             cls,
             check.str_param(name, "name"),
@@ -124,7 +141,7 @@ def construct_single_handler_logger(name, level, handler):
 BASE_DAGSTER_LOGGER = logging.getLogger(name="dagster")
 
 
-def get_dagster_logger(name: str = None) -> logging.Logger:
+def get_dagster_logger(name: Optional[str] = None) -> logging.Logger:
     """
     Creates a python logger whose output messages will be captured and converted into Dagster log
     messages. This means they will have structured information such as the step_key, run_id, etc.

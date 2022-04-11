@@ -1,7 +1,11 @@
 import pytest
 import responses
-from dagster import Failure, build_init_resource_context
 from dagster_airbyte import AirbyteOutput, AirbyteState, airbyte_resource
+from dagster_airbyte.utils import generate_materializations
+
+from dagster import Failure, MetadataEntry, build_init_resource_context
+
+from .utils import get_sample_connection_json, get_sample_job_json
 
 
 @responses.activate
@@ -26,12 +30,7 @@ def test_trigger_connection():
 
 def test_trigger_connection_fail():
     ab_resource = airbyte_resource(
-        build_init_resource_context(
-            config={"host": "some_host", "port": "8000", "request_max_retries": 1}
-        )
-    )
-    responses.add(
-        method=responses.POST, url=ab_resource.api_base_url + "/connections/sync", status=500
+        build_init_resource_context(config={"host": "some_host", "port": "8000"})
     )
     with pytest.raises(Failure, match="Exceeded max number of retries"):
         ab_resource.sync_and_poll("some_connection")
@@ -42,7 +41,7 @@ def test_trigger_connection_fail():
     "state",
     [AirbyteState.SUCCEEDED, AirbyteState.CANCELLED, AirbyteState.ERROR, "unrecognized"],
 )
-def test_sync_and_pool(state):
+def test_sync_and_poll(state):
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
@@ -50,6 +49,12 @@ def test_sync_and_pool(state):
                 "port": "8000",
             }
         )
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/get",
+        json=get_sample_connection_json(),
+        status=200,
     )
     responses.add(
         method=responses.POST,
@@ -78,7 +83,125 @@ def test_sync_and_pool(state):
 
     else:
         r = ab_resource.sync_and_poll("some_connection", 0)
-        assert r == AirbyteOutput({"id": 1, "status": state})
+        assert r == AirbyteOutput(
+            job_details={"job": {"id": 1, "status": state}},
+            connection_details=get_sample_connection_json(),
+        )
+
+
+@responses.activate
+def test_logging_multi_attempts(capsys):
+    def _get_attempt(ls):
+        return {"logs": {"logLines": ls}}
+
+    ab_resource = airbyte_resource(
+        build_init_resource_context(
+            config={
+                "host": "some_host",
+                "port": "8000",
+            }
+        )
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/get",
+        json={},
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/sync",
+        json={"job": {"id": 1}},
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/jobs/get",
+        json={"job": {"id": 1, "status": "pending"}},
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/jobs/get",
+        json={
+            "job": {"id": 1, "status": "running"},
+            "attempts": [_get_attempt(ls) for ls in [["log1a"]]],
+        },
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/jobs/get",
+        json={
+            "job": {"id": 1, "status": "running"},
+            "attempts": [_get_attempt(ls) for ls in [["log1a", "log1b"]]],
+        },
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/jobs/get",
+        json={
+            "job": {"id": 1, "status": "running"},
+            "attempts": [
+                _get_attempt(ls) for ls in [["log1a", "log1b", "log1c"], ["log2a", "log2b"]]
+            ],
+        },
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/jobs/get",
+        json={
+            "job": {"id": 1, "status": AirbyteState.SUCCEEDED},
+            "attempts": [
+                _get_attempt(ls) for ls in [["log1a", "log1b", "log1c"], ["log2a", "log2b"]]
+            ],
+        },
+        status=200,
+    )
+    ab_resource.sync_and_poll("some_connection", 0, None)
+    captured = capsys.readouterr()
+    assert captured.out == "\n".join(["log1a", "log1b", "log1c", "log2a", "log2b"]) + "\n"
+
+
+@responses.activate
+def test_assets():
+
+    ab_resource = airbyte_resource(
+        build_init_resource_context(
+            config={
+                "host": "some_host",
+                "port": "8000",
+            }
+        )
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/get",
+        json=get_sample_connection_json(),
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/sync",
+        json={"job": {"id": 1}},
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/jobs/get",
+        json=get_sample_job_json(),
+        status=200,
+    )
+
+    airbyte_output = ab_resource.sync_and_poll("some_connection", 0, None)
+
+    materializations = list(generate_materializations(airbyte_output, []))
+    assert len(materializations) == 3
+
+    assert MetadataEntry("bytesEmitted", value=1234) in materializations[0].metadata_entries
+    assert MetadataEntry("recordsCommitted", value=4321) in materializations[0].metadata_entries
 
 
 @responses.activate
@@ -90,6 +213,12 @@ def test_sync_and_poll_timeout():
                 "port": "8000",
             }
         )
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/get",
+        json={},
+        status=200,
     )
     responses.add(
         method=responses.POST,

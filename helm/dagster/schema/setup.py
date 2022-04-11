@@ -18,7 +18,12 @@ setup(
     ],
     packages=find_packages(exclude=["schema_tests"]),
     install_requires=["click", "pydantic"],
-    extras_require={"test": ["kubernetes"]},
+    extras_require={
+        "test": [
+            # remove pin once minimum supported kubernetes version is 1.19
+            "kubernetes<22.6.0"
+        ]
+    },
     entry_points={
         "console_scripts": [
             "dagster-helm = schema.cli:main",

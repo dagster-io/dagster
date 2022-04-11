@@ -3,7 +3,7 @@ import subprocess
 from typing import List
 
 import pytest
-from dagster_k8s.models import k8s_model_from_dict
+from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from kubernetes import client as k8s_client
 from kubernetes.client import models
 from schema.charts.dagster.subschema.global_ import Global
@@ -390,6 +390,46 @@ def test_startup_probe_enabled(template: HelmTemplate, enabled: bool):
     assert (container.startup_probe is not None) == enabled
 
 
+def test_readiness_probes(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.readinessProbe = kubernetes.ReadinessProbe.construct(timeout_seconds=3)
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    assert container.startup_probe is None
+    assert container.startup_probe is None
+    assert container.readiness_probe is not None
+
+
+def test_readiness_probes_subchart(subchart_template: HelmTemplate):
+    deployment = create_simple_user_deployment(
+        "foo",
+    )
+    deployment.readinessProbe = kubernetes.ReadinessProbe.construct(timeout_seconds=3)
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = subchart_template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    assert container.startup_probe is None
+    assert container.startup_probe is None
+    assert container.readiness_probe is not None
+
+
 def test_startup_probe_exec(template: HelmTemplate):
     deployment = create_simple_user_deployment("foo")
     deployment.startupProbe = kubernetes.StartupProbe.construct(
@@ -517,13 +557,19 @@ def test_user_deployment_volumes(template: HelmTemplate):
 
     deployed_volume_mounts = user_deployments[0].spec.template.spec.containers[0].volume_mounts
     assert deployed_volume_mounts == [
-        k8s_model_from_dict(k8s_client.models.V1VolumeMount, volume_mount)
+        k8s_model_from_dict(
+            k8s_client.models.V1VolumeMount,
+            k8s_snake_case_dict(k8s_client.models.V1VolumeMount, volume_mount),
+        )
         for volume_mount in volume_mounts
     ]
 
     deployed_volumes = user_deployments[0].spec.template.spec.volumes
     assert deployed_volumes == [
-        k8s_model_from_dict(k8s_client.models.V1Volume, volume) for volume in volumes
+        k8s_model_from_dict(
+            k8s_client.models.V1Volume, k8s_snake_case_dict(k8s_client.models.V1Volume, volume)
+        )
+        for volume in volumes
     ]
 
     assert image_name == deployment.image.repository

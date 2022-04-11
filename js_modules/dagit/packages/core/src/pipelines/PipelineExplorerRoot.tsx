@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Loading} from '../ui/Loading';
 import {buildPipelineSelector} from '../workspace/WorkspaceContext';
@@ -13,6 +13,7 @@ import {explodeCompositesInHandleGraph} from './CompositeSupport';
 import {
   GraphExplorer,
   GraphExplorerOptions,
+  GRAPH_EXPLORER_ASSET_NODE_FRAGMENT,
   GRAPH_EXPLORER_FRAGMENT,
   GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT,
 } from './GraphExplorer';
@@ -49,17 +50,16 @@ export const PipelineExplorerContainer: React.FC<{
 }> = ({explorerPath, repoAddress, onChangeExplorerPath, isGraph = false}) => {
   const [options, setOptions] = React.useState<GraphExplorerOptions>({
     explodeComposites: explorerPath.explodeComposites ?? false,
+    preferAssetRendering: true,
   });
 
   const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
-  const {flagAssetGraph} = useFeatureFlags();
 
   const pipelineResult = useQuery<PipelineExplorerRootQuery, PipelineExplorerRootQueryVariables>(
     PIPELINE_EXPLORER_ROOT_QUERY,
     {
       variables: {
-        pipelineSelector: pipelineSelector,
         snapshotPipelineSelector: explorerPath.snapshotId ? undefined : pipelineSelector,
         snapshotId: explorerPath.snapshotId ? explorerPath.snapshotId : undefined,
         rootHandleID: parentNames.join('.'),
@@ -70,7 +70,7 @@ export const PipelineExplorerContainer: React.FC<{
 
   return (
     <Loading<PipelineExplorerRootQuery> queryResult={pipelineResult}>
-      {({pipelineSnapshotOrError: result, assetNodes}) => {
+      {({pipelineSnapshotOrError: result}) => {
         if (result.__typename !== 'PipelineSnapshot') {
           return <NonIdealPipelineQueryResult isGraph={isGraph} result={result} />;
         }
@@ -79,24 +79,15 @@ export const PipelineExplorerContainer: React.FC<{
         const displayedHandles = options.explodeComposites
           ? explodeCompositesInHandleGraph(result.solidHandles)
           : result.solidHandles;
+        const assetNodesPresent = result.solidHandles.some(
+          (h) => h.solid.definition.assetNodes.length > 0,
+        );
 
-        if (flagAssetGraph && assetNodes.length > 0) {
-          const unrepresentedOps = result.solidHandles.filter(
-            (handle) => !assetNodes.some((asset) => asset.opName === handle.handleID),
-          );
-          if (unrepresentedOps.length) {
-            console.error(
-              `The following ops are not represented in the ${
-                explorerPath.pipelineName
-              } asset graph: ${unrepresentedOps
-                .map((h) => h.solid.name)
-                .join(
-                  ', ',
-                )}. Does this graph have a mix of ops and assets? This isn't currently supported.`,
-            );
-          }
+        if (options.preferAssetRendering && assetNodesPresent) {
           return (
             <AssetGraphExplorer
+              options={options}
+              setOptions={setOptions}
               pipelineSelector={pipelineSelector}
               handles={displayedHandles}
               explorerPath={explorerPath}
@@ -130,16 +121,11 @@ export const PipelineExplorerContainer: React.FC<{
 
 export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
   query PipelineExplorerRootQuery(
-    $pipelineSelector: PipelineSelector!
     $snapshotPipelineSelector: PipelineSelector
     $snapshotId: String
     $rootHandleID: String!
     $requestScopeHandleID: String
   ) {
-    assetNodes(pipeline: $pipelineSelector) {
-      id
-      opName
-    }
     pipelineSnapshotOrError(
       snapshotId: $snapshotId
       activePipelineSelector: $snapshotPipelineSelector
@@ -156,6 +142,12 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
           handleID
           solid {
             name
+            definition {
+              assetNodes {
+                id
+                ...GraphExplorerAssetNodeFragment
+              }
+            }
           }
           ...GraphExplorerSolidHandleFragment
         }
@@ -166,11 +158,11 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       ... on PipelineSnapshotNotFoundError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
   }
   ${GRAPH_EXPLORER_FRAGMENT}
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
+  ${GRAPH_EXPLORER_ASSET_NODE_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

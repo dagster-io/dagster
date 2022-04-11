@@ -1,6 +1,7 @@
 import csv
 
 import requests
+
 from dagster import get_dagster_logger, job, op
 
 
@@ -14,9 +15,7 @@ def download_cereals():
 @op
 def find_sugariest(cereals):
     sorted_by_sugar = sorted(cereals, key=lambda cereal: cereal["sugars"])
-    get_dagster_logger().info(
-        f'{sorted_by_sugar[-1]["name"]} is the sugariest cereal'
-    )
+    get_dagster_logger().info(f'{sorted_by_sugar[-1]["name"]} is the sugariest cereal')
 
 
 @job

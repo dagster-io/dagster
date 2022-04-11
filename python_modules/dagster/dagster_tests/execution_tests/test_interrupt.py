@@ -5,6 +5,7 @@ import time
 from threading import Thread
 
 import pytest
+
 from dagster import (
     DagsterEventType,
     Failure,
@@ -332,11 +333,16 @@ def test_retry_policy():
     """
 
     def _send_int(path):
-        while not os.path.exists(path):
-            time.sleep(0.05)
+        pid = None
+        while True:
+            if os.path.exists(path):
+                with open(path) as f:
+                    pid_str = f.read()
+                    if pid_str:
+                        pid = int(pid_str)
+                        break
 
-        with open(path) as f:
-            pid = int(f.read())
+            time.sleep(0.05)
 
         os.kill(pid, signal.SIGINT)
 

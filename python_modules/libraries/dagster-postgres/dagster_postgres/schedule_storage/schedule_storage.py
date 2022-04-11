@@ -1,4 +1,5 @@
 import sqlalchemy as db
+
 from dagster import check
 from dagster.core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
@@ -61,6 +62,10 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             with conn.begin():
                 ScheduleStorageSqlMetadata.create_all(conn)
                 stamp_alembic_rev(pg_alembic_config(__file__), conn)
+
+        # mark all the data migrations as applied
+        self.migrate()
+        self.optimize()
 
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold an open connection and set statement_timeout

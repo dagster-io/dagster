@@ -10,7 +10,7 @@ from dagster.core.definitions import (
     Output,
     SolidDefinition,
 )
-from dagster.core.definitions.decorators.solid import DecoratedSolidFunction
+from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.types.dagster_type import DagsterTypeKind
 
@@ -100,8 +100,7 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
                     node_type=context.solid_def.node_type_str,
                 )
             )
-        metadata = context.get_output_metadata(output_defs[0].name)
-        yield Output(value=result, output_name=output_defs[0].name, metadata=metadata)
+        yield Output(value=result, output_name=output_defs[0].name)
     elif len(output_defs) > 1 and isinstance(result, tuple):
         if len(result) != len(output_defs):
             check.failed(

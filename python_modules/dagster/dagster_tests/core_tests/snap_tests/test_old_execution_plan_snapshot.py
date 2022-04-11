@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import pytest
+
 from dagster import pipeline
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.plan import ExecutionPlan

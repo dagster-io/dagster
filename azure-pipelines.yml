@@ -8,8 +8,7 @@ parameters:
   - name: py3_versions
     type: object
     default:
-      - "3.6"
-      - "3.7"
+      - "3.9"
   - name: py3_env_suffixes
     type: object
     default:
@@ -22,7 +21,7 @@ parameters:
 jobs:
   - job: "dagster"
     pool:
-      vmImage: "vs2017-win2016"
+      vmImage: "windows-2019"
     strategy:
       matrix:
         ${{ each py_version in parameters.py3_versions }}:

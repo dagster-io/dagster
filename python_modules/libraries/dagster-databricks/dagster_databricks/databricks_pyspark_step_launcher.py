@@ -4,6 +4,15 @@ import pickle
 import tempfile
 import time
 
+from dagster_databricks import databricks_step_main
+from dagster_databricks.databricks import (
+    DEFAULT_RUN_MAX_WAIT_TIME_SEC,
+    DatabricksJobRunner,
+    poll_run_state,
+)
+from dagster_pyspark.utils import build_pyspark_zip
+from requests import HTTPError
+
 from dagster import Bool, Field, IntSource, StringSource, check, resource
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import raise_execution_interrupts
@@ -14,14 +23,6 @@ from dagster.core.execution.plan.external_step import (
 )
 from dagster.serdes import deserialize_value
 from dagster.utils.backoff import backoff
-from dagster_databricks import databricks_step_main
-from dagster_databricks.databricks import (
-    DEFAULT_RUN_MAX_WAIT_TIME_SEC,
-    DatabricksJobRunner,
-    poll_run_state,
-)
-from dagster_pyspark.utils import build_pyspark_zip
-from requests import HTTPError
 
 from .configs import (
     define_databricks_secrets_config,
@@ -142,7 +143,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             "Missing config: need to provide either 'local_dagster_job_package_path' or 'local_pipeline_package_path' config entry",
         )
         check.invariant(
-            local_dagster_job_package_path is None or local_pipeline_package_path,
+            local_dagster_job_package_path is None or local_pipeline_package_path is None,
             "Error in config: Provided both 'local_dagster_job_package_path' and 'local_pipeline_package_path' entries. Need to specify one or the other.",
         )
         self.local_dagster_job_package_path = check.str_param(
@@ -227,7 +228,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                         self.databricks_runner.max_wait_time_sec,
                     )
                 finally:
-                    all_events = self.get_step_events(step_context.run_id, step_key)
+                    all_events = self.get_step_events(
+                        step_context.run_id, step_key, step_context.previous_attempt_count
+                    )
                     # we get all available records on each poll, but we only want to process the
                     # ones we haven't seen before
                     for event in all_events[processed_events:]:
@@ -239,8 +242,8 @@ class DatabricksPySparkStepLauncher(StepLauncher):
 
         step_context.log.info(f"Databricks run {databricks_run_id} completed.")
 
-    def get_step_events(self, run_id: str, step_key: str):
-        path = self._dbfs_path(run_id, step_key, PICKLED_EVENTS_FILE_NAME)
+    def get_step_events(self, run_id: str, step_key: str, retry_number: int):
+        path = self._dbfs_path(run_id, step_key, f"{retry_number}_{PICKLED_EVENTS_FILE_NAME}")
 
         def _get_step_records():
             serialized_records = self.databricks_runner.client.read_file(path)
@@ -288,7 +291,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         main_local_path = self._main_file_local_path()
         with open(main_local_path, "rb") as infile:
             self.databricks_runner.client.put_file(
-                infile, self._dbfs_path(run_id, step_key, self._main_file_name())
+                infile, self._dbfs_path(run_id, step_key, self._main_file_name()), overwrite=True
             )
 
         log.info("Uploading dagster job to DBFS")
@@ -298,7 +301,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             build_pyspark_zip(zip_local_path, self.local_dagster_job_package_path)
             with open(zip_local_path, "rb") as infile:
                 self.databricks_runner.client.put_file(
-                    infile, self._dbfs_path(run_id, step_key, CODE_ZIP_NAME)
+                    infile, self._dbfs_path(run_id, step_key, CODE_ZIP_NAME), overwrite=True
                 )
 
         log.info("Uploading step run ref file to DBFS")
@@ -309,6 +312,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         self.databricks_runner.client.put_file(
             step_pickle_file,
             self._dbfs_path(run_id, step_key, PICKLED_STEP_RUN_REF_FILE_NAME),
+            overwrite=True,
         )
 
         databricks_config = DatabricksConfig(
@@ -323,6 +327,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         self.databricks_runner.client.put_file(
             databricks_config_file,
             self._dbfs_path(run_id, step_key, PICKLED_CONFIG_FILE_NAME),
+            overwrite=True,
         )
 
     def _log_logs_from_cluster(self, log, run_id):

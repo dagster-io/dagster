@@ -10,7 +10,7 @@ from dagster.core.execution.backfill import (
     submit_backfill_runs,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, RunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.core.workspace import IWorkspace
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -48,6 +48,9 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
     for backfill_job in backfill_jobs:
         backfill_id = backfill_job.backfill_id
 
+        # refetch, in case the backfill was updated in the meantime
+        backfill_job = instance.get_backfill(backfill_id)
+
         if not backfill_job.last_submitted_partition_name:
             logger.info(f"Starting backfill for {backfill_id}")
         else:
@@ -60,7 +63,7 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
         )
 
         try:
-            repo_location = workspace.get_location(origin)
+            repo_location = workspace.get_location(origin.location_name)
             repo_name = backfill_job.partition_set_origin.external_repository_origin.repository_name
             partition_set_name = backfill_job.partition_set_origin.partition_set_name
             if not repo_location.has_repository(repo_name):
@@ -76,8 +79,6 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
 
             has_more = True
             while has_more:
-                # refetch the backfill job
-                backfill_job = instance.get_backfill(backfill_job.backfill_id)
                 if backfill_job.status != BulkActionStatus.REQUESTED:
                     break
 
@@ -87,15 +88,20 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
                 _check_for_debug_crash(debug_crash_flags, "BEFORE_SUBMIT")
 
                 if chunk:
-
                     for _run_id in submit_backfill_runs(
                         instance, workspace, repo_location, backfill_job, chunk
                     ):
                         yield
+                        # before submitting, refetch the backfill job to check for status changes
+                        backfill_job = instance.get_backfill(backfill_job.backfill_id)
+                        if backfill_job.status != BulkActionStatus.REQUESTED:
+                            return
 
                 _check_for_debug_crash(debug_crash_flags, "AFTER_SUBMIT")
 
                 if has_more:
+                    # refetch, in case the backfill was updated in the meantime
+                    backfill_job = instance.get_backfill(backfill_job.backfill_id)
                     instance.update_backfill(backfill_job.with_partition_checkpoint(checkpoint))
                     yield
                     time.sleep(CHECKPOINT_INTERVAL)
@@ -128,7 +134,7 @@ def _get_partitions_chunk(instance, logger, backfill_job, chunk_size):
 
     # for idempotence, fetch all runs with the current backfill id
     backfill_runs = instance.get_runs(
-        PipelineRunsFilter(tags=PipelineRun.tags_for_backfill_id(backfill_job.backfill_id))
+        RunsFilter(tags=PipelineRun.tags_for_backfill_id(backfill_job.backfill_id))
     )
     completed_partitions = set([run.tags.get(PARTITION_NAME_TAG) for run in backfill_runs])
     initial_checkpoint = (

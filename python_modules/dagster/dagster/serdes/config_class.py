@@ -1,8 +1,9 @@
 import importlib
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import NamedTuple
 
 import yaml
+
 from dagster import check
 
 from .serdes import whitelist_for_serdes
@@ -48,9 +49,9 @@ class ConfigurableClassData(
         }
 
     def rehydrate(self):
-        from dagster.core.errors import DagsterInvalidConfigError
         from dagster.config.field import resolve_to_config_type
         from dagster.config.validate import process_config
+        from dagster.core.errors import DagsterInvalidConfigError
 
         try:
             module = importlib.import_module(self.module_name)
@@ -115,7 +116,8 @@ class ConfigurableClass(ABC):
 
     """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def inst_data(self):
         """
         Subclass must be able to return the inst_data as a property if it has been constructed

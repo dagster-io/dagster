@@ -3,10 +3,6 @@
 
 import os
 
-from dagster.core.execution.api import execute_pipeline
-from dagster.core.test_utils import environ
-from dagster.utils.merger import merge_dicts
-from dagster.utils.yaml_utils import merge_yamls
 from dagster_test.test_project import (
     find_local_test_image,
     get_buildkite_registry_config,
@@ -14,6 +10,11 @@ from dagster_test.test_project import (
     get_test_project_environments_path,
     get_test_project_recon_pipeline,
 )
+
+from dagster.core.execution.api import execute_pipeline
+from dagster.core.test_utils import environ
+from dagster.utils.merger import merge_dicts
+from dagster.utils.yaml_utils import merge_yamls
 
 from . import IS_BUILDKITE, docker_postgres_instance
 

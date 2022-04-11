@@ -1,9 +1,11 @@
 import copy
 from contextlib import ExitStack
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import pendulum
+
 from dagster import check
 from dagster.seven import funcsigs
 
@@ -25,12 +27,18 @@ from ..storage.tags import check_tags
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
-from .run_request import InstigatorType, RunRequest, SkipReason
+from .run_request import RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
-    from .decorators.schedule import DecoratedScheduleFunction
+    from .decorators.schedule_decorator import DecoratedScheduleFunction
+
+
+@whitelist_for_serdes
+class DefaultScheduleStatus(Enum):
+    RUNNING = "RUNNING"
+    STOPPED = "STOPPED"
 
 
 class ScheduleEvaluationContext:
@@ -171,6 +179,8 @@ class ScheduleDefinition:
         description (Optional[str]): A human-readable description of the schedule.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should execute when this
             schedule runs.
+        default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def __init__(
@@ -192,15 +202,16 @@ class ScheduleDefinition:
         ] = None,
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, PipelineDefinition]] = None,
+        default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     ):
-        from .decorators.schedule import DecoratedScheduleFunction
+        from .decorators.schedule_decorator import DecoratedScheduleFunction
 
         self._cron_schedule = check.str_param(cron_schedule, "cron_schedule")
 
         if not is_valid_cron_string(self._cron_schedule):
             raise DagsterInvalidDefinitionError(
-                f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''.  "
-                "Dagster recognizes cron expressions consisting of 5 space-separated fields."
+                f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''. "
+                "Dagster recognizes standard cron expressions consisting of 5 fields."
             )
 
         if job is not None:
@@ -310,7 +321,7 @@ class ScheduleDefinition:
         if self._execution_timezone:
             try:
                 # Verify that the timezone can be loaded
-                pendulum.timezone(self._execution_timezone)
+                pendulum.timezone(self._execution_timezone)  # type: ignore
             except Exception:
                 raise DagsterInvalidDefinitionError(
                     "Invalid execution timezone {timezone} for {schedule_name}".format(
@@ -318,8 +329,12 @@ class ScheduleDefinition:
                     )
                 )
 
+        self._default_status = check.inst_param(
+            default_status, "default_status", DefaultScheduleStatus
+        )
+
     def __call__(self, *args, **kwargs):
-        from .decorators.schedule import DecoratedScheduleFunction
+        from .decorators.schedule_decorator import DecoratedScheduleFunction
 
         if not isinstance(self._execution_fn, DecoratedScheduleFunction):
             raise DagsterInvalidInvocationError(
@@ -378,10 +393,6 @@ class ScheduleDefinition:
         return self._target.pipeline_name
 
     @property
-    def job_type(self) -> InstigatorType:
-        return InstigatorType.SCHEDULE
-
-    @property
     def solid_selection(self) -> Optional[List[Any]]:
         return self._target.solid_selection
 
@@ -405,6 +416,12 @@ class ScheduleDefinition:
     def execution_timezone(self) -> Optional[str]:
         return self._execution_timezone
 
+    @property
+    def job(self) -> PipelineDefinition:
+        if isinstance(self._target, DirectTarget):
+            return self._target.pipeline
+        raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
+
     def evaluate_tick(self, context: "ScheduleEvaluationContext") -> ScheduleExecutionData:
         """Evaluate schedule using the provided context.
 
@@ -415,7 +432,7 @@ class ScheduleDefinition:
 
         """
 
-        from .decorators.schedule import DecoratedScheduleFunction
+        from .decorators.schedule_decorator import DecoratedScheduleFunction
 
         check.inst_param(context, "context", ScheduleEvaluationContext)
         if isinstance(self._execution_fn, DecoratedScheduleFunction):
@@ -467,6 +484,10 @@ class ScheduleDefinition:
             return self._target.load()
 
         check.failed("Target is not loadable")
+
+    @property
+    def default_status(self) -> DefaultScheduleStatus:
+        return self._default_status
 
 
 def is_context_provided(params: List[funcsigs.Parameter]) -> bool:

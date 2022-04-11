@@ -1,7 +1,8 @@
-from collections import namedtuple
+from typing import Dict, List, NamedTuple, Optional
 
 import pkg_resources
 import yaml
+
 from dagster import check
 from dagster.core.definitions.utils import config_from_files, config_from_yaml_strings
 from dagster.core.errors import DagsterInvariantViolationError
@@ -12,7 +13,16 @@ from .utils import check_valid_name
 
 
 class PresetDefinition(
-    namedtuple("_PresetDefinition", "name run_config solid_selection mode tags")
+    NamedTuple(
+        "_PresetDefinition",
+        [
+            ("name", str),
+            ("run_config", Optional[Dict[str, object]]),
+            ("solid_selection", Optional[List[str]]),
+            ("mode", str),
+            ("tags", Dict[str, str]),
+        ],
+    )
 ):
     """Defines a preset configuration in which a pipeline can execute.
 
@@ -43,11 +53,11 @@ class PresetDefinition(
 
     def __new__(
         cls,
-        name,
-        run_config=None,
-        solid_selection=None,
-        mode=None,
-        tags=None,
+        name: str,
+        run_config: Optional[Dict[str, object]] = None,
+        solid_selection: Optional[List[str]] = None,
+        mode: Optional[str] = None,
+        tags: Optional[Dict[str, object]] = None,
     ):
 
         return super(PresetDefinition, cls).__new__(

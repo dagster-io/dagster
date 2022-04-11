@@ -1,10 +1,10 @@
-import abc
+from abc import ABC, abstractmethod
 
 from dagster.core.execution.retries import RetryMode
 
 
-class Executor(abc.ABC):  # pylint: disable=no-init
-    @abc.abstractmethod
+class Executor(ABC):  # pylint: disable=no-init
+    @abstractmethod
     def execute(self, plan_context, execution_plan):
         """
         For the given context and execution plan, orchestrate a series of sub plan executions in a way that satisfies the whole plan being executed.
@@ -17,7 +17,8 @@ class Executor(abc.ABC):  # pylint: disable=no-init
             A stream of dagster events.
         """
 
-    @abc.abstractproperty
+    @property
+    @abstractmethod
     def retries(self) -> RetryMode:
         """
         Whether retries are enabled or disabled for this instance of the executor.

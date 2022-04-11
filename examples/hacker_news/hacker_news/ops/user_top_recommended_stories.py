@@ -1,9 +1,10 @@
 import numpy as np
-from dagster import Out, op
 from hacker_news.ops.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame
 from scipy.sparse import coo_matrix, csc_matrix, csr_matrix
 from sklearn.decomposition import TruncatedSVD
+
+from dagster import Out, op
 
 
 @op(

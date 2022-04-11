@@ -1,14 +1,19 @@
 import time
-from typing import Dict, Generator, Tuple
+from typing import Dict, Generator, List, Tuple
 
 import pytest
+
 from dagster import (
+    AssetKey,
     AssetMaterialization,
     AssetObservation,
     DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DagsterType,
     DagsterTypeCheckDidNotPass,
+    DynamicOut,
+    DynamicOutput,
     ExpectationResult,
     In,
     Materialization,
@@ -84,6 +89,14 @@ def test_ins():
     assert my_op(1, "2") == 3
 
 
+def test_ins_dagster_types():
+    assert In(dagster_type=None)
+    assert In(dagster_type=int)
+    assert In(dagster_type=List)
+    assert In(dagster_type=List[int])  # typing type
+    assert In(dagster_type=Int)  # dagster type
+
+
 def test_out():
     @op(out=Out(metadata={"x": 1}))
     def my_op() -> int:
@@ -97,6 +110,14 @@ def test_out():
     assert my_op.output_defs[0].metadata == {"x": 1}
     assert my_op.output_defs[0].name == "result"
     assert my_op() == 1
+
+
+def test_out_dagster_types():
+    assert Out(dagster_type=None)
+    assert Out(dagster_type=int)
+    assert Out(dagster_type=List)
+    assert Out(dagster_type=List[int])  # typing type
+    assert Out(dagster_type=Int)  # dagster type
 
 
 def test_multi_out():
@@ -615,6 +636,7 @@ def test_metadata_logging():
     assert result.success
     assert result.output_for_node("basic") == "baz"
     events = result.events_for_node("basic")
+    assert len(events[1].event_specific_data.metadata_entries) == 1
     metadata_entry = events[1].event_specific_data.metadata_entries[0]
     assert metadata_entry.label == "foo"
     assert metadata_entry.entry_data.text == "bar"
@@ -631,3 +653,144 @@ def test_metadata_logging_multiple_entries():
         match="In op 'basic', attempted to log metadata for output 'result' more than once.",
     ):
         execute_op_in_graph(basic)
+
+
+def test_log_event_multi_output():
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op(context):
+        context.log_event(AssetMaterialization("foo"))
+        yield Output(value=1, output_name="out1")
+        context.log_event(AssetMaterialization("bar"))
+        yield Output(value=2, output_name="out2")
+        context.log_event(AssetMaterialization("baz"))
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+    assert len(result.asset_materializations_for_node("the_op")) == 3
+
+
+def test_log_metadata_multi_output():
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op(context):
+        context.add_output_metadata({"foo": "bar"}, output_name="out1")
+        yield Output(value=1, output_name="out1")
+        context.add_output_metadata({"bar": "baz"}, output_name="out2")
+        yield Output(value=2, output_name="out2")
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+    events = result.events_for_node("the_op")
+    first_output_event = events[1]
+    second_output_event = events[3]
+
+    assert first_output_event.event_specific_data.metadata_entries[0].label == "foo"
+    assert second_output_event.event_specific_data.metadata_entries[0].label == "bar"
+
+
+def test_log_metadata_after_output():
+    @op
+    def the_op(context):
+        yield Output(1)
+        context.add_output_metadata({"foo": "bar"})
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="In op 'the_op', attempted to log output metadata for output 'result' which has already been yielded. Metadata must be logged before the output is yielded.",
+    ):
+        execute_op_in_graph(the_op)
+
+
+def test_log_metadata_multiple_dynamic_outputs():
+    @op(out={"out1": DynamicOut(), "out2": DynamicOut()})
+    def the_op(context):
+        context.add_output_metadata({"one": "one"}, output_name="out1", mapping_key="one")
+        yield DynamicOutput(value=1, output_name="out1", mapping_key="one")
+        context.add_output_metadata({"two": "two"}, output_name="out1", mapping_key="two")
+        context.add_output_metadata({"three": "three"}, output_name="out2", mapping_key="three")
+        yield DynamicOutput(value=2, output_name="out1", mapping_key="two")
+        yield DynamicOutput(value=3, output_name="out2", mapping_key="three")
+        context.add_output_metadata({"four": "four"}, output_name="out2", mapping_key="four")
+        yield DynamicOutput(value=4, output_name="out2", mapping_key="four")
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+    events = result.all_node_events
+    output_event_one = events[1]
+    assert output_event_one.event_specific_data.mapping_key == "one"
+    assert output_event_one.event_specific_data.metadata_entries[0].label == "one"
+    output_event_two = events[3]
+    assert output_event_two.event_specific_data.mapping_key == "two"
+    assert output_event_two.event_specific_data.metadata_entries[0].label == "two"
+    output_event_three = events[5]
+    assert output_event_three.event_specific_data.mapping_key == "three"
+    assert output_event_three.event_specific_data.metadata_entries[0].label == "three"
+    output_event_four = events[7]
+    assert output_event_four.event_specific_data.mapping_key == "four"
+    assert output_event_four.event_specific_data.metadata_entries[0].label == "four"
+
+
+def test_log_metadata_after_dynamic_output():
+    @op(out=DynamicOut())
+    def the_op(context):
+        yield DynamicOutput(1, mapping_key="one")
+        context.add_output_metadata({"foo": "bar"}, mapping_key="one")
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="In op 'the_op', attempted to log output metadata for output 'result' with mapping_key 'one' which has already been yielded. Metadata must be logged before the output is yielded.",
+    ):
+        execute_op_in_graph(the_op)
+
+
+def test_log_metadata_asset_materialization():
+    key = AssetKey(["foo"])
+
+    @op(out=Out(asset_key=key))
+    def the_op(context):
+        context.add_output_metadata({"bar": "baz"})
+        return 5
+
+    result = execute_op_in_graph(the_op)
+    materialization = result.asset_materializations_for_node("the_op")[0]
+    assert len(materialization.metadata_entries) == 1
+    assert materialization.metadata_entries[0].label == "bar"
+    assert materialization.metadata_entries[0].entry_data.text == "baz"
+
+
+def test_implicit_op_output_with_asset_key():
+    @op(out=Out(asset_key=AssetKey("my_dataset")))
+    def my_constant_asset_op():
+        return 5
+
+    result = execute_op_in_graph(my_constant_asset_op)
+    assert result.success
+    assert len(result.asset_materializations_for_node(my_constant_asset_op.name)) == 1
+
+
+def test_args_kwargs_op():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"@op 'the_op' decorated function has positional vararg parameter "
+        r"'\*args'. @op decorated functions should only have keyword arguments "
+        r"that match input names and, if system information is required, a "
+        r"first positional parameter named 'context'.",
+    ):
+
+        @op(ins={"the_in": In()})
+        def the_op(*args):
+            pass
+
+    @op(ins={"the_in": In()})
+    def the_op(**kwargs):
+        return kwargs["the_in"]
+
+    @op
+    def emit_op():
+        return 1
+
+    @graph
+    def the_graph_provides_inputs():
+        the_op(emit_op())
+
+    result = the_graph_provides_inputs.execute_in_process()
+    assert result.success

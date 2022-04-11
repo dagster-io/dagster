@@ -1,4 +1,7 @@
+import warnings
+
 import pytest
+
 from dagster import (
     DagsterInvariantViolationError,
     Field,
@@ -8,7 +11,9 @@ from dagster import (
     job,
     op,
     reconstructable,
+    static_partitioned_config,
 )
+from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.core.test_utils import environ, instance_for_test
 
 
@@ -23,6 +28,15 @@ def define_the_job():
             my_op()
 
     return call_the_op
+
+
+def test_simple_job_no_warnings():
+
+    # will fail if any warning is emitted
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        job = define_the_job()
+        assert job.execute_in_process().success
 
 
 def test_job_execution_multiprocess_config():
@@ -125,3 +139,26 @@ def test_job_post_process_config():
 
     with environ({"SOME_ENV_VAR": "blah"}):
         assert the_job.execute_in_process().success
+
+
+def test_job_run_request():
+    def partition_fn(partition_key: str):
+        return {"ops": {"my_op": {"config": {"partition": partition_key}}}}
+
+    @static_partitioned_config(partition_keys=["a", "b", "c", "d"])
+    def my_partitioned_config(partition_key: str):
+        return partition_fn(partition_key)
+
+    @op
+    def my_op():
+        pass
+
+    @job(config=my_partitioned_config)
+    def my_job():
+        my_op()
+
+    for partition_key in ["a", "b", "c", "d"]:
+        run_request = my_job.run_request_for_partition(partition_key=partition_key, run_key=None)
+        assert run_request.run_config == partition_fn(partition_key)
+        assert run_request.tags
+        assert run_request.tags.get(PARTITION_NAME_TAG) == partition_key

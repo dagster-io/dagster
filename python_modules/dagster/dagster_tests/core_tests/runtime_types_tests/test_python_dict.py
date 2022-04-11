@@ -1,6 +1,7 @@
 import typing
 
 import pytest
+
 from dagster import (
     DagsterInvalidDefinitionError,
     DagsterTypeCheckDidNotPass,

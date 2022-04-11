@@ -1,5 +1,6 @@
-from dagster import repository
 from hacker_news_assets.sensors.slack_on_failure_sensor import make_slack_on_failure_sensor
+
+from dagster import repository
 
 
 def test_slack_on_failure_def():

@@ -48,6 +48,7 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_rep
 export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_typeSpecificData_ScheduleData {
@@ -80,10 +81,12 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_tic
 export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks_error | null;
 }
 
@@ -154,6 +157,7 @@ export interface SensorsRootQuery_unloadableInstigationStatesOrError_Instigation
 export interface SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_ScheduleData {
@@ -186,10 +190,12 @@ export interface SensorsRootQuery_unloadableInstigationStatesOrError_Instigation
 export interface SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error | null;
 }
 

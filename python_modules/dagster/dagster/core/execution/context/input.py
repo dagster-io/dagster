@@ -1,7 +1,8 @@
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
 
 from dagster import check
-from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.events import AssetKey, AssetObservation
+from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.solid_definition import SolidDefinition
@@ -12,11 +13,13 @@ from dagster.core.definitions.time_window_partitions import (
 from dagster.core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
-    from .output import OutputContext
     from dagster.core.definitions.resource_definition import Resources
+    from dagster.core.events import DagsterEvent
+    from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.types.dagster_type import DagsterType
-    from dagster.core.execution.context.system import StepExecutionContext
+
+    from .output import OutputContext
 
 
 class InputContext:
@@ -57,7 +60,7 @@ class InputContext:
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
     ):
-        from dagster.core.definitions.resource_definition import Resources, IContainsGenerator
+        from dagster.core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster.core.execution.build_resources import build_resources
 
         self._name = name
@@ -84,6 +87,10 @@ class InputContext:
             self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
             self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
             self._cm_scope_entered = False
+
+        self._events: List["DagsterEvent"] = []
+        self._observations: List[AssetObservation] = []
+        self._metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]] = []
 
     def __enter__(self):
         if self._resources_cm:
@@ -198,6 +205,9 @@ class InputContext:
 
     @property
     def asset_key(self) -> Optional[AssetKey]:
+        if not self._name:
+            return None
+
         matching_input_defs = [
             input_def
             for input_def in cast(SolidDefinition, self._solid_def).input_defs
@@ -286,6 +296,76 @@ class InputContext:
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
 
+    def consume_events(self) -> Iterator["DagsterEvent"]:
+        """Pops and yields all user-generated events that have been recorded from this context.
+
+        If consume_events has not yet been called, this will yield all logged events since the call to `handle_input`. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
+        """
+
+        events = self._events
+        self._events = []
+        yield from events
+
+    def add_input_metadata(
+        self,
+        metadata: Dict[str, Any],
+        description: Optional[str] = None,
+    ) -> None:
+        """Accepts a dictionary of metadata. Metadata entries will appear on the LOADED_INPUT event.
+        If the input is an asset, metadata will be attached to an asset observation.
+
+        The asset observation will be yielded from the run and appear in the event log.
+        Only valid if the context has an asset key.
+        """
+        from dagster.core.definitions.metadata import normalize_metadata
+        from dagster.core.events import DagsterEvent
+
+        metadata = check.dict_param(metadata, "metadata", key_type=str)
+        self._metadata_entries.extend(normalize_metadata(metadata, []))
+        if self.asset_key:
+            check.opt_str_param(description, "description")
+
+            observation = AssetObservation(
+                asset_key=self.asset_key,
+                description=description,
+                partition=self.asset_partition_key if self.has_asset_partitions else None,
+                metadata=metadata,
+            )
+            self._observations.append(observation)
+            if self._step_context:
+                self._events.append(DagsterEvent.asset_observation(self._step_context, observation))
+
+    def get_observations(
+        self,
+    ) -> List[AssetObservation]:
+        """Retrieve the list of user-generated asset observations that were observed via the context.
+
+        User-generated events that were yielded will not appear in this list.
+
+        **Examples:**
+
+        .. code-block:: python
+
+            from dagster import IOManager, build_input_context, AssetObservation
+
+            class MyIOManager(IOManager):
+                def load_input(self, context, obj):
+                    ...
+
+            def test_load_input():
+                mgr = MyIOManager()
+                context = build_input_context()
+                mgr.load_input(context)
+                observations = context.get_observations()
+                ...
+        """
+        return self._observations
+
+    def consume_metadata_entries(self) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
+        result = self._metadata_entries
+        self._metadata_entries = []
+        return result
+
 
 def build_input_context(
     name: Optional[str] = None,
@@ -296,6 +376,7 @@ def build_input_context(
     resource_config: Optional[Dict[str, Any]] = None,
     resources: Optional[Dict[str, Any]] = None,
     op_def: Optional[OpDefinition] = None,
+    step_context: Optional["StepExecutionContext"] = None,
 ) -> "InputContext":
     """Builds input context from provided parameters.
 
@@ -319,6 +400,7 @@ def build_input_context(
             definition.
         asset_key (Optional[AssetKey]): The asset key attached to the InputDefinition.
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
+        step_context (Optional[StepExecutionContext]): For internal use.
 
     Examples:
 
@@ -330,8 +412,9 @@ def build_input_context(
                 do_something
     """
     from dagster.core.execution.context.output import OutputContext
-    from dagster.core.types.dagster_type import DagsterType
+    from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.execution.context_creation_pipeline import initialize_console_manager
+    from dagster.core.types.dagster_type import DagsterType
 
     name = check.opt_str_param(name, "name")
     metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
@@ -340,6 +423,7 @@ def build_input_context(
     resource_config = check.opt_dict_param(resource_config, "resource_config", key_type=str)
     resources = check.opt_dict_param(resources, "resources", key_type=str)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
+    step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
 
     return InputContext(
         name=name,
@@ -351,6 +435,6 @@ def build_input_context(
         log_manager=initialize_console_manager(None),
         resource_config=resource_config,
         resources=resources,
-        step_context=None,
+        step_context=step_context,
         op_def=op_def,
     )

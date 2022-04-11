@@ -1,70 +1,73 @@
-// eslint-disable-next-line no-restricted-imports
-import {Intent, Menu, MenuDivider, MenuItem} from '@blueprintjs/core';
+/* eslint-disable no-restricted-imports */
+import {
+  Intent,
+  Menu as BlueprintMenu,
+  MenuDivider as BlueprintMenuDivider,
+  MenuItem as BlueprintMenuItem,
+} from '@blueprintjs/core';
 import * as React from 'react';
-import {Link, LinkProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {Box} from './Box';
-import {ColorsWIP} from './Colors';
-import {IconName, IconWIP, IconWrapper} from './Icon';
+import {Colors} from './Colors';
+import {IconName, Icon, IconWrapper} from './Icon';
 
-interface Props extends React.ComponentProps<typeof Menu> {}
+interface Props extends React.ComponentProps<typeof BlueprintMenu> {}
 
-export const MenuWIP: React.FC<Props> = (props) => {
+export const Menu: React.FC<Props> = (props) => {
   return <StyledMenu {...props} />;
 };
 
-const intentToTextColor = (intent: React.ComponentProps<typeof MenuItem>['intent']) => {
+const intentToTextColor = (intent: React.ComponentProps<typeof BlueprintMenuItem>['intent']) => {
   switch (intent) {
     case 'primary':
-      return ColorsWIP.Blue500;
+      return Colors.Blue500;
     case 'danger':
-      return ColorsWIP.Red500;
+      return Colors.Red500;
     case 'success':
-      return ColorsWIP.Green500;
+      return Colors.Green500;
     case 'warning':
-      return ColorsWIP.Yellow500;
+      return Colors.Yellow500;
     case 'none':
     default:
-      return ColorsWIP.Gray900;
+      return Colors.Gray900;
   }
 };
 
-const intentToIconColor = (intent: React.ComponentProps<typeof MenuItem>['intent']) => {
+const intentToIconColor = (intent: React.ComponentProps<typeof BlueprintMenuItem>['intent']) => {
   switch (intent) {
     case 'primary':
-      return ColorsWIP.Blue500;
+      return Colors.Blue500;
     case 'danger':
-      return ColorsWIP.Red500;
+      return Colors.Red500;
     case 'success':
-      return ColorsWIP.Green500;
+      return Colors.Green500;
     case 'warning':
-      return ColorsWIP.Yellow500;
+      return Colors.Yellow500;
     case 'none':
     default:
-      return ColorsWIP.Gray900;
+      return Colors.Gray900;
   }
 };
 
-const iconWithColor = (icon?: IconName | JSX.Element, intent?: Intent) => {
+export const iconWithColor = (icon?: IconName | JSX.Element, intent?: Intent) => {
   if (icon) {
     if (typeof icon === 'string') {
-      return <IconWIP name={icon} color={intentToIconColor(intent)} />;
+      return <Icon name={icon} color={intentToIconColor(intent)} />;
     }
     return icon;
   }
   return null;
 };
 
-interface CommonMenuItemProps {
+export interface CommonMenuItemProps {
   icon?: IconName | JSX.Element;
 }
 
 interface ItemProps
   extends CommonMenuItemProps,
-    Omit<React.ComponentProps<typeof MenuItem>, 'href' | 'icon'> {}
+    Omit<React.ComponentProps<typeof BlueprintMenuItem>, 'href' | 'icon'> {}
 
-export const MenuItemWIP: React.FC<ItemProps> = (props) => {
+export const MenuItem: React.FC<ItemProps> = (props) => {
   const {icon, intent, ...rest} = props;
   return (
     <StyledMenuItem
@@ -75,30 +78,9 @@ export const MenuItemWIP: React.FC<ItemProps> = (props) => {
   );
 };
 
-interface MenuLinkProps
-  extends CommonMenuItemProps,
-    Omit<React.ComponentProps<typeof MenuItem>, 'icon' | 'onClick'>,
-    LinkProps {}
-
-/**
- * If you want to use a menu item as a link, use `MenuLink` and provide a `to` prop.
- */
-export const MenuLink: React.FC<MenuLinkProps> = (props) => {
-  const {icon, intent, text, ...rest} = props;
-
-  return (
-    <StyledMenuLink {...rest}>
-      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-        {iconWithColor(icon, intent)}
-        <div>{text}</div>
-      </Box>
-    </StyledMenuLink>
-  );
-};
-
 interface MenuExternalLinkProps
   extends CommonMenuItemProps,
-    Omit<React.ComponentProps<typeof MenuItem>, 'href' | 'icon'> {
+    Omit<React.ComponentProps<typeof BlueprintMenuItem>, 'href' | 'icon'> {
   href: string;
 }
 
@@ -118,21 +100,21 @@ export const MenuExternalLink: React.FC<MenuExternalLinkProps> = (props) => {
   );
 };
 
-export const MenuDividerWIP = styled(MenuDivider)`
-  border-top: 1px solid ${ColorsWIP.Gray100};
+export const MenuDivider = styled(BlueprintMenuDivider)`
+  border-top: 1px solid ${Colors.Gray100};
   margin: 2px 0;
 `;
 
-const StyledMenu = styled(Menu)`
+const StyledMenu = styled(BlueprintMenu)`
   border-radius: 4px;
   padding: 8px 4px;
 `;
 
-interface StyledMenuItemProps extends React.ComponentProps<typeof MenuItem> {
+interface StyledMenuItemProps extends React.ComponentProps<typeof BlueprintMenuItem> {
   $textColor: string;
 }
 
-const StyledMenuItem = styled(MenuItem)<StyledMenuItemProps>`
+const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
   border-radius: 4px;
   color: ${({$textColor}) => $textColor};
   line-height: 20px;
@@ -149,10 +131,10 @@ const StyledMenuItem = styled(MenuItem)<StyledMenuItemProps>`
   }
 
   &.bp3-intent-primary.bp3-active {
-    background-color: ${ColorsWIP.Blue500};
+    background-color: ${Colors.Blue500};
 
     ${IconWrapper} {
-      background-color: ${ColorsWIP.White};
+      background-color: ${Colors.White};
     }
   }
 
@@ -161,7 +143,7 @@ const StyledMenuItem = styled(MenuItem)<StyledMenuItemProps>`
   }
 
   &.bp3-active ${IconWrapper} {
-    color: ${ColorsWIP.White};
+    color: ${Colors.White};
   }
 
   ${IconWrapper}:first-child {
@@ -169,7 +151,7 @@ const StyledMenuItem = styled(MenuItem)<StyledMenuItemProps>`
   }
 
   &:hover {
-    background: ${ColorsWIP.Gray100};
+    background: ${Colors.Gray100};
     color: ${({$textColor}) => $textColor};
   }
 
@@ -177,41 +159,5 @@ const StyledMenuItem = styled(MenuItem)<StyledMenuItemProps>`
     color: ${({$textColor}) => $textColor};
     box-shadow: rgba(58, 151, 212, 0.6) 0 0 0 2px;
     outline: none;
-  }
-`;
-
-const StyledMenuLink = styled(Link)`
-  text-decoration: none;
-
-  border-radius: 4px;
-  display: block;
-  line-height: 20px;
-  padding: 6px 8px 6px 12px;
-  transition: background-color 50ms, box-shadow 150ms;
-  align-items: flex-start;
-  user-select: none;
-
-  /**
-   * Use margin instead of align-items: center because the contents of the menu item may wrap 
-   * in unusual circumstances.
-   */
-  ${IconWrapper} {
-    margin-top: 2px;
-  }
-
-  ${IconWrapper}:first-child {
-    margin-left: -4px;
-  }
-
-  &&&:link,
-  &&&:visited,
-  &&&:hover,
-  &&&:active {
-    color: ${ColorsWIP.Gray900};
-    text-decoration: none;
-  }
-
-  &&&:hover {
-    background: ${ColorsWIP.Gray100};
   }
 `;

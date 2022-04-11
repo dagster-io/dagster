@@ -8,6 +8,7 @@ from typing import Any
 import requests
 import sqlalchemy
 import sqlalchemy.ext.declarative
+
 from dagster import Field, String, graph, op, repository, resource
 
 
@@ -139,9 +140,7 @@ calories_dev_job = calories.to_job(
 
 if __name__ == "__main__":
     # start_modes_main
-    run_config = {
-        "resources": {"warehouse": {"config": {"conn_str": ":memory:"}}}
-    }
+    run_config = {"resources": {"warehouse": {"config": {"conn_str": ":memory:"}}}}
     result = calories_test_job.execute_in_process(run_config=run_config)
     # end_modes_main
     assert result.success

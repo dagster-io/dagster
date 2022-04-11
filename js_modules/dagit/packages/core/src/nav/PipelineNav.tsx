@@ -1,5 +1,4 @@
-import {IconName} from '@blueprintjs/core';
-import {Box, PageHeader, Tab, Tabs, TagWIP, Heading, Tooltip} from '@dagster-io/ui';
+import {Box, PageHeader, Tabs, Tag, Heading, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
@@ -9,6 +8,7 @@ import {
   explorerPathToString,
   ExplorerPath,
 } from '../pipelines/PipelinePathUtils';
+import {TabLink} from '../ui/TabLink';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -19,27 +19,23 @@ import {RepositoryLink} from './RepositoryLink';
 interface TabConfig {
   title: string;
   pathComponent: string;
-  icon: IconName;
   isAvailable?: (permissions: PermissionsMap) => boolean;
 }
 
 const pipelineTabs: {[key: string]: TabConfig} = {
-  overview: {title: 'Overview', pathComponent: '', icon: 'dashboard'},
+  overview: {title: 'Overview', pathComponent: ''},
   playground: {
     title: 'Launchpad',
     pathComponent: 'playground',
-    icon: 'manually-entered-data',
     isAvailable: (permissions: PermissionsMap) => permissions.canLaunchPipelineExecution,
   },
   runs: {
     title: 'Runs',
     pathComponent: 'runs',
-    icon: 'history',
   },
   partitions: {
     title: 'Partitions',
     pathComponent: 'partitions',
-    icon: 'multi-select',
   },
 };
 
@@ -110,10 +106,10 @@ export const PipelineNav: React.FC<Props> = (props) => {
         title={<Heading>{pipelineName}</Heading>}
         tags={
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8, wrap: 'wrap'}}>
-            <TagWIP icon="job">
+            <Tag icon="job">
               {isJob ? 'Job in ' : 'Pipeline in '}
               <RepositoryLink repoAddress={repoAddress} />
-            </TagWIP>
+            </Tag>
             {snapshotId ? null : (
               <JobMetadata pipelineName={pipelineName} repoAddress={repoAddress} />
             )}
@@ -131,7 +127,7 @@ export const PipelineNav: React.FC<Props> = (props) => {
               ) : (
                 text
               );
-              return <Tab key={text} id={text} title={title} disabled={disabled} to={href} />;
+              return <TabLink key={text} id={text} title={title} disabled={disabled} to={href} />;
             })}
           </Tabs>
         }

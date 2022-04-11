@@ -1,6 +1,7 @@
 # pylint: disable=no-value-for-parameter
-from dagster import graph
 from dagster_shell import create_shell_command_op
+
+from dagster import graph
 
 
 @graph

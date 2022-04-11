@@ -1,18 +1,24 @@
 from unittest import mock
 
 import pytest
+
 from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
-    PipelineRunStatus,
+    DagsterRunStatus,
     RunRequest,
+    SensorDefinition,
     SensorEvaluationContext,
     SensorExecutionContext,
+    build_run_status_sensor_context,
     build_sensor_context,
+    job,
+    op,
+    run_failure_sensor,
     run_status_sensor,
     sensor,
 )
-from dagster.core.errors import DagsterInvalidInvocationError
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster.core.test_utils import instance_for_test
 
 
@@ -96,13 +102,80 @@ def test_instance_access_with_mock():
     assert build_sensor_context(instance=mock_instance).instance == mock_instance
 
 
-def test_run_status_sensor_invocation():
-    @run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
-    def the_sensor(_):
+def test_sensor_w_no_job():
+    @sensor()
+    def no_job_sensor():
         pass
 
     with pytest.raises(
-        DagsterInvalidInvocationError,
-        match="Direct invocation of RunStatusSensors is not yet supported.",
+        Exception,
+        match=r".* Sensor evaluation function returned a RunRequest for a sensor lacking a "
+        r"specified target .*",
     ):
-        the_sensor(None)
+        no_job_sensor.check_valid_run_requests(
+            [
+                RunRequest(
+                    run_key=None,
+                    run_config=None,
+                    tags=None,
+                )
+            ]
+        )
+
+
+def test_run_status_sensor():
+    @run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
+    def status_sensor(context):
+        assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
+
+    @op
+    def succeeds():
+        return 1
+
+    @job
+    def my_job_2():
+        succeeds()
+
+    instance = DagsterInstance.ephemeral()
+    result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
+
+    dagster_run = result.dagster_run
+    dagster_event = result.get_job_success_event()
+
+    context = build_run_status_sensor_context(
+        sensor_name="status_sensor",
+        dagster_instance=instance,
+        dagster_run=dagster_run,
+        dagster_event=dagster_event,
+    )
+
+    status_sensor(context)
+
+
+def test_run_failure_sensor():
+    @run_failure_sensor
+    def failure_sensor(context):
+        assert context.dagster_event.event_type_value == "PIPELINE_FAILURE"
+
+    @op
+    def will_fail():
+        raise Exception("failure")
+
+    @job
+    def my_job():
+        will_fail()
+
+    instance = DagsterInstance.ephemeral()
+    result = my_job.execute_in_process(instance=instance, raise_on_error=False)
+
+    dagster_run = result.dagster_run
+    dagster_event = result.get_job_failure_event()
+
+    context = build_run_status_sensor_context(
+        sensor_name="failure_sensor",
+        dagster_instance=instance,
+        dagster_run=dagster_run,
+        dagster_event=dagster_event,
+    ).for_run_failure()
+
+    failure_sensor(context)

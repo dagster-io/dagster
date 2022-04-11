@@ -1,4 +1,4 @@
-from collections import namedtuple
+from typing import List, NamedTuple
 
 from dagster import check
 from dagster.core.events.log import EventLogEntry
@@ -9,18 +9,24 @@ from dagster.serdes import serialize_dagster_namedtuple, whitelist_for_serdes
 
 @whitelist_for_serdes
 class DebugRunPayload(
-    namedtuple(
+    NamedTuple(
         "_DebugRunPayload",
-        "version pipeline_run event_list pipeline_snapshot execution_plan_snapshot",
+        [
+            ("version", str),
+            ("pipeline_run", PipelineRun),
+            ("event_list", List[EventLogEntry]),
+            ("pipeline_snapshot", PipelineSnapshot),
+            ("execution_plan_snapshot", ExecutionPlanSnapshot),
+        ],
     )
 ):
     def __new__(
         cls,
-        version,
-        pipeline_run,
-        event_list,
-        pipeline_snapshot,
-        execution_plan_snapshot,
+        version: str,
+        pipeline_run: PipelineRun,
+        event_list: List[EventLogEntry],
+        pipeline_snapshot: PipelineSnapshot,
+        execution_plan_snapshot: ExecutionPlanSnapshot,
     ):
         return super(DebugRunPayload, cls).__new__(
             cls,

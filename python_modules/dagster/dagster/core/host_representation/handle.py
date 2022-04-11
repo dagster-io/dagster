@@ -1,17 +1,29 @@
-from collections import namedtuple
+from typing import TYPE_CHECKING, Dict, NamedTuple
 
 from dagster import check
-from dagster.core.host_representation.origin import ExternalRepositoryOrigin
+from dagster.core.host_representation.origin import (
+    ExternalRepositoryOrigin,
+    RepositoryLocationOrigin,
+)
 from dagster.core.host_representation.selector import PipelineSelector
+from dagster.core.origin import RepositoryPythonOrigin
+
+if TYPE_CHECKING:
+    from dagster.core.host_representation.repository_location import RepositoryLocation
 
 
 class RepositoryHandle(
-    namedtuple(
+    NamedTuple(
         "_RepositoryHandle",
-        "repository_name repository_location_origin repository_python_origin display_metadata",
+        [
+            ("repository_name", str),
+            ("repository_location_origin", RepositoryLocationOrigin),
+            ("repository_python_origin", RepositoryPythonOrigin),
+            ("display_metadata", Dict[str, str]),
+        ],
     )
 ):
-    def __new__(cls, repository_name, repository_location):
+    def __new__(cls, repository_name: str, repository_location: "RepositoryLocation"):
         from dagster.core.host_representation.repository_location import RepositoryLocation
 
         check.inst_param(repository_location, "repository_location", RepositoryLocation)
@@ -37,8 +49,10 @@ class RepositoryHandle(
         return self.repository_python_origin
 
 
-class PipelineHandle(namedtuple("_PipelineHandle", "pipeline_name repository_handle")):
-    def __new__(cls, pipeline_name, repository_handle):
+class PipelineHandle(
+    NamedTuple("_PipelineHandle", [("pipeline_name", str), ("repository_handle", RepositoryHandle)])
+):
+    def __new__(cls, pipeline_name: str, repository_handle: RepositoryHandle):
         return super(PipelineHandle, cls).__new__(
             cls,
             check.str_param(pipeline_name, "pipeline_name"),
@@ -66,9 +80,13 @@ class PipelineHandle(namedtuple("_PipelineHandle", "pipeline_name repository_han
         return PipelineSelector(self.location_name, self.repository_name, self.pipeline_name, None)
 
 
-class JobHandle(namedtuple("_JobHandle", "job_name repository_handle")):
-    def __new__(cls, job_name, repository_handle):
-        return super(JobHandle, cls).__new__(
+class InstigatorHandle(
+    NamedTuple(
+        "_InstigatorHandle", [("instigator_name", str), ("repository_handle", RepositoryHandle)]
+    )
+):
+    def __new__(cls, job_name: str, repository_handle: RepositoryHandle):
+        return super(InstigatorHandle, cls).__new__(
             cls,
             check.str_param(job_name, "job_name"),
             check.inst_param(repository_handle, "repository_handle", RepositoryHandle),
@@ -83,11 +101,18 @@ class JobHandle(namedtuple("_JobHandle", "job_name repository_handle")):
         return self.repository_handle.location_name
 
     def get_external_origin(self):
-        return self.repository_handle.get_external_origin().get_job_origin(self.job_name)
+        return self.repository_handle.get_external_origin().get_instigator_origin(
+            self.instigator_name
+        )
 
 
-class PartitionSetHandle(namedtuple("_PartitionSetHandle", "partition_set_name repository_handle")):
-    def __new__(cls, partition_set_name, repository_handle):
+class PartitionSetHandle(
+    NamedTuple(
+        "_PartitionSetHandle",
+        [("partition_set_name", str), ("repository_handle", RepositoryHandle)],
+    )
+):
+    def __new__(cls, partition_set_name: str, repository_handle: RepositoryHandle):
         return super(PartitionSetHandle, cls).__new__(
             cls,
             check.str_param(partition_set_name, "partition_set_name"),

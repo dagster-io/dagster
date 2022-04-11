@@ -12,8 +12,8 @@ from dagster.core.errors import (
 )
 
 if TYPE_CHECKING:
-    from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.definitions.resource_definition import Resources
+    from dagster.core.execution.context.system import StepExecutionContext
 
 
 def build_resources_for_manager(
@@ -35,7 +35,7 @@ def solid_execution_error_boundary(error_cls, msg_fn, step_context, **kwargs):
     from dagster.core.execution.context.system import StepExecutionContext
 
     check.callable_param(msg_fn, "msg_fn")
-    check.subclass_param(error_cls, "error_cls", DagsterUserCodeExecutionError)
+    check.class_param(error_cls, "error_cls", superclass=DagsterUserCodeExecutionError)
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
     with raise_execution_interrupts():

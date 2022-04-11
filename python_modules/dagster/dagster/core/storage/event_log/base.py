@@ -1,7 +1,18 @@
 import warnings
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Callable, Iterable, List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
+from typing import (
+    Callable,
+    Iterable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -118,7 +129,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         self,
         run_id: str,
         cursor: Optional[int] = -1,
-        of_type: Optional[DagsterEventType] = None,
+        of_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
     ) -> Iterable[EventLogEntry]:
         """Get all of the logs corresponding to a run.
@@ -184,7 +195,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     def end_watch(self, run_id: str, handler: Callable):
         """Call this method to stop watching."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_persistent(self) -> bool:
         """bool: Whether the storage is persistent."""
 
@@ -243,14 +255,14 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     def get_asset_events(
         self,
         asset_key: AssetKey,
-        partitions: List[str] = None,
-        before_cursor: int = None,
-        after_cursor: int = None,
-        limit: int = None,
+        partitions: Optional[List[str]] = None,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
+        limit: Optional[int] = None,
         ascending: bool = False,
         include_cursor: bool = False,
         before_timestamp=None,
-        cursor: int = None,  # deprecated
+        cursor: Optional[int] = None,  # deprecated
     ) -> Union[Iterable[EventLogEntry], Iterable[Tuple[int, EventLogEntry]]]:
         pass
 

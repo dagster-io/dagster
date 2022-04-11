@@ -1,9 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  ColorsWIP,
+  Colors,
   HighlightedCodeBlock,
-  IconWIP,
+  Icon,
   PageHeader,
   Spinner,
   Code,
@@ -13,6 +13,8 @@ import {
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled, {createGlobalStyle, css} from 'styled-components/macro';
+
+import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceConfigQuery} from './types/InstanceConfigQuery';
@@ -25,25 +27,27 @@ const YamlShimStyle = createGlobalStyle`
 
   .config-yaml {
     .hljs-attr {
-      color: ${ColorsWIP.Blue700};
+      color: ${Colors.Blue700};
     }
 
     .hljs-string {
-      color: ${ColorsWIP.Green700};
+      color: ${Colors.Green700};
     }
 
     .hljs-number {
-      color: ${ColorsWIP.Red700};
+      color: ${Colors.Red700};
     }
   }
 `;
 
 export const InstanceConfig = React.memo(() => {
   const history = useHistory();
-  const {data} = useQuery<InstanceConfigQuery>(INSTANCE_CONFIG_QUERY, {
+  const queryResult = useQuery<InstanceConfigQuery>(INSTANCE_CONFIG_QUERY, {
     fetchPolicy: 'cache-and-network',
   });
   const [hash, setHash] = React.useState(() => document.location.hash);
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const {data} = queryResult;
 
   React.useEffect(() => {
     // Once data has finished loading and rendering, scroll to hash
@@ -80,10 +84,13 @@ export const InstanceConfig = React.memo(() => {
 
   return (
     <>
-      <PageHeader title={<Heading>Instance status</Heading>} tabs={<InstanceTabs tab="config" />} />
+      <PageHeader
+        title={<Heading>Instance status</Heading>}
+        tabs={<InstanceTabs tab="config" refreshState={refreshState} />}
+      />
       <Box
         padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
       >
         <Subheading>
           Dagster version: <Code style={{fontSize: '16px'}}>{data.version}</Code>
@@ -102,7 +109,7 @@ export const InstanceConfig = React.memo(() => {
               id={id}
             >
               <ConfigLink to={`/instance/config${hashForSection}`} key={id}>
-                <IconWIP name="link" color={ColorsWIP.Gray300} />
+                <Icon name="link" color={Colors.Gray300} />
               </ConfigLink>
               <ConfigSection highlighted={hash === hashForSection}>
                 <HighlightedCodeBlock value={section} language="yaml" className="config-yaml" />
@@ -132,7 +139,7 @@ const ConfigSection = styled.div<{highlighted: boolean}>`
   ${({highlighted}) =>
     highlighted
       ? css`
-          background-color: ${ColorsWIP.Gray100};
+          background-color: ${Colors.Gray100};
           margin: -8px;
           padding: 8px;
         `

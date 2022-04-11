@@ -5,21 +5,15 @@ description: To deploy Dagster to AWS, EC2 or ECS can host Dagit, RDS can store 
 
 # Deploying Dagster to AWS
 
-To deploy Dagster to AWS, EC2 or ECS can host Dagit, RDS can store runs and events, and S3 can act as an IO manager.
+This guide provides instructions for deploying Dagster on AWS. You can use EC2 or ECS to host Dagit and the Dagster Daemon, RDS to store runs and events, and S3 as an IO manager to store op inputs and outputs.
 
-## Hosting Dagit or Dagster Daemon on EC2 or ECS
+## Hosting Dagster on EC2
 
-To host Dagit or Dagster Daemon on a bare VM or in Docker on EC2 or ECS, see [Running Dagster as a service](/deployment/guides/service).
-
-### Example
-
-<CodeReferenceLink filePath="examples/deploy_ecs" />
-
-This example demonstrates how you can use `docker-compose` to manage a Dagster deployment on ECS. It includes a Dagit container for loading and launching jobs, a `dagster-daemon` container for managing a run queue and submitting runs from schedules and sensors, a postgres container for persistent storage, and a container with user job code. The Dagster instance uses the EcsRunLauncher to launch each run in its own ECS task.
+To host Dagster on a bare VM or in Docker on EC2, see [Running Dagster as a service](/deployment/guides/service).
 
 ## Using RDS for run and event log storage
 
-You can use a hosted RDS PostgreSQL database for your Dagster run/events data. You can do this by setting blocks in your `$DAGSTER_HOME/dagster.yaml` appropriately.
+You can use a hosted RDS PostgreSQL database for your Dagster run/events data by configuring your `dagster.yaml` file.
 
 ```python file=/deploying/dagster-pg.yaml
 run_storage:
@@ -62,6 +56,86 @@ Be sure that this file is present, and _DAGSTER_HOME_ is set, on the node where 
 
 Note that using RDS for run and event log storage does not require that Dagit be running in the cloud. If you are connecting a local Dagit instance to a remote RDS storage, double check that your local node is able to connect to RDS.
 
+## Deploying in ECS
+
+<CodeReferenceLink filePath="examples/deploy_ecs" />
+
+The Deploying on ECS example on GitHub demonstrates how to configure the [Docker Compose CLI integration with ECS](https://docs.docker.com/cloud/ecs-integration/) to manage all of the required AWS resources that Dagster needs to run on ECS. The example includes a Dagit container for loading and launching jobs, a `dagster-daemon` container for managing a run queue and submitting runs from schedules and sensors, a Postgres container for persistent storage, and a container with user job code. The Dagster instance uses the <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" /> to launch each run in its own ECS task.
+
+### Launching Runs in ECS
+
+The <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" /> launches an ECS task per run. It assumes that the rest of our Dagster deployment is also running in ECS on a Fargate compatible cluster.
+
+By default, each run's task registers its own task definition. To simplify configuration, these task definitions inherit most of their configuration (networking, cpu, memory, environment, etc.) from the process that launches the run but overrides its container definition with a new command to launch a Dagster run. When using the <PyObject module="dagster.core.run_coordinator" object="DefaultRunCoordinator" />, runs launched via Dagit or GraphQL inherit their task definitions from the Dagit task; runs launched from a sensor or schedule inherit their task definitions from the Daemon task.
+
+Alternatively, you can define your own task definition in your dagster.yaml:
+
+```yaml
+run_launcher:
+  module: "dagster_aws.ecs"
+  class: "EcsRunLauncher"
+  config:
+    task_definition: "arn:aws:ecs:us-east-1:1234567890:task-definition/my-task-definition:1"
+    container_name: "my_container_name"
+```
+
+### Customizing CPU and Memory in ECS
+
+You can use job tags to customize the run's CPU and Memory:
+
+```py
+from dagster import job, op
+
+@op()
+def my_op(context):
+  context.log.info('running')
+
+@job(
+  tags = {
+    "ecs/cpu": "256",
+    "ecs/memory": "512",
+  }
+)
+def my_job():
+  my_op()
+```
+
+[Fargate tasks only support certain combinations of CPU and Memory.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)
+
+### Secrets Management in ECS
+
+[ECS can bind AWS Secrets Managers secrets as environment variables when runs launch.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data-secrets.html)
+
+By default, Dagster will fetch any Secrets Manager secrets tagged with the key `dagster` and set them as environment variables.
+
+Alternatively you can set your own tag name in your dagster.yaml:
+
+```yaml
+run_launcher:
+  module: "dagster_aws.ecs"
+  class: "EcsRunLauncher"
+  config:
+    secrets_tag: "my-tag-name"
+```
+
+Any secret tagged with `my-tag-name` will be included in the environment.
+
+Additionally, you can pass specific secrets using the [same structure as the ECS API](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html):
+
+```yaml
+run_launcher:
+  module: "dagster_aws.ecs"
+  class: "EcsRunLauncher"
+  config:
+    secrets:
+      - name: "MY_API_TOKEN"
+        valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::"
+      - name: "MY_PASSWORD"
+        valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::"
+```
+
+Any secret tagged with `dagster` will be included in the environment. `MY_API_TOKEN` and `MY_PASSWORD` will also be included in the environment.
+
 ## Using S3 for IO Management
 
 To enable parallel computation (e.g., with the multiprocessing or Dagster celery executors), you will need to configure persistent [IO Managers](/concepts/io-management/io-managers) -- for instance, using an S3 bucket to store data passed between ops.
@@ -69,9 +143,10 @@ To enable parallel computation (e.g., with the multiprocessing or Dagster celery
 You'll first need to need to use <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/> as your IO Manager or customize your own persistent io managers (see [example](/concepts/io-management/io-managers#defining-an-io-manager)).
 
 ```python file=/deploying/aws/io_manager.py
-from dagster import Int, Out, job, op
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_aws.s3.resources import s3_resource
+
+from dagster import Int, Out, job, op
 
 
 @op(out=Out(Int))

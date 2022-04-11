@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, Optional, Union
 
 from dagster import Field, check
@@ -12,7 +12,8 @@ from .definition_config_schema import (
 
 
 class ConfigurableDefinition(ABC):
-    @abstractproperty
+    @property
+    @abstractmethod
     def config_schema(self) -> Optional[IDefinitionConfigSchema]:
         raise NotImplementedError()
 

@@ -38,7 +38,7 @@ You define a schedule by constructing a <PyObject object="ScheduleDefinition" />
 
 ### A basic schedule
 
-Here's a simple schedule that runs a job every day, at midnight. The `cron_schedule` accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron).
+Here's a simple schedule that runs a job every day, at midnight. The `cron_schedule` accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron). It also accepts `"@hourly"`, `"@daily"`, `"@weekly"`, and `"@monthly"` if your `croniter` dependency's version is >= 1.0.12.
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_schedule endbefore=end_basic_schedule
 @job
@@ -69,7 +69,9 @@ def configurable_job_schedule(context: ScheduleEvaluationContext):
     scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
     return RunRequest(
         run_key=None,
-        run_config={"ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}},
+        run_config={
+            "ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}
+        },
         tags={"date": scheduled_date},
     )
 ```
@@ -77,6 +79,8 @@ def configurable_job_schedule(context: ScheduleEvaluationContext):
 If you don't need access to the context parameter, you can omit it from the decorated function.
 
 ### A schedule from a partitioned job
+
+#### Time partitioned job
 
 When you have a [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job.
 
@@ -104,6 +108,65 @@ However, you can use the `end_offset` parameter of <PyObject object="daily_parti
 
 You can use the `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_month` parameters of `build_schedule_from_partitioned_job` to control the timing of the schedule. For example, if you have a job that's partitioned by date, and you set `minute_of_hour` to `30` and `hour_of_day` to `1`, the schedule would submit the run for partition `2020-04-01` at 1:30 AM on `2020-04-02`.
 
+#### Static partitioned job
+
+You can also create a schedule for a static partition. The Partitioned Jobs concepts page also includes an [example of how to define a static partitioned job](/concepts/partitions-schedules-sensors/partitions#defining-a-job-with-static-partitions). To define a schedule for a static partitioned job, we will construct a schedule from scratch, rather than using a helper function like `build_schedule_from_partitioned_job` this will allow more flexibility in determining which partitions should be run by the schedule.
+
+For example, if we have the continents static partitioned job from the Partitioned Jobs concept page
+
+```python file=/concepts/partitions_schedules_sensors/static_partitioned_job.py
+from dagster import job, op, static_partitioned_config
+
+CONTINENTS = [
+    "Africa",
+    "Antarctica",
+    "Asia",
+    "Europe",
+    "North America",
+    "Oceania",
+    "South America",
+]
+
+
+@static_partitioned_config(partition_keys=CONTINENTS)
+def continent_config(partition_key: str):
+    return {"ops": {"continent_op": {"config": {"continent_name": partition_key}}}}
+
+
+@op(config_schema={"continent_name": str})
+def continent_op(context):
+    context.log.info(context.op_config["continent_name"])
+
+
+@job(config=continent_config)
+def continent_job():
+    continent_op()
+```
+
+We can write a schedule that will run this partition
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_static_partition endbefore=end_static_partition
+from dagster import schedule
+
+
+@schedule(cron_schedule="0 0 * * *", job=continent_job)
+def continent_schedule():
+    for c in CONTINENTS:
+        request = continent_job.run_request_for_partition(partition_key=c, run_key=c)
+        yield request
+```
+
+Or a schedule that will run a subselection of the partition
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_single_partition endbefore=end_single_partition
+@schedule(cron_schedule="0 0 * * *", job=continent_job)
+def antarctica_schedule():
+    request = continent_job.run_request_for_partition(
+        partition_key="Antarctica", run_key=None
+    )
+    yield request
+```
+
 ### Timezones
 
 You can customize the timezone in which your schedule executes by setting the `execution_timezone` parameter on your schedule to any [tz timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Schedules with no timezone set run in UTC.
@@ -130,9 +193,17 @@ Hourly schedules will be unaffected by daylight savings time transitions - the s
 
 ## Running the scheduler
 
-In order for your schedule to run, it must be started. The easiest way to start and stop schedules is in Dagit from the Schedules page. You can also start and stop a schedule with the `dagster schedule start` and `dagster schedule stop` commands.
+In order for a schedule to run, it must be started. You can start or stop the schedule in Dagit, or with the `dagster schedule start` and `dagster schedule stop` commands. You can also start your schedule by setting the default status to `DefaultScheduleStatus.RUNNING` in code:
 
-Once your schedule is started, if you're running the [dagster-daemon](/deployment/dagster-daemon) process as part of your deployment, the schedule will begin executing immediately. See the [Troubleshooting](/concepts/partitions-schedules-sensors/schedules#troubleshooting) section below if your schedule has been started but isn't submitting runs.
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_running_in_code endbefore=end_running_in_code
+my_running_schedule = ScheduleDefinition(
+    job=my_job, cron_schedule="0 9 * * *", default_status=DefaultScheduleStatus.RUNNING
+)
+```
+
+If you manually start or stop a schedule in Dagit, that will override any default status that is set in code.
+
+Once your schedule is started, if you're running the [dagster-daemon](/deployment/dagster-daemon) process as part of your deployment, the schedule will begin executing immediately, without needing to restart the dagster-daemon process. See the [Troubleshooting](/concepts/partitions-schedules-sensors/schedules#troubleshooting) section below if your schedule has been started but isn't submitting runs.
 
 ## Testing Schedules
 
@@ -145,7 +216,9 @@ from dagster import build_schedule_context, validate_run_config
 
 
 def test_configurable_job_schedule():
-    context = build_schedule_context(scheduled_execution_time=datetime.datetime(2020, 1, 1))
+    context = build_schedule_context(
+        scheduled_execution_time=datetime.datetime(2020, 1, 1)
+    )
     run_request = configurable_job_schedule(context)
     assert validate_run_config(configurable_job, run_request.run_config)
 ```
@@ -156,7 +229,7 @@ If your `@schedule`-decorated function doesn't have a context parameter, you don
 
 Try these steps if you're trying to run a schedule and are running into problems.
 
-### Step 1: Is your schedule included in your repository and turned on?
+### Step 1: Is your schedule included in your repository and started?
 
 The left-hand navigation bar in Dagit shows all of the schedules for the currently-selected repository, with a green dot next to each schedule that is running. Make sure that your schedule appears in this list with a green dot. To ensure that Dagit has loaded the latest version of your schedule code, you can press the reload button next to your repository name to reload all the code in your repository.
 
@@ -175,6 +248,8 @@ It's possible that the `dagster-daemon` process that submits runs for your sched
 First, check that the daemon is running. Click on "Status" in the left nav in Dagit, and examine the "Scheduler" row under the "Daemon statuses" section. The daemon process periodically sends out a heartbeat from the scheduler, so if the scheduler daemon is listed as "Not running", that indicates that there's a problem with your daemon deployment. If the daemon ran into an error that caused it to throw an exception, that error will often appear in this UI as well.
 
 If there isn't a clear error on this page, or if the daemon should be sending heartbeats but isn't, you may need to check the logs from the daemon process. The steps to do this will depend on your deployment - for example, if you're using Kubernetes, you'll need to get the logs from the pod that's running the daemon. You should be able to search those logs for the name of your schedule (or `SchedulerDaemon` to see all logs associated with the scheduler) to gain an understanding of what's going wrong.
+
+If the daemon output shows errors about not being able to find the schedule, make sure the daemon is using the same `workspace.yaml` file as Dagit. The daemon does not need to restart in order to pick up changes to the `workspace.yaml` file.
 
 Finally, it's possible that the daemon is running correctly, but there's a problem with your schedule code. Check the "Latest tick" row on the page for your schedule. If there was an error while trying to submit runs for your schedule, there should be a red "Failure" box next to the time. Clicking on the box should display an error with a stack trace showing you why the schedule couldn't execute. If the schedule is working as expected, it should display a blue box instead with information about any runs that were created by that schedule tick.
 

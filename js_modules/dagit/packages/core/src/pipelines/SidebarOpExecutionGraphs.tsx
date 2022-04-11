@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, Spinner, Tooltip} from '@dagster-io/ui';
+import {Box, Colors, Spinner, Tooltip} from '@dagster-io/ui';
 import qs from 'qs';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -12,9 +12,9 @@ import {SidebarSection} from './SidebarComponents';
 import {SidebarOpGraphsQuery, SidebarOpGraphsQueryVariables} from './types/SidebarOpGraphsQuery';
 
 export const StateColors = {
-  SUCCESS: ColorsWIP.Green500,
-  FAILURE: ColorsWIP.Red500,
-  SKIPPED: ColorsWIP.Gray500,
+  SUCCESS: Colors.Green500,
+  FAILURE: Colors.Red500,
+  SKIPPED: Colors.Gray500,
 };
 
 export const SidebarOpExecutionGraphs: React.FC<{
@@ -79,12 +79,13 @@ export const SidebarOpExecutionGraphs: React.FC<{
   return (
     <>
       <SidebarSection title="Execution Time">
-        <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{height: 170}}>
+        <Box flex={{alignItems: 'center', justifyContent: 'center'}}>
           {result.loading ? (
             <Spinner purpose="section" />
           ) : (
             <AssetValueGraph
               label="Step Execution Time"
+              yAxisLabel="Seconds"
               width="100%"
               data={executionTime}
               xHover={highlightedStartTime}
@@ -118,10 +119,10 @@ export const SidebarOpExecutionGraphs: React.FC<{
                       style={{
                         border: `2px solid ${
                           startTime && startTime * 1000 === highlightedStartTime
-                            ? ColorsWIP.Blue500
+                            ? Colors.Blue500
                             : 'transparent'
                         }`,
-                        backgroundColor: status ? StateColors[status] : ColorsWIP.Gray200,
+                        backgroundColor: status ? StateColors[status] : Colors.Gray200,
                       }}
                     />
                   </Link>

@@ -1,8 +1,9 @@
+// eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {Group} from './Group';
 import {Slider, MultiSlider} from './Slider';
 
@@ -49,7 +50,7 @@ export const Sizes = () => {
         min={0}
         max={10}
         stepSize={0.01}
-        fillColor={ColorsWIP.Blue500}
+        fillColor={Colors.Blue500}
         labelRenderer={(value: number) => (
           <span style={{whiteSpace: 'nowrap'}}>Value: {value.toFixed(1)}</span>
         )}

@@ -9,13 +9,14 @@ from dagster.core.definitions import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
-    EventMetadataEntry,
     ExpectationResult,
     HookDefinition,
     Materialization,
+    MetadataEntry,
     NodeHandle,
 )
 from dagster.core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
+from dagster.core.definitions.metadata import MetadataValue
 from dagster.core.errors import DagsterError, HookExecutionError
 from dagster.core.execution.context.hook import HookContext
 from dagster.core.execution.context.system import (
@@ -34,15 +35,11 @@ from dagster.utils.error import SerializableErrorInfo, serializable_error_info_f
 from dagster.utils.timing import format_duration
 
 if TYPE_CHECKING:
+    from dagster.core.definitions.events import ObjectStoreOperation
+    from dagster.core.execution.plan.inputs import StepInputData
+    from dagster.core.execution.plan.objects import StepFailureData, StepRetryData, StepSuccessData
     from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.execution.plan.step import ExecutionStep, StepKind
-    from dagster.core.execution.plan.inputs import StepInputData
-    from dagster.core.execution.plan.objects import (
-        StepSuccessData,
-        StepFailureData,
-        StepRetryData,
-    )
-    from dagster.core.definitions.events import ObjectStoreOperation
 
     EventSpecificData = Union[
         StepOutputData,
@@ -61,6 +58,7 @@ if TYPE_CHECKING:
         "LoadedInputData",
         "ComputeLogsCaptureData",
         "AssetObservationData",
+        "AssetMaterializationPlannedData",
     ]
 
 
@@ -78,6 +76,7 @@ class DagsterEventType(Enum):
     STEP_RESTARTED = "STEP_RESTARTED"
 
     ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
+    ASSET_MATERIALIZATION_PLANNED = "ASSET_MATERIALIZATION_PLANNED"
     ASSET_OBSERVATION = "ASSET_OBSERVATION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
 
@@ -118,6 +117,8 @@ class DagsterEventType(Enum):
 
     ALERT_START = "ALERT_START"
     ALERT_SUCCESS = "ALERT_SUCCESS"
+    ALERT_FAILURE = "ALERT_FAILURE"
+
     LOGS_CAPTURED = "LOGS_CAPTURED"
 
 
@@ -175,6 +176,7 @@ HOOK_EVENTS = {
 ALERT_EVENTS = {
     DagsterEventType.ALERT_START,
     DagsterEventType.ALERT_SUCCESS,
+    DagsterEventType.ALERT_FAILURE,
 }
 
 
@@ -189,6 +191,12 @@ EVENT_TYPE_TO_PIPELINE_RUN_STATUS = {
 }
 
 PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.items()}
+
+ASSET_EVENTS = {
+    DagsterEventType.ASSET_MATERIALIZATION,
+    DagsterEventType.ASSET_OBSERVATION,
+    DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+}
 
 
 def _assert_type(
@@ -205,8 +213,8 @@ def _assert_type(
 def _validate_event_specific_data(
     event_type: DagsterEventType, event_specific_data: Optional["EventSpecificData"]
 ) -> Optional["EventSpecificData"]:
-    from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
     from dagster.core.execution.plan.inputs import StepInputData
+    from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
 
     if event_type == DagsterEventType.STEP_OUTPUT:
         check.inst_param(event_specific_data, "event_specific_data", StepOutputData)
@@ -224,6 +232,10 @@ def _validate_event_specific_data(
         check.inst_param(event_specific_data, "event_specific_data", EngineEventData)
     elif event_type == DagsterEventType.HOOK_ERRORED:
         check.inst_param(event_specific_data, "event_specific_data", HookErroredData)
+    elif event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
+        check.inst_param(
+            event_specific_data, "event_specific_data", AssetMaterializationPlannedData
+        )
 
     return event_specific_data
 
@@ -360,6 +372,22 @@ class DagsterEvent(
             pid=os.getpid(),
         )
         log_resource_event(log_manager, event)
+        return event
+
+    @staticmethod
+    def asset_materialization_planned(
+        pipeline_name: str,
+        asset_key: AssetKey,
+        log_manager: DagsterLogManager,
+    ) -> "DagsterEvent":
+        event = DagsterEvent(
+            event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+            pipeline_name=pipeline_name,
+            message=f"{pipeline_name} intends to materialize asset {asset_key.to_string()}",
+            event_specific_data=AssetMaterializationPlannedData(asset_key),
+        )
+        log_level = logging.DEBUG
+        log_manager.log_dagster_event(level=log_level, msg=event.message or "", dagster_event=event)
         return event
 
     def __new__(
@@ -508,6 +536,8 @@ class DagsterEvent(
             return self.step_materialization_data.materialization.asset_key
         elif self.event_type == DagsterEventType.ASSET_OBSERVATION:
             return self.asset_observation_data.asset_observation.asset_key
+        elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
+            return self.asset_materialization_planned_data.asset_key
         else:
             return None
 
@@ -564,6 +594,15 @@ class DagsterEvent(
     def asset_observation_data(self) -> "AssetObservationData":
         _assert_type("asset_observation_data", DagsterEventType.ASSET_OBSERVATION, self.event_type)
         return cast(AssetObservationData, self.event_specific_data)
+
+    @property
+    def asset_materialization_planned_data(self) -> "AssetMaterializationPlannedData":
+        _assert_type(
+            "asset_materialization_planned",
+            DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+            self.event_type,
+        )
+        return cast(AssetMaterializationPlannedData, self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
@@ -732,7 +771,7 @@ class DagsterEvent(
     def asset_materialization(
         step_context: IStepContext,
         materialization: Union[AssetMaterialization, Materialization],
-        asset_lineage: List[AssetLineageInfo] = None,
+        asset_lineage: Optional[List[AssetLineageInfo]] = None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -873,13 +912,15 @@ class DagsterEvent(
     ) -> "DagsterEvent":
 
         metadata_entries = []
-        for resource_key in resource_instances.keys():
-            resource_obj = resource_instances[resource_key]
-            resource_time = resource_init_times[resource_key]
-            metadata_entries.append(
-                EventMetadataEntry.python_artifact(
-                    resource_obj.__class__, resource_key, "Initialized in {}".format(resource_time)
-                )
+        for key in resource_instances.keys():
+            metadata_entries.extend(
+                [
+                    MetadataEntry(
+                        key,
+                        value=MetadataValue.python_artifact(resource_instances[key].__class__),
+                    ),
+                    MetadataEntry(f"{key}:init_time", value=resource_init_times[key]),
+                ]
             )
 
         return DagsterEvent.from_resource(
@@ -943,7 +984,7 @@ class DagsterEvent(
         pipeline_context: IPlanContext,
         message: str,
         event_specific_data: Optional["EngineEventData"] = None,
-        step_handle: Optional[StepHandle] = None,
+        step_handle: Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]] = None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_pipeline(
             DagsterEventType.ENGINE_EVENT,
@@ -1022,7 +1063,9 @@ class DagsterEvent(
                 value_name=value_name,
                 address=object_store_operation_result.key,
                 metadata_entries=[
-                    EventMetadataEntry.path(object_store_operation_result.key, label="key")
+                    MetadataEntry(
+                        "key", value=MetadataValue.path(object_store_operation_result.key)
+                    ),
                 ],
                 version=object_store_operation_result.version,
                 mapping_key=object_store_operation_result.mapping_key,
@@ -1036,7 +1079,7 @@ class DagsterEvent(
         output_name: str,
         manager_key: str,
         message_override: Optional[str] = None,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
     ) -> "DagsterEvent":
         message = f'Handled output "{output_name}" using IO manager "{manager_key}"'
         return DagsterEvent.from_step(
@@ -1058,6 +1101,7 @@ class DagsterEvent(
         upstream_output_name: Optional[str] = None,
         upstream_step_key: Optional[str] = None,
         message_override: Optional[str] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
     ) -> "DagsterEvent":
 
         message = f'Loaded input "{input_name}" using input manager "{manager_key}"'
@@ -1072,6 +1116,7 @@ class DagsterEvent(
                 manager_key=manager_key,
                 upstream_output_name=upstream_output_name,
                 upstream_step_key=upstream_step_key,
+                metadata_entries=metadata_entries if metadata_entries else [],
             ),
             message=message_override or message,
         )
@@ -1236,6 +1281,16 @@ class StepMaterializationData(
 
 
 @whitelist_for_serdes
+class AssetMaterializationPlannedData(
+    NamedTuple("_AssetMaterializationPlannedData", [("asset_key", AssetKey)])
+):
+    def __new__(cls, asset_key: AssetKey):
+        return super(AssetMaterializationPlannedData, cls).__new__(
+            cls, asset_key=check.inst_param(asset_key, "asset_key", AssetKey)
+        )
+
+
+@whitelist_for_serdes
 class StepExpectationResultData(
     NamedTuple(
         "_StepExpectationResultData",
@@ -1260,7 +1315,7 @@ class ObjectStoreOperationResultData(
         [
             ("op", ObjectStoreOperationType),
             ("value_name", Optional[str]),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
             ("address", Optional[str]),
             ("version", Optional[str]),
             ("mapping_key", Optional[str]),
@@ -1271,7 +1326,7 @@ class ObjectStoreOperationResultData(
         cls,
         op: ObjectStoreOperationType,
         value_name: Optional[str] = None,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
         address: Optional[str] = None,
         version: Optional[str] = None,
         mapping_key: Optional[str] = None,
@@ -1281,7 +1336,7 @@ class ObjectStoreOperationResultData(
             op=cast(ObjectStoreOperationType, check.str_param(op, "op")),
             value_name=check.opt_str_param(value_name, "value_name"),
             metadata_entries=check.opt_list_param(
-                metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+                metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
             address=check.opt_str_param(address, "address"),
             version=check.opt_str_param(version, "version"),
@@ -1294,7 +1349,7 @@ class EngineEventData(
     NamedTuple(
         "_EngineEventData",
         [
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
             ("error", Optional[SerializableErrorInfo]),
             ("marker_start", Optional[str]),
             ("marker_end", Optional[str]),
@@ -1307,7 +1362,7 @@ class EngineEventData(
     #
     def __new__(
         cls,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
         error: Optional[SerializableErrorInfo] = None,
         marker_start: Optional[str] = None,
         marker_end: Optional[str] = None,
@@ -1315,7 +1370,7 @@ class EngineEventData(
         return super(EngineEventData, cls).__new__(
             cls,
             metadata_entries=check.opt_list_param(
-                metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+                metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
             marker_start=check.opt_str_param(marker_start, "marker_start"),
@@ -1327,9 +1382,9 @@ class EngineEventData(
         pid: int, step_keys_to_execute: Optional[List[str]] = None, marker_end: Optional[str] = None
     ) -> "EngineEventData":
         return EngineEventData(
-            metadata_entries=[EventMetadataEntry.text(str(pid), "pid")]
+            metadata_entries=[MetadataEntry("pid", value=str(pid))]
             + (
-                [EventMetadataEntry.text(str(step_keys_to_execute), "step_keys")]
+                [MetadataEntry("step_keys", value=str(step_keys_to_execute))]
                 if step_keys_to_execute
                 else []
             ),
@@ -1341,9 +1396,9 @@ class EngineEventData(
         pid: int, step_keys_to_execute: Optional[List[str]] = None
     ) -> "EngineEventData":
         return EngineEventData(
-            metadata_entries=[EventMetadataEntry.text(str(pid), "pid")]
+            metadata_entries=[MetadataEntry("pid", value=str(pid))]
             + (
-                [EventMetadataEntry.text(str(step_keys_to_execute), "step_keys")]
+                [MetadataEntry("step_keys", value=str(step_keys_to_execute))]
                 if step_keys_to_execute
                 else []
             )
@@ -1352,7 +1407,7 @@ class EngineEventData(
     @staticmethod
     def interrupted(steps_interrupted: List[str]) -> "EngineEventData":
         return EngineEventData(
-            metadata_entries=[EventMetadataEntry.text(str(steps_interrupted), "steps_interrupted")]
+            metadata_entries=[MetadataEntry("steps_interrupted", value=str(steps_interrupted))]
         )
 
     @staticmethod
@@ -1412,7 +1467,7 @@ class HandledOutputData(
         [
             ("output_name", str),
             ("manager_key", str),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
         ],
     )
 ):
@@ -1420,14 +1475,14 @@ class HandledOutputData(
         cls,
         output_name: str,
         manager_key: str,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
     ):
         return super(HandledOutputData, cls).__new__(
             cls,
             output_name=check.str_param(output_name, "output_name"),
             manager_key=check.str_param(manager_key, "manager_key"),
             metadata_entries=check.opt_list_param(
-                metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+                metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
         )
 
@@ -1441,6 +1496,7 @@ class LoadedInputData(
             ("manager_key", str),
             ("upstream_output_name", Optional[str]),
             ("upstream_step_key", Optional[str]),
+            ("metadata_entries", Optional[List[MetadataEntry]]),
         ],
     )
 ):
@@ -1450,6 +1506,7 @@ class LoadedInputData(
         manager_key: str,
         upstream_output_name: Optional[str] = None,
         upstream_step_key: Optional[str] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
     ):
         return super(LoadedInputData, cls).__new__(
             cls,
@@ -1457,6 +1514,9 @@ class LoadedInputData(
             manager_key=check.str_param(manager_key, "manager_key"),
             upstream_output_name=check.opt_str_param(upstream_output_name, "upstream_output_name"),
             upstream_step_key=check.opt_str_param(upstream_step_key, "upstream_step_key"),
+            metadata_entries=check.opt_list_param(
+                metadata_entries, "metadata_entries", of_type=MetadataEntry
+            ),
         )
 
 

@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pandera as pa
-from dagster import AssetMaterialization, In, Out, Output, job, op
+
+from dagster import AssetMaterialization, In, Out, job, op
 from dagster.config.field import Field
 
 from .factory import pandera_schema_to_dagster_type
@@ -11,7 +12,9 @@ MIN_DATE = pd.Timestamp("2021-10-01")
 
 trips_schema = pa.DataFrameSchema(
     columns={
-        "bike_id": pa.Column(int, checks=pa.Check.ge(0)),  # ge: greater than or equal to
+        "bike_id": pa.Column(
+            int, checks=pa.Check.ge(0)
+        ),  # ge: greater than or equal to
         "start_time": pa.Column(pd.Timestamp, checks=pa.Check.ge(MIN_DATE)),
         "end_time": pa.Column(pd.Timestamp, checks=pa.Check.ge(MIN_DATE)),
     },
@@ -37,17 +40,18 @@ def load_trips(context):
 
 # We've added a Dagster type for this op's input
 @op(ins={"trips": In(TripsDataFrame)})
-def generate_plot(trips):
+def generate_plot(context, trips):
     minute_lengths = [x.total_seconds() / 60 for x in trips.end_time - trips.start_time]
     bin_edges = np.histogram_bin_edges(minute_lengths, 15)
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.set(title="Trip lengths", xlabel="Minutes", ylabel="Count")
     ax.hist(minute_lengths, bins=bin_edges)
     fig.savefig("trip_lengths.png")
-    yield AssetMaterialization(
-        asset_key="trip_dist_plot", description="Distribution of trip lengths."
+    context.log_event(
+        AssetMaterialization(
+            asset_key="trip_dist_plot", description="Distribution of trip lengths."
+        )
     )
-    yield Output(None)
 
 
 @job

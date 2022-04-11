@@ -1,5 +1,6 @@
 import copy
 import itertools
+import re
 import uuid
 from collections import defaultdict
 from operator import itemgetter
@@ -258,12 +259,25 @@ class StubbedEcs:
     @stubbed
     def register_task_definition(self, **kwargs):
         family = kwargs.get("family")
+        # Family must be <= 255 characters. Alphanumeric, dash, and underscore only.
+        if len(family) > 255 or not re.match(r"^[\w\-]+$", family):
+            self.stubber.add_client_error(
+                method="register_task_definition", expected_params={**kwargs}
+            )
+
         # Revisions are 1 indexed
         revision = len(self.task_definitions[family]) + 1
         arn = self._task_definition_arn(family, revision)
 
         memory = kwargs.get("memory")
         cpu = kwargs.get("cpu")
+
+        # Container definitions default to empty secret lists
+        container_definitions = kwargs.get("containerDefinitions", [])
+        for container_definition in container_definitions:
+            if not container_definition.get("secrets"):
+                container_definition["secrets"] = []
+        kwargs["containerDefinitions"] = container_definitions
 
         if self._valid_cpu_and_memory(cpu=cpu, memory=memory):
             task_definition = {
@@ -343,7 +357,7 @@ class StubbedEcs:
                     "clusterArn": self._cluster_arn(cluster),
                     "containers": containers,
                     "lastStatus": "RUNNING",
-                    "overrides": kwargs.get("overrides", {}),
+                    "overrides": overrides,
                     "taskArn": arn,
                     "taskDefinitionArn": task_definition["taskDefinitionArn"],
                     "cpu": task_definition["cpu"],

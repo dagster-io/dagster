@@ -2,6 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PipelineSelector} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -82,10 +83,9 @@ const JOB_OVERVIEW_SIDEBAR_QUERY = gql`
       ... on PipelineSnapshotNotFoundError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
   }
   ${SIDEBAR_MODE_INFO_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

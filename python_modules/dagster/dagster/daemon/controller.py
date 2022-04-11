@@ -6,10 +6,11 @@ import uuid
 from contextlib import ExitStack, contextmanager
 
 import pendulum
+
 from dagster import check
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
-from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
+from dagster.core.workspace.load_target import WorkspaceLoadTarget
 from dagster.daemon.daemon import (
     BackfillDaemon,
     DagsterDaemon,
@@ -21,6 +22,8 @@ from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedR
 from dagster.daemon.types import DaemonHeartbeat, DaemonStatus
 from dagster.utils.interrupts import raise_interrupts_as
 from dagster.utils.log import configure_loggers
+
+from .workspace import DaemonWorkspace
 
 # How long beyond the expected heartbeat will the daemon be considered healthy
 DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 300
@@ -66,6 +69,7 @@ def create_daemon_grpc_server_registry():
 @contextmanager
 def daemon_controller_from_instance(
     instance,
+    workspace_load_target,
     heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     wait_for_processes_on_exit=False,
@@ -73,8 +77,8 @@ def daemon_controller_from_instance(
     error_interval_seconds=DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
 ):
     check.inst_param(instance, "instance", DagsterInstance)
+    check.inst_param(workspace_load_target, "workspace_load_target", WorkspaceLoadTarget)
     grpc_server_registry = None
-
     try:
         with ExitStack() as stack:
             grpc_server_registry = stack.enter_context(create_daemon_grpc_server_registry())
@@ -83,7 +87,7 @@ def daemon_controller_from_instance(
             # Create this in each daemon to generate a workspace per-daemon
             @contextmanager
             def gen_workspace(_instance):
-                with DynamicWorkspace(grpc_server_registry) as workspace:
+                with DaemonWorkspace(grpc_server_registry, workspace_load_target) as workspace:
                     yield workspace
 
             with DagsterDaemonController(
@@ -175,31 +179,39 @@ class DagsterDaemonController:
         thread = self._daemon_threads[daemon_type]
         return thread.is_alive()
 
-    def _daemon_heartbeat_healthy(self, daemon_type):
+    def _daemon_heartbeat_health(self):
         now = time.time()
         try:
-            is_healthy = get_daemon_status(
+            daemon_statuses_by_type = get_daemon_statuses(
                 self._instance,
-                daemon_type,
+                daemon_types=self._daemons.keys(),
                 heartbeat_interval_seconds=self._heartbeat_interval_seconds,
                 heartbeat_tolerance_seconds=self._heartbeat_tolerance_seconds,
                 ignore_errors=True,
-            ).healthy
-            if is_healthy:
-                self._last_healthy_heartbeat_times[daemon_type] = now
-            return is_healthy
+            )
+            daemon_health_by_type = {
+                daemon_type: daemon_status.healthy
+                for (daemon_type, daemon_status) in daemon_statuses_by_type.items()
+            }
+
+            for daemon_type, is_daemon_healthy in daemon_health_by_type.items():
+                if is_daemon_healthy:
+                    self._last_healthy_heartbeat_times[daemon_type] = now
+
+            return daemon_health_by_type
         except Exception:
             self._logger.warning(
-                "Error attempting to check {daemon_type} heartbeat:".format(
-                    daemon_type=daemon_type,
-                ),
+                "Error attempting to check daemon heartbeats",
                 exc_info=sys.exc_info,
             )
 
-            return (
-                self._last_healthy_heartbeat_times[daemon_type]
-                > now - self._heartbeat_tolerance_seconds
-            )
+            return {
+                daemon_type: (
+                    self._last_healthy_heartbeat_times[daemon_type]
+                    > now - self._heartbeat_tolerance_seconds
+                )
+                for daemon_type in self._daemons.keys()
+            }
 
     def check_daemon_threads(self):
         failed_daemons = [
@@ -218,8 +230,8 @@ class DagsterDaemonController:
     def check_daemon_heartbeats(self):
         failed_daemons = [
             daemon_type
-            for daemon_type in self._daemon_threads
-            if not self._daemon_heartbeat_healthy(daemon_type)
+            for daemon_type, is_daemon_healthy in self._daemon_heartbeat_health().items()
+            if not is_daemon_healthy
         ]
 
         if failed_daemons:
@@ -302,20 +314,17 @@ def all_daemons_healthy(
 ):
     """
     True if all required daemons have had a recent heartbeat with no errors
-
     """
 
-    statuses = [
-        get_daemon_status(
-            instance,
-            daemon_type,
-            heartbeat_interval_seconds=heartbeat_interval_seconds,
-            heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
-            curr_time_seconds=curr_time_seconds,
-        )
-        for daemon_type in instance.get_required_daemon_types()
-    ]
-    return all([status.healthy for status in statuses])
+    statuses_by_type = get_daemon_statuses(
+        instance,
+        daemon_types=instance.get_required_daemon_types(),
+        heartbeat_interval_seconds=heartbeat_interval_seconds,
+        heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
+        curr_time_seconds=curr_time_seconds,
+    )
+
+    return all(status.healthy for status in statuses_by_type.values())
 
 
 def all_daemons_live(
@@ -328,23 +337,21 @@ def all_daemons_live(
     True if all required daemons have had a recent heartbeat, regardless of if it contained errors.
     """
 
-    statuses = [
-        get_daemon_status(
-            instance,
-            daemon_type,
-            heartbeat_interval_seconds=heartbeat_interval_seconds,
-            heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
-            curr_time_seconds=curr_time_seconds,
-            ignore_errors=True,
-        )
-        for daemon_type in instance.get_required_daemon_types()
-    ]
-    return all([status.healthy for status in statuses])
+    statuses_by_type = get_daemon_statuses(
+        instance,
+        daemon_types=instance.get_required_daemon_types(),
+        heartbeat_interval_seconds=heartbeat_interval_seconds,
+        heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
+        curr_time_seconds=curr_time_seconds,
+        ignore_errors=True,
+    )
+
+    return all(status.healthy for status in statuses_by_type.values())
 
 
-def get_daemon_status(
+def get_daemon_statuses(
     instance,
-    daemon_type,
+    daemon_types,
     curr_time_seconds=None,
     ignore_errors=False,
     heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
@@ -354,36 +361,41 @@ def get_daemon_status(
         curr_time_seconds, "curr_time_seconds", default=pendulum.now("UTC").float_timestamp
     )
 
-    # check if daemon required
-    if daemon_type not in instance.get_required_daemon_types():
-        return DaemonStatus(
-            daemon_type=daemon_type, required=False, healthy=None, last_heartbeat=None
-        )
-
-    # check if daemon present
+    daemon_statuses_by_type = {}
     heartbeats = instance.get_daemon_heartbeats()
-    if daemon_type not in heartbeats:
-        return DaemonStatus(
-            daemon_type=daemon_type, required=True, healthy=False, last_heartbeat=None
-        )
 
-    # check if daemon has sent a recent heartbeat
-    latest_heartbeat = heartbeats[daemon_type]
-    hearbeat_timestamp = latest_heartbeat.timestamp
-    maximum_tolerated_time = (
-        hearbeat_timestamp + heartbeat_interval_seconds + heartbeat_tolerance_seconds
-    )
-    healthy = curr_time_seconds <= maximum_tolerated_time
+    for daemon_type in daemon_types:
+        # check if daemon is not required
+        if daemon_type not in instance.get_required_daemon_types():
+            daemon_statuses_by_type[daemon_type] = DaemonStatus(
+                daemon_type=daemon_type, required=False, healthy=None, last_heartbeat=None
+            )
+        else:
+            # check if daemon has a heartbeat
+            if daemon_type not in heartbeats:
+                daemon_statuses_by_type[daemon_type] = DaemonStatus(
+                    daemon_type=daemon_type, required=True, healthy=False, last_heartbeat=None
+                )
+            else:
+                # check if daemon has sent a recent heartbeat
+                latest_heartbeat = heartbeats[daemon_type]
+                hearbeat_timestamp = latest_heartbeat.timestamp
+                maximum_tolerated_time = (
+                    hearbeat_timestamp + heartbeat_interval_seconds + heartbeat_tolerance_seconds
+                )
+                healthy = curr_time_seconds <= maximum_tolerated_time
 
-    if not ignore_errors and latest_heartbeat.errors:
-        healthy = False
+                if not ignore_errors and latest_heartbeat.errors:
+                    healthy = False
 
-    return DaemonStatus(
-        daemon_type=daemon_type,
-        required=True,
-        healthy=healthy,
-        last_heartbeat=heartbeats[daemon_type],
-    )
+                daemon_statuses_by_type[daemon_type] = DaemonStatus(
+                    daemon_type=daemon_type,
+                    required=True,
+                    healthy=healthy,
+                    last_heartbeat=heartbeats[daemon_type],
+                )
+
+    return daemon_statuses_by_type
 
 
 def debug_daemon_heartbeats(instance):

@@ -38,7 +38,7 @@ Inside of the directory `PROJECT_NAME/`, the following files and directories are
 | `PROJECT_NAME/jobs/`         | A Python package that contains JobDefinitions, which are built up from ops                                                           |
 | `PROJECT_NAME/schedules/`    | A Python package that contains ScheduleDefinitions, to trigger recurring job runs based on time                                      |
 | `PROJECT_NAME/sensors/`      | A Python package that contains SensorDefinitions, to trigger job runs based on external state                                        |
-| `PROJECT_NAME/repository.py` | A Python module that contains a RepositoryDefinition, to specify which jbos, schedules, and sensors are available in your repository |
+| `PROJECT_NAME/repository.py` | A Python module that contains a RepositoryDefinition, to specify which jobs, schedules, and sensors are available in your repository |
 
 This file structure is a good starting point and suitable for most Dagster projects. As you build more and more jobs, you may eventually find your own way of structuring your code that works best for you.
 
@@ -58,7 +58,7 @@ dagit
 
 The Dagit process automatically uses the file `workspace.yaml` to find your repositories, from which Dagster will load your jobs, schedules, and sensors. To see how you can customize the Dagit process, run `dagit --help`.
 
-3. (Optional) If you want to enable Dagster [Schedules](/concepts/partitions-schedules-sensors/schedules) or [Sensors](/concepts/partitions-schedules-sensors/sensors) for your jobs, start the [Dagster Daemon process](/deployment/dagster-daemon) **in a different shell or terminal**:
+3. (Optional) If you want to enable Dagster [Schedules](/concepts/partitions-schedules-sensors/schedules) or [Sensors](/concepts/partitions-schedules-sensors/sensors) for your jobs, start the [Dagster Daemon process](/deployment/dagster-daemon) **in the same folder as your `workspace.yaml` file, but in a different shell or terminal**. The `$DAGSTER_HOME` environment variable must be set to a directory for the daemon to work. Note: using directories within `/tmp` may cause issues. See <https://docs.dagster.io/deployment/dagster-instance#default-local-behavior> for more details.
 
 ```bash
 dagster-daemon run

@@ -5,6 +5,7 @@ from typing import List, Optional
 
 from airflow.models import Connection
 from airflow.models.baseoperator import BaseOperator
+
 from dagster import Any, In, Nothing, OpDefinition, Out, check, op
 
 

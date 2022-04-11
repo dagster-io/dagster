@@ -1,6 +1,7 @@
 import re
 
 import pytest
+
 from dagster import (
     AssetMaterialization,
     InputContext,
@@ -104,3 +105,11 @@ def test_context_logging_user_events():
     context.log_event(AssetMaterialization("first"))
     context.log_event(AssetMaterialization("second"))
     assert [event.label for event in context.get_logged_events()] == ["first", "second"]
+
+
+def test_context_logging_metadata():
+    context = build_output_context()
+
+    context.add_output_metadata({"foo": "bar"})
+
+    assert [entry.label for entry in context.get_logged_metadata_entries()] == ["foo"]

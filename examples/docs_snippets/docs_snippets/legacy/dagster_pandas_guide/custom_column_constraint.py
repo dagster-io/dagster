@@ -1,7 +1,5 @@
 from datetime import datetime
 
-from dagster import Out, job, op
-from dagster.utils import script_relative_path
 from dagster_pandas import PandasColumn, create_dagster_pandas_dataframe_type
 from dagster_pandas.constraints import (
     ColumnConstraint,
@@ -9,6 +7,9 @@ from dagster_pandas.constraints import (
     ColumnDTypeInSetConstraint,
 )
 from pandas import DataFrame, read_csv
+
+from dagster import Out, job, op
+from dagster.utils import script_relative_path
 
 
 # start_custom_col
@@ -20,7 +21,9 @@ class DivisibleByFiveConstraint(ColumnConstraint):
         )
 
     def validate(self, dataframe, column_name):
-        rows_with_unexpected_buckets = dataframe[dataframe[column_name].apply(lambda x: x % 5 != 0)]
+        rows_with_unexpected_buckets = dataframe[
+            dataframe[column_name].apply(lambda x: x % 5 != 0)
+        ]
         if not rows_with_unexpected_buckets.empty:
             raise ColumnConstraintViolationException(
                 constraint_name=self.name,
@@ -35,7 +38,10 @@ CustomTripDataFrame = create_dagster_pandas_dataframe_type(
     columns=[
         PandasColumn(
             "amount_paid",
-            constraints=[ColumnDTypeInSetConstraint({"int64"}), DivisibleByFiveConstraint()],
+            constraints=[
+                ColumnDTypeInSetConstraint({"int64"}),
+                DivisibleByFiveConstraint(),
+            ],
         )
     ],
 )

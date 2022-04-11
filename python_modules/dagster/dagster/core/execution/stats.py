@@ -1,10 +1,10 @@
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, Iterable, List, cast
+from typing import Any, Dict, Iterable, List, NamedTuple, Optional, cast
 
 from dagster import check
-from dagster.core.definitions import AssetMaterialization, ExpectationResult, Materialization
-from dagster.core.events import DagsterEventType, StepExpectationResultData, StepMaterializationData
+from dagster.core.definitions import ExpectationResult
+from dagster.core.events import DagsterEventType, StepExpectationResultData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
 from dagster.serdes import whitelist_for_serdes
@@ -116,11 +116,9 @@ def build_run_step_stats_from_events(
             by_step_key[step_key]["end_time"] = event.timestamp
             by_step_key[step_key]["status"] = StepEventStatus.SKIPPED
         if dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
-            event_specific_data = cast(StepMaterializationData, dagster_event.event_specific_data)
-            materialization = event_specific_data.materialization
-            step_materializations = by_step_key[step_key].get("materializations", [])
-            step_materializations.append(materialization)
-            by_step_key[step_key]["materializations"] = step_materializations
+            materialization_events = by_step_key[step_key].get("materialization_events", [])
+            materialization_events.append(event)
+            by_step_key[step_key]["materialization_events"] = materialization_events
         if dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
             expectation_data = cast(StepExpectationResultData, dagster_event.event_specific_data)
             expectation_result = expectation_data.expectation_result
@@ -186,15 +184,15 @@ def build_run_step_stats_from_events(
 
 @whitelist_for_serdes
 class RunStepMarker(
-    namedtuple(
+    NamedTuple(
         "_RunStepMarker",
-        ("start_time end_time"),
+        [("start_time", Optional[float]), ("end_time", Optional[float])],
     )
 ):
     def __new__(
         cls,
-        start_time=None,
-        end_time=None,
+        start_time: Optional[float] = None,
+        end_time: Optional[float] = None,
     ):
         return super(RunStepMarker, cls).__new__(
             cls,
@@ -205,26 +203,34 @@ class RunStepMarker(
 
 @whitelist_for_serdes
 class RunStepKeyStatsSnapshot(
-    namedtuple(
+    NamedTuple(
         "_RunStepKeyStatsSnapshot",
-        (
-            "run_id step_key status start_time end_time materializations expectation_results "
-            "attempts attempts_list markers"
-        ),
+        [
+            ("run_id", str),
+            ("step_key", str),
+            ("status", Optional[StepEventStatus]),
+            ("start_time", Optional[float]),
+            ("end_time", Optional[float]),
+            ("materialization_events", List[EventLogEntry]),
+            ("expectation_results", List[ExpectationResult]),
+            ("attempts", Optional[int]),
+            ("attempts_list", List[RunStepMarker]),
+            ("markers", List[RunStepMarker]),
+        ],
     )
 ):
     def __new__(
         cls,
-        run_id,
-        step_key,
-        status=None,
-        start_time=None,
-        end_time=None,
-        materializations=None,
-        expectation_results=None,
-        attempts=None,
-        attempts_list=None,
-        markers=None,
+        run_id: str,
+        step_key: str,
+        status: Optional[StepEventStatus] = None,
+        start_time: Optional[float] = None,
+        end_time: Optional[float] = None,
+        materialization_events: Optional[List[EventLogEntry]] = None,
+        expectation_results: Optional[List[ExpectationResult]] = None,
+        attempts: Optional[int] = None,
+        attempts_list: Optional[List[RunStepMarker]] = None,
+        markers: Optional[List[RunStepMarker]] = None,
     ):
         return super(RunStepKeyStatsSnapshot, cls).__new__(
             cls,
@@ -233,8 +239,10 @@ class RunStepKeyStatsSnapshot(
             status=check.opt_inst_param(status, "status", StepEventStatus),
             start_time=check.opt_float_param(start_time, "start_time"),
             end_time=check.opt_float_param(end_time, "end_time"),
-            materializations=check.opt_list_param(
-                materializations, "materializations", (AssetMaterialization, Materialization)
+            materialization_events=check.opt_list_param(
+                materialization_events,
+                "materialization_events",
+                EventLogEntry,
             ),
             expectation_results=check.opt_list_param(
                 expectation_results, "expectation_results", ExpectationResult

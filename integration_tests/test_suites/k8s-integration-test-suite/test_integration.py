@@ -3,11 +3,6 @@ import os
 import time
 
 import pytest
-from dagster import DagsterEventType, check
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.storage.tags import DOCKER_IMAGE_TAG
-from dagster.utils import load_yaml_from_path, merge_dicts
-from dagster.utils.yaml_utils import merge_yamls
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
 from dagster_k8s.utils import wait_for_job
@@ -21,6 +16,12 @@ from dagster_test.test_project import (
     get_test_project_docker_image,
     get_test_project_environments_path,
 )
+
+from dagster import DagsterEventType, check
+from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.tags import DOCKER_IMAGE_TAG
+from dagster.utils import load_yaml_from_path, merge_dicts
+from dagster.utils.yaml_utils import merge_yamls
 
 
 @pytest.mark.integration

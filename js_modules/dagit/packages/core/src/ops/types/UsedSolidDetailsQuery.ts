@@ -19,6 +19,17 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
   value: string;
 }
 
+export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_assetNodes_assetKey;
+}
+
 export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_inputDefinitions_type {
   __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
@@ -517,6 +528,7 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
   name: string;
   description: string | null;
   metadata: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_metadata[];
+  assetNodes: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_assetNodes[];
   inputDefinitions: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_inputDefinitions[];
   outputDefinitions: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_outputDefinitions[];
   configField: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_configField | null;
@@ -527,6 +539,17 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
+}
+
+export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_assetNodes_assetKey;
 }
 
 export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_inputDefinitions_type {
@@ -617,6 +640,7 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
   name: string;
   description: string | null;
   metadata: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_metadata[];
+  assetNodes: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_assetNodes[];
   inputDefinitions: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_outputDefinitions[];
   id: string;

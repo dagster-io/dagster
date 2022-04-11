@@ -1,6 +1,6 @@
 import {
   Box,
-  ColorsWIP,
+  Colors,
   Group,
   NonIdealState,
   Page,
@@ -12,7 +12,6 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {LoadingSpinner} from '../ui/Loading';
 
 import {ReloadAllButton} from './ReloadAllButton';
@@ -23,7 +22,6 @@ import {workspacePath} from './workspacePath';
 
 export const WorkspaceOverviewRoot = () => {
   const {loading, error, options} = useRepositoryOptions();
-  const {flagAssetGraph} = useFeatureFlags();
 
   const content = () => {
     if (loading) {
@@ -67,7 +65,7 @@ export const WorkspaceOverviewRoot = () => {
             {anyPipelinesInWorkspace ? <th>Pipelines</th> : null}
             <th>Graphs</th>
             <th>Ops</th>
-            {flagAssetGraph ? <th>Assets</th> : null}
+            <th>Assets</th>
             <th>Schedules</th>
             <th>Sensors</th>
           </tr>
@@ -91,7 +89,7 @@ export const WorkspaceOverviewRoot = () => {
                     {anyPipelines ? (
                       <Link to={workspacePath(name, location, '/pipelines')}>Pipelines</Link>
                     ) : (
-                      <span style={{color: ColorsWIP.Gray400}}>None</span>
+                      <span style={{color: Colors.Gray400}}>None</span>
                     )}
                   </td>
                 ) : null}
@@ -101,11 +99,9 @@ export const WorkspaceOverviewRoot = () => {
                 <td>
                   <Link to={workspacePath(name, location, '/ops')}>Ops</Link>
                 </td>
-                {flagAssetGraph ? (
-                  <td>
-                    <Link to={workspacePath(name, location, '/assets')}>Assets</Link>
-                  </td>
-                ) : null}
+                <td>
+                  <Link to={workspacePath(name, location, '/assets')}>Assets</Link>
+                </td>
                 <td>
                   <Link to={workspacePath(name, location, '/schedules')}>Schedules</Link>
                 </td>
@@ -134,7 +130,7 @@ export const WorkspaceOverviewRoot = () => {
       </Box>
       <Box
         padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
       >
         <Subheading id="repository-locations">Repositories</Subheading>
       </Box>

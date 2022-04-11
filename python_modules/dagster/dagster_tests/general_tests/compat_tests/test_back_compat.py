@@ -2,11 +2,14 @@
 import os
 import re
 import sqlite3
+import time
 from collections import namedtuple
 from enum import Enum
 from gzip import GzipFile
+from typing import NamedTuple, Optional, Union
 
 import pytest
+
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -20,13 +23,15 @@ from dagster import (
 )
 from dagster.cli.debug import DebugRunPayload
 from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.errors import DagsterInstanceMigrationRequired
+from dagster.core.errors import DagsterInstanceSchemaOutdated
 from dagster.core.events import DagsterEvent
 from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance, InstanceRef
+from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id
 from dagster.serdes.serdes import (
     WhitelistMap,
     _deserialize_json,
@@ -35,11 +40,12 @@ from dagster.serdes.serdes import (
     serialize_dagster_namedtuple,
     serialize_value,
 )
+from dagster.utils.error import SerializableErrorInfo
 from dagster.utils.test import copy_directory
 
 
 def _migration_regex(warning, current_revision, expected_revision=None):
-    instruction = re.escape("Please run `dagster instance migrate`.")
+    instruction = re.escape("To migrate, run `dagster instance migrate`.")
     if expected_revision:
         revision = re.escape(
             "Database is at revision {}, head is {}.".format(current_revision, expected_revision)
@@ -51,23 +57,21 @@ def _migration_regex(warning, current_revision, expected_revision=None):
 
 def _run_storage_migration_regex(current_revision, expected_revision=None):
     warning = re.escape(
-        "Instance is out of date and must be migrated (Sqlite run storage requires migration)."
+        "Raised an exception that may indicate that the Dagster database needs to be be migrated."
     )
     return _migration_regex(warning, current_revision, expected_revision)
 
 
 def _schedule_storage_migration_regex(current_revision, expected_revision=None):
     warning = re.escape(
-        "Instance is out of date and must be migrated (Sqlite schedule storage requires migration)."
+        "Raised an exception that may indicate that the Dagster database needs to be be migrated."
     )
     return _migration_regex(warning, current_revision, expected_revision)
 
 
 def _event_log_migration_regex(run_id, current_revision, expected_revision=None):
     warning = re.escape(
-        "Instance is out of date and must be migrated (SqliteEventLogStorage for run {}).".format(
-            run_id
-        )
+        "Raised an exception that may indicate that the Dagster database needs to be be migrated."
     )
     return _migration_regex(warning, current_revision, expected_revision)
 
@@ -133,6 +137,13 @@ def get_sqlite3_columns(db_path, table_name):
     return [r[1] for r in cursor.fetchall()]
 
 
+def get_sqlite3_indexes(db_path, table_name):
+    con = sqlite3.connect(db_path)
+    cursor = con.cursor()
+    cursor.execute('PRAGMA index_list("{}");'.format(table_name))
+    return [r[1] for r in cursor.fetchall()]
+
+
 def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
     run_id = "fb0b3905-068b-4444-8f00-76fcbaef7e8b"
     src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
@@ -156,7 +167,7 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
             noop_solid()
 
         with pytest.raises(
-            DagsterInstanceMigrationRequired,
+            DagsterInstanceSchemaOutdated,
             match=_run_storage_migration_regex(current_revision="9fe9e746268c"),
         ):
             execute_pipeline(noop_pipeline, instance=instance)
@@ -345,8 +356,8 @@ def test_run_partition_migration():
 def test_run_partition_data_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_9_22_post_schema_pre_data_partition/sqlite")
     with copy_directory(src_dir) as test_dir:
-        from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
         from dagster.core.storage.runs.migration import RUN_PARTITIONS
+        from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
 
         # load db that has migrated schema, but not populated data for run partitions
         db_path = os.path.join(test_dir, "history", "runs.db")
@@ -407,7 +418,7 @@ def test_0_10_0_schedule_wipe():
         assert "job_ticks" in get_sqlite3_tables(db_path)
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as upgraded_instance:
-            assert len(upgraded_instance.all_stored_job_state()) == 0
+            assert len(upgraded_instance.all_instigator_state()) == 0
 
 
 def test_0_10_6_add_bulk_actions_table():
@@ -549,8 +560,8 @@ def test_pipeline_run_dagster_run():
     ):
         pass
 
-    @_whitelist_for_serdes(legacy_env)  # pylint: disable=unused-variable
-    class PipelineRunStatus(Enum):
+    @_whitelist_for_serdes(legacy_env)
+    class PipelineRunStatus(Enum):  # pylint: disable=unused-variable
         QUEUED = "QUEUED"
         NOT_STARTED = "NOT_STARTED"
 
@@ -607,3 +618,276 @@ def test_start_time_end_time():
 
         assert get_current_alembic_version(db_path) == "7f2b1a4ca7a5"
         assert True
+
+
+def test_external_job_origin_instigator_origin():
+    def build_legacy_whitelist_map():
+        legacy_env = WhitelistMap.create()
+
+        @_whitelist_for_serdes(legacy_env)
+        class ExternalJobOrigin(
+            namedtuple("_ExternalJobOrigin", "external_repository_origin job_name")
+        ):
+            def get_id(self):
+                return create_snapshot_id(self)
+
+        @_whitelist_for_serdes(legacy_env)
+        class ExternalRepositoryOrigin(
+            namedtuple("_ExternalRepositoryOrigin", "repository_location_origin repository_name")
+        ):
+            def get_id(self):
+                return create_snapshot_id(self)
+
+        class GrpcServerOriginSerializer(DefaultNamedTupleSerializer):
+            @classmethod
+            def skip_when_empty(cls):
+                return {"use_ssl"}
+
+        @_whitelist_for_serdes(whitelist_map=legacy_env, serializer=GrpcServerOriginSerializer)
+        class GrpcServerRepositoryLocationOrigin(
+            namedtuple(
+                "_GrpcServerRepositoryLocationOrigin",
+                "host port socket location_name use_ssl",
+            ),
+        ):
+            def __new__(cls, host, port=None, socket=None, location_name=None, use_ssl=None):
+                return super(GrpcServerRepositoryLocationOrigin, cls).__new__(
+                    cls, host, port, socket, location_name, use_ssl
+                )
+
+        return (
+            legacy_env,
+            ExternalJobOrigin,
+            ExternalRepositoryOrigin,
+            GrpcServerRepositoryLocationOrigin,
+        )
+
+    legacy_env, klass, repo_klass, location_klass = build_legacy_whitelist_map()
+
+    from dagster.core.host_representation.origin import (
+        ExternalInstigatorOrigin,
+        ExternalRepositoryOrigin,
+        GrpcServerRepositoryLocationOrigin,
+    )
+
+    # serialize from current code, compare against old code
+    instigator_origin = ExternalInstigatorOrigin(
+        external_repository_origin=ExternalRepositoryOrigin(
+            repository_location_origin=GrpcServerRepositoryLocationOrigin(
+                host="localhost", port=1234, location_name="test_location"
+            ),
+            repository_name="the_repo",
+        ),
+        instigator_name="simple_schedule",
+    )
+    instigator_origin_str = serialize_dagster_namedtuple(instigator_origin)
+    instigator_to_job = _deserialize_json(instigator_origin_str, legacy_env)
+    assert isinstance(instigator_to_job, klass)
+    # ensure that the origin id is stable
+    assert instigator_to_job.get_id() == instigator_origin.get_id()
+
+    # # serialize from old code, compare against current code
+    job_origin = klass(
+        external_repository_origin=repo_klass(
+            repository_location_origin=location_klass(
+                host="localhost", port=1234, location_name="test_location"
+            ),
+            repository_name="the_repo",
+        ),
+        job_name="simple_schedule",
+    )
+    job_origin_str = serialize_value(job_origin, legacy_env)
+    from dagster.serdes.serdes import _WHITELIST_MAP
+
+    job_to_instigator = deserialize_json_to_dagster_namedtuple(job_origin_str)
+    assert isinstance(job_to_instigator, ExternalInstigatorOrigin)
+    # ensure that the origin id is stable
+    assert job_to_instigator.get_id() == job_origin.get_id()
+
+
+def test_schedule_namedtuple_job_instigator_backcompat():
+    src_dir = file_relative_path(__file__, "snapshot_0_13_19_instigator_named_tuples/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            states = instance.all_instigator_state()
+            assert len(states) == 2
+            check.is_list(states, of_type=InstigatorState)
+            for state in states:
+                assert state.instigator_type
+                assert state.instigator_data
+                ticks = instance.get_ticks(state.instigator_origin_id, state.selector_id)
+                check.is_list(ticks, of_type=InstigatorTick)
+                for tick in ticks:
+                    assert tick.tick_data
+                    assert tick.instigator_type
+                    assert tick.instigator_name
+
+
+def test_legacy_event_log_load():
+    # ensure EventLogEntry 0.14.3+ can still be loaded by older dagster versions
+    # to avoid downgrades etc from creating operational issues
+    legacy_env = WhitelistMap.create()
+
+    # snapshot of EventLogEntry pre commit ea19544
+    @_whitelist_for_serdes(
+        whitelist_map=legacy_env,
+        storage_name="EventLogEntry",  # use this to avoid collision with current EventLogEntry
+    )
+    class OldEventLogEntry(  # pylint: disable=unused-variable
+        NamedTuple(
+            "_OldEventLogEntry",
+            [
+                ("error_info", Optional[SerializableErrorInfo]),
+                ("message", str),
+                ("level", Union[str, int]),
+                ("user_message", str),
+                ("run_id", str),
+                ("timestamp", float),
+                ("step_key", Optional[str]),
+                ("pipeline_name", Optional[str]),
+                ("dagster_event", Optional[DagsterEvent]),
+            ],
+        )
+    ):
+        def __new__(
+            cls,
+            error_info,
+            message,
+            level,
+            user_message,
+            run_id,
+            timestamp,
+            step_key=None,
+            pipeline_name=None,
+            dagster_event=None,
+            job_name=None,
+        ):
+            pipeline_name = pipeline_name or job_name
+            return super().__new__(
+                cls,
+                check.opt_inst_param(error_info, "error_info", SerializableErrorInfo),
+                check.str_param(message, "message"),
+                level,  # coerce_valid_log_level call omitted
+                check.str_param(user_message, "user_message"),
+                check.str_param(run_id, "run_id"),
+                check.float_param(timestamp, "timestamp"),
+                check.opt_str_param(step_key, "step_key"),
+                check.opt_str_param(pipeline_name, "pipeline_name"),
+                check.opt_inst_param(dagster_event, "dagster_event", DagsterEvent),
+            )
+
+    # current event log entry
+    new_event = EventLogEntry(
+        user_message="test 1 2 3",
+        error_info=None,
+        level="debug",
+        run_id="fake_run_id",
+        timestamp=time.time(),
+    )
+
+    storage_str = serialize_dagster_namedtuple(new_event)
+
+    result = _deserialize_json(storage_str, legacy_env)
+    assert result.message is not None
+
+
+def test_schedule_secondary_index_table_backcompat():
+    src_dir = file_relative_path(__file__, "snapshot_0_14_6_schedule_migration_table/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "schedules", "schedules.db")
+
+        assert get_current_alembic_version(db_path) == "0da417ae1b81"
+
+        assert "secondary_indexes" not in get_sqlite3_tables(db_path)
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
+
+        assert "secondary_indexes" in get_sqlite3_tables(db_path)
+
+
+def test_instigators_table_backcompat():
+    src_dir = file_relative_path(__file__, "snapshot_0_14_6_instigators_table/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "schedules", "schedules.db")
+
+        assert get_current_alembic_version(db_path) == "54666da3db5c"
+
+        assert "instigators" not in get_sqlite3_tables(db_path)
+        assert "selector_id" not in set(get_sqlite3_columns(db_path, "jobs"))
+        assert "selector_id" not in set(get_sqlite3_columns(db_path, "job_ticks"))
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
+
+        assert "instigators" in get_sqlite3_tables(db_path)
+        assert "selector_id" in set(get_sqlite3_columns(db_path, "jobs"))
+        assert "selector_id" in set(get_sqlite3_columns(db_path, "job_ticks"))
+
+
+def test_jobs_selector_id_migration():
+    src_dir = file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite")
+    import sqlalchemy as db
+
+    from dagster.core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
+    from dagster.core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "schedules", "schedules.db")
+
+        assert get_current_alembic_version(db_path) == "c892b3fe0a9f"
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            # runs the required data migrations
+            instance.upgrade()
+            assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)
+            legacy_count = len(instance.all_instigator_state())
+            migrated_instigator_count = instance.schedule_storage.execute(
+                db.select([db.func.count()]).select_from(InstigatorsTable)
+            )[0][0]
+            assert migrated_instigator_count == legacy_count
+
+            migrated_job_count = instance.schedule_storage.execute(
+                db.select([db.func.count()])
+                .select_from(JobTable)
+                .where(JobTable.c.selector_id.isnot(None))
+            )[0][0]
+            assert migrated_job_count == legacy_count
+
+            legacy_tick_count = instance.schedule_storage.execute(
+                db.select([db.func.count()]).select_from(JobTickTable)
+            )[0][0]
+            assert legacy_tick_count > 0
+
+            # tick migrations are optional
+            migrated_tick_count = instance.schedule_storage.execute(
+                db.select([db.func.count()])
+                .select_from(JobTickTable)
+                .where(JobTickTable.c.selector_id.isnot(None))
+            )[0][0]
+            assert migrated_tick_count == 0
+
+            # run the optional migrations
+            instance.reindex()
+
+            migrated_tick_count = instance.schedule_storage.execute(
+                db.select([db.func.count()])
+                .select_from(JobTickTable)
+                .where(JobTickTable.c.selector_id.isnot(None))
+            )[0][0]
+            assert migrated_tick_count == legacy_tick_count
+
+
+def test_tick_selector_index_migration():
+    src_dir = file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite")
+    import sqlalchemy as db
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "schedules", "schedules.db")
+
+        assert get_current_alembic_version(db_path) == "c892b3fe0a9f"
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "idx_tick_selector_timestamp" not in get_sqlite3_indexes(db_path, "job_ticks")
+            instance.upgrade()
+            assert "idx_tick_selector_timestamp" in get_sqlite3_indexes(db_path, "job_ticks")

@@ -1,9 +1,11 @@
+import _thread as thread
 import contextlib
 import contextvars
 import datetime
 import errno
 import functools
 import inspect
+import multiprocessing
 import os
 import re
 import signal
@@ -20,11 +22,11 @@ from typing import Mapping as TypingMapping
 from typing import Optional, Type, TypeVar, Union, cast, overload
 from warnings import warn
 
-import _thread as thread
 import yaml
+
 from dagster import check, seven
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster.seven import IS_WINDOWS, multiprocessing
+from dagster.seven import IS_WINDOWS
 from dagster.seven.abc import Mapping
 
 from .merger import merge_dicts
@@ -447,7 +449,7 @@ class EventGenerationManager(Generic[GeneratedContext]):
         require_object: Optional[bool] = True,
     ):
         self.generator = check.generator(generator)
-        self.object_cls: Type[GeneratedContext] = check.type_param(object_cls, "object_cls")
+        self.object_cls: Type[GeneratedContext] = check.class_param(object_cls, "object_cls")
         self.require_object = check.bool_param(require_object, "require_object")
         self.object: Optional[GeneratedContext] = None
         self.did_setup = False

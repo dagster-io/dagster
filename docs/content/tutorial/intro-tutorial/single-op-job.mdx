@@ -39,8 +39,6 @@ def hello_cereal():
     lines = response.text.split("\n")
     cereals = [row for row in csv.DictReader(lines)]
     get_dagster_logger().info(f"Found {len(cereals)} cereals")
-
-    return cereals
 ```
 
 In this simple case, our op takes no arguments, and also returns no outputs. Don't worry, we'll soon encounter ops that are much more dynamic.
@@ -65,7 +63,7 @@ Assuming you’ve saved this job as `hello_cereal.py`, you can execute it via an
 
 ### Dagit
 
-To visualize your job (which only has one op) in Dagit, from the directory in which you've saved the job file, just run:
+To visualize your job (which only has one op) in Dagit, just run the following. Make sure you're in the directory in which you've saved the job file:
 
 ```bash
 dagit -f hello_cereal.py

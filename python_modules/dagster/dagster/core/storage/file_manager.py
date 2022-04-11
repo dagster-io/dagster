@@ -2,9 +2,9 @@ import io
 import os
 import shutil
 import uuid
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import BinaryIO, TextIO, Union
+from typing import BinaryIO, Optional, TextIO, Union
 
 from dagster import check
 from dagster.config import Field
@@ -31,7 +31,8 @@ class FileHandle(ABC):
     such as S3.
     """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def path_desc(self) -> str:
         """A representation of the file path for display purposes only."""
         raise NotImplementedError()
@@ -127,7 +128,7 @@ class FileManager(ABC):  # pylint: disable=no-init
 
     @abstractmethod
     def write(
-        self, file_obj: Union[TextIO, BinaryIO], mode: str = "wb", ext: str = None
+        self, file_obj: Union[TextIO, BinaryIO], mode: str = "wb", ext: Optional[str] = None
     ) -> FileHandle:
         """Write the bytes contained within the given file object into the file manager.
 
@@ -144,7 +145,7 @@ class FileManager(ABC):  # pylint: disable=no-init
         raise NotImplementedError()
 
     @abstractmethod
-    def write_data(self, data: bytes, ext: str = None) -> FileHandle:
+    def write_data(self, data: bytes, ext: Optional[str] = None) -> FileHandle:
         """Write raw bytes into the file manager.
 
         Args:

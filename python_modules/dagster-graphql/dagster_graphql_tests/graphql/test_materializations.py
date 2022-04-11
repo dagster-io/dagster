@@ -24,64 +24,64 @@ class TestMaterializations(ExecutingGraphQLContextTestMatrix):
         assert mat["label"] == "all_types"
 
         entry = mat["metadataEntries"][0]
-        assert entry["__typename"] == "EventTextMetadataEntry"
+        assert entry["__typename"] == "TextMetadataEntry"
         assert entry["text"]
 
         entry = mat["metadataEntries"][1]
-        assert entry["__typename"] == "EventUrlMetadataEntry"
+        assert entry["__typename"] == "UrlMetadataEntry"
         assert entry["url"]
 
         entry = mat["metadataEntries"][2]
-        assert entry["__typename"] == "EventPathMetadataEntry"
+        assert entry["__typename"] == "PathMetadataEntry"
         assert entry["path"]
 
         entry = mat["metadataEntries"][3]
-        assert entry["__typename"] == "EventJsonMetadataEntry"
+        assert entry["__typename"] == "JsonMetadataEntry"
         assert entry["jsonString"]
 
         entry = mat["metadataEntries"][4]
-        assert entry["__typename"] == "EventPythonArtifactMetadataEntry"
+        assert entry["__typename"] == "PythonArtifactMetadataEntry"
         assert entry["module"]
         assert entry["name"]
 
         entry = mat["metadataEntries"][5]
-        assert entry["__typename"] == "EventPythonArtifactMetadataEntry"
+        assert entry["__typename"] == "PythonArtifactMetadataEntry"
         assert entry["module"]
         assert entry["name"]
 
         entry = mat["metadataEntries"][6]
-        assert entry["__typename"] == "EventFloatMetadataEntry"
+        assert entry["__typename"] == "FloatMetadataEntry"
         assert entry["floatValue"]
 
         entry = mat["metadataEntries"][7]
-        assert entry["__typename"] == "EventIntMetadataEntry"
+        assert entry["__typename"] == "IntMetadataEntry"
         assert entry["intRepr"]
 
         entry = mat["metadataEntries"][8]
-        assert entry["__typename"] == "EventFloatMetadataEntry"
+        assert entry["__typename"] == "FloatMetadataEntry"
         assert entry["floatValue"] is None  # float NaN test
 
         entry = mat["metadataEntries"][9]
-        assert entry["__typename"] == "EventIntMetadataEntry"
+        assert entry["__typename"] == "IntMetadataEntry"
         assert int(entry["intRepr"]) == LONG_INT
 
         entry = mat["metadataEntries"][10]
-        assert entry["__typename"] == "EventPipelineRunMetadataEntry"
+        assert entry["__typename"] == "PipelineRunMetadataEntry"
         assert entry["runId"] == "fake_run_id"
 
         entry = mat["metadataEntries"][11]
-        assert entry["__typename"] == "EventAssetMetadataEntry"
+        assert entry["__typename"] == "AssetMetadataEntry"
         assert entry["assetKey"]
         assert entry["assetKey"]["path"]
 
         entry = mat["metadataEntries"][12]
-        assert entry["__typename"] == "EventTableMetadataEntry"
+        assert entry["__typename"] == "TableMetadataEntry"
         assert entry["table"]
         assert entry["table"]["records"]
         assert entry["table"]["schema"]
 
         entry = mat["metadataEntries"][13]
-        assert entry["__typename"] == "EventTableSchemaMetadataEntry"
+        assert entry["__typename"] == "TableSchemaMetadataEntry"
         assert entry["schema"]
         assert entry["schema"]["columns"]
         assert entry["schema"]["columns"][0]["constraints"]

@@ -1,7 +1,10 @@
 import {gql} from '@apollo/client';
-import {ColorsWIP, IconWIP, FontFamily} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
+
+import {displayNameForAssetKey, withMiddleTruncation} from '../app/Util';
+import {AssetKey} from '../assets/types';
 
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';
@@ -106,6 +109,8 @@ export class OpNode extends React.Component<IOpNodeProps> {
       tags.push({label: 'Expand', onClick: this.handleEnterComposite});
     }
 
+    const label = invocation ? invocation.name : definition.name;
+
     return (
       <NodeContainer
         $minified={minified}
@@ -154,16 +159,17 @@ export class OpNode extends React.Component<IOpNodeProps> {
         ))}
 
         <div className="node-box" style={{...position(layout.op)}}>
-          <div
-            className="name"
-            data-tooltip={invocation ? invocation.name : definition.name}
-            data-tooltip-style={TOOLTIP_STYLE}
-          >
-            {!minified && <IconWIP name="op" size={16} />}
-            <div className="label">{invocation ? invocation.name : definition.name}</div>
+          <div className="name">
+            {!minified && <Icon name="op" size={16} />}
+            <div className="label" data-tooltip={label} data-tooltip-style={TOOLTIP_STYLE}>
+              {withMiddleTruncation(label, {maxLength: 48})}
+            </div>
           </div>
-          {!minified && (
+          {!minified && (definition.description || definition.assetNodes.length === 0) && (
             <div className="description">{(definition.description || '').split('\n')[0]}</div>
+          )}
+          {!minified && definition.assetNodes.length > 0 && (
+            <OpNodeAssociatedAssets nodes={definition.assetNodes} />
           )}
         </div>
 
@@ -182,6 +188,19 @@ export class OpNode extends React.Component<IOpNodeProps> {
     );
   }
 }
+
+const OpNodeAssociatedAssets: React.FC<{nodes: {assetKey: AssetKey}[]}> = ({nodes}) => {
+  const more = nodes.length > 1 ? ` + ${nodes.length - 1} more` : '';
+  return (
+    <div className="assets">
+      <Icon name="asset" size={16} />
+      {withMiddleTruncation(displayNameForAssetKey(nodes[0].assetKey), {
+        maxLength: 48 - more.length,
+      })}
+      {more}
+    </div>
+  );
+};
 
 export const OP_NODE_INVOCATION_FRAGMENT = gql`
   fragment OpNodeInvocationFragment on Solid {
@@ -231,6 +250,12 @@ export const OP_NODE_DEFINITION_FRAGMENT = gql`
     metadata {
       key
       value
+    }
+    assetNodes {
+      id
+      assetKey {
+        path
+      }
     }
     inputDefinitions {
       name
@@ -304,7 +329,7 @@ const NodeContainer = styled.div<{
       p.$selected
         ? `2px dashed ${NodeHighlightColors.Border}`
         : p.$secondaryHighlight
-        ? `2px solid ${ColorsWIP.Blue500}55`
+        ? `2px solid ${Colors.Blue500}55`
         : '2px solid transparent'};
     border-radius: 6px;
     background: ${(p) => (p.$selected ? NodeHighlightColors.Background : 'transparent')};
@@ -313,11 +338,11 @@ const NodeContainer = styled.div<{
     border: 2px solid #dcd5ca;
     border-width: ${(p) => (p.$minified ? '3px' : '2px')};
     border-radius: 5px;
-    background: ${(p) => (p.$minified ? ColorsWIP.Gray50 : ColorsWIP.White)};
+    background: ${(p) => (p.$minified ? Colors.Gray50 : Colors.White)};
   }
   .composite-marker {
     outline: ${(p) => (p.$minified ? '3px' : '2px')} solid
-      ${(p) => (p.$selected ? 'transparent' : ColorsWIP.Yellow200)};
+      ${(p) => (p.$selected ? 'transparent' : Colors.Yellow200)};
     outline-offset: ${(p) => (p.$minified ? '5px' : '3px')};
     border-radius: 3px;
   }
@@ -349,6 +374,19 @@ const NodeContainer = styled.div<{
       overflow: hidden;
       text-overflow: ellipsis;
     }
+  }
+  .assets {
+    padding: 0 4px;
+    white-space: nowrap;
+    line-height: 22px;
+    height: 22px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: #f5f3ef;
+    font-size: 12px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
   }
   .description {
     padding: 0 8px;

@@ -1,6 +1,7 @@
-from dagster.core.definitions.decorators.hook import event_list_hook
-from dagster.core.definitions.events import HookExecutionResult
 from mlflow.entities.run_status import RunStatus
+
+from dagster.core.definitions.decorators.hook_decorator import event_list_hook
+from dagster.core.definitions.events import HookExecutionResult
 
 
 def _create_mlflow_run_hook(name):

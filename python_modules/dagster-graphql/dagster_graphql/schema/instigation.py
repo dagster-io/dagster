@@ -1,20 +1,22 @@
 import sys
+import warnings
 
 import graphene
 import pendulum
 import yaml
+
 from dagster import check
 from dagster.core.definitions.schedule_definition import ScheduleExecutionData
 from dagster.core.definitions.sensor_definition import RunRequest
 from dagster.core.scheduler.instigation import (
     InstigatorState,
-    InstigatorStatus,
     InstigatorTick,
     InstigatorType,
     ScheduleInstigatorData,
     SensorInstigatorData,
+    TickStatus,
 )
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 from dagster.seven.compat.pendulum import to_timezone
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -57,15 +59,17 @@ class GrapheneInstigationTickStatus(graphene.Enum):
 class GrapheneSensorData(graphene.ObjectType):
     lastTickTimestamp = graphene.Float()
     lastRunKey = graphene.String()
+    lastCursor = graphene.String()
 
     class Meta:
         name = "SensorData"
 
-    def __init__(self, job_specific_data):
-        check.inst_param(job_specific_data, "job_specific_data", SensorInstigatorData)
+    def __init__(self, instigator_data):
+        check.inst_param(instigator_data, "instigator_data", SensorInstigatorData)
         super().__init__(
-            lastTickTimestamp=job_specific_data.last_tick_timestamp,
-            lastRunKey=job_specific_data.last_run_key,
+            lastTickTimestamp=instigator_data.last_tick_timestamp,
+            lastRunKey=instigator_data.last_run_key,
+            lastCursor=instigator_data.cursor,
         )
 
 
@@ -76,11 +80,11 @@ class GrapheneScheduleData(graphene.ObjectType):
     class Meta:
         name = "ScheduleData"
 
-    def __init__(self, job_specific_data):
-        check.inst_param(job_specific_data, "job_specific_data", ScheduleInstigatorData)
+    def __init__(self, instigator_data):
+        check.inst_param(instigator_data, "instigator_data", ScheduleInstigatorData)
         super().__init__(
-            cronSchedule=job_specific_data.cron_schedule,
-            startTimestamp=job_specific_data.start_timestamp,
+            cronSchedule=instigator_data.cron_schedule,
+            startTimestamp=instigator_data.start_timestamp,
         )
 
 
@@ -95,40 +99,44 @@ class GrapheneInstigationTick(graphene.ObjectType):
     status = graphene.NonNull(GrapheneInstigationTickStatus)
     timestamp = graphene.NonNull(graphene.Float)
     runIds = non_null_list(graphene.String)
+    runKeys = non_null_list(graphene.String)
     error = graphene.Field(GraphenePythonError)
     skipReason = graphene.String()
+    cursor = graphene.String()
     runs = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun")
     originRunIds = non_null_list(graphene.String)
 
     class Meta:
         name = "InstigationTick"
 
-    def __init__(self, _, job_tick):
-        self._job_tick = check.inst_param(job_tick, "job_tick", InstigatorTick)
+    def __init__(self, _, tick):
+        self._tick = check.inst_param(tick, "tick", InstigatorTick)
 
         super().__init__(
-            status=job_tick.status,
-            timestamp=job_tick.timestamp,
-            runIds=job_tick.run_ids,
-            error=job_tick.error,
-            skipReason=job_tick.skip_reason,
-            originRunIds=job_tick.origin_run_ids,
+            status=tick.status,
+            timestamp=tick.timestamp,
+            runIds=tick.run_ids,
+            runKeys=tick.run_keys,
+            error=tick.error,
+            skipReason=tick.skip_reason,
+            originRunIds=tick.origin_run_ids,
+            cursor=tick.cursor,
         )
 
     def resolve_id(self, _):
-        return "%s:%s" % (self._job_tick.job_origin_id, self._job_tick.timestamp)
+        return "%s:%s" % (self._tick.instigator_origin_id, self._tick.timestamp)
 
     def resolve_runs(self, graphene_info):
         from .pipelines.pipeline import GrapheneRun
 
         instance = graphene_info.context.instance
-        run_ids = self._job_tick.origin_run_ids or self._job_tick.run_ids
+        run_ids = self._tick.origin_run_ids or self._tick.run_ids
         if not run_ids:
             return []
 
         records_by_id = {
             record.pipeline_run.run_id: record
-            for record in instance.get_run_records(PipelineRunsFilter(run_ids=run_ids))
+            for record in instance.get_run_records(RunsFilter(run_ids=run_ids))
         }
 
         return [GrapheneRun(records_by_id[run_id]) for run_id in run_ids if run_id in records_by_id]
@@ -141,21 +149,18 @@ class GrapheneFutureInstigationTick(graphene.ObjectType):
     class Meta:
         name = "FutureInstigationTick"
 
-    def __init__(self, job_state, timestamp):
-        self._job_state = check.inst_param(job_state, "job_state", InstigatorState)
+    def __init__(self, state, timestamp):
+        self._state = check.inst_param(state, "state", InstigatorState)
         self._timestamp = timestamp
         super().__init__(
             timestamp=check.float_param(timestamp, "timestamp"),
         )
 
     def resolve_evaluationResult(self, graphene_info):
-        if self._job_state.status != InstigatorStatus.RUNNING:
+        if not self._state.is_running or self._state.instigator_type != InstigatorType.SCHEDULE:
             return None
 
-        if self._job_state.job_type != InstigatorType.SCHEDULE:
-            return None
-
-        repository_origin = self._job_state.origin.external_repository_origin
+        repository_origin = self._state.origin.external_repository_origin
         if not graphene_info.context.has_repository_location(
             repository_origin.repository_location_origin.location_name
         ):
@@ -168,7 +173,11 @@ class GrapheneFutureInstigationTick(graphene.ObjectType):
             return None
 
         repository = repository_location.get_repository(repository_origin.repository_name)
-        external_schedule = repository.get_external_schedule(self._job_state.name)
+
+        if not repository.has_external_schedule(self._state.name):
+            return None
+
+        external_schedule = repository.get_external_schedule(self._state.name)
         timezone_str = external_schedule.execution_timezone
         if not timezone_str:
             timezone_str = "UTC"
@@ -267,6 +276,8 @@ class GrapheneInstigationState(graphene.ObjectType):
         dayRange=graphene.Int(),
         dayOffset=graphene.Int(),
         limit=graphene.Int(),
+        cursor=graphene.String(),
+        statuses=graphene.List(graphene.NonNull(GrapheneInstigationTickStatus)),
     )
     nextTick = graphene.Field(GrapheneFutureInstigationTick)
     runningCount = graphene.NonNull(graphene.Int)  # remove with cron scheduler
@@ -276,10 +287,12 @@ class GrapheneInstigationState(graphene.ObjectType):
 
     def __init__(
         self,
-        job_state,
+        instigator_state,
         batch_loader=None,
     ):
-        self._job_state = check.inst_param(job_state, "job_state", InstigatorState)
+        self._instigator_state = check.inst_param(
+            instigator_state, "instigator_state", InstigatorState
+        )
 
         # optional batch loader, provided by a parent GrapheneRepository object that instantiates
         # multiple schedules/sensors
@@ -287,25 +300,29 @@ class GrapheneInstigationState(graphene.ObjectType):
             batch_loader, "batch_loader", RepositoryScopedBatchLoader
         )
         super().__init__(
-            id=job_state.job_origin_id,
-            name=job_state.name,
-            instigationType=job_state.job_type,
-            status=job_state.status,
+            id=instigator_state.instigator_origin_id,
+            name=instigator_state.name,
+            instigationType=instigator_state.instigator_type,
+            status=(
+                GrapheneInstigationStatus.RUNNING
+                if instigator_state.is_running
+                else GrapheneInstigationStatus.STOPPED
+            ),
         )
 
     def resolve_repositoryOrigin(self, _graphene_info):
-        origin = self._job_state.origin.external_repository_origin
+        origin = self._instigator_state.origin.external_repository_origin
         return GrapheneRepositoryOrigin(origin)
 
     def resolve_typeSpecificData(self, _graphene_info):
-        if not self._job_state.job_specific_data:
+        if not self._instigator_state.instigator_data:
             return None
 
-        if self._job_state.job_type == InstigatorType.SENSOR:
-            return GrapheneSensorData(self._job_state.job_specific_data)
+        if self._instigator_state.instigator_type == InstigatorType.SENSOR:
+            return GrapheneSensorData(self._instigator_state.instigator_data)
 
-        if self._job_state.job_type == InstigatorType.SCHEDULE:
-            return GrapheneScheduleData(self._job_state.job_specific_data)
+        if self._instigator_state.instigator_type == InstigatorType.SCHEDULE:
+            return GrapheneScheduleData(self._instigator_state.instigator_data)
 
         return None
 
@@ -315,16 +332,18 @@ class GrapheneInstigationState(graphene.ObjectType):
         if kwargs.get("limit") and self._batch_loader:
             limit = kwargs["limit"]
             records = (
-                self._batch_loader.get_run_records_for_sensor(self._job_state.name, limit)
-                if self._job_state.job_type == InstigatorType.SENSOR
-                else self._batch_loader.get_run_records_for_schedule(self._job_state.name, limit)
+                self._batch_loader.get_run_records_for_sensor(self._instigator_state.name, limit)
+                if self._instigator_state.instigator_type == InstigatorType.SENSOR
+                else self._batch_loader.get_run_records_for_schedule(
+                    self._instigator_state.name, limit
+                )
             )
             return [GrapheneRun(record) for record in records]
 
-        if self._job_state.job_type == InstigatorType.SENSOR:
-            filters = PipelineRunsFilter.for_sensor(self._job_state)
+        if self._instigator_state.instigator_type == InstigatorType.SENSOR:
+            filters = RunsFilter.for_sensor(self._instigator_state)
         else:
-            filters = PipelineRunsFilter.for_schedule(self._job_state)
+            filters = RunsFilter.for_schedule(self._instigator_state)
         return [
             GrapheneRun(record)
             for record in graphene_info.context.instance.get_run_records(
@@ -334,41 +353,81 @@ class GrapheneInstigationState(graphene.ObjectType):
         ]
 
     def resolve_runsCount(self, graphene_info):
-        if self._job_state.job_type == InstigatorType.SENSOR:
-            filters = PipelineRunsFilter.for_sensor(self._job_state)
+        if self._instigator_state.instigator_type == InstigatorType.SENSOR:
+            filters = RunsFilter.for_sensor(self._instigator_state)
         else:
-            filters = PipelineRunsFilter.for_schedule(self._job_state)
+            filters = RunsFilter.for_schedule(self._instigator_state)
         return graphene_info.context.instance.get_runs_count(filters=filters)
 
     def resolve_tick(self, graphene_info, timestamp):
-        tick = graphene_info.context.instance.get_job_tick(
-            self._job_state.job_origin_id, timestamp=timestamp
+        matches = graphene_info.context.instance.get_ticks(
+            self._instigator_state.instigator_origin_id,
+            self._instigator_state.selector_id,
+            before=timestamp + 1,
+            after=timestamp - 1,
+            limit=1,
         )
-        return GrapheneInstigationTick(graphene_info, tick) if tick else None
+        return GrapheneInstigationTick(graphene_info, matches[0]) if matches else None
 
-    def resolve_ticks(self, graphene_info, dayRange=None, dayOffset=None, limit=None):
-        before = pendulum.now("UTC").subtract(days=dayOffset).timestamp() if dayOffset else None
+    def resolve_ticks(
+        self, graphene_info, dayRange=None, dayOffset=None, limit=None, cursor=None, statuses=None
+    ):
+        before = None
+        if dayOffset:
+            before = pendulum.now("UTC").subtract(days=dayOffset).timestamp()
+        elif cursor:
+            parts = cursor.split(":")
+            if parts:
+                try:
+                    before = float(parts[-1])
+                except (ValueError, IndexError):
+                    warnings.warn(f"Invalid cursor for {self.name} ticks: {cursor}")
+
         after = (
             pendulum.now("UTC").subtract(days=dayRange + (dayOffset or 0)).timestamp()
             if dayRange
             else None
         )
+        if statuses:
+            statuses = [TickStatus(status) for status in statuses]
+
+        if self._batch_loader and limit and not cursor and not before and not after:
+            ticks = (
+                self._batch_loader.get_sensor_ticks(
+                    self._instigator_state.instigator_origin_id,
+                    self._instigator_state.selector_id,
+                    limit,
+                )
+                if self._instigator_state.instigator_type == InstigatorType.SENSOR
+                else self._batch_loader.get_schedule_ticks(
+                    self._instigator_state.instigator_origin_id,
+                    self._instigator_state.selector_id,
+                    limit,
+                )
+            )
+            return [GrapheneInstigationTick(graphene_info, tick) for tick in ticks]
+
         return [
             GrapheneInstigationTick(graphene_info, tick)
-            for tick in graphene_info.context.instance.get_job_ticks(
-                self._job_state.job_origin_id, before=before, after=after, limit=limit
+            for tick in graphene_info.context.instance.get_ticks(
+                self._instigator_state.instigator_origin_id,
+                self._instigator_state.selector_id,
+                before=before,
+                after=after,
+                limit=limit,
+                statuses=statuses,
             )
         ]
 
     def resolve_nextTick(self, graphene_info):
         # sensor
-        if self._job_state.job_type == InstigatorType.SENSOR:
-            return get_sensor_next_tick(graphene_info, self._job_state)
+        if self._instigator_state.instigator_type == InstigatorType.SENSOR:
+            return get_sensor_next_tick(graphene_info, self._instigator_state)
         else:
-            return get_schedule_next_tick(graphene_info, self._job_state)
+            return get_schedule_next_tick(graphene_info, self._instigator_state)
 
     def resolve_runningCount(self, _graphene_info):
-        return 1 if self._job_state.status == InstigatorStatus.RUNNING else 0
+        return 1 if self._instigator_state.is_running else 0
 
 
 class GrapheneInstigationStates(graphene.ObjectType):

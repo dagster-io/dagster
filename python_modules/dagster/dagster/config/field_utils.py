@@ -221,7 +221,7 @@ class Permissive(_ConfigHasFields):
     .. code-block:: python
 
         @op(config_schema=Field(Permissive({'required': Field(String)})))
-        def partially_specified_config(context) -> List:
+        def map_config_op(context) -> List:
             return sorted(list(context.op_config.items()))
     """
 

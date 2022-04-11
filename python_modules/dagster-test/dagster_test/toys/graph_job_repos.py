@@ -4,12 +4,12 @@ from dagster import (
     InputDefinition,
     ResourceDefinition,
     SolidDefinition,
+    graph,
     repository,
     schedule,
     sensor,
     solid,
 )
-from dagster.core.definitions.decorators.graph import graph
 
 
 def make_solid(

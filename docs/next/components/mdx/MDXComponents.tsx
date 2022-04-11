@@ -11,6 +11,8 @@ import Icons from "../Icons";
 import Link from "../Link";
 import { useVersion } from "../../util/useVersion";
 import Image from "next/image";
+import Zoom from 'react-medium-image-zoom'
+import 'react-medium-image-zoom/dist/styles.css'
 export const SearchIndexContext = React.createContext(null);
 import path from "path";
 
@@ -196,32 +198,41 @@ const LinkGridItem = ({ title, href, children, tags = [] }) => {
   );
 };
 
-const Warning = ({ children }) => {
+const ADMONITION_STYLES = {
+  note: { colors: { bg: 'primary-100', borderIcon: 'primary-500', text: 'primary-500'}, icon: Icons.InfoCircle },
+  warning: { colors: { bg: 'yellow-50', borderIcon: 'yellow-400', text: 'yellow-700'}, icon: Icons.Warning },
+}
+
+const Admonition = ({ style, children }) => {
+  const { colors, icon } = ADMONITION_STYLES[style];
   return (
-    <div className="bg-yellow-50 border-l-4 border-yellow-400 px-4 my-4">
+    <div className={`bg-${colors.bg} border-l-4 border-${colors.borderIcon} px-4 my-4`}>
       <div className="flex items-center">
         <div className="flex-shrink-0">
-          {/* Heroicon name: solid/exclamation */}
           <svg
-            className="h-5 w-5 text-yellow-400"
+            className={`h-5 w-5 text-${colors.borderIcon}`}
             xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
+            viewBox="0 0 25 25"
             fill="currentColor"
             aria-hidden="true"
           >
-            <path
-              fillRule="evenodd"
-              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-              clipRule="evenodd"
-            />
+            {icon}
           </svg>
         </div>
         <div className="ml-3">
-          <p className="text-sm text-yellow-700">{children}</p>
+          <p className={`text-sm text-${colors.text}`}>{children}</p>
         </div>
       </div>
     </div>
   );
+};
+
+const Note = ({ children }) => {
+  return <Admonition style="note">{children}</Admonition>;
+};
+
+const Warning = ({ children }) => {
+  return <Admonition style="warning">{children}</Admonition>;
 };
 
 const CodeReferenceLink = ({ filePath, isInline, children }) => {
@@ -304,9 +315,9 @@ export default {
     );
   },
   img: ({ children, ...props }) => (
-    <div className="mx-auto">
+    <span className="block mx-auto">
       <img {...(props as any)} />
-    </div>
+    </span>
   ),
   Image: ({ children, ...props }) => {
     /* Only version images when all conditions meet:
@@ -318,9 +329,11 @@ export default {
     const { src } = props;
     if (version === "master" || !src.startsWith("/images/")) {
       return (
-        <div className="mx-auto">
+      <Zoom wrapElement="span" wrapStyle={{display: 'block'}}>
+        <span className="block mx-auto">
           <Image {...(props as any)} />
-        </div>
+        </span>
+      </Zoom>
       );
     }
 
@@ -330,14 +343,16 @@ export default {
     ).href;
 
     return (
-      <div className="mx-auto">
-        <Image
-          src={resolvedPath}
-          width={props.width}
-          height={props.height}
-          alt={props.alt}
-        />
-      </div>
+      <Zoom wrapElement="span" wrapStyle={{display: 'block'}}>
+        <span className="block mx-auto">
+          <Image
+            src={resolvedPath}
+            width={props.width}
+            height={props.height}
+            alt={props.alt}
+          />
+        </span>
+      </Zoom>
     );
   },
   PyObject,
@@ -346,6 +361,7 @@ export default {
   Cross,
   LinkGrid,
   LinkGridItem,
+  Note,
   Warning,
   CodeReferenceLink,
   InstanceDiagramBox,

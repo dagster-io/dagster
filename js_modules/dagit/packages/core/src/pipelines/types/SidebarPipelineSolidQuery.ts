@@ -122,6 +122,17 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   value: string;
 }
 
+export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_assetNodes_assetKey;
+}
+
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_requiredResources {
   __typename: "ResourceRequirement";
   resourceKey: string;
@@ -593,6 +604,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   name: string;
   description: string | null;
   metadata: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_metadata[];
+  assetNodes: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_assetNodes[];
   requiredResources: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_requiredResources[];
   configField: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField | null;
 }
@@ -630,6 +642,17 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
+}
+
+export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_assetNodes_assetKey;
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_inputMappings_definition {
@@ -693,6 +716,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   name: string;
   description: string | null;
   metadata: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_metadata[];
+  assetNodes: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_assetNodes[];
   id: string;
   inputMappings: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_inputMappings[];
   outputMappings: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_outputMappings[];
