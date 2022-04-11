@@ -1,6 +1,7 @@
 import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
+import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {PipelineSelector} from '../types/globalTypes';
@@ -18,7 +19,6 @@ import {
   RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors,
   RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules,
 } from './types/RootWorkspaceQuery';
-import {AppContext} from '../app/AppContext';
 
 type Repository = RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories;
 type RepositoryLocation = RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation;
