@@ -200,6 +200,10 @@ def create_event_log_event_idx():
     if not has_table("event_logs"):
         return
 
+    indices = [x.get("name") for x in get_inspector().get_indexes("event_logs")]
+    if "idx_event_type" in indices:
+        return
+
     op.create_index(
         "idx_event_type",
         "event_logs",
