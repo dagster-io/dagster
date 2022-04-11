@@ -114,23 +114,7 @@ def repository(
     Use this form when you have no need to lazy load pipelines or other definitions. This is the
     typical use case.
 
-    2. A dict of the form:
-
-    .. code-block:: python
-
-        {
-            'jobs': Dict[str, Callable[[], JobDefinition]],
-            'pipelines': Dict[str, Callable[[], PipelineDefinition]],
-            'partition_sets': Dict[str, Callable[[], PartitionSetDefinition]],
-            'schedules': Dict[str, Callable[[], ScheduleDefinition]]
-            'sensors': Dict[str, Callable[[], SensorDefinition]]
-        }
-
-    This form is intended to allow definitions to be created lazily when accessed by name,
-    which can be helpful for performance when there are many definitions in a repository, or
-    when constructing the definitions is costly.
-
-    3. A :py:class:`RepositoryData`. Return this object if you need fine-grained
+    2. A :py:class:`RepositoryData`. Return this object if you need fine-grained
     control over the construction and indexing of definitions within the repository, e.g., to
     create definitions dynamically from .yaml files in a directory.
 
@@ -178,34 +162,6 @@ def repository(
         @repository
         def simple_repository():
             return [simple_job, some_sensor, my_schedule]
-
-
-        ######################################################################
-        # A lazy-loaded repository
-        ######################################################################
-
-        def make_expensive_job():
-            @job
-            def expensive_job():
-                for i in range(10000):
-                    return_n.alias(f'return_n_{i}')()
-
-            return expensive_job
-
-        def make_expensive_schedule():
-            @job
-            def other_expensive_job():
-                for i in range(11000):
-                    return_n.alias(f'my_return_n_{i}')()
-
-            return ScheduleDefinition(cron_schedule="0 0 * * *", job=other_expensive_job)
-
-        @repository
-        def lazy_loaded_repository():
-            return {
-                'jobs': {'expensive_job': make_expensive_job},
-                'schedules': {'expensive_schedule: make_expensive_schedule}
-            }
 
 
         ######################################################################
