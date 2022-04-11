@@ -161,6 +161,10 @@ export function useExecutionSessionStorage(
   initial: Partial<IExecutionSession> = {},
 ): StorageHook {
   const {basePath} = React.useContext(AppContext);
+
+  const oldNamespace = `${repoAddress.name}.${pipelineOrJobName}`;
+  const oldData = getStorageDataForNamespace(oldNamespace);
+
   const namespace = `${basePath}-${repoAddress.location}-${repoAddress.name}-${pipelineOrJobName}`;
   const [version, setVersion] = React.useState<number>(0);
 
@@ -168,6 +172,13 @@ export function useExecutionSessionStorage(
     writeStorageDataForNamespace(namespace, newData);
     setVersion(version + 1); // trigger a React render
   };
+
+  // TODO: Remove this migration logic in a few patches when we know the old namespace is likely no longer being used
+  const oldDataMigrated = React.useRef(false);
+  if (oldData && !oldDataMigrated) {
+    onSave(oldData);
+    window.localStorage.removeItem(oldNamespace);
+  }
 
   return [getStorageDataForNamespace(namespace, initial), onSave];
 }
