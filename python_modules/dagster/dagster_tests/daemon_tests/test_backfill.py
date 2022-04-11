@@ -1,6 +1,7 @@
 import os
 import random
 import string
+import sys
 import time
 from collections import defaultdict
 from contextlib import contextmanager
@@ -20,7 +21,6 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions import Partition, PartitionSetDefinition
-from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.execution.api import execute_pipeline
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.host_representation import (
@@ -30,6 +30,7 @@ from dagster.core.host_representation import (
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster.core.test_utils import create_test_daemon_workspace, instance_for_test
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.backfill import execute_backfill_iteration
@@ -179,9 +180,15 @@ large_partition_set = PartitionSetDefinition(
 
 def _unloadable_partition_set_origin():
     working_directory = os.path.dirname(__file__)
-    recon_repo = ReconstructableRepository.for_file(__file__, "doesnt_exist", working_directory)
     return ExternalRepositoryOrigin(
-        InProcessRepositoryLocationOrigin(recon_repo), "fake_repository"
+        InProcessRepositoryLocationOrigin(
+            LoadableTargetOrigin(
+                executable_path=sys.executable,
+                python_file=__file__,
+                working_directory=working_directory,
+            )
+        ),
+        "fake_repository",
     ).get_partition_set_origin("doesnt_exist")
 
 

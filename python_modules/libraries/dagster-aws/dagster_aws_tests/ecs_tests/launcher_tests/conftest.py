@@ -6,8 +6,8 @@ import boto3
 import pytest
 
 from dagster import ExperimentalWarning
-from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.test_utils import in_process_test_workspace, instance_for_test
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 from . import repo
 
@@ -138,9 +138,11 @@ def instance(instance_cm):
 def workspace(instance, image):
     with in_process_test_workspace(
         instance,
-        ReconstructableRepository.for_file(
-            repo.__file__, repo.repository.__name__, container_image=image
+        loadable_target_origin=LoadableTargetOrigin(
+            python_file=repo.__file__,
+            attribute=repo.repository.__name__,
         ),
+        container_image=image,
     ) as workspace:
         yield workspace
 
@@ -149,9 +151,11 @@ def workspace(instance, image):
 def other_workspace(instance, other_image):
     with in_process_test_workspace(
         instance,
-        ReconstructableRepository.for_file(
-            repo.__file__, repo.repository.__name__, container_image=other_image
+        loadable_target_origin=LoadableTargetOrigin(
+            python_file=repo.__file__,
+            attribute=repo.repository.__name__,
         ),
+        container_image=other_image,
     ) as workspace:
         yield workspace
 

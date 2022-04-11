@@ -8,6 +8,7 @@ from typing import (
     Any,
     Dict,
     Generator,
+    List,
     Mapping,
     NamedTuple,
     NoReturn,
@@ -18,8 +19,8 @@ from typing import (
 )
 
 from dagster import check
-from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
+from dagster.core.origin import DEFAULT_DAGSTER_ENTRY_POINT
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import (
     DefaultNamedTupleSerializer,
@@ -143,16 +144,38 @@ class RegisteredRepositoryLocationOrigin(
 
 @whitelist_for_serdes
 class InProcessRepositoryLocationOrigin(
-    NamedTuple("_InProcessRepositoryLocationOrigin", [("recon_repo", ReconstructableRepository)]),
+    NamedTuple(
+        "_InProcessRepositoryLocationOrigin",
+        [
+            ("loadable_target_origin", LoadableTargetOrigin),
+            ("container_image", Optional[str]),
+            ("entry_point", List[str]),
+        ],
+    ),
     RepositoryLocationOrigin,
 ):
-    """Identifies a repository location constructed in the host process. Should only be
-    used in tests.
+    """Identifies a repository location constructed in the same process. Primarily
+    used in tests, since Dagster system processes like Dagit and the daemon do not
+    load user code in the same process.
     """
 
-    def __new__(cls, recon_repo: ReconstructableRepository):
+    def __new__(
+        cls,
+        loadable_target_origin: LoadableTargetOrigin,
+        container_image: Optional[str] = None,
+        entry_point: Optional[List[str]] = None,
+    ):
         return super(InProcessRepositoryLocationOrigin, cls).__new__(
-            cls, check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
+            cls,
+            check.inst_param(
+                loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
+            ),
+            container_image=check.opt_str_param(container_image, "container_image"),
+            entry_point=(
+                check.opt_list_param(entry_point, "entry_point")
+                if entry_point
+                else DEFAULT_DAGSTER_ENTRY_POINT
+            ),
         )
 
     @property
@@ -164,9 +187,7 @@ class InProcessRepositoryLocationOrigin(
         return False
 
     def get_display_metadata(self) -> Dict[str, Any]:
-        return {
-            "in_process_code_pointer": self.recon_repo.pointer.describe(),
-        }
+        return {}
 
     def create_location(self) -> "InProcessRepositoryLocation":
         from dagster.core.host_representation.repository_location import InProcessRepositoryLocation
