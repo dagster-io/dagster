@@ -453,10 +453,10 @@ def in_process_test_workspace(instance, loadable_target_origin, container_image=
 
 
 @contextmanager
-def create_test_daemon_workspace(workspace_load_target):
+def create_test_daemon_workspace(workspace_load_target, instance):
     """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
     configure_loggers()
-    with create_daemon_grpc_server_registry() as grpc_server_registry:
+    with create_daemon_grpc_server_registry(instance) as grpc_server_registry:
         with DaemonWorkspace(grpc_server_registry, workspace_load_target) as workspace:
             yield workspace
 

@@ -33,7 +33,7 @@ def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
             with pendulum.test(execution_datetime), create_test_daemon_workspace(
-                workspace_load_target=workspace_load_target()
+                workspace_load_target=workspace_load_target(), instance=instance
             ) as workspace:
                 list(
                     execute_backfill_iteration(

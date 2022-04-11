@@ -61,7 +61,11 @@ from dagster.utils import traced
 from dagster.utils.backcompat import experimental_functionality_warning
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-from .config import DAGSTER_CONFIG_YAML_FILENAME, is_dagster_home_set
+from .config import (
+    DAGSTER_CONFIG_YAML_FILENAME,
+    DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
+    is_dagster_home_set,
+)
 from .ref import InstanceRef
 
 # 'airflow_execution_date' and 'is_airflow_ingest_pipeline' are hardcoded tags used in the
@@ -71,7 +75,6 @@ from .ref import InstanceRef
 # https://github.com/dagster-io/dagster/issues/2403
 AIRFLOW_EXECUTION_DATE_STR = "airflow_execution_date"
 IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
-
 
 if TYPE_CHECKING:
     from dagster.core.debug import DebugRunPayload
@@ -594,6 +597,16 @@ class DagsterInstance:
     @property
     def run_monitoring_start_timeout_seconds(self) -> int:
         return self.run_monitoring_settings.get("start_timeout_seconds", 180)
+
+    @property
+    def code_server_settings(self) -> Dict:
+        return self.get_settings("code_servers")
+
+    @property
+    def code_server_process_startup_timeout(self) -> int:
+        return self.code_server_settings.get(
+            "local_startup_timeout", DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
+        )
 
     @property
     def run_monitoring_max_resume_run_attempts(self) -> int:

@@ -50,7 +50,6 @@ if TYPE_CHECKING:
 
 
 DAGIT_GRPC_SERVER_HEARTBEAT_TTL = 45
-DAGIT_GRPC_SERVER_STARTUP_TIMEOUT = 30
 
 
 class BaseWorkspaceRequestContext(IWorkspace):
@@ -436,7 +435,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 ProcessGrpcServerRegistry(
                     reload_interval=0,
                     heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
-                    startup_timeout=DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
+                    startup_timeout=instance.code_server_process_startup_timeout,
                 )
             )
 
