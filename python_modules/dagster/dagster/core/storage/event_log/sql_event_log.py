@@ -122,24 +122,6 @@ class SqlEventLogStorage(EventLogStorage):
         #
         # https://github.com/dagster-io/dagster/issues/3945
 
-        # The AssetKeyTable contains a `last_materialization_timestamp` column that is exclusively
-        # used to determine if an asset exists (last materialization timestamp > wipe timestamp).
-        # This column is used nowhere else, and as of AssetObservation/AssetMaterializationPlanned
-        # event creation, we want to extend this functionality to ensure that assets with any event
-        # (observation, materialization, or materialization planned) yielded with timestamp
-        # > wipe timestamp display in Dagit.
-
-        # As of the following PRs, we update last_materialization_timestamp to store the timestamp
-        # of the latest asset observation, materialization, or materialization_planned that has occurred.
-        # https://github.com/dagster-io/dagster/pull/6885
-        # https://github.com/dagster-io/dagster/pull/7319
-
-        # The AssetKeyTable also contains a `last_run_id` column that is updated upon asset
-        # materialization. This column was not being used until the below PR. This new change
-        # writes to the column upon `ASSET_MATERIALIZATION_PLANNED` events to fetch the last
-        # run id for a set of assets in one roundtrip call to event log storage.
-        # https://github.com/dagster-io/dagster/pull/7319
-
         values = self._get_asset_entry_values(event, self.has_asset_key_index_cols())
         insert_statement = AssetKeyTable.insert().values(
             asset_key=event.dagster_event.asset_key.to_string(), **values
@@ -159,17 +141,19 @@ class SqlEventLogStorage(EventLogStorage):
                 conn.execute(update_statement)
 
     def _get_asset_entry_values(self, event, has_asset_key_index_cols):
-        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
-        # last_run_id column is updated upon materialization and materialization planned events.
-        # See SqlEventLogStorage.store_asset_event method for more details
+        # The AssetKeyTable contains a `last_materialization_timestamp` column that is exclusively
+        # used to determine if an asset exists (last materialization timestamp > wipe timestamp).
+        # This column is used nowhere else, and as of AssetObservation/AssetMaterializationPlanned
+        # event creation, we want to extend this functionality to ensure that assets with any event
+        # (observation, materialization, or materialization planned) yielded with timestamp
+        # > wipe timestamp display in Dagit.
+
+        # As of the following PRs, we update last_materialization_timestamp to store the timestamp
+        # of the latest asset observation, materialization, or materialization_planned that has occurred.
+        # https://github.com/dagster-io/dagster/pull/6885
+        # https://github.com/dagster-io/dagster/pull/7319
 
         entry_values: Dict[str, Any] = {}
-        if has_asset_key_index_cols:
-            entry_values.update(
-                {
-                    "last_materialization_timestamp": utc_datetime_from_timestamp(event.timestamp),
-                }
-            )
         if event.dagster_event.is_step_materialization:
             entry_values.update(
                 {
@@ -181,13 +165,39 @@ class SqlEventLogStorage(EventLogStorage):
                 materialization = event.dagster_event.step_materialization_data.materialization
                 entry_values.update(
                     {
+                        "last_materialization_timestamp": utc_datetime_from_timestamp(
+                            event.timestamp
+                        ),
                         "tags": seven.json.dumps(materialization.tags)
                         if materialization.tags
-                        else None
+                        else None,
                     }
                 )
         elif event.dagster_event.is_asset_materialization_planned:
+            # The AssetKeyTable also contains a `last_run_id` column that is updated upon asset
+            # materialization. This column was not being used until the below PR. This new change
+            # writes to the column upon `ASSET_MATERIALIZATION_PLANNED` events to fetch the last
+            # run id for a set of assets in one roundtrip call to event log storage.
+            # https://github.com/dagster-io/dagster/pull/7319
             entry_values.update({"last_run_id": event.run_id})
+            if has_asset_key_index_cols:
+                entry_values.update(
+                    {
+                        "last_materialization_timestamp": utc_datetime_from_timestamp(
+                            event.timestamp
+                        ),
+                    }
+                )
+        elif event.dagster_event.is_asset_observation:
+            if has_asset_key_index_cols:
+                entry_values.update(
+                    {
+                        "last_materialization_timestamp": utc_datetime_from_timestamp(
+                            event.timestamp
+                        ),
+                    }
+                )
+
         return entry_values
 
     def store_event(self, event):

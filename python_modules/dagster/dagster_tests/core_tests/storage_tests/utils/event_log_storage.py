@@ -2060,7 +2060,7 @@ class TestEventLogStorage:
                 )
                 records = storage.get_asset_records([my_asset_key])
                 assert len(records) == 1
-                records = storage.get_asset_records([my_asset_key, second_asset_key])
+                records = storage.get_asset_records()  # should select all assets
                 assert len(records) == 2
 
                 asset_entry = records[0].asset_entry
