@@ -1,5 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
+from inspect import isfunction
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -594,7 +595,7 @@ class CachingRepositoryData(RepositoryData):
 
             if isinstance(job, GraphDefinition):
                 repository_definitions["jobs"][key] = job.coerce_to_job()
-            elif not isinstance(job, JobDefinition):
+            elif not isinstance(job, JobDefinition) and not isfunction(job):
                 raise DagsterInvalidDefinitionError(
                     f"Object mapped to {key} is not an instance of JobDefinition or GraphDefinition."
                 )
