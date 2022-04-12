@@ -1,9 +1,12 @@
 {
   "name": "@dagster-io/eslint-config",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Shared eslint configuration for @dagster-io",
   "license": "Apache-2.0",
   "main": "index.js",
+  "scripts": {
+    "lint": "eslint . --ext=.tsx,.ts,.js --fix -c .eslintrc.js"
+  },
   "peerDependencies": {
     "eslint": "^8.6.0",
     "prettier": "2.2.1"
@@ -17,5 +20,9 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "7.27.1",
     "eslint-plugin-react-hooks": "4.3.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.6.0",
+    "prettier": "2.2.1"
   }
 }

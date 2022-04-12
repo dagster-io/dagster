@@ -73,7 +73,7 @@ export const buildGraphData = (assetNodes: AssetNode[]) => {
     });
 
     data.nodes[id] = {
-      id: id,
+      id,
       assetKey: definition.assetKey,
       definition,
     };
@@ -90,7 +90,7 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
     },
     nodes: {
       [id]: {
-        id: id,
+        id,
         assetKey: assetNode.assetKey,
         definition: {...assetNode, dependencyKeys: [], dependedByKeys: []},
       },

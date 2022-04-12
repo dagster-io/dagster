@@ -40,7 +40,7 @@ export const groupByPartition = (
 
       return {
         all: sorted,
-        latest: latest,
+        latest,
         timestamp: latest?.timestamp,
         partition: key,
       };

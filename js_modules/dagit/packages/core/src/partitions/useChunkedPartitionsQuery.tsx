@@ -108,7 +108,7 @@ export function useChunkedPartitionsQuery(
           partitionSetName,
           repositorySelector,
           reverse: true,
-          cursor: cursor,
+          cursor,
           limit: pageSize === 'all' ? 100000 : pageSize,
         },
       });
@@ -254,7 +254,7 @@ export function useChunkedPartitionsQuery(
           runs: [],
         });
         setPaginationState({
-          pageSize: pageSize,
+          pageSize,
           cursorStack: cursorStack.slice(0, cursorStack.length - 1),
           cursor: cursorStack.length ? cursorStack[cursorStack.length - 1] : null,
         });
@@ -267,7 +267,7 @@ export function useChunkedPartitionsQuery(
           runs: [],
         });
         setPaginationState({
-          pageSize: pageSize,
+          pageSize,
           cursorStack: cursor ? [...cursorStack, cursor] : cursorStack,
           cursor: dataState.partitionNames[0],
         });

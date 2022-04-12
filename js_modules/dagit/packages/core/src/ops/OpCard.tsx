@@ -16,7 +16,7 @@ export const OpCard: React.FC<OpCardProps> = (props) => {
   const {name, inputDefinitions, outputDefinitions} = props.definition;
   const layout = layoutOp(
     {
-      name: name,
+      name,
       inputs: inputDefinitions.map((d) => ({
         definition: d,
         dependsOn: [],

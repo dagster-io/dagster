@@ -28,11 +28,11 @@ export const SidebarOpExecutionGraphs: React.FC<{
     SIDEBAR_OP_GRAPHS_QUERY,
     {
       variables: {
-        handleID: handleID,
+        handleID,
         selector: {
           repositoryName: repoAddress.name,
           repositoryLocationName: repoAddress.location,
-          pipelineName: pipelineName,
+          pipelineName,
         },
       },
       fetchPolicy: 'cache-and-network',
@@ -61,7 +61,7 @@ export const SidebarOpExecutionGraphs: React.FC<{
     const ys = values.map((v) => v.y).filter((v) => !isNaN(v));
     const data: AssetValueGraphData = {
       xAxis: 'time',
-      values: values,
+      values,
       minXNumeric: Math.min(...xs),
       maxXNumeric: Math.max(...xs),
       minY: Math.min(...ys),

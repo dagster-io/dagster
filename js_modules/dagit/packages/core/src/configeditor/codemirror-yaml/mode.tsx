@@ -64,7 +64,7 @@ function parentsAddingChildKeyToLast(parents: IParseStateParent[], key: string) 
 function parentsAddingChildKeyAtIndent(parents: IParseStateParent[], key: string, indent: number) {
   parents = parentsPoppingItemsDeeperThan(parents, indent);
   parents = parentsAddingChildKeyToLast(parents, key);
-  parents = [...parents, {key, indent: indent, childKeys: []}];
+  parents = [...parents, {key, indent, childKeys: []}];
   return parents;
 }
 

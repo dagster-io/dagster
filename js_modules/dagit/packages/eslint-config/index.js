@@ -3,7 +3,6 @@ module.exports = {
   extends: [
     'plugin:react/recommended',
     'plugin:@typescript-eslint/recommended',
-    'prettier',
     'plugin:prettier/recommended', // Prettier plugin must be last!
   ],
   plugins: ['react-hooks', 'import'],
@@ -72,6 +71,7 @@ module.exports = {
         ],
       },
     ],
+    'object-shorthand': ['error', 'always'],
     'react/jsx-curly-brace-presence': 'error',
     'react/jsx-no-target-blank': 'error',
     'react/prefer-stateless-function': 'error',

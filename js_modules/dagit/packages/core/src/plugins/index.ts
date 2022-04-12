@@ -4,8 +4,8 @@ import * as sql from '../plugins/sql';
 import {RepoAddress} from '../workspace/types';
 
 const plugins = {
-  sql: sql,
-  ipynb: ipynb,
+  sql,
+  ipynb,
   snowflake: sql,
 };
 
