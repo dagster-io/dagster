@@ -5,7 +5,7 @@ import styled from 'styled-components/macro';
 import {buildSVGPath} from './Utils';
 import {AssetLayoutEdge} from './layout';
 
-export const AssetLinks: React.FC<{edges: AssetLayoutEdge[]}> = React.memo(({edges}) => (
+export const AssetEdges: React.FC<{edges: AssetLayoutEdge[]}> = React.memo(({edges}) => (
   <>
     <defs>
       <marker

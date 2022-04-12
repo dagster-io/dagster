@@ -4,22 +4,22 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {AssetEvents} from '../../assets/AssetEvents';
+import {AssetEvents} from '../assets/AssetEvents';
 import {
   AssetMetadataTable,
   ASSET_NODE_OP_METADATA_FRAGMENT,
   metadataForAssetNode,
-} from '../../assets/AssetMetadata';
-import {PartitionHealthSummary, usePartitionHealthData} from '../../assets/PartitionHealthSummary';
-import {AssetKey} from '../../assets/types';
-import {DagsterTypeSummary} from '../../dagstertype/DagsterType';
-import {DagsterTypeFragment} from '../../dagstertype/types/DagsterTypeFragment';
-import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntry';
-import {Description} from '../../pipelines/Description';
-import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
-import {pluginForMetadata} from '../../plugins';
-import {buildRepoAddress} from '../buildRepoAddress';
-import {RepoAddress} from '../types';
+} from '../assets/AssetMetadata';
+import {PartitionHealthSummary, usePartitionHealthData} from '../assets/PartitionHealthSummary';
+import {AssetKey} from '../assets/types';
+import {DagsterTypeSummary} from '../dagstertype/DagsterType';
+import {DagsterTypeFragment} from '../dagstertype/types/DagsterTypeFragment';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {Description} from '../pipelines/Description';
+import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
+import {pluginForMetadata} from '../plugins';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {RepoAddress} from '../workspace/types';
 
 import {LiveDataForNode, displayNameForAssetKey} from './Utils';
 import {SidebarAssetFragment} from './types/SidebarAssetFragment';

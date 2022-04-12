@@ -43,7 +43,7 @@ const OpLink = (props: OpLinkInfo) => (
   </Link>
 );
 
-export const OpLinks = (props: {title: string; items: OpLinkInfo[]}) =>
+export const OpEdges = (props: {title: string; items: OpLinkInfo[]}) =>
   props.items && props.items.length ? (
     <Text>
       {props.title}

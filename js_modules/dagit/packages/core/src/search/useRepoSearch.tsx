@@ -3,7 +3,7 @@ import Fuse from 'fuse.js';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {displayNameForAssetKey, __ASSET_GROUP} from '../workspace/asset-graph/Utils';
+import {displayNameForAssetKey, __ASSET_GROUP} from '../asset-graph/Utils';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 

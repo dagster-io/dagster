@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { AssetKeyInput } from "./../../../types/globalTypes";
+import { AssetKeyInput } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SidebarAssetQuery

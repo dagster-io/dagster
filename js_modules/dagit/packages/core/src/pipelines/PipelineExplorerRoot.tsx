@@ -3,10 +3,10 @@ import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Loading} from '../ui/Loading';
 import {buildPipelineSelector} from '../workspace/WorkspaceContext';
-import {AssetGraphExplorer} from '../workspace/asset-graph/AssetGraphExplorer';
 import {RepoAddress} from '../workspace/types';
 
 import {explodeCompositesInHandleGraph} from './CompositeSupport';

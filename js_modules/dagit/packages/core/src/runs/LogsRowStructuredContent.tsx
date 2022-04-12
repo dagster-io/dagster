@@ -7,6 +7,7 @@ import {Link, useLocation} from 'react-router-dom';
 
 import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
 import {
   LogRowStructuredContentTable,
@@ -15,7 +16,6 @@ import {
 } from '../metadata/MetadataEntry';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
 import {ErrorSource} from '../types/globalTypes';
-import {displayNameForAssetKey} from '../workspace/asset-graph/Utils';
 
 import {EventTypeColumn} from './LogsRowComponents';
 import {IRunMetadataDict} from './RunMetadataProvider';

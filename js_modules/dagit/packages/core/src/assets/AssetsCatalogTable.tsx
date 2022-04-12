@@ -10,12 +10,12 @@ import {
   QueryRefreshCountdown,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {Loading} from '../ui/Loading';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
-import {tokenForAssetKey} from '../workspace/asset-graph/Utils';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 
 import {AssetTable, ASSET_TABLE_FRAGMENT} from './AssetTable';

@@ -1,8 +1,8 @@
 import {gql, useQuery} from '@apollo/client';
 import React from 'react';
 
-import {filterByQuery, GraphQueryItem} from '../../app/GraphQueryImpl';
-import {PipelineSelector} from '../../types/globalTypes';
+import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
+import {PipelineSelector} from '../types/globalTypes';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
 import {buildGraphData, tokenForAssetKey} from './Utils';

@@ -3,42 +3,42 @@ import _, {flatMap, uniq, uniqBy, without} from 'lodash';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {GraphQueryItem} from '../../app/GraphQueryImpl';
+import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
   QueryRefreshState,
   useQueryRefreshAtInterval,
-} from '../../app/QueryRefresh';
-import {AssetKey} from '../../assets/types';
-import {SVGViewport} from '../../graph/SVGViewport';
-import {useAssetLayout} from '../../graph/asyncGraphLayout';
-import {useDocumentTitle} from '../../hooks/useDocumentTitle';
+} from '../app/QueryRefresh';
+import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
+import {AssetKey} from '../assets/types';
+import {SVGViewport} from '../graph/SVGViewport';
+import {useAssetLayout} from '../graph/asyncGraphLayout';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {
   GraphExplorerOptions,
   OptionsOverlay,
   QueryOverlay,
   RightInfoPanel,
   RightInfoPanelContent,
-} from '../../pipelines/GraphExplorer';
+} from '../pipelines/GraphExplorer';
 import {
   EmptyDAGNotice,
   EntirelyFilteredDAGNotice,
   LargeDAGNotice,
   LoadingNotice,
-} from '../../pipelines/GraphNotices';
-import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
-import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
-import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
-import {useDidLaunchEvent} from '../../runs/RunUtils';
-import {PipelineSelector} from '../../types/globalTypes';
-import {GraphQueryInput} from '../../ui/GraphQueryInput';
-import {Loading} from '../../ui/Loading';
+} from '../pipelines/GraphNotices';
+import {ExplorerPath} from '../pipelines/PipelinePathUtils';
+import {SidebarPipelineOrJobOverview} from '../pipelines/SidebarPipelineOrJobOverview';
+import {GraphExplorerSolidHandleFragment} from '../pipelines/types/GraphExplorerSolidHandleFragment';
+import {useDidLaunchEvent} from '../runs/RunUtils';
+import {PipelineSelector} from '../types/globalTypes';
+import {GraphQueryInput} from '../ui/GraphQueryInput';
+import {Loading} from '../ui/Loading';
 
-import {AssetLinks} from './AssetLinks';
+import {AssetEdges} from './AssetEdges';
 import {AssetNode} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
-import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {OmittedAssetsNotice} from './OmittedAssetsNotice';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {
@@ -253,7 +253,7 @@ const AssetGraphExplorerWithData: React.FC<
             >
               {({scale: _scale}, viewportRect) => (
                 <SVGContainer width={layout.width} height={layout.height}>
-                  <AssetLinks edges={layout.edges} />
+                  <AssetEdges edges={layout.edges} />
 
                   {Object.values(layout.nodes).map(({id, bounds}, index) => {
                     const graphNode = assetGraphData.nodes[id];

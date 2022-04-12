@@ -6,16 +6,16 @@ import React, {CSSProperties} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
-import {NodeHighlightColors} from '../../graph/OpNode';
-import {OpTags} from '../../graph/OpTags';
-import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntry';
-import {titleForRun} from '../../runs/RunUtils';
-import {TimeElapsed} from '../../runs/TimeElapsed';
-import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {markdownToPlaintext} from '../../ui/markdownToPlaintext';
-import {buildRepoAddress} from '../buildRepoAddress';
-import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
+import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../assets/LastMaterializationMetadata';
+import {NodeHighlightColors} from '../graph/OpNode';
+import {OpTags} from '../graph/OpTags';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {titleForRun} from '../runs/RunUtils';
+import {TimeElapsed} from '../runs/TimeElapsed';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {markdownToPlaintext} from '../ui/markdownToPlaintext';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {workspacePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {displayNameForAssetKey, LiveDataForNode, __ASSET_GROUP} from './Utils';
 import {AssetNodeFragment} from './types/AssetNodeFragment';

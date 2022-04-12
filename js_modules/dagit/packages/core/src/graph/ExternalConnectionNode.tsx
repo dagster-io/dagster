@@ -3,7 +3,7 @@ import {LinkVertical as Link} from '@vx/shape';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {Edge} from './OpLinks';
+import {Edge} from './OpEdges';
 import {SVGMonospaceText} from './SVGComponents';
 import {IPoint} from './asyncGraphLayout';
 import {isHighlighted} from './highlighting';

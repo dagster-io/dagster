@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import React from 'react';
 
-import {AssetKeyInput, PipelineSelector} from '../../types/globalTypes';
+import {AssetKeyInput, PipelineSelector} from '../types/globalTypes';
 
 import {ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
 import {buildLiveData, GraphData, REPOSITORY_LIVE_FRAGMENT} from './Utils';

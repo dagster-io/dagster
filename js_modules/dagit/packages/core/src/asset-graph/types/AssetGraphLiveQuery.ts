@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, AssetKeyInput, RunStatus } from "./../../../types/globalTypes";
+import { RepositorySelector, AssetKeyInput, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: AssetGraphLiveQuery

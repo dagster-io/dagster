@@ -1,6 +1,6 @@
 import * as dagre from 'dagre';
 
-import {ILayout, IPoint} from '../../graph/layout';
+import {ILayout, IPoint} from '../graph/layout';
 
 import {GraphData, GraphNode, GraphId, displayNameForAssetKey} from './Utils';
 

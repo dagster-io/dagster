@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RunStatus } from "./../../../types/globalTypes";
+import { RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RepositoryLiveFragment
