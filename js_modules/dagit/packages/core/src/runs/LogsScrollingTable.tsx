@@ -49,7 +49,7 @@ function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: s
   const filteredNodes = logs.allNodes.filter((node) => {
     // These events are used to determine which assets a run will materialize and are not intended
     // to be displayed in Dagit. Pagination is offset based, so we remove these logs client-side.
-    if (node.__typename == 'AssetMaterializationPlannedEvent') {
+    if (node.__typename === 'AssetMaterializationPlannedEvent') {
       return false;
     }
     const l = node.__typename === 'LogMessageEvent' ? node.level : 'EVENT';
