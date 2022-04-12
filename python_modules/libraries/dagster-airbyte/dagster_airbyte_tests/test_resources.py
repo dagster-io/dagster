@@ -71,19 +71,19 @@ def test_sync_and_poll(state):
 
     if state == AirbyteState.ERROR:
         with pytest.raises(Failure, match="Job failed"):
-            r = ab_resource.sync_and_poll("some_connection", 0)
+            ab_resource.sync_and_poll("some_connection", 0)
 
     elif state == AirbyteState.CANCELLED:
         with pytest.raises(Failure, match="Job was cancelled"):
-            r = ab_resource.sync_and_poll("some_connection", 0)
+            ab_resource.sync_and_poll("some_connection", 0)
 
     elif state == "unrecognized":
         with pytest.raises(Failure, match="unexpected state"):
-            r = ab_resource.sync_and_poll("some_connection", 0)
+            ab_resource.sync_and_poll("some_connection", 0)
 
     else:
-        r = ab_resource.sync_and_poll("some_connection", 0)
-        assert r == AirbyteOutput(
+        result = ab_resource.sync_and_poll("some_connection", 0)
+        assert result == AirbyteOutput(
             job_details={"job": {"id": 1, "status": state}},
             connection_details=get_sample_connection_json(),
         )
@@ -106,7 +106,7 @@ def test_start_sync_bad_out_fail():
         status=204,
     )
     with pytest.raises(check.CheckError):
-        r = ab_resource.start_sync("some_connection")
+        ab_resource.start_sync("some_connection")
 
 
 @responses.activate
@@ -126,7 +126,7 @@ def test_get_connection_details_bad_out_fail():
         status=204,
     )
     with pytest.raises(check.CheckError):
-        r = ab_resource.get_connection_details("some_connection")
+        ab_resource.get_connection_details("some_connection")
 
 
 @responses.activate
@@ -146,7 +146,7 @@ def test_get_job_status_bad_out_fail():
         status=204,
     )
     with pytest.raises(check.CheckError):
-        r = ab_resource.get_job_status("some_connection")
+        ab_resource.get_job_status("some_connection")
 
 
 @responses.activate

@@ -7,7 +7,7 @@ import requests
 from dagster_airbyte.types import AirbyteOutput
 from requests.exceptions import RequestException
 
-from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource, check
+from dagster import Failure, Field, StringSource, __version__, check, get_dagster_logger, resource
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 
