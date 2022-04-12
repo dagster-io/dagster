@@ -1,6 +1,6 @@
 import sqlalchemy as db
 
-from dagster import check, seven
+from dagster import check
 from dagster.core.storage.event_log import (
     AssetKeyTable,
     SqlEventLogStorage,
@@ -10,8 +10,7 @@ from dagster.core.storage.event_log import (
 from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.core.storage.sql import stamp_alembic_rev  # pylint: disable=unused-import
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade
-from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
-from dagster.utils import utc_datetime_from_timestamp
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
 from ..utils import (
     MYSQL_POOL_RECYCLE,

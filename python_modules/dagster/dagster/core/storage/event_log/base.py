@@ -16,7 +16,7 @@ from typing import (
 
 from dagster import check
 from dagster.core.assets import AssetDetails
-from dagster.core.definitions.events import AssetKey, AssetMaterialization
+from dagster.core.definitions.events import AssetKey
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.stats import (

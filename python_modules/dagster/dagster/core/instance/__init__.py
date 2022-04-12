@@ -86,7 +86,7 @@ if TYPE_CHECKING:
     from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
     from dagster.core.storage.compute_log_manager import ComputeLogManager
     from dagster.core.storage.event_log import EventLogStorage
-    from dagster.core.storage.event_log.base import EventLogRecord, EventRecordsFilter, AssetRecord
+    from dagster.core.storage.event_log.base import AssetRecord, EventLogRecord, EventRecordsFilter
     from dagster.core.storage.root import LocalArtifactStorage
     from dagster.core.storage.runs import RunStorage
     from dagster.core.storage.schedules import ScheduleStorage
