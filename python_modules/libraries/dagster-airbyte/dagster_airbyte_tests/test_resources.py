@@ -3,7 +3,7 @@ import responses
 from dagster_airbyte import AirbyteOutput, AirbyteState, airbyte_resource
 from dagster_airbyte.utils import generate_materializations
 
-from dagster import Failure, MetadataEntry, build_init_resource_context
+from dagster import Failure, MetadataEntry, build_init_resource_context, check
 
 from .utils import get_sample_connection_json, get_sample_job_json
 
@@ -87,6 +87,66 @@ def test_sync_and_poll(state):
             job_details={"job": {"id": 1, "status": state}},
             connection_details=get_sample_connection_json(),
         )
+
+
+@responses.activate
+def test_start_sync_bad_out_fail():
+    ab_resource = airbyte_resource(
+        build_init_resource_context(
+            config={
+                "host": "some_host",
+                "port": "8000",
+            }
+        )
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/sync",
+        json=None,
+        status=204,
+    )
+    with pytest.raises(check.CheckError):
+        r = ab_resource.start_sync("some_connection")
+
+
+@responses.activate
+def test_get_connection_details_bad_out_fail():
+    ab_resource = airbyte_resource(
+        build_init_resource_context(
+            config={
+                "host": "some_host",
+                "port": "8000",
+            }
+        )
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/get",
+        json=None,
+        status=204,
+    )
+    with pytest.raises(check.CheckError):
+        r = ab_resource.get_connection_details("some_connection")
+
+
+@responses.activate
+def test_get_job_status_bad_out_fail():
+    ab_resource = airbyte_resource(
+        build_init_resource_context(
+            config={
+                "host": "some_host",
+                "port": "8000",
+            }
+        )
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/jobs/get",
+        json=None,
+        status=204,
+    )
+    with pytest.raises(check.CheckError):
+        r = ab_resource.get_job_status("some_connection")
 
 
 @responses.activate
