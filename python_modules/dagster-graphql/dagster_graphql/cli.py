@@ -3,8 +3,6 @@ from urllib.parse import urljoin, urlparse
 import click
 import requests
 from graphql import graphql
-from graphql.execution.executors.gevent import GeventExecutor
-from graphql.execution.executors.sync import SyncExecutor
 
 from dagster import __version__ as dagster_version
 from dagster import check, seven
@@ -27,26 +25,22 @@ def create_dagster_graphql_cli():
     return ui
 
 
-def execute_query(workspace_process_context, query, variables=None, use_sync_executor=False):
+def execute_query(workspace_process_context, query, variables=None):
     check.inst_param(
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
     )
     check.str_param(query, "query")
     check.opt_dict_param(variables, "variables")
-    check.bool_param(use_sync_executor, "use_sync_executor")
 
     query = query.strip("'\" \n\t")
 
     context = workspace_process_context.create_request_context()
-
-    executor = SyncExecutor() if use_sync_executor else GeventExecutor()
 
     result = graphql(
         request_string=query,
         schema=create_schema(),
         context_value=context,
         variable_values=variables,
-        executor=executor,
     )
 
     result_dict = result.to_dict()
