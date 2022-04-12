@@ -1,5 +1,7 @@
 import pickle
+from contextlib import contextmanager
 
+from azure.storage.filedatalake import DataLakeLeaseClient
 from dagster_azure.adls2.utils import ResourceNotFoundError
 
 from dagster import Field, IOManager, StringSource, check, io_manager
@@ -39,15 +41,18 @@ class PickledObjectADLS2IOManager(IOManager):
         check.param_invariant(len(key) > 0, "key")
 
         # This operates recursively already so is nice and simple.
-        self.file_system_client.delete_file(key)
+        with self._acquire_lease(self.file_system_client) as lease:
+            self.file_system_client.delete_file(key, lease=lease)
 
     def _has_object(self, key):
         check.str_param(key, "key")
         check.param_invariant(len(key) > 0, "key")
 
         try:
+
             file = self.file_system_client.get_file_client(key)
-            file.get_file_properties()
+            with self._acquire_lease(file) as lease:
+                file.get_file_properties(lease=lease)
             return True
         except ResourceNotFoundError:
             return False
@@ -62,12 +67,23 @@ class PickledObjectADLS2IOManager(IOManager):
             key=key,
         )
 
+    @contextmanager
+    def _acquire_lease(self, client):
+        lease_client = DataLakeLeaseClient(client=client)
+        try:
+            lease = lease_client.acquire(lease_duration=self.lease_duration)
+            print(f"********* LEASE ID {lease} **************")
+            yield lease
+        finally:
+            lease_client.release()
+
     def load_input(self, context):
         key = self._get_path(context.upstream_output)
         context.log.debug(f"Loading ADLS2 object from: {self._uri_for_key(key)}")
         file = self.file_system_client.get_file_client(key)
-        stream = file.download_file()
-        obj = pickle.loads(stream.readall())
+        with self._acquire_lease(file) as lease:
+            stream = file.download_file(lease=lease)
+            obj = pickle.loads(stream.readall())
 
         return obj
 
@@ -82,7 +98,7 @@ class PickledObjectADLS2IOManager(IOManager):
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
 
         file = self.file_system_client.create_file(key)
-        with file.acquire_lease(self.lease_duration) as lease:
+        with self._acquire_lease(file) as lease:
             file.upload_data(pickled_obj, lease=lease, overwrite=True)
 
 
