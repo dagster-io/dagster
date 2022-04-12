@@ -2,7 +2,6 @@ from datetime import datetime
 
 from hacker_news.ops.download_items import build_comments, build_stories, download_items
 from hacker_news.ops.id_range_for_time import id_range_for_time
-from hacker_news.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
 from hacker_news.resources.hn_resource import hn_api_subsample_client, hn_snapshot_client
 from hacker_news.resources.partition_bounds import partition_bounds
 
@@ -51,11 +50,8 @@ def hourly_download_config(start: datetime, end: datetime):
 
 download_prod_job = hacker_news_api_download.to_job(
     resource_defs={
-        **{
-            "partition_bounds": partition_bounds,
-            "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
-        },
-        **RESOURCES_PROD,
+        "partition_bounds": partition_bounds,
+        "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
     },
     tags=DOWNLOAD_TAGS,
     config=hourly_download_config,
@@ -64,11 +60,8 @@ download_prod_job = hacker_news_api_download.to_job(
 
 download_staging_job = hacker_news_api_download.to_job(
     resource_defs={
-        **{
-            "partition_bounds": partition_bounds,
-            "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
-        },
-        **RESOURCES_STAGING,
+        "partition_bounds": partition_bounds,
+        "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
     },
     tags=DOWNLOAD_TAGS,
     config=hourly_download_config,
@@ -76,18 +69,13 @@ download_staging_job = hacker_news_api_download.to_job(
 
 download_local_job = hacker_news_api_download.to_job(
     resource_defs={
-        **{"partition_bounds": partition_bounds, "hn_client": hn_snapshot_client},
-        **RESOURCES_LOCAL,
-    },
-    config={
-        "resources": {
-            "partition_bounds": {
-                "config": {
-                    "start": "2020-12-30 00:00:00",
-                    "end": "2020-12-30 01:00:00",
-                }
-            },
-        }
+        "partition_bounds": partition_bounds.configured(
+            {
+                "start": "2020-12-30 00:00:00",
+                "end": "2020-12-30 01:00:00",
+            }
+        ),
+        "hn_client": hn_snapshot_client,
     },
     executor_def=in_process_executor,
 )

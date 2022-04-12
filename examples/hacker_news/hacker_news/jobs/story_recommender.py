@@ -6,7 +6,6 @@ from hacker_news.ops.recommender_model import (
 )
 from hacker_news.ops.user_story_matrix import build_user_story_matrix
 from hacker_news.ops.user_top_recommended_stories import build_user_top_recommended_stories
-from hacker_news.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
 
 from dagster import ResourceDefinition, graph
 
@@ -23,25 +22,3 @@ def story_recommender():
     model_perf_notebook(recommender_model)
     build_component_top_stories(recommender_model, user_story_matrix)
     build_user_top_recommended_stories(recommender_model, user_story_matrix)
-
-
-story_recommender_prod_job = story_recommender.to_job(
-    resource_defs={
-        **RESOURCES_PROD,
-        **{"partition_bounds": ResourceDefinition.none_resource()},
-    }
-)
-
-story_recommender_staging_job = story_recommender.to_job(
-    resource_defs={
-        **RESOURCES_STAGING,
-        **{"partition_bounds": ResourceDefinition.none_resource()},
-    }
-)
-
-story_recommender_local_job = story_recommender.to_job(
-    resource_defs={
-        **RESOURCES_LOCAL,
-        **{"partition_bounds": ResourceDefinition.none_resource()},
-    }
-)
