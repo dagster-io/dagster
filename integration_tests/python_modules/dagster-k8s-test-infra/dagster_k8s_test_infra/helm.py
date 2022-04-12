@@ -171,11 +171,11 @@ def aws_configmap(namespace, should_cleanup):
                 )
                 aws_data["AWS_ACCESS_KEY_ID"] = creds["aws_access_key_id"]
                 aws_data["AWS_SECRET_ACCESS_KEY"] = creds["aws_secret_access_key"]
-            except:
+            except Exception as e:
                 raise Exception(
-                    "Must have AWS credentials set in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY "
+                    "Must run `aws sso login` or have AWS credentials set in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY "
                     "to be able to run Helm tests locally"
-                )
+                ) from e
 
         print("Creating ConfigMap %s with AWS credentials" % (TEST_AWS_CONFIGMAP_NAME))
         aws_configmap = kubernetes.client.V1ConfigMap(
