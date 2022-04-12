@@ -1,5 +1,5 @@
 import traceback
-from types import TracebackType  # pylint: disable=no-name-in-module; (false positive)
+from types import TracebackType
 from typing import Any, List, NamedTuple, Optional, Tuple, Type, Union
 
 from dagster.serdes import whitelist_for_serdes

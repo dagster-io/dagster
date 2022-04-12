@@ -15,7 +15,6 @@ from dagster import (
 )
 from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
-from dagster.utils.backcompat import ExperimentalWarning
 
 
 @pytest.fixture(autouse=True)

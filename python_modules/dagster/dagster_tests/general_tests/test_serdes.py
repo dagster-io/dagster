@@ -399,6 +399,7 @@ def test_persistent_tuple():
 
 
 def test_from_storage_dict():
+    # pylint: disable=function-redefined
     old_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=old_map)
@@ -419,7 +420,7 @@ def test_from_storage_dict():
 
     @_whitelist_for_serdes(
         whitelist_map=new_map, serializer=CompatSerializer
-    )  # pylint: disable=function-redefined
+    )
     class MyThing(NamedTuple):
         new_name: str
 
@@ -462,6 +463,7 @@ def test_from_unpacked():
 
 
 def test_skip_when_empty():
+    # pylint: disable=function-redefined
     test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
@@ -475,8 +477,8 @@ def test_skip_when_empty():
 
     # Without setting skip_when_empty, the ID changes
 
-    @_whitelist_for_serdes(whitelist_map=test_map)  # pylint: disable=function-redefined
-    class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):  # pylint: disable=function-redefined
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):
         def __new__(cls, foo, bar=None):
             return super(SameSnapshotTuple, cls).__new__(  # pylint: disable=bad-super-call
                 cls, foo, bar
@@ -499,7 +501,7 @@ def test_skip_when_empty():
 
     @_whitelist_for_serdes(
         whitelist_map=test_map, serializer=SkipWhenEmptySerializer
-    )  # pylint: disable=function-redefined
+    )
     class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):
         def __new__(cls, foo, bar=None):
             return super(SameSnapshotTuple, cls).__new__(  # pylint: disable=bad-super-call

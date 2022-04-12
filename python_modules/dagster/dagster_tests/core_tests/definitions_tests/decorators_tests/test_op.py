@@ -768,6 +768,7 @@ def test_implicit_op_output_with_asset_key():
 
 
 def test_args_kwargs_op():
+    # pylint: disable=function-redefined
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=r"@op 'the_op' decorated function has positional vararg parameter "
@@ -777,7 +778,7 @@ def test_args_kwargs_op():
     ):
 
         @op(ins={"the_in": In()})
-        def the_op(*args):
+        def the_op(*_args):
             pass
 
     @op(ins={"the_in": In()})

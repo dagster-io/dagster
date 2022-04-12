@@ -115,7 +115,7 @@ if __name__ == "__main__":
                 "yamllint",
                 "flake8>=3.7.8",
                 "astroid",  # let pylint determine the version
-                "pylint==2.13.0",
+                "pylint==2.13.4",
             ],
             "black": [
                 "black[jupyter]==22.3.0",

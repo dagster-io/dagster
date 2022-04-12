@@ -233,6 +233,7 @@ def test_capture_interrupt():
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_raise_execution_interrupts():
+    standard_interrupt = False
     with raise_execution_interrupts():
         try:
             _send_interrupt_to_self()

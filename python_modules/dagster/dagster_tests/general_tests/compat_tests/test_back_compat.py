@@ -69,7 +69,7 @@ def _schedule_storage_migration_regex(current_revision, expected_revision=None):
     return _migration_regex(warning, current_revision, expected_revision)
 
 
-def _event_log_migration_regex(run_id, current_revision, expected_revision=None):
+def _event_log_migration_regex(_run_id, current_revision, expected_revision=None):
     warning = re.escape(
         "Raised an exception that may indicate that the Dagster database needs to be be migrated."
     )
@@ -880,7 +880,7 @@ def test_jobs_selector_id_migration():
 
 def test_tick_selector_index_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite")
-    import sqlalchemy as db
+    import sqlalchemy as db   # pylint: disable=unused-import
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "schedules", "schedules.db")

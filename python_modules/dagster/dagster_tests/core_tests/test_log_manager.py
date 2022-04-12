@@ -83,6 +83,7 @@ def make_log_string(error, error_source=None):
 
 
 def test_construct_log_string_with_error():
+    error = None
     try:
         raise ValueError("some error")
     except ValueError:
@@ -103,6 +104,7 @@ def test_construct_log_string_with_error():
 
 
 def test_construct_log_string_with_user_code_error():
+    error = None
     try:
         with user_code_error_boundary(
             DagsterUserCodeExecutionError, lambda: "Error occurred while eating a banana"
@@ -129,6 +131,7 @@ def test_construct_log_string_with_user_code_error():
 
 
 def test_construct_log_string_with_error_raise_from():
+    error = None
     try:
         try:
             raise ValueError("inner error")
