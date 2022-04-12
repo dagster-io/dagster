@@ -70,8 +70,8 @@ const FinalRedirectOrLoadingRoot = () => {
     );
   }
 
-  // If we have more than one job, route to the instance overview
-  if (reposWithAJob.length > 1) {
+  // Otherwise, if we have any repos with jobs, route to the instance overview.
+  if (reposWithAJob.length) {
     return <Redirect to="/instance" />;
   }
 
