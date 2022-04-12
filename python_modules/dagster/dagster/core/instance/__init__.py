@@ -86,7 +86,7 @@ if TYPE_CHECKING:
     from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
     from dagster.core.storage.compute_log_manager import ComputeLogManager
     from dagster.core.storage.event_log import EventLogStorage
-    from dagster.core.storage.event_log.base import EventLogRecord, EventRecordsFilter
+    from dagster.core.storage.event_log.base import EventLogRecord, EventRecordsFilter, AssetRecord
     from dagster.core.storage.root import LocalArtifactStorage
     from dagster.core.storage.runs import RunStorage
     from dagster.core.storage.schedules import ScheduleStorage
@@ -1213,6 +1213,12 @@ class DagsterInstance:
             List[EventLogRecord]: List of event log records stored in the event log storage.
         """
         return self._event_storage.get_event_records(event_records_filter, limit, ascending)
+
+    @traced
+    def get_asset_records(
+        self, asset_keys: Optional[Sequence[AssetKey]] = None
+    ) -> Iterable["AssetRecord"]:
+        return self._event_storage.get_asset_records(asset_keys)
 
     @traced
     def events_for_asset_key(

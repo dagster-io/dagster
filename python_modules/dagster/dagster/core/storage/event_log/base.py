@@ -53,7 +53,7 @@ class AssetEntry(
         "_AssetEntry",
         [
             ("asset_key", AssetKey),
-            ("last_materialization", Optional[Union[AssetMaterialization, EventLogEntry]]),
+            ("last_materialization", Optional[EventLogEntry]),
             ("last_run_id", Optional[str]),
             ("asset_details", Optional[AssetDetails]),
         ],
@@ -62,7 +62,7 @@ class AssetEntry(
     def __new__(
         cls,
         asset_key: AssetKey,
-        last_materialization: Optional[Union[AssetMaterialization, EventLogEntry]] = None,
+        last_materialization: Optional[EventLogEntry] = None,
         last_run_id: Optional[str] = None,
         asset_details: Optional[AssetDetails] = None,
     ):
@@ -70,7 +70,7 @@ class AssetEntry(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             last_materialization=check.opt_inst_param(
-                last_materialization, "last_materialization", (AssetMaterialization, EventLogEntry)
+                last_materialization, "last_materialization", EventLogEntry
             ),
             last_run_id=check.opt_str_param(last_run_id, "last_run_id"),
             asset_details=check.opt_inst_param(asset_details, "asset_details", AssetDetails),

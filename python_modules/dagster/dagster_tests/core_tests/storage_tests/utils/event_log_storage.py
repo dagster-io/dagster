@@ -2063,6 +2063,7 @@ class TestEventLogStorage:
                 records = storage.get_asset_records()  # should select all assets
                 assert len(records) == 2
 
+                records.sort(key=lambda record: record.asset_entry.asset_key)  # order by asset key
                 asset_entry = records[0].asset_entry
                 assert asset_entry.asset_key == my_asset_key
                 materialize_event = [
