@@ -1,8 +1,8 @@
-from dagster import composite_solid, graph, job, op, solid
+from dagster import composite_solid, graph, job, op, resource, solid
 
 
 def test_description_inference():
-    decorators = [job, op, graph, solid, composite_solid]
+    decorators = [job, op, graph, solid, composite_solid, resource]
     for decorator in decorators:
 
         @decorator

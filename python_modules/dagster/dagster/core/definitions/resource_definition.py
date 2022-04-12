@@ -16,6 +16,7 @@ from typing import (
 )
 
 from dagster import check
+from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
 from dagster.core.errors import (
@@ -252,7 +253,7 @@ class _ResourceDecoratorCallable:
         resource_def = ResourceDefinition(
             resource_fn=resource_fn,
             config_schema=self.config_schema,
-            description=self.description,
+            description=self.description or format_docstring_for_description(resource_fn),
             version=self.version,
             required_resource_keys=self.required_resource_keys,
         )
