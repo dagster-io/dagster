@@ -11,6 +11,7 @@ from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass
 from dagster.utils import merge_dicts
+from dagster.core.storage.pipeline_run import PipelineRun
 
 from ..secretsmanager import get_secrets_from_arns, get_tagged_secrets
 from .tasks import default_ecs_task_definition, default_ecs_task_metadata
@@ -327,3 +328,50 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
     def _task_metadata(self):
         return default_ecs_task_metadata(self.ec2, self.ecs)
+
+    @property
+    def supports_check_run_worker_health(self):
+        return True
+
+    def check_run_worker_health(self, run: PipelineRun):
+
+        tags = self._get_run_tags(run.run_id)
+
+        if not (tags.arn and tags.cluster):
+            return CheckRunHealthResult(
+                WorkerStatus.UNKNOWN, ""
+            )
+
+        tasks = self.ecs.describe_tasks(tasks=[tags.arn], cluster=tags.cluster).get("tasks")
+        if not tasks:
+            return CheckRunHealthResult(
+                WorkerStatus.UNKNOWN, ""
+            )
+
+        t = tasks[0]
+        if t.get("healthStatus") == "UNHEALTHY":
+            return CheckRunHealthResult(WorkerStatus.FAILED, f"ECS task unhealthy. Stop code: {t['stopCode']}. Stop reason {t['stopReason']}.")
+        if t.get("healthStatus") == "UNKNOWN":
+            return CheckRunHealthResult(
+            WorkerStatus.UNKNOWN, "ECS task health status is unknown."
+        )
+
+        if t.get("lastStatus") == "RUNNING":
+            return CheckRunHealthResult(WorkerStatus.RUNNING)
+
+
+
+        # job_name = get_job_name_from_run_id(
+        #     run.run_id, resume_attempt_number=self._instance.count_resume_run_attempts(run.run_id)
+        # )
+        # try:
+        #     job = self._batch_api.read_namespaced_job(namespace=self.job_namespace, name=job_name)
+        # except Exception:
+        #     return CheckRunHealthResult(
+        #         WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
+        #     )
+        # if job.status.failed:
+        #     return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
+        # if job.status.succeeded:
+        #     return CheckRunHealthResult(WorkerStatus.SUCCESS)
+        # return CheckRunHealthResult(WorkerStatus.RUNNING)
