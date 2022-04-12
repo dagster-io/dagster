@@ -5,8 +5,6 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import (
     AssetKey,
-    DagsterEventType,
-    EventRecordsFilter,
     PipelineDefinition,
     PipelineRunStatus,
     check,
@@ -178,12 +176,6 @@ def get_in_progress_runs_by_step(graphene_info, job_names, step_keys):
     ]
 
 
-def get_asset_run_stats_by_step(graphene_info, asset_nodes):
-    latest_run_by_step = get_latest_asset_run_by_step_key(graphene_info, asset_nodes)
-
-    return [latest_run_by_step.get(asset_node.op_name) for asset_node in asset_nodes]
-
-
 def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
     from ..schema.pipelines.pipeline import GrapheneLatestRun, GrapheneRun
 
@@ -213,7 +205,7 @@ def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
             step_key, GrapheneRun(run_records_by_run_id[run_id]) if run_id else None
         )
 
-    return latest_run_by_step
+    return [latest_run_by_step.get(asset_node.op_name) for asset_node in asset_nodes]
 
 
 def get_runs_count(graphene_info, filters):

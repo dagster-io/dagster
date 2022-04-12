@@ -1,6 +1,6 @@
 import graphene
 from dagster_graphql.implementation.fetch_runs import (
-    get_asset_run_stats_by_step,
+    get_latest_asset_run_by_step_key,
     get_in_progress_runs_by_step,
 )
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
@@ -276,7 +276,7 @@ class GrapheneRepository(graphene.ObjectType):
     def resolve_latestRunByStep(self, graphene_info):
         asset_node = [node for node in self._repository.get_external_asset_nodes() if node.op_name]
 
-        return get_asset_run_stats_by_step(
+        return get_latest_asset_run_by_step_key(
             graphene_info,
             asset_node,
         )
