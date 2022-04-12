@@ -136,8 +136,12 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     def get_repository_location(self, name: str) -> RepositoryLocation:
         location_entry = self.get_location_entry(name)
-        if not location_entry or not location_entry.repository_location:
+
+        if not location_entry:
             raise Exception(f"Location {name} not in workspace")
+        if location_entry.load_error:
+            raise Exception(f"Error loading location {name}: {location_entry.load_error}")
+
         return cast(RepositoryLocation, location_entry.repository_location)
 
     def has_repository_location_error(self, name: str) -> bool:

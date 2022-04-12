@@ -439,9 +439,15 @@ class InProcessTestWorkspaceLoadTarget(WorkspaceLoadTarget):
 
 
 @contextmanager
-def in_process_test_workspace(instance, recon_repo):
+def in_process_test_workspace(instance, loadable_target_origin, container_image=None):
     with WorkspaceProcessContext(
-        instance, InProcessTestWorkspaceLoadTarget(InProcessRepositoryLocationOrigin(recon_repo))
+        instance,
+        InProcessTestWorkspaceLoadTarget(
+            InProcessRepositoryLocationOrigin(
+                loadable_target_origin,
+                container_image=container_image,
+            ),
+        ),
     ) as workspace_process_context:
         yield workspace_process_context.create_request_context()
 

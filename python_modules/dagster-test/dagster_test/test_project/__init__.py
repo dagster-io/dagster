@@ -30,6 +30,7 @@ from dagster.core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster.core.test_utils import in_process_test_workspace
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import create_snapshot_id, whitelist_for_serdes
 from dagster.utils import file_relative_path, git_repository_root
 
@@ -201,15 +202,13 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
         return ExternalPipelineOrigin(
             external_repository_origin=ExternalRepositoryOrigin(
                 repository_location_origin=InProcessRepositoryLocationOrigin(
-                    recon_repo=ReconstructableRepository(
-                        pointer=FileCodePointer(
-                            python_file="/dagster_test/test_project/test_pipelines/repo.py",
-                            fn_name="define_demo_execution_repo",
-                        ),
-                        container_image=self._container_image,
+                    loadable_target_origin=LoadableTargetOrigin(
                         executable_path="python",
-                        entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
-                    )
+                        python_file="/dagster_test/test_project/test_pipelines/repo.py",
+                        attribute="define_demo_execution_repo",
+                    ),
+                    container_image=self._container_image,
+                    entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
                 ),
                 repository_name="demo_execution_repo",
             ),
@@ -266,11 +265,12 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
 def get_test_project_workspace(instance, container_image=None):
     with in_process_test_workspace(
         instance,
-        recon_repo=ReconstructableRepository.for_file(
-            file_relative_path(__file__, "test_pipelines/repo.py"),
-            "define_demo_execution_repo",
-            container_image=container_image,
+        loadable_target_origin=LoadableTargetOrigin(
+            executable_path=sys.executable,
+            python_file=file_relative_path(__file__, "test_pipelines/repo.py"),
+            attribute="define_demo_execution_repo",
         ),
+        container_image=container_image,
     ) as workspace:
         yield workspace
 

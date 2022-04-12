@@ -1,5 +1,4 @@
 import datetime
-import sys
 import threading
 from abc import abstractmethod
 from contextlib import AbstractContextManager
@@ -21,7 +20,7 @@ from dagster.api.snapshot_repository import sync_get_streaming_external_reposito
 from dagster.api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster.api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
 from dagster.core.code_pointer import CodePointer
-from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.state import KnownExecutionState
@@ -262,22 +261,30 @@ class RepositoryLocation(AbstractContextManager):
 
 class InProcessRepositoryLocation(RepositoryLocation):
     def __init__(self, origin: InProcessRepositoryLocationOrigin):
+        from dagster.grpc.server import LoadedRepositories
+
         self._origin = check.inst_param(origin, "origin", InProcessRepositoryLocationOrigin)
 
-        self._recon_repo = self._origin.recon_repo
-
-        repo_def = self._recon_repo.get_definition()
-        pointer = self._recon_repo.pointer
-
-        self._repository_code_pointer_dict = {repo_def.name: pointer}
-
-        def_name = repo_def.name
-
-        self._external_repo = external_repo_from_def(
-            repo_def,
-            RepositoryHandle(repository_name=def_name, repository_location=self),
+        loadable_target_origin = self._origin.loadable_target_origin
+        self._loaded_repositories = LoadedRepositories(
+            loadable_target_origin, self._origin.entry_point
         )
-        self._repositories = {self._external_repo.name: self._external_repo}
+
+        self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name
+
+        self._recon_repos = {
+            repo_name: self._loaded_repositories.get_recon_repo(repo_name)
+            for repo_name in self._repository_code_pointer_dict
+        }
+
+        self._repositories = {}
+        for repo_name in self._repository_code_pointer_dict:
+            recon_repo = self._loaded_repositories.get_recon_repo(repo_name)
+            repo_def = recon_repo.get_definition()
+            self._repositories[repo_name] = external_repo_from_def(
+                repo_def,
+                RepositoryHandle(repository_name=repo_name, repository_location=self),
+            )
 
     @property
     def is_reload_supported(self) -> bool:
@@ -289,27 +296,22 @@ class InProcessRepositoryLocation(RepositoryLocation):
 
     @property
     def executable_path(self) -> Optional[str]:
-        return (
-            self._recon_repo.executable_path if self._recon_repo.executable_path else sys.executable
-        )
+        return self._origin.loadable_target_origin.executable_path
 
     @property
     def container_image(self) -> Optional[str]:
-        return self._recon_repo.container_image
+        return self._origin.container_image
 
     @property
     def entry_point(self) -> Optional[List[str]]:
-        return self._recon_repo.entry_point
+        return self._origin.entry_point
 
     @property
     def repository_code_pointer_dict(self) -> Dict[str, CodePointer]:
         return self._repository_code_pointer_dict
 
     def get_reconstructable_pipeline(self, name: str) -> ReconstructablePipeline:
-        return self.get_reconstructable_repository().get_reconstructable_pipeline(name)
-
-    def get_reconstructable_repository(self) -> ReconstructableRepository:
-        return self.origin.recon_repo
+        return self._recon_repos[name].get_reconstructable_pipeline(name)
 
     def get_repository(self, name: str) -> ExternalRepository:
         return self._repositories[name]
@@ -378,7 +380,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.str_param(partition_name, "partition_name")
 
         return get_partition_config(
-            recon_repo=self._recon_repo,
+            recon_repo=self._recon_repos[repository_handle.repository_name],
             partition_set_name=partition_set_name,
             partition_name=partition_name,
         )
@@ -391,7 +393,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.str_param(partition_name, "partition_name")
 
         return get_partition_tags(
-            recon_repo=self._recon_repo,
+            recon_repo=self._recon_repos[repository_handle.repository_name],
             partition_set_name=partition_set_name,
             partition_name=partition_name,
         )
@@ -403,7 +405,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.str_param(partition_set_name, "partition_set_name")
 
         return get_partition_names(
-            recon_repo=self._recon_repo,
+            recon_repo=self._recon_repos[repository_handle.repository_name],
             partition_set_name=partition_set_name,
         )
 
@@ -420,7 +422,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", PendulumDateTime)
 
         return get_external_schedule_execution(
-            self._recon_repo,
+            recon_repo=self._recon_repos[repository_handle.repository_name],
             instance_ref=instance.get_ref(),
             schedule_name=schedule_name,
             scheduled_execution_timestamp=scheduled_execution_time.timestamp()
@@ -441,7 +443,12 @@ class InProcessRepositoryLocation(RepositoryLocation):
         cursor: Optional[str],
     ) -> Union["SensorExecutionData", "ExternalSensorExecutionErrorData"]:
         return get_external_sensor_execution(
-            self._recon_repo, instance.get_ref(), name, last_completion_time, last_run_key, cursor
+            self._recon_repos[repository_handle.repository_name],
+            instance.get_ref(),
+            name,
+            last_completion_time,
+            last_run_key,
+            cursor,
         )
 
     def get_external_partition_set_execution_param_data(
@@ -455,7 +462,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.list_param(partition_names, "partition_names", of_type=str)
 
         return get_partition_set_execution_param_data(
-            self._recon_repo,
+            recon_repo=self._recon_repos[repository_handle.repository_name],
             partition_set_name=partition_set_name,
             partition_names=partition_names,
         )
