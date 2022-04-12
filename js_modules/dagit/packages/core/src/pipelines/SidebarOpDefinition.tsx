@@ -4,12 +4,12 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {breakOnUnderscores, displayNameForAssetKey} from '../app/Util';
+import {breakOnUnderscores} from '../app/Util';
 import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignature';
 import {pluginForMetadata} from '../plugins';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
+import {displayNameForAssetKey, __ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {RepoAddress} from '../workspace/types';
 
 import {Description} from './Description';

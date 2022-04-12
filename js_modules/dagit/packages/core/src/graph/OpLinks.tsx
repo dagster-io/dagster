@@ -4,7 +4,7 @@ import styled from 'styled-components/macro';
 
 import {weakmapMemoize} from '../app/Util';
 
-import {IFullPipelineLayout, IFullOpLayout, ILayoutConnection} from './getFullOpLayout';
+import {OpGraphLayout, OpLayout, OpLayoutEdge} from './asyncGraphLayout';
 import {PipelineGraphOpFragment} from './types/PipelineGraphOpFragment';
 
 export type Edge = {a: string; b: string};
@@ -17,7 +17,7 @@ const buildSVGPath = pathVerticalDiagonal({
 });
 
 const buildSVGPaths = weakmapMemoize(
-  (connections: ILayoutConnection[], ops: {[name: string]: IFullOpLayout}) =>
+  (connections: OpLayoutEdge[], ops: {[name: string]: OpLayout}) =>
     connections.map(({from, to}) => {
       const sourceOutput = ops[from.opName].outputs[from.edgeName];
       if (!sourceOutput) {
@@ -67,8 +67,8 @@ export const OpLinks = React.memo(
   (props: {
     color: string;
     ops: PipelineGraphOpFragment[];
-    layout: IFullPipelineLayout;
-    connections: ILayoutConnection[];
+    layout: OpGraphLayout;
+    connections: OpLayoutEdge[];
     onHighlight: (arr: Edge[]) => void;
   }) => (
     <g>

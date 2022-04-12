@@ -3,18 +3,19 @@ import {Colors, Icon, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {displayNameForAssetKey, withMiddleTruncation} from '../app/Util';
+import {withMiddleTruncation} from '../app/Util';
 import {AssetKey} from '../assets/types';
+import {displayNameForAssetKey} from '../workspace/asset-graph/Utils';
 
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';
-import {IFullOpLayout, ILayout} from './getFullOpLayout';
+import {OpLayout, ILayout} from './asyncGraphLayout';
 import {Edge} from './highlighting';
 import {OpNodeDefinitionFragment} from './types/OpNodeDefinitionFragment';
 import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
 
 interface IOpNodeProps {
-  layout: IFullOpLayout;
+  layout: OpLayout;
   invocation?: OpNodeInvocationFragment;
   definition: OpNodeDefinitionFragment;
   highlightedEdges: Edge[];

@@ -5,7 +5,7 @@ import styled from 'styled-components/macro';
 
 import {Edge} from './OpLinks';
 import {SVGMonospaceText} from './SVGComponents';
-import {IPoint} from './getFullOpLayout';
+import {IPoint} from './asyncGraphLayout';
 import {isHighlighted} from './highlighting';
 
 interface ExternalConnectionNodeProps {

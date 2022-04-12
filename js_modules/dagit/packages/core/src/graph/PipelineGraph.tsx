@@ -9,7 +9,7 @@ import {OpLinks} from './OpLinks';
 import {OpNode, OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT} from './OpNode';
 import {ParentOpNode, SVGLabeledParentRect} from './ParentOpNode';
 import {DETAIL_ZOOM, SVGViewport, SVGViewportInteractor} from './SVGViewport';
-import {IFullPipelineLayout, IFullOpLayout, ILayout} from './getFullOpLayout';
+import {OpGraphLayout, OpLayout, ILayout} from './asyncGraphLayout';
 import {Edge, isHighlighted, isOpHighlighted} from './highlighting';
 import {PipelineGraphOpFragment} from './types/PipelineGraphOpFragment';
 
@@ -17,7 +17,7 @@ const NoOp = () => {};
 
 interface IPipelineGraphProps {
   pipelineName: string;
-  layout: IFullPipelineLayout;
+  layout: OpGraphLayout;
   ops: PipelineGraphOpFragment[];
   focusOps: PipelineGraphOpFragment[];
   parentHandleID?: string;
@@ -35,7 +35,7 @@ interface IPipelineGraphProps {
 
 interface IPipelineContentsProps extends IPipelineGraphProps {
   minified: boolean;
-  layout: IFullPipelineLayout;
+  layout: OpGraphLayout;
   bounds: {top: number; left: number; right: number; bottom: number};
 }
 
@@ -44,7 +44,7 @@ interface IPipelineContentsProps extends IPipelineGraphProps {
  * an array of bounding boxes and common prefixes. Used to render lightweight
  * outlines around flattened composites.
  */
-function computeOpPrefixBoundingBoxes(layout: IFullPipelineLayout) {
+function computeOpPrefixBoundingBoxes(layout: OpGraphLayout) {
   const groups: {[base: string]: ILayout[]} = {};
   let maxDepth = 0;
 
@@ -109,20 +109,6 @@ const PipelineGraphContents: React.FC<IPipelineContentsProps> = React.memo((prop
           minified={minified}
         />
       )}
-      {/* {selectedOp && layout.ops[selectedOp.name] && (
-        // this rect is hidden beneath the user's selection with a React key so that
-        // when they expand the composite op React sees this component becoming
-        // the one above and re-uses the DOM node. This allows us to animate the rect's
-        // bounds from the parent layout to the inner layout with no React state.
-        <SVGLabeledParentRect
-          {...layout.ops[selectedOp.name].op}
-          key={`composite-rect-${selectedHandleID}`}
-          label={''}
-          fill={Colors.Gray50}
-          minified={true}
-        />
-      )} */}
-
       {parentOp && (
         <ParentOpNode
           onClickOp={onClickOp}
@@ -209,7 +195,7 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
 
   resolveOpPosition = (
     arg: OpNameOrPath,
-    cb: (cx: number, cy: number, layout: IFullOpLayout) => void,
+    cb: (cx: number, cy: number, layout: OpLayout) => void,
   ) => {
     const lastName = 'name' in arg ? arg.name : arg.path[arg.path.length - 1];
     const opLayout = this.props.layout.ops[lastName];
@@ -241,7 +227,7 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
     }
 
     const current = layout.ops[selectedOp.name];
-    const center = (op: IFullOpLayout): {x: number; y: number} => ({
+    const center = (op: OpLayout): {x: number; y: number} => ({
       x: op.boundingBox.x + op.boundingBox.width / 2,
       y: op.boundingBox.y + op.boundingBox.height / 2,
     });
@@ -249,7 +235,7 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
     /* Sort all the ops in the graph based on their attractiveness
     as a jump target. We want the nearest node in the exact same row for left/right,
     and the visually "closest" node above/below for up/down. */
-    const score = (op: IFullOpLayout): number => {
+    const score = (op: OpLayout): number => {
       const dx = center(op).x - center(current).x;
       const dy = center(op).y - center(current).y;
 

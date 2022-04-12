@@ -17,7 +17,6 @@ import * as yaml from 'yaml';
 
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorInfo';
-import {displayNameForAssetKey} from '../../app/Util';
 import {PartitionHealthSummary, usePartitionHealthData} from '../../assets/PartitionHealthSummary';
 import {AssetKey} from '../../assets/types';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../../launchpad/ConfigEditorConfigPicker';
@@ -48,6 +47,7 @@ import {
 import {RepoAddress} from '../types';
 
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
+import {displayNameForAssetKey} from './Utils';
 import {
   AssetJobPartitionSetsQuery,
   AssetJobPartitionSetsQueryVariables,

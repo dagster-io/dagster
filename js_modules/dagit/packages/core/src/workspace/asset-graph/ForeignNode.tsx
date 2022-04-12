@@ -2,7 +2,7 @@ import {Colors, Icon, FontFamily} from '@dagster-io/ui';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {displayNameForAssetKey} from '../../app/Util';
+import {displayNameForAssetKey} from './Utils';
 
 export const ForeignNode: React.FC<{assetKey: {path: string[]}}> = React.memo(({assetKey}) => (
   <ForeignNodeLink>
@@ -25,7 +25,3 @@ const ForeignNodeLink = styled.div`
     text-decoration: underline;
   }
 `;
-export const getForeignNodeDimensions = (id: string) => {
-  const path = JSON.parse(id);
-  return {width: displayNameForAssetKey({path}).length * 8 + 30, height: 30};
-};

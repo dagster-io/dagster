@@ -17,7 +17,8 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
-import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
+import {assertUnreachable} from '../app/Util';
+import {displayNameForAssetKey} from '../workspace/asset-graph/Utils';
 
 import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';

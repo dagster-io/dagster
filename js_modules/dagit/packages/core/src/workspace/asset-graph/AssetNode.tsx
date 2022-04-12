@@ -6,7 +6,6 @@ import React, {CSSProperties} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {displayNameForAssetKey} from '../../app/Util';
 import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
 import {NodeHighlightColors} from '../../graph/OpNode';
 import {OpTags} from '../../graph/OpTags';
@@ -18,7 +17,7 @@ import {markdownToPlaintext} from '../../ui/markdownToPlaintext';
 import {buildRepoAddress} from '../buildRepoAddress';
 import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
 
-import {LiveDataForNode, __ASSET_GROUP} from './Utils';
+import {displayNameForAssetKey, LiveDataForNode, __ASSET_GROUP} from './Utils';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 
 export const AssetNode: React.FC<{
@@ -246,22 +245,6 @@ export const ASSET_NODE_FRAGMENT = gql`
   }
   ${METADATA_ENTRY_FRAGMENT}
 `;
-
-export const getNodeDimensions = (def: {
-  assetKey: {path: string[]};
-  opName: string | null;
-  description?: string | null;
-}) => {
-  let height = 95;
-  if (def.description) {
-    height += 25;
-  }
-  const displayName = displayNameForAssetKey(def.assetKey);
-  if (def.opName && displayName !== def.opName) {
-    height += 25;
-  }
-  return {width: Math.max(250, displayName.length * 8.0) + 25, height};
-};
 
 const BoxColors = {
   Divider: 'rgba(219, 219, 244, 1)',

@@ -10,12 +10,12 @@ import {MappingLine} from './MappingLine';
 import {metadataForCompositeParentIO, PARENT_IN, PARENT_OUT, OpIOBox} from './OpIOBox';
 import {position} from './OpNode';
 import {SVGLabeledRect} from './SVGComponents';
-import {IFullPipelineLayout} from './getFullOpLayout';
+import {OpGraphLayout} from './asyncGraphLayout';
 import {Edge} from './highlighting';
 import {PipelineGraphOpFragment} from './types/PipelineGraphOpFragment';
 
 interface ParentOpNodeProps {
-  layout: IFullPipelineLayout;
+  layout: OpGraphLayout;
   op: PipelineGraphOpFragment;
   minified: boolean;
 

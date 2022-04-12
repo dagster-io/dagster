@@ -4,7 +4,7 @@ import React from 'react';
 import styled from 'styled-components/macro';
 
 import {OpNode, OP_NODE_DEFINITION_FRAGMENT} from '../graph/OpNode';
-import {layoutOp} from '../graph/getFullOpLayout';
+import {layoutOp} from '../graph/asyncGraphLayout';
 
 import {OpCardSolidDefinitionFragment} from './types/OpCardSolidDefinitionFragment';
 

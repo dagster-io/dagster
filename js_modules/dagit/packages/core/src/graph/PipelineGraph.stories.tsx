@@ -5,7 +5,7 @@ import {OpNameOrPath} from '../ops/OpNameOrPath';
 
 import {PipelineGraph} from './PipelineGraph';
 import {SVGViewport} from './SVGViewport';
-import {getDagrePipelineLayout} from './getFullOpLayout';
+import {getFullOpLayout} from './asyncGraphLayout';
 import {PipelineGraphOpFragment} from './types/PipelineGraphOpFragment';
 
 // eslint-disable-next-line import/no-default-export
@@ -106,7 +106,7 @@ export const Basic = () => {
     <PipelineGraph
       pipelineName="Test Pipeline"
       ops={ops}
-      layout={getDagrePipelineLayout(ops)}
+      layout={getFullOpLayout(ops)}
       interactor={SVGViewport.Interactors.PanAndZoom}
       focusOps={ops.filter((s) => focusOps.includes(s.name))}
       highlightedOps={[]}
@@ -134,7 +134,7 @@ export const FanOut = () => {
     <PipelineGraph
       pipelineName="Test Pipeline"
       ops={ops}
-      layout={getDagrePipelineLayout(ops)}
+      layout={getFullOpLayout(ops)}
       interactor={SVGViewport.Interactors.PanAndZoom}
       focusOps={ops.filter((s) => focusOps.includes(s.name))}
       highlightedOps={[]}
@@ -159,7 +159,7 @@ export const Tagged = () => {
     <PipelineGraph
       pipelineName="Test Pipeline"
       ops={ops}
-      layout={getDagrePipelineLayout(ops)}
+      layout={getFullOpLayout(ops)}
       interactor={SVGViewport.Interactors.PanAndZoom}
       focusOps={ops.filter((s) => focusOps.includes(s.name))}
       highlightedOps={[]}
@@ -217,7 +217,7 @@ export const Composite = () => {
       ops={parentOp ? childOps : ops}
       parentOp={parentOp}
       parentHandleID={parentOpName}
-      layout={parentOp ? getDagrePipelineLayout(childOps, parentOp) : getDagrePipelineLayout(ops)}
+      layout={parentOp ? getFullOpLayout(childOps, parentOp) : getFullOpLayout(ops)}
       interactor={SVGViewport.Interactors.PanAndZoom}
       focusOps={ops.filter((s) => focusOps.includes(s.name))}
       highlightedOps={[]}
