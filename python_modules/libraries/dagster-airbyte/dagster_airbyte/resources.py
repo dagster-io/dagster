@@ -7,7 +7,7 @@ import requests
 from dagster_airbyte.types import AirbyteOutput
 from requests.exceptions import RequestException
 
-from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource
+from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource, check
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 
@@ -52,7 +52,9 @@ class AirbyteResource:
             + "/api/v1"
         )
 
-    def make_request(self, endpoint: str, data: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    def make_request(
+        self, endpoint: str, data: Optional[Dict[str, Any]]
+    ) -> Optional[Dict[str, Any]]:
         """
         Creates and sends a request to the desired Airbyte REST API endpoint.
 
@@ -90,13 +92,17 @@ class AirbyteResource:
         raise Failure("Exceeded max number of retries.")
 
     def start_sync(self, connection_id: str) -> dict:
-        return self.make_request(endpoint="/connections/sync", data={"connectionId": connection_id})
+        return check.is_dict(
+            self.make_request(endpoint="/connections/sync", data={"connectionId": connection_id})
+        )
 
     def get_job_status(self, job_id: int) -> dict:
-        return self.make_request(endpoint="/jobs/get", data={"id": job_id})
+        return check.is_dict(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
 
     def get_connection_details(self, connection_id: str) -> dict:
-        return self.make_request(endpoint="/connections/get", data={"connectionId": connection_id})
+        return check.is_dict(
+            self.make_request(endpoint="/connections/get", data={"connectionId": connection_id})
+        )
 
     def sync_and_poll(
         self,
