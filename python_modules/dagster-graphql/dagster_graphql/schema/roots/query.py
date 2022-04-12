@@ -39,7 +39,7 @@ from ...implementation.fetch_schedules import (
 )
 from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from ...implementation.fetch_solids import get_graph_or_error
-from ...implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependencyLoader
+from ...implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependedByLoader
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
 from ..asset_graph import GrapheneAssetNode, GrapheneAssetNodeOrError
@@ -472,14 +472,14 @@ class GrapheneDagitQuery(graphene.ObjectType):
             instance=graphene_info.context.instance, asset_keys=[node.assetKey for node in results]
         )
 
-        dependency_loader = CrossRepoAssetDependencyLoader(context=graphene_info.context)
+        depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
         return [
             GrapheneAssetNode(
                 node.repository_location,
                 node.external_repository,
                 node.external_asset_node,
                 materialization_loader=materialization_loader,
-                dependency_loader=dependency_loader,
+                depended_by_loader=depended_by_loader,
             )
             for node in results
         ]

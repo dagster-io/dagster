@@ -851,7 +851,7 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert never_runs_asset_status["unstartedRuns"][0]["runId"] == run_id
 
 
-class TestCrossRepoAssetDependencies(AllRepositoryGraphQLContextTestMatrix):
+class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
     def test_cross_repo_assets(self, graphql_context):
         repository_location = graphql_context.get_repository_location("test")
         repository = repository_location.get_repository("upstream_assets_repository")

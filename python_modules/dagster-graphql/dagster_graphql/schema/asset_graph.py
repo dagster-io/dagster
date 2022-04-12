@@ -17,7 +17,7 @@ from dagster.core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 
-from ..implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependencyLoader
+from ..implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependedByLoader
 from . import external
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
@@ -43,7 +43,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
         input_name: str,
         asset_key: AssetKey,
         materialization_loader: Optional[BatchMaterializationLoader] = None,
-        dependency_loader: Optional[CrossRepoAssetDependencyLoader] = None,
+        depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
     ):
         self._repository_location = check.inst_param(
             repository_location, "repository_location", RepositoryLocation
@@ -55,16 +55,16 @@ class GrapheneAssetDependency(graphene.ObjectType):
         self._latest_materialization_loader = check.opt_inst_param(
             materialization_loader, "materialization_loader", BatchMaterializationLoader
         )
-        self._dependency_loader = check.opt_inst_param(
-            dependency_loader, "dependency_loader", CrossRepoAssetDependencyLoader
+        self._depended_by_loader = check.opt_inst_param(
+            depended_by_loader, "depended_by_loader", CrossRepoAssetDependedByLoader
         )
         super().__init__(inputName=input_name)
 
     def resolve_asset(self, _graphene_info):
         asset_node = self._external_repository.get_external_asset_node(self._asset_key)
-        if not asset_node and self._dependency_loader:
+        if not asset_node and self._depended_by_loader:
             # Only load from dependency loader if asset node cannot be found in current repository
-            asset_node = self._dependency_loader.get_sink_asset(self._asset_key)
+            asset_node = self._depended_by_loader.get_sink_asset(self._asset_key)
         asset_node = check.not_none(asset_node)
         return GrapheneAssetNode(
             self._repository_location,
@@ -114,7 +114,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         external_repository: ExternalRepository,
         external_asset_node: ExternalAssetNode,
         materialization_loader: Optional[BatchMaterializationLoader] = None,
-        dependency_loader: Optional[CrossRepoAssetDependencyLoader] = None,
+        depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
     ):
         self._repository_location = check.inst_param(
             repository_location,
@@ -130,8 +130,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._latest_materialization_loader = check.opt_inst_param(
             materialization_loader, "materialization_loader", BatchMaterializationLoader
         )
-        self._dependency_loader = check.opt_inst_param(
-            dependency_loader, "dependency_loader", CrossRepoAssetDependencyLoader
+        self._depended_by_loader = check.opt_inst_param(
+            depended_by_loader, "depended_by_loader", CrossRepoAssetDependedByLoader
         )
 
         super().__init__(
@@ -213,15 +213,15 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._external_asset_node.compute_kind
 
     def resolve_dependedBy(self, graphene_info) -> List[GrapheneAssetDependency]:
-        # CrossRepoAssetDependencyLoader class loads all cross-repo asset dependencies workspace-wide.
+        # CrossRepoAssetDependedByLoader class loads cross-repo asset dependencies workspace-wide.
         # In order to avoid recomputing workspace-wide values per asset node, we add a loader
         # that batch loads all cross-repo dependencies for the whole workspace.
         check.invariant(
-            self._dependency_loader,
-            "dependency_loader must exist in order to resolve dependedBy nodes",
+            self._depended_by_loader,
+            "depended_by_loader must exist in order to resolve dependedBy nodes",
         )
 
-        depended_by_asset_nodes = self._dependency_loader.get_cross_repo_dependent_assets(
+        depended_by_asset_nodes = self._depended_by_loader.get_cross_repo_dependent_assets(
             self._repository_location.name,
             self._external_repository.name,
             self._external_asset_node.asset_key,
@@ -243,21 +243,21 @@ class GrapheneAssetNode(graphene.ObjectType):
                 input_name=dep.input_name,
                 asset_key=dep.downstream_asset_key,
                 materialization_loader=materialization_loader,
-                dependency_loader=self._dependency_loader,
+                depended_by_loader=self._depended_by_loader,
             )
             for dep in depended_by_asset_nodes
         ]
 
     def resolve_dependedByKeys(self, _graphene_info) -> List[GrapheneAssetKey]:
-        # CrossRepoAssetDependencyLoader class loads all cross-repo asset dependencies workspace-wide.
+        # CrossRepoAssetDependedByLoader class loads all cross-repo asset dependencies workspace-wide.
         # In order to avoid recomputing workspace-wide values per asset node, we add a loader
         # that batch loads all cross-repo dependencies for the whole workspace.
         check.invariant(
-            self._dependency_loader,
-            "dependency_loader must exist in order to resolve dependedBy nodes",
+            self._depended_by_loader,
+            "depended_by_loader must exist in order to resolve dependedBy nodes",
         )
 
-        depended_by_asset_nodes = self._dependency_loader.get_cross_repo_dependent_assets(
+        depended_by_asset_nodes = self._depended_by_loader.get_cross_repo_dependent_assets(
             self._repository_location.name,
             self._external_repository.name,
             self._external_asset_node.asset_key,

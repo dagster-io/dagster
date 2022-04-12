@@ -1,7 +1,7 @@
 from collections import defaultdict
 from enum import Enum
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from dagster import DagsterInstance, check
 from dagster.core.definitions.events import AssetKey
@@ -286,7 +286,7 @@ class BatchMaterializationLoader:
         self._materializations = self._instance.get_latest_materialization_events(self._asset_keys)
 
 
-class CrossRepoAssetDependencyLoader:
+class CrossRepoAssetDependedByLoader:
     """
     A batch loader that computes cross-repository asset dependencies. Locates source assets
     within all workspace repositories, and determines if they are derived (defined) assets in
@@ -300,19 +300,20 @@ class CrossRepoAssetDependencyLoader:
     same asset key as A). If within repo C has a downstream asset B, B is a sink asset of A (it
     is external from A's repo but an edge exists from A to B).
 
+    The @lru_cache decorator enables the _build_cross_repo_deps method to cache its return value
+    to avoid recalculating the asset dependencies on repeated calls to the method.
     """
+
     def __init__(self, context: WorkspaceRequestContext):
         self._context = context
-        self._fetched = False
-        self._sink_assets: Dict[AssetKey, ExternalAssetNode] = {}
-        self._external_asset_deps: Dict[
-            Tuple[str, str], Dict[AssetKey, Sequence[ExternalAssetDependedBy]]
-        ] = (
-            {}
-        )  # nested dict that maps dependedby assets by asset key by location tuple (repo_location.name, repo_name)
 
     @lru_cache(maxsize=1)
-    def _build_cross_repo_deps(self) -> None:
+    def _build_cross_repo_deps(
+        self,
+    ) -> Tuple[
+        Dict[AssetKey, ExternalAssetNode],
+        Dict[Tuple[str, str], Dict[AssetKey, List[ExternalAssetDependedBy]]],
+    ]:
         """
         This method constructs a sink asset as an ExternalAssetNode for every asset immediately
         downstream of a source asset that is defined in another repository as a derived asset.
@@ -323,7 +324,7 @@ class CrossRepoAssetDependencyLoader:
         that depend on the asset with that key. When get_cross_repo_dependent_assets is called with a derived
         asset's asset key and its location, all dependent ExternalAssetDependedBy nodes are returned.
         """
-        depended_by_assets_by_source_asset: Dict[AssetKey, Sequence[ExternalAssetDependedBy]] = {}
+        depended_by_assets_by_source_asset: Dict[AssetKey, List[ExternalAssetDependedBy]] = {}
 
         map_defined_asset_to_location: Dict[
             AssetKey, Tuple[str, str]
@@ -350,22 +351,27 @@ class CrossRepoAssetDependencyLoader:
                         )
                         external_asset_node_by_asset_key[asset_node.asset_key] = asset_node
 
+        sink_assets: Dict[AssetKey, ExternalAssetNode] = {}
+        external_asset_deps: Dict[
+            Tuple[str, str], Dict[AssetKey, List[ExternalAssetDependedBy]]
+        ] = (
+            {}
+        )  # nested dict that maps dependedby assets by asset key by location tuple (repo_location.name, repo_name)
+
         for source_asset, depended_by_assets in depended_by_assets_by_source_asset.items():
             asset_def_location = map_defined_asset_to_location.get(source_asset, None)
             if asset_def_location:  # source asset is defined as asset in another repository
-                if asset_def_location not in self._external_asset_deps:
-                    self._external_asset_deps[asset_def_location] = {}
-                if source_asset not in self._external_asset_deps[asset_def_location]:
-                    self._external_asset_deps[asset_def_location][source_asset] = []
-                self._external_asset_deps[asset_def_location][source_asset].extend(
-                    depended_by_assets
-                )
+                if asset_def_location not in external_asset_deps:
+                    external_asset_deps[asset_def_location] = {}
+                if source_asset not in external_asset_deps[asset_def_location]:
+                    external_asset_deps[asset_def_location][source_asset] = []
+                external_asset_deps[asset_def_location][source_asset].extend(depended_by_assets)
                 for asset in depended_by_assets:
                     # SourceAssets defined as ExternalAssetNodes contain no definition data (e.g.
                     # no output or partition definition data) and no job_names. Dagit displays
                     # all ExternalAssetNodes with no job_names as foreign assets, so sink assets
                     # are defined as ExternalAssetNodes with no definition data.
-                    self._sink_assets[asset.downstream_asset_key] = ExternalAssetNode(
+                    sink_assets[asset.downstream_asset_key] = ExternalAssetNode(
                         asset_key=asset.downstream_asset_key,
                         dependencies=[
                             ExternalAssetDependency(
@@ -376,19 +382,16 @@ class CrossRepoAssetDependencyLoader:
                         ],
                         depended_by=[],
                     )
+        return sink_assets, external_asset_deps
 
     def get_sink_asset(self, asset_key: AssetKey) -> ExternalAssetNode:
-        if not self._fetched:
-            self._fetch()
-        return self._sink_assets.get(asset_key)
+        sink_assets, _ = self._build_cross_repo_deps()
+        return sink_assets.get(asset_key)
 
-    def get_cross_repo_dependent_assets(self, repository_location_name: str, repository_name: str, asset_key: AssetKey) -> List[ExternalAssetDependedBy]:
-        if not self._fetched:
-            self._fetch()
-        return self._external_asset_deps.get((repository_location_name, repository_name), {}).get(
+    def get_cross_repo_dependent_assets(
+        self, repository_location_name: str, repository_name: str, asset_key: AssetKey
+    ) -> List[ExternalAssetDependedBy]:
+        _, external_asset_deps = self._build_cross_repo_deps()
+        return external_asset_deps.get((repository_location_name, repository_name), {}).get(
             asset_key, []
         )
-
-    def _fetch(self):
-        self._fetched = True
-        self._build_cross_repo_deps()
