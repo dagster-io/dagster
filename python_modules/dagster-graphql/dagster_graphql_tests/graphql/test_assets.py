@@ -703,7 +703,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data
         snapshot.assert_match(result.data)
 
-    def test_latest_run_stats_by_asset(self, graphql_context):
+    def test_latest_run_by_asset(self, graphql_context):
         def get_response_by_step(response):
             return {stat["stepKey"]: stat for stat in response}
 

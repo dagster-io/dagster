@@ -190,17 +190,13 @@ def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
     instance = graphene_info.context.instance
 
     latest_run_by_step: Dict[str, PipelineRun] = {}
-
     latest_run_id_by_asset: Dict[AssetKey, str] = {}
-    for asset in asset_nodes:
-        event_records = instance.get_event_records(
-            event_records_filter=EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED, asset_key=asset.asset_key
-            ),
-            limit=1,
-        )
-        if event_records:
-            latest_run_id_by_asset[asset.asset_key] = event_records[0].event_log_entry.run_id
+
+    for record in instance.get_asset_records([asset.asset_key for asset in asset_nodes]):
+        asset_key = record.asset_entry.asset_key
+        last_run_id = record.asset_entry.last_run_id
+        if last_run_id:
+            latest_run_id_by_asset[asset_key] = last_run_id
 
     run_records_by_run_id = {}
     run_ids = list(set(latest_run_id_by_asset.values()))
