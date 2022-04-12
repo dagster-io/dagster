@@ -40,6 +40,7 @@ def types():
         GrapheneStepEvent,
         GrapheneStepExpectationResultEvent,
         GrapheneTypeCheck,
+        GrapheneAssetMaterializationPlannedEvent,
     )
     from .log_level import GrapheneLogLevel
 
@@ -87,4 +88,5 @@ def types():
         GrapheneMaterializationEvent,
         GrapheneObservationEvent,
         GrapheneTypeCheck,
+        GrapheneAssetMaterializationPlannedEvent,
     ]
