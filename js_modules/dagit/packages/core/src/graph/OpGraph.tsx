@@ -5,7 +5,7 @@ import styled from 'styled-components/macro';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 
-import {OpLinks} from './OpLinks';
+import {OpEdges} from './OpEdges';
 import {OpNode, OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT} from './OpNode';
 import {ParentOpNode, SVGLabeledParentRect} from './ParentOpNode';
 import {DETAIL_ZOOM, SVGViewport, SVGViewportInteractor} from './SVGViewport';
@@ -121,14 +121,14 @@ const OpGraphContents: React.FC<OpGraphContentsProps> = React.memo((props) => {
           layout={layout}
         />
       )}
-      <OpLinks
+      <OpEdges
         ops={ops}
         layout={layout}
         color={Colors.KeylineGray}
         edges={layout.edges}
         onHighlight={setHighlighted}
       />
-      <OpLinks
+      <OpEdges
         ops={ops}
         layout={layout}
         color={Colors.Blue500}

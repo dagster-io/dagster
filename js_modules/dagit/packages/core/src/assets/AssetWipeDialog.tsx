@@ -3,7 +3,7 @@ import {Button, DialogBody, DialogFooter, Dialog, Group} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {displayNameForAssetKey} from '../workspace/asset-graph/Utils';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
 
 interface AssetKey {
   path: string[];

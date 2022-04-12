@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {pathVerticalDiagonal} from '@vx/shape';
 
-import {AssetNodeDefinitionFragment} from '../../assets/types/AssetNodeDefinitionFragment';
+import {AssetNodeDefinitionFragment} from '../assets/types/AssetNodeDefinitionFragment';
 
 import {AssetGraphLiveQuery_assetNodes_assetMaterializations} from './types/AssetGraphLiveQuery';
 import {

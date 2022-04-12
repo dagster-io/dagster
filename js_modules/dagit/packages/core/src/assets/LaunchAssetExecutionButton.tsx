@@ -1,13 +1,13 @@
 import {Button, Icon, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 
-import {AssetKey} from '../../assets/types';
-import {LaunchRootExecutionButton} from '../../launchpad/LaunchRootExecutionButton';
-import {DagsterTag} from '../../runs/RunTag';
-import {buildRepoAddress} from '../buildRepoAddress';
+import {isSourceAsset} from '../asset-graph/Utils';
+import {LaunchRootExecutionButton} from '../launchpad/LaunchRootExecutionButton';
+import {DagsterTag} from '../runs/RunTag';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
-import {isSourceAsset} from './Utils';
+import {AssetKey} from './types';
 
 type AssetMinimal = {
   assetKey: {path: string[]};

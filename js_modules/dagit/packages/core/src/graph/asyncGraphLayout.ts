@@ -2,8 +2,8 @@ import memoize from 'lodash/memoize';
 import React from 'react';
 
 import {asyncMemoize} from '../app/Util';
-import {GraphData} from '../workspace/asset-graph/Utils';
-import {AssetGraphLayout, layoutAssetGraph} from '../workspace/asset-graph/layout';
+import {GraphData} from '../asset-graph/Utils';
+import {AssetGraphLayout, layoutAssetGraph} from '../asset-graph/layout';
 
 import {ILayoutOp, layoutOpGraph, OpGraphLayout} from './layout';
 

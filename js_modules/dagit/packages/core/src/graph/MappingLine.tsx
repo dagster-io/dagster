@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import {Edge} from './OpLinks';
+import {Edge} from './OpEdges';
 import {IPoint} from './asyncGraphLayout';
 import {isHighlighted} from './highlighting';
 

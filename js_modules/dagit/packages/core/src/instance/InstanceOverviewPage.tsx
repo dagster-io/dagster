@@ -18,6 +18,7 @@ import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {__ASSET_GROUP} from '../asset-graph/Utils';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -38,7 +39,6 @@ import {RunStatus} from '../types/globalTypes';
 import {AnchorButton} from '../ui/AnchorButton';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';

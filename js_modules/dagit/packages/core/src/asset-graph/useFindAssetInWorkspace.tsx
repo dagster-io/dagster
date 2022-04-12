@@ -1,7 +1,7 @@
 import {gql, useApolloClient} from '@apollo/client';
 import React from 'react';
 
-import {AssetKeyInput} from '../../types/globalTypes';
+import {AssetKeyInput} from '../types/globalTypes';
 
 import {
   AssetForNavigationQuery,

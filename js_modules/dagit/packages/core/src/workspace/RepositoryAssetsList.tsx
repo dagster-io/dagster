@@ -4,9 +4,9 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {__ASSET_GROUP, displayNameForAssetKey} from '../asset-graph/Utils';
 import {RepositoryLink} from '../nav/RepositoryLink';
 
-import {__ASSET_GROUP, displayNameForAssetKey} from './asset-graph/Utils';
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';

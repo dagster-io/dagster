@@ -59,7 +59,7 @@ const inputIsDynamicCollect = (
   return inputDef?.isDynamicCollect || false;
 };
 
-export const OpLinks = React.memo(
+export const OpEdges = React.memo(
   (props: {
     color: string;
     ops: OpGraphOpFragment[];
@@ -99,7 +99,7 @@ export const OpLinks = React.memo(
   ),
 );
 
-OpLinks.displayName = 'OpLinks';
+OpEdges.displayName = 'OpEdges';
 
 const DynamicMarker: React.FC<{
   x: number;

@@ -5,13 +5,13 @@ import styled from 'styled-components/macro';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {__ASSET_GROUP} from '../asset-graph/Utils';
 import {GanttChart, GanttChartLoadingState, GanttChartMode, QueuedState} from '../gantt/GanttChart';
 import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RunStatus} from '../types/globalTypes';
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 
 import {ComputeLogPanel} from './ComputeLogPanel';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';

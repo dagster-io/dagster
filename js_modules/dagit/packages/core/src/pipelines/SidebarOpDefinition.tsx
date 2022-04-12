@@ -5,11 +5,11 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {breakOnUnderscores} from '../app/Util';
+import {displayNameForAssetKey, __ASSET_GROUP} from '../asset-graph/Utils';
 import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignature';
 import {pluginForMetadata} from '../plugins';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
-import {displayNameForAssetKey, __ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {RepoAddress} from '../workspace/types';
 
 import {Description} from './Description';
@@ -26,7 +26,7 @@ import {
   ResourceHeader,
   ShowAllButton,
   SidebarOpInvocationInfo,
-  OpLinks,
+  OpEdges,
   OpMappingTable,
   TypeWrapper,
 } from './SidebarOpHelpers';
@@ -127,7 +127,7 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
                 <TypeWithTooltip type={inputDef.type} />
               </TypeWrapper>
               <Description description={inputDef.description} />
-              <OpLinks title="Mapped to:" items={inputMappings[inputDef.name]} />
+              <OpEdges title="Mapped to:" items={inputMappings[inputDef.name]} />
             </SectionItemContainer>
           ))}
         </Box>
@@ -143,7 +143,7 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
               <TypeWrapper>
                 <TypeWithTooltip type={outputDef.type} />
               </TypeWrapper>
-              <OpLinks title="Mapped from:" items={outputMappings[outputDef.name]} />
+              <OpEdges title="Mapped from:" items={outputMappings[outputDef.name]} />
               <Description description={outputDef.description} />
             </SectionItemContainer>
           ))}

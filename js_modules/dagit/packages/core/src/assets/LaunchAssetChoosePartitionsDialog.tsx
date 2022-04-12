@@ -15,39 +15,39 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 import * as yaml from 'yaml';
 
-import {showCustomAlert} from '../../app/CustomAlertProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorInfo';
-import {PartitionHealthSummary, usePartitionHealthData} from '../../assets/PartitionHealthSummary';
-import {AssetKey} from '../../assets/types';
-import {CONFIG_PARTITION_SELECTION_QUERY} from '../../launchpad/ConfigEditorConfigPicker';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {PartitionHealthSummary, usePartitionHealthData} from '../assets/PartitionHealthSummary';
+import {AssetKey} from '../assets/types';
+import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
 import {
   ConfigPartitionSelectionQuery,
   ConfigPartitionSelectionQueryVariables,
-} from '../../launchpad/types/ConfigPartitionSelectionQuery';
+} from '../launchpad/types/ConfigPartitionSelectionQuery';
 import {
   assembleIntoSpans,
   PartitionRangeInput,
   stringForSpan,
-} from '../../partitions/PartitionRangeInput';
+} from '../partitions/PartitionRangeInput';
 import {
   LAUNCH_PARTITION_BACKFILL_MUTATION,
   showBackfillErrorToast,
   showBackfillSuccessToast,
-} from '../../partitions/PartitionsBackfill';
+} from '../partitions/PartitionsBackfill';
 import {
   LaunchPartitionBackfill,
   LaunchPartitionBackfillVariables,
-} from '../../partitions/types/LaunchPartitionBackfill';
-import {DagsterTag} from '../../runs/RunTag';
-import {handleLaunchResult, LAUNCH_PIPELINE_EXECUTION_MUTATION} from '../../runs/RunUtils';
+} from '../partitions/types/LaunchPartitionBackfill';
+import {DagsterTag} from '../runs/RunTag';
+import {handleLaunchResult, LAUNCH_PIPELINE_EXECUTION_MUTATION} from '../runs/RunUtils';
 import {
   LaunchPipelineExecution,
   LaunchPipelineExecutionVariables,
-} from '../../runs/types/LaunchPipelineExecution';
-import {RepoAddress} from '../types';
+} from '../runs/types/LaunchPipelineExecution';
+import {RepoAddress} from '../workspace/types';
 
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
-import {displayNameForAssetKey} from './Utils';
 import {
   AssetJobPartitionSetsQuery,
   AssetJobPartitionSetsQueryVariables,

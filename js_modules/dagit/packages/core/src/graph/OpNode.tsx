@@ -4,8 +4,8 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
-import {displayNameForAssetKey} from '../workspace/asset-graph/Utils';
 
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';

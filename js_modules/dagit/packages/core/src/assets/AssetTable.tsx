@@ -5,12 +5,12 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
 import {MenuLink} from '../ui/MenuLink';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
-import {tokenForAssetKey} from '../workspace/asset-graph/Utils';
 
 import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';

@@ -9,8 +9,8 @@
  * try to remove it.
  */
 
+import {layoutAssetGraph} from '../asset-graph/layout';
 import {layoutOpGraph} from '../graph/layout';
-import {layoutAssetGraph} from '../workspace/asset-graph/layout';
 const ctx: Worker = self as any;
 
 ctx.addEventListener('message', (event) => {

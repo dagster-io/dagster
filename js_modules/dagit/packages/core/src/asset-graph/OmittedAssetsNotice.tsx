@@ -1,9 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
+import {Colors} from '@dagster-io/ui';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {Colors} from '../../../../ui/src';
-import {AssetKey} from '../../assets/types';
+import {AssetKey} from '../assets/types';
 
 import {OmittedAssetCountQuery} from './types/OmittedAssetCountQuery';
 

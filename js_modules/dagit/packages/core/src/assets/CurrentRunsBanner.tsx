@@ -2,7 +2,7 @@ import {BaseTag, Box, Colors, Spinner} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
-import {LiveDataForNode} from './Utils';
+import {LiveDataForNode} from '../asset-graph/Utils';
 
 export const CurrentRunsBanner: React.FC<{liveData?: LiveDataForNode}> = ({liveData}) => {
   const {inProgressRunIds = [], unstartedRunIds = []} = liveData || {};
