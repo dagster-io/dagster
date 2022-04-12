@@ -25,12 +25,15 @@ dbt_assets = load_assets_from_dbt_manifest(
     io_manager_key="warehouse_io_manager",
 )
 
-activity_analytics_assets = AssetGroup.from_package_module(
-    package_module=assets, namespace="activity_analytics"
-) + AssetGroup(dbt_assets)
+activity_analytics_assets = (
+    AssetGroup.from_package_module(package_module=assets).prefixed(
+        "activity_analytics", upstream_groups=[dbt_assets]
+    )
+    + dbt_assets
+)
 
 activity_analytics_assets_sensor = make_hn_tables_updated_sensor(
-    AssetGroup.build_job(name="story_activity_analytics_job")
+    activity_analytics_assets.build_job(name="story_activity_analytics_job")
 )
 
 activity_analytics_definitions = [activity_analytics_assets, activity_analytics_assets_sensor]
