@@ -26,7 +26,7 @@ setup(
         "dbt-core",
         "dbt-duckdb",
         "dbt-snowflake",
-        "duckdb",
+        "duckdb!=0.3.3",  # missing wheels
         "mock",
         # DataFrames were not written to Snowflake, causing errors
         "pandas<1.4.0",
