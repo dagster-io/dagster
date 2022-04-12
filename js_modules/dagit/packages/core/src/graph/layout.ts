@@ -14,8 +14,12 @@ export type OpLayoutEdge = {
 };
 
 export interface OpLayout {
+  // Overall frame of the box relative to 0,0 on the graph
+  bounds: ILayout;
+
+  // Frames of specific components - These need to be computed during layout
+  // (rather than at render time) to position edges into inputs/outputs.
   op: ILayout;
-  boundingBox: ILayout;
   inputs: {
     [inputName: string]: {
       layout: ILayout;
@@ -34,10 +38,8 @@ export type OpGraphLayout = {
   width: number;
   height: number;
   parent: ParentOpLayout | null;
-  connections: OpLayoutEdge[];
-  ops: {
-    [opName: string]: OpLayout;
-  };
+  edges: OpLayoutEdge[];
+  nodes: {[opName: string]: OpLayout};
 };
 
 interface ParentOpLayout extends Omit<OpLayout, 'op'> {
@@ -145,7 +147,7 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): O
   g.setGraph({rankdir: 'TB', marginx, marginy});
   g.setDefaultEdgeLabel(() => ({}));
 
-  const connections: OpLayoutEdge[] = [];
+  const edges: OpLayoutEdge[] = [];
   const opNamesPresent: {[name: string]: boolean} = {};
 
   pipelineOps.forEach((op) => {
@@ -157,8 +159,8 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): O
     // x,y position.
     const layout = layoutOp(op, {x: 0, y: 0});
     g.setNode(op.name, {
-      width: layout.boundingBox.width,
-      height: layout.boundingBox.height,
+      width: layout.bounds.width,
+      height: layout.bounds.height,
     });
 
     // Give Dagre the dependency edges and build a flat set of them so we
@@ -168,7 +170,7 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): O
         if (opNamesPresent[dep.solid.name] && opNamesPresent[op.name]) {
           g.setEdge({v: dep.solid.name, w: op.name}, {weight: 1});
 
-          connections.push({
+          edges.push({
             from: {
               point: {x: 0, y: 0},
               opName: dep.solid.name,
@@ -188,13 +190,13 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): O
   dagre.layout(g);
 
   const ops: {[opName: string]: OpLayout} = {};
-  const nodesByOp: {[opName: string]: dagre.Node} = {};
+  const dagreNodes: {[opName: string]: dagre.Node} = {};
   g.nodes().forEach(function (opName) {
     const node = g.node(opName);
     if (!node) {
       return;
     }
-    nodesByOp[opName] = node;
+    dagreNodes[opName] = node;
   });
 
   if (MAX_PER_ROW_ENABLED) {
@@ -262,12 +264,12 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): O
       }
     }
     let minX = Number.MAX_SAFE_INTEGER;
-    Object.keys(nodesByOp).forEach((opName) => {
-      const node = nodesByOp[opName];
+    Object.keys(dagreNodes).forEach((opName) => {
+      const node = dagreNodes[opName];
       minX = Math.min(minX, node.x - node.width / 2 - marginx);
     });
-    Object.keys(nodesByOp).forEach((opName) => {
-      const node = nodesByOp[opName];
+    Object.keys(dagreNodes).forEach((opName) => {
+      const node = dagreNodes[opName];
       node.x -= minX;
     });
   }
@@ -280,8 +282,8 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): O
 
   // Read the Dagre layout and map "nodes" back to our solids, but with
   // X,Y coordinates this time.
-  Object.keys(nodesByOp).forEach((opName) => {
-    const node = nodesByOp[opName];
+  Object.keys(dagreNodes).forEach((opName) => {
+    const node = dagreNodes[opName];
     const op = pipelineOps.find(({name}) => name === opName);
     if (!op) {
       return;
@@ -297,7 +299,7 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): O
   // Read the Dagre layout and map "edges" back to our data model. We don't
   // currently use the "closest points on the node" Dagre suggests (but we could).
   g.edges().forEach(function (e) {
-    const conn = connections.find((c) => c.from.opName === e.v && c.to.opName === e.w);
+    const conn = edges.find((c) => c.from.opName === e.v && c.to.opName === e.w);
     const points = g.edge(e).points;
     if (conn) {
       conn.from.point = points[0];
@@ -306,8 +308,8 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): O
   });
 
   const result: OpGraphLayout = {
-    ops,
-    connections,
+    edges,
+    nodes: ops,
     width: maxWidth + marginx,
     height: maxHeight + marginy,
     parent: null,
@@ -330,7 +332,7 @@ function layoutParentGraphOp(layout: OpGraphLayout, op: ILayoutOp, parentIOPaddi
       width: layout.width - 1,
       height: layout.height - 1,
     },
-    boundingBox: {
+    bounds: {
       x: PARENT_INVOCATION_PADDING,
       y: PARENT_INVOCATION_PADDING + parentIOPadding,
       width: layout.width - PARENT_INVOCATION_PADDING * 2,
@@ -352,19 +354,19 @@ function layoutParentGraphOp(layout: OpGraphLayout, op: ILayoutOp, parentIOPaddi
     ),
   };
 
-  const boundingBottom = result.boundingBox.y + result.boundingBox.height;
+  const boundingBottom = result.bounds.y + result.bounds.height;
 
   op.inputs.forEach((input, idx) => {
     result.inputs[input.definition.name] = {
       layout: {
-        x: result.boundingBox.x,
-        y: result.boundingBox.y - idx * IO_HEIGHT - IO_HEIGHT,
+        x: result.bounds.x,
+        y: result.bounds.y - idx * IO_HEIGHT - IO_HEIGHT,
         width: 0,
         height: IO_HEIGHT,
       },
       port: {
-        x: result.boundingBox.x + PORT_INSET_X,
-        y: result.boundingBox.y - idx * IO_HEIGHT - IO_HEIGHT / 2,
+        x: result.bounds.x + PORT_INSET_X,
+        y: result.bounds.y - idx * IO_HEIGHT - IO_HEIGHT / 2,
       },
     };
   });
@@ -372,13 +374,13 @@ function layoutParentGraphOp(layout: OpGraphLayout, op: ILayoutOp, parentIOPaddi
   op.outputs.forEach((output, idx) => {
     result.outputs[output.definition.name] = {
       layout: {
-        x: result.boundingBox.x,
+        x: result.bounds.x,
         y: boundingBottom + idx * IO_HEIGHT,
         width: 0,
         height: IO_HEIGHT,
       },
       port: {
-        x: result.boundingBox.x + PORT_INSET_X,
+        x: result.bounds.x + PORT_INSET_X,
         y: boundingBottom + idx * IO_HEIGHT + IO_HEIGHT / 2,
       },
     };
@@ -488,7 +490,7 @@ export function layoutOp(op: ILayoutOp, root: IPoint): OpLayout {
   }
 
   return {
-    boundingBox: {
+    bounds: {
       x: root.x - 5,
       y: root.y - 5,
       width: OP_WIDTH + 10,

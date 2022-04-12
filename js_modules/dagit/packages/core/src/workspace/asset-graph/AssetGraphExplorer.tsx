@@ -251,29 +251,29 @@ const AssetGraphExplorerWithData: React.FC<
               maxZoom={1.2}
               maxAutocenterZoom={1.0}
             >
-              {({scale: _scale}, bounds) => (
+              {({scale: _scale}, viewportRect) => (
                 <SVGContainer width={layout.width} height={layout.height}>
                   <AssetLinks edges={layout.edges} />
 
-                  {layout.nodes.map((layoutNode, index) => {
-                    const graphNode = assetGraphData.nodes[layoutNode.id];
-                    const path = JSON.parse(layoutNode.id);
+                  {Object.values(layout.nodes).map(({id, bounds}, index) => {
+                    const graphNode = assetGraphData.nodes[id];
+                    const path = JSON.parse(id);
 
-                    if (isNodeOffscreen(layoutNode, bounds)) {
-                      return layoutNode.id === lastSelectedNode?.id ? (
+                    if (isNodeOffscreen(bounds, viewportRect)) {
+                      return id === lastSelectedNode?.id ? (
                         <RecenterGraph
                           key={index}
                           viewportRef={viewportEl}
-                          x={layoutNode.x + layoutNode.width / 2}
-                          y={layoutNode.y + layoutNode.height / 2}
+                          x={bounds.x + bounds.width / 2}
+                          y={bounds.y + bounds.height / 2}
                         />
                       ) : null;
                     }
 
                     return (
                       <foreignObject
-                        {...layoutNode}
-                        key={layoutNode.id}
+                        {...bounds}
+                        key={id}
                         onClick={(e) => onSelectNode(e, {path}, graphNode)}
                         style={{overflow: 'visible'}}
                       >

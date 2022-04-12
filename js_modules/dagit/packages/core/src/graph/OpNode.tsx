@@ -121,7 +121,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
         onClick={this.handleClick}
         onDoubleClick={this.handleDoubleClick}
       >
-        <div className="highlight-box" style={{...position(layout.boundingBox)}} />
+        <div className="highlight-box" style={{...position(layout.bounds)}} />
         {composite && <div className="composite-marker" style={{...position(layout.op)}} />}
 
         {invocation?.isDynamicMapped && (

@@ -3,15 +3,15 @@ import * as React from 'react';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 
-import {PipelineGraph} from './PipelineGraph';
+import {OpGraph} from './OpGraph';
 import {SVGViewport} from './SVGViewport';
 import {getFullOpLayout} from './asyncGraphLayout';
-import {PipelineGraphOpFragment} from './types/PipelineGraphOpFragment';
+import {OpGraphOpFragment} from './types/OpGraphOpFragment';
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'PipelineGraph',
-  component: PipelineGraph,
+  title: 'OpGraph',
+  component: OpGraph,
 } as Meta;
 
 const IO_TYPE = {
@@ -36,7 +36,7 @@ function buildEdge(descriptor: string): Edge {
 }
 
 function buildGraphSolidFragment(sname: string, ins: string[], outs: string[], edges: Edge[]) {
-  const result: PipelineGraphOpFragment = {
+  const result: OpGraphOpFragment = {
     __typename: 'Solid',
     name: sname,
     definition: {
@@ -89,7 +89,7 @@ function buildGraphSolidFragment(sname: string, ins: string[], outs: string[], e
 function buildBasicDAG() {
   const edges = ['A:out=>B:in', 'B:out1=>C:in', 'B:out2=>D:in1', 'C:out=>D:in2'].map(buildEdge);
 
-  const ops: PipelineGraphOpFragment[] = [
+  const ops: OpGraphOpFragment[] = [
     buildGraphSolidFragment('A', [], ['out'], edges),
     buildGraphSolidFragment('B', ['in'], ['out1', 'out2'], edges),
     buildGraphSolidFragment('C', ['in'], ['out'], edges),
@@ -103,7 +103,7 @@ export const Basic = () => {
   const ops = buildBasicDAG();
 
   return (
-    <PipelineGraph
+    <OpGraph
       pipelineName="Test Pipeline"
       ops={ops}
       layout={getFullOpLayout(ops)}
@@ -123,7 +123,7 @@ export const FanOut = () => {
     edges.push(buildEdge(`A:out=>B${ii}:in`));
     edges.push(buildEdge(`B${ii}:out=>C:in`));
   }
-  const ops: PipelineGraphOpFragment[] = [];
+  const ops: OpGraphOpFragment[] = [];
   ops.push(buildGraphSolidFragment('A', ['in'], ['out'], edges));
   ops.push(buildGraphSolidFragment('C', ['in'], ['out'], edges));
   for (let ii = 0; ii < 60; ii++) {
@@ -131,7 +131,7 @@ export const FanOut = () => {
   }
 
   return (
-    <PipelineGraph
+    <OpGraph
       pipelineName="Test Pipeline"
       ops={ops}
       layout={getFullOpLayout(ops)}
@@ -156,7 +156,7 @@ export const Tagged = () => {
   );
 
   return (
-    <PipelineGraph
+    <OpGraph
       pipelineName="Test Pipeline"
       ops={ops}
       layout={getFullOpLayout(ops)}
@@ -212,7 +212,7 @@ export const Composite = () => {
   const parentOp = ops.find((s) => s.name === parentOpName);
 
   return (
-    <PipelineGraph
+    <OpGraph
       pipelineName="Test Pipeline"
       ops={parentOp ? childOps : ops}
       parentOp={parentOp}

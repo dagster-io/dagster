@@ -1,18 +1,16 @@
 import * as dagre from 'dagre';
 
+import {ILayout, IPoint} from '../../graph/layout';
+
 import {GraphData, GraphNode, GraphId, displayNameForAssetKey} from './Utils';
 
 interface AssetLayout {
   id: GraphId;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+
+  // Overall frame of the box relative to 0,0 on the graph
+  bounds: ILayout;
 }
-interface IPoint {
-  x: number;
-  y: number;
-}
+
 export type AssetLayoutEdge = {
   from: IPoint;
   to: IPoint;
@@ -23,7 +21,7 @@ export type AssetGraphLayout = {
   width: number;
   height: number;
   edges: AssetLayoutEdge[];
-  nodes: AssetLayout[];
+  nodes: {[id: string]: AssetLayout};
 };
 
 const opts: {margin: number; mini: boolean} = {
@@ -90,16 +88,18 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
 
   let maxWidth = 0;
   let maxHeight = 0;
-  const nodes: AssetLayout[] = [];
+  const nodes: {[id: string]: AssetLayout} = {};
   Object.keys(dagreNodesById).forEach((id) => {
     const dagreNode = dagreNodesById[id];
-    nodes.push({
+    nodes[id] = {
       id,
-      x: dagreNode.x - dagreNode.width / 2,
-      y: dagreNode.y - dagreNode.height / 2,
-      width: dagreNode.width,
-      height: dagreNode.height,
-    });
+      bounds: {
+        x: dagreNode.x - dagreNode.width / 2,
+        y: dagreNode.y - dagreNode.height / 2,
+        width: dagreNode.width,
+        height: dagreNode.height,
+      },
+    };
     maxWidth = Math.max(maxWidth, dagreNode.x + dagreNode.width / 2);
     maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height / 2);
   });

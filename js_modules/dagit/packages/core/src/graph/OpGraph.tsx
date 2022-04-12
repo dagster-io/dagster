@@ -11,20 +11,20 @@ import {ParentOpNode, SVGLabeledParentRect} from './ParentOpNode';
 import {DETAIL_ZOOM, SVGViewport, SVGViewportInteractor} from './SVGViewport';
 import {OpGraphLayout, OpLayout, ILayout} from './asyncGraphLayout';
 import {Edge, isHighlighted, isOpHighlighted} from './highlighting';
-import {PipelineGraphOpFragment} from './types/PipelineGraphOpFragment';
+import {OpGraphOpFragment} from './types/OpGraphOpFragment';
 
 const NoOp = () => {};
 
-interface IPipelineGraphProps {
+interface OpGraphProps {
   pipelineName: string;
   layout: OpGraphLayout;
-  ops: PipelineGraphOpFragment[];
-  focusOps: PipelineGraphOpFragment[];
+  ops: OpGraphOpFragment[];
+  focusOps: OpGraphOpFragment[];
   parentHandleID?: string;
-  parentOp?: PipelineGraphOpFragment;
+  parentOp?: OpGraphOpFragment;
   selectedHandleID?: string;
-  selectedOp?: PipelineGraphOpFragment;
-  highlightedOps: Array<PipelineGraphOpFragment>;
+  selectedOp?: OpGraphOpFragment;
+  highlightedOps: Array<OpGraphOpFragment>;
   interactor?: SVGViewportInteractor;
   onClickOp?: (arg: OpNameOrPath) => void;
   onDoubleClickOp?: (arg: OpNameOrPath) => void;
@@ -33,7 +33,7 @@ interface IPipelineGraphProps {
   onClickBackground?: () => void;
 }
 
-interface IPipelineContentsProps extends IPipelineGraphProps {
+interface OpGraphContentsProps extends OpGraphProps {
   minified: boolean;
   layout: OpGraphLayout;
   bounds: {top: number; left: number; right: number; bottom: number};
@@ -48,7 +48,7 @@ function computeOpPrefixBoundingBoxes(layout: OpGraphLayout) {
   const groups: {[base: string]: ILayout[]} = {};
   let maxDepth = 0;
 
-  for (const key of Object.keys(layout.ops)) {
+  for (const key of Object.keys(layout.nodes)) {
     const parts = key.split('.');
     if (parts.length === 1) {
       continue;
@@ -56,7 +56,7 @@ function computeOpPrefixBoundingBoxes(layout: OpGraphLayout) {
     for (let ii = 1; ii < parts.length; ii++) {
       const base = parts.slice(0, ii).join('.');
       groups[base] = groups[base] || [];
-      groups[base].push(layout.ops[key].boundingBox);
+      groups[base].push(layout.nodes[key].bounds);
       maxDepth = Math.max(maxDepth, ii);
     }
   }
@@ -80,7 +80,7 @@ function computeOpPrefixBoundingBoxes(layout: OpGraphLayout) {
   return boxes;
 }
 
-const PipelineGraphContents: React.FC<IPipelineContentsProps> = React.memo((props) => {
+const OpGraphContents: React.FC<OpGraphContentsProps> = React.memo((props) => {
   const [highlighted, setHighlighted] = React.useState<Edge[]>(() => []);
 
   const {
@@ -125,7 +125,7 @@ const PipelineGraphContents: React.FC<IPipelineContentsProps> = React.memo((prop
         ops={ops}
         layout={layout}
         color={Colors.KeylineGray}
-        connections={layout.connections}
+        edges={layout.edges}
         onHighlight={setHighlighted}
       />
       <OpLinks
@@ -133,7 +133,7 @@ const PipelineGraphContents: React.FC<IPipelineContentsProps> = React.memo((prop
         layout={layout}
         color={Colors.Blue500}
         onHighlight={setHighlighted}
-        connections={layout.connections.filter(({from, to}) =>
+        edges={layout.edges.filter(({from, to}) =>
           isHighlighted(highlighted, {
             a: from.opName,
             b: to.opName,
@@ -152,7 +152,7 @@ const PipelineGraphContents: React.FC<IPipelineContentsProps> = React.memo((prop
       <foreignObject width={layout.width} height={layout.height} style={{pointerEvents: 'none'}}>
         {ops
           .filter((op) => {
-            const box = layout.ops[op.name].boundingBox;
+            const box = layout.nodes[op.name].bounds;
             return (
               box.x + box.width >= bounds.left &&
               box.y + box.height >= bounds.top &&
@@ -170,7 +170,7 @@ const PipelineGraphContents: React.FC<IPipelineContentsProps> = React.memo((prop
               onDoubleClick={() => onDoubleClickOp({name: op.name})}
               onEnterComposite={() => onEnterSubgraph({name: op.name})}
               onHighlightEdges={setHighlighted}
-              layout={layout.ops[op.name]}
+              layout={layout.nodes[op.name]}
               selected={selectedOp === op}
               focused={focusOps.includes(op)}
               highlightedEdges={
@@ -184,13 +184,13 @@ const PipelineGraphContents: React.FC<IPipelineContentsProps> = React.memo((prop
   );
 });
 
-PipelineGraphContents.displayName = 'PipelineGraphContents';
+OpGraphContents.displayName = 'OpGraphContents';
 
 // This is a specific empty array we pass to represent the common / empty case
 // so that OpNode can use shallow equality comparisons in shouldComponentUpdate.
 const EmptyHighlightedArray: never[] = [];
 
-export class PipelineGraph extends React.Component<IPipelineGraphProps> {
+export class OpGraph extends React.Component<OpGraphProps> {
   viewportEl: React.RefObject<SVGViewport> = React.createRef();
 
   resolveOpPosition = (
@@ -198,12 +198,12 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
     cb: (cx: number, cy: number, layout: OpLayout) => void,
   ) => {
     const lastName = 'name' in arg ? arg.name : arg.path[arg.path.length - 1];
-    const opLayout = this.props.layout.ops[lastName];
+    const opLayout = this.props.layout.nodes[lastName];
     if (!opLayout) {
       return;
     }
-    const cx = opLayout.boundingBox.x + opLayout.boundingBox.width / 2;
-    const cy = opLayout.boundingBox.y + opLayout.boundingBox.height / 2;
+    const cx = opLayout.bounds.x + opLayout.bounds.width / 2;
+    const cy = opLayout.bounds.y + opLayout.bounds.height / 2;
     cb(cx, cy, opLayout);
   };
 
@@ -226,10 +226,10 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
       return;
     }
 
-    const current = layout.ops[selectedOp.name];
+    const current = layout.nodes[selectedOp.name];
     const center = (op: OpLayout): {x: number; y: number} => ({
-      x: op.boundingBox.x + op.boundingBox.width / 2,
-      y: op.boundingBox.y + op.boundingBox.height / 2,
+      x: op.bounds.x + op.bounds.width / 2,
+      y: op.bounds.y + op.bounds.height / 2,
     });
 
     /* Sort all the ops in the graph based on their attractiveness
@@ -254,8 +254,8 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
       return Number.NaN;
     };
 
-    const closest = Object.keys(layout.ops)
-      .map((name) => ({name, score: score(layout.ops[name])}))
+    const closest = Object.keys(layout.nodes)
+      .map((name) => ({name, score: score(layout.nodes[name])}))
       .filter((e) => e.name !== selectedOp.name && !Number.isNaN(e.score))
       .sort((a, b) => b.score - a.score)
       .pop();
@@ -286,7 +286,7 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
     e.stopPropagation();
   };
 
-  componentDidUpdate(prevProps: IPipelineGraphProps) {
+  componentDidUpdate(prevProps: OpGraphProps) {
     if (prevProps.parentOp !== this.props.parentOp) {
       this.viewportEl.current!.cancelAnimations();
       this.viewportEl.current!.autocenter();
@@ -316,7 +316,7 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
       >
         {({scale}, bounds) => (
           <SVGContainer width={layout.width} height={layout.height + 200}>
-            <PipelineGraphContents
+            <OpGraphContents
               {...this.props}
               layout={layout}
               minified={scale < DETAIL_ZOOM - 0.01}
@@ -330,8 +330,8 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
   }
 }
 
-export const PIPELINE_GRAPH_OP_FRAGMENT = gql`
-  fragment PipelineGraphOpFragment on Solid {
+export const OP_GRAPH_OP_FRAGMENT = gql`
+  fragment OpGraphOpFragment on Solid {
     name
     ...OpNodeInvocationFragment
     definition {

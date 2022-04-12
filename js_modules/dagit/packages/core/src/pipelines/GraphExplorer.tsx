@@ -9,8 +9,8 @@ import {Route} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
-import {PIPELINE_GRAPH_OP_FRAGMENT} from '../graph/PipelineGraph';
-import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
+import {OP_GRAPH_OP_FRAGMENT} from '../graph/OpGraph';
+import {OpGraphContainer} from '../graph/OpGraphContainer';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {RepoAddress} from '../workspace/types';
@@ -251,7 +251,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
             <EntirelyFilteredDAGNotice nodeType="op" />
           ) : undefined}
 
-          <PipelineGraphContainer
+          <OpGraphContainer
             pipelineName={pipelineOrGraph.name}
             ops={queryResultOps.all}
             focusOps={queryResultOps.focus}
@@ -315,10 +315,10 @@ export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
     handleID
     solid {
       name
-      ...PipelineGraphOpFragment
+      ...OpGraphOpFragment
     }
   }
-  ${PIPELINE_GRAPH_OP_FRAGMENT}
+  ${OP_GRAPH_OP_FRAGMENT}
 `;
 
 export const RightInfoPanel = styled.div`
