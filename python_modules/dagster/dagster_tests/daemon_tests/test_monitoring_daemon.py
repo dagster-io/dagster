@@ -87,8 +87,10 @@ def instance():
 
 
 @pytest.fixture
-def workspace():
-    with create_test_daemon_workspace(workspace_load_target=EmptyWorkspaceTarget()) as workspace:
+def workspace(instance):
+    with create_test_daemon_workspace(
+        workspace_load_target=EmptyWorkspaceTarget(), instance=instance
+    ) as workspace:
         yield workspace
 
 

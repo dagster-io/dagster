@@ -38,6 +38,7 @@ if TYPE_CHECKING:
         InProcessRepositoryLocation,
         RepositoryLocation,
     )
+    from dagster.core.instance import DagsterInstance
     from dagster.grpc.client import DagsterGrpcClient
 
 # This is a hard-coded name for the special "in-process" location.
@@ -242,11 +243,10 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         )
 
     @contextmanager
-    def create_single_location(self) -> Generator["RepositoryLocation", None, None]:
-        from dagster.core.workspace.context import (
-            DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
-            DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
-        )
+    def create_single_location(
+        self, instance: "DagsterInstance"
+    ) -> Generator["RepositoryLocation", None, None]:
+        from dagster.core.workspace.context import DAGIT_GRPC_SERVER_HEARTBEAT_TTL
 
         from .grpc_server_registry import ProcessGrpcServerRegistry
         from .repository_location import GrpcServerRepositoryLocation
@@ -254,7 +254,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         with ProcessGrpcServerRegistry(
             reload_interval=0,
             heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
-            startup_timeout=DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
+            startup_timeout=instance.code_server_process_startup_timeout,
         ) as grpc_server_registry:
             endpoint = grpc_server_registry.get_grpc_endpoint(self)
             with GrpcServerRepositoryLocation(

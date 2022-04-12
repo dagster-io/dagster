@@ -210,10 +210,10 @@ def the_repo():
 
 
 @contextmanager
-def default_repo():
+def default_repo(instance):
     load_target = workspace_load_target()
     origin = load_target.create_origins()[0]
-    with origin.create_single_location() as location:
+    with origin.create_single_location(instance) as location:
         yield location.get_repository("the_repo")
 
 
@@ -230,9 +230,10 @@ def workspace_load_target():
 def instance_for_context(external_repo_context, overrides=None):
     with instance_for_test(overrides) as instance:
         with create_test_daemon_workspace(
-            workspace_load_target=workspace_load_target()
+            workspace_load_target=workspace_load_target(),
+            instance=instance,
         ) as workspace:
-            with external_repo_context() as external_repo:
+            with external_repo_context(instance) as external_repo:
                 yield (instance, workspace, external_repo)
 
 
