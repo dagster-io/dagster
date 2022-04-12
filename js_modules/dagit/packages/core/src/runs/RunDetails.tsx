@@ -1,5 +1,4 @@
 import {gql} from '@apollo/client';
-import {AnchorButton} from '../ui/AnchorButton';
 import {
   Button,
   Colors,
@@ -21,6 +20,7 @@ import * as yaml from 'yaml';
 import {AppContext} from '../app/AppContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
+import {AnchorButton} from '../ui/AnchorButton';
 import {workspacePathFromRunDetails} from '../workspace/workspacePath';
 
 import {RunTags} from './RunTags';
