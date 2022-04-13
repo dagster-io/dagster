@@ -4,6 +4,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -18,7 +19,9 @@ from dagster import check
 from dagster.builtins import Nothing
 from dagster.config import Field
 from dagster.core.decorator_utils import get_function_params, get_valid_name_permutations
+from dagster.core.definitions import OpDefinition
 from dagster.core.definitions.decorators.op_decorator import _Op
+from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.input import In
 from dagster.core.definitions.output import Out
@@ -26,6 +29,7 @@ from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.utils import NoValueSentinel
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType
+from dagster.seven import funcsigs
 from dagster.utils.backcompat import ExperimentalWarning, experimental_decorator
 
 from .asset_in import AssetIn
@@ -301,6 +305,154 @@ def multi_asset(
     return inner
 
 
+@experimental_decorator
+def assets_definition(
+    name: Optional[str] = None,
+    asset_keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
+    asset_keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
+    internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
+) -> Callable[[OpDefinition], AssetsDefinition]:
+    """Create a definition of multiple assets which share the same computation and same upstream assets.
+
+    Each argument to the decorated function references an upstream asset that these assets depends on.
+    The name of the argument designates the name of the upstream asset.
+
+    Args:
+        name (Optional[str]): The name of the op that generates the assets.
+        asset_keys_by_input_name: (Optional[Dict[str, AssetKey]]): A mapping of the input names of the
+            decorated function to the input asset keys they represent. Input names are the keys
+            of the ins dictionary provided in the op decorator, or the parameter names of the decorated
+            function if the ins dictionary is not specified.
+        asset_keys_by_output_name: (Optional[Dict[str, AssetKey]]): A mapping of the output names of the
+            decorated function to the output asset keys they represent. Output names are the keys
+            of the outs dictionary provided in the op decorator, or the parameter names of the decorated
+            function if the outs dictionary is not specified.
+        internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
+            that all assets produced by an op depend on all assets that are consumed by that
+            op. If this default is not correct, you pass in a map of output names to a
+            corrected set of AssetKeys that they depend on. Any AssetKeys in this list must be either
+            used as input to the asset or produced within the op.
+    """
+    asset_keys_by_input_name = check.opt_dict_param(
+        asset_keys_by_input_name, "asset_keys_by_input_name", key_type=str, value_type=AssetKey
+    )
+    asset_keys_by_output_name = check.opt_dict_param(
+        asset_keys_by_output_name, "asset_keys_by_output_name", key_type=str, value_type=AssetKey
+    )
+    internal_asset_deps = check.opt_dict_param(
+        internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
+    )
+
+    if callable(name):
+        check.invariant(
+            isinstance(name, OpDefinition),
+            "assets_definition decorator can only be applied to an OpDefinition",
+        )
+        op_def = name
+        return AssetsDefinition(
+            input_names_by_asset_key=_infer_input_names_by_asset_key(
+                op_def,
+                asset_keys_by_input_name or {},
+            ),
+            output_names_by_asset_key=_infer_output_names_by_asset_key(
+                op_def, asset_keys_by_output_name or {}
+            ),
+            op=op_def,
+        )
+
+    def inner(op_def: OpDefinition) -> AssetsDefinition:
+        check.invariant(
+            isinstance(op_def, OpDefinition),
+            "assets_definition decorator can only be applied to an OpDefinition",
+        )
+        output_names_by_asset_key = _infer_output_names_by_asset_key(
+            op_def, asset_keys_by_output_name or {}
+        )
+        asset_key_by_output_name = {
+            output_name: asset_key for asset_key, output_name in output_names_by_asset_key.items()
+        }
+        transformed_internal_asset_deps = {}
+        if internal_asset_deps:
+            for output_name, asset_keys in internal_asset_deps.items():
+                check.invariant(
+                    output_name in asset_key_by_output_name,
+                    f"output_name {output_name} specified in internal_asset_deps does not exist in the decorated function",
+                )
+                transformed_internal_asset_deps[asset_key_by_output_name[output_name]] = asset_keys
+
+        return AssetsDefinition(
+            input_names_by_asset_key=_infer_input_names_by_asset_key(
+                op_def,
+                asset_keys_by_input_name or {},
+            ),
+            output_names_by_asset_key=output_names_by_asset_key,
+            op=op_def,
+            asset_deps=transformed_internal_asset_deps or None,
+        )
+
+    return inner
+
+
+def _get_input_param_names(fn_params: List[funcsigs.Parameter]) -> List[str]:
+    is_context_provided = len(fn_params) > 0 and fn_params[0].name in get_valid_name_permutations(
+        "context"
+    )
+    return [
+        input_param.name for input_param in (fn_params[1:] if is_context_provided else fn_params)
+    ]
+
+
+def _infer_input_names_by_asset_key(
+    op_def: OpDefinition, asset_keys_by_input_name: Mapping[str, AssetKey]
+) -> Mapping[AssetKey, str]:
+    # Infer non-argument deps for inputs with type In(nothing) with AssetKey(input_name)
+
+    input_param_names = []
+    if isinstance(op_def.compute_fn, DecoratedSolidFunction):
+        params = get_function_params(op_def.compute_fn.decorated_fn)
+        input_param_names = _get_input_param_names(params)
+
+    for in_key in asset_keys_by_input_name.keys():
+        if in_key not in input_param_names:
+            raise DagsterInvalidDefinitionError(
+                f"Key '{in_key}' in provided asset_keys_by_input_name dict does not correspond to "
+                "any key provided in the ins dictionary of the decorated op or any argument "
+                "to the decorated function"
+            )
+
+    all_input_names = set(input_param_names) | op_def.ins.keys()
+    # If asset key is not supplied in asset_keys_by_input_name, create asset key
+    # from input name
+    inferred_input_names_by_asset_key: Dict[AssetKey, str] = {
+        asset_keys_by_input_name.get(input_name, AssetKey([input_name])): input_name
+        for input_name in all_input_names
+    }
+
+    return inferred_input_names_by_asset_key
+
+
+def _infer_output_names_by_asset_key(
+    op_def: OpDefinition, asset_keys_by_output_name: Mapping[str, AssetKey]
+) -> Mapping[AssetKey, str]:
+    inferred_output_name_by_asset_key: Dict[AssetKey, str] = {
+        asset_key: output_name for output_name, asset_key in asset_keys_by_output_name.items()
+    }
+    op_outs = op_def.outs
+
+    for output_name in asset_keys_by_output_name.keys():
+        if output_name not in op_outs:
+            raise DagsterInvalidDefinitionError(
+                f"Key {output_name} in provided asset_keys_by_output_name does not correspond "
+                "to any key provided in the out dictionary of the decorated op"
+            )
+
+    for output_name in op_outs:
+        if output_name not in inferred_output_name_by_asset_key:
+            inferred_output_name_by_asset_key[AssetKey([output_name])] = output_name
+
+    return inferred_output_name_by_asset_key
+
+
 def build_asset_outs(
     op_name: str,
     outs: Mapping[str, Out],
@@ -334,12 +486,7 @@ def build_asset_ins(
     non_argument_deps = check.opt_set_param(non_argument_deps, "non_argument_deps", AssetKey)
 
     params = get_function_params(fn)
-    is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
-        "context"
-    )
-    input_param_names = [
-        input_param.name for input_param in (params[1:] if is_context_provided else params)
-    ]
+    input_param_names = _get_input_param_names(params)
 
     all_input_names = set(input_param_names) | asset_ins.keys()
 

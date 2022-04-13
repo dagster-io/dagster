@@ -32,6 +32,7 @@ class AssetsDefinition:
         self._partition_mappings = partition_mappings or {}
 
         # if not specified assume all output assets depend on all input assets
+<<<<<<< HEAD
         self._asset_deps = asset_deps or {
             out_asset_key: self.input_asset_keys for out_asset_key in self.asset_keys
         }
@@ -47,6 +48,12 @@ class AssetsDefinition:
                 "Each specified asset key must be associated with an input to the asset or "
                 f"produced by this asset. Valid keys: {valid_asset_deps}",
             )
+=======
+        all_input_asset_keys = self.input_defs_by_asset_key.keys()
+        self._asset_deps = asset_deps or {
+            out_asset_key: all_input_asset_keys for out_asset_key in self.asset_keys
+        }
+>>>>>>> 42bf30542d (add internal_asset deps)
         check.invariant(
             set(self._asset_deps.keys()) == self.asset_keys,
             "The set of asset keys with dependencies specified in the asset_deps argument must "
@@ -89,6 +96,10 @@ class AssetsDefinition:
     @property
     def asset_keys_by_input_def(self) -> Mapping[InputDefinition, AssetKey]:
         return self._asset_keys_by_input_def
+
+    @property
+    def asset_deps(self) -> Mapping[AssetKey, AbstractSet[AssetKey]]:
+        return self._asset_deps
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:

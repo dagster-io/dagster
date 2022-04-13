@@ -5,15 +5,19 @@ import pytest
 from dagster import (
     AssetKey,
     DagsterInvalidDefinitionError,
+    In,
+    Nothing,
     OpExecutionContext,
     Out,
     Output,
     String,
     build_op_context,
     check,
+    op,
+    resource,
 )
 from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
-from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
+from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY, assets_definition
 from dagster.utils.backcompat import ExperimentalWarning
 
 
@@ -326,3 +330,125 @@ def test_invoking_asset_with_context():
     ctx = build_op_context()
     out = asset_with_context(ctx, 1)
     assert out == 1
+<<<<<<< HEAD
+=======
+
+
+def test_partitions_def():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+    @asset(partitions_def=partitions_def)
+    def my_asset():
+        pass
+
+    assert my_asset.partitions_def == partitions_def
+
+
+def test_asset_definition_decorator():
+    @assets_definition(
+        asset_keys_by_input_name={"x": AssetKey("x_asset"), "y": AssetKey("y_asset")},
+        asset_keys_by_output_name={"a": AssetKey("a_asset"), "b": AssetKey("b_asset")},
+    )
+    @op(out={"a": Out(), "b": Out()}, ins={"x": In(int), "y": In(int)})
+    def multi_asset_op(context, x, y):
+        yield Output(1, "a")
+        yield Output(2, "b")
+
+    output_def_by_asset_key = multi_asset_op.output_defs_by_asset_key
+    input_def_by_asset_key = multi_asset_op.input_defs_by_asset_key
+
+    assert output_def_by_asset_key[AssetKey("a_asset")].name == "a"
+    assert output_def_by_asset_key[AssetKey("b_asset")].name == "b"
+    assert input_def_by_asset_key[AssetKey("x_asset")].name == "x"
+    assert input_def_by_asset_key[AssetKey("y_asset")].name == "y"
+
+
+def test_asset_definition_no_names_specified():
+    @assets_definition
+    @op(out={"a": Out(), "b": Out()}, ins={"x": In(int), "y": In(int), "z": In(Nothing)})
+    def multi_asset_op(context, x, y):
+        yield Output(1, "a")
+        yield Output(2, "b")
+
+    output_def_by_asset_key = multi_asset_op.output_defs_by_asset_key
+    input_def_by_asset_key = multi_asset_op.input_defs_by_asset_key
+
+    assert output_def_by_asset_key[AssetKey("a")].name == "a"
+    assert output_def_by_asset_key[AssetKey("b")].name == "b"
+    assert input_def_by_asset_key[AssetKey("x")].name == "x"
+    assert input_def_by_asset_key[AssetKey("y")].name == "y"
+    assert input_def_by_asset_key[AssetKey("z")].name == "z"
+
+
+def test_assets_no_ins_outs():
+    @assets_definition(asset_keys_by_input_name={"x": AssetKey("x_asset")})
+    @op
+    def multi_asset_op(context, x, y):
+        yield Output(1, "a")
+        yield Output(2, "b")
+
+    input_def_by_asset_key = multi_asset_op.input_defs_by_asset_key
+    assert input_def_by_asset_key[AssetKey("x_asset")].name == "x"
+    assert input_def_by_asset_key[AssetKey("y")].name == "y"
+
+
+def test_partial_asset_keys_provided():
+    @assets_definition(
+        asset_keys_by_input_name={"x": AssetKey("x_asset")},
+        asset_keys_by_output_name={"a": AssetKey("a_asset")},
+    )
+    @op(out={"a": Out(), "b": Out()}, ins={"x": In(int), "y": In(int), "z": In(Nothing)})
+    def multi_asset_op(context, x, y):
+        yield Output(1, "a")
+        yield Output(2, "b")
+
+    output_def_by_asset_key = multi_asset_op.output_defs_by_asset_key
+    input_def_by_asset_key = multi_asset_op.input_defs_by_asset_key
+
+    assert output_def_by_asset_key[AssetKey("a_asset")].name == "a"
+    assert output_def_by_asset_key[AssetKey("b")].name == "b"
+    assert input_def_by_asset_key[AssetKey("x_asset")].name == "x"
+    assert input_def_by_asset_key[AssetKey("y")].name == "y"
+
+
+def test_default_assets_and_op_definition():
+    @assets_definition(asset_keys_by_output_name={"result": AssetKey("result_asset")})
+    @op
+    def my_op():
+        return 5, 6
+
+    output_def_by_asset_key = my_op.output_defs_by_asset_key
+    input_def_by_asset_key = my_op.input_defs_by_asset_key
+
+    assert input_def_by_asset_key == {}
+    assert output_def_by_asset_key[AssetKey("result_asset")].name == "result"
+
+
+def test_assets_definition_errors_when_not_op_decorated():
+    with pytest.raises(Exception):
+
+        @assets_definition
+        @resource
+        def my_op():
+            return 5, 6
+
+    with pytest.raises(Exception):
+
+        @assets_definition(asset_keys_by_output_name={"result": AssetKey("result_asset")})
+        @resource
+        def my_op():
+            return 5, 6
+<<<<<<< HEAD
+>>>>>>> d8f0689a93 (first stab)
+=======
+
+
+def test_internal_asset_deps():
+    with pytest.raises(Exception):
+
+        @assets_definition(internal_asset_deps={"non_exist_output_name": AssetKey("b")})
+        @op(out={"a": Out(), "b": Out()})
+        def multi_asset_op(context):
+            yield Output(1, "a")
+            yield Output(2, "b")
+>>>>>>> 42bf30542d (add internal_asset deps)
