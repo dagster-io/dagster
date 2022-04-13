@@ -303,8 +303,8 @@ def test_software_defined_assets_job():
 
 
 def test_partitioned_assets():
-    assert (
-        partitioned_asset_group.build_job("all_assets")
-        .execute_in_process(partition_key="2020-02-01")
-        .success
-    )
+    for job_def in partitioned_asset_group.get_base_jobs():
+        partition_key = job_def.mode_definitions[
+            0
+        ].partitioned_config.partitions_def.get_partition_keys()[0]
+        assert job_def.execute_in_process(partition_key=partition_key).success
