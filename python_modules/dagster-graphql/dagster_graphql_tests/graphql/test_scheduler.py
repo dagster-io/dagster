@@ -1,4 +1,5 @@
 import os
+import sys
 
 import pendulum
 import pytest
@@ -10,7 +11,6 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
-from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
@@ -21,6 +21,7 @@ from dagster.core.scheduler.instigation import (
     InstigatorType,
     ScheduleInstigatorData,
 )
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.seven.compat.pendulum import create_pendulum_time
 from dagster.utils import Counter, traced_counter
 
@@ -231,9 +232,13 @@ def default_execution_params():
 
 def _get_unloadable_schedule_origin(name):
     working_directory = os.path.dirname(__file__)
-    recon_repo = ReconstructableRepository.for_file(__file__, "doesnt_exist", working_directory)
+    loadable_target_origin = LoadableTargetOrigin(
+        executable_path=sys.executable,
+        python_file=__file__,
+        working_directory=working_directory,
+    )
     return ExternalRepositoryOrigin(
-        InProcessRepositoryLocationOrigin(recon_repo), "fake_repository"
+        InProcessRepositoryLocationOrigin(loadable_target_origin), "fake_repository"
     ).get_instigator_origin(name)
 
 

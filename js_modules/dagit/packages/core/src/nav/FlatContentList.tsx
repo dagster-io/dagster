@@ -3,6 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {__ASSET_GROUP} from '../asset-graph/Utils';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {InstigationStatus} from '../types/globalTypes';
 import {
@@ -10,7 +11,6 @@ import {
   WorkspaceRepositorySchedule,
   WorkspaceRepositorySensor,
 } from '../workspace/WorkspaceContext';
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';

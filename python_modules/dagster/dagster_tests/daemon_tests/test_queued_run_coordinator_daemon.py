@@ -54,13 +54,15 @@ def daemon_fixture():
 
 
 @pytest.fixture(name="workspace")
-def workspace_fixture():
-    with create_test_daemon_workspace(workspace_load_target=EmptyWorkspaceTarget()) as workspace:
+def workspace_fixture(instance):
+    with create_test_daemon_workspace(
+        workspace_load_target=EmptyWorkspaceTarget(), instance=instance
+    ) as workspace:
         yield workspace
 
 
 def create_run(instance, **kwargs):
-    with get_foo_pipeline_handle() as pipeline_handle:
+    with get_foo_pipeline_handle(instance) as pipeline_handle:
         create_run_for_test(
             instance,
             external_pipeline_origin=pipeline_handle.get_external_origin(),

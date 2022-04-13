@@ -61,7 +61,11 @@ from dagster.utils import traced
 from dagster.utils.backcompat import experimental_functionality_warning
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-from .config import DAGSTER_CONFIG_YAML_FILENAME, is_dagster_home_set
+from .config import (
+    DAGSTER_CONFIG_YAML_FILENAME,
+    DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
+    is_dagster_home_set,
+)
 from .ref import InstanceRef
 
 # 'airflow_execution_date' and 'is_airflow_ingest_pipeline' are hardcoded tags used in the
@@ -71,7 +75,6 @@ from .ref import InstanceRef
 # https://github.com/dagster-io/dagster/issues/2403
 AIRFLOW_EXECUTION_DATE_STR = "airflow_execution_date"
 IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
-
 
 if TYPE_CHECKING:
     from dagster.core.debug import DebugRunPayload
@@ -86,7 +89,7 @@ if TYPE_CHECKING:
     from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
     from dagster.core.storage.compute_log_manager import ComputeLogManager
     from dagster.core.storage.event_log import EventLogStorage
-    from dagster.core.storage.event_log.base import EventLogRecord, EventRecordsFilter
+    from dagster.core.storage.event_log.base import AssetRecord, EventLogRecord, EventRecordsFilter
     from dagster.core.storage.root import LocalArtifactStorage
     from dagster.core.storage.runs import RunStorage
     from dagster.core.storage.schedules import ScheduleStorage
@@ -594,6 +597,16 @@ class DagsterInstance:
     @property
     def run_monitoring_start_timeout_seconds(self) -> int:
         return self.run_monitoring_settings.get("start_timeout_seconds", 180)
+
+    @property
+    def code_server_settings(self) -> Dict:
+        return self.get_settings("code_servers")
+
+    @property
+    def code_server_process_startup_timeout(self) -> int:
+        return self.code_server_settings.get(
+            "local_startup_timeout", DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
+        )
 
     @property
     def run_monitoring_max_resume_run_attempts(self) -> int:
@@ -1213,6 +1226,12 @@ class DagsterInstance:
             List[EventLogRecord]: List of event log records stored in the event log storage.
         """
         return self._event_storage.get_event_records(event_records_filter, limit, ascending)
+
+    @traced
+    def get_asset_records(
+        self, asset_keys: Optional[Sequence[AssetKey]] = None
+    ) -> Iterable["AssetRecord"]:
+        return self._event_storage.get_asset_records(asset_keys)
 
     @traced
     def events_for_asset_key(

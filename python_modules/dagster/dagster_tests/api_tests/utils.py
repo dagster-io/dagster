@@ -26,7 +26,7 @@ def get_bar_workspace(instance):
 
 
 @contextmanager
-def get_bar_repo_repository_location():
+def get_bar_repo_repository_location(instance):
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable,
         python_file=file_relative_path(__file__, "api_tests_repo.py"),
@@ -36,23 +36,17 @@ def get_bar_repo_repository_location():
 
     origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
 
-    with origin.create_single_location() as location:
+    with origin.create_single_location(instance) as location:
         yield location
 
 
 @contextmanager
-def get_bar_repo_handle():
-    with get_bar_repo_repository_location() as location:
+def get_bar_repo_handle(instance):
+    with get_bar_repo_repository_location(instance) as location:
         yield location.get_repository("bar_repo").handle
 
 
 @contextmanager
-def get_foo_pipeline_handle():
-    with get_bar_repo_handle() as repo_handle:
+def get_foo_pipeline_handle(instance):
+    with get_bar_repo_handle(instance) as repo_handle:
         yield PipelineHandle("foo", repo_handle)
-
-
-@contextmanager
-def get_foo_external_pipeline():
-    with get_bar_repo_repository_location() as location:
-        yield location.get_repository("bar_repo").get_full_external_pipeline("foo")

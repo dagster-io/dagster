@@ -2,7 +2,7 @@ import inspect
 import os
 import sys
 from functools import lru_cache
-from typing import TYPE_CHECKING, FrozenSet, List, NamedTuple, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, NamedTuple, Optional, Union, overload
 
 from dagster import check, seven
 from dagster.core.code_pointer import (
@@ -20,7 +20,7 @@ from dagster.core.origin import (
 )
 from dagster.core.selector import parse_solid_selection
 from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
-from dagster.utils import frozenlist
+from dagster.utils import frozenlist, make_readonly_value
 from dagster.utils.backcompat import experimental
 
 from .pipeline_base import IPipeline
@@ -47,6 +47,7 @@ class ReconstructableRepository(
             ("container_image", Optional[str]),
             ("executable_path", Optional[str]),
             ("entry_point", List[str]),
+            ("container_context", Optional[Dict[str, Any]]),
         ],
     )
 ):
@@ -56,6 +57,7 @@ class ReconstructableRepository(
         container_image=None,
         executable_path=None,
         entry_point=None,
+        container_context=None,
     ):
         return super(ReconstructableRepository, cls).__new__(
             cls,
@@ -67,6 +69,11 @@ class ReconstructableRepository(
                 if entry_point != None
                 else DEFAULT_DAGSTER_ENTRY_POINT
             ),
+            container_context=(
+                make_readonly_value(check.opt_dict_param(container_context, "container_context"))
+                if container_context != None
+                else None
+            ),
         )
 
     @lru_cache(maxsize=1)
@@ -77,14 +84,26 @@ class ReconstructableRepository(
         return ReconstructablePipeline(self, name)
 
     @classmethod
-    def for_file(cls, file, fn_name, working_directory=None, container_image=None):
+    def for_file(
+        cls, file, fn_name, working_directory=None, container_image=None, container_context=None
+    ):
         if not working_directory:
             working_directory = os.getcwd()
-        return cls(FileCodePointer(file, fn_name, working_directory), container_image)
+        return cls(
+            FileCodePointer(file, fn_name, working_directory),
+            container_image=container_image,
+            container_context=container_context,
+        )
 
     @classmethod
-    def for_module(cls, module, fn_name, working_directory=None, container_image=None):
-        return cls(ModuleCodePointer(module, fn_name, working_directory), container_image)
+    def for_module(
+        cls, module, fn_name, working_directory=None, container_image=None, container_context=None
+    ):
+        return cls(
+            ModuleCodePointer(module, fn_name, working_directory),
+            container_image=container_image,
+            container_context=container_context,
+        )
 
     def get_python_origin(self):
         return RepositoryPythonOrigin(
@@ -92,6 +111,7 @@ class ReconstructableRepository(
             code_pointer=self.pointer,
             container_image=self.container_image,
             entry_point=self.entry_point,
+            container_context=self.container_context,
         )
 
     def get_python_origin_id(self):

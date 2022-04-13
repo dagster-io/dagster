@@ -6,11 +6,11 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
+import {__ASSET_GROUP} from '../asset-graph/Utils';
 import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';

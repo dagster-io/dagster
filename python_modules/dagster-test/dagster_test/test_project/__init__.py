@@ -30,6 +30,7 @@ from dagster.core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster.core.test_utils import in_process_test_workspace
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import create_snapshot_id, whitelist_for_serdes
 from dagster.utils import file_relative_path, git_repository_root
 
@@ -112,12 +113,13 @@ def build_and_tag_test_image(tag):
     return subprocess.check_output(["./build.sh", base_python, tag], cwd=get_test_repo_path())
 
 
-def get_test_project_recon_pipeline(pipeline_name, container_image=None):
+def get_test_project_recon_pipeline(pipeline_name, container_image=None, container_context=None):
     return ReOriginatedReconstructablePipelineForTest(
         ReconstructableRepository.for_file(
             file_relative_path(__file__, "test_pipelines/repo.py"),
             "define_demo_execution_repo",
             container_image=container_image,
+            container_context=container_context,
         ).get_reconstructable_pipeline(pipeline_name)
     )
 
@@ -153,17 +155,15 @@ class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
                 ),
                 container_image=self.repository.container_image,
                 entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
+                container_context=self.repository.container_context,
             ),
         )
 
 
 class ReOriginatedExternalPipelineForTest(ExternalPipeline):
-    def __init__(
-        self,
-        external_pipeline,
-        container_image=None,
-    ):
+    def __init__(self, external_pipeline, container_image=None, container_context=None):
         self._container_image = container_image
+        self._container_context = container_context
         super(ReOriginatedExternalPipelineForTest, self).__init__(
             external_pipeline.external_pipeline_data,
             external_pipeline.repository_handle,
@@ -187,6 +187,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
                 ),
                 container_image=self._container_image,
                 entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
+                container_context=self._container_context,
             ),
         )
 
@@ -201,15 +202,13 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
         return ExternalPipelineOrigin(
             external_repository_origin=ExternalRepositoryOrigin(
                 repository_location_origin=InProcessRepositoryLocationOrigin(
-                    recon_repo=ReconstructableRepository(
-                        pointer=FileCodePointer(
-                            python_file="/dagster_test/test_project/test_pipelines/repo.py",
-                            fn_name="define_demo_execution_repo",
-                        ),
-                        container_image=self._container_image,
+                    loadable_target_origin=LoadableTargetOrigin(
                         executable_path="python",
-                        entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
-                    )
+                        python_file="/dagster_test/test_project/test_pipelines/repo.py",
+                        attribute="define_demo_execution_repo",
+                    ),
+                    container_image=self._container_image,
+                    entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
                 ),
                 repository_name="demo_execution_repo",
             ),
@@ -266,11 +265,12 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
 def get_test_project_workspace(instance, container_image=None):
     with in_process_test_workspace(
         instance,
-        recon_repo=ReconstructableRepository.for_file(
-            file_relative_path(__file__, "test_pipelines/repo.py"),
-            "define_demo_execution_repo",
-            container_image=container_image,
+        loadable_target_origin=LoadableTargetOrigin(
+            executable_path=sys.executable,
+            python_file=file_relative_path(__file__, "test_pipelines/repo.py"),
+            attribute="define_demo_execution_repo",
         ),
+        container_image=container_image,
     ) as workspace:
         yield workspace
 

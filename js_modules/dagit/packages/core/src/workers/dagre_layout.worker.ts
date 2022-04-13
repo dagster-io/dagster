@@ -9,11 +9,16 @@
  * try to remove it.
  */
 
-import {layoutPipeline} from '../graph/layout';
+import {layoutAssetGraph} from '../asset-graph/layout';
+import {layoutOpGraph} from '../graph/layout';
 const ctx: Worker = self as any;
 
 ctx.addEventListener('message', (event) => {
-  const {solids, parentSolid} = event.data;
-  const layout = layoutPipeline(solids, parentSolid);
-  ctx.postMessage(layout);
+  if (event.data.type === 'layoutOpGraph') {
+    const {ops, parentOp} = event.data;
+    ctx.postMessage(layoutOpGraph(ops, parentOp));
+  } else if (event.data.type === 'layoutAssetGraph') {
+    const {graphData} = event.data;
+    ctx.postMessage(layoutAssetGraph(graphData));
+  }
 });

@@ -14,6 +14,7 @@ from dagster.core.errors import (
 )
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance, InstanceRef
+from dagster.core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster.core.launcher import LaunchRunContext, RunLauncher
 from dagster.core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster.core.snap import (
@@ -201,7 +202,20 @@ class TestNonResumeRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
 
-def test_run_monitoring(capsys):
+def test_grpc_default_settings():
+    with instance_for_test() as instance:
+        assert (
+            instance.code_server_process_startup_timeout
+            == DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
+        )
+
+
+def test_grpc_override_settings():
+    with instance_for_test(overrides={"code_servers": {"local_startup_timeout": 60}}) as instance:
+        assert instance.code_server_process_startup_timeout == 60
+
+
+def test_run_monitoring(capsys):  # pylint: disable=unused-argument
     with instance_for_test(
         overrides={
             "run_monitoring": {"enabled": True},

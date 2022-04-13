@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
+import {__ASSET_GROUP} from '../asset-graph/Utils';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -13,7 +14,6 @@ import {
   isThisThingAJob,
   useRepositoryOptions,
 } from '../workspace/WorkspaceContext';
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';

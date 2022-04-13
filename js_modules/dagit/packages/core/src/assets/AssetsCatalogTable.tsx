@@ -10,7 +10,7 @@ import {
   QueryRefreshCountdown,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
-import {tokenForAssetKey} from '../app/Util';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';

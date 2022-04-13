@@ -1,6 +1,6 @@
 import sqlalchemy as db
 
-from dagster import check, seven
+from dagster import check
 from dagster.core.storage.event_log import (
     AssetKeyTable,
     SqlEventLogStorage,
@@ -10,8 +10,7 @@ from dagster.core.storage.event_log import (
 from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.core.storage.sql import stamp_alembic_rev  # pylint: disable=unused-import
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade
-from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
-from dagster.utils import utc_datetime_from_timestamp
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
 from ..utils import (
     MYSQL_POOL_RECYCLE,
@@ -119,63 +118,23 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         MySQLEventLogStorage.wipe_storage(conn_string)
         return MySQLEventLogStorage(conn_string)
 
-    def store_asset_observation(self, event):
-        # last_materialization_timestamp is updated upon observation or materialization
-        # See store_asset method in SqlEventLogStorage for more details
-        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
-            with self.index_connection() as conn:
-                conn.execute(
-                    db.dialects.mysql.insert(AssetKeyTable)
-                    .values(
-                        asset_key=event.dagster_event.asset_key.to_string(),
-                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-                    )
-                    .on_duplicate_key_update(
-                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-                    )
-                )
+    def store_asset_event(self, event):
+        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
+        # See SqlEventLogStorage.store_asset_event method for more details
 
-    def store_asset_materialization(self, event):
-        # last_materialization_timestamp is updated upon observation or materialization
-        # See store_asset method in SqlEventLogStorage for more details
-        materialization = event.dagster_event.step_materialization_data.materialization
+        values = self._get_asset_entry_values(event, self.has_secondary_index(ASSET_KEY_INDEX_COLS))
 
-        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
-            with self.index_connection() as conn:
-                conn.execute(
-                    db.dialects.mysql.insert(AssetKeyTable)
-                    .values(
-                        asset_key=event.dagster_event.asset_key.to_string(),
-                        last_materialization=serialize_dagster_namedtuple(materialization),
-                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-                        last_run_id=event.run_id,
-                        tags=seven.json.dumps(materialization.tags)
-                        if materialization.tags
-                        else None,
-                    )
-                    .on_duplicate_key_update(
-                        last_materialization=serialize_dagster_namedtuple(materialization),
-                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-                        last_run_id=event.run_id,
-                        tags=seven.json.dumps(materialization.tags)
-                        if materialization.tags
-                        else None,
-                    )
+        with self.index_connection() as conn:
+            conn.execute(
+                db.dialects.mysql.insert(AssetKeyTable)
+                .values(
+                    asset_key=event.dagster_event.asset_key.to_string(),
+                    **values,
                 )
-        else:
-            with self.index_connection() as conn:
-                conn.execute(
-                    db.dialects.mysql.insert(AssetKeyTable)
-                    .values(
-                        asset_key=event.dagster_event.asset_key.to_string(),
-                        last_materialization=serialize_dagster_namedtuple(materialization),
-                        last_run_id=event.run_id,
-                    )
-                    .on_duplicate_key_update(
-                        last_materialization=serialize_dagster_namedtuple(materialization),
-                        last_run_id=event.run_id,
-                    )
+                .on_duplicate_key_update(
+                    **values,
                 )
+            )
 
     def _connect(self):
         return create_mysql_connection(self._engine, __file__, "event log")

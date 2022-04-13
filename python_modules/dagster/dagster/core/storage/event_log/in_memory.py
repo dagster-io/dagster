@@ -4,10 +4,13 @@ from collections import OrderedDict, defaultdict
 from typing import Dict, Iterable, Mapping, Optional, Sequence
 
 from dagster import check
+from dagster.core.assets import AssetDetails
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
+from dagster.core.storage.event_log.base import AssetEntry, AssetRecord
 from dagster.serdes import ConfigurableClass
+from dagster.utils import utc_datetime_from_timestamp
 
 from .base import (
     EventLogRecord,
@@ -33,6 +36,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         if preload:
             for payload in preload:
                 self._logs[payload.pipeline_run.run_id] = payload.event_list
+        self._assets = defaultdict(dict)
 
         super().__init__()
 
@@ -100,6 +104,17 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         run_id = event.run_id
         self._logs[run_id].append(event)
 
+        if (
+            event.is_dagster_event
+            and (
+                event.dagster_event.is_step_materialization
+                or event.dagster_event.is_asset_observation
+                or event.dagster_event.is_asset_materialization_planned
+            )
+            and event.dagster_event.asset_key
+        ):
+            self.store_asset_event(event)
+
         # snapshot handlers
         handlers = list(self._handlers[run_id])
 
@@ -108,6 +123,23 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                 handler(event)
             except Exception:
                 logging.exception("Exception in callback for event watch on run %s.", run_id)
+
+    def store_asset_event(self, event):
+        asset_key = event.dagster_event.asset_key
+        asset = self._assets[asset_key] if asset_key in self._assets else {"id": len(self._assets)}
+
+        asset["last_materialization_timestamp"] = utc_datetime_from_timestamp(event.timestamp)
+        if event.dagster_event.is_step_materialization:
+            materialization = event.dagster_event.step_materialization_data.materialization
+            asset["last_materialization"] = event
+            asset["tags"] = materialization.tags if materialization.tags else None
+        if (
+            event.dagster_event.is_step_materialization
+            or event.dagster_event.is_asset_materialization_planned
+        ):
+            asset["last_run_id"] = event.run_id
+
+        self._assets[asset_key] = asset
 
     def delete_events(self, run_id):
         del self._logs[run_id]
@@ -220,6 +252,32 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
 
         return event_records
 
+    def get_asset_records(
+        self, asset_keys: Optional[Sequence[AssetKey]] = None
+    ) -> Iterable[AssetRecord]:
+        records = []
+        for asset_key, asset in self._assets.items():
+            if not asset_keys or asset_key in asset_keys:
+                wipe_timestamp = self._wiped_asset_keys.get(asset_key)
+                if (
+                    not wipe_timestamp
+                    or wipe_timestamp < asset.get("last_materialization_timestamp").timestamp()
+                ):
+                    records.append(
+                        AssetRecord(
+                            storage_id=asset["id"],
+                            asset_entry=AssetEntry(
+                                asset_key=asset_key,
+                                last_materialization=asset.get("last_materialization"),
+                                last_run_id=asset.get("last_run_id"),
+                                asset_details=AssetDetails(last_wipe_timestamp=wipe_timestamp)
+                                if wipe_timestamp
+                                else None,
+                            ),
+                        )
+                    )
+        return records
+
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         for records in self._logs.values():
             for record in records:
@@ -325,6 +383,8 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     def wipe_asset(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
         self._wiped_asset_keys[asset_key] = time.time()
+        if asset_key in self._assets:
+            self._assets[asset_key]["last_run_id"] = None
 
     def get_materialization_count_by_partition(
         self, asset_keys: Sequence[AssetKey]
