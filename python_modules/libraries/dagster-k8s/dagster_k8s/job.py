@@ -418,14 +418,16 @@ class DagsterK8sJobConfig(
             ),
             "volume_mounts": Field(
                 Array(
-                    Shape(
+                    # Can supply either snake_case or camelCase, but in typeaheads based on the
+                    # schema we assume snake_case
+                    Permissive(
                         {
                             "name": StringSource,
-                            "mountPath": StringSource,
-                            "mountPropagation": Field(StringSource, is_required=False),
-                            "readOnly": Field(BoolSource, is_required=False),
-                            "subPath": Field(StringSource, is_required=False),
-                            "subPathExpr": Field(StringSource, is_required=False),
+                            "mount_path": Field(StringSource, is_required=False),
+                            "mount_propagation": Field(StringSource, is_required=False),
+                            "read_only": Field(BoolSource, is_required=False),
+                            "sub_path": Field(StringSource, is_required=False),
+                            "sub_path_expr": Field(StringSource, is_required=False),
                         }
                     )
                 ),
