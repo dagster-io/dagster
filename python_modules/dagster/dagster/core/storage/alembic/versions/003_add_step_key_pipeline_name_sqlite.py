@@ -23,7 +23,9 @@ def upgrade():
     inspector = reflection.Inspector.from_engine(bind)
     has_tables = inspector.get_table_names()
     if "event_logs" in has_tables:
-        op.add_column("event_logs", sa.Column("step_key", sa.String))
+        columns = [x.get("name") for x in inspector.get_columns("event_logs")]
+        if "step_key" not in columns:
+            op.add_column("event_logs", sa.Column("step_key", sa.String))
 
 
 def downgrade():
@@ -31,4 +33,6 @@ def downgrade():
     inspector = reflection.Inspector.from_engine(bind)
     has_tables = inspector.get_table_names()
     if "event_logs" in has_tables:
-        op.drop_column("event_logs", "step_key")
+        columns = [x.get("name") for x in inspector.get_columns("event_logs")]
+        if "step_key" in columns:
+            op.drop_column("event_logs", "step_key")
