@@ -1,5 +1,3 @@
-import os
-
 import docker
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 
@@ -15,6 +13,9 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.grpc.types import ExecuteRunArgs, ResumeRunArgs
 from dagster.serdes import ConfigurableClass
+
+from .container_context import DockerContainerContext
+from .utils import parse_env_var
 
 DOCKER_CONTAINER_ID_TAG = "docker/container_id"
 
@@ -64,13 +65,16 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return DockerRunLauncher(inst_data=inst_data, **config_value)
 
-    def _get_client(self):
+    def get_container_context(self, pipeline_run: PipelineRun) -> DockerContainerContext:
+        return DockerContainerContext.create_for_run(pipeline_run, self)
+
+    def _get_client(self, container_context: DockerContainerContext):
         client = docker.client.from_env()
-        if self.registry:
+        if container_context.registry:
             client.login(
-                registry=self.registry["url"],
-                username=self.registry["username"],
-                password=self.registry["password"],
+                registry=container_context.registry["url"],
+                username=container_context.registry["username"],
+                password=container_context.registry["password"],
             )
         return client
 
@@ -87,11 +91,10 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         return docker_image
 
     def _launch_container_with_command(self, run, docker_image, command):
-        docker_env = (
-            {env_name: os.getenv(env_name) for env_name in self.env_vars} if self.env_vars else {}
-        )
+        container_context = self.get_container_context(run)
+        docker_env = dict([parse_env_var(env_var) for env_var in container_context.env_vars])
 
-        client = self._get_client()
+        client = self._get_client(container_context)
 
         try:
             container = client.containers.create(
@@ -99,8 +102,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 command=command,
                 detach=True,
                 environment=docker_env,
-                network=self.networks[0] if len(self.networks) else None,
-                **self.container_kwargs,
+                network=container_context.networks[0] if len(container_context.networks) else None,
+                **container_context.container_kwargs,
             )
 
         except docker.errors.ImageNotFound:
@@ -110,12 +113,12 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 command=command,
                 detach=True,
                 environment=docker_env,
-                network=self.networks[0] if len(self.networks) else None,
-                **self.container_kwargs,
+                network=container_context.networks[0] if len(container_context.networks) else None,
+                **container_context.container_kwargs,
             )
 
-        if len(self.networks) > 1:
-            for network_name in self.networks[1:]:
+        if len(container_context.networks) > 1:
+            for network_name in container_context.networks[1:]:
                 network = client.networks.get(network_name)
                 network.connect(container)
 
@@ -174,8 +177,10 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         if not container_id:
             return None
 
+        container_context = self.get_container_context(run)
+
         try:
-            return self._get_client().containers.get(container_id)
+            return self._get_client(container_context).containers.get(container_id)
         except Exception:
             return None
 
