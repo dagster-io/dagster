@@ -20,7 +20,7 @@ import {usePermissions} from '../app/Permissions';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
-import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
+import {workspacePathFromRunDetails} from '../workspace/workspacePath';
 
 import {DeletionDialog} from './DeletionDialog';
 import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from './RunFragments';
@@ -73,22 +73,6 @@ export const RunActionsMenu: React.FC<{
   const isFinished = doneStatuses.has(run.status);
   const isJob = !!(repoMatch && isThisThingAJob(repoMatch?.match, run.pipelineName));
 
-  const launchpadPath = () => {
-    const path = `/playground/setup-from-run/${run.id}`;
-
-    if (repoMatch) {
-      return workspacePipelinePath({
-        repoName: repoMatch.match.repository.name,
-        repoLocation: repoMatch.match.repositoryLocation.name,
-        pipelineName: run.pipelineName,
-        isJob,
-        path,
-      });
-    }
-
-    return workspacePipelinePathGuessRepo(run.pipelineName, isJob, path);
-  };
-
   const infoReady = called ? !loading : false;
   return (
     <>
@@ -118,7 +102,13 @@ export const RunActionsMenu: React.FC<{
                   text="Open in Launchpad..."
                   disabled={!infoReady}
                   icon="edit"
-                  to={launchpadPath()}
+                  to={workspacePathFromRunDetails({
+                    id: run.id,
+                    pipelineName: run.pipelineName,
+                    repositoryName: repoMatch?.match.repository.name,
+                    repositoryLocationName: repoMatch?.match.repositoryLocation.name,
+                    isJob,
+                  })}
                 />
               </Tooltip>
               <Tooltip

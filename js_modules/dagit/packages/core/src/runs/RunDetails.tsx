@@ -8,7 +8,10 @@ import {
   Group,
   HighlightedCodeBlock,
   Icon,
+  MenuItem,
+  Menu,
   MetadataTable,
+  Popover,
   Tooltip,
   IconName,
 } from '@dagster-io/ui';
@@ -19,6 +22,8 @@ import {AppContext} from '../app/AppContext';
 import {useCopyToClipboard} from '../app/browser';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
+import {AnchorButton} from '../ui/AnchorButton';
+import {workspacePathFromRunDetails} from '../workspace/workspacePath';
 
 import {RunTags} from './RunTags';
 import {TimeElapsed} from './TimeElapsed';
@@ -130,17 +135,41 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
   return (
     <div>
       <Group direction="row" spacing={8}>
+        <AnchorButton
+          icon={<Icon name="edit" />}
+          to={workspacePathFromRunDetails({
+            id: run.id,
+            repositoryName: run.repositoryOrigin?.repositoryName,
+            repositoryLocationName: run.repositoryOrigin?.repositoryLocationName,
+            pipelineName: run.pipelineName,
+            isJob,
+          })}
+        >
+          Open in Launchpad
+        </AnchorButton>
         <Button icon={<Icon name="tag" />} onClick={() => setShowDialog(true)}>
           View tags and config
         </Button>
-        <Tooltip content="Loadable in dagit-debug" position="bottom-right">
-          <Button
-            icon={<Icon name="download_for_offline" />}
-            onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
-          >
-            Debug file
-          </Button>
-        </Tooltip>
+        <Popover
+          position="bottom-right"
+          content={
+            <Menu>
+              <Tooltip
+                content="Loadable in dagit-debug"
+                position="bottom-right"
+                targetTagName="div"
+              >
+                <MenuItem
+                  text="Download debug file"
+                  icon={<Icon name="download_for_offline" />}
+                  onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
+                />
+              </Tooltip>
+            </Menu>
+          }
+        >
+          <Button icon={<Icon name="expand_more" />} />
+        </Popover>
       </Group>
       <Dialog
         isOpen={showDialog}
