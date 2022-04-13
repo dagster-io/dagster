@@ -1,7 +1,7 @@
 import graphene
 from dagster_graphql.implementation.fetch_runs import (
-    get_latest_asset_run_by_step_key,
     get_in_progress_runs_by_step,
+    get_latest_asset_run_by_step_key,
 )
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
