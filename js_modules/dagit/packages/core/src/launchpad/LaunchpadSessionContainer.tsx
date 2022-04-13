@@ -170,11 +170,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     return {};
   }, [isJob, partitionSets.results, presets]);
 
-  const [data, onSave] = useExecutionSessionStorage(
-    repoAddress,
-    pipeline.name,
-    initialDataForMode,
-  );
+  const [data, onSave] = useExecutionSessionStorage(repoAddress, pipeline.name, initialDataForMode);
 
   const currentSession = data.sessions[data.current];
   const tagsFromSession = React.useMemo(() => currentSession.tags || [], [currentSession]);
