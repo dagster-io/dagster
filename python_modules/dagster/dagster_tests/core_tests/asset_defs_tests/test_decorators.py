@@ -310,7 +310,6 @@ def test_invoking_asset_with_deps():
 
     # check that the asset dependencies are in place
     job = build_assets_job("foo", [upstream, downstream])
-    print("JOB CREATED")
     assert job.execute_in_process().success
 
     out = downstream([3])

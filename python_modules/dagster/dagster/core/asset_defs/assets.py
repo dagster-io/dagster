@@ -35,9 +35,6 @@ class AssetsDefinition:
         self._asset_deps = asset_deps or {
             out_asset_key: self.input_asset_keys for out_asset_key in self.asset_keys
         }
-        print("AD")
-        print(asset_deps)
-        print(self._asset_deps)
 
         # ensure that the specified asset_deps make sense
         valid_asset_deps = self.asset_keys | self.input_asset_keys

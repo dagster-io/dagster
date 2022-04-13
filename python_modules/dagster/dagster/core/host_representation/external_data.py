@@ -794,7 +794,6 @@ def external_asset_graph_from_defs(
                 for id in node_def.input_defs
                 if id in job.asset_key_by_input_def
             }
-            print(input_name_by_asset_key)
 
             output_name_by_asset_key = {
                 job.asset_key_by_output_def[id]: id.name
@@ -808,8 +807,6 @@ def external_asset_graph_from_defs(
                 output_asset_key = job.asset_key_by_output_def.get(output_def)
                 if not output_asset_key:
                     continue
-                print(job.asset_deps)
-                print(job.asset_deps[output_asset_key])
                 node_defs_by_asset_key[output_asset_key].append((output_def, node_def, job))
                 for upstream_asset_key in job.asset_deps[output_asset_key]:
                     deps[output_asset_key][upstream_asset_key] = ExternalAssetDependency(
