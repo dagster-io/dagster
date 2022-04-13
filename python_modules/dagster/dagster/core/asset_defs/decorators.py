@@ -184,16 +184,18 @@ class _Asset:
                 return [context.partition_key]
 
         out_asset_key = AssetKey(list(filter(None, [*(self.namespace or []), asset_name])))
-        out = Out(
-            asset_key=out_asset_key,
-            metadata=self.metadata or {},
-            io_manager_key=self.io_manager_key,
-            dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
-            asset_partitions_def=self.partitions_def,
-            asset_partitions=partition_fn,
-        )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+            out = Out(
+                asset_key=out_asset_key,
+                metadata=self.metadata or {},
+                io_manager_key=self.io_manager_key,
+                dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
+                asset_partitions_def=self.partitions_def,
+                asset_partitions=partition_fn,
+            )
+
             op = _Op(
                 name="__".join(out_asset_key.path),
                 description=self.description,
