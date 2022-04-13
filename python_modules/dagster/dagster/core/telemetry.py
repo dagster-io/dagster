@@ -326,7 +326,7 @@ def _get_instance_telemetry_info(instance):
     dagster_telemetry_enabled = _get_instance_telemetry_enabled(instance)
     instance_id = None
     if dagster_telemetry_enabled:
-        instance_id = _get_or_set_instance_id()
+        instance_id = get_or_set_instance_id()
 
     run_storage_id = None
     if isinstance(instance.run_storage, SqlRunStorage):
@@ -338,7 +338,7 @@ def _get_instance_telemetry_enabled(instance):
     return instance.telemetry_enabled
 
 
-def _get_or_set_instance_id():
+def get_or_set_instance_id():
     instance_id = _get_telemetry_instance_id()
     if instance_id == None:
         instance_id = _set_telemetry_instance_id()
@@ -353,8 +353,10 @@ def _get_telemetry_instance_id():
 
     with open(telemetry_id_path, "r") as telemetry_id_file:
         telemetry_id_yaml = yaml.safe_load(telemetry_id_file)
-        if INSTANCE_ID_STR in telemetry_id_yaml and isinstance(
-            telemetry_id_yaml[INSTANCE_ID_STR], str
+        if (
+            telemetry_id_yaml
+            and INSTANCE_ID_STR in telemetry_id_yaml
+            and isinstance(telemetry_id_yaml[INSTANCE_ID_STR], str)
         ):
             return telemetry_id_yaml[INSTANCE_ID_STR]
     return None
@@ -389,7 +391,7 @@ def log_external_repo_stats(instance, source, external_repo, external_pipeline=N
     check.opt_inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
 
     if _get_instance_telemetry_enabled(instance):
-        instance_id = _get_or_set_instance_id()
+        instance_id = get_or_set_instance_id()
 
         pipeline_name_hash = hash_name(external_pipeline.name) if external_pipeline else ""
         repo_hash = hash_name(external_repo.name)
@@ -422,7 +424,7 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
     check.opt_inst_param(repo, "repo", ReconstructableRepository)
 
     if _get_instance_telemetry_enabled(instance):
-        instance_id = _get_or_set_instance_id()
+        instance_id = get_or_set_instance_id()
 
         if isinstance(pipeline, ReconstructablePipeline):
             pipeline_name_hash = hash_name(pipeline.get_definition().name)
