@@ -16,6 +16,7 @@ from dagster.core.test_utils import (
     in_process_test_workspace,
     instance_for_test,
 )
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.utils import merge_dicts
 from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipeline
@@ -92,8 +93,10 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     recon_pipeline = reconstructable(fake_pipeline)
     recon_repo = recon_pipeline.repository
     repo_def = recon_repo.get_definition()
+    loadable_target_origin = LoadableTargetOrigin(python_file=__file__)
+
     with instance_for_test() as instance:
-        with in_process_test_workspace(instance, recon_repo) as workspace:
+        with in_process_test_workspace(instance, loadable_target_origin) as workspace:
             location = workspace.get_repository_location(workspace.repository_location_names[0])
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
@@ -165,8 +168,10 @@ def test_raise_on_error(kubeconfig_file):
     recon_pipeline = reconstructable(fake_pipeline)
     recon_repo = recon_pipeline.repository
     repo_def = recon_repo.get_definition()
+    loadable_target_origin = LoadableTargetOrigin(python_file=__file__)
+
     with instance_for_test() as instance:
-        with in_process_test_workspace(instance, recon_repo) as workspace:
+        with in_process_test_workspace(instance, loadable_target_origin) as workspace:
             location = workspace.get_repository_location(workspace.repository_location_names[0])
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
@@ -224,9 +229,10 @@ def test_no_postgres(kubeconfig_file):
     recon_pipeline = reconstructable(fake_pipeline)
     recon_repo = recon_pipeline.repository
     repo_def = recon_repo.get_definition()
+    loadable_target_origin = LoadableTargetOrigin(python_file=__file__)
 
     with instance_for_test() as instance:
-        with in_process_test_workspace(instance, recon_repo) as workspace:
+        with in_process_test_workspace(instance, loadable_target_origin) as workspace:
             location = workspace.get_repository_location(workspace.repository_location_names[0])
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
@@ -294,8 +300,10 @@ def test_check_run_health(kubeconfig_file):
     recon_pipeline = reconstructable(fake_pipeline)
     recon_repo = recon_pipeline.repository
     repo_def = recon_repo.get_definition()
+    loadable_target_origin = LoadableTargetOrigin(python_file=__file__)
+
     with instance_for_test() as instance:
-        with in_process_test_workspace(instance, recon_repo) as workspace:
+        with in_process_test_workspace(instance, loadable_target_origin) as workspace:
             location = workspace.get_repository_location(workspace.repository_location_names[0])
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,

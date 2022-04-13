@@ -3,13 +3,18 @@ import {Box, Colors, Icon, Caption, Subheading, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {displayNameForAssetKey, tokenForAssetKey} from '../app/Util';
+import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../asset-graph/AssetNode';
+import {
+  displayNameForAssetKey,
+  isSourceAsset,
+  LiveData,
+  tokenForAssetKey,
+  __ASSET_GROUP,
+} from '../asset-graph/Utils';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
 import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
-import {isSourceAsset, LiveData, __ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 

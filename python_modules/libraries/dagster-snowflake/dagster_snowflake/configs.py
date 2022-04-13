@@ -133,6 +133,12 @@ def define_snowflake_config():
         is_required=False,
     )
 
+    authenticator = Field(
+        StringSource,
+        description="Optional parameter to specify the authentication mechanism to use.",
+        is_required=False,
+    )
+
     return {
         "account": account,
         "user": user,
@@ -153,4 +159,5 @@ def define_snowflake_config():
         "connector": connector,
         "cache_column_metadata": cache_column_metadata,
         "numpy": numpy,
+        "authenticator": authenticator,
     }

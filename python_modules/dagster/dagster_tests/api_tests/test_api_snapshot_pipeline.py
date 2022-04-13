@@ -18,8 +18,8 @@ def _test_pipeline_subset_grpc(pipeline_handle, api_client, solid_selection=None
     )
 
 
-def test_pipeline_snapshot_api_grpc():
-    with get_bar_repo_repository_location() as repository_location:
+def test_pipeline_snapshot_api_grpc(instance):
+    with get_bar_repo_repository_location(instance) as repository_location:
         pipeline_handle = PipelineHandle(
             "foo", repository_location.get_repository("bar_repo").handle
         )
@@ -31,8 +31,8 @@ def test_pipeline_snapshot_api_grpc():
         assert external_pipeline_subset_result.external_pipeline_data.name == "foo"
 
 
-def test_pipeline_with_valid_subset_snapshot_api_grpc():
-    with get_bar_repo_repository_location() as repository_location:
+def test_pipeline_with_valid_subset_snapshot_api_grpc(instance):
+    with get_bar_repo_repository_location(instance) as repository_location:
         pipeline_handle = PipelineHandle(
             "foo", repository_location.get_repository("bar_repo").handle
         )
@@ -46,8 +46,8 @@ def test_pipeline_with_valid_subset_snapshot_api_grpc():
         assert external_pipeline_subset_result.external_pipeline_data.name == "foo"
 
 
-def test_pipeline_with_invalid_subset_snapshot_api_grpc():
-    with get_bar_repo_repository_location() as repository_location:
+def test_pipeline_with_invalid_subset_snapshot_api_grpc(instance):
+    with get_bar_repo_repository_location(instance) as repository_location:
         pipeline_handle = PipelineHandle(
             "foo", repository_location.get_repository("bar_repo").handle
         )
@@ -60,8 +60,8 @@ def test_pipeline_with_invalid_subset_snapshot_api_grpc():
             _test_pipeline_subset_grpc(pipeline_handle, api_client, ["invalid_solid"])
 
 
-def test_pipeline_with_invalid_definition_snapshot_api_grpc():
-    with get_bar_repo_repository_location() as repository_location:
+def test_pipeline_with_invalid_definition_snapshot_api_grpc(instance):
+    with get_bar_repo_repository_location(instance) as repository_location:
         pipeline_handle = PipelineHandle(
             "bar", repository_location.get_repository("bar_repo").handle
         )

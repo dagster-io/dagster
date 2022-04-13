@@ -1,6 +1,8 @@
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 
+import {useFeatureFlags} from './Flags';
+
 function useMatchMedia(query: string) {
   const match = React.useRef(matchMedia(query));
   const [result, setResult] = React.useState(match.current.matches);
@@ -37,9 +39,11 @@ export const LayoutContext = React.createContext<LayoutContextValue>({
 
 export const LayoutProvider: React.FC = (props) => {
   const [navOpen, setNavOpen] = React.useState(false);
+  const flags = useFeatureFlags();
   const location = useLocation();
   const isSmallScreen = useMatchMedia('(max-width: 1440px)');
   const isInstancePage = location.pathname.startsWith('/instance');
+  const isCollapsible = flags.flagAlwaysCollapseNavigation || isInstancePage || isSmallScreen;
 
   React.useEffect(() => {
     setNavOpen(false);
@@ -49,12 +53,12 @@ export const LayoutProvider: React.FC = (props) => {
     () => ({
       nav: {
         isOpen: navOpen,
-        isCollapsible: isInstancePage || isSmallScreen,
+        isCollapsible: isCollapsible,
         open: () => setNavOpen(true),
         close: () => setNavOpen(false),
       },
     }),
-    [navOpen, isInstancePage, isSmallScreen],
+    [navOpen, isCollapsible],
   );
 
   return <LayoutContext.Provider value={value}>{props.children}</LayoutContext.Provider>;

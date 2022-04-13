@@ -13,11 +13,13 @@ import {
   MetadataTable,
   Popover,
   Tooltip,
+  IconName,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import * as yaml from 'yaml';
 
 import {AppContext} from '../app/AppContext';
+import {useCopyToClipboard} from '../app/browser';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -119,8 +121,16 @@ export const RunDetails: React.FC<{
 
 export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({run, isJob}) => {
   const [showDialog, setShowDialog] = React.useState(false);
+  const [copyIcon, setCopyIcon] = React.useState<IconName>('copy_to_clipboard');
   const {rootServerURI} = React.useContext(AppContext);
   const runConfigYaml = yaml.stringify(run.runConfig) || '';
+  const copy = useCopyToClipboard();
+
+  const copyConfig = () => {
+    copy(runConfigYaml);
+    setCopyIcon('copy_to_clipboard_done');
+    setTimeout(() => setCopyIcon('copy_to_clipboard'), 2000);
+  };
 
   return (
     <div>
@@ -182,6 +192,9 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
           </Group>
         </DialogBody>
         <DialogFooter>
+          <Button icon={<Icon name={copyIcon} />} onClick={() => copyConfig()} intent="none">
+            Copy config
+          </Button>
           <Button onClick={() => setShowDialog(false)} intent="primary">
             OK
           </Button>

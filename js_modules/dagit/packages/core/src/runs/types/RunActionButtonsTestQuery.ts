@@ -91,6 +91,7 @@ export interface RunActionButtonsTestQuery_pipelineRunOrError_Run {
   repositoryOrigin: RunActionButtonsTestQuery_pipelineRunOrError_Run_repositoryOrigin | null;
   startTime: number | null;
   endTime: number | null;
+  updateTime: number | null;
   stepStats: RunActionButtonsTestQuery_pipelineRunOrError_Run_stepStats[];
 }
 

@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import {Text} from '@blueprintjs/core';
 import {Colors, Group, Icon, IconWrapper, Code, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
@@ -42,7 +43,7 @@ const OpLink = (props: OpLinkInfo) => (
   </Link>
 );
 
-export const OpLinks = (props: {title: string; items: OpLinkInfo[]}) =>
+export const OpEdges = (props: {title: string; items: OpLinkInfo[]}) =>
   props.items && props.items.length ? (
     <Text>
       {props.title}

@@ -31,7 +31,8 @@ query JobQuery($instigationSelector: InstigationSelector!) {
 
 def _create_sensor_tick(graphql_context):
     with create_test_daemon_workspace(
-        graphql_context.process_context.workspace_load_target
+        graphql_context.process_context.workspace_load_target,
+        graphql_context.instance,
     ) as workspace:
         list(
             execute_sensor_iteration(

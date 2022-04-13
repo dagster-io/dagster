@@ -6,9 +6,11 @@ from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
-from dagster.core.definitions.resource_definition import ResourceDefinition
+from dagster.core.definitions.resource_definition import ResourceDefinition, is_context_provided
 from dagster.core.storage.input_manager import InputManager
 from dagster.utils.backcompat import experimental
+
+from ..decorator_utils import get_function_params
 
 
 class IInputManagerDefinition:
@@ -159,7 +161,11 @@ class RootInputManagerWrapper(RootInputManager):
         self._load_fn = load_fn
 
     def load_input(self, context):
-        return self._load_fn(context)
+        return (
+            self._load_fn(context)
+            if is_context_provided(get_function_params(self._load_fn))
+            else self._load_fn()
+        )
 
 
 class _InputManagerDecoratorCallable:

@@ -12,6 +12,8 @@ from dagster import (
 from dagster.core.asset_defs import AssetGroup
 from dagster.core.code_pointer import load_python_file, load_python_module
 
+LOAD_ALL_ASSETS = "<<LOAD_ALL_ASSETS>>"
+
 
 class LoadableTarget(NamedTuple):
     attribute: str
@@ -83,10 +85,10 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
     elif len(loadable_graphs) > 1:
         raise DagsterInvariantViolationError(
             (
-                'No repository, job, or pipeline, and more than one graph found in "{module_name}". '
-                "If you load a file or module directly it must either have one repository, one "
-                "job, one pipeline, or one graph in scope. Found graphs defined in variables or "
-                "decorated functions: {graph_symbols}."
+                'More than one graph found in "{module_name}". '
+                "If you load a file or module directly and it has no repositories, jobs, or "
+                "pipelines in scope, it must have no more than one graph in scope. "
+                "Found graphs defined in variables or decorated functions: {graph_symbols}."
             ).format(
                 module_name=module.__name__,
                 graph_symbols=repr([g.attribute for g in loadable_graphs]),
@@ -101,17 +103,23 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
         var_names = repr([a.attribute for a in loadable_asset_groups])
         raise DagsterInvariantViolationError(
             (
-                f'More than one asset collection found in "{module.__name__}". '
-                "If you load a file or module directly it must either have one repository, one "
-                "job, one pipeline, one graph, or one asset collection scope. Found asset "
-                f"collections defined in variables: {var_names}."
+                f'More than one asset group found in "{module.__name__}". '
+                "If you load a file or module directly and it has no repositories, jobs, "
+                "pipeline, or graphs in scope, it must have no more than one asset group in scope. "
+                f"Found asset groups defined in variables: {var_names}."
             )
         )
 
+    asset_group_from_module_assets = AssetGroup.from_modules([module])
+    if (
+        len(asset_group_from_module_assets.assets) > 0
+        or len(asset_group_from_module_assets.source_assets) > 0
+    ):
+        return [LoadableTarget(LOAD_ALL_ASSETS, asset_group_from_module_assets)]
+
     raise DagsterInvariantViolationError(
-        'No jobs, pipelines, graphs, asset collections, or repositories found in "{}".'.format(
-            module.__name__
-        )
+        "No repositories, jobs, pipelines, graphs, asset groups, or asset definitions found in "
+        f'"{module.__name__}".'
     )
 
 

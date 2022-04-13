@@ -531,6 +531,10 @@ class DagsterEvent(
         return self.event_type == DagsterEventType.ASSET_OBSERVATION
 
     @property
+    def is_asset_materialization_planned(self) -> bool:
+        return self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+
+    @property
     def asset_key(self) -> Optional[AssetKey]:
         if self.event_type == DagsterEventType.ASSET_MATERIALIZATION:
             return self.step_materialization_data.materialization.asset_key

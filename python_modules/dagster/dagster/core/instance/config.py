@@ -97,6 +97,9 @@ def python_logs_config_schema():
     )
 
 
+DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT = 60
+
+
 def dagster_instance_config_schema():
     return {
         "local_artifact_storage": config_field_for_configurable_class(),
@@ -126,5 +129,9 @@ def dagster_instance_config_schema():
                 "poll_interval_seconds": Field(int, is_required=False),
                 "cancellation_thread_poll_interval_seconds": Field(int, is_required=False),
             },
+        ),
+        "code_servers": Field(
+            {"local_startup_timeout": Field(int, is_required=False)},
+            is_required=False,
         ),
     }

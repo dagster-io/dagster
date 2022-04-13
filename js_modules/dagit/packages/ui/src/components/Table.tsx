@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import {HTMLTable, IHTMLTableProps} from '@blueprintjs/core';
 import styled from 'styled-components/macro';
 

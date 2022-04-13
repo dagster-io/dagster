@@ -4,9 +4,9 @@ from dagster.utils import file_relative_path
 from .utils import get_bar_repo_repository_location
 
 
-def test_external_notebook_grpc():
+def test_external_notebook_grpc(instance):
     notebook_path = file_relative_path(__file__, "foo.ipynb")
-    with get_bar_repo_repository_location() as repository_location:
+    with get_bar_repo_repository_location(instance) as repository_location:
         api_client = repository_location.client
 
         content = sync_get_streaming_external_notebook_data_grpc(

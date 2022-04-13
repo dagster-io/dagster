@@ -1,11 +1,13 @@
+// eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
 import {Box, Colors, Tag} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
-import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
+import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
 import {
   LogRowStructuredContentTable,

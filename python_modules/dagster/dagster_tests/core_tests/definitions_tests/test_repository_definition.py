@@ -25,6 +25,7 @@ from dagster import (
     sensor,
     solid,
 )
+from dagster.check import CheckError
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 
 
@@ -463,6 +464,51 @@ def test_dict_jobs():
     assert jobs.has_job("my_graph")
     assert jobs.get_job("my_graph")
     assert jobs.get_job("other_graph")
+
+
+def test_lazy_jobs():
+    @graph
+    def my_graph():
+        pass
+
+    @repository
+    def jobs():
+        return {
+            "jobs": {
+                "my_graph": my_graph,
+                "my_job": lambda: my_graph.to_job(name="my_job"),
+                "other_job": lambda: my_graph.to_job(name="other_job"),
+            }
+        }
+
+    assert jobs.get_pipeline("my_graph")
+    assert jobs.get_pipeline("my_job")
+    assert jobs.get_pipeline("other_job")
+
+    assert jobs.has_job("my_graph")
+    assert jobs.get_job("my_job")
+    assert jobs.get_job("other_job")
+
+
+def test_lazy_graph():
+    @graph
+    def my_graph():
+        pass
+
+    @repository
+    def jobs():
+        return {
+            "jobs": {
+                "my_graph": lambda: my_graph,
+            }
+        }
+
+    # Repository with a lazy graph can be constructed, but fails when you try to fetch it
+    with pytest.raises(
+        CheckError,
+        match="Invariant failed. Description: Bad constructor for job my_graph: must return JobDefinition",
+    ):
+        assert jobs.get_pipeline("my_graph")
 
 
 def test_list_dupe_graph():
