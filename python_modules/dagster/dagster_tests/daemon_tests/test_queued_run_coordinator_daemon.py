@@ -142,6 +142,33 @@ def test_get_queued_runs_max_runs(num_in_progress_runs, workspace, daemon):
         assert len(instance.run_launcher.queue()) == max(0, max_runs - num_in_progress_runs)
 
 
+def test_disable_max_concurrent_runs_limit(workspace, daemon):
+    with instance_for_queued_run_coordinator(max_concurrent_runs=-1) as instance:
+        # create ongoing runs
+        in_progress_run_ids = ["in_progress-run-{}".format(i) for i in range(5)]
+        for i, run_id in enumerate(in_progress_run_ids):
+            # get a selection of all in progress statuses
+            status = IN_PROGRESS_RUN_STATUSES[i % len(IN_PROGRESS_RUN_STATUSES)]
+            create_run(
+                instance,
+                run_id=run_id,
+                status=status,
+            )
+
+        # add more queued runs
+        queued_run_ids = ["queued-run-{}".format(i) for i in range(6)]
+        for run_id in queued_run_ids:
+            create_run(
+                instance,
+                run_id=run_id,
+                status=PipelineRunStatus.QUEUED,
+            )
+
+        list(daemon.run_iteration(instance, workspace))
+
+        assert len(instance.run_launcher.queue()) == 6
+
+
 def test_priority(instance, workspace, daemon):
     create_run(instance, run_id="default-pri-run", status=PipelineRunStatus.QUEUED)
     create_run(
