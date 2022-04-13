@@ -2,6 +2,7 @@ import graphene
 import yaml
 
 from dagster import check
+from dagster.core.events import DagsterEventType
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunRecord, RunsFilter

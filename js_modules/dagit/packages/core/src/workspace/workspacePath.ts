@@ -58,7 +58,7 @@ export const workspacePathFromRunDetails = ({
     return workspacePipelinePath({
       repoName: repositoryName,
       repoLocation: repositoryLocationName,
-      pipelineName: pipelineName,
+      pipelineName,
       isJob,
       path,
     });
