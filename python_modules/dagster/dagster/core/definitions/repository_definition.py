@@ -1,4 +1,3 @@
-import warnings
 from abc import ABC, abstractmethod
 from inspect import isfunction
 from types import FunctionType
@@ -21,7 +20,6 @@ from dagster import check
 from dagster.core.asset_defs.source_asset import SourceAsset
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import ExperimentalWarning
 
 from .events import AssetKey
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
@@ -623,13 +621,14 @@ class CachingRepositoryData(RepositoryData):
                 Use this constructor when you have no need to lazy load pipelines/jobs or other
                 definitions.
         """
-        from dagster.core.asset_defs import AssetGroup, build_assets_job
+        from dagster.core.asset_defs import AssetGroup
 
         pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
         partition_sets: Dict[str, PartitionSetDefinition] = {}
         schedules: Dict[str, ScheduleDefinition] = {}
         sensors: Dict[str, SensorDefinition] = {}
         source_assets: Dict[AssetKey, SourceAsset] = {}
+        encountered_asset_group = False
         for definition in repository_definitions:
             if isinstance(definition, PipelineDefinition):
                 if (
@@ -641,9 +640,10 @@ class CachingRepositoryData(RepositoryData):
                             target_type=definition.target_type, target=definition.describe_target()
                         )
                     )
-                if definition.name == AssetGroup.all_assets_job_name():
+                if AssetGroup.is_base_job_name(definition.name):
                     raise DagsterInvalidDefinitionError(
-                        f"Attempted to provide job called {AssetGroup.all_assets_job_name()} to repository, which is a reserved name. Please rename the job."
+                        f"Attempted to provide job called {definition.name} to repository, which "
+                        "is a reserved name. Please rename the job."
                     )
                 pipelines_or_jobs[definition.name] = definition
             elif isinstance(definition, PartitionSetDefinition):
@@ -694,21 +694,18 @@ class CachingRepositoryData(RepositoryData):
                 pipelines_or_jobs[coerced.name] = coerced
 
             elif isinstance(definition, AssetGroup):
+                if encountered_asset_group:
+                    raise DagsterInvalidDefinitionError(
+                        "When constructing repository, attempted to pass multiple AssetGroups. "
+                        "There can only be one AssetGroup per repository."
+                    )
+
+                encountered_asset_group = True
                 asset_group = definition
 
-                if asset_group.all_assets_job_name() in pipelines_or_jobs:
-                    raise DagsterInvalidDefinitionError(
-                        "When constructing repository, attempted to pass multiple AssetGroups. There can only be one AssetGroup per repository."
-                    )
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=ExperimentalWarning)
-                    pipelines_or_jobs[asset_group.all_assets_job_name()] = build_assets_job(
-                        asset_group.all_assets_job_name(),
-                        assets=asset_group.assets,
-                        source_assets=asset_group.source_assets,
-                        resource_defs=asset_group.resource_defs,
-                        executor_def=asset_group.executor_def,
-                    )
+                for job_def in asset_group.get_base_jobs():
+                    pipelines_or_jobs[job_def.name] = job_def
+
                 source_assets = {
                     source_asset.key: source_asset for source_asset in asset_group.source_assets
                 }

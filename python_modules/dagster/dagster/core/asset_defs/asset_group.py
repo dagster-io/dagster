@@ -3,6 +3,7 @@ import os
 import pkgutil
 import re
 import warnings
+from collections import defaultdict
 from importlib import import_module
 from types import ModuleType
 from typing import (
@@ -22,6 +23,8 @@ from typing import (
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.executor_definition import in_process_executor
+from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.utils import merge_dicts
@@ -30,11 +33,14 @@ from dagster.utils.backcompat import ExperimentalWarning
 from ..definitions.executor_definition import ExecutorDefinition
 from ..definitions.job_definition import JobDefinition
 from ..definitions.op_definition import OpDefinition
+from ..definitions.partition import PartitionsDefinition
 from ..definitions.resource_definition import ResourceDefinition
 from ..errors import DagsterInvalidDefinitionError
 from .assets import AssetsDefinition
 from .assets_job import build_assets_job, build_root_manager, build_source_assets_by_key
 from .source_asset import SourceAsset
+
+ASSET_GROUP_BASE_JOB_PREFIX = "__ASSET_GROUP"
 
 
 class AssetGroup(
@@ -149,9 +155,8 @@ class AssetGroup(
         )
 
     @staticmethod
-    def all_assets_job_name() -> str:
-        """The name of the mega-job that the provided list of assets is coerced into."""
-        return "__ASSET_GROUP"
+    def is_base_job_name(name) -> bool:
+        return name.startswith(ASSET_GROUP_BASE_JOB_PREFIX)
 
     def build_job(
         self,
@@ -508,9 +513,49 @@ class AssetGroup(
             name="in_process_materialization_job", selection=selection
         ).execute_in_process()
 
+    def get_base_jobs(self) -> Sequence[JobDefinition]:
+        """For internal use only."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-from dagster.core.definitions.executor_definition import in_process_executor
-from dagster.core.errors import DagsterUnmetExecutorRequirementsError
+            assets_by_partitions_def: Dict[
+                Optional[PartitionsDefinition], List[AssetsDefinition]
+            ] = defaultdict(list)
+            for assets_def in self.assets:
+                assets_by_partitions_def[assets_def.partitions_def].append(assets_def)
+
+            if len(assets_by_partitions_def.keys()) == 0 or assets_by_partitions_def.keys() == {
+                None
+            }:
+                return [
+                    build_assets_job(
+                        ASSET_GROUP_BASE_JOB_PREFIX,
+                        assets=self.assets,
+                        source_assets=self.source_assets,
+                        resource_defs=self.resource_defs,
+                        executor_def=self.executor_def,
+                    )
+                ]
+            else:
+                unpartitioned_assets = assets_by_partitions_def.get(None, [])
+                jobs = []
+
+                # sort to ensure some stability in the ordering
+                for i, (partitions_def, assets_with_partitions) in enumerate(
+                    sorted(assets_by_partitions_def.items(), key=lambda item: repr(item[0]))
+                ):
+                    if partitions_def is not None:
+                        jobs.append(
+                            build_assets_job(
+                                f"{ASSET_GROUP_BASE_JOB_PREFIX}_{i}",
+                                assets=assets_with_partitions + unpartitioned_assets,
+                                source_assets=[*self.source_assets, *self.assets],
+                                resource_defs=self.resource_defs,
+                                executor_def=self.executor_def,
+                            )
+                        )
+
+                return jobs
 
 
 def _find_assets_in_module(
