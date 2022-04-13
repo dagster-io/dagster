@@ -1,3 +1,10 @@
+import warnings
+
+from dagster import ExperimentalWarning
+
+# squelch experimental warnings since we often include experimental things in toys for development
+warnings.filterwarnings("ignore", category=ExperimentalWarning)
+
 import pendulum
 from dagster_test.graph_job_op_toys.asset_lineage import (
     asset_lineage_job,
