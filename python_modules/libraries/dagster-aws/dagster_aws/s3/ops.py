@@ -3,7 +3,6 @@ from dagster import (
     Field,
     FileHandle,
     In,
-    MetadataEntry,
     MetadataValue,
     Out,
     Output,
@@ -75,9 +74,7 @@ def file_handle_to_s3(context, file_handle):
 
         yield AssetMaterialization(
             asset_key=s3_file_handle.s3_path,
-            metadata_entries=[
-                MetadataEntry(last_key(key), value=MetadataValue.path(s3_file_handle.s3_path))
-            ],
+            metadata={last_key(key): MetadataValue.path(s3_file_handle.s3_path)},
         )
 
         yield Output(value=s3_file_handle, output_name="s3_file_handle")
