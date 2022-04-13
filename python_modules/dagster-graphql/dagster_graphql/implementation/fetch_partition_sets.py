@@ -1,5 +1,5 @@
 import yaml
-from graphql.execution.base import ResolveInfo
+
 
 from dagster import check
 from dagster.core.host_representation import (
@@ -17,7 +17,7 @@ from .utils import capture_error
 def get_partition_sets_or_error(graphene_info, repository_selector, pipeline_name):
     from ..schema.partition_sets import GraphenePartitionSet, GraphenePartitionSets
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
     check.str_param(pipeline_name, "pipeline_name")
     location = graphene_info.context.get_repository_location(repository_selector.location_name)
@@ -50,7 +50,7 @@ def get_partition_sets_or_error(graphene_info, repository_selector, pipeline_nam
 def get_partition_set(graphene_info, repository_selector, partition_set_name):
     from ..schema.partition_sets import GraphenePartitionSet, GraphenePartitionSetNotFoundError
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
     check.str_param(partition_set_name, "partition_set_name")
     location = graphene_info.context.get_repository_location(repository_selector.location_name)
@@ -70,7 +70,7 @@ def get_partition_set(graphene_info, repository_selector, partition_set_name):
 def get_partition_by_name(graphene_info, repository_handle, partition_set, partition_name):
     from ..schema.partition_sets import GraphenePartition
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.inst_param(partition_set, "partition_set", ExternalPartitionSet)
     check.str_param(partition_name, "partition_name")

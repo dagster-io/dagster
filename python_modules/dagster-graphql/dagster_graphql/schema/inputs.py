@@ -46,7 +46,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
 
         if self.statuses:
             statuses = [
-                PipelineRunStatus[status]
+                PipelineRunStatus[status.value]
                 for status in self.statuses  # pylint: disable=not-an-iterable
             ]
         else:

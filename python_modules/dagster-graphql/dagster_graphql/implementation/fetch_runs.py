@@ -1,8 +1,6 @@
 from collections import defaultdict
 from typing import Dict
 
-from graphql.execution.base import ResolveInfo
-
 from dagster import AssetKey, PipelineDefinition, PipelineRunStatus, check
 from dagster.config.validate import validate_config
 from dagster.core.definitions import create_run_config_schema
@@ -238,7 +236,6 @@ def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
 def validate_pipeline_config(graphene_info, selector, run_config, mode):
     from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
     check.opt_str_param(mode, "mode")
 
@@ -251,7 +248,6 @@ def validate_pipeline_config(graphene_info, selector, run_config, mode):
 def get_execution_plan(graphene_info, selector, run_config, mode):
     from ..schema.execution import GrapheneExecutionPlan
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
     check.opt_str_param(mode, "mode")
 

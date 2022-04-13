@@ -1,5 +1,3 @@
-from graphql.execution.base import ResolveInfo
-
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.host_representation import RepresentedPipeline
@@ -7,6 +5,7 @@ from dagster.core.host_representation import RepresentedPipeline
 from .external import get_external_pipeline_or_raise
 from .utils import PipelineSelector, UserFacingGraphQLError, capture_error
 
+from graphene import ResolveInfo
 
 @capture_error
 def resolve_run_config_schema_or_error(graphene_info, selector, mode):

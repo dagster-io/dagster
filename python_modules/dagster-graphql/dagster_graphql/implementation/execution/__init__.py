@@ -1,7 +1,8 @@
+import asyncio
+import os
 import sys
 
-from graphql.execution.base import ResolveInfo
-from rx import Observable
+from graphene import ResolveInfo
 
 from dagster import check
 from dagster.core.events import DagsterEventType, EngineEventData
@@ -13,7 +14,6 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 
 from ..external import ExternalPipeline, ensure_valid_config, get_external_pipeline_or_raise
 from ..fetch_runs import is_config_valid
-from ..pipeline_run_storage import PipelineRunObservableSubscribe
 from ..utils import ExecutionParams, UserFacingGraphQLError, capture_error
 from .backfill import (
     cancel_partition_backfill,
@@ -125,7 +125,11 @@ def delete_pipeline_run(graphene_info, run_id):
     return GrapheneDeletePipelineRunSuccess(run_id)
 
 
-def get_pipeline_run_observable(graphene_info, run_id, after=None):
+def get_chunk_size() -> int:
+    return int(os.getenv("DAGIT_EVENT_LOAD_CHUNK_SIZE", "10000"))
+
+
+async def gen_events_for_run(graphene_info, run_id, after=None):
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.pipelines.subscription import (
         GraphenePipelineRunLogsSubscriptionFailure,
@@ -135,51 +139,74 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(run_id, "run_id")
-    check.opt_int_param(after, "after")
+    after = check.opt_int_param(after, "after", -1)
     instance = graphene_info.context.instance
     records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
 
     if not records:
-
-        def _get_error_observable(observer):
-            observer.on_next(
-                GraphenePipelineRunLogsSubscriptionFailure(
-                    missingRunId=run_id, message="Could not load run with id {}".format(run_id)
-                )
-            )
-
-        return Observable.create(_get_error_observable)  # pylint: disable=E1101
+        yield GraphenePipelineRunLogsSubscriptionFailure(
+            missingRunId=run_id, message="Could not load run with id {}".format(run_id)
+        )
 
     record = records[0]
     run = record.pipeline_run
 
-    def _handle_events(payload):
-        events, loading_past = payload
+    def _handle_events(events, loading_past):
         return GraphenePipelineRunLogsSubscriptionSuccess(
             run=GrapheneRun(record),
             messages=[from_event_record(event, run.pipeline_name) for event in events],
             hasMorePastEvents=loading_past,
         )
 
-    # pylint: disable=E1101
-    return Observable.create(
-        PipelineRunObservableSubscribe(instance, run_id, after_cursor=after)
-    ).map(_handle_events)
+    after_cursor = after
+    chunk_size = get_chunk_size()
+    done_loading = False
+
+    while not done_loading:
+        events = instance.logs_after(run_id, after, limit=chunk_size)
+        done_loading = len(events) < chunk_size
+        after_cursor = len(events) + int(after_cursor)
+        yield _handle_events(events, not done_loading)
+
+    loop = asyncio.get_event_loop()
+    queue = asyncio.Queue()
+
+    def _enqueue(new_event):
+        loop.call_soon_threadsafe(queue.put_nowait, new_event)
+
+    instance.watch_event_logs(run_id, after_cursor, _enqueue)
+    try:
+        while True:
+            event = await queue.get()
+            yield _handle_events([event], False)
+    finally:
+        instance.end_watch_event_logs(run_id, _enqueue)
 
 
-def get_compute_log_observable(graphene_info, run_id, step_key, io_type, cursor=None):
+async def gen_compute_logs(graphene_info, run_id, step_key, io_type, cursor=None):
     from ...schema.logs.compute_logs import from_compute_log_file
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(run_id, "run_id")
     check.str_param(step_key, "step_key")
     check.inst_param(io_type, "io_type", ComputeIOType)
     check.opt_str_param(cursor, "cursor")
 
-    return graphene_info.context.instance.compute_log_manager.observable(
+    obs = graphene_info.context.instance.compute_log_manager.observable(
         run_id, step_key, io_type, cursor
-    ).map(lambda update: from_compute_log_file(graphene_info, update))
+    )
 
+    loop = asyncio.get_event_loop()
+    queue = asyncio.Queue()
+    def _enqueue(new_event):
+        loop.call_soon_threadsafe(queue.put_nowait, new_event)
+
+    obs(_enqueue)
+    try:
+        while not obs.is_complete:
+            update = await queue.get()
+            yield from_compute_log_file(graphene_info, update)
+    finally:
+        obs.dispose()
 
 @capture_error
 def wipe_assets(graphene_info, asset_keys):

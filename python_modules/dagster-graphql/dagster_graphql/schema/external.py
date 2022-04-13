@@ -1,3 +1,5 @@
+import asyncio
+
 import graphene
 from dagster_graphql.implementation.fetch_runs import (
     get_in_progress_runs_by_step,
@@ -313,22 +315,23 @@ class GrapheneLocationStateChangeSubscription(graphene.ObjectType):
         name = "LocationStateChangeSubscription"
 
 
-def get_location_state_change_observable(graphene_info):
-
-    # This observerable lives on the process context and is never modified/destroyed, so we can
-    # access it directly
+async def gen_location_state_changes(graphene_info):
     context = graphene_info.context.process_context
-
-    return context.location_state_events.map(
-        lambda event: GrapheneLocationStateChangeSubscription(
-            event=GrapheneLocationStateChangeEvent(
-                event_type=event.event_type,
-                location_name=event.location_name,
-                message=event.message,
-                server_id=event.server_id,
-            ),
-        )
-    )
+    queue = asyncio.Queue()
+    token = context.add_state_subscriber(queue.put_nowait)
+    try:
+        while True:
+            event = await queue.get()
+            yield GrapheneLocationStateChangeSubscription(
+                event=GrapheneLocationStateChangeEvent(
+                    event_type=event.event_type,
+                    location_name=event.location_name,
+                    message=event.message,
+                    server_id=event.server_id,
+                ),
+            )
+    finally:
+        context.rm_state_subscriber(token)
 
 
 class GrapheneRepositoriesOrError(graphene.Union):

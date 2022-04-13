@@ -3,8 +3,6 @@ from contextlib import contextmanager
 from enum import Enum
 from typing import NamedTuple, Optional
 
-from rx import Observable
-
 from dagster import check
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -179,7 +177,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
         pass
 
     def observable(self, run_id, key, io_type, cursor=None):
-        """Return an Observable which streams back log data from the execution logs for a given
+        """Return an ComputeLogSubscription which streams back log data from the execution logs for a given
         compute step.
 
         Args:
@@ -188,8 +186,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
             io_type (ComputeIOType): Flag indicating the I/O type, either stdout or stderr
             cursor (Optional[Int]): Starting cursor (byte) of log file
 
-        Returns:
-            Observable
+        Returns: ComputeLogSubscription
         """
         check.str_param(run_id, "run_id")
         check.str_param(key, "key")
@@ -203,7 +200,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
 
         subscription = ComputeLogSubscription(self, run_id, key, io_type, cursor)
         self.on_subscribe(subscription)
-        return Observable.create(subscription)  # pylint: disable=E1101
+        return subscription
 
     def dispose(self):
         pass
@@ -221,6 +218,7 @@ class ComputeLogSubscription:
         self.io_type = io_type
         self.cursor = cursor
         self.observer = None
+        self.is_complete = False
 
     def __call__(self, observer):
         self.observer = observer
@@ -231,8 +229,6 @@ class ComputeLogSubscription:
 
     def dispose(self):
         # called when the connection gets closed, allowing the observer to get GC'ed
-        if self.observer and callable(getattr(self.observer, "dispose", None)):
-            self.observer.dispose()
         self.observer = None
         self.manager.on_unsubscribe(self)
 
@@ -250,11 +246,11 @@ class ComputeLogSubscription:
                 max_bytes=MAX_BYTES_CHUNK_READ,
             )
             if not self.cursor or update.cursor != self.cursor:
-                self.observer.on_next(update)
+                self.observer(update)
                 self.cursor = update.cursor
             should_fetch = update.data and len(update.data.encode("utf-8")) >= MAX_BYTES_CHUNK_READ
 
     def complete(self):
         if not self.observer:
             return
-        self.observer.on_completed()
+        self.is_complete = True

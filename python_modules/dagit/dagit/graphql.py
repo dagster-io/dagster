@@ -8,8 +8,9 @@ from graphene import Schema
 from graphql.error import GraphQLError
 from graphql.error import format_error as format_graphql_error
 from graphql.execution import ExecutionResult
-from rx import Observable
-from rx.concurrency import thread_pool_scheduler
+
+# from rx import Observable
+# from rx.concurrency import thread_pool_scheduler
 from starlette import status
 from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
@@ -157,7 +158,7 @@ class GraphQLServer(ABC):
                 elif message_type == GraphQLWS.START:
                     data = message["payload"]
 
-                    task, error_payload = self.execute_graphql_subscription(
+                    task, error_payload = await self.execute_graphql_subscription(
                         websocket=websocket,
                         operation_id=operation_id,
                         query=data["query"],
@@ -202,7 +203,7 @@ class GraphQLServer(ABC):
             middleware=self._graphql_middleware,
         )
 
-    def execute_graphql_subscription(
+    async def execute_graphql_subscription(
         self,
         websocket: WebSocket,
         operation_id: str,
@@ -212,12 +213,11 @@ class GraphQLServer(ABC):
     ) -> Tuple[Optional[Task], Optional[Dict[str, Any]]]:
         request_context = self.make_request_context(websocket)
         try:
-            async_result = self._graphql_schema.execute(
+            async_result = await self._graphql_schema.subscribe(
                 query,
                 variables=variables,
                 operation_name=operation_name,
                 context=request_context,
-                allow_subscriptions=True,
             )
         except GraphQLError as error:
             error_payload = format_graphql_error(error)
@@ -231,11 +231,12 @@ class GraphQLServer(ABC):
             return None, handled_errors[0]
 
         # in the future we should get back async gen directly, back compat for now
-        disposable, async_gen = _disposable_and_async_gen_from_obs(async_result, get_event_loop())
+        # disposable, async_gen = _disposable_and_async_gen_from_obs(async_result, get_event_loop())
+        async_gen = async_result
         task = get_event_loop().create_task(
             _handle_async_results(async_gen, operation_id, websocket)
         )
-        task.add_done_callback(lambda _: disposable.dispose())
+        # task.add_done_callback(lambda _: disposable.dispose())
 
         return task, None
 
@@ -291,23 +292,23 @@ async def _send_message(
     return await websocket.send_json(data)
 
 
-def _disposable_and_async_gen_from_obs(obs: Observable, loop):
-    """
-    Compatability layer for legacy Observable to async generator
+# def _disposable_and_async_gen_from_obs(obs: Observable, loop):
+#     """
+#     Compatability layer for legacy Observable to async generator
 
-    This should be removed and subscription resolvers changed to
-    return async generators after removal of flask & gevent based dagit.
-    """
-    queue: Queue = Queue()
+#     This should be removed and subscription resolvers changed to
+#     return async generators after removal of flask & gevent based dagit.
+#     """
+#     queue: Queue = Queue()
 
-    # process observable in a thread, handle results in aio loop
-    disposable = obs.subscribe_on(thread_pool_scheduler).subscribe(
-        on_next=lambda i: loop.call_soon_threadsafe(queue.put_nowait, i)
-    )
+#     # process observable in a thread, handle results in aio loop
+#     disposable = obs.subscribe_on(thread_pool_scheduler).subscribe(
+#         on_next=lambda i: loop.call_soon_threadsafe(queue.put_nowait, i)
+#     )
 
-    async def async_gen():
-        while True:
-            i = await queue.get()
-            yield i
+#     async def async_gen():
+#         while True:
+#             i = await queue.get()
+#             yield i
 
-    return disposable, async_gen()
+#     return disposable, async_gen()

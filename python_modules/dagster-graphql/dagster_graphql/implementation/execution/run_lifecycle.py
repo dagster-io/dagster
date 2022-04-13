@@ -1,5 +1,3 @@
-from graphql.execution.base import ResolveInfo
-
 from dagster import check
 from dagster.core.execution.plan.resume_retry import get_retry_steps_from_parent_run
 from dagster.core.execution.plan.state import KnownExecutionState
@@ -14,7 +12,7 @@ from ..utils import ExecutionParams, UserFacingGraphQLError
 
 
 def compute_step_keys_to_execute(graphene_info, execution_params):
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+
     check.inst_param(execution_params, "execution_params", ExecutionParams)
 
     instance = graphene_info.context.instance

@@ -2,7 +2,6 @@ import sys
 from collections import namedtuple
 from typing import cast
 
-from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.core.host_representation import GraphSelector, PipelineSelector
@@ -22,7 +21,7 @@ def check_permission(permission):
     return decorator
 
 
-def assert_permission(graphene_info: ResolveInfo, permission: str) -> None:
+def assert_permission(graphene_info, permission: str) -> None:
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
     context = cast(BaseWorkspaceRequestContext, graphene_info.context)

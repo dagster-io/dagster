@@ -529,7 +529,7 @@ class GrapheneRunStepStats(graphene.ObjectType):
         super().__init__(
             runId=stats.run_id,
             stepKey=stats.step_key,
-            status=stats.status,
+            status=stats.status.value,
             startTime=stats.start_time,
             endTime=stats.end_time,
             materializations=stats.materialization_events,

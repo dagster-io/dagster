@@ -1,5 +1,3 @@
-from graphql.execution.base import ResolveInfo
-
 from dagster import check
 from dagster.core.storage.pipeline_run import PipelineRun
 
@@ -74,7 +72,6 @@ def get_pipeline_reference_or_raise(graphene_info, pipeline_run):
 def get_pipeline_from_selector(graphene_info, selector):
     from ..schema.pipelines.pipeline import GraphenePipeline
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
 
     return GraphenePipeline(get_external_pipeline_or_raise(graphene_info, selector))

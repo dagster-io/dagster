@@ -1,7 +1,5 @@
 import sys
 
-from graphql.execution.base import ResolveInfo
-
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.host_representation import ExternalPipeline, PipelineSelector, RepositorySelector
@@ -14,7 +12,6 @@ from .utils import UserFacingGraphQLError, capture_error
 def get_full_external_pipeline_or_raise(graphene_info, selector):
     from ..schema.errors import GraphenePipelineNotFoundError
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
 
     if not graphene_info.context.has_external_pipeline(selector):
@@ -24,7 +21,7 @@ def get_full_external_pipeline_or_raise(graphene_info, selector):
 
 
 def get_external_pipeline_or_raise(graphene_info, selector):
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+
     check.inst_param(selector, "selector", PipelineSelector)
 
     full_pipeline = get_full_external_pipeline_or_raise(graphene_info, selector)
@@ -108,7 +105,6 @@ def get_external_execution_plan_or_raise(
 def fetch_repositories(graphene_info):
     from ..schema.external import GrapheneRepository, GrapheneRepositoryConnection
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     return GrapheneRepositoryConnection(
         nodes=[
             GrapheneRepository(
@@ -127,7 +123,7 @@ def fetch_repository(graphene_info, repository_selector):
     from ..schema.errors import GrapheneRepositoryNotFoundError
     from ..schema.external import GrapheneRepository
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
     if graphene_info.context.has_repository_location(repository_selector.location_name):

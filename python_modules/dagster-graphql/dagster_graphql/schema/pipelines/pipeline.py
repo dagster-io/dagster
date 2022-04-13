@@ -255,7 +255,7 @@ class GrapheneRun(graphene.ObjectType):
         pipeline_run = record.pipeline_run
         super().__init__(
             runId=pipeline_run.run_id,
-            status=PipelineRunStatus(pipeline_run.status),
+            status=pipeline_run.status.value,
             mode=pipeline_run.mode,
         )
         self._pipeline_run = pipeline_run

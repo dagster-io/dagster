@@ -5,7 +5,8 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
+from itertools import count
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Union, cast
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError, DagsterRepositoryLocationLoadError
@@ -38,7 +39,6 @@ from .permissions import get_user_permissions
 from .workspace import IWorkspace, WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 
 if TYPE_CHECKING:
-    from rx.subjects import Subject
 
     from dagster.core.host_representation import (
         ExternalPartitionConfigData,
@@ -346,11 +346,6 @@ class IWorkspaceProcessContext(ABC):
     def version(self) -> str:
         pass
 
-    @property
-    @abstractmethod
-    def location_state_events(self) -> "Subject":
-        pass
-
     @abstractmethod
     def reload_repository_location(self, name: str) -> None:
         pass
@@ -399,17 +394,9 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         check.opt_str_param(version, "version")
         check.bool_param(read_only, "read_only")
 
-        # lazy import for perf
-        from rx.subjects import Subject
-
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
         self._workspace_load_target = check.opt_inst_param(
             workspace_load_target, "workspace_load_target", WorkspaceLoadTarget
-        )
-
-        self._location_state_events = Subject()
-        self._location_state_subscriber = LocationStateSubscriber(
-            self._location_state_events_handler
         )
 
         self._read_only = read_only
@@ -423,8 +410,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._watch_thread_shutdown_events: Dict[str, threading.Event] = {}
         self._watch_threads: Dict[str, threading.Thread] = {}
 
-        self._state_subscribers: List[LocationStateSubscriber] = []
-        self.add_state_subscriber(self._location_state_subscriber)
+        self._state_subscriber_id_iter = count()
+        self._state_subscribers: Dict[int, LocationStateSubscriber] = {}
 
         if grpc_server_registry:
             self._grpc_server_registry: GrpcServerRegistry = check.inst_param(
@@ -448,8 +435,14 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
     def workspace_load_target(self):
         return self._workspace_load_target
 
-    def add_state_subscriber(self, subscriber):
-        self._state_subscribers.append(subscriber)
+    def add_state_subscriber(self, subscriber: Callable) -> int:
+        token = next(self._state_subscriber_id_iter)
+        self._state_subscribers[token] = subscriber
+        return token
+
+    def rm_state_subscriber(self, token: int) -> None:
+        if token in self._state_subscribers:
+            del self._state_subscribers[token]
 
     def _load_workspace(self):
         assert self._lock.locked()
