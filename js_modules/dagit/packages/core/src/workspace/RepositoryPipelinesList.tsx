@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {__ASSET_GROUP} from '../asset-graph/Utils';
+import {isAssetGroup} from '../asset-graph/Utils';
 import {PipelineTable, PIPELINE_TABLE_FRAGMENT} from '../pipelines/PipelineTable';
 
 import {repoAddressAsString} from './repoAddressAsString';
@@ -52,7 +52,7 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
       return null;
     }
     return repo.pipelines
-      .filter((pipelineOrJob) => pipelineOrJob.name !== __ASSET_GROUP)
+      .filter((pipelineOrJob) => !isAssetGroup(pipelineOrJob.name))
       .map((pipelineOrJob) => ({
         pipelineOrJob,
         repoAddress,
