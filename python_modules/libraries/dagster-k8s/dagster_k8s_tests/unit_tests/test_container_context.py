@@ -19,14 +19,14 @@ def container_context_config():
             "env_vars": ["MY_ENV_VAR"],
             "volume_mounts": [
                 {
-                    "mountPath": "my_mount_path",
-                    "mountPropagation": "my_mount_propagation",
+                    "mount_path": "my_mount_path",
+                    "mount_propagation": "my_mount_propagation",
                     "name": "a_volume_mount_one",
-                    "readOnly": False,
-                    "subPath": "path/",
+                    "read_only": False,
+                    "sub_path": "path/",
                 }
             ],
-            "volumes": [{"name": "foo", "configMap": {"name": "settings-cm"}}],
+            "volumes": [{"name": "foo", "config_map": {"name": "settings-cm"}}],
             "labels": {"foo_label": "bar_value"},
             "namespace": "my_namespace",
         }
@@ -45,16 +45,42 @@ def other_container_context_config():
             "env_vars": ["YOUR_ENV_VAR"],
             "volume_mounts": [
                 {
-                    "mountPath": "your_mount_path",
-                    "mountPropagation": "your_mount_propagation",
+                    "mount_path": "your_mount_path",
+                    "mount_propagation": "your_mount_propagation",
                     "name": "b_volume_mount_one",
-                    "readOnly": True,
-                    "subPath": "your_path/",
+                    "read_only": True,
+                    "sub_path": "your_path/",
                 }
             ],
-            "volumes": [{"name": "bar", "configMap": {"name": "your-settings-cm"}}],
+            "volumes": [{"name": "bar", "config_map": {"name": "your-settings-cm"}}],
             "labels": {"bar_label": "baz_value"},
             "namespace": "your_namespace",
+        }
+    }
+
+
+@pytest.fixture
+def container_context_config_camel_case_volumes():
+    return {
+        "k8s": {
+            "image_pull_policy": "Always",
+            "image_pull_secrets": [{"name": "my_secret"}],
+            "service_account_name": "my_service_account",
+            "env_config_maps": ["my_config_map"],
+            "env_secrets": ["my_secret"],
+            "env_vars": ["MY_ENV_VAR"],
+            "volume_mounts": [
+                {
+                    "mountPath": "my_mount_path",
+                    "mountPropagation": "my_mount_propagation",
+                    "name": "a_volume_mount_one",
+                    "readOnly": False,
+                    "subPath": "path/",
+                }
+            ],
+            "volumes": [{"name": "foo", "configMap": {"name": "settings-cm"}}],
+            "labels": {"foo_label": "bar_value"},
+            "namespace": "my_namespace",
         }
     }
 
@@ -72,6 +98,11 @@ def container_context_fixture(container_context_config):
 @pytest.fixture(name="other_container_context")
 def other_container_context_fixture(other_container_context_config):
     return K8sContainerContext.create_from_config(other_container_context_config)
+
+
+@pytest.fixture(name="container_context_camel_case_volumes")
+def container_context_camel_case_volumes_fixture(container_context_config_camel_case_volumes):
+    return K8sContainerContext.create_from_config(container_context_config_camel_case_volumes)
 
 
 def test_empty_container_context(empty_container_context):
@@ -102,6 +133,11 @@ def _check_same_sorted(list1, list2):
     ) == sorted([make_readonly_value(val) for val in list2], key=lambda val: val.__hash__())
 
 
+def test_camel_case_volumes(container_context_camel_case_volumes, container_context):
+    assert container_context.volume_mounts == container_context_camel_case_volumes.volume_mounts
+    assert container_context.volumes == container_context_camel_case_volumes.volumes
+
+
 def test_merge(empty_container_context, container_context, other_container_context):
     assert container_context.image_pull_policy == "Always"
     assert container_context.image_pull_secrets == [{"name": "my_secret"}]
@@ -111,14 +147,14 @@ def test_merge(empty_container_context, container_context, other_container_conte
     assert container_context.env_vars == ["MY_ENV_VAR"]
     assert container_context.volume_mounts == [
         {
-            "mountPath": "my_mount_path",
-            "mountPropagation": "my_mount_propagation",
+            "mount_path": "my_mount_path",
+            "mount_propagation": "my_mount_propagation",
             "name": "a_volume_mount_one",
-            "readOnly": False,
-            "subPath": "path/",
+            "read_only": False,
+            "sub_path": "path/",
         }
     ]
-    assert container_context.volumes == [{"name": "foo", "configMap": {"name": "settings-cm"}}]
+    assert container_context.volumes == [{"name": "foo", "config_map": {"name": "settings-cm"}}]
     assert container_context.labels == {"foo_label": "bar_value"}
     assert container_context.namespace == "my_namespace"
 
@@ -158,26 +194,26 @@ def test_merge(empty_container_context, container_context, other_container_conte
         merged.volume_mounts,
         [
             {
-                "mountPath": "your_mount_path",
-                "mountPropagation": "your_mount_propagation",
+                "mount_path": "your_mount_path",
+                "mount_propagation": "your_mount_propagation",
                 "name": "b_volume_mount_one",
-                "readOnly": True,
-                "subPath": "your_path/",
+                "read_only": True,
+                "sub_path": "your_path/",
             },
             {
-                "mountPath": "my_mount_path",
-                "mountPropagation": "my_mount_propagation",
+                "mount_path": "my_mount_path",
+                "mount_propagation": "my_mount_propagation",
                 "name": "a_volume_mount_one",
-                "readOnly": False,
-                "subPath": "path/",
+                "read_only": False,
+                "sub_path": "path/",
             },
         ],
     )
     _check_same_sorted(
         merged.volumes,
         [
-            {"name": "bar", "configMap": {"name": "your-settings-cm"}},
-            {"name": "foo", "configMap": {"name": "settings-cm"}},
+            {"name": "bar", "config_map": {"name": "your-settings-cm"}},
+            {"name": "foo", "config_map": {"name": "settings-cm"}},
         ],
     )
     assert merged.labels == {"foo_label": "bar_value", "bar_label": "baz_value"}
