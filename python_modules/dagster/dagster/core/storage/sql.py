@@ -17,10 +17,12 @@ from dagster.utils.log import quieten
 create_engine = db.create_engine  # exported
 
 
+ALEMBIC_SCRIPTS_LOCATION = "dagster:core/storage/alembic"
+
 @lru_cache(maxsize=3)  # run, event, and schedule storages
-def get_alembic_config(dunder_file, config_path="alembic/alembic.ini", script_path="alembic/"):
+def get_alembic_config(dunder_file, config_path="alembic/alembic.ini"):
     alembic_config = Config(file_relative_path(dunder_file, config_path))
-    alembic_config.set_main_option("script_location", file_relative_path(dunder_file, script_path))
+    alembic_config.set_main_option("script_location", ALEMBIC_SCRIPTS_LOCATION)
     return alembic_config
 
 
@@ -92,6 +94,8 @@ def run_migrations_offline(context, config, target_metadata):
     script output.
 
     """
+    from sqlite3 import DatabaseError
+
     connectable = config.attributes.get("connection", None)
 
     if connectable is None:
@@ -100,15 +104,21 @@ def run_migrations_offline(context, config, target_metadata):
             "command line, STOP and read the README."
         )
 
-    context.configure(
-        url=connectable.url,
-        target_metadata=target_metadata,
-        literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
-    )
+    try:
+        context.configure(
+            url=connectable.url,
+            target_metadata=target_metadata,
+            literal_binds=True,
+            dialect_opts={"paramstyle": "named"},
+        )
 
-    with context.begin_transaction():
-        context.run_migrations()
+        with context.begin_transaction():
+            context.run_migrations()
+    except DatabaseError as exc:
+        # This is to deal with concurrent execution -- if this table already exists thanks to a
+        # race with another process, we are fine and can continue.
+        if not "table alembic_version already exists" in str(exc):
+            raise
 
 
 def run_migrations_online(context, config, target_metadata):
@@ -118,6 +128,7 @@ def run_migrations_online(context, config, target_metadata):
     and associate a connection with the context.
 
     """
+    from sqlite3 import DatabaseError
     connection = config.attributes.get("connection", None)
 
     if connection is None:
@@ -126,10 +137,17 @@ def run_migrations_online(context, config, target_metadata):
             "command line, STOP and read the README."
         )
 
-    context.configure(connection=connection, target_metadata=target_metadata)
+    try:
+        context.configure(connection=connection, target_metadata=target_metadata)
 
-    with context.begin_transaction():
-        context.run_migrations()
+        with context.begin_transaction():
+            context.run_migrations()
+
+    except DatabaseError as exc:
+        # This is to deal with concurrent execution -- if this table already exists thanks to a
+        # race with another process, we are fine and can continue.
+        if not "table alembic_version already exists" in str(exc):
+            raise
 
 
 # SQLAlchemy types, compiler directives, etc. to avoid pre-0.11.0 migrations
