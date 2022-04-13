@@ -1,7 +1,9 @@
-import {Box, ColorsWIP, IconWIP, IconWrapper, Slider} from '@dagster-io/ui';
+import {Box, Colors, Icon, IconWrapper, Slider} from '@dagster-io/ui';
 import animate from 'amator';
 import * as React from 'react';
 import styled from 'styled-components/macro';
+
+import {IBounds} from './common';
 
 export interface SVGViewportInteractor {
   onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>): void;
@@ -18,7 +20,10 @@ interface SVGViewportProps {
   maxAutocenterZoom: number;
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
   onDoubleClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
-  onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
+  onArrowKeyDown?: (
+    event: React.KeyboardEvent<HTMLDivElement>,
+    dir: 'left' | 'up' | 'right' | 'down',
+  ) => void;
   children: (
     state: SVGViewportState,
     bounds: {top: number; left: number; bottom: number; right: number},
@@ -118,7 +123,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
               viewport.adjustZoomRelativeToScreenPoint(adjusted, {x, y});
             }}
           >
-            <IconWIP size={24} name="zoom_in" color={ColorsWIP.Gray300} />
+            <Icon size={24} name="zoom_in" color={Colors.Gray300} />
           </IconButton>
         </Box>
         <Slider
@@ -143,7 +148,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
               viewport.adjustZoomRelativeToScreenPoint(scale, {x, y});
             }}
           >
-            <IconWIP size={24} name="zoom_out" color={ColorsWIP.Gray300} />
+            <Icon size={24} name="zoom_out" color={Colors.Gray300} />
           </IconButton>
         </Box>
       </ZoomSliderContainer>
@@ -168,12 +173,12 @@ const IconButton = styled.button`
   }
 
   :focus ${IconWrapper}, :hover ${IconWrapper}, :active ${IconWrapper} {
-    background-color: ${ColorsWIP.Blue500};
+    background-color: ${Colors.Blue500};
   }
 `;
 
 const NoneInteractor: SVGViewportInteractor = {
-  onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>) {
+  onMouseDown(_viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>) {
     event.preventDefault();
     event.stopPropagation();
   },
@@ -322,6 +327,10 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     this.setState({x, y, scale: nextScale});
   }
 
+  public smoothZoomToSVGBox(box: IBounds, newScale = this.state.scale) {
+    this.smoothZoomToSVGCoords(box.x + box.width / 2, box.y + box.height / 2, newScale);
+  }
+
   public smoothZoomToSVGCoords(x: number, y: number, scale: number) {
     const el = this.element.current!;
     const ownerRect = el.getBoundingClientRect();
@@ -387,6 +396,21 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     }
   };
 
+  onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.target && (e.target as HTMLElement).nodeName === 'INPUT') {
+      return;
+    }
+
+    const dir = ({37: 'left', 38: 'up', 39: 'right', 40: 'down'} as const)[e.keyCode];
+    if (!dir) {
+      return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+    this.props.onArrowKeyDown?.(e, dir);
+  };
+
   onDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     // Don't allow double-click events on the zoom slider to trigger this.
     if (event.target instanceof HTMLElement && event.target.closest('#zoom-slider-container')) {
@@ -396,7 +420,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   };
 
   render() {
-    const {children, onKeyDown, onClick, interactor, backgroundColor} = this.props;
+    const {children, onClick, interactor, backgroundColor} = this.props;
     const {x, y, scale} = this.state;
 
     return (
@@ -405,8 +429,8 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
         style={Object.assign({backgroundColor}, SVGViewportStyles)}
         onMouseDown={(e) => interactor.onMouseDown(this, e)}
         onDoubleClick={this.onDoubleClick}
+        onKeyDown={this.onKeyDown}
         onClick={onClick}
-        onKeyDown={onKeyDown}
         tabIndex={-1}
       >
         <div

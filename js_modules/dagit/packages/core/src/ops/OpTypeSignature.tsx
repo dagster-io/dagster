@@ -1,6 +1,7 @@
 import {gql} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
 import {Code} from '@blueprintjs/core';
-import {ColorsWIP, FontFamily} from '@dagster-io/ui';
+import {Colors, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -56,7 +57,7 @@ export const OP_TYPE_SIGNATURE_FRAGMENT = gql`
 
 const TypeSignature = styled(Code)`
   && {
-    background: ${ColorsWIP.Blue50};
+    background: ${Colors.Blue50};
     font-family: ${FontFamily.monospace};
     font-size: 14px;
     padding: 4px;

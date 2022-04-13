@@ -1,11 +1,12 @@
+// eslint-disable-next-line no-restricted-imports
 import {TagInput} from '@blueprintjs/core';
-import isEqual from 'lodash/isEqual';
-import React from 'react';
+import isEqual from 'lodash.isequal';
+import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {Box} from './Box';
-import {ColorsWIP} from './Colors';
-import {MenuItemWIP, MenuWIP} from './Menu';
+import {Colors} from './Colors';
+import {MenuItem, Menu} from './Menu';
 import {Popover} from './Popover';
 import {Spinner} from './Spinner';
 
@@ -65,12 +66,19 @@ export const tokenizedValuesFromString = (str: string, providers: SuggestionProv
 export const tokenizedValuesFromStringArray = (tokens: string[], providers: SuggestionProvider[]) =>
   tokens.map((token) => tokenizedValueFromString(token, providers));
 
+export const tokenizeString = (str: string): [string, string] => {
+  const colonAt = str.indexOf(':');
+  if (colonAt === -1) {
+    return [str, ''];
+  }
+  return [str.slice(0, colonAt), str.slice(colonAt + 1)];
+};
+
 export function tokenizedValueFromString(
   str: string,
   providers: SuggestionProvider[],
 ): TokenizingFieldValue {
-  const [token = '', value = ''] = str.split(':');
-
+  const [token, value] = tokenizeString(str);
   if (findProviderByToken(token, providers)) {
     if (token && value) {
       return {token, value};
@@ -328,7 +336,7 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
           <div style={{maxHeight: 235, overflowY: 'scroll'}} ref={menuRef}>
             <StyledMenu>
               {suggestions.map((suggestion, idx) => (
-                <MenuItemWIP
+                <MenuItem
                   data-idx={idx}
                   key={suggestion.text}
                   text={suggestion.text}
@@ -395,15 +403,14 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
 const StyledTagInput = styled(TagInput)`
   border: none;
   border-radius: 8px;
-  box-shadow: ${ColorsWIP.Gray300} inset 0px 0px 0px 1px,
-    ${ColorsWIP.KeylineGray} inset 2px 2px 1.5px;
+  box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px;
   min-width: 400px;
   max-width: 600px;
   transition: box-shadow 150ms;
 
   &.bp3-active {
-    box-shadow: ${ColorsWIP.Gray300} inset 0px 0px 0px 1px,
-      ${ColorsWIP.KeylineGray} inset 2px 2px 1.5px, rgba(58, 151, 212, 0.6) 0 0 0 3px;
+    box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px,
+      rgba(58, 151, 212, 0.6) 0 0 0 3px;
   }
 
   input {
@@ -443,26 +450,26 @@ const StyledTagInput = styled(TagInput)`
   }
 
   .bp3-tag.bp3-minimal:not([class*='bp3-intent-']) {
-    background-color: ${ColorsWIP.Gray100};
-    color: ${ColorsWIP.Gray900};
+    background-color: ${Colors.Gray100};
+    color: ${Colors.Gray900};
   }
 
   .bp3-tag.bp3-minimal.bp3-intent-success {
-    background-color: ${ColorsWIP.Green50};
-    color: ${ColorsWIP.Green700};
+    background-color: ${Colors.Green50};
+    color: ${Colors.Green700};
   }
 
   .bp3-tag.bp3-minimal.bp3-intent-warning {
-    background-color: ${ColorsWIP.Yellow50};
-    color: ${ColorsWIP.Yellow700};
+    background-color: ${Colors.Yellow50};
+    color: ${Colors.Yellow700};
   }
 
   .bp3-tag.bp3-minimal.bp3-intent-danger {
-    background-color: ${ColorsWIP.Red50};
-    color: ${ColorsWIP.Red700};
+    background-color: ${Colors.Red50};
+    color: ${Colors.Red700};
   }
 `;
 
-const StyledMenu = styled(MenuWIP)`
+const StyledMenu = styled(Menu)`
   width: 400px;
 `;

@@ -11,7 +11,6 @@ from dagster.core.storage.sql import stamp_alembic_rev  # pylint: disable=unused
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
-from dagster.utils.backcompat import experimental_class_warning
 
 from ..utils import (
     MYSQL_POOL_RECYCLE,
@@ -43,7 +42,6 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
     """
 
     def __init__(self, mysql_url, inst_data=None):
-        experimental_class_warning("MySQLRunStorage")
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.mysql_url = mysql_url
 

@@ -9,11 +9,13 @@ from dagster.cli.pipeline import pipeline_execute_command
 from dagster.core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster.core.telemetry import (
     UPDATE_REPO_STATS,
-    get_dir_from_dagster_home,
+    cleanup_telemetry_logger,
+    get_or_create_dir_from_dagster_home,
     hash_name,
     log_workspace_stats,
+    write_telemetry_log_line,
 )
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import environ, instance_for_test
 from dagster.core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster.utils import file_relative_path, pushd, script_relative_path
 
@@ -67,6 +69,9 @@ def test_dagster_telemetry_enabled(caplog):
             assert len(caplog.records) == 5
             assert result.exit_code == 0
 
+        # Needed to avoid file contention issues on windows with the telemetry log file
+        cleanup_telemetry_logger()
+
 
 def test_dagster_telemetry_disabled(caplog):
     with instance_for_test(overrides={"telemetry": {"enabled": False}}):
@@ -83,7 +88,9 @@ def test_dagster_telemetry_disabled(caplog):
                 ],
             )
 
-        assert not os.path.exists(os.path.join(get_dir_from_dagster_home("logs"), "event.log"))
+        assert not os.path.exists(
+            os.path.join(get_or_create_dir_from_dagster_home("logs"), "event.log")
+        )
         assert len(caplog.records) == 0
         assert result.exit_code == 0
 
@@ -113,6 +120,9 @@ def test_dagster_telemetry_unset(caplog):
 
                 assert len(caplog.records) == 5
                 assert result.exit_code == 0
+
+            # Needed to avoid file contention issues on windows with the telemetry log file
+            cleanup_telemetry_logger()
 
 
 def test_repo_stats(caplog):
@@ -151,6 +161,9 @@ def test_repo_stats(caplog):
                 assert len(caplog.records) == 5
                 assert result.exit_code == 0
 
+            # Needed to avoid file contention issues on windows with the telemetry log file
+            cleanup_telemetry_logger()
+
 
 def test_log_workspace_stats(caplog):
     with instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance:
@@ -165,6 +178,9 @@ def test_log_workspace_stats(caplog):
                 assert set(message.keys()) == EXPECTED_KEYS
 
             assert len(caplog.records) == 2
+
+        # Needed to avoid file contention issues on windows with the telemetry log file
+        cleanup_telemetry_logger()
 
 
 # Sanity check that the hash function maps these similar names to sufficiently dissimilar strings
@@ -181,3 +197,27 @@ def test_hash_name():
     assert SequenceMatcher(None, hashes[0], hashes[1]).ratio() < 0.4
     assert SequenceMatcher(None, hashes[0], hashes[2]).ratio() < 0.4
     assert SequenceMatcher(None, hashes[1], hashes[2]).ratio() < 0.4
+
+
+def test_write_telemetry_log_line_writes_to_dagster_home():
+    # Ensures that if logging directory is deleted between writes, it can be re-created without failure.
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with environ({"DAGSTER_HOME": temp_dir}):
+            write_telemetry_log_line({"foo": "bar"})
+            with open(os.path.join(temp_dir, "logs", "event.log"), "r") as f:
+                res = json.load(f)
+                assert res == {"foo": "bar"}
+
+            # Needed to avoid file contention issues on windows with the telemetry log file
+            cleanup_telemetry_logger()
+
+            os.remove(os.path.join(temp_dir, "logs", "event.log"))
+            os.rmdir(os.path.join(temp_dir, "logs"))
+
+            write_telemetry_log_line({"foo": "bar"})
+            with open(os.path.join(temp_dir, "logs", "event.log"), "r") as f:
+                res = json.load(f)
+                assert res == {"foo": "bar"}
+
+        # Needed to avoid file contention issues on windows with the telemetry log file
+        cleanup_telemetry_logger()

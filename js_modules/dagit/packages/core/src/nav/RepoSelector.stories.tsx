@@ -1,4 +1,4 @@
-import {Box, ColorsWIP} from '@dagster-io/ui';
+import {Box, Colors} from '@dagster-io/ui';
 import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
@@ -126,24 +126,27 @@ export const ManyRepos = () => {
   const [selected, setSelected] = React.useState<RepoSelectorOption[]>([]);
 
   const onToggle = React.useCallback(
-    (address: RepoAddress) => {
-      const option = OPTIONS.find(
-        (r) => r.repository.name === address.name && r.repositoryLocation.name === address.location,
-      );
-      if (!option) {
-        return;
-      }
-      if (selected.includes(option)) {
-        setSelected(selected.filter((o) => o !== option));
-      } else {
-        setSelected([...selected, option]);
-      }
+    (addresses: RepoAddress[]) => {
+      addresses.forEach((address) => {
+        const option = OPTIONS.find(
+          (r) =>
+            r.repository.name === address.name && r.repositoryLocation.name === address.location,
+        );
+        if (!option) {
+          return;
+        }
+        if (selected.includes(option)) {
+          setSelected(selected.filter((o) => o !== option));
+        } else {
+          setSelected([...selected, option]);
+        }
+      });
     },
     [selected],
   );
 
   return (
-    <Box background={ColorsWIP.Gray800} padding={16}>
+    <Box background={Colors.Gray800} padding={16}>
       <RepoSelector options={OPTIONS} onBrowse={() => {}} onToggle={onToggle} selected={selected} />
     </Box>
   );

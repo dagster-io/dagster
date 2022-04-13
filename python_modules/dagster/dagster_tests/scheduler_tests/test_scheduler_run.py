@@ -529,7 +529,7 @@ def test_simple_schedule(instance, workspace, external_repo):
         instance.start_schedule(external_schedule)
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 0
 
         # launch_scheduled_runs does nothing before the first tick
@@ -542,7 +542,7 @@ def test_simple_schedule(instance, workspace, external_repo):
             )
         )
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 0
 
     freeze_datetime = freeze_datetime.add(seconds=2)
@@ -557,7 +557,7 @@ def test_simple_schedule(instance, workspace, external_repo):
         )
 
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
         expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
@@ -588,7 +588,7 @@ def test_simple_schedule(instance, workspace, external_repo):
             )
         )
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.SUCCESS
 
@@ -604,7 +604,7 @@ def test_simple_schedule(instance, workspace, external_repo):
             )
         )
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.SUCCESS
 
@@ -621,7 +621,7 @@ def test_simple_schedule(instance, workspace, external_repo):
             )
         )
         assert instance.get_runs_count() == 3
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 3
         assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 3
 
@@ -633,7 +633,7 @@ def test_simple_schedule(instance, workspace, external_repo):
         # Check idempotence again
         list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
         assert instance.get_runs_count() == 3
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 3
 
 
@@ -653,6 +653,7 @@ def test_old_tick_schedule(instance, workspace, external_repo):
                 instigator_type=InstigatorType.SCHEDULE,
                 status=TickStatus.STARTED,
                 timestamp=pendulum.now("UTC").subtract(days=3).timestamp(),
+                selector_id=external_schedule.selector_id,
             )
         )
 
@@ -673,7 +674,7 @@ def test_old_tick_schedule(instance, workspace, external_repo):
         )
 
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 2
 
 
@@ -684,14 +685,15 @@ def test_no_started_schedules(instance, workspace, external_repo):
     list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
     assert instance.get_runs_count() == 0
 
-    ticks = instance.get_ticks(schedule_origin.get_id())
+    ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
     assert len(ticks) == 0
 
 
 def test_schedule_without_timezone(instance):
     with mock_system_timezone("US/Eastern"):
         with create_test_daemon_workspace(
-            workspace_load_target=workspace_load_target()
+            workspace_load_target=workspace_load_target(),
+            instance=instance,
         ) as workspace:
             external_repo = next(
                 iter(workspace.get_workspace_snapshot().values())
@@ -711,7 +713,7 @@ def test_schedule_without_timezone(instance):
 
                 assert instance.get_runs_count() == 1
 
-                ticks = instance.get_ticks(schedule_origin.get_id())
+                ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
 
                 assert len(ticks) == 1
 
@@ -736,7 +738,7 @@ def test_schedule_without_timezone(instance):
                 # Verify idempotence
                 list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
                 assert instance.get_runs_count() == 1
-                ticks = instance.get_ticks(schedule_origin.get_id())
+                ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
                 assert len(ticks) == 1
 
 
@@ -750,7 +752,7 @@ def test_bad_env_fn_no_retries(instance, workspace, external_repo):
         list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
         validate_tick(
@@ -767,7 +769,7 @@ def test_bad_env_fn_no_retries(instance, workspace, external_repo):
         list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
         validate_tick(
@@ -785,7 +787,7 @@ def test_bad_env_fn_no_retries(instance, workspace, external_repo):
         list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 2
 
         validate_tick(
@@ -813,7 +815,7 @@ def test_bad_env_fn_with_retries(instance, workspace, external_repo):
         )
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
         validate_tick(
@@ -838,7 +840,7 @@ def test_bad_env_fn_with_retries(instance, workspace, external_repo):
         )
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
         validate_tick(
@@ -857,7 +859,7 @@ def test_bad_env_fn_with_retries(instance, workspace, external_repo):
             )
         )
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
         validate_tick(
@@ -875,7 +877,7 @@ def test_bad_env_fn_with_retries(instance, workspace, external_repo):
         list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 2
 
         validate_tick(
@@ -903,7 +905,7 @@ def test_passes_on_retry(instance, workspace, external_repo):
         )
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
         validate_tick(
@@ -923,7 +925,7 @@ def test_passes_on_retry(instance, workspace, external_repo):
         )
 
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
         validate_tick(
@@ -944,7 +946,7 @@ def test_passes_on_retry(instance, workspace, external_repo):
         )
 
         assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 2
 
         validate_tick(
@@ -974,7 +976,7 @@ def test_bad_should_execute(instance, workspace, external_repo):
         list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
         validate_tick(
@@ -1001,7 +1003,7 @@ def test_skip(instance, workspace, external_repo):
         list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -1024,7 +1026,7 @@ def test_wrong_config_schedule(instance, workspace, external_repo):
 
         assert instance.get_runs_count() == 0
 
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -1059,7 +1061,7 @@ def test_schedule_run_default_config(instance, workspace, external_repo):
             expected_success=True,
         )
 
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -1126,7 +1128,7 @@ def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_re
             partition_time=create_pendulum_time(2019, 2, 26),
         )
 
-        good_ticks = instance.get_ticks(good_origin.get_id())
+        good_ticks = instance.get_ticks(good_origin.get_id(), good_schedule.selector_id)
         assert len(good_ticks) == 1
         validate_tick(
             good_ticks[0],
@@ -1136,7 +1138,7 @@ def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_re
             [run.run_id for run in instance.get_runs()],
         )
 
-        bad_ticks = instance.get_ticks(bad_origin.get_id())
+        bad_ticks = instance.get_ticks(bad_origin.get_id(), bad_schedule.selector_id)
         assert len(bad_ticks) == 1
 
         assert bad_ticks[0].status == TickStatus.FAILURE
@@ -1146,7 +1148,7 @@ def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_re
             in bad_ticks[0].error.message
         )
 
-        unloadable_ticks = instance.get_ticks(unloadable_origin.get_id())
+        unloadable_ticks = instance.get_ticks(unloadable_origin.get_id(), "fake_selector")
         assert len(unloadable_ticks) == 0
 
     initial_datetime = initial_datetime.add(days=1)
@@ -1166,7 +1168,7 @@ def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_re
             partition_time=create_pendulum_time(2019, 2, 27),
         )
 
-        good_ticks = instance.get_ticks(good_origin.get_id())
+        good_ticks = instance.get_ticks(good_origin.get_id(), good_schedule.selector_id)
         assert len(good_ticks) == 2
         validate_tick(
             good_ticks[0],
@@ -1185,7 +1187,7 @@ def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_re
             partition_time=create_pendulum_time(2019, 2, 27),
         )
 
-        bad_ticks = instance.get_ticks(bad_origin.get_id())
+        bad_ticks = instance.get_ticks(bad_origin.get_id(), bad_schedule.selector_id)
         assert len(bad_ticks) == 2
         validate_tick(
             bad_ticks[0],
@@ -1195,7 +1197,7 @@ def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_re
             [bad_schedule_runs[0].run_id],
         )
 
-        unloadable_ticks = instance.get_ticks(unloadable_origin.get_id())
+        unloadable_ticks = instance.get_ticks(unloadable_origin.get_id(), "fake_selector")
         assert len(unloadable_ticks) == 0
 
 
@@ -1218,7 +1220,7 @@ def test_run_scheduled_on_time_boundary(instance, workspace, external_repo):
         list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.SUCCESS
 
@@ -1255,7 +1257,7 @@ def test_bad_load_repository(instance, workspace, external_repo, caplog):
 
         assert instance.get_runs_count() == 0
 
-        ticks = instance.get_ticks(invalid_repo_origin.get_id())
+        ticks = instance.get_ticks(invalid_repo_origin.get_id(), external_schedule.selector_id)
 
         assert len(ticks) == 0
 
@@ -1294,7 +1296,7 @@ def test_bad_load_schedule(instance, workspace, external_repo, caplog):
 
         assert instance.get_runs_count() == 0
 
-        ticks = instance.get_ticks(invalid_repo_origin.get_id())
+        ticks = instance.get_ticks(invalid_repo_origin.get_id(), schedule_state.selector_id)
 
         assert len(ticks) == 0
 
@@ -1302,7 +1304,9 @@ def test_bad_load_schedule(instance, workspace, external_repo, caplog):
 
 
 def test_error_load_repository_location(instance):
-    with create_test_daemon_workspace(_get_unloadable_workspace_load_target()) as workspace:
+    with create_test_daemon_workspace(
+        _get_unloadable_workspace_load_target(), instance
+    ) as workspace:
         fake_origin = _get_unloadable_schedule_origin()
         initial_datetime = create_pendulum_time(
             year=2019,
@@ -1327,7 +1331,7 @@ def test_error_load_repository_location(instance):
 
             assert instance.get_runs_count() == 0
 
-            ticks = instance.get_ticks(fake_origin.get_id())
+            ticks = instance.get_ticks(fake_origin.get_id(), schedule_state.selector_id)
 
             assert len(ticks) == 0
 
@@ -1335,7 +1339,7 @@ def test_error_load_repository_location(instance):
         with pendulum.test(initial_datetime):
             list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 0
-            ticks = instance.get_ticks(fake_origin.get_id())
+            ticks = instance.get_ticks(fake_origin.get_id(), schedule_state.selector_id)
             assert len(ticks) == 0
 
 
@@ -1374,7 +1378,7 @@ def test_load_repository_location_not_in_workspace(instance, workspace, external
 
         assert instance.get_runs_count() == 0
 
-        ticks = instance.get_ticks(invalid_repo_origin.get_id())
+        ticks = instance.get_ticks(invalid_repo_origin.get_id(), schedule_state.selector_id)
 
         assert len(ticks) == 0
 
@@ -1407,11 +1411,15 @@ def test_multiple_schedules_on_different_time_ranges(instance, workspace, extern
         )
 
         assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(
+            external_schedule.get_external_origin_id(), external_schedule.selector_id
+        )
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.SUCCESS
 
-        hourly_ticks = instance.get_ticks(external_hourly_schedule.get_external_origin_id())
+        hourly_ticks = instance.get_ticks(
+            external_hourly_schedule.get_external_origin_id(), external_hourly_schedule.selector_id
+        )
         assert len(hourly_ticks) == 1
         assert hourly_ticks[0].status == TickStatus.SUCCESS
 
@@ -1421,11 +1429,15 @@ def test_multiple_schedules_on_different_time_ranges(instance, workspace, extern
 
         assert instance.get_runs_count() == 3
 
-        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(
+            external_schedule.get_external_origin_id(), external_schedule.selector_id
+        )
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.SUCCESS
 
-        hourly_ticks = instance.get_ticks(external_hourly_schedule.get_external_origin_id())
+        hourly_ticks = instance.get_ticks(
+            external_hourly_schedule.get_external_origin_id(), external_hourly_schedule.selector_id
+        )
         assert len(hourly_ticks) == 2
         assert len([tick for tick in hourly_ticks if tick.status == TickStatus.SUCCESS]) == 2
 
@@ -1464,7 +1476,7 @@ def test_launch_failure(workspace, external_repo):
                 expected_success=False,
             )
 
-            ticks = instance.get_ticks(schedule_origin.get_id())
+            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
@@ -1490,7 +1502,7 @@ def test_partitionless_schedule(instance, workspace, external_repo):
 
         wait_for_all_runs_to_start(instance)
 
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
         validate_tick(
@@ -1533,7 +1545,7 @@ def test_max_catchup_runs(instance, workspace, external_repo):
         )
 
         assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 2
 
         first_datetime = create_pendulum_time(year=2019, month=3, day=4)
@@ -1591,20 +1603,20 @@ def test_multi_runs(instance, workspace, external_repo):
         instance.start_schedule(external_schedule)
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 0
 
         # launch_scheduled_runs does nothing before the first tick
         list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 0
 
     freeze_datetime = freeze_datetime.add(seconds=2)
     with pendulum.test(freeze_datetime):
         list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
         assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
         expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
@@ -1626,7 +1638,7 @@ def test_multi_runs(instance, workspace, external_repo):
         # Verify idempotence
         list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
         assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.SUCCESS
 
@@ -1636,7 +1648,7 @@ def test_multi_runs(instance, workspace, external_repo):
         # Traveling one more day in the future before running results in a tick
         list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
         assert instance.get_runs_count() == 4
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 2
         assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
         runs = instance.get_runs()
@@ -1655,7 +1667,7 @@ def test_multi_runs_missing_run_key(instance, workspace, external_repo):
 
         list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
         validate_tick(
@@ -1693,7 +1705,7 @@ def test_large_schedule(instance, workspace, external_repo):
         )
 
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
 
@@ -1719,7 +1731,7 @@ def test_manual_partition_with_solid_selection(instance, workspace, external_rep
         )
 
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
         run_id = ticks[0].run_ids[0]
 
@@ -1762,7 +1774,7 @@ def test_skip_reason_schedule(instance, workspace, external_repo):
         list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id())
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
         expected_datetime = create_pendulum_time(year=2019, month=2, day=28, tz="UTC")
@@ -1792,7 +1804,8 @@ def test_grpc_server_down(instance):
 
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     with create_test_daemon_workspace(
-        GrpcServerTarget(host="localhost", port=port, socket=None, location_name="test_location")
+        GrpcServerTarget(host="localhost", port=port, socket=None, location_name="test_location"),
+        instance,
     ) as workspace:
         with pendulum.test(initial_datetime):
             with _grpc_server_external_repo(port) as external_repo:
@@ -1804,7 +1817,7 @@ def test_grpc_server_down(instance):
             for _trial in range(3):
                 list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
                 assert instance.get_runs_count() == 0
-                ticks = instance.get_ticks(schedule_origin.get_id())
+                ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
                 assert len(ticks) == 1
 
                 validate_tick(
@@ -1821,7 +1834,7 @@ def test_grpc_server_down(instance):
             with _grpc_server_external_repo(port) as external_repo:
                 list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
                 assert instance.get_runs_count() == 1
-                ticks = instance.get_ticks(schedule_origin.get_id())
+                ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
                 assert len(ticks) == 1
 
                 expected_datetime = create_pendulum_time(year=2019, month=2, day=27)
@@ -1842,7 +1855,8 @@ def test_status_in_code_schedule(instance):
         "US/Central",
     )
     with create_test_daemon_workspace(
-        workspace_load_target(attribute="the_status_in_code_repo")
+        workspace_load_target(attribute="the_status_in_code_repo"),
+        instance,
     ) as workspace:
         external_repo = next(
             iter(workspace.get_workspace_snapshot().values())
@@ -1856,8 +1870,20 @@ def test_status_in_code_schedule(instance):
             never_running_origin = not_running_schedule.get_external_origin()
 
             assert instance.get_runs_count() == 0
-            assert len(instance.get_ticks(always_running_origin.get_id())) == 0
-            assert len(instance.get_ticks(never_running_origin.get_id())) == 0
+            assert (
+                len(
+                    instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
+                )
+                == 0
+            )
+            assert (
+                len(
+                    instance.get_ticks(
+                        never_running_origin.get_id(), not_running_schedule.selector_id
+                    )
+                )
+                == 0
+            )
 
             assert len(instance.all_instigator_state()) == 0
 
@@ -1868,17 +1894,26 @@ def test_status_in_code_schedule(instance):
 
             assert len(instance.all_instigator_state()) == 1
 
-            instigator_state = instance.get_instigator_state(always_running_origin.get_id())
+            instigator_state = instance.get_instigator_state(
+                always_running_origin.get_id(), running_schedule.selector_id
+            )
 
             assert instigator_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
             assert (
                 instigator_state.instigator_data.start_timestamp == pendulum.now("UTC").timestamp()
             )
 
-            ticks = instance.get_ticks(always_running_origin.get_id())
+            ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
             assert len(ticks) == 0
 
-            assert len(instance.get_ticks(never_running_origin.get_id())) == 0
+            assert (
+                len(
+                    instance.get_ticks(
+                        never_running_origin.get_id(), not_running_schedule.selector_id
+                    )
+                )
+                == 0
+            )
 
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum.test(freeze_datetime):
@@ -1893,9 +1928,16 @@ def test_status_in_code_schedule(instance):
 
             assert instance.get_runs_count() == 1
 
-            assert len(instance.get_ticks(never_running_origin.get_id())) == 0
+            assert (
+                len(
+                    instance.get_ticks(
+                        never_running_origin.get_id(), not_running_schedule.selector_id
+                    )
+                )
+                == 0
+            )
 
-            ticks = instance.get_ticks(always_running_origin.get_id())
+            ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
 
             assert len(ticks) == 1
 
@@ -1927,7 +1969,7 @@ def test_status_in_code_schedule(instance):
                 )
             )
             assert instance.get_runs_count() == 1
-            ticks = instance.get_ticks(always_running_origin.get_id())
+            ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
 
@@ -1943,7 +1985,7 @@ def test_status_in_code_schedule(instance):
                 )
             )
             assert instance.get_runs_count() == 3
-            ticks = instance.get_ticks(always_running_origin.get_id())
+            ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
             assert len(ticks) == 3
             assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 3
 
@@ -1954,7 +1996,7 @@ def test_status_in_code_schedule(instance):
 
     # Now try with an empty workspace - ticks are still there, but the job state is deleted
     # once it's no longer present in the workspace
-    with create_test_daemon_workspace(EmptyWorkspaceTarget()) as empty_workspace:
+    with create_test_daemon_workspace(EmptyWorkspaceTarget(), instance) as empty_workspace:
         with pendulum.test(freeze_datetime):
             list(
                 launch_scheduled_runs(
@@ -1964,7 +2006,7 @@ def test_status_in_code_schedule(instance):
                     pendulum.now("UTC"),
                 )
             )
-            ticks = instance.get_ticks(always_running_origin.get_id())
+            ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
             assert len(ticks) == 3
             assert len(instance.all_instigator_state()) == 0
 
@@ -1976,7 +2018,8 @@ def test_change_default_status(instance):
         "US/Central",
     )
     with create_test_daemon_workspace(
-        workspace_load_target(attribute="the_status_in_code_repo")
+        workspace_load_target(attribute="the_status_in_code_repo"),
+        instance,
     ) as workspace:
         external_repo = next(
             iter(workspace.get_workspace_snapshot().values())
@@ -2010,11 +2053,15 @@ def test_change_default_status(instance):
                 )
             )
 
-            ticks = instance.get_ticks(never_running_origin.get_id())
+            ticks = instance.get_ticks(
+                never_running_origin.get_id(), not_running_schedule.selector_id
+            )
             assert len(ticks) == 0
 
             # AUTOMATICALLY_RUNNING row has been removed from the database
-            instigator_state = instance.get_instigator_state(never_running_origin.get_id())
+            instigator_state = instance.get_instigator_state(
+                never_running_origin.get_id(), not_running_schedule.selector_id
+            )
             assert not instigator_state
 
             # schedule can still be manually started
@@ -2039,7 +2086,9 @@ def test_change_default_status(instance):
                 )
             )
 
-            ticks = instance.get_ticks(never_running_origin.get_id())
+            ticks = instance.get_ticks(
+                never_running_origin.get_id(), not_running_schedule.selector_id
+            )
             assert len(ticks) == 1
             assert len(ticks[0].run_ids) == 1
             assert ticks[0].timestamp == freeze_datetime.timestamp()

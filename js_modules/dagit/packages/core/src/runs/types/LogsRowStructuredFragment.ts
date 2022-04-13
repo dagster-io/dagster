@@ -10,7 +10,7 @@ import { DagsterEventType, LogLevel, ErrorSource, ObjectStoreOperationType } fro
 // ====================================================
 
 export interface LogsRowStructuredFragment_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent" | "AlertFailureEvent" | "AssetMaterializationPlannedEvent";
   message: string;
   eventType: DagsterEventType | null;
   timestamp: string;
@@ -1551,6 +1551,157 @@ export interface LogsRowStructuredFragment_HandledOutputEvent {
   metadataEntries: LogsRowStructuredFragment_HandledOutputEvent_metadataEntries[];
 }
 
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type LogsRowStructuredFragment_LoadedInputEvent_metadataEntries = LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_PathMetadataEntry | LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_JsonMetadataEntry | LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_UrlMetadataEntry | LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TextMetadataEntry | LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_MarkdownMetadataEntry | LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_PythonArtifactMetadataEntry | LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_FloatMetadataEntry | LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_IntMetadataEntry | LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_PipelineRunMetadataEntry | LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_AssetMetadataEntry | LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableMetadataEntry | LogsRowStructuredFragment_LoadedInputEvent_metadataEntries_TableSchemaMetadataEntry;
+
 export interface LogsRowStructuredFragment_LoadedInputEvent {
   __typename: "LoadedInputEvent";
   message: string;
@@ -1562,6 +1713,7 @@ export interface LogsRowStructuredFragment_LoadedInputEvent {
   managerKey: string;
   upstreamOutputName: string | null;
   upstreamStepKey: string | null;
+  metadataEntries: LogsRowStructuredFragment_LoadedInputEvent_metadataEntries[];
 }
 
 export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_PathMetadataEntry {

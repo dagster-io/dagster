@@ -14,6 +14,7 @@ from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
+from .container_context import K8sContainerContext
 from .job import (
     DagsterK8sJobConfig,
     construct_dagster_k8s_job,
@@ -112,6 +113,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         super().__init__()
 
     @property
+    def job_image(self):
+        return self._job_image
+
+    @property
     def image_pull_policy(self):
         return self._image_pull_policy
 
@@ -175,72 +180,20 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def get_static_job_config(self):
-        if self._job_config:
-            return self._job_config
-        else:
-            self._job_config = DagsterK8sJobConfig(
-                job_image=check.str_param(self._job_image, "job_image"),
-                dagster_home=check.str_param(self.dagster_home, "dagster_home"),
-                image_pull_policy=check.str_param(self._image_pull_policy, "image_pull_policy"),
-                image_pull_secrets=check.opt_list_param(
-                    self._image_pull_secrets, "image_pull_secrets", of_type=dict
-                ),
-                service_account_name=check.str_param(
-                    self._service_account_name, "service_account_name"
-                ),
-                instance_config_map=check.str_param(
-                    self.instance_config_map, "instance_config_map"
-                ),
-                postgres_password_secret=check.opt_str_param(
-                    self.postgres_password_secret, "postgres_password_secret"
-                ),
-                env_config_maps=check.opt_list_param(
-                    self._env_config_maps, "env_config_maps", of_type=str
-                ),
-                env_secrets=check.opt_list_param(self._env_secrets, "env_secrets", of_type=str),
-                env_vars=check.opt_list_param(self._env_vars, "env_vars", of_type=str),
-                volume_mounts=self._volume_mounts,
-                volumes=self._volumes,
-                labels=self._labels,
-            )
-            return self._job_config
+    def get_container_context_for_run(self, pipeline_run: PipelineRun) -> K8sContainerContext:
+        return K8sContainerContext.create_for_run(pipeline_run, self)
 
-    def _get_grpc_job_config(self, job_image):
-        return DagsterK8sJobConfig(
-            job_image=check.str_param(job_image, "job_image"),
-            dagster_home=check.str_param(self.dagster_home, "dagster_home"),
-            image_pull_policy=check.str_param(self._image_pull_policy, "image_pull_policy"),
-            image_pull_secrets=check.opt_list_param(
-                self._image_pull_secrets, "image_pull_secrets", of_type=dict
-            ),
-            service_account_name=check.str_param(
-                self._service_account_name, "service_account_name"
-            ),
-            instance_config_map=check.str_param(self.instance_config_map, "instance_config_map"),
-            postgres_password_secret=check.opt_str_param(
-                self.postgres_password_secret, "postgres_password_secret"
-            ),
-            env_config_maps=check.opt_list_param(
-                self._env_config_maps, "env_config_maps", of_type=str
-            ),
-            env_secrets=check.opt_list_param(self._env_secrets, "env_secrets", of_type=str),
-            env_vars=check.opt_list_param(self._env_vars, "env_vars", of_type=str),
-            volume_mounts=self._volume_mounts,
-            volumes=self._volumes,
-            labels=self._labels,
-        )
+    def _launch_k8s_job_with_args(self, job_name, args, run):
+        container_context = self.get_container_context_for_run(run)
 
-    def _launch_k8s_job_with_args(self, job_name, args, run, pipeline_origin):
         pod_name = job_name
 
+        pipeline_origin = run.pipeline_code_origin
         user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))
         repository_origin = pipeline_origin.repository_origin
 
-        job_config = (
-            self._get_grpc_job_config(repository_origin.container_image)
-            if repository_origin.container_image
-            else self.get_static_job_config()
+        job_config = container_context.get_k8s_job_config(
+            job_image=repository_origin.container_image, run_launcher=self
         )
 
         self._instance.add_run_tags(
@@ -267,31 +220,24 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             EngineEventData(
                 [
                     MetadataEntry("Kubernetes Job name", value=job_name),
-                    MetadataEntry("Kubernetes Namespace", value=self.job_namespace),
+                    MetadataEntry("Kubernetes Namespace", value=container_context.namespace),
                     MetadataEntry("Run ID", value=run.run_id),
                 ]
             ),
             cls=self.__class__,
         )
 
-        self._batch_api.create_namespaced_job(body=job, namespace=self.job_namespace)
+        self._batch_api.create_namespaced_job(body=job, namespace=container_context.namespace)
         self._instance.report_engine_event(
             "Kubernetes run worker job created",
             run,
-            EngineEventData(
-                [
-                    MetadataEntry("Kubernetes Job name", value=job_name),
-                    MetadataEntry("Kubernetes Namespace", value=self.job_namespace),
-                    MetadataEntry("Run ID", value=run.run_id),
-                ]
-            ),
             cls=self.__class__,
         )
 
     def launch_run(self, context: LaunchRunContext) -> None:
         run = context.pipeline_run
         job_name = get_job_name_from_run_id(run.run_id)
-        pipeline_origin = context.pipeline_code_origin
+        pipeline_origin = run.pipeline_code_origin
 
         args = ExecuteRunArgs(
             pipeline_origin=pipeline_origin,
@@ -300,7 +246,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             set_exit_code_on_failure=self._fail_pod_on_run_failure,
         ).get_command_args()
 
-        self._launch_k8s_job_with_args(job_name, args, run, pipeline_origin)
+        self._launch_k8s_job_with_args(job_name, args, run)
 
     @property
     def supports_resume_run(self):
@@ -311,7 +257,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_name = get_job_name_from_run_id(
             run.run_id, resume_attempt_number=context.resume_attempt_number
         )
-        pipeline_origin = context.pipeline_code_origin
+        pipeline_origin = run.pipeline_code_origin
 
         args = ResumeRunArgs(
             pipeline_origin=pipeline_origin,
@@ -320,7 +266,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             set_exit_code_on_failure=self._fail_pod_on_run_failure,
         ).get_command_args()
 
-        self._launch_k8s_job_with_args(job_name, args, run, pipeline_origin)
+        self._launch_k8s_job_with_args(job_name, args, run)
 
     # https://github.com/dagster-io/dagster/issues/2741
     def can_terminate(self, run_id):
@@ -340,6 +286,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         if not run:
             return False
 
+        container_context = self.get_container_context_for_run(run)
+
         can_terminate = self.can_terminate(run_id)
         if not can_terminate:
             self._instance.report_engine_event(
@@ -356,7 +304,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         )
 
         try:
-            termination_result = delete_job(job_name=job_name, namespace=self.job_namespace)
+            termination_result = delete_job(
+                job_name=job_name, namespace=container_context.namespace
+            )
             if termination_result:
                 self._instance.report_engine_event(
                     message="Run was terminated successfully.",
@@ -387,11 +337,15 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def check_run_worker_health(self, run: PipelineRun):
+        container_context = self.get_container_context_for_run(run)
+
         job_name = get_job_name_from_run_id(
             run.run_id, resume_attempt_number=self._instance.count_resume_run_attempts(run.run_id)
         )
         try:
-            job = self._batch_api.read_namespaced_job(namespace=self.job_namespace, name=job_name)
+            job = self._batch_api.read_namespaced_job(
+                namespace=container_context.namespace, name=job_name
+            )
         except Exception:
             return CheckRunHealthResult(
                 WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))

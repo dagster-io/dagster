@@ -120,6 +120,12 @@ class GrapheneAlertSuccessEvent(graphene.ObjectType):
         name = "AlertSuccessEvent"
 
 
+class GrapheneAlertFailureEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        name = "AlertFailureEvent"
+
+
 class GrapheneStepEvent(graphene.Interface):
     stepKey = graphene.Field(graphene.String)
     solidHandleID = graphene.Field(graphene.String)
@@ -377,6 +383,25 @@ class GrapheneObservationEvent(graphene.ObjectType, AssetEventMixin):
         )
 
 
+class GrapheneAssetMaterializationPlannedEvent(graphene.ObjectType):
+    assetKey = graphene.Field(GrapheneAssetKey)
+    runOrError = graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GrapheneRunOrError")
+
+    class Meta:
+        name = "AssetMaterializationPlannedEvent"
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+
+    def __init__(self, event):
+        self._event = event
+        super().__init__(**construct_basic_params(event))
+
+    def resolve_assetKey(self, _graphene_info):
+        return self._event.dagster_event.asset_materialization_planned_data
+
+    def resolve_runOrError(self, graphene_info):
+        return get_run_by_id(graphene_info, self._event.run_id)
+
+
 class GrapheneHandledOutputEvent(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneDisplayableEvent)
@@ -388,7 +413,7 @@ class GrapheneHandledOutputEvent(graphene.ObjectType):
 
 class GrapheneLoadedInputEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
+        interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneDisplayableEvent)
         name = "LoadedInputEvent"
 
     input_name = graphene.NonNull(graphene.String)
@@ -457,6 +482,8 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneHookErroredEvent,
             GrapheneAlertStartEvent,
             GrapheneAlertSuccessEvent,
+            GrapheneAlertFailureEvent,
+            GrapheneAssetMaterializationPlannedEvent,
         )
         name = "DagsterRunEvent"
 

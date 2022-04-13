@@ -114,7 +114,6 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         check.inst_param(context, "context", OutputContext)
 
         filepath = self._get_path(context)
-        context.log.debug(f"Writing file at: {filepath}")
 
         # Ensure path exists
         mkdir_p(os.path.dirname(filepath))
@@ -143,12 +142,14 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
                     "https://docs.dagster.io/deployment/executors#overview"
                 )
 
+        context.add_output_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
+
     def load_input(self, context):
         """Unpickle the file and Load it to a data object."""
         check.inst_param(context, "context", InputContext)
 
         filepath = self._get_path(context.upstream_output)
-        context.log.debug(f"Loading file from: {filepath}")
+        context.add_input_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
 
         with open(filepath, self.read_mode) as read_obj:
             return pickle.load(read_obj)

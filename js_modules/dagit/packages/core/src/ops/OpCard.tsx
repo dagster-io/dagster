@@ -4,7 +4,7 @@ import React from 'react';
 import styled from 'styled-components/macro';
 
 import {OpNode, OP_NODE_DEFINITION_FRAGMENT} from '../graph/OpNode';
-import {layoutOp} from '../graph/getFullOpLayout';
+import {layoutOp} from '../graph/asyncGraphLayout';
 
 import {OpCardSolidDefinitionFragment} from './types/OpCardSolidDefinitionFragment';
 
@@ -16,7 +16,7 @@ export const OpCard: React.FC<OpCardProps> = (props) => {
   const {name, inputDefinitions, outputDefinitions} = props.definition;
   const layout = layoutOp(
     {
-      name: name,
+      name,
       inputs: inputDefinitions.map((d) => ({
         definition: d,
         dependsOn: [],
@@ -35,7 +35,7 @@ export const OpCard: React.FC<OpCardProps> = (props) => {
 
   return (
     <Box padding={24}>
-      <OpCardContainer style={{height: layout.boundingBox.height}}>
+      <OpCardContainer style={{height: layout.bounds.height}}>
         <OpNode
           invocation={undefined}
           definition={props.definition}

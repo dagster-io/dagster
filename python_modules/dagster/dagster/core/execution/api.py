@@ -6,6 +6,7 @@ from dagster import check
 from dagster.core.definitions import IPipeline, JobDefinition, PipelineDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.pipeline_definition import PipelineSubsetDefinition
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import PlanOrchestrationContext
@@ -429,6 +430,9 @@ def _logged_execute_pipeline(
         solid_selection=solid_selection,
         solids_to_execute=solids_to_execute,
         tags=tags,
+        pipeline_code_origin=(
+            pipeline.get_python_origin() if isinstance(pipeline, ReconstructablePipeline) else None
+        ),
     )
 
     return execute_run(

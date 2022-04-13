@@ -1,22 +1,29 @@
 import {gql} from '@apollo/client';
 import {
-  ButtonWIP,
-  ColorsWIP,
+  Button,
+  Colors,
   DialogBody,
   DialogFooter,
-  DialogWIP,
+  Dialog,
   Group,
   HighlightedCodeBlock,
-  IconWIP,
+  Icon,
+  MenuItem,
+  Menu,
   MetadataTable,
+  Popover,
   Tooltip,
+  IconName,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import * as yaml from 'yaml';
 
 import {AppContext} from '../app/AppContext';
+import {useCopyToClipboard} from '../app/browser';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
+import {AnchorButton} from '../ui/AnchorButton';
+import {workspacePathFromRunDetails} from '../workspace/workspacePath';
 
 import {RunTags} from './RunTags';
 import {TimeElapsed} from './TimeElapsed';
@@ -50,7 +57,7 @@ const LoadingOrValue: React.FC<{
   loading: boolean;
   children: () => React.ReactNode;
 }> = ({loading, children}) =>
-  loading ? <div style={{color: ColorsWIP.Gray400}}>Loading…</div> : <div>{children()}</div>;
+  loading ? <div style={{color: Colors.Gray400}}>Loading…</div> : <div>{children()}</div>;
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
@@ -71,7 +78,7 @@ export const RunDetails: React.FC<{
                   return <TimestampDisplay timestamp={run.startTime} timeFormat={TIME_FORMAT} />;
                 }
                 return (
-                  <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: Colors.Gray400}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
@@ -86,7 +93,7 @@ export const RunDetails: React.FC<{
                   return <TimestampDisplay timestamp={run.endTime} timeFormat={TIME_FORMAT} />;
                 }
                 return (
-                  <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: Colors.Gray400}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
@@ -101,7 +108,7 @@ export const RunDetails: React.FC<{
                   return <TimeElapsed startUnix={run.startTime} endUnix={run.endTime} />;
                 }
                 return (
-                  <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: Colors.Gray400}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
@@ -114,24 +121,57 @@ export const RunDetails: React.FC<{
 
 export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({run, isJob}) => {
   const [showDialog, setShowDialog] = React.useState(false);
+  const [copyIcon, setCopyIcon] = React.useState<IconName>('copy_to_clipboard');
   const {rootServerURI} = React.useContext(AppContext);
   const runConfigYaml = yaml.stringify(run.runConfig) || '';
+  const copy = useCopyToClipboard();
+
+  const copyConfig = () => {
+    copy(runConfigYaml);
+    setCopyIcon('copy_to_clipboard_done');
+    setTimeout(() => setCopyIcon('copy_to_clipboard'), 2000);
+  };
+
   return (
     <div>
       <Group direction="row" spacing={8}>
-        <ButtonWIP icon={<IconWIP name="tag" />} onClick={() => setShowDialog(true)}>
+        <AnchorButton
+          icon={<Icon name="edit" />}
+          to={workspacePathFromRunDetails({
+            id: run.id,
+            repositoryName: run.repositoryOrigin?.repositoryName,
+            repositoryLocationName: run.repositoryOrigin?.repositoryLocationName,
+            pipelineName: run.pipelineName,
+            isJob,
+          })}
+        >
+          Open in Launchpad
+        </AnchorButton>
+        <Button icon={<Icon name="tag" />} onClick={() => setShowDialog(true)}>
           View tags and config
-        </ButtonWIP>
-        <Tooltip content="Loadable in dagit-debug" position="bottom-right">
-          <ButtonWIP
-            icon={<IconWIP name="download_for_offline" />}
-            onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
-          >
-            Debug file
-          </ButtonWIP>
-        </Tooltip>
+        </Button>
+        <Popover
+          position="bottom-right"
+          content={
+            <Menu>
+              <Tooltip
+                content="Loadable in dagit-debug"
+                position="bottom-right"
+                targetTagName="div"
+              >
+                <MenuItem
+                  text="Download debug file"
+                  icon={<Icon name="download_for_offline" />}
+                  onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
+                />
+              </Tooltip>
+            </Menu>
+          }
+        >
+          <Button icon={<Icon name="expand_more" />} />
+        </Popover>
       </Group>
-      <DialogWIP
+      <Dialog
         isOpen={showDialog}
         onClose={() => setShowDialog(false)}
         style={{width: '800px'}}
@@ -152,11 +192,14 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
           </Group>
         </DialogBody>
         <DialogFooter>
-          <ButtonWIP onClick={() => setShowDialog(false)} intent="primary">
+          <Button icon={<Icon name={copyIcon} />} onClick={() => copyConfig()} intent="none">
+            Copy config
+          </Button>
+          <Button onClick={() => setShowDialog(false)} intent="primary">
             OK
-          </ButtonWIP>
+          </Button>
         </DialogFooter>
-      </DialogWIP>
+      </Dialog>
     </div>
   );
 };

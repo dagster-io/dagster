@@ -1,17 +1,17 @@
 import {
   Box,
-  ButtonWIP,
+  Button,
   ButtonGroup,
   Checkbox,
   Group,
   IconName,
-  IconWIP,
-  MenuItemWIP,
-  SelectWIP,
+  Icon,
+  MenuItem,
+  Select,
   Spinner,
   Tab,
   Tabs,
-  TagWIP,
+  Tag,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -157,11 +157,11 @@ const ComputeLogToolbar = ({
       style={{flex: 1}}
     >
       <Group direction="row" spacing={24} alignItems="center">
-        <SelectWIP
+        <Select
           disabled={!steps.length}
           items={Object.keys(logCaptureSteps)}
           itemRenderer={(item: string, options: {handleClick: any; modifiers: any}) => (
-            <MenuItemWIP
+            <MenuItem
               key={item}
               onClick={options.handleClick}
               text={logKeyText(item)}
@@ -174,10 +174,10 @@ const ComputeLogToolbar = ({
             onSetComputeLogKey(logKey);
           }}
         >
-          <ButtonWIP disabled={!steps.length} rightIcon={<IconWIP name="expand_more" />}>
+          <Button disabled={!steps.length} rightIcon={<Icon name="expand_more" />}>
             {logKeyText(computeLogKey) || 'Select a step...'}
-          </ButtonWIP>
-        </SelectWIP>
+          </Button>
+        </Select>
         {isValidStepSelection ? (
           <Tabs selectedTabId={logType} onChange={onSetLogType} size="small">
             <Tab id={LogType.stdout} title="stdout" />
@@ -295,7 +295,7 @@ const StructuredLogToolbar = ({
                 })
               }
             >
-              <TagWIP
+              <Tag
                 key={level}
                 intent={enabled ? 'primary' : 'none'}
                 interactive
@@ -303,22 +303,22 @@ const StructuredLogToolbar = ({
                 round
               >
                 {level.toLowerCase()}
-              </TagWIP>
+              </Tag>
             </FilterButton>
           );
         })}
       </Group>
       {selectedStep && <OptionsDivider />}
       <div style={{minWidth: 15, flex: 1}} />
-      <ButtonWIP
-        icon={<IconWIP name={copyIcon} />}
+      <Button
+        icon={<Icon name={copyIcon} />}
         onClick={() => {
           copyToClipboard(window.location.href);
           setCopyIcon('assignment_turned_in');
         }}
       >
         Copy URL
-      </ButtonWIP>
+      </Button>
     </>
   );
 };

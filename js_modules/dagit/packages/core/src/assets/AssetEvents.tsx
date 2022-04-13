@@ -1,18 +1,18 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ButtonGroup, ColorsWIP, NonIdealState, Spinner, Subheading} from '@dagster-io/ui';
+import {Box, ButtonGroup, Colors, NonIdealState, Spinner, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {LiveDataForNode} from '../asset-graph/Utils';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RepositorySelector} from '../types/globalTypes';
-import {CurrentRunsBanner} from '../workspace/asset-graph/CurrentRunsBanner';
-import {FailedRunsSinceMaterializationBanner} from '../workspace/asset-graph/FailedRunsSinceMaterializationBanner';
-import {LiveDataForNode} from '../workspace/asset-graph/Utils';
 
 import {AssetEventsTable} from './AssetEventsTable';
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
 import {AssetViewParams} from './AssetView';
+import {CurrentRunsBanner} from './CurrentRunsBanner';
+import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {AssetEventGroup, groupByPartition} from './groupByPartition';
 import {AssetKey} from './types';
@@ -57,12 +57,12 @@ function useRecentAssetEvents(
       variables: loadUsingPartitionKeys
         ? {
             assetKey: {path: assetKey.path},
-            before: before,
+            before,
             partitionInLast: 120,
           }
         : {
             assetKey: {path: assetKey.path},
-            before: before,
+            before,
             limit: 100,
           },
     },
@@ -169,7 +169,7 @@ export const AssetEvents: React.FC<Props> = ({
           ) : (
             <Box
               margin={{horizontal: 24, vertical: 12}}
-              style={{color: ColorsWIP.Gray500, fontSize: '0.8rem'}}
+              style={{color: Colors.Gray500, fontSize: '0.8rem'}}
             >
               No materializations found
             </Box>
@@ -210,7 +210,7 @@ export const AssetEvents: React.FC<Props> = ({
         </Box>
         <Box
           style={{width: '40%'}}
-          border={{side: 'left', color: ColorsWIP.KeylineGray, width: 1}}
+          border={{side: 'left', color: Colors.KeylineGray, width: 1}}
         ></Box>
       </Box>
     );
@@ -255,10 +255,7 @@ export const AssetEvents: React.FC<Props> = ({
             setFocused={onSetFocused}
           />
         ) : (
-          <Box
-            padding={{vertical: 20}}
-            border={{side: 'top', color: ColorsWIP.KeylineGray, width: 1}}
-          >
+          <Box padding={{vertical: 20}} border={{side: 'top', color: Colors.KeylineGray, width: 1}}>
             <NonIdealState
               icon="asset"
               title="No materializations"
@@ -267,12 +264,12 @@ export const AssetEvents: React.FC<Props> = ({
           </Box>
         )}
         {loadedPartitionKeys && (
-          <Box padding={{vertical: 16, horizontal: 24}} style={{color: ColorsWIP.Gray400}}>
+          <Box padding={{vertical: 16, horizontal: 24}} style={{color: Colors.Gray400}}>
             Showing materializations for the last {loadedPartitionKeys.length} partitions.
           </Box>
         )}
       </Box>
-      <Box style={{width: '40%'}} border={{side: 'left', color: ColorsWIP.KeylineGray, width: 1}}>
+      <Box style={{width: '40%'}} border={{side: 'left', color: Colors.KeylineGray, width: 1}}>
         <AssetMaterializationGraphs
           xAxis={xAxis}
           asSidebarSection={asSidebarSection}

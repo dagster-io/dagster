@@ -60,7 +60,7 @@ def pg_url_from_config(config_value):
 
 
 def get_conn_string(username, password, hostname, db_name, port="5432", params=None):
-    uri = f"postgresql://{username}:{urlquote(password)}@{hostname}:{port}/{db_name}"
+    uri = f"postgresql://{urlquote(username)}:{urlquote(password)}@{hostname}:{port}/{db_name}"
 
     if params:
         query_string = f"{urlencode(params, quote_via=quote)}"

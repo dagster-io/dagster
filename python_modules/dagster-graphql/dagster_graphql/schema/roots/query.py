@@ -4,7 +4,7 @@ from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.execution.backfill import BulkActionStatus
 from dagster.core.host_representation import (
-    InstigationSelector,
+    InstigatorSelector,
     RepositorySelector,
     ScheduleSelector,
     SensorSelector,
@@ -340,7 +340,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_instigationStateOrError(self, graphene_info, instigationSelector):
         return get_instigator_state_or_error(
-            graphene_info, InstigationSelector.from_graphql_input(instigationSelector)
+            graphene_info, InstigatorSelector.from_graphql_input(instigationSelector)
         )
 
     def resolve_unloadableInstigationStatesOrError(self, graphene_info, **kwargs):

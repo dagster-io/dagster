@@ -64,7 +64,7 @@ function parentsAddingChildKeyToLast(parents: IParseStateParent[], key: string) 
 function parentsAddingChildKeyAtIndent(parents: IParseStateParent[], key: string, indent: number) {
   parents = parentsPoppingItemsDeeperThan(parents, indent);
   parents = parentsAddingChildKeyToLast(parents, key);
-  parents = [...parents, {key, indent: indent, childKeys: []}];
+  parents = [...parents, {key, indent, childKeys: []}];
   return parents;
 }
 
@@ -308,11 +308,7 @@ CodeMirror.registerHelper(
     options: {
       schema?: ConfigEditorRunConfigSchemaFragment;
     },
-  ): {list: Array<CodemirrorHint>} => {
-    if (!options.schema) {
-      return {list: []};
-    }
-
+  ): {list: Array<CodemirrorHint>; from: CodemirrorLocation; to: CodemirrorLocation} => {
     const {
       cursor,
       context,
@@ -321,8 +317,16 @@ CodeMirror.registerHelper(
       searchString,
       prevToken,
     } = expandAutocompletionContextAtCursor(editor);
+
+    const from = {line: cursor.line, ch: start};
+    const to = {line: cursor.line, ch: token.end};
+
+    if (!options.schema) {
+      return {list: [], from, to};
+    }
+
     if (!context) {
-      return {list: []};
+      return {list: [], from, to};
     }
 
     // Since writing meaningful tests for this functionality is difficult given a) no jsdom
@@ -433,8 +437,8 @@ CodeMirror.registerHelper(
         }
         el.appendChild(div);
       },
-      from: {line: cursor.line, ch: start},
-      to: {line: cursor.line, ch: token.end},
+      from,
+      to,
     });
 
     // Calculate if this is on a new-line child of a scalar union type, as an indication that we
@@ -458,6 +462,8 @@ CodeMirror.registerHelper(
               field.description,
             ),
           ),
+        from,
+        to,
       };
     }
 
@@ -470,6 +476,8 @@ CodeMirror.registerHelper(
         list: context.type.values
           .filter((val) => val.value.startsWith(searchWithoutQuotes))
           .map((val) => buildSuggestion(val.value, `"${val.value}"`, null)),
+        from,
+        to,
       };
     }
 
@@ -479,6 +487,8 @@ CodeMirror.registerHelper(
         list: ['True', 'False']
           .filter((val) => val.startsWith(searchString))
           .map((val) => buildSuggestion(val, val, null)),
+        from,
+        to,
       };
     }
 
@@ -513,10 +523,10 @@ CodeMirror.registerHelper(
           );
       }
 
-      return {list: [...scalarSuggestions, ...nonScalarSuggestions]};
+      return {list: [...scalarSuggestions, ...nonScalarSuggestions], from, to};
     }
 
-    return {list: []};
+    return {list: [], from, to};
   },
 );
 

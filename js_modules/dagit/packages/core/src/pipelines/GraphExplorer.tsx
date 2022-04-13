@@ -1,6 +1,7 @@
 import {gql} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
 import {Breadcrumbs} from '@blueprintjs/core';
-import {Checkbox, ColorsWIP, SplitPanelContainer, TextInput} from '@dagster-io/ui';
+import {Checkbox, Colors, SplitPanelContainer, TextInput} from '@dagster-io/ui';
 import Color from 'color';
 import qs from 'qs';
 import * as React from 'react';
@@ -8,13 +9,18 @@ import {Route} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
-import {PIPELINE_GRAPH_OP_FRAGMENT} from '../graph/PipelineGraph';
-import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
+import {OpGraph, OP_GRAPH_OP_FRAGMENT} from '../graph/OpGraph';
+import {useOpLayout} from '../graph/asyncGraphLayout';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {RepoAddress} from '../workspace/types';
 
-import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LargeDAGNotice} from './GraphNotices';
+import {
+  EmptyDAGNotice,
+  EntirelyFilteredDAGNotice,
+  LargeDAGNotice,
+  LoadingNotice,
+} from './GraphNotices';
 import {ExplorerPath} from './PipelinePathUtils';
 import {
   SidebarTabbedContainer,
@@ -165,6 +171,9 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
     [nameMatch, queryResultOps.all],
   );
 
+  const parentOp = parentHandle && parentHandle.solid;
+  const {layout, loading, async} = useOpLayout(queryResultOps.all, parentOp);
+
   return (
     <SplitPanelContainer
       identifier="explorer"
@@ -250,18 +259,25 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
             <EntirelyFilteredDAGNotice nodeType="op" />
           ) : undefined}
 
-          <PipelineGraphContainer
-            pipelineName={pipelineOrGraph.name}
-            ops={queryResultOps.all}
-            focusOps={queryResultOps.focus}
-            highlightedOps={highlightedOps}
-            selectedHandle={selectedHandle}
-            parentHandle={parentHandle}
-            onClickOp={handleClickOp}
-            onClickBackground={handleClickBackground}
-            onEnterSubgraph={handleEnterCompositeSolid}
-            onLeaveSubgraph={handleLeaveCompositeSolid}
-          />
+          {loading || !layout ? (
+            <LoadingNotice async={async} nodeType="op" />
+          ) : (
+            <OpGraph
+              jobName={pipelineOrGraph.name}
+              ops={queryResultOps.all}
+              focusOps={queryResultOps.focus}
+              highlightedOps={highlightedOps}
+              selectedHandleID={selectedHandle && selectedHandle.handleID}
+              selectedOp={selectedHandle && selectedHandle.solid}
+              parentHandleID={parentHandle && parentHandle.handleID}
+              parentOp={parentOp}
+              onClickOp={handleClickOp}
+              onClickBackground={handleClickBackground}
+              onEnterSubgraph={handleEnterCompositeSolid}
+              onLeaveSubgraph={handleLeaveCompositeSolid}
+              layout={layout}
+            />
+          )}
         </>
       }
       second={
@@ -314,10 +330,10 @@ export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
     handleID
     solid {
       name
-      ...PipelineGraphOpFragment
+      ...OpGraphOpFragment
     }
   }
-  ${PIPELINE_GRAPH_OP_FRAGMENT}
+  ${OP_GRAPH_OP_FRAGMENT}
 `;
 
 export const RightInfoPanel = styled.div`
@@ -331,7 +347,7 @@ export const RightInfoPanel = styled.div`
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: ${ColorsWIP.White};
+  background: ${Colors.White};
 `;
 
 export const RightInfoPanelContent = styled.div`
@@ -340,7 +356,7 @@ export const RightInfoPanelContent = styled.div`
 `;
 
 export const OptionsOverlay = styled.div`
-  background-color: ${Color(ColorsWIP.White).fade(0.6).toString()};
+  background-color: ${Color(Colors.White).fade(0.6).toString()};
   z-index: 2;
   padding: 15px 15px;
   display: inline-flex;
@@ -353,7 +369,7 @@ export const OptionsOverlay = styled.div`
 `;
 
 export const HighlightOverlay = styled.div`
-  background-color: ${Color(ColorsWIP.White).fade(0.6).toString()};
+  background-color: ${Color(Colors.White).fade(0.6).toString()};
   z-index: 2;
   padding: 12px 12px 0 0;
   display: inline-flex;
@@ -372,7 +388,7 @@ export const QueryOverlay = styled.div`
 `;
 
 export const BreadcrumbsOverlay = styled.div`
-  background-color: ${Color(ColorsWIP.White).fade(0.6).toString()};
+  background-color: ${Color(Colors.White).fade(0.6).toString()};
   z-index: 2;
   padding: 12px 0 0 20px;
   height: 42px;

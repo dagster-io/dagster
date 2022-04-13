@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, Popover} from '@dagster-io/ui';
+import {Box, Colors, Popover} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -70,7 +70,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
   const {data, loading} = useQuery<OpSelectorQuery>(SOLID_SELECTOR_QUERY, {
-    variables: {selector: selector, requestScopeHandleID: flattenGraphs ? undefined : ''},
+    variables: {selector, requestScopeHandleID: flattenGraphs ? undefined : ''},
     fetchPolicy: 'cache-and-network',
   });
 
@@ -147,7 +147,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
             linkToPreview={{
               repoName: repoAddress.name,
               repoLocation: repoAddress.location,
-              pipelineName: pipelineName,
+              pipelineName,
               isJob,
             }}
             flattenGraphsEnabled={flattenGraphsEnabled}
@@ -165,7 +165,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
 const PopoverErrorWrap = styled.div`
   padding: 4px 8px;
   border-radius: 2px;
-  border: 1px solid ${ColorsWIP.Red500};
-  background: ${ColorsWIP.Red200};
-  color: ${ColorsWIP.Red700};
+  border: 1px solid ${Colors.Red500};
+  background: ${Colors.Red200};
+  color: ${Colors.Red700};
 `;

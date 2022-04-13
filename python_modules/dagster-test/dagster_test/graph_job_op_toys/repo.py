@@ -1,3 +1,10 @@
+import warnings
+
+from dagster import ExperimentalWarning
+
+# squelch experimental warnings since we often include experimental things in toys for development
+warnings.filterwarnings("ignore", category=ExperimentalWarning)
+
 import pendulum
 from dagster_test.graph_job_op_toys.asset_lineage import (
     asset_lineage_job,
@@ -6,6 +13,11 @@ from dagster_test.graph_job_op_toys.asset_lineage import (
 from dagster_test.graph_job_op_toys.big_honkin_asset_graph import big_honkin_asset_group
 from dagster_test.graph_job_op_toys.branches import branch_failed_job, branch_job
 from dagster_test.graph_job_op_toys.composition import composition
+from dagster_test.graph_job_op_toys.cross_repo_assets import (
+    downstream_asset_group1,
+    downstream_asset_group2,
+    upstream_asset_group,
+)
 from dagster_test.graph_job_op_toys.dynamic import dynamic_job
 from dagster_test.graph_job_op_toys.error_monster import (
     error_monster_failing_job,
@@ -92,3 +104,18 @@ def big_honkin_assets_repository():
 @repository
 def partitioned_asset_repository():
     return [partitioned_asset_group]
+
+
+@repository
+def upstream_assets_repository():
+    return [upstream_asset_group]
+
+
+@repository
+def downstream_assets_repository1():
+    return [downstream_asset_group1]
+
+
+@repository
+def downstream_assets_repository2():
+    return [downstream_asset_group2]

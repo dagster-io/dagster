@@ -1,14 +1,15 @@
 import {gql} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
 import {
   Box,
-  ButtonWIP,
+  Button,
   ButtonLink,
   Checkbox,
-  ColorsWIP,
-  IconWIP,
+  Colors,
+  Icon,
   SplitPanelContainer,
-  TagWIP,
+  Tag,
   Code,
   Tooltip,
 } from '@dagster-io/ui';
@@ -125,7 +126,7 @@ const RemoveExtraConfigButton = ({
     onRemoveExtraPaths(extraNodes);
   };
 
-  return <ButtonWIP onClick={onClick}>Remove Extra Config</ButtonWIP>;
+  return <Button onClick={onClick}>Remove Extra Config</Button>;
 };
 
 const ScaffoldConfigButton = ({
@@ -166,7 +167,7 @@ const ScaffoldConfigButton = ({
     onScaffoldMissingConfig();
   };
 
-  return <ButtonWIP onClick={onClick}>Scaffold missing config</ButtonWIP>;
+  return <Button onClick={onClick}>Scaffold missing config</Button>;
 };
 
 interface RunPreviewProps {
@@ -314,7 +315,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
             intent={stateToHint[state].intent}
             key={item.name}
           >
-            <TagWIP
+            <Tag
               key={item.name}
               intent={stateToHint[state].intent}
               onClick={() => {
@@ -323,7 +324,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
               }}
             >
               {item.name}
-            </TagWIP>
+            </Tag>
           </Tooltip>
         );
       })
@@ -479,7 +480,7 @@ export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
 `;
 
 const SectionTitle = styled.div`
-  color: ${ColorsWIP.Gray400};
+  color: ${Colors.Gray400};
   text-transform: uppercase;
   font-size: 12px;
   margin-bottom: 8px;
@@ -528,7 +529,7 @@ const ErrorRowContainer = styled.div<{hoverable: boolean}>`
   ${({hoverable}) =>
     hoverable &&
     `&:hover {
-      background: ${ColorsWIP.Gray50};
+      background: ${Colors.Gray50};
     }
   `}
 `;
@@ -563,7 +564,7 @@ const ErrorRow: React.FC<{
       onClick={() => target && onHighlight(errorStackToYamlPath(target.stack.entries))}
     >
       <div style={{paddingRight: 4}}>
-        <IconWIP name="error" color={ColorsWIP.Red500} />
+        <Icon name="error" color={Colors.Red500} />
       </div>
       <div>
         {displayed}

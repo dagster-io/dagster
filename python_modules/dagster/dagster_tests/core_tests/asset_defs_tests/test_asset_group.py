@@ -13,10 +13,12 @@ from dagster import (
     in_process_executor,
     io_manager,
     mem_io_manager,
+    multiprocess_executor,
     repository,
     resource,
 )
 from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
+from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 
 
 @pytest.fixture(autouse=True)
@@ -463,3 +465,59 @@ def test_job_with_reserved_name():
         @repository
         def the_repo():  # pylint: disable=unused-variable
             return [the_job]
+
+
+def test_materialize():
+    @asset
+    def asset_foo():
+        return "foo"
+
+    group = AssetGroup(assets=[asset_foo])
+
+    result = group.materialize()
+    assert result.success
+
+
+def test_materialize_with_out_of_process_executor():
+    @asset
+    def asset_foo():
+        return "foo"
+
+    group = AssetGroup(assets=[asset_foo], executor_def=multiprocess_executor)
+
+    with pytest.raises(
+        DagsterUnmetExecutorRequirementsError,
+        match="'materialize' can only be invoked on AssetGroups which have no executor or have "
+        "the in_process_executor, but the AssetGroup had executor 'multiprocess'",
+    ):
+        group.materialize()
+
+
+def test_materialize_with_selection():
+    @asset
+    def start_asset():
+        return "foo"
+
+    @multi_asset(outs={"o1": Out(asset_key=AssetKey("o1")), "o2": Out(asset_key=AssetKey("o2"))})
+    def middle_asset(start_asset):
+        return (start_asset, start_asset)
+
+    @asset
+    def follows_o1(o1):
+        return o1
+
+    @asset
+    def follows_o2(o2):
+        return o2
+
+    _, io_manager_def = asset_aware_io_manager()
+    group = AssetGroup(
+        [start_asset, middle_asset, follows_o1, follows_o2],
+        resource_defs={"io_manager": io_manager_def},
+    )
+
+    result = group.materialize(selection="*follows_o2")
+    assert result.success
+    assert result.output_for_node("middle_asset", "o1") == "foo"
+    assert result.output_for_node("follows_o2") == "foo"
+    assert result.output_for_node("start_asset") == "foo"

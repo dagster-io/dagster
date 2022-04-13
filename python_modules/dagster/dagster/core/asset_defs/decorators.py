@@ -92,6 +92,8 @@ def asset(
             name forms the asset key.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
             and namespaces.
+        non_argument_deps (Optional[Set[AssetKey]]): Set of asset keys that are upstream dependencies,
+            but do not pass an input to the asset.
         metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
         io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
@@ -249,6 +251,8 @@ def multi_asset(
         outs: (Optional[Dict[str, Out]]): The Outs representing the produced assets.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
             and namespaces.
+        non_argument_deps (Optional[Set[AssetKey]]): Set of asset keys that are upstream dependencies,
+            but do not pass an input to the multi_asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
         io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
             output of the op as an asset, and for loading it in downstream ops
@@ -387,11 +391,9 @@ def build_asset_ins(
             asset_key = asset_ins[input_name].asset_key
             metadata = asset_ins[input_name].metadata or {}
             namespace = asset_ins[input_name].namespace
-            dagster_type = None
         else:
             metadata = {}
             namespace = None
-            dagster_type = None
 
         asset_key = asset_key or AssetKey(
             list(filter(None, [*(namespace or asset_namespace or []), input_name]))
@@ -401,7 +403,6 @@ def build_asset_ins(
             metadata=metadata,
             root_manager_key="root_manager",
             asset_key=asset_key,
-            dagster_type=dagster_type,
         )
 
     for asset_key in non_argument_deps:

@@ -9,6 +9,7 @@ from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.plan.step import ResolvedFromDynamicStepHandle
 from dagster.core.host_representation import ExternalExecutionPlan
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.pipeline_run import PipelineRun
 
 
 def _update_tracking_dict(tracking, handle):
@@ -30,12 +31,18 @@ def _in_tracking_dict(handle, tracking):
 
 
 def get_retry_steps_from_parent_run(
-    instance, parent_run_id
+    instance, parent_run_id: str = None, parent_run: PipelineRun = None
 ) -> Tuple[List[str], Optional[KnownExecutionState]]:
     check.inst_param(instance, "instance", DagsterInstance)
-    check.str_param(parent_run_id, "parent_run_id")
 
-    parent_run = instance.get_run_by_id(parent_run_id)
+    check.invariant(
+        bool(parent_run_id) != bool(parent_run), "Must provide one of parent_run_id or parent_run"
+    )
+    check.opt_str_param(parent_run_id, "parent_run_id")
+    check.opt_inst_param(parent_run, "parent_run", PipelineRun)
+
+    parent_run = parent_run or instance.get_run_by_id(parent_run_id)
+    parent_run_id = parent_run.run_id
     parent_run_logs = instance.all_logs(parent_run_id)
 
     execution_plan_snapshot = instance.get_execution_plan_snapshot(

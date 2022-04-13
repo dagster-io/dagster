@@ -1,9 +1,9 @@
-import {Box, ExternalAnchorButton, ColorsWIP, NonIdealState, Spinner} from '@dagster-io/ui';
+import {Box, ExternalAnchorButton, Colors, NonIdealState, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 
+import {__ASSET_GROUP} from '../asset-graph/Utils';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
 const InstanceRedirect = () => {
@@ -37,7 +37,7 @@ const FinalRedirectOrLoadingRoot = () => {
       <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
           <Spinner purpose="section" />
-          <div style={{color: ColorsWIP.Gray600}}>Loading workspace…</div>
+          <div style={{color: Colors.Gray600}}>Loading workspace…</div>
         </Box>
       </Box>
     );
@@ -71,7 +71,7 @@ const FinalRedirectOrLoadingRoot = () => {
   }
 
   // If we have more than one job, route to the instance overview
-  if (reposWithAJob.length > 1) {
+  if (reposWithAJob.length > 0) {
     return <Redirect to="/instance" />;
   }
 
@@ -81,10 +81,10 @@ const FinalRedirectOrLoadingRoot = () => {
     <Box padding={{vertical: 64}}>
       <NonIdealState
         icon="no-results"
-        title={repoWithNoJob ? 'No pipelines or jobs' : 'No repositories'}
+        title={repoWithNoJob ? 'No jobs' : 'No repositories'}
         description={
           repoWithNoJob
-            ? 'Your repository is loaded but no pipelines or jobs were found.'
+            ? 'Your repository is loaded, but no jobs were found.'
             : 'Add a repository to get started.'
         }
         action={

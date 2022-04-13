@@ -1,13 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  ColorsWIP,
-  Group,
-  NonIdealState,
-  PageHeader,
-  Heading,
-  Subheading,
-} from '@dagster-io/ui';
+import {Box, Colors, Group, NonIdealState, PageHeader, Heading, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -70,7 +62,7 @@ const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
         <React.Fragment key={repository.name}>
           <Box
             padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
           >
             <Subheading>{`${buildRepoPath(repository.name, repository.location.name)}`}</Subheading>
           </Box>

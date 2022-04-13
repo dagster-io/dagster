@@ -57,7 +57,9 @@ if TYPE_CHECKING:
     from dagster.core.executor.base import Executor
 
 
-def initialize_console_manager(pipeline_run: Optional[PipelineRun]) -> DagsterLogManager:
+def initialize_console_manager(
+    pipeline_run: Optional[PipelineRun], instance: Optional[DagsterInstance] = None
+) -> DagsterLogManager:
     # initialize default colored console logger
     loggers = []
     for logger_def, logger_config in default_system_loggers():
@@ -68,7 +70,7 @@ def initialize_console_manager(pipeline_run: Optional[PipelineRun]) -> DagsterLo
                 )
             )
         )
-    return DagsterLogManager.create(loggers=loggers, pipeline_run=pipeline_run)
+    return DagsterLogManager.create(loggers=loggers, pipeline_run=pipeline_run, instance=instance)
 
 
 def executor_def_from_config(

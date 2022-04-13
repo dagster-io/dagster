@@ -1,16 +1,16 @@
-import {Box, ColorsWIP, Heading, PageHeader} from '@dagster-io/ui';
+import {Box, Colors, Heading, PageHeader} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router';
 import {useHistory} from 'react-router-dom';
 
+import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
+import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {
   instanceAssetsExplorerPathFromString,
   instanceAssetsExplorerPathToURL,
 } from '../pipelines/PipelinePathUtils';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
-import {AssetGraphExplorer} from '../workspace/asset-graph/AssetGraphExplorer';
-import {AssetGraphQuery_assetNodes} from '../workspace/asset-graph/types/AssetGraphQuery';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 
 import {AssetViewModeSwitch} from './AssetViewModeSwitch';
@@ -40,9 +40,9 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
     >
       <PageHeader title={<Heading>Assets</Heading>} />
       <Box
-        background={ColorsWIP.White}
+        background={Colors.White}
         padding={{horizontal: 24, vertical: 8}}
-        border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
         flex={{direction: 'row', gap: 12}}
       >
         <AssetViewModeSwitch

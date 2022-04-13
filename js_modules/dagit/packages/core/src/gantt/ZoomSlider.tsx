@@ -1,4 +1,4 @@
-import {ColorsWIP, SliderStyles} from '@dagster-io/ui';
+import {Colors, SliderStyles} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -13,7 +13,7 @@ export const ZoomSlider: React.FC<{
 }> = React.memo((props) => {
   return (
     <ZoomSliderContainer
-      $fillColor={ColorsWIP.Gray600}
+      $fillColor={Colors.Gray600}
       className="bp3-slider bp3-slider-unlabeled"
       onMouseDown={(e: React.MouseEvent) => {
         const rect = e.currentTarget.closest('.bp3-slider')!.getBoundingClientRect();

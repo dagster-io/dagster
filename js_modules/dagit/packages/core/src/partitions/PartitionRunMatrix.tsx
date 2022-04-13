@@ -1,14 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  ButtonWIP,
-  ColorsWIP,
+  Button,
+  Colors,
   DialogFooter,
-  DialogWIP,
-  IconWIP,
-  MenuItemWIP,
-  MenuLink,
-  MenuWIP,
+  Dialog,
+  Icon,
+  MenuItem,
+  Menu,
   Popover,
   FontFamily,
 } from '@dagster-io/ui';
@@ -21,6 +20,7 @@ import {useViewport} from '../gantt/useViewport';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {RunFilterToken} from '../runs/RunsFilterInput';
+import {MenuLink} from '../ui/MenuLink';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -181,7 +181,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
 
   return (
     <PartitionRunMatrixContainer>
-      <DialogWIP
+      <Dialog
         isOpen={!!focused}
         onClose={() => setFocused(null)}
         style={{width: '90vw'}}
@@ -207,11 +207,11 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
           )}
         </Box>
         <DialogFooter>
-          <ButtonWIP intent="primary" autoFocus={true} onClick={() => setFocused(null)}>
+          <Button intent="primary" autoFocus={true} onClick={() => setFocused(null)}>
             OK
-          </ButtonWIP>
+          </Button>
         </DialogFooter>
-      </DialogWIP>
+      </Dialog>
       <OptionsContainer>
         <strong>Run Matrix</strong>
         <OptionsDivider />
@@ -245,7 +245,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
         style={{
           position: 'relative',
           display: 'flex',
-          borderBottom: `1px solid ${ColorsWIP.KeylineGray}`,
+          borderBottom: `1px solid ${Colors.KeylineGray}`,
         }}
       >
         <GridFloatingContainer floating={viewport.left > 0}>
@@ -385,7 +385,7 @@ const Divider = styled.div`
   height: 1px;
   width: 100%;
   margin-top: 5px;
-  border-top: 1px solid ${ColorsWIP.KeylineGray};
+  border-top: 1px solid ${Colors.KeylineGray};
 `;
 
 export const PARTITION_RUN_MATRIX_RUN_FRAGMENT = gql`
@@ -465,24 +465,21 @@ const RunMatrixSettings: React.FC<{
     <Popover
       position="bottom-left"
       content={
-        <MenuWIP>
-          <MenuItemWIP
+        <Menu>
+          <MenuItem
             text="Show previous status"
             icon={
-              <IconWIP
-                name="done"
-                color={options.showPrevious ? ColorsWIP.Gray700 : ColorsWIP.Gray200}
-              />
+              <Icon name="done" color={options.showPrevious ? Colors.Gray700 : Colors.Gray200} />
             }
             onClick={() => setOptions({...options, showPrevious: !options.showPrevious})}
             shouldDismissPopover={false}
           />
-          <MenuItemWIP
+          <MenuItem
             text="Only show failures and gaps"
             icon={
-              <IconWIP
+              <Icon
                 name="done"
-                color={options.showFailuresAndGapsOnly ? ColorsWIP.Gray700 : ColorsWIP.Gray200}
+                color={options.showFailuresAndGapsOnly ? Colors.Gray700 : Colors.Gray200}
               />
             }
             onClick={() =>
@@ -493,7 +490,7 @@ const RunMatrixSettings: React.FC<{
             }
             shouldDismissPopover={false}
           />
-          <MenuItemWIP
+          <MenuItem
             tagName="div"
             text={
               <Box flex={{direction: 'column', gap: 8}}>
@@ -512,18 +509,15 @@ const RunMatrixSettings: React.FC<{
               </Box>
             }
             icon={
-              <IconWIP
-                name="done"
-                color={options.colorizeByAge ? ColorsWIP.Gray700 : ColorsWIP.Gray200}
-              />
+              <Icon name="done" color={options.colorizeByAge ? Colors.Gray700 : Colors.Gray200} />
             }
             onClick={() => setOptions({...options, colorizeByAge: !options.colorizeByAge})}
             shouldDismissPopover={false}
           />
-        </MenuWIP>
+        </Menu>
       }
     >
-      <ButtonWIP icon={<IconWIP name="tune" />}>Settings</ButtonWIP>
+      <Button icon={<Icon name="tune" />}>Settings</Button>
     </Popover>
   );
 };
@@ -534,7 +528,7 @@ const RedBox = styled.div<{$filled: boolean}>`
   right: ${(p) => (p.$filled ? `2px` : `6px`)};
   font-size: 14px;
   cursor: pointer;
-  color: ${(p) => (p.$filled ? ColorsWIP.Red700 : ColorsWIP.Gray300)};
+  color: ${(p) => (p.$filled ? Colors.Red700 : Colors.Gray300)};
   line-height: 20px;
   padding: ${(p) => (p.$filled ? `0 4px;` : `0`)};
   border-radius: 3px;
@@ -543,7 +537,7 @@ const RedBox = styled.div<{$filled: boolean}>`
 `;
 
 const IconSorter: React.FC<{$asc: boolean; $sorting: boolean}> = ({$asc, $sorting}) => (
-  <IconWIP
+  <Icon
     name="arrow_drop_down"
     size={24}
     style={{
@@ -622,14 +616,14 @@ const PartitionStepSquare: React.FC<{
       onOpening={() => setOpened(true)}
       onClosed={() => setOpened(false)}
       content={
-        <MenuWIP>
+        <Menu>
           <MenuLink icon="open_in_new" text="Show Logs From Last Run" to={lastRunHref} />
-          <MenuItemWIP
+          <MenuItem
             icon="settings_backup_restore"
             text={`View Runs (${runs.length})`}
             onClick={() => setFocused({stepName: name, partitionName})}
           />
-        </MenuWIP>
+        </Menu>
       }
     >
       {content}

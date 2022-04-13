@@ -1,7 +1,7 @@
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {TextInput} from './TextInput';
 
 // eslint-disable-next-line import/no-default-export
@@ -41,7 +41,7 @@ export const StrokeColor = () => {
       placeholder="Type anything…"
       value={value}
       onChange={(e) => setValue(e.target.value)}
-      strokeColor={ColorsWIP.Red500}
+      strokeColor={Colors.Red500}
     />
   );
 };

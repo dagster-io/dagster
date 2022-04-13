@@ -1,13 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, NonIdealState, Table} from '@dagster-io/ui';
+import {Box, Colors, NonIdealState, Table} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {displayNameForAssetKey} from '../app/Util';
+import {__ASSET_GROUP, displayNameForAssetKey} from '../asset-graph/Utils';
 import {RepositoryLink} from '../nav/RepositoryLink';
 
-import {__ASSET_GROUP} from './asset-graph/Utils';
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
@@ -130,6 +129,6 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
 };
 
 const Description = styled.div`
-  color: ${ColorsWIP.Gray400};
+  color: ${Colors.Gray400};
   font-size: 12px;
 `;

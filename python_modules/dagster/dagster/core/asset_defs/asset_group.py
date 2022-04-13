@@ -22,6 +22,7 @@ from typing import (
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
+from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning
@@ -474,6 +475,42 @@ class AssetGroup(
         if module is None:
             check.failed("Could not find a module for the caller")
         return AssetGroup.from_modules([module], resource_defs, executor_def)
+
+    def materialize(
+        self, selection: Optional[Union[str, List[str]]] = None
+    ) -> ExecuteInProcessResult:
+        """
+        Executes an in-process run that materializes all assets in the group.
+
+        The execution proceeds serially, in a single thread. Only supported by AssetGroups that have
+        no executor_def or that that use the in-process executor.
+
+        Args:
+            selection (Union[str, List[str]]): A single selection query or list of selection queries
+                to for assets in the group. For example:
+
+                    - ``['some_asset_key']`` select ``some_asset_key`` itself.
+                    - ``['*some_asset_key']`` select ``some_asset_key`` and all its ancestors (upstream dependencies).
+                    - ``['*some_asset_key+++']`` select ``some_asset_key``, all its ancestors, and its descendants (downstream dependencies) within 3 levels down.
+                    - ``['*some_asset_key', 'other_asset_key_a', 'other_asset_key_b+']`` select ``some_asset_key`` and all its ancestors, ``other_asset_key_a`` itself, and ``other_asset_key_b`` and its direct child asset keys. When subselecting into a multi-asset, all of the asset keys in that multi-asset must be selected.
+
+        Returns:
+            ExecuteInProcessResult: The result of the execution.
+        """
+        if self.executor_def and self.executor_def is not in_process_executor:
+            raise DagsterUnmetExecutorRequirementsError(
+                "'materialize' can only be invoked on AssetGroups which have no executor or have "
+                "the in_process_executor, but the AssetGroup had executor "
+                f"'{self.executor_def.name}'"
+            )
+
+        return self.build_job(
+            name="in_process_materialization_job", selection=selection
+        ).execute_in_process()
+
+
+from dagster.core.definitions.executor_definition import in_process_executor
+from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 
 
 def _find_assets_in_module(

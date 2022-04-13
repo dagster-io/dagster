@@ -1,20 +1,21 @@
 import {gql} from '@apollo/client';
-import {ColorsWIP, IconWIP, FontFamily} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {displayNameForAssetKey, withMiddleTruncation} from '../app/Util';
+import {withMiddleTruncation} from '../app/Util';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
 
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';
-import {IFullOpLayout, ILayout} from './getFullOpLayout';
-import {Edge} from './highlighting';
+import {OpLayout} from './asyncGraphLayout';
+import {Edge, IBounds} from './common';
 import {OpNodeDefinitionFragment} from './types/OpNodeDefinitionFragment';
 import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
 
 interface IOpNodeProps {
-  layout: IFullOpLayout;
+  layout: OpLayout;
   invocation?: OpNodeInvocationFragment;
   definition: OpNodeDefinitionFragment;
   highlightedEdges: Edge[];
@@ -120,7 +121,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
         onClick={this.handleClick}
         onDoubleClick={this.handleDoubleClick}
       >
-        <div className="highlight-box" style={{...position(layout.boundingBox)}} />
+        <div className="highlight-box" style={{...position(layout.bounds)}} />
         {composite && <div className="composite-marker" style={{...position(layout.op)}} />}
 
         {invocation?.isDynamicMapped && (
@@ -160,7 +161,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
 
         <div className="node-box" style={{...position(layout.op)}}>
           <div className="name">
-            {!minified && <IconWIP name="op" size={16} />}
+            {!minified && <Icon name="op" size={16} />}
             <div className="label" data-tooltip={label} data-tooltip-style={TOOLTIP_STYLE}>
               {withMiddleTruncation(label, {maxLength: 48})}
             </div>
@@ -193,7 +194,7 @@ const OpNodeAssociatedAssets: React.FC<{nodes: {assetKey: AssetKey}[]}> = ({node
   const more = nodes.length > 1 ? ` + ${nodes.length - 1} more` : '';
   return (
     <div className="assets">
-      <IconWIP name="asset" size={16} />
+      <Icon name="asset" size={16} />
       {withMiddleTruncation(displayNameForAssetKey(nodes[0].assetKey), {
         maxLength: 48 - more.length,
       })}
@@ -329,7 +330,7 @@ const NodeContainer = styled.div<{
       p.$selected
         ? `2px dashed ${NodeHighlightColors.Border}`
         : p.$secondaryHighlight
-        ? `2px solid ${ColorsWIP.Blue500}55`
+        ? `2px solid ${Colors.Blue500}55`
         : '2px solid transparent'};
     border-radius: 6px;
     background: ${(p) => (p.$selected ? NodeHighlightColors.Background : 'transparent')};
@@ -338,11 +339,11 @@ const NodeContainer = styled.div<{
     border: 2px solid #dcd5ca;
     border-width: ${(p) => (p.$minified ? '3px' : '2px')};
     border-radius: 5px;
-    background: ${(p) => (p.$minified ? ColorsWIP.Gray50 : ColorsWIP.White)};
+    background: ${(p) => (p.$minified ? Colors.Gray50 : Colors.White)};
   }
   .composite-marker {
     outline: ${(p) => (p.$minified ? '3px' : '2px')} solid
-      ${(p) => (p.$selected ? 'transparent' : ColorsWIP.Yellow200)};
+      ${(p) => (p.$selected ? 'transparent' : Colors.Yellow200)};
     outline-offset: ${(p) => (p.$minified ? '5px' : '3px')};
     border-radius: 3px;
   }
@@ -403,7 +404,7 @@ const NodeContainer = styled.div<{
   }
 `;
 
-export const position = ({x, y, width, height}: ILayout) => ({
+export const position = ({x, y, width, height}: IBounds) => ({
   left: x,
   top: y,
   width,

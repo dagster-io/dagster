@@ -2,18 +2,18 @@ import {gql, useQuery, useMutation} from '@apollo/client';
 import {
   Alert,
   Box,
-  ButtonWIP,
-  ColorsWIP,
+  Button,
+  Colors,
   CursorPaginationControls,
   Group,
-  IconWIP,
-  MenuItemWIP,
-  MenuWIP,
+  Icon,
+  MenuItem,
+  Menu,
   NonIdealState,
   PageHeader,
   Popover,
   Table,
-  TagWIP,
+  Tag,
   Heading,
   Mono,
   stringFromValue,
@@ -340,9 +340,9 @@ const BackfillRow = ({
                 showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
               }
             >
-              <TagWIP intent="danger" interactive>
+              <Tag intent="danger" interactive>
                 {backfill.status}
-              </TagWIP>
+              </Tag>
             </TagButton>
           </Box>
         ) : null}
@@ -352,11 +352,11 @@ const BackfillRow = ({
       <td>
         <Popover
           content={
-            <MenuWIP>
+            <Menu>
               {canCancelPartitionBackfill ? (
                 <>
                   {counts.numUnscheduled && backfill.status === BulkActionStatus.REQUESTED ? (
-                    <MenuItemWIP
+                    <MenuItem
                       text="Cancel backfill submission"
                       icon="cancel"
                       intent="danger"
@@ -364,7 +364,7 @@ const BackfillRow = ({
                     />
                   ) : null}
                   {canCancel ? (
-                    <MenuItemWIP
+                    <MenuItem
                       text="Terminate unfinished runs"
                       icon="cancel"
                       intent="danger"
@@ -376,7 +376,7 @@ const BackfillRow = ({
               {canLaunchPartitionBackfill &&
               backfill.status === BulkActionStatus.FAILED &&
               backfill.partitionSet ? (
-                <MenuItemWIP
+                <MenuItem
                   text="Resume failed backfill"
                   title="Submits runs for all partitions in the backfill that do not have a corresponding run. Does not retry failed runs."
                   icon="refresh"
@@ -384,22 +384,22 @@ const BackfillRow = ({
                 />
               ) : null}
               {partitionSetBackfillUrl ? (
-                <MenuItemWIP
+                <MenuItem
                   text="View Partition Matrix"
                   icon="view_list"
                   onClick={() => history.push(partitionSetBackfillUrl)}
                 />
               ) : null}
-              <MenuItemWIP
+              <MenuItem
                 text="View Backfill Runs"
                 icon="settings_backup_restore"
                 onClick={() => history.push(runsUrl)}
               />
-            </MenuWIP>
+            </Menu>
           }
           position="bottom-right"
         >
-          <ButtonWIP icon={<IconWIP name="expand_more" />} />
+          <Button icon={<Icon name="expand_more" />} />
         </Popover>
       </td>
     </tr>
@@ -467,7 +467,7 @@ const BackfillProgress = ({backfill}: {backfill: Backfill}) => {
         lineHeight: '32px',
         fontSize: '36px',
         fontWeight: 600,
-        color: ColorsWIP.Gray600,
+        color: Colors.Gray600,
       }}
     >
       {numTotal ? Math.floor((100 * numCompleted) / numTotal) : '-'}%
@@ -499,7 +499,7 @@ const PartitionSetReference: React.FC<{
         {partitionSet.name}
       </Link>
       <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-        <IconWIP name="repo" color={ColorsWIP.Gray400} />
+        <Icon name="repo" color={Colors.Gray400} />
         <Link to={workspacePathFromAddress(repoAddress)}>{repoAddressAsString(repoAddress)}</Link>
       </Box>
       <PipelineReference

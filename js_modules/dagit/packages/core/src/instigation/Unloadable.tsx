@@ -4,7 +4,7 @@ import {
   Box,
   ButtonLink,
   Checkbox,
-  ColorsWIP,
+  Colors,
   Group,
   Table,
   Subheading,
@@ -183,7 +183,7 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
         {latestTick ? (
           <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
         ) : (
-          <span style={{color: ColorsWIP.Gray300}}>None</span>
+          <span style={{color: Colors.Gray300}}>None</span>
         )}
       </td>
       <td>

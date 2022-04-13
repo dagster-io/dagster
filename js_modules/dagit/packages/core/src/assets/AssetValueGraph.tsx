@@ -1,4 +1,4 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import {ActiveElement} from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import * as React from 'react';
@@ -41,18 +41,18 @@ export const AssetValueGraph: React.FC<{
   }
 
   const graphData = {
-    labels: labels,
+    labels,
     datasets: [
       {
         label: props.label,
         lineTension: 0,
         data: props.data.values.map((v) => ({x: v.xNumeric, y: v.y})),
-        borderColor: ColorsWIP.Blue500,
+        borderColor: Colors.Blue500,
         backgroundColor: 'rgba(0,0,0,0)',
         pointBorderWidth: 2,
         pointHoverBorderWidth: 2,
         pointHoverRadius: 13,
-        pointHoverBorderColor: ColorsWIP.Blue500,
+        pointHoverBorderColor: Colors.Blue500,
       },
     ],
   };

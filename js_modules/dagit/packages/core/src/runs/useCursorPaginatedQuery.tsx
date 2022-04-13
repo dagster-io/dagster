@@ -34,7 +34,7 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
 
   const queryVars: any = {
     ...options.variables,
-    cursor: cursor,
+    cursor,
     limit: options.pageSize + 1,
   };
 

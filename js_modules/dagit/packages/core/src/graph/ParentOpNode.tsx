@@ -1,4 +1,4 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -10,13 +10,13 @@ import {MappingLine} from './MappingLine';
 import {metadataForCompositeParentIO, PARENT_IN, PARENT_OUT, OpIOBox} from './OpIOBox';
 import {position} from './OpNode';
 import {SVGLabeledRect} from './SVGComponents';
-import {IFullPipelineLayout} from './getFullOpLayout';
-import {Edge} from './highlighting';
-import {PipelineGraphOpFragment} from './types/PipelineGraphOpFragment';
+import {OpGraphLayout} from './asyncGraphLayout';
+import {Edge} from './common';
+import {OpGraphOpFragment} from './types/OpGraphOpFragment';
 
 interface ParentOpNodeProps {
-  layout: IFullPipelineLayout;
-  op: PipelineGraphOpFragment;
+  layout: OpGraphLayout;
+  op: OpGraphOpFragment;
   minified: boolean;
 
   highlightedEdges: Edge[];
@@ -38,7 +38,7 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
     throw new Error('Parent op rendered when no parent layout is present.');
   }
 
-  const {boundingBox, mappingLeftEdge, mappingLeftSpacing} = parentLayout;
+  const {bounds, mappingLeftEdge, mappingLeftSpacing} = parentLayout;
   const highlightingProps = {
     highlightedEdges: props.highlightedEdges,
     onHighlightEdges: props.onHighlightEdges,
@@ -46,19 +46,19 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
     onClickOp: props.onClickOp,
   };
 
-  if (boundingBox.height < 0 || boundingBox.width < 0) {
+  if (bounds.height < 0 || bounds.width < 0) {
     return <g />;
   }
   return (
     <>
       <SVGLabeledParentRect
-        {...boundingBox}
+        {...bounds}
         label={op.definition.name}
-        fill={ColorsWIP.Gray50}
+        fill={Colors.Gray50}
         minified={minified}
       />
       {def.inputMappings.map(({definition, mappedInput}, idx) => {
-        const destination = layout.ops[mappedInput.solid.name];
+        const destination = layout.nodes[mappedInput.solid.name];
         if (!destination) {
           return <g />;
         }
@@ -78,7 +78,7 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
         );
       })}
       {def.outputMappings.map(({definition, mappedOutput}, idx) => {
-        const destination = layout.ops[mappedOutput.solid.name];
+        const destination = layout.nodes[mappedOutput.solid.name];
         if (!destination) {
           return <g />;
         }

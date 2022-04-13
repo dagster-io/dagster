@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, PageHeader, Heading, Subheading} from '@dagster-io/ui';
+import {Box, Colors, PageHeader, Heading, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -20,7 +20,7 @@ export const InstanceHealthPage = () => {
   const daemonContent = () => {
     if (loading && !data?.instance) {
       return (
-        <Box padding={{horizontal: 24}} style={{color: ColorsWIP.Gray400}}>
+        <Box padding={{horizontal: 24}} style={{color: Colors.Gray400}}>
           Loading…
         </Box>
       );

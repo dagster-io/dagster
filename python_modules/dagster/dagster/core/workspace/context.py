@@ -50,7 +50,6 @@ if TYPE_CHECKING:
 
 
 DAGIT_GRPC_SERVER_HEARTBEAT_TTL = 45
-DAGIT_GRPC_SERVER_STARTUP_TIMEOUT = 30
 
 
 class BaseWorkspaceRequestContext(IWorkspace):
@@ -136,8 +135,12 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     def get_repository_location(self, name: str) -> RepositoryLocation:
         location_entry = self.get_location_entry(name)
-        if not location_entry or not location_entry.repository_location:
+
+        if not location_entry:
             raise Exception(f"Location {name} not in workspace")
+        if location_entry.load_error:
+            raise Exception(f"Error loading location {name}: {location_entry.load_error}")
+
         return cast(RepositoryLocation, location_entry.repository_location)
 
     def has_repository_location_error(self, name: str) -> bool:
@@ -432,7 +435,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 ProcessGrpcServerRegistry(
                     reload_interval=0,
                     heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
-                    startup_timeout=DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
+                    startup_timeout=instance.code_server_process_startup_timeout,
                 )
             )
 

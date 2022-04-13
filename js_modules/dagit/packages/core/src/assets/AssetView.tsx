@@ -3,12 +3,12 @@ import {
   Alert,
   Box,
   ButtonLink,
-  ColorsWIP,
+  Colors,
   NonIdealState,
   Spinner,
   Tab,
   Tabs,
-  TagWIP,
+  Tag,
 } from '@dagster-io/ui';
 import * as React from 'react';
 
@@ -17,26 +17,26 @@ import {
   QueryRefreshCountdown,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
-import {displayNameForAssetKey} from '../app/Util';
 import {Timestamp} from '../app/time/Timestamp';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {RepositoryLink} from '../nav/RepositoryLink';
-import {useDidLaunchEvent} from '../runs/RunUtils';
-import {LaunchAssetExecutionButton} from '../workspace/asset-graph/LaunchAssetExecutionButton';
 import {
   buildGraphDataFromSingleNode,
   buildLiveData,
   REPOSITORY_LIVE_FRAGMENT,
   LiveData,
+  displayNameForAssetKey,
   toGraphId,
-} from '../workspace/asset-graph/Utils';
+} from '../asset-graph/Utils';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {RepositoryLink} from '../nav/RepositoryLink';
+import {useDidLaunchEvent} from '../runs/RunUtils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetEvents} from './AssetEvents';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
 import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetPageHeader} from './AssetPageHeader';
+import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
 import {
   AssetNodeDefinitionLiveQuery,
@@ -126,11 +126,11 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         tags={
           <>
             {repoAddress ? (
-              <TagWIP icon="asset">
+              <Tag icon="asset">
                 Asset in <RepositoryLink repoAddress={repoAddress} />
-              </TagWIP>
+              </Tag>
             ) : (
-              <TagWIP icon="asset">Asset</TagWIP>
+              <Tag icon="asset">Asset</Tag>
             )}
             {definition && repoAddress && (
               <AssetNodeInstigatorTag assetNode={definition} repoAddress={repoAddress} />
@@ -180,7 +180,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         ) : params.asOf ? (
           <Box
             padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
           >
             <HistoricalViewAlert
               asOf={params.asOf}

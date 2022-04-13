@@ -489,7 +489,7 @@ runLauncher:
       # Additional config options for Celery, applied to all queues.
       # These can be overridden per-queue below.
       # For available options, see:
-      # https://docs.celeryproject.org/en/stable/userguide/configuration.html
+      # https://docs.celeryq.dev/en/stable/userguide/configuration.html
       configSource: {}
 
       # Additional Celery worker queues can be configured here. When overriding, be sure to
@@ -1067,6 +1067,19 @@ extraManifests:
 ####################################################################################################
 migrate:
   enabled: false
+
+####################################################################################################
+# As an open source project, we collect usage statistics to better understand how users engage
+# with Dagster and to inform development priorities.
+#
+# Telemetry data will motivate projects such as adding functionality in frequently-used parts of
+# the product and will help us understand adoption of new features.
+#
+# For more details, see:
+# https://docs.dagster.io/getting-started/telemetry
+####################################################################################################
+telemetry:
+  enabled: true
 
 serviceAccount:
   create: true

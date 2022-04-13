@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, Group, NonIdealState, Subheading} from '@dagster-io/ui';
+import {Box, Colors, Group, NonIdealState, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
@@ -52,12 +52,12 @@ export const NoTargetSensorPreviousRuns: React.FC<{
     <Group direction="column" spacing={4}>
       <Box
         padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}
+        border={{side: 'bottom', width: 1, color: Colors.Gray100}}
         flex={{direction: 'row'}}
       >
         <Subheading>Latest runs</Subheading>
       </Box>
-      <div style={{color: ColorsWIP.Gray400}}>
+      <div style={{color: Colors.Gray400}}>
         <Box margin={{vertical: 64}}>
           <NonIdealState
             icon="sensors"

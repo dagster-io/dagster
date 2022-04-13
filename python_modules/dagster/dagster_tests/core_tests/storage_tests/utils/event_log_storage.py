@@ -1,4 +1,5 @@
 import datetime
+import logging
 import re
 import time
 from collections import Counter
@@ -9,6 +10,7 @@ import pendulum
 import pytest
 
 from dagster import (
+    AssetGroup,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
@@ -19,6 +21,8 @@ from dagster import (
     Output,
     OutputDefinition,
     RetryRequested,
+    asset,
+    build_assets_job,
     job,
     op,
     pipeline,
@@ -26,6 +30,7 @@ from dagster import (
     seven,
     solid,
 )
+from dagster.core.assets import AssetDetails
 from dagster.core.definitions import ExpectationResult
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
@@ -36,7 +41,12 @@ from dagster.core.events import (
     StepExpectationResultData,
     StepMaterializationData,
 )
-from dagster.core.events.log import EventLogEntry, construct_event_logger
+from dagster.core.events.log import (
+    EventLogEntry,
+    StructuredLoggerMessage,
+    construct_event_logger,
+    construct_event_record,
+)
 from dagster.core.execution.api import execute_run
 from dagster.core.execution.plan.handle import StepHandle
 from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
@@ -261,6 +271,14 @@ def cursor_datetime_args():
     yield None
     yield pendulum.now()
     yield datetime.datetime.now()
+
+
+def _execute_job_and_store_events(instance, storage, job):
+    result = job.execute_in_process(instance=instance, raise_on_error=False)
+    events = instance.all_logs(run_id=result.run_id)
+    for event in events:
+        storage.store_event(event)
+    return result
 
 
 class TestEventLogStorage:
@@ -1993,3 +2011,135 @@ class TestEventLogStorage:
                     storage.store_event(event)
 
                 assert [key] == storage.all_asset_keys()
+
+    def test_get_asset_records(self, storage):
+        @asset
+        def my_asset():
+            return 1
+
+        @asset
+        def second_asset(my_asset):
+            return 2
+
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            my_asset_key = AssetKey("my_asset")
+            second_asset_key = AssetKey("second_asset")
+            # storage.get_asset_records([my_asset_key, second_asset_key])
+
+            assert len(storage.get_asset_records()) == 0
+
+            asset_group = AssetGroup([my_asset, second_asset])
+            result = _execute_job_and_store_events(
+                instance,
+                storage,
+                asset_group.build_job(name="one_asset_job", selection=["my_asset"]),
+            )
+            records = storage.get_asset_records([my_asset_key])
+
+            assert len(records) == 1
+            asset_entry = records[0].asset_entry
+            assert asset_entry.asset_key == my_asset_key
+            materialize_event = [
+                event for event in result.all_events if event.is_step_materialization
+            ][0]
+            assert asset_entry.last_materialization.dagster_event == materialize_event
+            assert asset_entry.last_run_id == result.run_id
+            assert asset_entry.asset_details == None
+
+            if self.can_wipe():
+                storage.wipe_asset(my_asset_key)
+
+                # confirm that last_run_id == None when asset is wiped
+                assert len(storage.get_asset_records([my_asset_key])) == 0
+
+                result = _execute_job_and_store_events(
+                    instance, storage, asset_group.build_job(name="two_asset_job")
+                )
+                records = storage.get_asset_records([my_asset_key])
+                assert len(records) == 1
+                records = storage.get_asset_records()  # should select all assets
+                assert len(records) == 2
+
+                records.sort(key=lambda record: record.asset_entry.asset_key)  # order by asset key
+                asset_entry = records[0].asset_entry
+                assert asset_entry.asset_key == my_asset_key
+                materialize_event = [
+                    event for event in result.all_events if event.is_step_materialization
+                ][0]
+                assert asset_entry.last_materialization.dagster_event == materialize_event
+                assert asset_entry.last_run_id == result.run_id
+                assert isinstance(asset_entry.asset_details, AssetDetails)
+
+    def test_asset_record_run_id_wiped(self, storage):
+        asset_key = AssetKey("foo")
+
+        @op
+        def materialize_asset():
+            yield AssetMaterialization("foo")
+            yield Output(5)
+
+        @op
+        def observe_asset():
+            yield AssetObservation("foo")
+            yield Output(5)
+
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            events, result = _synthesize_events(lambda: observe_asset(), instance=instance)
+            for event in events:
+                storage.store_event(event)
+            asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
+            assert asset_entry.last_run_id == None
+
+            events, result = _synthesize_events(lambda: materialize_asset(), instance=instance)
+            for event in events:
+                storage.store_event(event)
+            asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
+            assert asset_entry.last_run_id == result.run_id
+
+            if self.can_wipe():
+                storage.wipe_asset(asset_key)
+                assert len(storage.get_asset_records([asset_key])) == 0
+
+                events, result = _synthesize_events(lambda: observe_asset(), instance=instance)
+                for event in events:
+                    storage.store_event(event)
+                asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
+                assert asset_entry.last_run_id == None
+
+    def test_last_run_id_updates_on_materialization_planned(self, storage):
+        @asset
+        def never_materializes_asset():
+            raise Exception("foo")
+
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            asset_key = AssetKey("never_materializes_asset")
+            never_materializes_job = build_assets_job(
+                "never_materializes_job", [never_materializes_asset]
+            )
+
+            result = _execute_job_and_store_events(instance, storage, never_materializes_job)
+            records = storage.get_asset_records([asset_key])
+
+            assert len(records) == 1
+            asset_record = records[0]
+            assert result.run_id == asset_record.asset_entry.last_run_id
+
+            if self.can_wipe():
+                storage.wipe_asset(asset_key)
+
+                # confirm that last_run_id == None when asset is wiped
+                assert len(storage.get_asset_records([asset_key])) == 0
+
+                result = _execute_job_and_store_events(instance, storage, never_materializes_job)
+                records = storage.get_asset_records([asset_key])
+                assert len(records) == 1
+                assert result.run_id == records[0].asset_entry.last_run_id

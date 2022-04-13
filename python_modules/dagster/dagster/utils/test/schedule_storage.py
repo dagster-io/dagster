@@ -87,6 +87,7 @@ class TestScheduleStorage:
         storage.add_instigator_state(schedule)
         schedules = storage.all_instigator_state(
             self.fake_repo_target().get_id(),
+            self.fake_repo_target().get_selector_id(),
             InstigatorType.SCHEDULE,
         )
         assert len(schedules) == 1
@@ -108,7 +109,9 @@ class TestScheduleStorage:
         storage.add_instigator_state(schedule_3)
 
         schedules = storage.all_instigator_state(
-            self.fake_repo_target().get_id(), InstigatorType.SCHEDULE
+            self.fake_repo_target().get_id(),
+            self.fake_repo_target().get_selector_id(),
+            InstigatorType.SCHEDULE,
         )
         assert len(schedules) == 3
 
@@ -121,7 +124,7 @@ class TestScheduleStorage:
 
         state = self.build_schedule("my_schedule", "* * * * *")
         storage.add_instigator_state(state)
-        schedule = storage.get_instigator_state(state.instigator_origin_id)
+        schedule = storage.get_instigator_state(state.instigator_origin_id, state.selector_id)
 
         assert schedule.instigator_name == "my_schedule"
         assert schedule.instigator_data.start_timestamp == None
@@ -129,8 +132,9 @@ class TestScheduleStorage:
     def test_get_schedule_state_not_found(self, storage):
         assert storage
 
-        storage.add_instigator_state(self.build_schedule("my_schedule", "* * * * *"))
-        schedule = storage.get_instigator_state("fake_id")
+        state = self.build_schedule("my_schedule", "* * * * *")
+        storage.add_instigator_state(state)
+        schedule = storage.get_instigator_state("fake_id", "fake_selector")
 
         assert schedule is None
 
@@ -151,7 +155,9 @@ class TestScheduleStorage:
         storage.update_instigator_state(new_schedule)
 
         schedules = storage.all_instigator_state(
-            self.fake_repo_target().get_id(), InstigatorType.SCHEDULE
+            self.fake_repo_target().get_id(),
+            self.fake_repo_target().get_selector_id(),
+            InstigatorType.SCHEDULE,
         )
         assert len(schedules) == 1
 
@@ -166,7 +172,9 @@ class TestScheduleStorage:
         storage.update_instigator_state(stopped_schedule)
 
         schedules = storage.all_instigator_state(
-            self.fake_repo_target().get_id(), InstigatorType.SCHEDULE
+            self.fake_repo_target().get_id(),
+            self.fake_repo_target().get_selector_id(),
+            InstigatorType.SCHEDULE,
         )
         assert len(schedules) == 1
 
@@ -191,10 +199,12 @@ class TestScheduleStorage:
 
         schedule = self.build_schedule("my_schedule", "* * * * *")
         storage.add_instigator_state(schedule)
-        storage.delete_instigator_state(schedule.instigator_origin_id)
+        storage.delete_instigator_state(schedule.instigator_origin_id, schedule.selector_id)
 
         schedules = storage.all_instigator_state(
-            self.fake_repo_target().get_id(), InstigatorType.SCHEDULE
+            self.fake_repo_target().get_id(),
+            self.fake_repo_target().get_selector_id(),
+            InstigatorType.SCHEDULE,
         )
         assert len(schedules) == 0
 
@@ -207,7 +217,7 @@ class TestScheduleStorage:
         schedule = self.build_schedule("my_schedule", "* * * * *")
 
         with pytest.raises(Exception):
-            storage.delete_instigator_state(schedule.instigator_origin_id)
+            storage.delete_instigator_state(schedule.instigator_origin_id, schedule.selector_id)
 
     def test_add_schedule_with_same_name(self, storage):
         assert storage
@@ -228,6 +238,7 @@ class TestScheduleStorage:
             [run_id] if run_id else [],
             [],
             error,
+            selector_id="my_schedule",
         )
 
     def test_create_tick(self, storage):
@@ -235,7 +246,7 @@ class TestScheduleStorage:
 
         current_time = time.time()
         tick = storage.create_tick(self.build_schedule_tick(current_time))
-        ticks = storage.get_ticks("my_schedule")
+        ticks = storage.get_ticks("my_schedule", "my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.instigator_name == "my_schedule"
@@ -255,7 +266,7 @@ class TestScheduleStorage:
 
         storage.update_tick(updated_tick)
 
-        ticks = storage.get_ticks("my_schedule")
+        ticks = storage.get_ticks("my_schedule", "my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.instigator_name == "my_schedule"
@@ -275,7 +286,7 @@ class TestScheduleStorage:
 
         storage.update_tick(updated_tick)
 
-        ticks = storage.get_ticks("my_schedule")
+        ticks = storage.get_ticks("my_schedule", "my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.instigator_name == "my_schedule"
@@ -298,7 +309,7 @@ class TestScheduleStorage:
 
         storage.update_tick(updated_tick)
 
-        ticks = storage.get_ticks("my_schedule")
+        ticks = storage.get_ticks("my_schedule", "my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.tick_id > 0
@@ -308,43 +319,13 @@ class TestScheduleStorage:
         assert tick.run_ids == []
         assert tick.error == SerializableErrorInfo(message="Error", stack=[], cls_name="TestError")
 
-    def test_get_tick_stats(self, storage):
-        assert storage
-
-        current_time = time.time()
-
-        error = SerializableErrorInfo(message="Error", stack=[], cls_name="TestError")
-
-        # Create ticks
-        for x in range(2):
-            storage.create_tick(self.build_schedule_tick(current_time))
-
-        for x in range(3):
-            storage.create_tick(
-                self.build_schedule_tick(current_time, TickStatus.SUCCESS, run_id=str(x)),
-            )
-
-        for x in range(4):
-            storage.create_tick(
-                self.build_schedule_tick(current_time, TickStatus.SKIPPED),
-            )
-
-        for x in range(5):
-            storage.create_tick(
-                self.build_schedule_tick(current_time, TickStatus.FAILURE, error=error),
-            )
-
-        stats = storage.get_tick_stats("my_schedule")
-        assert stats.ticks_started == 2
-        assert stats.ticks_succeeded == 3
-        assert stats.ticks_skipped == 4
-        assert stats.ticks_failed == 5
-
     def test_basic_storage(self, storage):
         assert storage
         sensor_state = self.build_sensor("my_sensor")
         storage.add_instigator_state(sensor_state)
-        states = storage.all_instigator_state(self.fake_repo_target().get_id())
+        states = storage.all_instigator_state(
+            self.fake_repo_target().get_id(), self.fake_repo_target().get_selector_id()
+        )
         assert len(states) == 1
 
         state = states[0]
@@ -361,7 +342,9 @@ class TestScheduleStorage:
         storage.add_instigator_state(state_2)
         storage.add_instigator_state(state_3)
 
-        states = storage.all_instigator_state(self.fake_repo_target().get_id())
+        states = storage.all_instigator_state(
+            self.fake_repo_target().get_id(), self.fake_repo_target().get_selector_id()
+        )
         assert len(states) == 3
 
         assert any(s.instigator_name == "my_sensor" for s in states)
@@ -373,7 +356,7 @@ class TestScheduleStorage:
 
         state = self.build_sensor("my_sensor")
         storage.add_instigator_state(state)
-        state = storage.get_instigator_state(state.instigator_origin_id)
+        state = storage.get_instigator_state(state.instigator_origin_id, state.selector_id)
 
         assert state.instigator_name == "my_sensor"
 
@@ -381,7 +364,7 @@ class TestScheduleStorage:
         assert storage
 
         storage.add_instigator_state(self.build_sensor("my_sensor"))
-        state = storage.get_instigator_state("fake_id")
+        state = storage.get_instigator_state("fake_id", "fake_selector")
         assert state is None
 
     def test_update_state(self, storage):
@@ -393,7 +376,9 @@ class TestScheduleStorage:
         new_state = state.with_status(InstigatorStatus.RUNNING)
         storage.update_instigator_state(new_state)
 
-        states = storage.all_instigator_state(self.fake_repo_target().get_id())
+        states = storage.all_instigator_state(
+            self.fake_repo_target().get_id(), self.fake_repo_target().get_selector_id()
+        )
         assert len(states) == 1
 
         state = states[0]
@@ -403,7 +388,9 @@ class TestScheduleStorage:
         stopped_state = state.with_status(InstigatorStatus.STOPPED)
         storage.update_instigator_state(stopped_state)
 
-        states = storage.all_instigator_state(self.fake_repo_target().get_id())
+        states = storage.all_instigator_state(
+            self.fake_repo_target().get_id(), self.fake_repo_target().get_selector_id()
+        )
         assert len(states) == 1
 
         state = states[0]
@@ -426,9 +413,11 @@ class TestScheduleStorage:
 
         state = self.build_sensor("my_sensor")
         storage.add_instigator_state(state)
-        storage.delete_instigator_state(state.instigator_origin_id)
+        storage.delete_instigator_state(state.instigator_origin_id, state.selector_id)
 
-        states = storage.all_instigator_state(self.fake_repo_target().get_id())
+        states = storage.all_instigator_state(
+            self.fake_repo_target().get_id(), self.fake_repo_target().get_selector_id()
+        )
         assert len(states) == 0
 
     def test_delete_state_not_found(self, storage):
@@ -440,7 +429,7 @@ class TestScheduleStorage:
         state = self.build_sensor("my_sensor")
 
         with pytest.raises(Exception):
-            storage.delete_instigator_state(state.instigator_origin_id)
+            storage.delete_instigator_state(state.instigator_origin_id, state.selector_id)
 
     def test_add_state_with_same_name(self, storage):
         assert storage
@@ -462,6 +451,7 @@ class TestScheduleStorage:
             current_time,
             [run_id] if run_id else [],
             error=error,
+            selector_id=name,
         )
 
     def test_create_sensor_tick(self, storage):
@@ -471,7 +461,7 @@ class TestScheduleStorage:
         tick = storage.create_tick(self.build_sensor_tick(current_time))
         tick_id = tick.tick_id
 
-        ticks = storage.get_ticks("my_sensor")
+        ticks = storage.get_ticks("my_sensor", "my_sensor")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.tick_id == tick_id
@@ -491,14 +481,16 @@ class TestScheduleStorage:
         storage.create_tick(self.build_sensor_tick(five_days_ago, TickStatus.SKIPPED))
         storage.create_tick(self.build_sensor_tick(four_days_ago, TickStatus.SKIPPED))
         storage.create_tick(self.build_sensor_tick(one_day_ago, TickStatus.SKIPPED))
-        ticks = storage.get_ticks("my_sensor")
+        ticks = storage.get_ticks("my_sensor", "my_sensor")
         assert len(ticks) == 3
 
-        ticks = storage.get_ticks("my_sensor", after=five_days_ago + 1)
+        ticks = storage.get_ticks("my_sensor", "my_sensor", after=five_days_ago + 1)
         assert len(ticks) == 2
-        ticks = storage.get_ticks("my_sensor", before=one_day_ago - 1)
+        ticks = storage.get_ticks("my_sensor", "my_sensor", before=one_day_ago - 1)
         assert len(ticks) == 2
-        ticks = storage.get_ticks("my_sensor", after=five_days_ago + 1, before=one_day_ago - 1)
+        ticks = storage.get_ticks(
+            "my_sensor", "my_sensor", after=five_days_ago + 1, before=one_day_ago - 1
+        )
         assert len(ticks) == 1
 
     def test_update_sensor_tick_to_success(self, storage):
@@ -512,7 +504,7 @@ class TestScheduleStorage:
 
         storage.update_tick(updated_tick)
 
-        ticks = storage.get_ticks("my_sensor")
+        ticks = storage.get_ticks("my_sensor", "my_sensor")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.tick_id > 0
@@ -533,7 +525,7 @@ class TestScheduleStorage:
 
         storage.update_tick(updated_tick)
 
-        ticks = storage.get_ticks("my_sensor")
+        ticks = storage.get_ticks("my_sensor", "my_sensor")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.tick_id > 0
@@ -555,7 +547,7 @@ class TestScheduleStorage:
 
         storage.update_tick(updated_tick)
 
-        ticks = storage.get_ticks("my_sensor")
+        ticks = storage.get_ticks("my_sensor", "my_sensor")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.tick_id > 0
@@ -579,15 +571,17 @@ class TestScheduleStorage:
         one_minute_tick = storage.create_tick(
             self.build_sensor_tick(one_minute_ago, TickStatus.SKIPPED)
         )
-        ticks = storage.get_ticks("my_sensor")
+        ticks = storage.get_ticks("my_sensor", "my_sensor")
         assert len(ticks) == 3
 
         latest_tick = ticks[0]
         assert latest_tick.tick_id == one_minute_tick.tick_id
 
-        storage.purge_ticks("my_sensor", TickStatus.SKIPPED, now.subtract(minutes=2).timestamp())
+        storage.purge_ticks(
+            "my_sensor", "my_sensor", TickStatus.SKIPPED, now.subtract(minutes=2).timestamp()
+        )
 
-        ticks = storage.get_ticks("my_sensor")
+        ticks = storage.get_ticks("my_sensor", "my_sensor")
         assert len(ticks) == 2
 
     def test_ticks_filtered(self, storage):
@@ -602,24 +596,26 @@ class TestScheduleStorage:
             )
         )
 
-        ticks = storage.get_ticks("my_sensor")
+        ticks = storage.get_ticks("my_sensor", "my_sensor")
         assert len(ticks) == 4
 
-        started = storage.get_ticks("my_sensor", statuses=[TickStatus.STARTED])
+        started = storage.get_ticks("my_sensor", "my_sensor", statuses=[TickStatus.STARTED])
         assert len(started) == 1
 
-        successes = storage.get_ticks("my_sensor", statuses=[TickStatus.SUCCESS])
+        successes = storage.get_ticks("my_sensor", "my_sensor", statuses=[TickStatus.SUCCESS])
         assert len(successes) == 1
 
-        skips = storage.get_ticks("my_sensor", statuses=[TickStatus.SKIPPED])
+        skips = storage.get_ticks("my_sensor", "my_sensor", statuses=[TickStatus.SKIPPED])
         assert len(skips) == 1
 
-        failures = storage.get_ticks("my_sensor", statuses=[TickStatus.FAILURE])
+        failures = storage.get_ticks("my_sensor", "my_sensor", statuses=[TickStatus.FAILURE])
         assert len(failures) == 1
 
         # everything but skips
         non_skips = storage.get_ticks(
-            "my_sensor", statuses=[TickStatus.STARTED, TickStatus.SUCCESS, TickStatus.FAILURE]
+            "my_sensor",
+            "my_sensor",
+            statuses=[TickStatus.STARTED, TickStatus.SUCCESS, TickStatus.FAILURE],
         )
         assert len(non_skips) == 3
 

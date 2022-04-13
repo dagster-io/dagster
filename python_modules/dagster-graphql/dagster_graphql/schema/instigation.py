@@ -362,6 +362,7 @@ class GrapheneInstigationState(graphene.ObjectType):
     def resolve_tick(self, graphene_info, timestamp):
         matches = graphene_info.context.instance.get_ticks(
             self._instigator_state.instigator_origin_id,
+            self._instigator_state.selector_id,
             before=timestamp + 1,
             after=timestamp - 1,
             limit=1,
@@ -393,11 +394,15 @@ class GrapheneInstigationState(graphene.ObjectType):
         if self._batch_loader and limit and not cursor and not before and not after:
             ticks = (
                 self._batch_loader.get_sensor_ticks(
-                    self._instigator_state.instigator_origin_id, limit
+                    self._instigator_state.instigator_origin_id,
+                    self._instigator_state.selector_id,
+                    limit,
                 )
                 if self._instigator_state.instigator_type == InstigatorType.SENSOR
                 else self._batch_loader.get_schedule_ticks(
-                    self._instigator_state.instigator_origin_id, limit
+                    self._instigator_state.instigator_origin_id,
+                    self._instigator_state.selector_id,
+                    limit,
                 )
             )
             return [GrapheneInstigationTick(graphene_info, tick) for tick in ticks]
@@ -406,6 +411,7 @@ class GrapheneInstigationState(graphene.ObjectType):
             GrapheneInstigationTick(graphene_info, tick)
             for tick in graphene_info.context.instance.get_ticks(
                 self._instigator_state.instigator_origin_id,
+                self._instigator_state.selector_id,
                 before=before,
                 after=after,
                 limit=limit,

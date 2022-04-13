@@ -9,7 +9,7 @@ import {
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
 import {
-  ColorsWIP,
+  Colors,
   GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
@@ -17,6 +17,8 @@ import {
   GlobalTooltipStyle,
   FontFamily,
   CustomTooltipProvider,
+  GlobalInter,
+  GlobalInconsolata,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
@@ -34,6 +36,8 @@ import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
 import {TimezoneProvider} from './time/TimezoneContext';
 
+import './blueprint.css';
+
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these
 // when you copy-paste so they don't get pasted into editors, etc.
@@ -45,7 +49,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body, #root {
-    color: ${ColorsWIP.Gray800};
+    color: ${Colors.Gray800};
     width: 100vw;
     height: 100vh;
     overflow: hidden;
@@ -58,7 +62,7 @@ const GlobalStyle = createGlobalStyle`
   a,
   a:hover,
   a:active {
-    color: ${ColorsWIP.Link};
+    color: ${Colors.Link};
   }
 
   #root {
@@ -97,7 +101,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   .bp3-button:disabled .material-icons {
-    color: ${ColorsWIP.Gray300}
+    color: ${Colors.Gray300}
   }
 `;
 
@@ -162,6 +166,8 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
   return (
     <AppContext.Provider value={appContextValue}>
       <WebSocketProvider websocketClient={websocketClient}>
+        <GlobalInter />
+        <GlobalInconsolata />
         <GlobalStyle />
         <GlobalToasterStyle />
         <GlobalTooltipStyle />

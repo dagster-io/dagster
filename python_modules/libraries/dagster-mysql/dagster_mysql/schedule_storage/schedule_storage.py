@@ -4,7 +4,6 @@ from dagster import check
 from dagster.core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils.backcompat import experimental_class_warning
 
 from ..utils import (
     MYSQL_POOL_RECYCLE,
@@ -35,7 +34,6 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     """
 
     def __init__(self, mysql_url, inst_data=None):
-        experimental_class_warning("MySQLScheduleStorage")
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.mysql_url = mysql_url
 
@@ -59,6 +57,10 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             with conn.begin():
                 ScheduleStorageSqlMetadata.create_all(conn)
                 stamp_alembic_rev(mysql_alembic_config(__file__), conn)
+
+        # mark all the data migrations as applied
+        self.migrate()
+        self.optimize()
 
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold an open connection

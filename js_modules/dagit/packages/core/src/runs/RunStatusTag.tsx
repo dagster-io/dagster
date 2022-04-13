@@ -1,4 +1,4 @@
-import {Box, Popover, TagWIP} from '@dagster-io/ui';
+import {Box, Popover, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {assertUnreachable} from '../app/Util';
@@ -56,12 +56,12 @@ const statusToString = (status: RunStatus) => {
 export const RunStatusTag = (props: {status: RunStatus}) => {
   const {status} = props;
   return (
-    <TagWIP intent={statusToIntent(status)}>
+    <Tag intent={statusToIntent(status)}>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
         <RunStatusIndicator status={status} size={10} />
         <div>{statusToString(status)}</div>
       </Box>
-    </TagWIP>
+    </Tag>
   );
 };
 

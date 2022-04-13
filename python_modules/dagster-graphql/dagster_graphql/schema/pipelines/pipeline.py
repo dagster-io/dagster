@@ -2,6 +2,7 @@ import graphene
 import yaml
 
 from dagster import check
+from dagster.core.events import DagsterEventType
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunRecord, RunsFilter
@@ -235,6 +236,7 @@ class GrapheneRun(graphene.ObjectType):
     rootRunId = graphene.Field(graphene.String)
     parentRunId = graphene.Field(graphene.String)
     canTerminate = graphene.NonNull(graphene.Boolean)
+    assetMaterializations = non_null_list(GrapheneMaterializationEvent)
     assets = non_null_list(GrapheneAsset)
     events = graphene.Field(
         non_null_list(GrapheneDagsterRunEvent),
@@ -355,6 +357,15 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_assets(self, graphene_info):
         return get_assets_for_run_id(graphene_info, self.run_id)
+
+    def resolve_assetMaterializations(self, graphene_info):
+        # convenience field added for users querying directly via GraphQL
+        return [
+            GrapheneMaterializationEvent(event=event)
+            for event in graphene_info.context.instance.all_logs(
+                self.run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
+            )
+        ]
 
     def resolve_events(self, graphene_info, after=-1):
         events = graphene_info.context.instance.logs_after(self.run_id, cursor=after)

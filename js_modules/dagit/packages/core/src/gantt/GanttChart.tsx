@@ -1,10 +1,10 @@
 import {
   Box,
   Checkbox,
-  ColorsWIP,
+  Colors,
   FontFamily,
   Group,
-  IconWIP,
+  Icon,
   NonIdealState,
   Spinner,
   SpinnerWrapper,
@@ -371,11 +371,11 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
               <Group
                 direction="row"
                 spacing={8}
-                background={`${ColorsWIP.Yellow500}26`}
+                background={`${Colors.Yellow500}26`}
                 padding={{vertical: 8, horizontal: 12}}
                 alignItems="flex-start"
               >
-                <IconWIP name="warning" color={ColorsWIP.Yellow700} />
+                <Icon name="warning" color={Colors.Yellow700} />
                 <div style={{maxWidth: '400px', whiteSpace: 'normal', overflow: 'hidden'}}>
                   <strong>Lost connection to Dagit server.</strong>
                   <span>
@@ -625,7 +625,7 @@ const GanttLine = React.memo(
     depNotDrawn: boolean;
   } & Bounds) => {
     const border = `${LINE_SIZE}px ${dotted ? 'dotted' : 'solid'} ${
-      darkened ? ColorsWIP.Gray700 : ColorsWIP.Gray300
+      darkened ? Colors.Gray700 : Colors.Gray300
     }`;
 
     const maxXAvoidingOverlap = maxX + (depIdx % 10) * LINE_SIZE;
@@ -684,7 +684,7 @@ const GanttChartContainer = styled.div`
   flex-direction: column;
   z-index: 2;
   user-select: none;
-  background: ${ColorsWIP.White};
+  background: ${Colors.White};
 
   .line {
     position: absolute;
@@ -735,11 +735,11 @@ const GanttChartContainer = styled.div`
       width ${CSS_DURATION}ms linear, height ${CSS_DURATION}ms linear;
 
     &.focused {
-      border: 1px solid ${ColorsWIP.Gray900};
-      box-shadow: 0 0 0 2px ${ColorsWIP.Yellow500};
+      border: 1px solid ${Colors.Gray900};
+      box-shadow: 0 0 0 2px ${Colors.Yellow500};
     }
     &.hovered {
-      border: 1px solid ${ColorsWIP.Gray800};
+      border: 1px solid ${Colors.Gray800};
     }
     &.dynamic {
       filter: brightness(125%);
@@ -778,7 +778,7 @@ const GanttChartContainer = styled.div`
 const WebsocketWarning = styled.div`
   position: absolute;
   bottom: 100%;
-  color: ${ColorsWIP.Yellow700};
+  color: ${Colors.Yellow700};
   width: 100%;
 `;
 
@@ -792,7 +792,7 @@ const GraphQueryInputContainer = styled.div`
 `;
 
 const FilterInputsBackgroundBox = styled(Box)`
-  background: radial-gradient(${ColorsWIP.Gray50} 0%, rgba(255, 255, 255, 0) 100%);
+  background: radial-gradient(${Colors.Gray50} 0%, rgba(255, 255, 255, 0) 100%);
   padding: 15px 15px 0px 15px;
 `;
 

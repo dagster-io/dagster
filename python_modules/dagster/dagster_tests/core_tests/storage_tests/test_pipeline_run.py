@@ -3,8 +3,8 @@ import sys
 import pytest
 
 from dagster import check
+from dagster.check import CheckError
 from dagster.core.code_pointer import ModuleCodePointer
-from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
@@ -20,14 +20,21 @@ from dagster.core.storage.pipeline_run import (
     NON_IN_PROGRESS_RUN_STATUSES,
     PipelineRun,
     PipelineRunStatus,
+    RunsFilter,
 )
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 
 def test_queued_pipeline_origin_check():
     code_pointer = ModuleCodePointer("fake", "fake", working_directory=None)
     fake_pipeline_origin = ExternalPipelineOrigin(
         ExternalRepositoryOrigin(
-            InProcessRepositoryLocationOrigin(ReconstructableRepository(code_pointer)),
+            InProcessRepositoryLocationOrigin(
+                LoadableTargetOrigin(
+                    executable_path=sys.executable,
+                    module_name="fake",
+                )
+            ),
             "foo_repo",
         ),
         "foo",
@@ -68,3 +75,11 @@ def test_in_progress_statuses():
     assert len(IN_PROGRESS_RUN_STATUSES) + len(NON_IN_PROGRESS_RUN_STATUSES) == len(
         PipelineRunStatus
     )
+
+
+def test_runs_filter_supports_nonempty_run_ids():
+    assert RunsFilter()
+    assert RunsFilter(run_ids=["1234"])
+
+    with pytest.raises(CheckError):
+        RunsFilter(run_ids=[])

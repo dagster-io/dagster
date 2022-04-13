@@ -1,4 +1,5 @@
 import {gql, useApolloClient, useMutation, useQuery} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
 import * as React from 'react';
 

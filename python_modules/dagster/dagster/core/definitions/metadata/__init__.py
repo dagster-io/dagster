@@ -356,6 +356,11 @@ class MetadataValue:
 
     @staticmethod
     def dagster_run(run_id: str) -> "DagsterPipelineRunMetadataValue":
+        """Static constructor for a metadata value wrapping a reference to a Dagster run.
+
+        Args:
+            run_id (str): The ID of the run.
+        """
         return MetadataValue.pipeline_run(run_id)
 
     @staticmethod

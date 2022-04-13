@@ -1,5 +1,6 @@
+// eslint-disable-next-line no-restricted-imports
 import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
-import {Box, ColorsWIP, PageHeader, Heading} from '@dagster-io/ui';
+import {Box, Colors, PageHeader, Heading} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -43,10 +44,10 @@ export const AssetPageHeader: React.FC<Props> = ({assetKey, ...extra}) => {
 };
 
 const BreadcrumbLink = styled(Link)`
-  color: ${ColorsWIP.Gray800};
+  color: ${Colors.Gray800};
 
   :hover,
   :active {
-    color: ${ColorsWIP.Gray800};
+    color: ${Colors.Gray800};
   }
 `;

@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, NonIdealState} from '@dagster-io/ui';
+import {Box, Colors, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
@@ -47,7 +47,7 @@ const useSidebarOpQuery = (
           repositoryLocationName: repoAddress?.location || '',
           pipelineName: name,
         },
-        handleID: handleID,
+        handleID,
       },
       fetchPolicy: 'cache-and-network',
       skip: isGraph,
@@ -63,7 +63,7 @@ const useSidebarOpQuery = (
           repositoryLocationName: repoAddress?.location || '',
           graphName: name,
         },
-        handleID: handleID,
+        handleID,
       },
       fetchPolicy: 'cache-and-network',
       skip: !isGraph,
@@ -123,7 +123,7 @@ export const SidebarOpContainer: React.FC<SidebarOpContainerProps> = ({
   if (!solidContainer) {
     console.error('Could not load ops');
     return (
-      <Box padding={{vertical: 16, horizontal: 24}} style={{color: ColorsWIP.Gray500}}>
+      <Box padding={{vertical: 16, horizontal: 24}} style={{color: Colors.Gray500}}>
         Could not load ops.
       </Box>
     );

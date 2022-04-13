@@ -1,4 +1,4 @@
-import {ButtonWIP, IconWIP, Tooltip} from '@dagster-io/ui';
+import {Button, Icon, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
@@ -12,21 +12,16 @@ export const ReloadAllButton = () => {
   if (!canReloadWorkspace) {
     return (
       <Tooltip content={DISABLED_MESSAGE}>
-        <ButtonWIP icon={<IconWIP name="refresh" />} disabled intent="none">
+        <Button icon={<Icon name="refresh" />} disabled intent="none">
           Reload all
-        </ButtonWIP>
+        </Button>
       </Tooltip>
     );
   }
 
   return (
-    <ButtonWIP
-      onClick={onClick}
-      icon={<IconWIP name="refresh" />}
-      loading={reloading}
-      intent="none"
-    >
+    <Button onClick={onClick} icon={<Icon name="refresh" />} loading={reloading} intent="none">
       Reload all
-    </ButtonWIP>
+    </Button>
   );
 };

@@ -23,6 +23,7 @@ def get_sensors_or_error(graphene_info, repository_selector):
         state.name: state
         for state in graphene_info.context.instance.all_instigator_state(
             repository_origin_id=repository.get_external_origin_id(),
+            repository_selector_id=repository_selector.selector_id,
             instigator_type=InstigatorType.SENSOR,
         )
     }
@@ -51,7 +52,8 @@ def get_sensor_or_error(graphene_info, selector):
         raise UserFacingGraphQLError(GrapheneSensorNotFoundError(selector.sensor_name))
     external_sensor = repository.get_external_sensor(selector.sensor_name)
     sensor_state = graphene_info.context.instance.get_instigator_state(
-        external_sensor.get_external_origin_id()
+        external_sensor.get_external_origin_id(),
+        external_sensor.selector_id,
     )
 
     return GrapheneSensor(external_sensor, sensor_state)
@@ -72,7 +74,8 @@ def start_sensor(graphene_info, sensor_selector):
     external_sensor = repository.get_external_sensor(sensor_selector.sensor_name)
     graphene_info.context.instance.start_sensor(external_sensor)
     sensor_state = graphene_info.context.instance.get_instigator_state(
-        external_sensor.get_external_origin_id()
+        external_sensor.get_external_origin_id(),
+        external_sensor.selector_id,
     )
     return GrapheneSensor(external_sensor, sensor_state)
 
@@ -92,7 +95,10 @@ def stop_sensor(graphene_info, instigator_origin_id):
         for sensor in repository.get_external_sensors()
     }
     instance.stop_sensor(instigator_origin_id, external_sensors.get(instigator_origin_id))
-    state = graphene_info.context.instance.get_instigator_state(instigator_origin_id)
+    state = graphene_info.context.instance.get_instigator_state(
+        instigator_origin_id,
+        external_sensors.get(instigator_origin_id).selector_id,
+    )
     return GrapheneStopSensorMutationResult(state)
 
 
@@ -146,7 +152,8 @@ def get_sensors_for_pipeline(graphene_info, pipeline_selector):
             continue
 
         sensor_state = graphene_info.context.instance.get_instigator_state(
-            external_sensor.get_external_origin_id()
+            external_sensor.get_external_origin_id(),
+            external_sensor.selector_id,
         )
         results.append(GrapheneSensor(external_sensor, sensor_state))
 
@@ -181,7 +188,9 @@ def get_sensor_next_tick(graphene_info, sensor_state):
     if not sensor_state.is_running:
         return None
 
-    ticks = graphene_info.context.instance.get_ticks(sensor_state.instigator_origin_id, limit=1)
+    ticks = graphene_info.context.instance.get_ticks(
+        sensor_state.instigator_origin_id, sensor_state.selector_id, limit=1
+    )
     if not ticks:
         return None
     latest_tick = ticks[0]
@@ -208,7 +217,10 @@ def set_sensor_cursor(graphene_info, selector, cursor):
         raise UserFacingGraphQLError(GrapheneSensorNotFoundError(selector.sensor_name))
     instance = graphene_info.context.instance
     external_sensor = repository.get_external_sensor(selector.sensor_name)
-    stored_state = instance.get_instigator_state(external_sensor.get_external_origin_id())
+    stored_state = instance.get_instigator_state(
+        external_sensor.get_external_origin_id(),
+        external_sensor.selector_id,
+    )
     sensor_state = external_sensor.get_current_instigator_state(stored_state)
     updated_state = sensor_state.with_data(
         SensorInstigatorData(

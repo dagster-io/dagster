@@ -1,10 +1,15 @@
 import pytest
 from dagster_azure.adls2 import create_adls2_client
-from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
+from dagster_azure.adls2.io_manager import (
+    PickledObjectADLS2IOManager,
+    adls2_pickle_asset_io_manager,
+    adls2_pickle_io_manager,
+)
 from dagster_azure.adls2.resources import adls2_resource
 from dagster_azure.blob import create_blob_client
 
 from dagster import (
+    AssetGroup,
     DagsterInstance,
     DynamicOutput,
     DynamicOutputDefinition,
@@ -12,6 +17,7 @@ from dagster import (
     Int,
     OutputDefinition,
     PipelineRun,
+    asset,
     build_input_context,
     build_output_context,
     graph,
@@ -68,7 +74,7 @@ def define_inty_job():
 
 
 @pytest.mark.nettest
-@pytest.mark.skip("https://github.com/dagster-io/dagster/issues/6607")
+@pytest.mark.skip("https://github.com/dagster-io/dagster/issues/7421")
 def test_adls2_pickle_io_manager_execution(storage_account, file_system, credential):
     job = define_inty_job()
 
@@ -139,3 +145,33 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
     assert get_step_output(add_one_step_events, "add_one")
     assert io_manager.load_input(context) == 2
+
+
+@pytest.mark.skip("https://github.com/dagster-io/dagster/issues/7421")
+def test_asset_io_manager(storage_account, file_system, credential):
+    @asset
+    def upstream():
+        return 2
+
+    @asset
+    def downstream(upstream):
+        assert upstream == 2
+        return 1 + upstream
+
+    asset_group = AssetGroup(
+        [upstream, downstream],
+        resource_defs={"io_manager": adls2_pickle_asset_io_manager, "adls2": adls2_resource},
+    )
+    asset_job = asset_group.build_job(name="my_asset_job")
+
+    run_config = {
+        "resources": {
+            "io_manager": {"config": {"adls2_file_system": file_system}},
+            "adls2": {
+                "config": {"storage_account": storage_account, "credential": {"key": credential}}
+            },
+        }
+    }
+
+    result = asset_job.execute_in_process(run_config=run_config)
+    assert result.success

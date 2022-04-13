@@ -639,7 +639,7 @@ def pipeline_launch_command(**kwargs):
 
 @telemetry_wrapper
 def execute_launch_command(
-    instance: DagsterInstance, kwargs: Dict[str, object], using_job_op_graph_apis: bool = False
+    instance: DagsterInstance, kwargs: Dict[str, str], using_job_op_graph_apis: bool = False
 ):
     preset = cast(Optional[str], kwargs.get("preset"))
     mode = cast(Optional[str], kwargs.get("mode"))
@@ -751,7 +751,7 @@ def gen_partition_names_from_args(partition_names, kwargs):
     return partition_names[start:end]
 
 
-def get_config_from_args(kwargs: Dict[str, object]) -> Dict[str, object]:
+def get_config_from_args(kwargs: Dict[str, str]) -> Dict[str, object]:
 
     config = kwargs.get("config")  # files
     config_json = kwargs.get("config_json")

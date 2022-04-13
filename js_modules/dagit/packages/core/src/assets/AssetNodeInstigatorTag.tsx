@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 import {flatMap} from 'lodash';
 import React from 'react';
 
-import {ScheduleOrSensorTag} from '../nav/JobMetadata';
+import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {RepoAddress} from '../workspace/types';
@@ -16,7 +16,14 @@ export const AssetNodeInstigatorTag: React.FC<{
   const schedules = flatMap(assetNode.jobs, (j) => j.schedules);
   const sensors = flatMap(assetNode.jobs, (j) => j.sensors);
 
-  return <ScheduleOrSensorTag repoAddress={repoAddress} schedules={schedules} sensors={sensors} />;
+  return (
+    <ScheduleOrSensorTag
+      repoAddress={repoAddress}
+      schedules={schedules}
+      sensors={sensors}
+      showSwitch={false}
+    />
+  );
 };
 
 export const ASSET_NODE_INSTIGATORS_FRAGMENT = gql`

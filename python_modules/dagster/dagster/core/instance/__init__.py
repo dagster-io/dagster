@@ -52,16 +52,20 @@ from dagster.core.storage.pipeline_run import (
     RunsFilter,
     TagBucket,
 )
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
+from dagster.core.storage.tags import PARENT_RUN_ID_TAG, RESUME_RETRY_TAG, ROOT_RUN_ID_TAG
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass
 from dagster.seven import get_current_datetime_in_utc
-from dagster.utils import traced
+from dagster.utils import merge_dicts, traced
 from dagster.utils.backcompat import experimental_functionality_warning
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-from .config import DAGSTER_CONFIG_YAML_FILENAME, is_dagster_home_set
+from .config import (
+    DAGSTER_CONFIG_YAML_FILENAME,
+    DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
+    is_dagster_home_set,
+)
 from .ref import InstanceRef
 
 # 'airflow_execution_date' and 'is_airflow_ingest_pipeline' are hardcoded tags used in the
@@ -72,13 +76,16 @@ from .ref import InstanceRef
 AIRFLOW_EXECUTION_DATE_STR = "airflow_execution_date"
 IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 
-
 if TYPE_CHECKING:
     from dagster.core.debug import DebugRunPayload
     from dagster.core.events import DagsterEvent, DagsterEventType
     from dagster.core.events.log import EventLogEntry
     from dagster.core.execution.stats import RunStepKeyStatsSnapshot
-    from dagster.core.host_representation import HistoricalPipeline
+    from dagster.core.host_representation import (
+        ExternalPipeline,
+        HistoricalPipeline,
+        RepositoryLocation,
+    )
     from dagster.core.launcher import RunLauncher
     from dagster.core.run_coordinator import RunCoordinator
     from dagster.core.scheduler import Scheduler
@@ -86,7 +93,7 @@ if TYPE_CHECKING:
     from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
     from dagster.core.storage.compute_log_manager import ComputeLogManager
     from dagster.core.storage.event_log import EventLogStorage
-    from dagster.core.storage.event_log.base import EventLogRecord, EventRecordsFilter
+    from dagster.core.storage.event_log.base import AssetRecord, EventLogRecord, EventRecordsFilter
     from dagster.core.storage.root import LocalArtifactStorage
     from dagster.core.storage.runs import RunStorage
     from dagster.core.storage.schedules import ScheduleStorage
@@ -596,6 +603,16 @@ class DagsterInstance:
         return self.run_monitoring_settings.get("start_timeout_seconds", 180)
 
     @property
+    def code_server_settings(self) -> Dict:
+        return self.get_settings("code_servers")
+
+    @property
+    def code_server_process_startup_timeout(self) -> int:
+        return self.code_server_settings.get(
+            "local_startup_timeout", DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
+        )
+
+    @property
     def run_monitoring_max_resume_run_attempts(self) -> int:
         default_max_resume_run_attempts = 3 if self.run_launcher.supports_resume_run else 0
         return self.run_monitoring_settings.get(
@@ -642,6 +659,7 @@ class DagsterInstance:
             if print_fn:
                 print_fn("Updating schedule storage...")
             self._schedule_storage.upgrade()
+            self._schedule_storage.migrate(print_fn)
 
     def optimize_for_dagit(self, statement_timeout):
         if self._schedule_storage:
@@ -654,6 +672,7 @@ class DagsterInstance:
         self._event_storage.reindex_events(print_fn)
         self._event_storage.reindex_assets(print_fn)
         self._run_storage.optimize(print_fn)
+        self._schedule_storage.optimize(print_fn)
         print_fn("Done.")
 
     def dispose(self):
@@ -932,6 +951,22 @@ class DagsterInstance:
 
         return execution_plan_snapshot_id
 
+    def _log_asset_materialization_planned_events(self, pipeline_run, execution_plan_snapshot):
+        from dagster.core.events import DagsterEvent
+        from dagster.core.execution.context_creation_pipeline import initialize_console_manager
+
+        pipeline_name = pipeline_run.pipeline_name
+
+        for step in execution_plan_snapshot.steps:
+            if step.key in execution_plan_snapshot.step_keys_to_execute:
+                for output in step.outputs:
+                    asset_key = output.properties.asset_key
+                    if asset_key:
+                        # Logs and stores asset_materialization_planned event
+                        DagsterEvent.asset_materialization_planned(
+                            pipeline_name, asset_key, initialize_console_manager(pipeline_run, self)
+                        )
+
     def create_run(
         self,
         pipeline_name,
@@ -970,7 +1005,83 @@ class DagsterInstance:
             external_pipeline_origin=external_pipeline_origin,
             pipeline_code_origin=pipeline_code_origin,
         )
-        return self._run_storage.add_run(pipeline_run)
+
+        pipeline_run = self._run_storage.add_run(pipeline_run)
+
+        if execution_plan_snapshot:
+            self._log_asset_materialization_planned_events(pipeline_run, execution_plan_snapshot)
+
+        return pipeline_run
+
+    def create_reexecuted_run_from_failure(
+        self,
+        parent_run: PipelineRun,
+        repo_location: "RepositoryLocation",
+        external_pipeline: "ExternalPipeline",
+        tags: Optional[Dict[str, Any]] = None,
+        run_config: Optional[Dict[str, Any]] = None,
+        mode: Optional[str] = None,
+    ) -> PipelineRun:
+        from dagster.core.execution.plan.resume_retry import get_retry_steps_from_parent_run
+        from dagster.core.host_representation import ExternalPipeline, RepositoryLocation
+
+        check.inst_param(parent_run, "parent_run", PipelineRun)
+        check.inst_param(repo_location, "repo_location", RepositoryLocation)
+        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+        check.opt_dict_param(tags, "tags", key_type=str)
+        check.opt_dict_param(run_config, "run_config", key_type=str)
+        check.opt_str_param(mode, "mode")
+        check.invariant(
+            parent_run.status == PipelineRunStatus.FAILURE,
+            "Cannot reexecute from failure a run that is not failed",
+        )
+
+        root_run_id = parent_run.root_run_id or parent_run.run_id
+        parent_run_id = parent_run.run_id
+
+        new_tags = merge_dicts(
+            tags or {},
+            external_pipeline.tags,
+            {
+                PARENT_RUN_ID_TAG: parent_run_id,
+                ROOT_RUN_ID_TAG: root_run_id,
+                RESUME_RETRY_TAG: "true",
+            },
+        )
+        mode = cast(str, mode if mode is not None else parent_run.mode)
+        run_config = run_config if run_config is not None else parent_run.run_config
+
+        step_keys_to_execute, known_state = get_retry_steps_from_parent_run(
+            self, parent_run=parent_run
+        )
+
+        external_execution_plan = repo_location.get_external_execution_plan(
+            external_pipeline,
+            run_config,
+            mode=mode,
+            step_keys_to_execute=step_keys_to_execute,
+            known_state=known_state,
+            instance=self,
+        )
+
+        return self.create_run(
+            pipeline_name=parent_run.pipeline_name,
+            run_id=None,
+            run_config=run_config,
+            mode=mode,
+            solids_to_execute=parent_run.solids_to_execute,
+            step_keys_to_execute=step_keys_to_execute,
+            status=PipelineRunStatus.NOT_STARTED,
+            tags=new_tags,
+            root_run_id=root_run_id,
+            parent_run_id=parent_run_id,
+            pipeline_snapshot=external_pipeline.pipeline_snapshot,
+            execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
+            parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
+            solid_selection=parent_run.solid_selection,
+            external_pipeline_origin=external_pipeline.get_external_origin(),
+            pipeline_code_origin=external_pipeline.get_python_origin(),
+        )
 
     def register_managed_run(
         self,
@@ -1189,6 +1300,12 @@ class DagsterInstance:
             List[EventLogRecord]: List of event log records stored in the event log storage.
         """
         return self._event_storage.get_event_records(event_records_filter, limit, ascending)
+
+    @traced
+    def get_asset_records(
+        self, asset_keys: Optional[Sequence[AssetKey]] = None
+    ) -> Iterable["AssetRecord"]:
+        return self._event_storage.get_asset_records(asset_keys)
 
     @traced
     def events_for_asset_key(
@@ -1695,7 +1812,9 @@ records = instance.get_event_records(
             SensorInstigatorData,
         )
 
-        state = self.get_instigator_state(external_sensor.get_external_origin_id())
+        state = self.get_instigator_state(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
 
         if external_sensor.get_current_instigator_state(state).is_running:
             raise Exception(
@@ -1724,7 +1843,7 @@ records = instance.get_event_records(
             SensorInstigatorData,
         )
 
-        state = self.get_instigator_state(instigator_origin_id)
+        state = self.get_instigator_state(instigator_origin_id, external_sensor.selector_id)
 
         if not state:
             return self.add_instigator_state(
@@ -1739,12 +1858,16 @@ records = instance.get_event_records(
             return self.update_instigator_state(state.with_status(InstigatorStatus.STOPPED))
 
     @traced
-    def all_instigator_state(self, repository_origin_id=None, instigator_type=None):
-        return self._schedule_storage.all_instigator_state(repository_origin_id, instigator_type)
+    def all_instigator_state(
+        self, repository_origin_id=None, repository_selector_id=None, instigator_type=None
+    ):
+        return self._schedule_storage.all_instigator_state(
+            repository_origin_id, repository_selector_id, instigator_type
+        )
 
     @traced
-    def get_instigator_state(self, origin_id):
-        return self._schedule_storage.get_instigator_state(origin_id)
+    def get_instigator_state(self, origin_id, selector_id):
+        return self._schedule_storage.get_instigator_state(origin_id, selector_id)
 
     def add_instigator_state(self, state):
         return self._schedule_storage.add_instigator_state(state)
@@ -1752,8 +1875,8 @@ records = instance.get_event_records(
     def update_instigator_state(self, state):
         return self._schedule_storage.update_instigator_state(state)
 
-    def delete_instigator_state(self, origin_id):
-        return self._schedule_storage.delete_instigator_state(origin_id)
+    def delete_instigator_state(self, origin_id, selector_id):
+        return self._schedule_storage.delete_instigator_state(origin_id, selector_id)
 
     @property
     def supports_batch_tick_queries(self):
@@ -1762,25 +1885,25 @@ records = instance.get_event_records(
     @traced
     def get_batch_ticks(
         self,
-        origin_ids: Sequence[str],
+        selector_ids: Sequence[str],
         limit: Optional[int] = None,
         statuses: Optional[Sequence["TickStatus"]] = None,
     ) -> Mapping[str, Iterable["InstigatorTick"]]:
         if not self._schedule_storage:
             return {}
-        return self._schedule_storage.get_batch_ticks(origin_ids, limit, statuses)
+        return self._schedule_storage.get_batch_ticks(selector_ids, limit, statuses)
 
     @traced
-    def get_tick(self, origin_id, timestamp):
+    def get_tick(self, origin_id, selector_id, timestamp):
         matches = self._schedule_storage.get_ticks(
-            origin_id, before=timestamp + 1, after=timestamp - 1, limit=1
+            origin_id, selector_id, before=timestamp + 1, after=timestamp - 1, limit=1
         )
         return matches[0] if len(matches) else None
 
     @traced
-    def get_ticks(self, origin_id, before=None, after=None, limit=None, statuses=None):
+    def get_ticks(self, origin_id, selector_id, before=None, after=None, limit=None, statuses=None):
         return self._schedule_storage.get_ticks(
-            origin_id, before=before, after=after, limit=limit, statuses=statuses
+            origin_id, selector_id, before=before, after=after, limit=limit, statuses=statuses
         )
 
     def create_tick(self, tick_data):
@@ -1789,12 +1912,8 @@ records = instance.get_event_records(
     def update_tick(self, tick):
         return self._schedule_storage.update_tick(tick)
 
-    @traced
-    def get_tick_stats(self, origin_id):
-        return self._schedule_storage.get_tick_stats(origin_id)
-
-    def purge_ticks(self, origin_id, tick_status, before):
-        self._schedule_storage.purge_ticks(origin_id, tick_status, before)
+    def purge_ticks(self, origin_id, selector_id, tick_status, before):
+        self._schedule_storage.purge_ticks(origin_id, selector_id, tick_status, before)
 
     def wipe_all_schedules(self):
         if self._scheduler:

@@ -3,7 +3,7 @@ import json
 import logging
 import time
 from typing import Any, Dict, List, Optional, cast
-from urllib.parse import urljoin
+from urllib.parse import urlencode, urljoin
 
 import requests
 from requests.exceptions import RequestException
@@ -180,6 +180,49 @@ class DbtCloudResourceV2:
             f"the dbt Cloud UI: {resp['href']}"
         )
         return resp
+
+    def get_runs(
+        self,
+        include_related: Optional[List[str]] = None,
+        job_id: Optional[int] = None,
+        order_by: Optional[str] = "-id",
+        offset: int = 0,
+        limit: int = 100,
+    ) -> List[Dict[str, any]]:
+        """
+        Returns a list of runs from dbt Cloud. This can be optionally filtered to a specific job
+        using the job_definition_id. It supports pagination using offset and limit as well and
+        can be configured to load a variety of related information about the runs.
+
+        Args:
+            include_related (Optional[List[str]]): A list of resources to include in the response
+                from dbt Cloud. This is technically a required field according to the API, but it
+                can be passed with an empty list where it will only load the default run
+                information. Valid values are "trigger", "job", "repository", and "environment".
+            job_definition_id (Optional[int]): This method can be optionally filtered to only
+                load runs for a specific job id if it is included here. If omitted it will pull
+                runs for every job.
+            order_by (Optional[str]): An identifier designated by dbt Cloud in which to sort the
+                results before returning them. Useful when combined with offset and limit to load
+                runs for a job. Defaults to "-id" where "-" designates reverse order and "id" is
+                the key to filter on.
+            offset (int): An offset to apply when listing runs. Can be used to paginate results
+                when combined with order_by and limit. Defaults to 0.
+            limit (int): Limits the amount of rows returned by the API. Defaults to 100.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries containing the runs and any included
+                related information.
+        """
+        query_dict = {
+            "include_related": include_related or [],
+            "order_by": order_by,
+            "offset": offset,
+            "limit": limit,
+        }
+        if job_id:
+            query_dict["job_definition_id"] = job_id
+        return self.make_request("GET", f"{self._account_id}/runs/?{urlencode(query_dict)}")
 
     def get_run(self, run_id: int, include_related: Optional[List[str]] = None) -> Dict[str, Any]:
         """

@@ -15,7 +15,7 @@ import 'codemirror/lib/codemirror.css';
 import './codemirror-yaml/lint'; // Patch lint
 import './codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
 
-import {ColorsWIP, FontFamily, Icons} from '@dagster-io/ui';
+import {Colors, FontFamily, Icons} from '@dagster-io/ui';
 import {Editor} from 'codemirror';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
@@ -41,9 +41,6 @@ interface ConfigEditorProps {
   onConfigChange: (newValue: string) => void;
   onHelpContextChange: (helpContext: ConfigEditorHelpContext | null) => void;
 }
-
-// Use `default` due to Webpack config.
-const errorIconPath = Icons.error.default;
 
 const AUTO_COMPLETE_AFTER_KEY = /^[a-zA-Z0-9_@(]$/;
 const performLint = debounce((editor: any) => {
@@ -75,8 +72,8 @@ const CodeMirrorShimStyle = createGlobalStyle`
   .CodeMirror-gutter-elt {
     .CodeMirror-lint-marker-error {
       background-image: none;
-      background: ${ColorsWIP.Red500};
-      mask-image: url(${errorIconPath});
+      background: ${Colors.Red500};
+      mask-image: url(${Icons.error});
       mask-size: cover;
       margin-bottom: 2px;
     }
@@ -93,49 +90,49 @@ const CodeMirrorShimStyle = createGlobalStyle`
 
   .react-codemirror2 .CodeMirror.cm-s-dagit {
     .cm-atom {
-      color: ${ColorsWIP.Blue700};
+      color: ${Colors.Blue700};
     }
 
     .cm-comment {
-      color: ${ColorsWIP.Gray400};
+      color: ${Colors.Gray400};
     }
 
     .cm-meta {
-      color: ${ColorsWIP.Gray700};
+      color: ${Colors.Gray700};
     }
 
     .cm-number {
-      color: ${ColorsWIP.Red700};
+      color: ${Colors.Red700};
     }
 
     .cm-string {
-      color: ${ColorsWIP.Green700};
+      color: ${Colors.Green700};
     }
 
     .cm-string-2 {
-      color: ${ColorsWIP.Olive700};
+      color: ${Colors.Olive700};
     }
 
     .cm-variable-2 {
-      color: ${ColorsWIP.Blue500};
+      color: ${Colors.Blue500};
     }
 
     .cm-keyword {
-      color: ${ColorsWIP.Yellow700};
+      color: ${Colors.Yellow700};
     }
 
     .CodeMirror-selected {
-      background-color: ${ColorsWIP.Blue50};
+      background-color: ${Colors.Blue50};
     }
 
     .CodeMirror-gutters {
-      background-color: ${ColorsWIP.Gray50};
+      background-color: ${Colors.Gray50};
     }
   }
 
   div.CodeMirror-lint-tooltip {
     background: rgba(255, 247, 231, 1);
-    border: 1px solid ${ColorsWIP.Gray200};
+    border: 1px solid ${Colors.Gray200};
   }
 
   .CodeMirror-lint-message {
@@ -206,7 +203,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     const offsetFromTop = 20;
 
     this._editor?.scrollIntoView({
-      left: left,
+      left,
       right: left,
       top: top - offsetFromTop,
       bottom: top + (clientHeight - offsetFromTop),

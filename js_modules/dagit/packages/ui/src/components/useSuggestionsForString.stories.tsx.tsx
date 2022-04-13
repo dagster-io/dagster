@@ -2,7 +2,7 @@ import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
 import {ButtonLink} from './ButtonLink';
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {Group} from './Group';
 import {useSuggestionsForString} from './useSuggestionsForString';
 
@@ -47,7 +47,7 @@ export const Example = () => {
         value={value}
         onChange={onChange}
         style={{
-          border: `1px solid ${ColorsWIP.Gray400}`,
+          border: `1px solid ${Colors.Gray400}`,
           borderRadius: '3px',
           padding: '8px',
           fontSize: '14px',

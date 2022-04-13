@@ -276,6 +276,23 @@ CROSS_REPO_ASSET_GRAPH = """
 """
 
 
+GET_RUN_MATERIALIZATIONS = """
+    query RunAssetsQuery {
+        runsOrError {
+            ... on Runs {
+                results {
+                    assetMaterializations {
+                        assetKey {
+                            path
+                        }
+                    }
+                }
+            }
+        }
+    }
+"""
+
+
 def _create_run(graphql_context, pipeline_name, mode="default", step_keys=None):
     selector = infer_pipeline_selector(graphql_context, pipeline_name)
     result = execute_dagster_graphql(
@@ -785,6 +802,16 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         # A job containing asset 2 was run 6 times, asset 2 was never materialized
         assert result["asset_2"]["count"] == 6
         assert result["asset_2"]["sinceLatestMaterialization"] == False
+
+    def test_get_run_materialization(self, graphql_context, snapshot):
+        _create_run(graphql_context, "single_asset_pipeline")
+        result = execute_dagster_graphql(graphql_context, GET_RUN_MATERIALIZATIONS)
+        assert result.data
+        assert result.data["runsOrError"]
+        assert result.data["runsOrError"]["results"]
+        assert len(result.data["runsOrError"]["results"]) == 1
+        assert len(result.data["runsOrError"]["results"][0]["assetMaterializations"]) == 1
+        snapshot.assert_match(result.data)
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):

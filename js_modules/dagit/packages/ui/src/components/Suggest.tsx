@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import {InputGroupProps2, IPopoverProps} from '@blueprintjs/core';
 // eslint-disable-next-line no-restricted-imports
 import {isCreateNewItem, Suggest as BlueprintSuggest, SuggestProps} from '@blueprintjs/select';
@@ -6,7 +7,7 @@ import * as React from 'react';
 import {List} from 'react-virtualized';
 import {createGlobalStyle} from 'styled-components/macro';
 
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 
 export const GlobalSuggestStyle = createGlobalStyle`
   .dagit-suggest-input.bp3-input-group {
@@ -20,24 +21,24 @@ export const GlobalSuggestStyle = createGlobalStyle`
 
     .bp3-input {
       border-radius: 8px;
-      box-shadow: ${ColorsWIP.Gray300} inset 0px 0px 0px 1px,
-        ${ColorsWIP.KeylineGray} inset 2px 2px 1.5px;
+      box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px,
+        ${Colors.KeylineGray} inset 2px 2px 1.5px;
       height: auto;
       line-height: 20px;
       padding: 6px 6px 6px 12px;
 
       :disabled::placeholder {
-        color: ${ColorsWIP.Gray400};
+        color: ${Colors.Gray400};
       }
     }
 
     /* Add more intents here as needed. */
 
     &.bp3-intent-danger .bp3-input {
-      box-shadow: ${ColorsWIP.Red500} inset 0px 0px 0px 1px, ${ColorsWIP.KeylineGray} inset 2px 2px 1.5px;
+      box-shadow: ${Colors.Red500} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px;
 
       :focus {
-        box-shadow: ${ColorsWIP.Red500} inset 0px 0px 0px 1px, ${ColorsWIP.KeylineGray} inset 2px 2px 1.5px, ${ColorsWIP.Red200} 0 0 0 3px;
+        box-shadow: ${Colors.Red500} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px, ${Colors.Red200} 0 0 0 3px;
       }
     }
 
@@ -55,7 +56,7 @@ export const MENU_ITEM_HEIGHT = 32;
 const MENU_WIDTH = 250; // arbitrary, just looks nice
 const MENU_HEIGHT_MAX = MENU_ITEM_HEIGHT * 7.5;
 
-export const SuggestWIP = <T,>(props: React.PropsWithChildren<SuggestProps<T>>) => {
+export const Suggest = <T,>(props: React.PropsWithChildren<SuggestProps<T>>) => {
   const popoverProps: Partial<IPopoverProps> = {
     ...props.popoverProps,
     minimal: true,

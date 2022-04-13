@@ -74,7 +74,9 @@ class Scheduler(abc.ABC):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
-        schedule_state = instance.get_instigator_state(external_schedule.get_external_origin_id())
+        schedule_state = instance.get_instigator_state(
+            external_schedule.get_external_origin_id(), external_schedule.selector_id
+        )
         if external_schedule.get_current_instigator_state(schedule_state).is_running:
             raise DagsterSchedulerError(
                 "You have attempted to start schedule {name}, but it is already running".format(
@@ -115,7 +117,9 @@ class Scheduler(abc.ABC):
         check.str_param(schedule_origin_id, "schedule_origin_id")
         check.opt_inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
-        schedule_state = instance.get_instigator_state(schedule_origin_id)
+        schedule_state = instance.get_instigator_state(
+            schedule_origin_id, external_schedule.selector_id
+        )
         if (
             external_schedule
             and not external_schedule.get_current_instigator_state(schedule_state).is_running

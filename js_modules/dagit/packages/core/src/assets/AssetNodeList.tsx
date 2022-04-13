@@ -2,9 +2,9 @@ import {Box} from '@dagster-io/ui';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 
-import {AssetNode} from '../workspace/asset-graph/AssetNode';
-import {ForeignNode} from '../workspace/asset-graph/ForeignNode';
-import {LiveData, toGraphId} from '../workspace/asset-graph/Utils';
+import {AssetNode} from '../asset-graph/AssetNode';
+import {ForeignNode} from '../asset-graph/ForeignNode';
+import {LiveData, toGraphId} from '../asset-graph/Utils';
 
 import {AssetNodeDefinitionFragment_dependencies} from './types/AssetNodeDefinitionFragment';
 
@@ -40,7 +40,6 @@ export const AssetNodeList: React.FC<{
                 definition={asset}
                 metadata={[]}
                 inAssetCatalog
-                jobName={asset.jobNames[0]}
                 selected={false}
                 liveData={liveDataByNode[toGraphId(asset.assetKey)]}
               />
