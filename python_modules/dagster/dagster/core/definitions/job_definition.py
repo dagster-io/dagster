@@ -68,8 +68,8 @@ class JobDefinition(PipelineDefinition):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
-        output_def_to_asset_key: Optional[Mapping[OutputDefinition, AssetKey]] = None,
-        input_def_to_asset_key: Optional[Mapping[InputDefinition, AssetKey]] = None,
+        asset_key_by_output_def: Optional[Mapping[OutputDefinition, AssetKey]] = None,
+        asset_key_by_input_def: Optional[Mapping[InputDefinition, AssetKey]] = None,
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
     ):
@@ -82,11 +82,40 @@ class JobDefinition(PipelineDefinition):
         # TODO: scrape asset key info off of input def / output def
         # TODO: scrape asset dep info off of output def + dependency structure
 
-        print("ayy")
-        print(output_def_to_asset_key)
-        self._output_def_to_asset_key = output_def_to_asset_key
-        self._input_def_to_asset_key = input_def_to_asset_key
-        self._asset_deps = asset_deps
+        self._asset_key_by_output_def = check.opt_dict_param(
+            asset_key_by_output_def,
+            "asset_key_by_output_def",
+            key_type=OutputDefinition,
+            value_type=AssetKey,
+        )
+        self._asset_key_by_input_def = check.opt_dict_param(
+            asset_key_by_input_def,
+            "asset_key_by_input_def",
+            key_type=InputDefinition,
+            value_type=AssetKey,
+        )
+        self._asset_deps = check.opt_dict_param(
+            asset_deps,
+            "asset_deps",
+            key_type=AssetKey,
+            value_type=set,
+        )
+
+        # For legacy purposes, scrape info off of OutputDefinition/InputDefinition
+        for solid in graph_def.iterate_solid_defs():
+            input_asset_keys = set()
+            for input_def in solid.input_defs:
+                input_key = input_def.hardcoded_asset_key
+                if input_key:
+                    check.invariant(input_def not in self._asset_key_by_input_def)
+                    input_asset_keys.add(input_key)
+                    self._asset_key_by_input_def[input_def] = input_key
+            for output_def in solid.output_defs:
+                output_key = output_def.hardcoded_asset_key
+                if output_key:
+                    check.invariant(output_def not in self._asset_key_by_output_def)
+                    self._asset_key_by_output_def[output_def] = output_key
+                    self._asset_deps[output_key] = input_asset_keys
 
         super(JobDefinition, self).__init__(
             name=name,
@@ -101,14 +130,12 @@ class JobDefinition(PipelineDefinition):
         )
 
     @property
-    def input_def_to_asset_key(self):
-        return self._input_def_to_asset_key
+    def asset_key_by_input_def(self):
+        return self._asset_key_by_input_def
 
     @property
-    def output_def_to_asset_key(self):
-        print("hi")
-        print(self._output_def_to_asset_key)
-        return self._output_def_to_asset_key
+    def asset_key_by_output_def(self):
+        return self._asset_key_by_output_def
 
     @property
     def asset_deps(self):

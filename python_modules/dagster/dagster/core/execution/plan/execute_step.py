@@ -422,7 +422,7 @@ def _asset_key_and_partitions_for_output(
 
     if (
         isinstance(pipeline_def, JobDefinition)
-        and output_def in pipeline_def.output_def_to_asset_key
+        and output_def in pipeline_def.asset_key_by_output_def
     ):
         if manager_asset_key is not None:
             solid_def = cast(SolidDefinition, output_context.solid_def)
@@ -433,7 +433,7 @@ def _asset_key_and_partitions_for_output(
                 "specify an AssetKey in its get_output_asset_key() function."
             )
         return (
-            pipeline_def.output_def_to_asset_key[output_def],
+            pipeline_def.asset_key_by_output_def[output_def],
             output_def.get_asset_partitions(output_context) or set(),
         )
     elif manager_asset_key:

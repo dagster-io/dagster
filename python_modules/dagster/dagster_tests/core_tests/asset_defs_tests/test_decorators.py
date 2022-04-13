@@ -49,7 +49,7 @@ def test_asset_with_inputs():
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
-    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey("arg1")
+    assert my_asset.input_asset_keys == {AssetKey("arg1")}
 
 
 def test_asset_with_compute_kind():
@@ -98,7 +98,8 @@ def test_multi_asset_internal_asset_deps_metadata():
             "my_other_out_name": Out(metadata={"bar": "foo"}),
         },
         internal_asset_deps={
-            "my_out_name": {AssetKey("my_other_out_name"), AssetKey("my_in_name")}
+            AssetKey("my_out_name"): {AssetKey("my_other_out_name"), AssetKey("my_in_name")},
+            AssetKey("my_other_out_name"): {AssetKey("my_in_name")},
         },
     )
     def my_asset(my_in_name):  # pylint: disable=unused-argument
@@ -106,29 +107,26 @@ def test_multi_asset_internal_asset_deps_metadata():
         yield Output(2, "my_other_out_name")
 
     assert my_asset.asset_keys == {AssetKey("my_out_name"), AssetKey("my_other_out_name")}
-    assert my_asset.op.output_def_named("my_out_name").metadata == {
-        "foo": "bar",
-        ASSET_DEPENDENCY_METADATA_KEY: {AssetKey("my_other_out_name"), AssetKey("my_in_name")},
-    }
+    assert my_asset.op.output_def_named("my_out_name").metadata == {"foo": "bar"}
     assert my_asset.op.output_def_named("my_other_out_name").metadata == {"bar": "foo"}
 
 
 def test_multi_asset_internal_asset_deps_invalid():
 
-    with pytest.raises(check.CheckError, match="Invalid out key"):
+    with pytest.raises(check.CheckError, match="Invariant failed"):
 
         @multi_asset(
             outs={"my_out_name": Out()},
-            internal_asset_deps={"something_weird": {AssetKey("my_out_name")}},
+            internal_asset_deps={AssetKey("something_weird"): {AssetKey("my_out_name")}},
         )
         def _my_asset():
             pass
 
-    with pytest.raises(check.CheckError, match="Invalid asset dependencies"):
+    with pytest.raises(check.CheckError, match="Invariant failed"):
 
         @multi_asset(
             outs={"my_out_name": Out()},
-            internal_asset_deps={"my_out_name": {AssetKey("something_weird")}},
+            internal_asset_deps={AssetKey("my_out_name"): {AssetKey("something_weird")}},
         )
         def _my_asset():
             pass
@@ -177,7 +175,7 @@ def test_asset_with_inputs_and_namespace():
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
-    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey(["my_namespace", "arg1"])
+    assert my_asset.input_asset_keys == {AssetKey(["my_namespace", "arg1"])}
 
 
 def test_asset_with_context_arg():
@@ -197,7 +195,8 @@ def test_asset_with_context_arg_and_dep():
 
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.input_defs) == 1
-    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey("arg1")
+    assert my_asset.input_asset_keys == {AssetKey("arg1")}
+    assert my_asset.asset_keys == {AssetKey("my_asset")}
 
 
 def test_input_asset_key():
@@ -205,7 +204,7 @@ def test_input_asset_key():
     def my_asset(arg1):
         assert arg1
 
-    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey("foo")
+    assert my_asset.input_asset_keys == {AssetKey("foo")}
 
 
 def test_input_asset_key_and_namespace():
@@ -221,7 +220,7 @@ def test_input_namespace_str():
     def my_asset(arg1):
         assert arg1
 
-    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey(["abc", "arg1"])
+    assert my_asset.input_asset_keys == {AssetKey(["abc", "arg1"])}
 
 
 def test_input_namespace_list():
@@ -229,7 +228,7 @@ def test_input_namespace_list():
     def my_asset(arg1):
         assert arg1
 
-    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey(["abc", "xyz", "arg1"])
+    assert my_asset.input_asset_keys == {AssetKey(["abc", "xyz", "arg1"])}
 
 
 def test_input_metadata():

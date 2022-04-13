@@ -11,22 +11,22 @@ from .partition_mapping import PartitionMapping
 class AssetsDefinition:
     def __init__(
         self,
-        input_name_to_asset_key: Mapping[str, AssetKey],
-        output_name_to_asset_key: Mapping[str, AssetKey],
+        asset_key_by_input_name: Mapping[str, AssetKey],
+        asset_key_by_output_name: Mapping[str, AssetKey],
         op: OpDefinition,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]] = None,
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
     ):
         self._op = op
-        self._input_def_to_asset_key = {
+        self._asset_key_by_input_def = {
             op.input_dict[input_name]: asset_key
-            for input_name, asset_key in input_name_to_asset_key.items()
+            for input_name, asset_key in asset_key_by_input_name.items()
         }
 
-        self._output_def_to_asset_key = {
+        self._asset_key_by_output_def = {
             op.output_dict[output_name]: asset_key
-            for output_name, asset_key in output_name_to_asset_key.items()
+            for output_name, asset_key in asset_key_by_output_name.items()
         }
         self._partitions_def = partitions_def
         self._partition_mappings = partition_mappings or {}
@@ -35,6 +35,9 @@ class AssetsDefinition:
         self._asset_deps = asset_deps or {
             out_asset_key: self.input_asset_keys for out_asset_key in self.asset_keys
         }
+        print("AD")
+        print(asset_deps)
+        print(self._asset_deps)
 
         # ensure that the specified asset_deps make sense
         valid_asset_deps = self.asset_keys | self.input_asset_keys
@@ -64,23 +67,23 @@ class AssetsDefinition:
 
     @property
     def input_asset_keys(self) -> AbstractSet[AssetKey]:
-        return set(self._input_def_to_asset_key.values())
+        return set(self._asset_key_by_input_def.values())
 
     @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
-        return set(self._output_def_to_asset_key.values())
+        return set(self._asset_key_by_output_def.values())
 
     @property
     def asset_deps(self) -> Mapping[AssetKey, AbstractSet[AssetKey]]:
         return self._asset_deps
 
     @property
-    def output_def_to_asset_key(self) -> Mapping[OutputDefinition, AssetKey]:
-        return self._output_def_to_asset_key
+    def asset_key_by_output_def(self) -> Mapping[OutputDefinition, AssetKey]:
+        return self._asset_key_by_output_def
 
     @property
-    def input_def_to_asset_key(self) -> Mapping[InputDefinition, AssetKey]:
-        return self._input_def_to_asset_key
+    def asset_key_by_input_def(self) -> Mapping[InputDefinition, AssetKey]:
+        return self._asset_key_by_input_def
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:

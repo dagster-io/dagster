@@ -186,7 +186,6 @@ class _Asset:
 
         out_asset_key = AssetKey(list(filter(None, [*(self.namespace or []), asset_name])))
         out = Out(
-            asset_key=out_asset_key,
             metadata=self.metadata or {},
             io_manager_key=self.io_manager_key,
             dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
@@ -211,10 +210,10 @@ class _Asset:
             )(fn)
 
         return AssetsDefinition(
-            input_name_to_asset_key={
+            asset_key_by_input_name={
                 input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
             },
-            output_name_to_asset_key={"result": out_asset_key},
+            asset_key_by_output_name={"result": out_asset_key},
             op=op,
             partitions_def=self.partitions_def,
             partition_mappings={
@@ -289,10 +288,10 @@ def multi_asset(
             )(fn)
 
         return AssetsDefinition(
-            input_name_to_asset_key={
+            asset_key_by_input_name={
                 input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
             },
-            output_name_to_asset_key={
+            asset_key_by_output_name={
                 output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()
             },
             op=op,

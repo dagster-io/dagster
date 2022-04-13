@@ -299,12 +299,7 @@ def test_same_asset_in_multiple_pipelines():
 
 
 def test_basic_multi_asset():
-    @multi_asset(
-        outs={
-            f"out{i}": Out(description=f"foo: {i}", asset_key=AssetKey(f"asset{i}"))
-            for i in range(10)
-        }
-    )
+    @multi_asset(outs={f"out{i}": Out(description=f"foo: {i}") for i in range(10)})
     def assets():
         pass
 
@@ -314,7 +309,7 @@ def test_basic_multi_asset():
 
     assert external_asset_nodes == [
         ExternalAssetNode(
-            asset_key=AssetKey(f"asset{i}"),
+            asset_key=AssetKey(f"out{i}"),
             dependencies=[],
             depended_by=[],
             op_name="assets",
