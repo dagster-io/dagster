@@ -32,26 +32,31 @@ def test_get_secrets_from_arns(mock_secretsmanager_resource):
 
 
 def test_get_tagged_secrets(mock_secretsmanager_resource):
-    assert get_tagged_secrets(mock_secretsmanager_resource, "dagster") == {}
+    assert get_tagged_secrets(mock_secretsmanager_resource, ["dagster"]) == {}
 
     foo_secret = mock_secretsmanager_resource.create_secret(
         Name="foo_secret", SecretString="foo_value", Tags=[{"Key": "dagster", "Value": "foo"}]
     )
-    assert get_tagged_secrets(mock_secretsmanager_resource, "dagster") == {
+    bar_secret = mock_secretsmanager_resource.create_secret(
+        Name="bar_secret", SecretString="bar_value", Tags=[{"Key": "other_tag", "Value": "bar"}]
+    )
+
+    assert get_tagged_secrets(mock_secretsmanager_resource, ["dagster"]) == {
         "foo_secret": foo_secret["ARN"]
     }
+    assert get_tagged_secrets(mock_secretsmanager_resource, ["other_tag"]) == {
+        "bar_secret": bar_secret["ARN"]
+    }
 
-    mock_secretsmanager_resource.create_secret(
-        Name="bar_secret", SecretString="bar_value", Tags=[{"Key": "airflow", "Value": "bar"}]
-    )
-    assert get_tagged_secrets(mock_secretsmanager_resource, "dagster") == {
-        "foo_secret": foo_secret["ARN"]
+    assert get_tagged_secrets(mock_secretsmanager_resource, ["dagster", "other_tag"]) == {
+        "foo_secret": foo_secret["ARN"],
+        "bar_secret": bar_secret["ARN"],
     }
 
     baz_secret = mock_secretsmanager_resource.create_secret(
         Name="baz_secret", SecretString="baz_value", Tags=[{"Key": "dagster", "Value": "baz"}]
     )
-    assert get_tagged_secrets(mock_secretsmanager_resource, "dagster") == {
+    assert get_tagged_secrets(mock_secretsmanager_resource, ["dagster"]) == {
         "foo_secret": foo_secret["ARN"],
         "baz_secret": baz_secret["ARN"],
     }
@@ -62,7 +67,7 @@ def test_secretmanager_secrets_resource(mock_secretsmanager_resource):
         Name="foo_secret", SecretString="foo_value", Tags=[{"Key": "dagster", "Value": "foo"}]
     )
     bar_secret = mock_secretsmanager_resource.create_secret(
-        Name="bar_secret", SecretString="bar_value", Tags=[{"Key": "airflow", "Value": "bar"}]
+        Name="bar_secret", SecretString="bar_value", Tags=[{"Key": "other_tag", "Value": "bar"}]
     )
     _baz_secret = mock_secretsmanager_resource.create_secret(
         Name="baz_secret", SecretString="baz_value", Tags=[{"Key": "dagster", "Value": "baz"}]

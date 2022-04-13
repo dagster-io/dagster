@@ -10,9 +10,9 @@ from dagster.core.events import EngineEventData, MetadataEntry
 from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass
-from dagster.utils import merge_dicts
 
-from ..secretsmanager import get_secrets_from_arns, get_tagged_secrets
+from ..secretsmanager import get_secrets_from_arns
+from .container_context import EcsContainerContext
 from .tasks import default_ecs_task_definition, default_ecs_task_metadata
 from .utils import sanitize_family
 
@@ -39,19 +39,23 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.task_definition = task_definition
         self.container_name = container_name
 
-        self.secrets = secrets or []
-        if all(isinstance(secret, str) for secret in self.secrets):
+        self.secrets = check.opt_list_param(secrets, "secrets")
+
+        if self.secrets and all(isinstance(secret, str) for secret in self.secrets):
             warnings.warn(
                 "Setting secrets as a list of ARNs is deprecated. "
                 "Secrets should instead follow the same structure as the ECS API: "
                 "https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html",
                 DeprecationWarning,
             )
-            self.secrets = get_secrets_from_arns(self.secrets_manager, self.secrets)
-        else:
-            self.secrets = {secret["name"]: secret["valueFrom"] for secret in self.secrets}
+            self.secrets = [
+                {"name": name, "valueFrom": value_from}
+                for name, value_from in get_secrets_from_arns(
+                    self.secrets_manager, self.secrets
+                ).items()
+            ]
 
-        self.secrets_tag = secrets_tag
+        self.secrets_tags = [secrets_tag] if secrets_tag else []
         self.include_sidecars = include_sidecars
 
         if self.task_definition:
@@ -164,10 +168,15 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         family = sanitize_family(
             run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
         )
+
+        container_context = EcsContainerContext.create_for_run(run, self)
+
         metadata = self._task_metadata()
         pipeline_origin = context.pipeline_code_origin
         image = pipeline_origin.repository_origin.container_image
-        task_definition = self._task_definition(family, metadata, image)["family"]
+        task_definition = self._task_definition(family, metadata, image, container_context)[
+            "family"
+        ]
 
         args = ExecuteRunArgs(
             pipeline_origin=pipeline_origin,
@@ -273,7 +282,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.ecs.stop_task(task=tags.arn, cluster=tags.cluster)
         return True
 
-    def _task_definition(self, family, metadata, image):
+    def _task_definition(self, family, metadata, image, container_context):
         """
         Return the launcher's task definition if it's configured.
 
@@ -286,15 +295,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             task_definition = self.ecs.describe_task_definition(taskDefinition=self.task_definition)
             return task_definition["taskDefinition"]
 
-        secrets = merge_dicts(
-            (
-                get_tagged_secrets(self.secrets_manager, self.secrets_tag)
-                if self.secrets_tag
-                else {}
-            ),
-            self.secrets,
-        )
-        secrets_dict = (
+        secrets = container_context.get_secrets_dict(self.secrets_manager)
+        secrets_definition = (
             {"secrets": [{"name": key, "valueFrom": value} for key, value in secrets.items()]}
             if secrets
             else {}
@@ -311,7 +313,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             if (
                 container_definition.get("image") == image
                 and container_definition.get("name") == self.container_name
-                and container_definition.get("secrets") == secrets_dict.get("secrets", [])
+                and container_definition.get("secrets") == secrets_definition.get("secrets", [])
             ):
                 return task_definition
 
@@ -321,7 +323,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             metadata,
             image,
             self.container_name,
-            secrets=secrets_dict,
+            secrets=secrets_definition,
             include_sidecars=self.include_sidecars,
         )
 
