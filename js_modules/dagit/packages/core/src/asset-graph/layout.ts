@@ -1,14 +1,14 @@
 import * as dagre from 'dagre';
 
-import {ILayout, IPoint} from '../graph/layout';
+import {IBounds, IPoint} from '../graph/common';
 
 import {GraphData, GraphNode, GraphId, displayNameForAssetKey} from './Utils';
 
-interface AssetLayout {
+export interface AssetLayout {
   id: GraphId;
 
   // Overall frame of the box relative to 0,0 on the graph
-  bounds: ILayout;
+  bounds: IBounds;
 }
 
 export type AssetLayoutEdge = {

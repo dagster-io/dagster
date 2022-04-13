@@ -2,6 +2,8 @@ import * as dagre from 'dagre';
 
 import {titleOfIO} from '../app/titleOfIO';
 
+import {IBounds, IPoint} from './common';
+
 type OpLayoutEdgeSide = {
   point: IPoint;
   opName: string;
@@ -15,20 +17,20 @@ export type OpLayoutEdge = {
 
 export interface OpLayout {
   // Overall frame of the box relative to 0,0 on the graph
-  bounds: ILayout;
+  bounds: IBounds;
 
   // Frames of specific components - These need to be computed during layout
   // (rather than at render time) to position edges into inputs/outputs.
-  op: ILayout;
+  op: IBounds;
   inputs: {
     [inputName: string]: {
-      layout: ILayout;
+      layout: IBounds;
       port: IPoint;
     };
   };
   outputs: {
     [outputName: string]: {
-      layout: ILayout;
+      layout: IBounds;
       port: IPoint;
     };
   };
@@ -47,7 +49,7 @@ interface ParentOpLayout extends Omit<OpLayout, 'op'> {
   mappingLeftSpacing: number;
   dependsOn: {[opName: string]: IPoint};
   dependedBy: {[opName: string]: IPoint};
-  invocationBoundingBox: ILayout;
+  invocationBoundingBox: IBounds;
 }
 
 export interface ILayoutOp {
@@ -86,18 +88,6 @@ export interface ILayoutOp {
       };
     }[];
   }[];
-}
-
-export interface ILayout {
-  x: number;
-  y: number;
-  height: number;
-  width: number;
-}
-
-export interface IPoint {
-  x: number;
-  y: number;
 }
 
 const MAX_PER_ROW_ENABLED = false;
@@ -414,7 +404,7 @@ export function layoutOp(op: ILayoutOp, root: IPoint): OpLayout {
   let accY = root.y;
 
   const inputsLayouts: {
-    [inputName: string]: {layout: ILayout; port: IPoint};
+    [inputName: string]: {layout: IBounds; port: IPoint};
   } = {};
 
   const buildIOSmallLayout = (idx: number, count: number) => {
@@ -435,7 +425,7 @@ export function layoutOp(op: ILayoutOp, root: IPoint): OpLayout {
   };
 
   const buildIOLayout = () => {
-    const layout: {layout: ILayout; port: IPoint} = {
+    const layout: {layout: IBounds; port: IPoint} = {
       port: {x: root.x + PORT_INSET_X, y: accY + PORT_INSET_Y},
       layout: {
         x: root.x,
@@ -458,7 +448,7 @@ export function layoutOp(op: ILayoutOp, root: IPoint): OpLayout {
     accY += IO_HEIGHT;
   }
 
-  const opLayout: ILayout = {
+  const opLayout: IBounds = {
     x: root.x,
     y: Math.max(root.y, accY - IO_INSET),
     width: OP_WIDTH,
@@ -474,7 +464,7 @@ export function layoutOp(op: ILayoutOp, root: IPoint): OpLayout {
 
   const outputLayouts: {
     [outputName: string]: {
-      layout: ILayout;
+      layout: IBounds;
       port: IPoint;
     };
   } = {};
