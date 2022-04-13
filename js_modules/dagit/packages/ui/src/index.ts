@@ -13,7 +13,6 @@ export * from './components/CustomTooltipProvider';
 export * from './components/Icon';
 export * from './components/Dialog';
 export * from './components/Group';
-export * from './components/HighlightedCodeBlock';
 export * from './components/MainContent';
 export * from './components/Markdown';
 export * from './components/Menu';

@@ -31,7 +31,6 @@
   },
   "dependencies": {
     "deepmerge": "^4.2.2",
-    "highlight.js": "11.5.0",
     "lodash.isequal": "^4.5.0",
     "react-markdown": "6.0.3",
     "react-virtualized": "^9.22.3",
