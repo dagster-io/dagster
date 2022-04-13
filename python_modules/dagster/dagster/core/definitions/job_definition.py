@@ -14,6 +14,9 @@ from typing import (
 )
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.input import InputDefinition
+from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.composition import MappedInputPlaceholder
 from dagster.core.definitions.dependency import (
     DependencyDefinition,
@@ -65,6 +68,9 @@ class JobDefinition(PipelineDefinition):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
+        output_def_to_asset_key: Optional[Mapping[OutputDefinition, AssetKey]] = None,
+        input_def_to_asset_key: Optional[Mapping[InputDefinition, AssetKey]] = None,
+        asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
     ):
 
@@ -72,6 +78,15 @@ class JobDefinition(PipelineDefinition):
         self._op_selection_data = check.opt_inst_param(
             _op_selection_data, "_op_selection_data", OpSelectionData
         )
+
+        # TODO: scrape asset key info off of input def / output def
+        # TODO: scrape asset dep info off of output def + dependency structure
+
+        print("ayy")
+        print(output_def_to_asset_key)
+        self._output_def_to_asset_key = output_def_to_asset_key
+        self._input_def_to_asset_key = input_def_to_asset_key
+        self._asset_deps = asset_deps
 
         super(JobDefinition, self).__init__(
             name=name,
@@ -84,6 +99,20 @@ class JobDefinition(PipelineDefinition):
             graph_def=graph_def,
             version_strategy=version_strategy,
         )
+
+    @property
+    def input_def_to_asset_key(self):
+        return self._input_def_to_asset_key
+
+    @property
+    def output_def_to_asset_key(self):
+        print("hi")
+        print(self._output_def_to_asset_key)
+        return self._output_def_to_asset_key
+
+    @property
+    def asset_deps(self):
+        return self._asset_deps
 
     @property
     def target_type(self) -> str:

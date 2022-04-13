@@ -343,8 +343,9 @@ def test_inter_op_dependency():
     @multi_asset(
         outs={"only_in": Out(), "mixed": Out(), "only_out": Out()},
         internal_asset_deps={
-            "mixed": {AssetKey("in1"), AssetKey("only_in")},
-            "only_out": {AssetKey("only_in"), AssetKey("mixed")},
+            AssetKey(["only_in"]): {AssetKey("in1"), AssetKey("in2")},
+            AssetKey(["mixed"]): {AssetKey("in1"), AssetKey("only_in")},
+            AssetKey(["only_out"]): {AssetKey("only_in"), AssetKey("mixed")},
         },
     )
     def assets(in1, in2):  # pylint: disable=unused-argument
@@ -433,13 +434,6 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="mixed",
-            metadata_entries=[
-                MetadataEntry(
-                    label=".dagster/asset_deps",
-                    description=None,
-                    entry_data=MetadataValue.text("[set] (unserializable)"),
-                )
-            ],
         ),
         ExternalAssetNode(
             asset_key=AssetKey(["only_in"]),
@@ -483,13 +477,7 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="only_out",
-            metadata_entries=[
-                MetadataEntry(
-                    label=".dagster/asset_deps",
-                    description=None,
-                    entry_data=MetadataValue.text("[set] (unserializable)"),
-                )
-            ],
+            metadata_entries=[],
         ),
     ]
 

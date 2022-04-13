@@ -787,20 +787,18 @@ def external_asset_graph_from_defs(
     for pipeline in pipelines:
         for node_def in pipeline.all_node_defs:
             input_name_by_asset_key = {
-                id.hardcoded_asset_key: id.name
+                pipeline.input_def_to_asset_key.get(id): id.name
                 for id in node_def.input_defs
-                if id.hardcoded_asset_key is not None
+                if id in pipeline.input_def_to_asset_key
             }
 
             output_name_by_asset_key = {
-                od.hardcoded_asset_key: od.name
-                for od in node_def.output_defs
-                if od.hardcoded_asset_key is not None
+                pipeline.output_def_to_asset_key.get(id): id.name
+                for id in node_def.output_defs
+                if id in pipeline.output_def_to_asset_key
             }
 
-            node_upstream_asset_keys = set(
-                filter(None, (id.hardcoded_asset_key for id in node_def.input_defs))
-            )
+            node_upstream_asset_keys = set(input_name_by_asset_key.keys())
             all_upstream_asset_keys.update(node_upstream_asset_keys)
 
             for output_def in node_def.output_defs:
@@ -811,13 +809,9 @@ def external_asset_graph_from_defs(
                 node_defs_by_asset_key[output_asset_key].append((output_def, node_def, pipeline))
 
                 # if no deps specified, assume depends on all inputs and no outputs
-                asset_deps = cast(
-                    Set[AssetKey], (output_def.metadata or {}).get(ASSET_DEPENDENCY_METADATA_KEY)
-                )
-                if asset_deps is None:
-                    asset_deps = node_upstream_asset_keys
+                output_asset_deps = pipeline.asset_deps.get(output_asset_key, [])
 
-                for upstream_asset_key in asset_deps:
+                for upstream_asset_key in output_asset_deps:
                     deps[output_asset_key][upstream_asset_key] = ExternalAssetDependency(
                         upstream_asset_key=upstream_asset_key,
                         input_name=input_name_by_asset_key.get(upstream_asset_key),

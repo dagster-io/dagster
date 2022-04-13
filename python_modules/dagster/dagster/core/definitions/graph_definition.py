@@ -461,6 +461,9 @@ class GraphDefinition(NodeDefinition):
         version_strategy: Optional[VersionStrategy] = None,
         op_selection: Optional[List[str]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
+        input_def_to_asset_key=None,
+        output_def_to_asset_key=None,
+        asset_deps=None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -565,6 +568,9 @@ class GraphDefinition(NodeDefinition):
                 f"is an object of type {type(config)}"
             )
 
+        print("lmao")
+        print(output_def_to_asset_key)
+
         return JobDefinition(
             name=job_name,
             description=description or self.description,
@@ -581,6 +587,9 @@ class GraphDefinition(NodeDefinition):
             hook_defs=hooks,
             version_strategy=version_strategy,
             op_retry_policy=op_retry_policy,
+            input_def_to_asset_key=input_def_to_asset_key,
+            output_def_to_asset_key=output_def_to_asset_key,
+            asset_deps=asset_deps,
         ).get_job_def_for_op_selection(op_selection)
 
     def coerce_to_job(self):

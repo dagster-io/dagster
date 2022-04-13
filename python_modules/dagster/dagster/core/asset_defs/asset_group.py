@@ -559,7 +559,7 @@ def _validate_resource_reqs_for_asset_group(
                 f"AssetGroup is missing required resource keys for asset '{asset_def.op.name}'. Missing resource keys: {missing_resource_keys}"
             )
 
-        for asset_key, output_def in asset_def.output_defs_by_asset_key.items():
+        for output_def, asset_key in asset_def.output_def_to_asset_key.items():
             if output_def.io_manager_key and output_def.io_manager_key not in present_resource_keys:
                 raise DagsterInvalidDefinitionError(
                     f"Output '{output_def.name}' with AssetKey '{asset_key}' "
