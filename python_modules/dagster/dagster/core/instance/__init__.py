@@ -1318,7 +1318,7 @@ class DagsterInstance:
         before_timestamp=None,
         limit=None,
         ascending=False,
-    ):
+    ) -> Iterable[Tuple[int, "EventLogEntry"]]:
         check.inst_param(asset_key, "asset_key", AssetKey)
 
         warnings.warn(
