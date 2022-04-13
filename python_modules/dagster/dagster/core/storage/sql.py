@@ -131,25 +131,26 @@ def run_migrations_online(context, config, target_metadata):
     """
     from sqlite3 import DatabaseError
 
-    connection = config.attributes.get("connection", None)
+    connectable = config.attributes.get("connection", None)
 
-    if connection is None:
+    if connectable is None:
         raise Exception(
             "No connection set in alembic config. If you are trying to run this script from the "
             "command line, STOP and read the README."
         )
 
-    try:
-        context.configure(connection=connection, target_metadata=target_metadata)
+    with connectable.connect() as connection:
+        try:
+            context.configure(connection=connection, target_metadata=target_metadata)
 
-        with context.begin_transaction():
-            context.run_migrations()
+            with context.begin_transaction():
+                context.run_migrations()
 
-    except DatabaseError as exc:
-        # This is to deal with concurrent execution -- if this table already exists thanks to a
-        # race with another process, we are fine and can continue.
-        if not "table alembic_version already exists" in str(exc):
-            raise
+        except DatabaseError as exc:
+            # This is to deal with concurrent execution -- if this table already exists thanks to a
+            # race with another process, we are fine and can continue.
+            if not "table alembic_version already exists" in str(exc):
+                raise
 
 
 # SQLAlchemy types, compiler directives, etc. to avoid pre-0.11.0 migrations
