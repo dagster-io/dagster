@@ -40,12 +40,6 @@
     "test": "react-scripts test",
     "ts": "tsc -p ."
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
   "browserslist": {
     "production": [
       ">0.2%",

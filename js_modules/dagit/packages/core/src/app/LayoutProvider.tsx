@@ -53,7 +53,7 @@ export const LayoutProvider: React.FC = (props) => {
     () => ({
       nav: {
         isOpen: navOpen,
-        isCollapsible: isCollapsible,
+        isCollapsible,
         open: () => setNavOpen(true),
         close: () => setNavOpen(false),
       },

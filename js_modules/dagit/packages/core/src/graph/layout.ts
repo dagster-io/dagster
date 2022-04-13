@@ -416,7 +416,7 @@ export function layoutOp(op: ILayoutOp, root: IPoint): OpLayout {
         y: accY + PORT_INSET_Y,
       },
       layout: {
-        x: x,
+        x,
         y: accY,
         width: IO_MINI_WIDTH,
         height: IO_HEIGHT,

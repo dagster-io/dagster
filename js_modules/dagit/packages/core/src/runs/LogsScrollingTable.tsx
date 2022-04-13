@@ -81,7 +81,7 @@ function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: s
 
   return {
     filteredNodes: hasTextFilter && filter.hideNonMatches ? textMatchNodes : filteredNodes,
-    textMatchNodes: textMatchNodes,
+    textMatchNodes,
   };
 }
 

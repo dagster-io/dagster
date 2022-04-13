@@ -203,7 +203,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     const offsetFromTop = 20;
 
     this._editor?.scrollIntoView({
-      left: left,
+      left,
       right: left,
       top: top - offsetFromTop,
       bottom: top + (clientHeight - offsetFromTop),

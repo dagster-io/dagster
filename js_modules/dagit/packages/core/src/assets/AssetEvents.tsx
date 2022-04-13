@@ -57,12 +57,12 @@ function useRecentAssetEvents(
       variables: loadUsingPartitionKeys
         ? {
             assetKey: {path: assetKey.path},
-            before: before,
+            before,
             partitionInLast: 120,
           }
         : {
             assetKey: {path: assetKey.path},
-            before: before,
+            before,
             limit: 100,
           },
     },

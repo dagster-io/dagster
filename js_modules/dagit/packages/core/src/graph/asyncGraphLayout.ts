@@ -106,7 +106,7 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
       const layout = await asyncGetFullOpLayout(ops, parentOp);
       dispatch({
         type: 'layout',
-        payload: {layout: layout, cacheKey},
+        payload: {layout, cacheKey},
       });
     }
 
@@ -136,7 +136,7 @@ export function useAssetLayout(graphData: GraphData) {
       const layout = await asyncGetFullAssetLayout(graphData);
       dispatch({
         type: 'layout',
-        payload: {layout: layout, cacheKey},
+        payload: {layout, cacheKey},
       });
     }
 

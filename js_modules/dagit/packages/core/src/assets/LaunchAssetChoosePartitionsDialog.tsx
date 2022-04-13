@@ -212,7 +212,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           executionParams: {
             runConfigData,
             mode: partition.mode,
-            stepKeys: stepKeys,
+            stepKeys,
             selector: {
               repositoryLocationName: repoAddress.location,
               repositoryName: repoAddress.name,
