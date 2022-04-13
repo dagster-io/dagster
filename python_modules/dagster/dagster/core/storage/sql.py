@@ -19,6 +19,7 @@ create_engine = db.create_engine  # exported
 
 ALEMBIC_SCRIPTS_LOCATION = "dagster:core/storage/alembic"
 
+
 @lru_cache(maxsize=3)  # run, event, and schedule storages
 def get_alembic_config(dunder_file, config_path="alembic/alembic.ini"):
     alembic_config = Config(file_relative_path(dunder_file, config_path))
@@ -129,6 +130,7 @@ def run_migrations_online(context, config, target_metadata):
 
     """
     from sqlite3 import DatabaseError
+
     connection = config.attributes.get("connection", None)
 
     if connection is None:

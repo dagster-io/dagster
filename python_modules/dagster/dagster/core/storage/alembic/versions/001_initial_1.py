@@ -10,9 +10,11 @@ Create Date: 2019-11-21 09:59:57.028730
 # alembic dynamically populates the alembic.context module
 
 import sqlalchemy as sa
-from alembic import op
+from alembic import context, op
 from sqlalchemy import Column
 from sqlalchemy.engine import reflection
+
+from dagster.core.storage.event_log import SqlEventLogStorageTable
 
 # revision identifiers, used by Alembic.
 revision = "567bc23fd1ac"

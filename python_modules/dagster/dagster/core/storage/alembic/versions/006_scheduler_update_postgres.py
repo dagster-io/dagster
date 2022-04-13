@@ -6,6 +6,7 @@ Create Date: 2020-06-10 10:00:57.793622
 
 """
 from alembic import op
+from sqlalchemy.engine import reflection
 
 from dagster.core.storage.migration.utils import get_currently_upgrading_instance, has_table
 
@@ -21,6 +22,9 @@ depends_on = None
 
 
 def upgrade():
+    bind = op.get_context().bind
+    inspector = reflection.Inspector.from_engine(bind)
+
     if "postgresql" not in inspector.dialect.dialect_description:
         return
     instance = get_currently_upgrading_instance()
