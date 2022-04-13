@@ -817,6 +817,42 @@ snapshots['TestAssetAwareEventLog.test_get_partitioned_asset_key_materialization
     }
 }
 
+snapshots['TestAssetAwareEventLog.test_get_run_materialization[sqlite_with_default_run_launcher_deployed_grpc_env] 1'] = {
+    'runsOrError': {
+        'results': [
+            {
+                'assetMaterializations': [
+                    {
+                        'assetKey': {
+                            'path': [
+                                'a'
+                            ]
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}
+
+snapshots['TestAssetAwareEventLog.test_get_run_materialization[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
+    'runsOrError': {
+        'results': [
+            {
+                'assetMaterializations': [
+                    {
+                        'assetKey': {
+                            'path': [
+                                'a'
+                            ]
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}
+
 snapshots['TestAssetAwareEventLog.test_op_assets[asset_aware_instance_in_process_env] 1'] = {
     'repositoryOrError': {
         'usedSolid': {

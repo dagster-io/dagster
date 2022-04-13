@@ -1,4 +1,4 @@
-import {Colors, Icon, NonIdealState} from '@dagster-io/ui';
+import {Box, Colors, Icon, NonIdealState, Spinner} from '@dagster-io/ui';
 import {capitalize} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -62,6 +62,31 @@ export const EntirelyFilteredDAGNotice: React.FC<{nodeType: 'asset' | 'op'}> = (
     </CenteredContainer>
   );
 };
+
+export const LoadingNotice: React.FC<{async: boolean; nodeType: 'asset' | 'op'}> = (props) => {
+  const {async} = props;
+  return (
+    <LoadingContainer>
+      {async ? (
+        <Box margin={{bottom: 24}}>Rendering a large number of {props.nodeType}s, please wait…</Box>
+      ) : null}
+      <Spinner purpose="page" />
+    </LoadingContainer>
+  );
+};
+
+const LoadingContainer = styled.div`
+  background-color: ${Colors.White};
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+`;
 
 const CenteredContainer = styled.div`
   position: absolute;

@@ -35,17 +35,17 @@ def runner_execute_run(runner, cli_args):
 
 
 def test_execute_run():
-    with get_foo_pipeline_handle() as pipeline_handle:
-        runner = CliRunner()
-
-        with instance_for_test(
-            overrides={
-                "compute_logs": {
-                    "module": "dagster.core.storage.noop_compute_log_manager",
-                    "class": "NoOpComputeLogManager",
-                }
+    with instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster.core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
             }
-        ) as instance:
+        }
+    ) as instance:
+        with get_foo_pipeline_handle(instance) as pipeline_handle:
+            runner = CliRunner()
+
             instance = DagsterInstance.get()
             run = create_run_for_test(instance, pipeline_name="foo", run_id="new_run")
 
@@ -70,18 +70,18 @@ def test_execute_run():
 
 
 def test_execute_run_fail_pipeline():
-    with get_bar_repo_handle() as repo_handle:
-        pipeline_handle = PipelineHandle("fail", repo_handle)
-        runner = CliRunner()
-
-        with instance_for_test(
-            overrides={
-                "compute_logs": {
-                    "module": "dagster.core.storage.noop_compute_log_manager",
-                    "class": "NoOpComputeLogManager",
-                }
+    with instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster.core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
             }
-        ) as instance:
+        }
+    ) as instance:
+        with get_bar_repo_handle(instance) as repo_handle:
+            pipeline_handle = PipelineHandle("fail", repo_handle)
+            runner = CliRunner()
+
             instance = DagsterInstance.get()
             run = create_run_for_test(instance, pipeline_name="foo", run_id="new_run")
 
@@ -126,18 +126,16 @@ def test_execute_run_fail_pipeline():
 
 
 def test_execute_run_cannot_load():
-    with get_foo_pipeline_handle() as pipeline_handle:
-        runner = CliRunner()
-
-        with instance_for_test(
-            overrides={
-                "compute_logs": {
-                    "module": "dagster.core.storage.noop_compute_log_manager",
-                    "class": "NoOpComputeLogManager",
-                }
+    with instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster.core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
             }
-        ) as instance:
-            instance = DagsterInstance.get()
+        }
+    ) as instance:
+        with get_foo_pipeline_handle(instance) as pipeline_handle:
+            runner = CliRunner()
 
             input_json = serialize_dagster_namedtuple(
                 ExecuteRunArgs(
@@ -181,17 +179,17 @@ def runner_execute_step(runner, cli_args):
 
 
 def test_execute_step():
-    with get_foo_pipeline_handle() as pipeline_handle:
-        runner = CliRunner()
-
-        with instance_for_test(
-            overrides={
-                "compute_logs": {
-                    "module": "dagster.core.storage.noop_compute_log_manager",
-                    "class": "NoOpComputeLogManager",
-                }
+    with instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster.core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
             }
-        ) as instance:
+        }
+    ) as instance:
+        with get_foo_pipeline_handle(instance) as pipeline_handle:
+            runner = CliRunner()
+
             run = create_run_for_test(instance, pipeline_name="foo", run_id="new_run")
 
             input_json = serialize_dagster_namedtuple(
@@ -212,17 +210,18 @@ def test_execute_step():
 
 
 def test_execute_step_1():
-    with get_foo_pipeline_handle() as pipeline_handle:
-        runner = CliRunner()
 
-        with instance_for_test(
-            overrides={
-                "compute_logs": {
-                    "module": "dagster.core.storage.noop_compute_log_manager",
-                    "class": "NoOpComputeLogManager",
-                }
+    with instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster.core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
             }
-        ) as instance:
+        }
+    ) as instance:
+        with get_foo_pipeline_handle(instance) as pipeline_handle:
+            runner = CliRunner()
+
             run = create_run_for_test(instance, pipeline_name="foo", run_id="new_run")
 
             input_json = serialize_dagster_namedtuple(
@@ -243,17 +242,17 @@ def test_execute_step_1():
 
 
 def test_execute_step_verify_step():
-    with get_foo_pipeline_handle() as pipeline_handle:
-        runner = CliRunner()
-
-        with instance_for_test(
-            overrides={
-                "compute_logs": {
-                    "module": "dagster.core.storage.noop_compute_log_manager",
-                    "class": "NoOpComputeLogManager",
-                }
+    with instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster.core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
             }
-        ) as instance:
+        }
+    ) as instance:
+        with get_foo_pipeline_handle(instance) as pipeline_handle:
+            runner = CliRunner()
+
             run = create_run_for_test(
                 instance,
                 pipeline_name="foo",
@@ -304,19 +303,19 @@ def test_execute_step_verify_step():
 
 @mock.patch("dagster.cli.api.verify_step")
 def test_execute_step_verify_step_framework_error(mock_verify_step):
-    with get_foo_pipeline_handle() as pipeline_handle:
-        runner = CliRunner()
-
-        mock_verify_step.side_effect = Exception("Unexpected framework error text")
-
-        with instance_for_test(
-            overrides={
-                "compute_logs": {
-                    "module": "dagster.core.storage.noop_compute_log_manager",
-                    "class": "NoOpComputeLogManager",
-                }
+    with instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster.core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
             }
-        ) as instance:
+        }
+    ) as instance:
+        with get_foo_pipeline_handle(instance) as pipeline_handle:
+            runner = CliRunner()
+
+            mock_verify_step.side_effect = Exception("Unexpected framework error text")
+
             run = create_run_for_test(
                 instance,
                 pipeline_name="foo",

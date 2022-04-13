@@ -104,3 +104,48 @@ def test_docker_executor_check_step_health():
             assert not execute_pipeline(
                 recon_pipeline, run_config=run_config, instance=instance
             ).success
+
+
+def test_docker_executor_config_on_container_context():
+    """
+    Note that this test relies on having AWS credentials in the environment.
+    """
+
+    executor_config = {"execution": {"docker": {"config": {}}}}
+
+    docker_image = get_test_project_docker_image()
+    if IS_BUILDKITE:
+        executor_config["execution"]["docker"]["config"][
+            "registry"
+        ] = get_buildkite_registry_config()
+    else:
+        find_local_test_image(docker_image)
+
+    run_config = merge_dicts(
+        merge_yamls(
+            [
+                os.path.join(get_test_project_environments_path(), "env.yaml"),
+                os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
+            ]
+        ),
+        executor_config,
+    )
+
+    with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
+        with docker_postgres_instance() as instance:
+            recon_pipeline = get_test_project_recon_pipeline(
+                "demo_pipeline_docker",
+                docker_image,
+                container_context={
+                    "docker": {
+                        "networks": ["container:test-postgres-db-docker"],
+                        "env_vars": [
+                            "AWS_ACCESS_KEY_ID",
+                            "AWS_SECRET_ACCESS_KEY",
+                        ],
+                    }
+                },
+            )
+            assert execute_pipeline(
+                recon_pipeline, run_config=run_config, instance=instance
+            ).success

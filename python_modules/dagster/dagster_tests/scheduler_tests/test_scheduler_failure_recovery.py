@@ -31,7 +31,7 @@ spawn_ctx = multiprocessing.get_context("spawn")
 def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with create_test_daemon_workspace(workspace_load_target()) as workspace:
+            with create_test_daemon_workspace(workspace_load_target(), instance) as workspace:
                 with pendulum.test(execution_datetime):
                     list(
                         launch_scheduled_runs(

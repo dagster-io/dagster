@@ -9,13 +9,18 @@ import {Route} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
-import {PIPELINE_GRAPH_OP_FRAGMENT} from '../graph/PipelineGraph';
-import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
+import {OpGraph, OP_GRAPH_OP_FRAGMENT} from '../graph/OpGraph';
+import {useOpLayout} from '../graph/asyncGraphLayout';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {RepoAddress} from '../workspace/types';
 
-import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LargeDAGNotice} from './GraphNotices';
+import {
+  EmptyDAGNotice,
+  EntirelyFilteredDAGNotice,
+  LargeDAGNotice,
+  LoadingNotice,
+} from './GraphNotices';
 import {ExplorerPath} from './PipelinePathUtils';
 import {
   SidebarTabbedContainer,
@@ -166,6 +171,9 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
     [nameMatch, queryResultOps.all],
   );
 
+  const parentOp = parentHandle && parentHandle.solid;
+  const {layout, loading, async} = useOpLayout(queryResultOps.all, parentOp);
+
   return (
     <SplitPanelContainer
       identifier="explorer"
@@ -251,18 +259,25 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
             <EntirelyFilteredDAGNotice nodeType="op" />
           ) : undefined}
 
-          <PipelineGraphContainer
-            pipelineName={pipelineOrGraph.name}
-            ops={queryResultOps.all}
-            focusOps={queryResultOps.focus}
-            highlightedOps={highlightedOps}
-            selectedHandle={selectedHandle}
-            parentHandle={parentHandle}
-            onClickOp={handleClickOp}
-            onClickBackground={handleClickBackground}
-            onEnterSubgraph={handleEnterCompositeSolid}
-            onLeaveSubgraph={handleLeaveCompositeSolid}
-          />
+          {loading || !layout ? (
+            <LoadingNotice async={async} nodeType="op" />
+          ) : (
+            <OpGraph
+              jobName={pipelineOrGraph.name}
+              ops={queryResultOps.all}
+              focusOps={queryResultOps.focus}
+              highlightedOps={highlightedOps}
+              selectedHandleID={selectedHandle && selectedHandle.handleID}
+              selectedOp={selectedHandle && selectedHandle.solid}
+              parentHandleID={parentHandle && parentHandle.handleID}
+              parentOp={parentOp}
+              onClickOp={handleClickOp}
+              onClickBackground={handleClickBackground}
+              onEnterSubgraph={handleEnterCompositeSolid}
+              onLeaveSubgraph={handleLeaveCompositeSolid}
+              layout={layout}
+            />
+          )}
         </>
       }
       second={
@@ -315,10 +330,10 @@ export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
     handleID
     solid {
       name
-      ...PipelineGraphOpFragment
+      ...OpGraphOpFragment
     }
   }
-  ${PIPELINE_GRAPH_OP_FRAGMENT}
+  ${OP_GRAPH_OP_FRAGMENT}
 `;
 
 export const RightInfoPanel = styled.div`

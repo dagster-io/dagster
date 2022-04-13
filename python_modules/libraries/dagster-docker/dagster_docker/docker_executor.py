@@ -1,5 +1,4 @@
-import os
-from typing import List
+from typing import List, Optional
 
 import docker
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
@@ -16,6 +15,9 @@ from dagster.core.executor.step_delegating.step_handler.base import StepHandler,
 from dagster.serdes.utils import hash_str
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import experimental
+
+from .container_context import DockerContainerContext
+from .utils import parse_env_var
 
 
 @executor(
@@ -54,7 +56,6 @@ def docker_executor(init_context: InitExecutorContext) -> Executor:
     If you're using the DockerRunLauncher, configuration set on the containers created by the run
     launcher will also be set on the containers that are created for each step.
     """
-    from . import DockerRunLauncher
 
     image = init_context.executor_config.get("image")
     registry = init_context.executor_config.get("registry")
@@ -63,25 +64,20 @@ def docker_executor(init_context: InitExecutorContext) -> Executor:
     networks = init_context.executor_config.get("networks")
     container_kwargs = init_context.executor_config.get("container_kwargs")
 
-    run_launcher = init_context.instance.run_launcher
-    if isinstance(run_launcher, DockerRunLauncher):
-        image = image or run_launcher.image
-        registry = registry or run_launcher.registry
-        env_vars = run_launcher.env_vars + (env_vars or [])
-        networks = run_launcher.networks + (networks or [])
-        container_kwargs = merge_dicts(run_launcher.container_kwargs, container_kwargs or {})
-
     validate_docker_config(network, networks, container_kwargs)
 
+    if network and not networks:
+        networks = [network]
+
+    container_context = DockerContainerContext(
+        registry=registry,
+        env_vars=env_vars or [],
+        networks=networks or [],
+        container_kwargs=container_kwargs,
+    )
+
     return StepDelegatingExecutor(
-        DockerStepHandler(
-            image,
-            registry,
-            env_vars,
-            network,
-            networks,
-            container_kwargs,
-        ),
+        DockerStepHandler(image, container_context),
         retries=RetryMode.from_config(init_context.executor_config["retries"]),
     )
 
@@ -89,91 +85,107 @@ def docker_executor(init_context: InitExecutorContext) -> Executor:
 class DockerStepHandler(StepHandler):
     def __init__(
         self,
-        image=None,
-        registry=None,
-        env_vars=None,
-        network=None,
-        networks=None,
-        container_kwargs=None,
+        image: Optional[str],
+        container_context: DockerContainerContext,
     ):
         super().__init__()
 
-        self._image = image
-        self._registry = registry
-        self._env_vars = env_vars
-
-        if network:
-            self._networks = [network]
-        elif networks:
-            self._networks = networks
-        else:
-            self._networks = []
-
-        self._container_kwargs = check.opt_dict_param(
-            container_kwargs, "container_kwargs", key_type=str
+        self._image = check.opt_str_param(image, "image")
+        self._container_context = check.inst_param(
+            container_context, "container_context", DockerContainerContext
         )
+
+    def _get_image(self, step_handler_context: StepHandlerContext):
+        from . import DockerRunLauncher
+
+        image = (
+            step_handler_context.execute_step_args.pipeline_origin.repository_origin.container_image
+        )
+        if not image:
+            image = self._image
+
+        run_launcher = step_handler_context.instance.run_launcher
+
+        if not image and isinstance(run_launcher, DockerRunLauncher):
+            image = run_launcher.image
+
+        if not image:
+            raise Exception("No docker image specified by the executor config or repository")
+
+        return image
+
+    def _get_docker_container_context(self, step_handler_context: StepHandlerContext):
+        # This doesn't vary per step: would be good to have a hook where it can be set once
+        # for the whole StepHandler but we need access to the PipelineRun for that
+
+        from .docker_run_launcher import DockerRunLauncher
+
+        run_launcher = step_handler_context.instance.run_launcher
+        run_target = DockerContainerContext.create_for_run(
+            step_handler_context.pipeline_run,
+            run_launcher if isinstance(run_launcher, DockerRunLauncher) else None,
+        )
+
+        merged_container_context = run_target.merge(self._container_context)
+
+        validate_docker_config(
+            network=None,
+            networks=merged_container_context.networks,
+            container_kwargs=merged_container_context.container_kwargs,
+        )
+
+        return merged_container_context
 
     @property
     def name(self) -> str:
         return "DockerStepHandler"
 
-    def _get_client(self):
+    def _get_client(self, docker_container_context: DockerContainerContext):
         client = docker.client.from_env()
-        if self._registry:
+        if docker_container_context.registry:
             client.login(
-                registry=self._registry["url"],
-                username=self._registry["username"],
-                password=self._registry["password"],
+                registry=docker_container_context.registry["url"],
+                username=docker_container_context.registry["username"],
+                password=docker_container_context.registry["password"],
             )
         return client
 
     def _get_container_name(self, run_id, step_key):
         return f"dagster-step-{hash_str(run_id + step_key)}"
 
-    def _create_step_container(self, client, step_image, execute_step_args):
+    def _create_step_container(self, client, container_context, step_image, execute_step_args):
         return client.containers.create(
             step_image,
             name=self._get_container_name(
                 execute_step_args.pipeline_run_id, execute_step_args.step_keys_to_execute[0]
             ),
             detach=True,
-            network=self._networks[0] if len(self._networks) else None,
+            network=container_context.networks[0] if len(container_context.networks) else None,
             command=execute_step_args.get_command_args(),
-            environment=(
-                {env_name: os.getenv(env_name) for env_name in self._env_vars}
-                if self._env_vars
-                else {}
-            ),
-            **self._container_kwargs,
+            environment=(dict([parse_env_var(env_var) for env_var in container_context.env_vars])),
+            **container_context.container_kwargs,
         )
 
     def launch_step(self, step_handler_context: StepHandlerContext) -> List[DagsterEvent]:
-        client = self._get_client()
+        container_context = self._get_docker_container_context(step_handler_context)
 
-        step_image = (
-            step_handler_context.execute_step_args.pipeline_origin.repository_origin.container_image
-        )
+        client = self._get_client(container_context)
 
-        if not step_image:
-            step_image = self._image
-
-        if not step_image:
-            raise Exception("No docker image specified by the executor config or repository")
-
+        step_image = self._get_image(step_handler_context)
         validate_docker_image(step_image)
 
         try:
             step_container = self._create_step_container(
-                client, step_image, step_handler_context.execute_step_args
+                client, container_context, step_image, step_handler_context.execute_step_args
             )
         except docker.errors.ImageNotFound:
             client.images.pull(step_image)
             step_container = self._create_step_container(
-                client, step_image, step_handler_context.execute_step_args
+                client, container_context, step_image, step_handler_context.execute_step_args
             )
 
-        if len(self._networks) > 1:
-            for network_name in self._networks[1:]:
+        if len(container_context.networks) > 1:
+            for network_name in container_context.networks[1:]:
                 network = client.networks.get(network_name)
                 network.connect(step_container)
 
@@ -203,8 +215,9 @@ class DockerStepHandler(StepHandler):
 
     def check_step_health(self, step_handler_context: StepHandlerContext) -> List[DagsterEvent]:
         step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
+        container_context = self._get_docker_container_context(step_handler_context)
 
-        client = self._get_client()
+        client = self._get_client(container_context)
 
         container_name = self._get_container_name(
             step_handler_context.execute_step_args.pipeline_run_id,
@@ -265,6 +278,7 @@ class DockerStepHandler(StepHandler):
         ]
 
     def terminate_step(self, step_handler_context: StepHandlerContext) -> List[DagsterEvent]:
+        container_context = self._get_docker_container_context(step_handler_context)
 
         assert (
             len(step_handler_context.execute_step_args.step_keys_to_execute) == 1
@@ -281,7 +295,7 @@ class DockerStepHandler(StepHandler):
             )
         ]
 
-        client = self._get_client()
+        client = self._get_client(container_context)
 
         try:
             container = client.containers.get(

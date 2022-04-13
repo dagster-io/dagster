@@ -471,7 +471,8 @@ def test_sensor_next_ticks(graphql_context):
 
 def _create_tick(graphql_context):
     with create_test_daemon_workspace(
-        graphql_context.process_context.workspace_load_target
+        graphql_context.process_context.workspace_load_target,
+        graphql_context.instance,
     ) as workspace:
         list(
             execute_sensor_iteration(

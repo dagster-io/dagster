@@ -1,15 +1,19 @@
 # pylint: disable=redefined-outer-name, unused-argument
+import json
 import warnings
+from collections import namedtuple
 from contextlib import contextmanager
 
 import boto3
 import pytest
 
 from dagster import ExperimentalWarning
-from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.test_utils import in_process_test_workspace, instance_for_test
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 from . import repo
+
+Secret = namedtuple("Secret", ["name", "arn"])
 
 
 @pytest.fixture(autouse=True)
@@ -138,9 +142,11 @@ def instance(instance_cm):
 def workspace(instance, image):
     with in_process_test_workspace(
         instance,
-        ReconstructableRepository.for_file(
-            repo.__file__, repo.repository.__name__, container_image=image
+        loadable_target_origin=LoadableTargetOrigin(
+            python_file=repo.__file__,
+            attribute=repo.repository.__name__,
         ),
+        container_image=image,
     ) as workspace:
         yield workspace
 
@@ -149,9 +155,11 @@ def workspace(instance, image):
 def other_workspace(instance, other_image):
     with in_process_test_workspace(
         instance,
-        ReconstructableRepository.for_file(
-            repo.__file__, repo.repository.__name__, container_image=other_image
+        loadable_target_origin=LoadableTargetOrigin(
+            python_file=repo.__file__,
+            attribute=repo.repository.__name__,
         ),
+        container_image=other_image,
     ) as workspace:
         yield workspace
 
@@ -202,6 +210,105 @@ def launch_run(pipeline, external_pipeline, workspace):
             pipeline,
             external_pipeline_origin=external_pipeline.get_external_origin(),
             pipeline_code_origin=external_pipeline.get_python_origin(),
+        )
+        instance.launch_run(run.run_id, workspace)
+
+    return _launch_run
+
+
+@pytest.fixture
+def tagged_secret(secrets_manager):
+    # A secret tagged with "dagster"
+    name = "tagged_secret"
+    arn = secrets_manager.create_secret(
+        Name=name,
+        SecretString="hello",
+        Tags=[{"Key": "dagster", "Value": "true"}],
+    )["ARN"]
+
+    yield Secret(name, arn)
+
+
+@pytest.fixture
+def other_secret(secrets_manager):
+    # A secret without a tag
+    name = "other_secret"
+    arn = secrets_manager.create_secret(
+        Name=name,
+        SecretString="hello",
+    )["ARN"]
+
+    yield Secret(name, arn)
+
+
+@pytest.fixture
+def configured_secret(secrets_manager):
+    name = "configured_secret"
+    arn = secrets_manager.create_secret(
+        Name=name,
+        SecretString=json.dumps({"hello": "world"}),
+    )["ARN"]
+
+    yield Secret(name, arn)
+
+
+@pytest.fixture
+def other_configured_secret(secrets_manager):
+    name = "other_configured_secret"
+    arn = secrets_manager.create_secret(
+        Name=name,
+        SecretString=json.dumps({"goodnight": "moon"}),
+    )["ARN"]
+
+    yield Secret(name, arn)
+
+
+@pytest.fixture
+def container_context_config(configured_secret):
+    return {
+        "ecs": {
+            "secrets": [
+                {
+                    "name": "HELLO",
+                    "valueFrom": configured_secret.arn + "/hello",
+                }
+            ],
+            "secrets_tags": ["dagster"],
+        }
+    }
+
+
+@pytest.fixture
+def other_container_context_config(other_configured_secret):
+    return {
+        "ecs": {
+            "secrets": [
+                {
+                    "name": "GOODBYE",
+                    "valueFrom": other_configured_secret.arn + "/goodbye",
+                }
+            ],
+            "secrets_tags": ["other_secret_tag"],
+        }
+    }
+
+
+@pytest.fixture
+def launch_run_with_container_context(
+    pipeline, external_pipeline, workspace, container_context_config
+):
+    def _launch_run(instance):
+        python_origin = external_pipeline.get_python_origin()
+        python_origin = python_origin._replace(
+            repository_origin=python_origin.repository_origin._replace(
+                container_context=container_context_config,
+            )
+        )
+
+        run = instance.create_run_for_pipeline(
+            pipeline,
+            external_pipeline_origin=external_pipeline.get_external_origin(),
+            pipeline_code_origin=python_origin,
         )
         instance.launch_run(run.run_id, workspace)
 

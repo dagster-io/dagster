@@ -304,8 +304,10 @@ class DagsterK8sJobConfig(
 
     @classmethod
     def config_type_run_launcher(cls):
-        """Configuration intended to be set on the Dagster instance."""
+        """Configuration intended to be set on the Dagster instance for the run launcher."""
+
         return merge_dicts(
+            DagsterK8sJobConfig.config_type_job(),
             {
                 "instance_config_map": Field(
                     StringSource,
@@ -352,37 +354,46 @@ class DagsterK8sJobConfig(
                     description="Whether the launched Kubernetes Jobs and Pods should fail if the Dagster run fails",
                 ),
             },
-            DagsterK8sJobConfig.config_type_job(),
         )
 
     @classmethod
     def config_type_job(cls):
-        """Configuration intended to be set at pipeline execution time."""
+        """Configuration intended to be set when creating a k8s job (e.g. in an executor that runs
+        each op in its own k8s job, or a run launcher that create a k8s job for the run worker).
+        Shares most of the schema with the container_context, but for back-compat reasons,
+        'namespace' is called 'job_namespace'."""
+
+        return merge_dicts(
+            {
+                "job_image": Field(
+                    Noneable(StringSource),
+                    is_required=False,
+                    description="Docker image to use for launched Jobs. If this field is empty, "
+                    "the image that was used to originally load the Dagster repository will be used. "
+                    '(Ex: "mycompany.com/dagster-k8s-image:latest").',
+                ),
+            },
+            DagsterK8sJobConfig.config_type_container(),
+        )
+
+    @classmethod
+    def config_type_container(cls):
         return {
-            "job_image": Field(
-                Noneable(StringSource),
-                is_required=False,
-                description="Docker image to use for launched Jobs. If this field is empty, "
-                "the image that was used to originally load the Dagster repository will be used."
-                '(Ex: "mycompany.com/dagster-k8s-image:latest").',
-            ),
             "image_pull_policy": Field(
                 Noneable(StringSource),
                 is_required=False,
-                description="Image pull policy to set on the launched task Job Pods. Defaults to "
-                '"IfNotPresent".',
+                description="Image pull policy to set on launched Pods.",
             ),
             "image_pull_secrets": Field(
                 Noneable(Array(Shape({"name": StringSource}))),
                 is_required=False,
-                description="(Advanced) Specifies that Kubernetes should get the credentials from "
+                description="Specifies that Kubernetes should get the credentials from "
                 "the Secrets named in this list.",
             ),
             "service_account_name": Field(
                 Noneable(StringSource),
                 is_required=False,
-                description="(Advanced) Override the name of the Kubernetes service account under "
-                "which to run the Job.",
+                description="The name of the Kubernetes service account under which to run.",
             ),
             "env_config_maps": Field(
                 Noneable(Array(StringSource)),
@@ -440,10 +451,25 @@ class DagsterK8sJobConfig(
             "labels": Field(
                 dict,
                 is_required=False,
-                description="Additional labels that should be included in the Job's Pod. See: "
+                description="Labels to apply to all created pods. See: "
                 "https://kubernetes.io/docs/concepts/overview/working-with-objects/labels",
             ),
         }
+
+    @classmethod
+    def config_type_container_context(cls):
+        return merge_dicts(
+            DagsterK8sJobConfig.config_type_container(),
+            {
+                "namespace": Field(
+                    Noneable(StringSource),
+                    is_required=False,
+                    description="The namespace into which to launch Kubernetes resources. Note that any "
+                    "other required resources (such as the service account) must be "
+                    "present in this namespace.",
+                ),
+            },
+        )
 
     @property
     def env(self) -> List[Dict[str, Optional[str]]]:

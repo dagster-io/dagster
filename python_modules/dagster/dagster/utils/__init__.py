@@ -191,6 +191,9 @@ class frozendict(dict):
     setdefault = __readonly__
     del __readonly__
 
+    def __hash__(self):
+        return hash(tuple(sorted(self.items())))
+
 
 class frozenlist(list):
     def __readonly__(self, *args, **kwargs):

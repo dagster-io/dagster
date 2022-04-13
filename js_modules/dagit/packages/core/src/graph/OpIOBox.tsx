@@ -4,7 +4,7 @@ import styled from 'styled-components/macro';
 
 import {DEFAULT_RESULT_NAME, titleOfIO} from '../app/titleOfIO';
 
-import {Edge, isHighlighted} from './highlighting';
+import {Edge, isHighlighted} from './common';
 import {
   OpNodeDefinitionFragment,
   OpNodeDefinitionFragment_SolidDefinition_inputDefinitions,
