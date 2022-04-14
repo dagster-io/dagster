@@ -109,7 +109,7 @@ def s3_pickle_io_manager(init_context):
 
 class PickledObjectS3AssetIOManager(PickledObjectS3IOManager):
     def _get_path(self, context):
-        return "/".join([self.s3_prefix, *context.asset_key.path])
+        return "/".join([self.s3_prefix, *context.get_asset_output_identifier()])
 
 
 @io_manager(
