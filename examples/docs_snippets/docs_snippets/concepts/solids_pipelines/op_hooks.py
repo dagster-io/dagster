@@ -1,4 +1,4 @@
-"""isort:skip_file"""
+# isort: skip_file
 import yaml
 from unittest import mock
 from dagster_slack import slack_resource

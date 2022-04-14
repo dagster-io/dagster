@@ -1,4 +1,4 @@
-"""isort:skip_file"""
+# isort: skip_file
 
 # start_solid_marker
 import requests

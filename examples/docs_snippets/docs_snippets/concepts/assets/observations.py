@@ -1,4 +1,4 @@
-"""isort:skip_file"""
+# isort: skip_file
 # pylint: disable=reimported
 from dagster import op, job
 
