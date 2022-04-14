@@ -18,7 +18,11 @@ import {
 type AssetNode = AssetGraphQuery_assetNodes;
 type AssetKey = AssetGraphQuery_assetNodes_assetKey;
 
-export const __ASSET_GROUP = '__ASSET_GROUP';
+export const __ASSET_GROUP_PREFIX = '__ASSET_GROUP';
+
+export function isAssetGroup(jobName: string) {
+  return jobName.startsWith(__ASSET_GROUP_PREFIX);
+}
 
 // IMPORTANT: We use this, rather than AssetNode.id throughout this file because
 // the GraphQL interface exposes dependencyKeys, not dependencyIds. We also need

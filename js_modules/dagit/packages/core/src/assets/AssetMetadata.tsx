@@ -2,7 +2,6 @@ import {gql} from '@apollo/client';
 import {Box, MetadataTable} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {__ASSET_GROUP} from '../asset-graph/Utils';
 import {DAGSTER_TYPE_FRAGMENT} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterTypeFragment';
 import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';

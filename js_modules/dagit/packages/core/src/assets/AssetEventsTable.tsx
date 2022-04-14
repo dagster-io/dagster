@@ -18,7 +18,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
-import {__ASSET_GROUP} from '../asset-graph/Utils';
+import {isAssetGroup} from '../asset-graph/Utils';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
@@ -231,7 +231,7 @@ const EventGroupRow: React.FC<{
         </Group>
       </td>
       <td>
-        {run.pipelineName !== __ASSET_GROUP && (
+        {!isAssetGroup(run.pipelineName) && (
           <Box margin={{bottom: 4}}>
             <Box padding={{left: 8}}>
               <PipelineReference
