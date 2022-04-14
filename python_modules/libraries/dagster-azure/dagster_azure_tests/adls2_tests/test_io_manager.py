@@ -5,7 +5,7 @@ from dagster_azure.adls2.io_manager import (
     adls2_pickle_asset_io_manager,
     adls2_pickle_io_manager,
 )
-from dagster_azure.adls2.resources import adls2_resource
+from dagster_azure.adls2.resources import adls2_resource, _adls2_resource_from_config
 from dagster_azure.blob import create_blob_client
 
 from dagster import (
@@ -73,77 +73,77 @@ def define_inty_job():
     )
 
 
-@pytest.mark.nettest
-def test_adls2_pickle_io_manager_execution(storage_account, file_system, credential):
-    job = define_inty_job()
+# @pytest.mark.nettest
+# def test_adls2_pickle_io_manager_execution(storage_account, file_system, credential):
+#     job = define_inty_job()
 
-    run_config = {
-        "resources": {
-            "io_manager": {"config": {"adls2_file_system": file_system}},
-            "adls2": {
-                "config": {"storage_account": storage_account, "credential": {"key": credential}}
-            },
-        }
-    }
+#     run_config = {
+#         "resources": {
+#             "io_manager": {"config": {"adls2_file_system": file_system}},
+#             "adls2": {
+#                 "config": {"storage_account": storage_account, "credential": {"key": credential}}
+#             },
+#         }
+#     }
 
-    run_id = make_new_run_id()
+#     run_id = make_new_run_id()
 
-    resolved_run_config = ResolvedRunConfig.build(job, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(job), resolved_run_config)
+#     resolved_run_config = ResolvedRunConfig.build(job, run_config=run_config)
+#     execution_plan = ExecutionPlan.build(InMemoryPipeline(job), resolved_run_config)
 
-    assert execution_plan.get_step_by_key("return_one")
+#     assert execution_plan.get_step_by_key("return_one")
 
-    step_keys = ["return_one"]
-    instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name=job.name, run_id=run_id, run_config=run_config)
+#     step_keys = ["return_one"]
+#     instance = DagsterInstance.ephemeral()
+#     pipeline_run = PipelineRun(pipeline_name=job.name, run_id=run_id, run_config=run_config)
 
-    return_one_step_events = list(
-        execute_plan(
-            execution_plan.build_subset_plan(step_keys, job, resolved_run_config),
-            pipeline=InMemoryPipeline(job),
-            run_config=run_config,
-            pipeline_run=pipeline_run,
-            instance=instance,
-        )
-    )
+#     return_one_step_events = list(
+#         execute_plan(
+#             execution_plan.build_subset_plan(step_keys, job, resolved_run_config),
+#             pipeline=InMemoryPipeline(job),
+#             run_config=run_config,
+#             pipeline_run=pipeline_run,
+#             instance=instance,
+#         )
+#     )
 
-    assert get_step_output(return_one_step_events, "return_one")
-    context = build_input_context(
-        upstream_output=build_output_context(
-            step_key="return_one",
-            name="result",
-            run_id=run_id,
-        )
-    )
+#     assert get_step_output(return_one_step_events, "return_one")
+#     context = build_input_context(
+#         upstream_output=build_output_context(
+#             step_key="return_one",
+#             name="result",
+#             run_id=run_id,
+#         )
+#     )
 
-    io_manager = PickledObjectADLS2IOManager(
-        file_system=file_system,
-        adls2_client=create_adls2_client(storage_account, credential),
-        blob_client=create_blob_client(storage_account, credential),
-    )
-    assert io_manager.load_input(context) == 1
+#     io_manager = PickledObjectADLS2IOManager(
+#         file_system=file_system,
+#         adls2_client=create_adls2_client(storage_account, credential),
+#         blob_client=create_blob_client(storage_account, credential),
+#     )
+#     assert io_manager.load_input(context) == 1
 
-    add_one_step_events = list(
-        execute_plan(
-            execution_plan.build_subset_plan(["add_one"], job, resolved_run_config),
-            pipeline=InMemoryPipeline(job),
-            pipeline_run=pipeline_run,
-            run_config=run_config,
-            instance=instance,
-        )
-    )
+#     add_one_step_events = list(
+#         execute_plan(
+#             execution_plan.build_subset_plan(["add_one"], job, resolved_run_config),
+#             pipeline=InMemoryPipeline(job),
+#             pipeline_run=pipeline_run,
+#             run_config=run_config,
+#             instance=instance,
+#         )
+#     )
 
-    context = build_input_context(
-        upstream_output=build_output_context(
-            step_key="add_one",
-            name="result",
-            run_id=run_id,
-            mapping_key="foo",
-        )
-    )
+#     context = build_input_context(
+#         upstream_output=build_output_context(
+#             step_key="add_one",
+#             name="result",
+#             run_id=run_id,
+#             mapping_key="foo",
+#         )
+#     )
 
-    assert get_step_output(add_one_step_events, "add_one")
-    assert io_manager.load_input(context) == 2
+#     assert get_step_output(add_one_step_events, "add_one")
+#     assert io_manager.load_input(context) == 2
 
 
 def test_asset_io_manager(storage_account, file_system, credential):
@@ -173,3 +173,26 @@ def test_asset_io_manager(storage_account, file_system, credential):
 
     result = asset_job.execute_in_process(run_config=run_config)
     assert result.success
+
+    assert False
+
+
+
+def test_asset_io_manager_isolation(storage_account, file_system, credential):
+    adls_resource = _adls2_resource_from_config(
+        {
+            "storage_account": storage_account,
+            "credential": {
+                "key": credential
+            }
+        }
+    )
+
+    io_mgr = PickledObjectADLS2IOManager(
+        file_system=file_system,
+        client=adls_resource.adls2_client,
+        blob_client=adls_resource.blob_client,
+        prefix="isolation_test",
+    )
+
+    # io_mgr.

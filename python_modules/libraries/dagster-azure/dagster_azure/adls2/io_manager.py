@@ -43,11 +43,11 @@ class PickledObjectADLS2IOManager(IOManager):
         # This operates recursively already so is nice and simple.
         print("_rm_object get lease")
         file_client = self.file_system_client.get_file_client(key)
-        with self._acquire_lease(file_client) as lease:
-            # lease = self.file_system_client.acquire_lease()
-            print(f"_rm_object got lease {lease}")
-            file_client.delete_file(lease=lease)
-            # self.file_system_client.delete_file(file=key)
+        # with self._acquire_lease(file_client, is_rm=True, bigger_client=self.file_system_client) as lease:
+            # print(f"_rm_object got lease {lease}")
+            # file_client.delete_file(lease=lease)
+
+        file_client.delete_file()
 
     def _has_object(self, key):
         check.str_param(key, "key")
@@ -57,8 +57,9 @@ class PickledObjectADLS2IOManager(IOManager):
 
             file = self.file_system_client.get_file_client(key)
             print("_has_object get lease")
-            with self._acquire_lease(file) as lease:
-                file.get_file_properties(lease=lease)
+            # with self._acquire_lease(file) as lease:
+                # file.get_file_properties(lease=lease)
+            file.get_file_properties()
             return True
         except ResourceNotFoundError:
             return False
@@ -74,7 +75,7 @@ class PickledObjectADLS2IOManager(IOManager):
         )
 
     @contextmanager
-    def _acquire_lease(self, client):
+    def _acquire_lease(self, client, bigger_client=None, is_rm=False):
         print("getting lease")
         lease_client = DataLakeLeaseClient(client=client)
         print("got lease client")
@@ -83,22 +84,27 @@ class PickledObjectADLS2IOManager(IOManager):
             print(f"********* LEASE ID {lease_client.id} **************")
             yield lease_client.id
         finally:
-            print("releasing")
-            print(lease_client.id)
-            print(dir(lease_client))
-            print(type(lease_client))
-            print(lease_client._blob_lease_client)
-            lease_client.release()
-            print("done releasing")
+            if is_rm:
+                print("trying to acquire again for test")
+                new_lease_client = DataLakeLeaseClient(client=bigger_client)
+                new_lease_client.acquire()
+
+            else:
+                print("releasing")
+                print(lease_client.id)
+                lease_client.release()
+                print("done releasing")
 
     def load_input(self, context):
         key = self._get_path(context.upstream_output)
         context.log.debug(f"Loading ADLS2 object from: {self._uri_for_key(key)}")
         file = self.file_system_client.get_file_client(key)
         print("load_input get lease")
-        with self._acquire_lease(file) as lease:
-            stream = file.download_file(lease=lease)
-            obj = pickle.loads(stream.readall())
+        # with self._acquire_lease(file) as lease:
+            # stream = file.download_file(lease=lease)
+            # obj = pickle.loads(stream.readall())
+        stream = file.download_file()
+        obj = pickle.loads(stream.readall())
 
         return obj
 
@@ -108,14 +114,15 @@ class PickledObjectADLS2IOManager(IOManager):
 
         if self._has_object(key):
             context.log.warning(f"Removing existing ADLS2 key: {key}")
-            self._rm_object(key)
+            # self._rm_object(key)
 
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
 
         file = self.file_system_client.create_file(key)
         print("handle_output get lease")
-        with self._acquire_lease(file) as lease:
-            file.upload_data(pickled_obj, lease=lease, overwrite=True)
+        # with self._acquire_lease(file) as lease:
+            # file.upload_data(pickled_obj, lease=lease, overwrite=True)
+        file.upload_data(pickled_obj, overwrite=True)
 
 
 @io_manager(
