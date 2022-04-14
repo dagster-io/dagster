@@ -41,8 +41,13 @@ class PickledObjectADLS2IOManager(IOManager):
         check.param_invariant(len(key) > 0, "key")
 
         # This operates recursively already so is nice and simple.
-        with self._acquire_lease(self.file_system_client) as lease:
-            self.file_system_client.delete_file(key, lease=lease)
+        print("_rm_object get lease")
+        file_client = self.file_system_client.get_file_client(key)
+        with self._acquire_lease(file_client) as lease:
+            # lease = self.file_system_client.acquire_lease()
+            print(f"_rm_object got lease {lease}")
+            file_client.delete_file(lease=lease)
+            # self.file_system_client.delete_file(file=key)
 
     def _has_object(self, key):
         check.str_param(key, "key")
@@ -51,6 +56,7 @@ class PickledObjectADLS2IOManager(IOManager):
         try:
 
             file = self.file_system_client.get_file_client(key)
+            print("_has_object get lease")
             with self._acquire_lease(file) as lease:
                 file.get_file_properties(lease=lease)
             return True
@@ -69,18 +75,27 @@ class PickledObjectADLS2IOManager(IOManager):
 
     @contextmanager
     def _acquire_lease(self, client):
+        print("getting lease")
         lease_client = DataLakeLeaseClient(client=client)
+        print("got lease client")
         try:
-            lease = lease_client.acquire(lease_duration=self.lease_duration)
-            print(f"********* LEASE ID {lease} **************")
-            yield lease
+            lease_client.acquire(lease_duration=self.lease_duration)
+            print(f"********* LEASE ID {lease_client.id} **************")
+            yield lease_client.id
         finally:
+            print("releasing")
+            print(lease_client.id)
+            print(dir(lease_client))
+            print(type(lease_client))
+            print(lease_client._blob_lease_client)
             lease_client.release()
+            print("done releasing")
 
     def load_input(self, context):
         key = self._get_path(context.upstream_output)
         context.log.debug(f"Loading ADLS2 object from: {self._uri_for_key(key)}")
         file = self.file_system_client.get_file_client(key)
+        print("load_input get lease")
         with self._acquire_lease(file) as lease:
             stream = file.download_file(lease=lease)
             obj = pickle.loads(stream.readall())
@@ -98,6 +113,7 @@ class PickledObjectADLS2IOManager(IOManager):
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
 
         file = self.file_system_client.create_file(key)
+        print("handle_output get lease")
         with self._acquire_lease(file) as lease:
             file.upload_data(pickled_obj, lease=lease, overwrite=True)
 
