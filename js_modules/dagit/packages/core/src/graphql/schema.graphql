@@ -1169,6 +1169,8 @@ type InstigationState {
   name: String!
   instigationType: InstigationType!
   status: InstigationStatus!
+  repositoryName: String!
+  repositoryLocationName: String!
   repositoryOrigin: RepositoryOrigin!
   typeSpecificData: InstigationTypeSpecificData
   runs(limit: Int): [Run!]!

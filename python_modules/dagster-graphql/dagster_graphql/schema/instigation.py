@@ -264,6 +264,8 @@ class GrapheneInstigationState(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     instigationType = graphene.NonNull(GrapheneInstigationType)
     status = graphene.NonNull(GrapheneInstigationStatus)
+    repositoryName = graphene.NonNull(graphene.String)
+    repositoryLocationName = graphene.NonNull(graphene.String)
     repositoryOrigin = graphene.NonNull(GrapheneRepositoryOrigin)
     typeSpecificData = graphene.Field(GrapheneInstigationTypeSpecificData)
     runs = graphene.Field(
@@ -315,6 +317,12 @@ class GrapheneInstigationState(graphene.ObjectType):
     def resolve_repositoryOrigin(self, _graphene_info):
         origin = self._instigator_state.origin.external_repository_origin
         return GrapheneRepositoryOrigin(origin)
+
+    def resolve_repositoryName(self, _graphene_info):
+        return self._instigator_state.repository_selector.repository_name
+
+    def resolve_repositoryLocationName(self, _graphene_info):
+        return self._instigator_state.repository_selector.location_name
 
     def resolve_typeSpecificData(self, _graphene_info):
         if not self._instigator_state.instigator_data:
