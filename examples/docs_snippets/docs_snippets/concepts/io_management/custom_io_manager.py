@@ -1,4 +1,4 @@
-"""isort:skip_file"""
+# isort: skip_file
 from dagster import job, op, MetadataEntry
 
 
