@@ -1,8 +1,9 @@
 import * as React from 'react';
 
 import {getJSONForKey} from '../hooks/useStateWithStorage';
-import {AppContext} from './AppContext';
 import {RepoAddress} from '../workspace/types';
+
+import {AppContext} from './AppContext';
 
 // Internal LocalStorage data format and mutation helpers
 
