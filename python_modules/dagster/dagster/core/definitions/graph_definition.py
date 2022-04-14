@@ -7,7 +7,9 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Mapping,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Union,
@@ -22,6 +24,7 @@ from dagster.config.config_type import ConfigType
 from dagster.config.validate import validate_config
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.resource_definition import ResourceDefinition
@@ -42,6 +45,7 @@ from .dependency import (
     NodeHandle,
     NodeInvocation,
     SolidInputHandle,
+    SolidOutputHandle,
 )
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
@@ -461,9 +465,9 @@ class GraphDefinition(NodeDefinition):
         version_strategy: Optional[VersionStrategy] = None,
         op_selection: Optional[List[str]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
-        asset_key_by_input_def=None,
-        asset_key_by_output_def=None,
-        asset_deps=None,
+        asset_keys_by_input_handle: Optional[Mapping[SolidInputHandle, AssetKey]] = None,
+        asset_keys_by_output_handle: Optional[Mapping[SolidOutputHandle, AssetKey]] = None,
+        asset_deps: Optional[Mapping[AssetKey, Sequence[AssetKey]]] = None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -584,8 +588,8 @@ class GraphDefinition(NodeDefinition):
             hook_defs=hooks,
             version_strategy=version_strategy,
             op_retry_policy=op_retry_policy,
-            asset_key_by_input_def=asset_key_by_input_def,
-            asset_key_by_output_def=asset_key_by_output_def,
+            asset_keys_by_output_handle=asset_keys_by_output_handle,
+            asset_keys_by_input_handle=asset_keys_by_input_handle,
             asset_deps=asset_deps,
         ).get_job_def_for_op_selection(op_selection)
 

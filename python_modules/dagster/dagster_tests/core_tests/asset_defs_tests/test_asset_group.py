@@ -218,7 +218,7 @@ def test_asset_group_build_subset_job():
     def start_asset():
         return "foo"
 
-    @multi_asset(outs={"o1": Out(asset_key=AssetKey("o1")), "o2": Out(asset_key=AssetKey("o2"))})
+    @multi_asset(outs={"o1": Out(), "o2": Out()})
     def middle_asset(start_asset):
         return (start_asset, start_asset)
 
@@ -313,7 +313,7 @@ def test_asset_group_build_subset_job():
         DagsterInvalidDefinitionError,
         match=r"When attempting to create job 'bad_subset', the clause "
         r"'doesnt_exist' within the asset key selection did not match any asset "
-        r"keys. Present asset keys: \['start_asset', 'o1', 'o2', 'follows_o1', 'follows_o2'\]",
+        r"keys. Present asset keys: \['follows_o1', 'follows_o2', 'o1', 'o2', 'start_asset'\]",
     ):
         group.build_job(name="bad_subset", selection="doesnt_exist")
 
@@ -498,7 +498,7 @@ def test_materialize_with_selection():
     def start_asset():
         return "foo"
 
-    @multi_asset(outs={"o1": Out(asset_key=AssetKey("o1")), "o2": Out(asset_key=AssetKey("o2"))})
+    @multi_asset(outs={"o1": Out(), "o2": Out()})
     def middle_asset(start_asset):
         return (start_asset, start_asset)
 

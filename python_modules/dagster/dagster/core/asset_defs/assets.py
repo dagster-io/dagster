@@ -1,7 +1,7 @@
 from typing import AbstractSet, Mapping, Optional, Tuple
 
 from dagster import check
-from dagster.core.definitions import OpDefinition, OutputDefinition, InputDefinition
+from dagster.core.definitions import InputDefinition, OpDefinition, OutputDefinition
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
 
@@ -11,22 +11,22 @@ from .partition_mapping import PartitionMapping
 class AssetsDefinition:
     def __init__(
         self,
-        asset_key_by_input_name: Mapping[str, AssetKey],
-        asset_key_by_output_name: Mapping[str, AssetKey],
+        asset_keys_by_input_name: Mapping[str, AssetKey],
+        asset_keys_by_output_name: Mapping[str, AssetKey],
         op: OpDefinition,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]] = None,
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
     ):
         self._op = op
-        self._asset_key_by_input_def = {
+        self._asset_keys_by_input_def = {
             op.input_dict[input_name]: asset_key
-            for input_name, asset_key in asset_key_by_input_name.items()
+            for input_name, asset_key in asset_keys_by_input_name.items()
         }
 
-        self._asset_key_by_output_def = {
+        self._asset_keys_by_output_def = {
             op.output_dict[output_name]: asset_key
-            for output_name, asset_key in asset_key_by_output_name.items()
+            for output_name, asset_key in asset_keys_by_output_name.items()
         }
         self._partitions_def = partitions_def
         self._partition_mappings = partition_mappings or {}
@@ -64,23 +64,23 @@ class AssetsDefinition:
 
     @property
     def input_asset_keys(self) -> AbstractSet[AssetKey]:
-        return set(self._asset_key_by_input_def.values())
+        return set(self._asset_keys_by_input_def.values())
 
     @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
-        return set(self._asset_key_by_output_def.values())
+        return set(self._asset_keys_by_output_def.values())
 
     @property
     def asset_deps(self) -> Mapping[AssetKey, AbstractSet[AssetKey]]:
         return self._asset_deps
 
     @property
-    def asset_key_by_output_def(self) -> Mapping[OutputDefinition, AssetKey]:
-        return self._asset_key_by_output_def
+    def asset_keys_by_output_def(self) -> Mapping[OutputDefinition, AssetKey]:
+        return self._asset_keys_by_output_def
 
     @property
-    def asset_key_by_input_def(self) -> Mapping[InputDefinition, AssetKey]:
-        return self._asset_key_by_input_def
+    def asset_keys_by_input_def(self) -> Mapping[InputDefinition, AssetKey]:
+        return self._asset_keys_by_input_def
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:

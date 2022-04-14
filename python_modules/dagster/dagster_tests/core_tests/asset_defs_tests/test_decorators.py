@@ -68,6 +68,7 @@ def test_multi_asset_with_compute_kind():
     assert my_asset.op.tags == {"kind": "sql"}
 
 
+@pytest.mark.skip(reason="Temporarily disable this behavior")
 def test_multi_asset_out_name_diff_from_asset_key():
     @multi_asset(
         outs={

@@ -8,10 +8,10 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Union,
     cast,
     overload,
-    Tuple,
 )
 
 from dagster import check
@@ -210,10 +210,10 @@ class _Asset:
             )(fn)
 
         return AssetsDefinition(
-            asset_key_by_input_name={
+            asset_keys_by_input_name={
                 input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
             },
-            asset_key_by_output_name={"result": out_asset_key},
+            asset_keys_by_output_name={"result": out_asset_key},
             op=op,
             partitions_def=self.partitions_def,
             partition_mappings={
@@ -288,10 +288,10 @@ def multi_asset(
             )(fn)
 
         return AssetsDefinition(
-            asset_key_by_input_name={
+            asset_keys_by_input_name={
                 input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
             },
-            asset_key_by_output_name={
+            asset_keys_by_output_name={
                 output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()
             },
             op=op,
@@ -376,6 +376,6 @@ def build_asset_ins(
 
     for asset_key in non_argument_deps:
         in_name = "_".join(asset_key.path)
-        ins[asset_key] = (in_name, In(dagster_type=cast(type, Nothing), asset_key=asset_key))
+        ins[asset_key] = (in_name, In(dagster_type=cast(type, Nothing)))
 
     return ins

@@ -8,15 +8,16 @@ from dagster.core.definitions import (
     AssetMaterialization,
     AssetObservation,
     ExpectationResult,
+    JobDefinition,
     Materialization,
     Output,
     OutputDefinition,
+    PipelineDefinition,
     SolidDefinition,
     TypeCheck,
-    PipelineDefinition,
-    JobDefinition,
 )
 from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+from dagster.core.definitions.dependency import SolidOutputHandle
 from dagster.core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster.core.definitions.metadata import (
     MetadataEntry,
@@ -420,9 +421,12 @@ def _asset_key_and_partitions_for_output(
 
     manager_asset_key = output_manager.get_output_asset_key(output_context)
 
+    output_handle = SolidOutputHandle(
+        solid=output_context.step_context.solid, output_def=output_def
+    )
     if (
         isinstance(pipeline_def, JobDefinition)
-        and output_def in pipeline_def.asset_key_by_output_def
+        and output_handle in pipeline_def.asset_keys_by_output_handle
     ):
         if manager_asset_key is not None:
             solid_def = cast(SolidDefinition, output_context.solid_def)
@@ -433,7 +437,7 @@ def _asset_key_and_partitions_for_output(
                 "specify an AssetKey in its get_output_asset_key() function."
             )
         return (
-            pipeline_def.asset_key_by_output_def[output_def],
+            pipeline_def.asset_keys_by_output_handle[output_handle],
             output_def.get_asset_partitions(output_context) or set(),
         )
     elif manager_asset_key:

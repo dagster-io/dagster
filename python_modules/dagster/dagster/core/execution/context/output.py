@@ -239,13 +239,12 @@ class OutputContext:
 
     @property
     def asset_key(self) -> Optional[AssetKey]:
-        matching_output_defs = [
-            output_def
-            for output_def in cast(SolidDefinition, self._solid_def).output_defs
-            if output_def.name == self.name
-        ]
-        check.invariant(len(matching_output_defs) == 1)
-        return matching_output_defs[0].get_asset_key(self)
+        from dagster.core.definitions.job_definition import JobDefinition
+
+        if not isinstance(self.step_context.pipeline_def, JobDefinition):
+            return None
+        output_handle = self.step_context.solid.output_handle(self.name)
+        return self.step_context.pipeline_def.asset_keys_by_output_handle.get(output_handle)
 
     @property
     def step_context(self) -> "StepExecutionContext":

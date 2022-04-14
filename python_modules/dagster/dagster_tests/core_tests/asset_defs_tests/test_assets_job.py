@@ -4,10 +4,13 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetsDefinition,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
     IOManager,
+    NodeInvocation,
     io_manager,
+    op,
 )
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
 from dagster.core.snap import DependencyStructureIndex
@@ -307,3 +310,35 @@ def test_multiple_non_argument_deps():
     result = job.execute_in_process()
     assert result.success
     assert result.output_for_node("qux") == 1
+
+
+def test_same_op_different_assets():
+    @asset
+    def foo():
+        return 1
+
+    @op
+    def add_one(in_asset):
+        return in_asset + 1
+
+    foo_plus_one = AssetsDefinition(
+        asset_keys_by_input_name={"in_asset": AssetKey("foo")},
+        asset_keys_by_output_name={"result": AssetKey("foo_plus_one")},
+        op=add_one,
+    )
+    foo_plus_two = AssetsDefinition(
+        asset_keys_by_input_name={"in_asset": AssetKey("foo_plus_one")},
+        asset_keys_by_output_name={"result": AssetKey("foo_plus_two")},
+        op=add_one,
+    )
+
+    job = build_assets_job("foos", [foo, foo_plus_one, foo_plus_two])
+    assert job.dependencies == {
+        "foo": {},
+        "add_one": {"in_asset": DependencyDefinition("foo", "result")},
+        NodeInvocation(name="add_one", alias="add_one_2"): {
+            "in_asset": DependencyDefinition("add_one", "result")
+        },
+    }
+    result = job.execute_in_process()
+    assert result.output_for_node("add_one_2") == 3

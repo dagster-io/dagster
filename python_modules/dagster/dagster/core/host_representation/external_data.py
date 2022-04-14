@@ -788,37 +788,40 @@ def external_asset_graph_from_defs(
         # only jobs will have this info available
         if not isinstance(job, JobDefinition):
             continue
-        for node_def in job.all_node_defs:
-            input_name_by_asset_key = {
-                job.asset_key_by_input_def[id]: id.name
-                for id in node_def.input_defs
-                if id in job.asset_key_by_input_def
-            }
-
+        # build index so that we can quickly map from asset key to input/output name, given a node
+        asset_name_mappings = {}
+        for node_name, node in job.graph.node_dict.items():
             output_name_by_asset_key = {
-                job.asset_key_by_output_def[id]: id.name
-                for id in node_def.output_defs
-                if id in job.asset_key_by_output_def
+                job.asset_keys_by_output_handle.get(output_handle): output_handle.output_def.name
+                for output_handle in node.output_handles()
+                if output_handle in job.asset_keys_by_output_handle
             }
-
+            input_name_by_asset_key = {
+                job.asset_keys_by_input_handle.get(input_handle): input_handle.input_def.name
+                for input_handle in node.input_handles()
+                if input_handle in job.asset_keys_by_input_handle
+            }
+            asset_name_mappings[node_name] = (output_name_by_asset_key, input_name_by_asset_key)
+        # for each output associated w/ an asset, create dependency information for that asset
+        for output_handle, output_asset_key in job.asset_keys_by_output_handle.items():
+            node_defs_by_asset_key[output_asset_key].append(
+                (output_handle.output_def, output_handle.solid.definition, job)
+            )
+            output_name_by_asset_key, input_name_by_asset_key = asset_name_mappings[
+                output_handle.solid.name
+            ]
             all_upstream_asset_keys.update(set(input_name_by_asset_key.keys()))
-
-            for output_def in node_def.output_defs:
-                output_asset_key = job.asset_key_by_output_def.get(output_def)
-                if not output_asset_key:
-                    continue
-                node_defs_by_asset_key[output_asset_key].append((output_def, node_def, job))
-                for upstream_asset_key in job.asset_deps[output_asset_key]:
-                    deps[output_asset_key][upstream_asset_key] = ExternalAssetDependency(
-                        upstream_asset_key=upstream_asset_key,
-                        input_name=input_name_by_asset_key.get(upstream_asset_key),
-                        output_name=output_name_by_asset_key.get(upstream_asset_key),
-                    )
-                    dep_by[upstream_asset_key][output_asset_key] = ExternalAssetDependedBy(
-                        downstream_asset_key=output_asset_key,
-                        input_name=input_name_by_asset_key.get(upstream_asset_key),
-                        output_name=output_name_by_asset_key.get(upstream_asset_key),
-                    )
+            for upstream_asset_key in job.asset_deps[output_asset_key]:
+                deps[output_asset_key][upstream_asset_key] = ExternalAssetDependency(
+                    upstream_asset_key=upstream_asset_key,
+                    input_name=input_name_by_asset_key.get(upstream_asset_key),
+                    output_name=output_name_by_asset_key.get(upstream_asset_key),
+                )
+                dep_by[upstream_asset_key][output_asset_key] = ExternalAssetDependedBy(
+                    downstream_asset_key=output_asset_key,
+                    input_name=input_name_by_asset_key.get(upstream_asset_key),
+                    output_name=output_name_by_asset_key.get(upstream_asset_key),
+                )
 
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
         node_defs_by_asset_key.keys()

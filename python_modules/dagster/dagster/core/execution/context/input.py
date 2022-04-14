@@ -205,16 +205,14 @@ class InputContext:
 
     @property
     def asset_key(self) -> Optional[AssetKey]:
+        from dagster.core.definitions.job_definition import JobDefinition
+
         if not self._name:
             return None
-
-        matching_input_defs = [
-            input_def
-            for input_def in cast(SolidDefinition, self._solid_def).input_defs
-            if input_def.name == self.name
-        ]
-        check.invariant(len(matching_input_defs) == 1)
-        return matching_input_defs[0].get_asset_key(self)
+        if not isinstance(self.step_context.pipeline_def, JobDefinition):
+            return None
+        input_handle = self.step_context.solid.input_handle(self.name)
+        return self.step_context.pipeline_def.asset_keys_by_input_handle.get(input_handle)
 
     @property
     def step_context(self) -> "StepExecutionContext":

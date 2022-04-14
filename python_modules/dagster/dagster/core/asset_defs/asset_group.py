@@ -315,13 +315,13 @@ class AssetGroup(
                     "a source asset. Source assets can't be materialized, and "
                     "therefore can't be subsetted into a job. Please choose a "
                     "subset on asset keys that are materializable - that is, "
-                    f"included on assets within the group. Valid assets: {list(asset_keys_to_ops.keys())}"
+                    f"included on assets within the group. Valid assets: {sorted(list(asset_keys_to_ops.keys()))}"
                 )
             if key_str not in asset_keys_to_ops:
                 raise DagsterInvalidDefinitionError(
                     f"When attempting to create job '{job_name}', the clause "
                     f"'{clause}' within the asset key selection did not match "
-                    f"any asset keys. Present asset keys: {list(asset_keys_to_ops.keys())}"
+                    f"any asset keys. Present asset keys: {sorted(list(asset_keys_to_ops.keys()))}"
                 )
 
             seen_asset_keys.add(key_str)
@@ -559,7 +559,7 @@ def _validate_resource_reqs_for_asset_group(
                 f"AssetGroup is missing required resource keys for asset '{asset_def.op.name}'. Missing resource keys: {missing_resource_keys}"
             )
 
-        for output_def, asset_key in asset_def.asset_key_by_output_def.items():
+        for output_def, asset_key in asset_def.asset_keys_by_output_def.items():
             if output_def.io_manager_key and output_def.io_manager_key not in present_resource_keys:
                 raise DagsterInvalidDefinitionError(
                     f"Output '{output_def.name}' with AssetKey '{asset_key}' "

@@ -14,9 +14,6 @@ from typing import (
 )
 
 from dagster import check
-from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.input import InputDefinition
-from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.composition import MappedInputPlaceholder
 from dagster.core.definitions.dependency import (
     DependencyDefinition,
@@ -26,9 +23,13 @@ from dagster.core.definitions.dependency import (
     Node,
     NodeHandle,
     NodeInvocation,
+    SolidInputHandle,
     SolidOutputHandle,
 )
+from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.input import InputDefinition
 from dagster.core.definitions.node_definition import NodeDefinition
+from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster.core.selector.subset_selector import (
@@ -68,8 +69,8 @@ class JobDefinition(PipelineDefinition):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
-        asset_key_by_output_def: Optional[Mapping[OutputDefinition, AssetKey]] = None,
-        asset_key_by_input_def: Optional[Mapping[InputDefinition, AssetKey]] = None,
+        asset_keys_by_output_handle: Optional[Mapping[SolidOutputHandle, AssetKey]] = None,
+        asset_keys_by_input_handle: Optional[Mapping[SolidInputHandle, AssetKey]] = None,
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
     ):
@@ -79,19 +80,18 @@ class JobDefinition(PipelineDefinition):
             _op_selection_data, "_op_selection_data", OpSelectionData
         )
 
-        # TODO: scrape asset key info off of input def / output def
         # TODO: scrape asset dep info off of output def + dependency structure
 
-        self._asset_key_by_output_def = check.opt_dict_param(
-            asset_key_by_output_def,
-            "asset_key_by_output_def",
-            key_type=OutputDefinition,
+        self._asset_keys_by_output_handle = check.opt_dict_param(
+            asset_keys_by_output_handle,
+            "asset_keys_by_output_handle",
+            key_type=SolidOutputHandle,
             value_type=AssetKey,
         )
-        self._asset_key_by_input_def = check.opt_dict_param(
-            asset_key_by_input_def,
-            "asset_key_by_input_def",
-            key_type=InputDefinition,
+        self._asset_keys_by_input_handle = check.opt_dict_param(
+            asset_keys_by_input_handle,
+            "asset_keys_by_input_handle",
+            key_type=SolidInputHandle,
             value_type=AssetKey,
         )
         self._asset_deps = check.opt_dict_param(
@@ -102,19 +102,20 @@ class JobDefinition(PipelineDefinition):
         )
 
         # For legacy purposes, scrape info off of OutputDefinition/InputDefinition
-        for solid in graph_def.iterate_solid_defs():
+        for solid in graph_def.solids:
             input_asset_keys = set()
-            for input_def in solid.input_defs:
-                input_key = input_def.hardcoded_asset_key
+            for input_handle in solid.input_handles():
+                input_key = input_handle.input_def.hardcoded_asset_key
                 if input_key:
-                    check.invariant(input_def not in self._asset_key_by_input_def)
+                    check.invariant(input_handle not in self._asset_keys_by_input_handle)
                     input_asset_keys.add(input_key)
-                    self._asset_key_by_input_def[input_def] = input_key
-            for output_def in solid.output_defs:
-                output_key = output_def.hardcoded_asset_key
+                    self._asset_keys_by_input_handle[input_handle] = input_key
+            for output_handle in solid.output_handles():
+                output_key = output_handle.output_def.hardcoded_asset_key
                 if output_key:
-                    check.invariant(output_def not in self._asset_key_by_output_def)
-                    self._asset_key_by_output_def[output_def] = output_key
+                    check.invariant(output_handle not in self._asset_keys_by_output_handle)
+                    self._asset_keys_by_output_handle[output_handle] = output_key
+                    # assume asset depends on all node inputs
                     self._asset_deps[output_key] = input_asset_keys
 
         super(JobDefinition, self).__init__(
@@ -130,12 +131,12 @@ class JobDefinition(PipelineDefinition):
         )
 
     @property
-    def asset_key_by_input_def(self):
-        return self._asset_key_by_input_def
+    def asset_keys_by_input_handle(self) -> Mapping[SolidInputHandle, AssetKey]:
+        return self._asset_keys_by_input_handle
 
     @property
-    def asset_key_by_output_def(self):
-        return self._asset_key_by_output_def
+    def asset_keys_by_output_handle(self) -> Mapping[SolidOutputHandle, AssetKey]:
+        return self._asset_keys_by_output_handle
 
     @property
     def asset_deps(self):
@@ -230,6 +231,9 @@ class JobDefinition(PipelineDefinition):
             tags=self.tags,
             op_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,
+            asset_keys_by_input_handle=self.asset_keys_by_input_handle,
+            asset_keys_by_output_handle=self.asset_keys_by_output_handle,
+            asset_deps=self.asset_deps,
         ).get_job_def_for_op_selection(op_selection)
 
         tags = None
@@ -290,6 +294,10 @@ class JobDefinition(PipelineDefinition):
             op_retry_policy=self._solid_retry_policy,
             graph_def=sub_graph,
             version_strategy=self.version_strategy,
+            # TODO: subset these things?
+            asset_keys_by_input_handle=self.asset_keys_by_input_handle,
+            asset_keys_by_output_handle=self.asset_keys_by_output_handle,
+            asset_deps=self.asset_deps,
             _op_selection_data=OpSelectionData(
                 op_selection=op_selection,
                 resolved_op_selection=set(
@@ -347,6 +355,9 @@ class JobDefinition(PipelineDefinition):
             hook_defs=hook_defs | self.hook_defs,
             description=self._description,
             op_retry_policy=self._solid_retry_policy,
+            asset_keys_by_input_handle=self.asset_keys_by_input_handle,
+            asset_keys_by_output_handle=self.asset_keys_by_output_handle,
+            asset_deps=self.asset_deps,
             _op_selection_data=self._op_selection_data,
         )
 
