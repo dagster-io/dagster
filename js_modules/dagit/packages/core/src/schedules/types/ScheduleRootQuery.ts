@@ -77,6 +77,7 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;

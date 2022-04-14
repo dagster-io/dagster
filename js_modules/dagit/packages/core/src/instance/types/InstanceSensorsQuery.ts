@@ -123,6 +123,7 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
@@ -254,6 +255,7 @@ export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_Instiga
 export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;

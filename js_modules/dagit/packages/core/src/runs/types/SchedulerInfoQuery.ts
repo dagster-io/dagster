@@ -118,6 +118,7 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;

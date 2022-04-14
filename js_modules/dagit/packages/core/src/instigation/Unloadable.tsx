@@ -133,7 +133,7 @@ const UnloadableScheduleInfo = () => (
 );
 
 const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) => {
-  const {id, name, status, repositoryOrigin, ticks} = sensorState;
+  const {id, selectorId, name, status, repositoryOrigin, ticks} = sensorState;
 
   const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor>(STOP_SENSOR_MUTATION, {
     onCompleted: displaySensorMutationErrors,
@@ -150,7 +150,7 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
           'If you turn it off, you will not be able to turn it back on from ' +
           'the currently loaded workspace.',
       });
-      stopSensor({variables: {jobOriginId: id}});
+      stopSensor({variables: {jobOriginId: id, jobSelectorId: selectorId}});
     }
   };
 
@@ -206,7 +206,7 @@ const ScheduleStateRow: React.FC<{
   );
   const [showRepositoryOrigin, setShowRepositoryOrigin] = React.useState(false);
   const confirm = useConfirmation();
-  const {id, name, ticks, status, repositoryOrigin, typeSpecificData} = scheduleState;
+  const {id, selectorId, name, ticks, status, repositoryOrigin, typeSpecificData} = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;
   const cronSchedule =
     typeSpecificData && typeSpecificData.__typename === 'ScheduleData'
@@ -221,7 +221,7 @@ const ScheduleStateRow: React.FC<{
           'If you turn it off, you will not be able to turn it back on from ' +
           'the currently loaded workspace.',
       });
-      stopSchedule({variables: {scheduleOriginId: id}});
+      stopSchedule({variables: {scheduleOriginId: id, scheduleSelectorId: selectorId}});
     }
   };
 
