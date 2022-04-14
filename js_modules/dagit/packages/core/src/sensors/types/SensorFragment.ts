@@ -76,6 +76,7 @@ export interface SensorFragment_sensorState_ticks {
 export interface SensorFragment_sensorState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;

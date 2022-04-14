@@ -83,6 +83,7 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_ticks {
 export interface RepositorySchedulesFragment_schedules_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;

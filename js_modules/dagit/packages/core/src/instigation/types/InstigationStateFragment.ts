@@ -71,6 +71,7 @@ export interface InstigationStateFragment_ticks {
 export interface InstigationStateFragment {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;

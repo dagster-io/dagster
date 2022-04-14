@@ -93,6 +93,7 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_tic
 export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
@@ -202,6 +203,7 @@ export interface SensorsRootQuery_unloadableInstigationStatesOrError_Instigation
 export interface SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;

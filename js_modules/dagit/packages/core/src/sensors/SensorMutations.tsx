@@ -26,8 +26,8 @@ export const START_SENSOR_MUTATION = gql`
 `;
 
 export const STOP_SENSOR_MUTATION = gql`
-  mutation StopSensor($jobOriginId: String!) {
-    stopSensor(jobOriginId: $jobOriginId) {
+  mutation StopSensor($jobOriginId: String!, $jobSelectorId: String!) {
+    stopSensor(jobOriginId: $jobOriginId, jobSelectorId: $jobSelectorId) {
       __typename
       ... on StopSensorMutationResult {
         instigationState {

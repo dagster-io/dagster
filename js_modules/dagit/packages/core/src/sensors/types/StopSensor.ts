@@ -45,4 +45,5 @@ export interface StopSensor {
 
 export interface StopSensorVariables {
   jobOriginId: string;
+  jobSelectorId: string;
 }

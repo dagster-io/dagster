@@ -1165,6 +1165,7 @@ type Schedule {
 
 type InstigationState {
   id: ID!
+  selectorId: String!
   name: String!
   instigationType: InstigationType!
   status: InstigationStatus!
@@ -1799,10 +1800,13 @@ type DagitMutation {
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
   launchRunReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
   startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
-  stopRunningSchedule(scheduleOriginId: String!): ScheduleMutationResult!
+  stopRunningSchedule(
+    scheduleOriginId: String!
+    scheduleSelectorId: String!
+  ): ScheduleMutationResult!
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
   setSensorCursor(cursor: String, sensorSelector: SensorSelector!): SensorOrError!
-  stopSensor(jobOriginId: String!): StopSensorMutationResultOrError!
+  stopSensor(jobOriginId: String!, jobSelectorId: String!): StopSensorMutationResultOrError!
   terminatePipelineExecution(
     runId: String!
     terminatePolicy: TerminateRunPolicy
