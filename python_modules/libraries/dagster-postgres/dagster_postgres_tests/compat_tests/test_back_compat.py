@@ -431,8 +431,8 @@ def test_schedule_secondary_index_table_backcompat(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -457,8 +457,8 @@ def test_instigators_table_backcompat(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -486,8 +486,8 @@ def test_jobs_selector_id_migration(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
