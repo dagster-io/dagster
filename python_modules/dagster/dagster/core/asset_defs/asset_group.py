@@ -231,7 +231,7 @@ class AssetGroup(
             op_names = set(list(resolved_op_selection_dict.keys()))
 
             for asset in self.assets:
-                if asset.op.name in op_names:
+                if asset.node_def.name in op_names:
                     included_assets.append(asset)
                 else:
                     excluded_assets.append(asset)
@@ -270,11 +270,11 @@ class AssetGroup(
         source_asset_keys = set()
 
         for asset in self.assets:
-            if asset.op.name not in op_names_to_asset_keys:
-                op_names_to_asset_keys[asset.op.name] = set()
+            if asset.node_def.name not in op_names_to_asset_keys:
+                op_names_to_asset_keys[asset.node_def.name] = set()
             for asset_key in asset.asset_keys:
                 asset_key_as_str = ".".join([piece for piece in asset_key.path])
-                op_names_to_asset_keys[asset.op.name].add(asset_key_as_str)
+                op_names_to_asset_keys[asset.node_def.name].add(asset_key_as_str)
                 if not asset_key_as_str in asset_keys_to_ops:
                     asset_keys_to_ops[asset_key_as_str] = []
                 asset_keys_to_ops[asset_key_as_str].append(asset.op)
@@ -552,11 +552,13 @@ def _validate_resource_reqs_for_asset_group(
 ):
     present_resource_keys = set(resource_defs.keys())
     for asset_def in asset_list:
-        resource_keys = set(asset_def.op.required_resource_keys or {})
+        resource_keys = set()
+        for op_def in asset_def.node_def.iterate_solid_defs():
+            resource_keys |= set(op_def.required_resource_keys or {})
         missing_resource_keys = list(set(resource_keys) - present_resource_keys)
         if missing_resource_keys:
             raise DagsterInvalidDefinitionError(
-                f"AssetGroup is missing required resource keys for asset '{asset_def.op.name}'. Missing resource keys: {missing_resource_keys}"
+                f"AssetGroup is missing required resource keys for asset '{asset_def.node_def.name}'. Missing resource keys: {missing_resource_keys}"
             )
 
         for output_def, asset_key in asset_def.asset_keys_by_output_def.items():
