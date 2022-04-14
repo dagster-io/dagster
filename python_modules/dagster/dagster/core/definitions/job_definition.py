@@ -69,8 +69,12 @@ class JobDefinition(PipelineDefinition):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
-        asset_keys_by_output_handle: Optional[Mapping[SolidOutputHandle, AssetKey]] = None,
-        asset_keys_by_input_handle: Optional[Mapping[SolidInputHandle, AssetKey]] = None,
+        asset_keys_by_input_handle: Optional[
+            Mapping[Tuple[NodeHandle, InputDefinition], AssetKey]
+        ] = None,
+        asset_keys_by_output_handle: Optional[
+            Mapping[Tuple[NodeHandle, OutputDefinition], AssetKey]
+        ] = None,
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
     ):
@@ -80,18 +84,16 @@ class JobDefinition(PipelineDefinition):
             _op_selection_data, "_op_selection_data", OpSelectionData
         )
 
-        # TODO: scrape asset dep info off of output def + dependency structure
-
         self._asset_keys_by_output_handle = check.opt_dict_param(
             asset_keys_by_output_handle,
             "asset_keys_by_output_handle",
-            key_type=SolidOutputHandle,
+            key_type=tuple,
             value_type=AssetKey,
         )
         self._asset_keys_by_input_handle = check.opt_dict_param(
             asset_keys_by_input_handle,
             "asset_keys_by_input_handle",
-            key_type=SolidInputHandle,
+            key_type=tuple,
             value_type=AssetKey,
         )
         self._asset_deps = check.opt_dict_param(

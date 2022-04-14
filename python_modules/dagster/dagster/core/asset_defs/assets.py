@@ -1,7 +1,7 @@
 from typing import AbstractSet, Mapping, Optional, Tuple
 
 from dagster import check
-from dagster.core.definitions import InputDefinition, OpDefinition, OutputDefinition
+from dagster.core.definitions import InputDefinition, NodeDefinition, OpDefinition, OutputDefinition
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
 
@@ -13,19 +13,19 @@ class AssetsDefinition:
         self,
         asset_keys_by_input_name: Mapping[str, AssetKey],
         asset_keys_by_output_name: Mapping[str, AssetKey],
-        op: OpDefinition,
+        node_def: NodeDefinition,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]] = None,
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
     ):
-        self._op = op
+        self._node_def = node_def
         self._asset_keys_by_input_def = {
-            op.input_dict[input_name]: asset_key
+            node_def.input_dict[input_name]: asset_key
             for input_name, asset_key in asset_keys_by_input_name.items()
         }
 
         self._asset_keys_by_output_def = {
-            op.output_dict[output_name]: asset_key
+            node_def.output_dict[output_name]: asset_key
             for output_name, asset_key in asset_keys_by_output_name.items()
         }
         self._partitions_def = partitions_def
@@ -43,7 +43,7 @@ class AssetsDefinition:
             check.invariant(
                 not invalid_asset_deps,
                 f"Invalid asset dependencies: {invalid_asset_deps} specified in `asset_deps` "
-                f"argument for AssetsDefinition '{self.op.name}' on key '{asset_key}'. "
+                f"argument for AssetsDefinition '{self.node_def.name}' on key '{asset_key}'. "
                 "Each specified asset key must be associated with an input to the asset or "
                 f"produced by this asset. Valid keys: {valid_asset_deps}",
             )
@@ -56,11 +56,19 @@ class AssetsDefinition:
         )
 
     def __call__(self, *args, **kwargs):
-        return self._op(*args, **kwargs)
+        return self._node_def(*args, **kwargs)
 
     @property
     def op(self) -> OpDefinition:
-        return self._op
+        check.invariant(
+            isinstance(self._node_def, OpDefinition),
+            "The NodeDefinition for this AssetsDefinition is not of type OpDefinition.",
+        )
+        return self._node_def
+
+    @property
+    def node_def(self) -> NodeDefinition:
+        return self._node_def
 
     @property
     def input_asset_keys(self) -> AbstractSet[AssetKey]:

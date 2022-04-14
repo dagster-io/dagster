@@ -214,7 +214,7 @@ class _Asset:
                 input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
             },
             asset_keys_by_output_name={"result": out_asset_key},
-            op=op,
+            node_def=op,
             partitions_def=self.partitions_def,
             partition_mappings={
                 asset_key: self.partition_mappings[input_name]
@@ -294,7 +294,7 @@ def multi_asset(
             asset_keys_by_output_name={
                 output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()
             },
-            op=op,
+            node_def=op,
             asset_deps=internal_asset_deps or None,
         )
 

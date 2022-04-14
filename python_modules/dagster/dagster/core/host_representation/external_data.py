@@ -628,12 +628,6 @@ class ExternalAssetDependency(
         input_name: Optional[str] = None,
         output_name: Optional[str] = None,
     ):
-        check.invariant(
-            (input_name is None) ^ (output_name is None),
-            "When constructing ExternalAssetDependency, exactly one of `input_name` and "
-            f"`output_name` should be supplied. AssetKey `{upstream_asset_key}` is associated with "
-            f"input `{input_name}` and output `{output_name}`.",
-        )
         return super(ExternalAssetDependency, cls).__new__(
             cls,
             upstream_asset_key=upstream_asset_key,
@@ -665,12 +659,6 @@ class ExternalAssetDependedBy(
         input_name: Optional[str] = None,
         output_name: Optional[str] = None,
     ):
-        check.invariant(
-            (input_name is None) ^ (output_name is None),
-            "When constructing ExternalAssetDependedBy, exactly one of `input_name` and "
-            f"`output_name` should be supplied. AssetKey `{downstream_asset_key}` is associated with "
-            f"input `{input_name}` and output `{output_name}`.",
-        )
         return super(ExternalAssetDependedBy, cls).__new__(
             cls,
             downstream_asset_key=downstream_asset_key,
@@ -788,39 +776,19 @@ def external_asset_graph_from_defs(
         # only jobs will have this info available
         if not isinstance(job, JobDefinition):
             continue
-        # build index so that we can quickly map from asset key to input/output name, given a node
-        asset_name_mappings = {}
-        for node_name, node in job.graph.node_dict.items():
-            output_name_by_asset_key = {
-                job.asset_keys_by_output_handle.get(output_handle): output_handle.output_def.name
-                for output_handle in node.output_handles()
-                if output_handle in job.asset_keys_by_output_handle
-            }
-            input_name_by_asset_key = {
-                job.asset_keys_by_input_handle.get(input_handle): input_handle.input_def.name
-                for input_handle in node.input_handles()
-                if input_handle in job.asset_keys_by_input_handle
-            }
-            asset_name_mappings[node_name] = (output_name_by_asset_key, input_name_by_asset_key)
         # for each output associated w/ an asset, create dependency information for that asset
-        for output_handle, output_asset_key in job.asset_keys_by_output_handle.items():
-            node_defs_by_asset_key[output_asset_key].append(
-                (output_handle.output_def, output_handle.solid.definition, job)
-            )
-            output_name_by_asset_key, input_name_by_asset_key = asset_name_mappings[
-                output_handle.solid.name
-            ]
-            all_upstream_asset_keys.update(set(input_name_by_asset_key.keys()))
-            for upstream_asset_key in job.asset_deps[output_asset_key]:
+        for (node_handle, output_def), output_asset_key in job.asset_keys_by_output_handle.items():
+            node_def = job.graph.get_solid(node_handle).definition
+            node_defs_by_asset_key[output_asset_key].append((output_def, node_def, job))
+
+            upstream_asset_keys = job.asset_deps[output_asset_key]
+            all_upstream_asset_keys.update(upstream_asset_keys)
+            for upstream_asset_key in upstream_asset_keys:
                 deps[output_asset_key][upstream_asset_key] = ExternalAssetDependency(
-                    upstream_asset_key=upstream_asset_key,
-                    input_name=input_name_by_asset_key.get(upstream_asset_key),
-                    output_name=output_name_by_asset_key.get(upstream_asset_key),
+                    upstream_asset_key=upstream_asset_key
                 )
                 dep_by[upstream_asset_key][output_asset_key] = ExternalAssetDependedBy(
-                    downstream_asset_key=output_asset_key,
-                    input_name=input_name_by_asset_key.get(upstream_asset_key),
-                    output_name=output_name_by_asset_key.get(upstream_asset_key),
+                    downstream_asset_key=output_asset_key
                 )
 
     asset_keys_without_definitions = all_upstream_asset_keys.difference(

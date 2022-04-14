@@ -465,8 +465,12 @@ class GraphDefinition(NodeDefinition):
         version_strategy: Optional[VersionStrategy] = None,
         op_selection: Optional[List[str]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
-        asset_keys_by_input_handle: Optional[Mapping[SolidInputHandle, AssetKey]] = None,
-        asset_keys_by_output_handle: Optional[Mapping[SolidOutputHandle, AssetKey]] = None,
+        asset_keys_by_input_handle: Optional[
+            Mapping[Tuple[NodeHandle, InputDefinition], AssetKey]
+        ] = None,
+        asset_keys_by_output_handle: Optional[
+            Mapping[Tuple[NodeHandle, OutputDefinition], AssetKey]
+        ] = None,
         asset_deps: Optional[Mapping[AssetKey, Sequence[AssetKey]]] = None,
     ) -> "JobDefinition":
         """

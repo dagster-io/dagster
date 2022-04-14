@@ -243,8 +243,15 @@ class OutputContext:
 
         if not isinstance(self.step_context.pipeline_def, JobDefinition):
             return None
-        output_handle = self.step_context.solid.output_handle(self.name)
-        return self.step_context.pipeline_def.asset_keys_by_output_handle.get(output_handle)
+
+        matching_output_defs = [
+            output_def
+            for output_def in cast(SolidDefinition, self._solid_def).output_defs
+            if output_def.name == self.name
+        ]
+        check.invariant(len(matching_output_defs) == 1)
+        output_key = (self.step_context.solid_handle, matching_output_defs[0])
+        return self.step_context.pipeline_def.asset_keys_by_output_handle.get(output_key)
 
     @property
     def step_context(self) -> "StepExecutionContext":

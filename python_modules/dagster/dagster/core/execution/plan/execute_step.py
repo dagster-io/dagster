@@ -413,7 +413,6 @@ def _type_check_and_store_output(
 
 
 def _asset_key_and_partitions_for_output(
-    pipeline_def: PipelineDefinition,
     output_context: OutputContext,
     output_def: OutputDefinition,
     output_manager: IOManager,
@@ -421,12 +420,11 @@ def _asset_key_and_partitions_for_output(
 
     manager_asset_key = output_manager.get_output_asset_key(output_context)
 
-    output_handle = SolidOutputHandle(
-        solid=output_context.step_context.solid, output_def=output_def
-    )
+    pipeline_def = output_context.step_context.pipeline_def
+    output_key = (output_context.step_context.solid_handle, output_def)
     if (
         isinstance(pipeline_def, JobDefinition)
-        and output_handle in pipeline_def.asset_keys_by_output_handle
+        and output_key in pipeline_def.asset_keys_by_output_handle
     ):
         if manager_asset_key is not None:
             solid_def = cast(SolidDefinition, output_context.solid_def)
@@ -437,7 +435,7 @@ def _asset_key_and_partitions_for_output(
                 "specify an AssetKey in its get_output_asset_key() function."
             )
         return (
-            pipeline_def.asset_keys_by_output_handle[output_handle],
+            pipeline_def.asset_keys_by_output_handle[output_key],
             output_def.get_asset_partitions(output_context) or set(),
         )
     elif manager_asset_key:
@@ -596,7 +594,7 @@ def _store_output(
         yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
 
     asset_key, partitions = _asset_key_and_partitions_for_output(
-        step_context.pipeline_def, output_context, output_def, output_manager
+        output_context, output_def, output_manager
     )
     if asset_key:
         for materialization in _get_output_asset_materializations(
