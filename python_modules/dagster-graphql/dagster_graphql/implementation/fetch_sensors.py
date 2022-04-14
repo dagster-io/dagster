@@ -81,7 +81,7 @@ def start_sensor(graphene_info, sensor_selector):
 
 
 @capture_error
-def stop_sensor(graphene_info, instigator_origin_id):
+def stop_sensor(graphene_info, instigator_origin_id, instigator_selector_id):
     from ..schema.sensors import GrapheneStopSensorMutationResult
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
@@ -94,10 +94,12 @@ def stop_sensor(graphene_info, instigator_origin_id):
         for repository in repository_location.get_repositories().values()
         for sensor in repository.get_external_sensors()
     }
-    instance.stop_sensor(instigator_origin_id, external_sensors.get(instigator_origin_id))
+    instance.stop_sensor(
+        instigator_origin_id, instigator_selector_id, external_sensors.get(instigator_origin_id)
+    )
     state = graphene_info.context.instance.get_instigator_state(
         instigator_origin_id,
-        external_sensors.get(instigator_origin_id).selector_id,
+        instigator_selector_id,
     )
     return GrapheneStopSensorMutationResult(state)
 

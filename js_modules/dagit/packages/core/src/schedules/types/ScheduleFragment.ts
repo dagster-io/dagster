@@ -77,6 +77,7 @@ export interface ScheduleFragment_scheduleState_ticks {
 export interface ScheduleFragment_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;

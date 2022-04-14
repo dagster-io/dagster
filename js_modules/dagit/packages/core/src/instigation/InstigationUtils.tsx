@@ -42,6 +42,7 @@ export const RUN_STATUS_FRAGMENT = gql`
 export const INSTIGATION_STATE_FRAGMENT = gql`
   fragment InstigationStateFragment on InstigationState {
     id
+    selectorId
     name
     instigationType
     status

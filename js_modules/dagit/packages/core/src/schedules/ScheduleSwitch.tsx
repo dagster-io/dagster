@@ -25,7 +25,7 @@ interface Props {
 export const ScheduleSwitch: React.FC<Props> = (props) => {
   const {repoAddress, schedule, size = 'large'} = props;
   const {name, scheduleState} = schedule;
-  const {status, id} = scheduleState;
+  const {status, id, selectorId} = scheduleState;
 
   const {canStartSchedule, canStopRunningSchedule} = usePermissions();
 
@@ -50,7 +50,7 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
   const onStatusChange = () => {
     if (status === InstigationStatus.RUNNING) {
       stopSchedule({
-        variables: {scheduleOriginId: id},
+        variables: {scheduleOriginId: id, scheduleSelectorId: selectorId},
       });
     } else {
       startSchedule({
@@ -102,6 +102,7 @@ export const SCHEDULE_SWITCH_FRAGMENT = gql`
     cronSchedule
     scheduleState {
       id
+      selectorId
       status
     }
   }

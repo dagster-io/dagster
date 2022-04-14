@@ -1773,8 +1773,10 @@ records = instance.get_event_records(
     def start_schedule(self, external_schedule):
         return self._scheduler.start_schedule(self, external_schedule)
 
-    def stop_schedule(self, schedule_origin_id, external_schedule):
-        return self._scheduler.stop_schedule(self, schedule_origin_id, external_schedule)
+    def stop_schedule(self, schedule_origin_id, schedule_selector_id, external_schedule):
+        return self._scheduler.stop_schedule(
+            self, schedule_origin_id, schedule_selector_id, external_schedule
+        )
 
     def scheduler_debug_info(self):
         from dagster.core.definitions.run_request import InstigatorType
@@ -1835,7 +1837,7 @@ records = instance.get_event_records(
         else:
             return self.update_instigator_state(state.with_status(InstigatorStatus.RUNNING))
 
-    def stop_sensor(self, instigator_origin_id, external_sensor):
+    def stop_sensor(self, instigator_origin_id, selector_id, external_sensor):
         from dagster.core.definitions.run_request import InstigatorType
         from dagster.core.scheduler.instigation import (
             InstigatorState,
@@ -1843,9 +1845,10 @@ records = instance.get_event_records(
             SensorInstigatorData,
         )
 
-        state = self.get_instigator_state(instigator_origin_id, external_sensor.selector_id)
+        state = self.get_instigator_state(instigator_origin_id, selector_id)
 
         if not state:
+            assert external_sensor
             return self.add_instigator_state(
                 InstigatorState(
                     external_sensor.get_external_origin(),

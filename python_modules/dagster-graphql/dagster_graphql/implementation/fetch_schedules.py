@@ -25,7 +25,7 @@ def start_schedule(graphene_info, schedule_selector):
 
 
 @capture_error
-def stop_schedule(graphene_info, schedule_origin_id):
+def stop_schedule(graphene_info, schedule_origin_id, schedule_selector_id):
     from ..schema.instigation import GrapheneInstigationState
     from ..schema.schedules import GrapheneScheduleStateResult
 
@@ -40,7 +40,7 @@ def stop_schedule(graphene_info, schedule_origin_id):
     }
 
     schedule_state = instance.stop_schedule(
-        schedule_origin_id, external_schedules.get(schedule_origin_id)
+        schedule_origin_id, schedule_selector_id, external_schedules.get(schedule_origin_id)
     )
     return GrapheneScheduleStateResult(GrapheneInstigationState(schedule_state))
 

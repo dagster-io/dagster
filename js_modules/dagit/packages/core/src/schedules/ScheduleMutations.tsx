@@ -27,8 +27,11 @@ export const START_SCHEDULE_MUTATION = gql`
 `;
 
 export const STOP_SCHEDULE_MUTATION = gql`
-  mutation StopSchedule($scheduleOriginId: String!) {
-    stopRunningSchedule(scheduleOriginId: $scheduleOriginId) {
+  mutation StopSchedule($scheduleOriginId: String!, $scheduleSelectorId: String!) {
+    stopRunningSchedule(
+      scheduleOriginId: $scheduleOriginId
+      scheduleSelectorId: $scheduleSelectorId
+    ) {
       __typename
       ... on ScheduleStateResult {
         scheduleState {

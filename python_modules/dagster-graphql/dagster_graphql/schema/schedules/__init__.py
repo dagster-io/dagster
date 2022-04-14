@@ -80,14 +80,15 @@ class GrapheneStopRunningScheduleMutation(graphene.Mutation):
 
     class Arguments:
         schedule_origin_id = graphene.NonNull(graphene.String)
+        schedule_selector_id = graphene.NonNull(graphene.String)
 
     class Meta:
         name = "StopRunningScheduleMutation"
 
     @capture_error
     @check_permission(Permissions.STOP_RUNNING_SCHEDULE)
-    def mutate(self, graphene_info, schedule_origin_id):
-        return stop_schedule(graphene_info, schedule_origin_id)
+    def mutate(self, graphene_info, schedule_origin_id, schedule_selector_id):
+        return stop_schedule(graphene_info, schedule_origin_id, schedule_selector_id)
 
 
 def types():

@@ -124,6 +124,7 @@ export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection
 export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
@@ -250,6 +251,7 @@ export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_Insti
 export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;

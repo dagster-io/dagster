@@ -87,6 +87,7 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_sched
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
@@ -214,6 +215,7 @@ export interface SchedulesRootQuery_unloadableInstigationStatesOrError_Instigati
 export interface SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;

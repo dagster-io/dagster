@@ -57,6 +57,7 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
   __typename: "InstigationState";
   id: string;
   status: InstigationStatus;
+  selectorId: string;
 }
 
 export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules_futureTicks_results {
@@ -89,6 +90,7 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
   __typename: "InstigationState";
   id: string;
   status: InstigationStatus;
+  selectorId: string;
 }
 
 export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors {

@@ -39,6 +39,7 @@ export interface AssetQuery_assetOrError_Asset_definition_repository {
 export interface AssetQuery_assetOrError_Asset_definition_jobs_schedules_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   status: InstigationStatus;
 }
 
@@ -53,6 +54,7 @@ export interface AssetQuery_assetOrError_Asset_definition_jobs_schedules {
 export interface AssetQuery_assetOrError_Asset_definition_jobs_sensors_sensorState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   status: InstigationStatus;
 }
 

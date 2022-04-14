@@ -260,6 +260,7 @@ class GrapheneFutureInstigationTicks(graphene.ObjectType):
 
 class GrapheneInstigationState(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
+    selectorId = graphene.NonNull(graphene.String)
     name = graphene.NonNull(graphene.String)
     instigationType = graphene.NonNull(GrapheneInstigationType)
     status = graphene.NonNull(GrapheneInstigationStatus)
@@ -301,6 +302,7 @@ class GrapheneInstigationState(graphene.ObjectType):
         )
         super().__init__(
             id=instigator_state.instigator_origin_id,
+            selectorId=instigator_state.selector_id,
             name=instigator_state.name,
             instigationType=instigator_state.instigator_type,
             status=(
