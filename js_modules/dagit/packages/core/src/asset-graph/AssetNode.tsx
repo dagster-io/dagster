@@ -17,7 +17,7 @@ import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
-import {displayNameForAssetKey, LiveDataForNode, __ASSET_GROUP} from './Utils';
+import {displayNameForAssetKey, LiveDataForNode, isAssetGroup} from './Utils';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 
 export const AssetNode: React.FC<{
@@ -78,7 +78,9 @@ export const AssetNode: React.FC<{
           {runOrError?.__typename === 'Run' && event ? (
             <>
               <StatsRow>
-                {runOrError.pipelineName !== __ASSET_GROUP ? (
+                {isAssetGroup(runOrError.pipelineName) ? (
+                  <span />
+                ) : (
                   <Link
                     data-tooltip={runOrError.pipelineName}
                     data-tooltip-style={RunLinkTooltipStyle}
@@ -97,8 +99,6 @@ export const AssetNode: React.FC<{
                   >
                     {runOrError.pipelineName}
                   </Link>
-                ) : (
-                  <span />
                 )}
                 <Link
                   style={{fontFamily: FontFamily.monospace, fontSize: 14}}

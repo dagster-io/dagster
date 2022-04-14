@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {__ASSET_GROUP} from '../asset-graph/Utils';
+import {isAssetGroup} from '../asset-graph/Utils';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {InstigationStatus} from '../types/globalTypes';
 import {
@@ -55,7 +55,7 @@ export const FlatContentList: React.FC<Props> = (props) => {
 
       const {schedules, sensors} = repository;
       for (const pipeline of repository.pipelines) {
-        if (pipeline.name === __ASSET_GROUP) {
+        if (isAssetGroup(pipeline.name)) {
           continue;
         }
 
