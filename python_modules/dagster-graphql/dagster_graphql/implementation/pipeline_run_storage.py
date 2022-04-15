@@ -3,8 +3,6 @@ from enum import Enum
 from threading import Event, Thread
 from time import sleep
 
-import gevent
-
 from dagster import check
 
 
@@ -52,19 +50,13 @@ class PipelineRunObservableSubscribe:
     def load_events(self):
         self.state = State.LOADING
 
-        # support for gevent based dagit server
-        if gevent.get_hub().gr_frame:
-            self.stopping = gevent.event.Event()
-            self.stopped = gevent.event.Event()
-            load_thread = gevent.Greenlet(self.background_event_loading, gevent.sleep)
-        else:
-            self.stopping = Event()
-            self.stopped = Event()
-            load_thread = Thread(
-                target=self.background_event_loading,
-                args=(sleep,),
-                name=f"load-events-{self.run_id}",
-            )
+        self.stopping = Event()
+        self.stopped = Event()
+        load_thread = Thread(
+            target=self.background_event_loading,
+            args=(sleep,),
+            name=f"load-events-{self.run_id}",
+        )
 
         load_thread.start()
 
