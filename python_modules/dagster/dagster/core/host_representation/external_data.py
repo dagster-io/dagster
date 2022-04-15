@@ -20,7 +20,7 @@ from dagster.core.definitions import (
     RepositoryDefinition,
     ScheduleDefinition,
 )
-from dagster.core.definitions.asset_layer import AssetOutputInfo
+from dagster.core.definitions.assets_info import AssetInfo
 from dagster.core.definitions.dependency import NodeOutputHandle
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.metadata import MetadataEntry
@@ -764,19 +764,22 @@ def external_asset_graph_from_defs(
     pipelines: Sequence[PipelineDefinition], source_assets_by_key: Mapping[AssetKey, SourceAsset]
 ) -> Sequence[ExternalAssetNode]:
     node_defs_by_asset_key: Dict[
-        AssetKey, List[Tuple[NodeOutputHandle, PipelineDefinition]]
+        AssetKey, List[Tuple[NodeOutputHandle, JobDefinition]]
     ] = defaultdict(list)
-    asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
+    asset_info_by_asset_key: Dict[AssetKey, AssetInfo] = dict()
 
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
     dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
     all_upstream_asset_keys: Set[AssetKey] = set()
 
     for pipeline_def in pipelines:
-        asset_info_by_node_output = pipeline_def.asset_layer.asset_info_by_node_output_handle
+        if not isinstance(pipeline_def, JobDefinition):
+            continue
+        assets_info = pipeline_def.assets_info
+        asset_info_by_node_output = pipeline_def.assets_info.asset_info_by_node_output_handle
         for node_output_handle, asset_info in asset_info_by_node_output.items():
-            output_key = asset_info.key
-            upstream_asset_keys = pipeline_def.asset_layer.upstream_assets_for_asset(output_key)
+            output_key = asset_info.asset_key
+            upstream_asset_keys = assets_info.upstream_assets(output_key)
             all_upstream_asset_keys.update(upstream_asset_keys)
             node_defs_by_asset_key[output_key].append((node_output_handle, pipeline_def))
             asset_info_by_asset_key[output_key] = asset_info
@@ -842,7 +845,7 @@ def external_asset_graph_from_defs(
             ]
         ] = None
 
-        partitions_def = asset_info.partitions_def
+        partitions_def = asset_info.asset_partitions_def
         if partitions_def:
             if isinstance(partitions_def, TimeWindowPartitionsDefinition):
                 partitions_def_data = external_time_window_partitions_definition_from_def(
