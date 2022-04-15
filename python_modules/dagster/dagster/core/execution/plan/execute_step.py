@@ -1,4 +1,5 @@
 import inspect
+import warnings
 from collections import defaultdict
 from typing import AbstractSet, Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
 
@@ -42,7 +43,7 @@ from dagster.core.storage.io_manager import IOManager
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.utils import ensure_gen, iterate_with_context
-from dagster.utils.backcompat import experimental_functionality_warning
+from dagster.utils.backcompat import ExperimentalWarning, experimental_functionality_warning
 from dagster.utils.timing import time_execution_scope
 
 from .compute import SolidOutputUnion
@@ -484,11 +485,14 @@ def _get_output_asset_materializations(
                     metadata_mapping[partition].append(entry)
 
         for partition in asset_partitions:
-            yield AssetMaterialization(
-                asset_key=asset_key,
-                partition=partition,
-                metadata_entries=metadata_mapping[partition],
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+                yield AssetMaterialization(
+                    asset_key=asset_key,
+                    partition=partition,
+                    metadata_entries=metadata_mapping[partition],
+                )
     else:
         for entry in all_metadata:
             if isinstance(entry, PartitionMetadataEntry):
@@ -496,7 +500,10 @@ def _get_output_asset_materializations(
                     f"Output {output_def.name} got a PartitionMetadataEntry ({entry}), but "
                     "is not associated with any specific partitions."
                 )
-        yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+            yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata)
 
 
 def _store_output(
@@ -574,15 +581,19 @@ def _store_output(
             raise DagsterInvariantViolationError(
                 f"When handling output '{output_context.name}' of {output_context.solid_def.node_type_str} '{output_context.solid_def.name}', received a materialization with metadata, while context.add_output_metadata was used within the same call to handle_output. Due to potential conflicts, this is not allowed. Please specify metadata in one place within the `handle_output` function."
             )
+
         if manager_metadata_entries:
-            materialization = AssetMaterialization(
-                asset_key=materialization.asset_key,
-                description=materialization.description,
-                metadata_entries=manager_metadata_entries,
-                partition=materialization.partition,
-                tags=materialization.tags,
-                metadata=None,
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+                materialization = AssetMaterialization(
+                    asset_key=materialization.asset_key,
+                    description=materialization.description,
+                    metadata_entries=manager_metadata_entries,
+                    partition=materialization.partition,
+                    tags=materialization.tags,
+                    metadata=None,
+                )
         yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
 
     asset_key, partitions = _asset_key_and_partitions_for_output(
