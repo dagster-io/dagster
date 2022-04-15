@@ -127,12 +127,16 @@ export const getForeignNodeDimensions = (id: string) => {
   return {width: displayNameForAssetKey({path}).length * 8 + 30, height: 30};
 };
 
+export const ASSET_NODE_ANNOTATIONS_MAX_WIDTH = 65;
+export const ASSET_NODE_NAME_MAX_LENGTH = 50;
+const DISPLAY_NAME_PX_PER_CHAR = 8.0;
+
 export const getAssetNodeDimensions = (def: {
   assetKey: {path: string[]};
   opName: string | null;
   description?: string | null;
 }) => {
-  let height = 95;
+  let height = 75;
   if (def.description) {
     height += 25;
   }
@@ -140,5 +144,12 @@ export const getAssetNodeDimensions = (def: {
   if (def.opName && displayName !== def.opName) {
     height += 25;
   }
-  return {width: Math.max(250, displayName.length * 8.0) + 25, height};
+  return {
+    width:
+      Math.max(
+        200,
+        Math.min(ASSET_NODE_NAME_MAX_LENGTH, displayName.length) * DISPLAY_NAME_PX_PER_CHAR,
+      ) + ASSET_NODE_ANNOTATIONS_MAX_WIDTH,
+    height,
+  };
 };

@@ -1,11 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Spinner, Tooltip} from '@dagster-io/ui';
-import qs from 'qs';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetValueGraph, AssetValueGraphData} from '../assets/AssetValueGraph';
 import {StepStatusDot} from '../gantt/GanttStatusPanel';
+import {linkToRunEvent} from '../runs/RunUtils';
 import {RepoAddress} from '../workspace/types';
 
 import {SidebarSection} from './SidebarComponents';
@@ -107,12 +107,7 @@ export const SidebarOpExecutionGraphs: React.FC<{
                   placement="bottom-end"
                   content={`View Run ${runId.slice(0, 8)} →`}
                 >
-                  <Link
-                    to={`/instance/runs/${runId}?${qs.stringify({
-                      selection: solidName,
-                      logs: `step:${solidName}`,
-                    })}`}
-                  >
+                  <Link to={linkToRunEvent({runId}, {stepKey: solidName})}>
                     <StepStatusDot
                       onMouseEnter={() => startTime && setHighlightedStartTime(startTime * 1000)}
                       onMouseLeave={() => setHighlightedStartTime(null)}
