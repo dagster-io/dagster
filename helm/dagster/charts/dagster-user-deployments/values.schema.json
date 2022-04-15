@@ -291,7 +291,6 @@
                 "name",
                 "image",
                 "dagsterApiGrpcArgs",
-                "includeConfigInLaunchedRuns",
                 "port"
             ]
         },

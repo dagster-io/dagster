@@ -1,3 +1,5 @@
+from typing import Optional
+
 from schema.charts.dagster_user_deployments.subschema.user_deployments import (
     UserDeployment,
     UserDeploymentIncludeConfigInLaunchedRuns,
@@ -6,15 +8,17 @@ from schema.charts.utils import kubernetes
 
 
 def create_simple_user_deployment(
-    name: str, include_config_in_launched_runs: bool = False
+    name: str, include_config_in_launched_runs: Optional[bool] = False
 ) -> UserDeployment:
     return UserDeployment(
         name=name,
         image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
         dagsterApiGrpcArgs=["-m", name],
         port=3030,
-        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(
-            enabled=include_config_in_launched_runs
+        includeConfigInLaunchedRuns=(
+            UserDeploymentIncludeConfigInLaunchedRuns(enabled=include_config_in_launched_runs)
+            if include_config_in_launched_runs != None
+            else None
         ),
     )
 

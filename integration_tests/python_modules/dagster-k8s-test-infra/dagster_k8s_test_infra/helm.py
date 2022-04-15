@@ -665,9 +665,6 @@ def helm_chart_for_user_deployments_subchart_disabled(namespace, docker_image, s
                             "define_demo_execution_repo",
                         ],
                         "port": 3030,
-                        "includeConfigInLaunchedRuns": {
-                            "enabled": False,
-                        },
                         "env": (
                             {"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}
                         ),
@@ -723,9 +720,6 @@ def helm_chart_for_user_deployments_subchart(namespace, docker_image, should_cle
                     "define_demo_execution_repo",
                 ],
                 "port": 3030,
-                "includeConfigInLaunchedRuns": {
-                    "enabled": False,
-                },
             }
         ],
     }
