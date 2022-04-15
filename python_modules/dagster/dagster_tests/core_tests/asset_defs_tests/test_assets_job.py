@@ -335,36 +335,3 @@ def test_multiple_non_argument_deps():
     assert result.output_for_node("qux") == 1
     assert _asset_keys_for_node(result, "namespace__bar") == {AssetKey(["namespace", "bar"])}
     assert _asset_keys_for_node(result, "qux") == {AssetKey("qux")}
-
-
-def test_fail_with_get_output_asset_key():
-    @io_manager
-    def my_io_manager(_context):
-        class Mine(IOManager):
-            def get_output_asset_key(self, _context):
-                return AssetKey("hey")
-
-            def handle_output(self, context, obj):
-                pass
-
-            def load_input(self, context):
-                return None
-
-        return Mine()
-
-    @asset
-    def foo():
-        return 1
-
-    @asset
-    def bar(foo):
-        return foo + 1
-
-    job = build_assets_job("x", [foo, bar], resource_defs={"io_manager": my_io_manager})
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match=r'The IOManager of output "result" on node "foo" associates it with asset key '
-        r"\"AssetKey\(\['hey'\]\)\", but this output has already been defined to produce asset "
-        r"\"AssetKey\(\['foo'\]\)\"",
-    ):
-        job.execute_in_process()
