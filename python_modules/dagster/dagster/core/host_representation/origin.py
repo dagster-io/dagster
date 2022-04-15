@@ -151,6 +151,7 @@ class InProcessRepositoryLocationOrigin(
             ("loadable_target_origin", LoadableTargetOrigin),
             ("container_image", Optional[str]),
             ("entry_point", List[str]),
+            ("container_context", Optional[Dict[str, Any]]),
         ],
     ),
     RepositoryLocationOrigin,
@@ -165,6 +166,7 @@ class InProcessRepositoryLocationOrigin(
         loadable_target_origin: LoadableTargetOrigin,
         container_image: Optional[str] = None,
         entry_point: Optional[List[str]] = None,
+        container_context=None,
     ):
         return super(InProcessRepositoryLocationOrigin, cls).__new__(
             cls,
@@ -177,6 +179,7 @@ class InProcessRepositoryLocationOrigin(
                 if entry_point
                 else DEFAULT_DAGSTER_ENTRY_POINT
             ),
+            container_context=check.opt_dict_param(container_context, "container_context"),
         )
 
     @property
