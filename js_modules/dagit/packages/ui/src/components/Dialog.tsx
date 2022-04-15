@@ -62,18 +62,20 @@ export const DialogBody: React.FC = (props) => {
 };
 
 interface DialogFooterProps {
+  topBorder?: boolean;
   left?: React.ReactFragment;
 }
 
-export const DialogFooter: React.FC<DialogFooterProps> = (props) => {
+export const DialogFooter: React.FC<DialogFooterProps> = ({children, left, topBorder}) => {
   return (
     <Box
-      padding={{bottom: 20, top: 8, horizontal: 24}}
+      padding={{bottom: 16, top: topBorder ? 16 : 8, horizontal: 24}}
+      border={topBorder ? {side: 'top', width: 1, color: Colors.KeylineGray} : null}
       background={Colors.White}
       flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
     >
-      <div>{props.left}</div>
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>{props.children}</Box>
+      <div>{left}</div>
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>{children}</Box>
     </Box>
   );
 };

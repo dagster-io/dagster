@@ -1,7 +1,6 @@
 import {gql, useLazyQuery, useMutation} from '@apollo/client';
 import {
   Button,
-  HighlightedCodeBlock,
   Icon,
   MenuDivider,
   MenuExternalLink,
@@ -9,14 +8,18 @@ import {
   Menu,
   Popover,
   Tooltip,
+  DialogFooter,
+  Dialog,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 import * as yaml from 'yaml';
 
 import {AppContext} from '../app/AppContext';
-import {showCustomAlert} from '../app/CustomAlertProvider';
+import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
+import {useCopyToClipboard} from '../app/browser';
+import {DagitReadOnlyCodeMirror} from '../ui/DagitCodeMirror';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
@@ -40,11 +43,15 @@ export const RunActionsMenu: React.FC<{
   run: RunTableRunFragment;
 }> = React.memo(({run}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
-  const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');
+  const [visibleDialog, setVisibleDialog] = React.useState<
+    'none' | 'terminate' | 'delete' | 'config'
+  >('none');
 
   const {rootServerURI} = React.useContext(AppContext);
   const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
   const history = useHistory();
+
+  const copyConfig = useCopyToClipboard();
 
   const [reexecute] = useMutation<LaunchPipelineReexecution>(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {
     onCompleted: refetch,
@@ -83,12 +90,7 @@ export const RunActionsMenu: React.FC<{
               text={loading ? 'Loading Configuration...' : 'View Configuration...'}
               disabled={!runConfigYaml}
               icon="open_in_new"
-              onClick={() =>
-                showCustomAlert({
-                  title: 'Config',
-                  body: <HighlightedCodeBlock value={runConfigYaml || ''} language="yaml" />,
-                })
-              }
+              onClick={() => setVisibleDialog('config')}
             />
             <MenuDivider />
             <>
@@ -190,6 +192,36 @@ export const RunActionsMenu: React.FC<{
           selectedRuns={{[run.id]: run.canTerminate}}
         />
       ) : null}
+      <Dialog
+        isOpen={visibleDialog === 'config'}
+        title="Config"
+        canOutsideClickClose
+        canEscapeKeyClose
+        onClose={closeDialogs}
+      >
+        <DagitReadOnlyCodeMirror
+          value={runConfigYaml || ''}
+          options={{lineNumbers: true, mode: 'yaml'}}
+        />
+        <DialogFooter topBorder>
+          <Button
+            intent="none"
+            onClick={() => {
+              copyConfig(runConfigYaml || '');
+              SharedToaster.show({
+                intent: 'success',
+                icon: 'copy_to_clipboard_done',
+                message: 'Copied!',
+              });
+            }}
+          >
+            Copy config
+          </Button>
+          <Button intent="primary" onClick={closeDialogs}>
+            OK
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </>
   );
 });
