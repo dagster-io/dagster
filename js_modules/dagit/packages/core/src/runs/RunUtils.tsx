@@ -1,5 +1,6 @@
 import {gql} from '@apollo/client';
 import {History} from 'history';
+import qs from 'qs';
 import * as React from 'react';
 
 import {Mono} from '../../../ui/src';
@@ -20,6 +21,17 @@ import {RunTimeFragment} from './types/RunTimeFragment';
 
 export function titleForRun(run: {runId: string}) {
   return run.runId.split('-').shift();
+}
+
+export function linkToRunEvent(
+  run: {runId: string},
+  event: {timestamp?: string; stepKey: string | null},
+) {
+  return `/instance/runs/${run.runId}?${qs.stringify({
+    focusedTime: event.timestamp ? Number(event.timestamp) : undefined,
+    selection: event.stepKey,
+    logs: `step:${event.stepKey}`,
+  })}`;
 }
 
 export const RunsQueryRefetchContext = React.createContext<{
