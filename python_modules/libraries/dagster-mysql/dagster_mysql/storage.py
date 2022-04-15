@@ -1,3 +1,5 @@
+from typing import Optional
+
 from dagster import check
 from dagster.core.storage.base_storage import DagsterStorage
 from dagster.core.storage.event_log import EventLogStorage
@@ -65,3 +67,27 @@ class DagsterMySQLStorage(DagsterStorage, ConfigurableClass):
     @property
     def schedule_storage(self) -> ScheduleStorage:
         return self._schedule_storage
+
+    @property
+    def event_storage_data(self) -> Optional[ConfigurableClassData]:
+        return ConfigurableClassData(
+            "dagster_mysql",
+            "MySQLEventLogStorage",
+            self.inst_data.config_yaml,
+        ) if self.inst_data else None
+
+    @property
+    def run_storage_data(self) -> Optional[ConfigurableClassData]:
+        return ConfigurableClassData(
+            "dagster_mysql",
+            "MySQLRunStorage",
+            self.inst_data.config_yaml,
+        ) if self.inst_data else None
+
+    @property
+    def schedule_storage_data(self) -> Optional[ConfigurableClassData]:
+        return ConfigurableClassData(
+            "dagster_mysql",
+            "MySQLScheduleStorage",
+            self.inst_data.config_yaml,
+        ) if self.inst_data else None

@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from dagster import check
 from dagster.config.source import StringSource
@@ -49,6 +50,7 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
     """
 
     def __init__(self, base_dir, inst_data=None):
+        self.base_dir = check.str_param(base_dir)
         self._run_storage = SqliteRunStorage.from_local(_runs_directory(base_dir))
         self._event_log_storage = SqliteEventLogStorage(_event_logs_directory(base_dir))
         self._schedule_storage = SqliteScheduleStorage.from_local(_schedule_directory(base_dir))
@@ -84,3 +86,27 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
     @property
     def schedule_storage(self) -> ScheduleStorage:
         return self._schedule_storage
+
+    @property
+    def event_storage_data(self) -> Optional[ConfigurableClassData]:
+        return ConfigurableClassData(
+            "dagster.core.storage.event_log",
+            "SqliteEventLogStorage",
+            yaml.dump({"base_dir": _runs_directory(self.base_dir)}, default_flow_style=False),
+        )
+
+    @property
+    def run_storage_data(self) -> Optional[ConfigurableClassData]:
+        return ConfigurableClassData(
+            "dagster.core.storage.runs",
+            "SqliteRunStorage",
+            yaml.dump({"base_dir": _event_logs_directory(self.base_dir)}, default_flow_style=False),
+        )
+
+    @property
+    def schedule_storage_data(self) -> Optional[ConfigurableClassData]:
+        return ConfigurableClassData(
+            "dagster.core.storage.schedules",
+            "SqliteScheduleStorage",
+            yaml.dump({"base_dir": _schedule_directory(self.base_dir)}, default_flow_style=False),
+        )

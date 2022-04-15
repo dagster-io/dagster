@@ -28,3 +28,15 @@ class LegacyStorage(DagsterStorage):
     @property
     def schedule_storage(self) -> ScheduleStorage:
         return self._schedule_storage
+
+    @abstractproperty
+    def event_storage_data(self) -> ConfigurableClassData:
+        return self.event_log_storage.inst_data
+
+    @abstractproperty
+    def run_storage_data(self) -> ConfigurableClassData:
+        return self.run_storage.inst_data
+
+    @abstractproperty
+    def schedule_storage_data(self) -> ConfigurableClassData:
+        return self.schedule_storage.inst_data
