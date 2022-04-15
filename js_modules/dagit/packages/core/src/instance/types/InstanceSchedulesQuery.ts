@@ -62,20 +62,6 @@ export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection
   name: string;
 }
 
-export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
-}
-
 export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
@@ -128,7 +114,8 @@ export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
-  repositoryOrigin: InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin;
+  repositoryName: string;
+  repositoryLocationName: string;
   typeSpecificData: InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData | null;
   runs: InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs[];
   ticks: InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks[];
@@ -189,20 +176,6 @@ export interface InstanceSchedulesQuery_repositoriesOrError_PythonError {
 
 export type InstanceSchedulesQuery_repositoriesOrError = InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection | InstanceSchedulesQuery_repositoriesOrError_PythonError;
 
-export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin_repositoryLocationMetadata[];
-}
-
 export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
@@ -255,7 +228,8 @@ export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_Insti
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
-  repositoryOrigin: InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin;
+  repositoryName: string;
+  repositoryLocationName: string;
   typeSpecificData: InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData | null;
   runs: InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_runs[];
   ticks: InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks[];

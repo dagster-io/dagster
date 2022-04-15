@@ -9,20 +9,6 @@ import { InstigationType, InstigationStatus, RunStatus, InstigationTickStatus } 
 // GraphQL fragment: InstigationStateFragment
 // ====================================================
 
-export interface InstigationStateFragment_repositoryOrigin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface InstigationStateFragment_repositoryOrigin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: InstigationStateFragment_repositoryOrigin_repositoryLocationMetadata[];
-}
-
 export interface InstigationStateFragment_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
@@ -75,7 +61,8 @@ export interface InstigationStateFragment {
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
-  repositoryOrigin: InstigationStateFragment_repositoryOrigin;
+  repositoryName: string;
+  repositoryLocationName: string;
   typeSpecificData: InstigationStateFragment_typeSpecificData | null;
   runs: InstigationStateFragment_runs[];
   ticks: InstigationStateFragment_ticks[];

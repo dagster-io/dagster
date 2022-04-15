@@ -18,20 +18,6 @@ export interface SensorRootQuery_sensorOrError_Sensor_nextTick {
   timestamp: number;
 }
 
-export interface SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrigin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrigin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrigin_repositoryLocationMetadata[];
-}
-
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
@@ -84,7 +70,8 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState {
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
-  repositoryOrigin: SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrigin;
+  repositoryName: string;
+  repositoryLocationName: string;
   typeSpecificData: SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData | null;
   runs: SensorRootQuery_sensorOrError_Sensor_sensorState_runs[];
   ticks: SensorRootQuery_sensorOrError_Sensor_sensorState_ticks[];
