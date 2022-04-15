@@ -144,6 +144,7 @@ from .time_window_partitions import (
     WeeklyPartitionsDefinition,
     daily_partitioned_config,
     hourly_partitioned_config,
+    sub_hourly_partitioned_config,
     monthly_partitioned_config,
     weekly_partitioned_config,
 )

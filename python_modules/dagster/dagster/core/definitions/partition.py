@@ -141,14 +141,35 @@ class ScheduleType(Enum):
     DAILY = "DAILY"
     WEEKLY = "WEEKLY"
     MONTHLY = "MONTHLY"
+    TEN_MINUTES = "MINUTES10"
+    FIFTEEN_MINUTES = "MINUTES15"
+    TWENTY_MINUTES = "MINUTES20"
+    THIRTY_MINUTES = "MINUTES30"
 
     @property
     def ordinal(self):
-        return {"HOURLY": 1, "DAILY": 2, "WEEKLY": 3, "MONTHLY": 4}[self.value]
+        return {
+            "TEN_MINUTES": 2,
+            "FIFTEEN_MINUTES": 3,
+            "TWENTY_MINUTES": 4,
+            "THIRTY_MINUTES": 5,
+            "HOURLY": 6,
+            "DAILY": 7,
+            "WEEKLY": 8,
+            "MONTHLY": 9,
+        }[self.value]
 
     @property
     def delta(self):
-        if self == ScheduleType.HOURLY:
+        if self == ScheduleType.TEN_MINUTES:
+            return timedelta(minutes=10)
+        elif self == ScheduleType.FIFTEEN_MINUTES:
+            return timedelta(minutes=15)
+        elif self == ScheduleType.TWENTY_MINUTES:
+            return timedelta(minutes=20)
+        elif self == ScheduleType.THIRTY_MINUTES:
+            return timedelta(minutes=30)
+        elif self == ScheduleType.HOURLY:
             return timedelta(hours=1)
         elif self == ScheduleType.DAILY:
             return timedelta(days=1)
@@ -888,7 +909,15 @@ def get_cron_schedule(
     minute = time_of_day.minute
     hour = time_of_day.hour
 
-    if schedule_type is ScheduleType.HOURLY:
+    if schedule_type is ScheduleType.TEN_MINUTES:
+        return f"{minute}/10 * * * *"
+    if schedule_type is ScheduleType.FIFTEEN_MINUTES:
+        return f"{minute}/15 * * * *"
+    if schedule_type is ScheduleType.TWENTY_MINUTES:
+        return f"{minute}/20 * * * *"
+    if schedule_type is ScheduleType.THIRTY_MINUTES:
+        return f"{minute}/30 * * * *"
+    elif schedule_type is ScheduleType.HOURLY:
         return f"{minute} * * * *"
     elif schedule_type is ScheduleType.DAILY:
         return f"{minute} {hour} * * *"

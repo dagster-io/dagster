@@ -4,7 +4,10 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 import pendulum
 
 from dagster import check
-from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
+from dagster.utils.partitions import (
+    DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
+    DEFAULT_SUB_HOURLY_FORMAT_WITHOUT_TIMEZONE,
+)
 from dagster.utils.schedules import schedule_execution_time_iterator
 
 from .partition import (
@@ -388,6 +391,135 @@ def hourly_partitioned_config(
             ),
             partitions_def=HourlyPartitionsDefinition(
                 start_date=start_date,
+                minute_offset=minute_offset,
+                timezone=timezone,
+                fmt=fmt,
+                end_offset=end_offset,
+            ),
+            decorated_fn=fn,
+            tags_for_partition_fn=wrap_time_window_tags_fn(tags_for_partition_fn),
+        )
+
+    return inner
+
+
+class SubHourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
+    def __new__(
+        cls,
+        start_date: Union[datetime, str],
+        granularity_minutes: int,
+        minute_offset: int = 0,
+        timezone: Optional[str] = None,
+        fmt: Optional[str] = None,
+        end_offset: int = 0,
+    ):
+        """A set of sub hourly partitions.
+
+        The first partition in the set will start on the start_date at midnight. The last partition
+        in the set will end before the current time, unless the end_offset argument is set to a
+        positive number. If minute_offset is provided, the start and end times of each partition
+        will be minute_offset past the hour.
+
+        Args:
+            start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
+                provide in either a datetime or string format.
+            granularity_minutes (int): Time step in minutes between partitions within hour.
+            minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
+                to 0.
+            fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
+            timezone (Optional[str]): The timezone in which each date should exist.
+                Supported strings for timezones are the ones provided by the
+                `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            end_offset (int): Extends the partition set by a number of partitions equal to the value
+                passed. If end_offset is 0 (the default), the last partition ends before the current
+                time. If end_offset is 1, the second-to-last partition ends before the current time,
+                and so on.
+
+        .. code-block:: python
+
+            SubHourlyPartitionsDefinition(start_date=datetime(2022, 03, 12))
+            # creates partitions (2022-03-12-00:00, 2022-03-12-12:30), (2022-03-12-12:30, 2022-03-12-01:00), ...
+
+            SubHourlyPartitionsDefinition(start_date=datetime(2022, 03, 12), minute_offset=15)
+            # creates partitions (2022-03-12-00:00, 2022-03-12-12:15), (2022-03-12-12:15, 2022-03-12-12:30), ...
+        """
+        _fmt = fmt or DEFAULT_SUB_HOURLY_FORMAT_WITHOUT_TIMEZONE
+
+        schedule_type_map = {
+            10: ScheduleType.TEN_MINUTES,
+            15: ScheduleType.FIFTEEN_MINUTES,
+            20: ScheduleType.TWENTY_MINUTES,
+            30: ScheduleType.THIRTY_MINUTES,
+        }
+        schedule_type = schedule_type_map[granularity_minutes]
+
+        return super(SubHourlyPartitionsDefinition, cls).__new__(
+            cls,
+            schedule_type=schedule_type,
+            start=start_date,
+            minute_offset=minute_offset,
+            timezone=timezone,
+            fmt=_fmt,
+            end_offset=end_offset,
+        )
+
+
+def sub_hourly_partitioned_config(
+    start_date: Union[datetime, str],
+    granularity_minutes: int,
+    minute_offset: int = 0,
+    timezone: Optional[str] = None,
+    fmt: Optional[str] = None,
+    end_offset: int = 0,
+    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Dict[str, str]]] = None,
+) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
+    """Defines run config over a set of sub hourly partitions.
+
+    The decorated function should accept a start datetime and end datetime, which represent the date
+    partition the config should delineate.
+
+    The decorated function should return a run config dictionary.
+
+    The resulting object created by this decorator can be provided to the config argument of a Job.
+    The first partition in the set will start at the start_date at midnight. The last partition in
+    the set will end before the current time, unless the end_offset argument is set to a positive
+    number. If minute_offset is provided, the start and end times of each partition will be
+    minute_offset past the hour.
+
+    Args:
+        start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
+            provide in either a datetime or string format.
+        granularity_minutes (int): Time step in minutes between partitions withing hour.
+        minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
+            to 0.
+        fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
+        timezone (Optional[str]): The timezone in which each date should exist.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+        end_offset (int): Extends the partition set by a number of partitions equal to the value
+            passed. If end_offset is 0 (the default), the last partition ends before the current
+            time. If end_offset is 1, the second-to-last partition ends before the current time,
+            and so on.
+
+    .. code-block:: python
+
+        @sub_hourly_partitioned_config(start_date=datetime(2022, 03, 12), granularity_minutes=30)
+        # creates partitions (2022-03-12-00:00, 2022-03-12-12:30), (2022-03-12-12:30, 2022-03-12-01:00), ...
+
+        @sub_hourly_partitioned_config(start_date=datetime(2022, 03, 12), granularity_minutes=15)
+        # creates partitions (2022-03-12-00:00, 2022-03-12-12:15), (2022-03-12-12:15, 2022-03-12-12:30), ...
+    """
+
+    def inner(fn: Callable[[datetime, datetime], Dict[str, Any]]) -> PartitionedConfig:
+        check.callable_param(fn, "fn")
+
+        return PartitionedConfig(
+            run_config_for_partition_fn=lambda partition: fn(
+                partition.value[0], partition.value[1]
+            ),
+            partitions_def=SubHourlyPartitionsDefinition(
+                start_date=start_date,
+                granularity_minutes=granularity_minutes,
                 minute_offset=minute_offset,
                 timezone=timezone,
                 fmt=fmt,
