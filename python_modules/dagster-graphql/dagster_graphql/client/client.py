@@ -424,16 +424,13 @@ class DagsterGraphQLClient:
         else:
             raise Exception(f"Unexpected query result type {query_result_type}")
 
-    def terminate_run(self, run_id: str) -> str:
+    def terminate_run(self, run_id: str):
         """
         Terminates a pipeline run. This method it is useful when you would like to stop a pipeline run
         based on a external event.
 
         Args:
             run_id (str): The run id of the pipeline run to terminate
-
-        Returns:
-            PipelineRunStatus: The status of the terminated run
         """
         check.str_param(run_id, "run_id")
 
@@ -444,7 +441,7 @@ class DagsterGraphQLClient:
         query_result: Dict[str, Any] = res_data["terminateRun"]
         query_result_type: str = query_result["__typename"]
         if query_result_type == "TerminateRunSuccess":
-            return query_result["run"]
+            return
 
         elif query_result_type == "RunNotFoundError":
             raise DagsterGraphQLClientError(
