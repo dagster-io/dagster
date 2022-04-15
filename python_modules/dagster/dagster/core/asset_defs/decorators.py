@@ -59,7 +59,6 @@ def asset(
     ...
 
 
-@experimental_decorator
 def asset(
     name: Optional[Union[Callable[..., Any], Optional[str]]] = None,
     namespace: Optional[Sequence[str]] = None,
