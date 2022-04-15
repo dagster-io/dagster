@@ -37,6 +37,7 @@ from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.utils import str_format_set
 
 from .config import ConfigMapping
+from .assets_info import AssetsJobInfo
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
@@ -71,6 +72,7 @@ class JobDefinition(PipelineDefinition):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
+        assets_info: Optional[AssetsJobInfo] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
     ):
 
@@ -86,6 +88,9 @@ class JobDefinition(PipelineDefinition):
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
         self._op_selection_data = check.opt_inst_param(
             _op_selection_data, "_op_selection_data", OpSelectionData
+        )
+        self._assets_info = check.opt_inst_param(
+            assets_info, "assets_nfo", AssetsJobInfo, default=AssetsJobInfo.from_graph(graph_def)
         )
 
         super(JobDefinition, self).__init__(
@@ -130,6 +135,10 @@ class JobDefinition(PipelineDefinition):
     @property
     def loggers(self) -> Mapping[str, LoggerDefinition]:
         return self.get_mode_definition().loggers
+
+    @property
+    def assets_info(self) -> AssetsJobInfo:
+        return self._assets_info
 
     def execute_in_process(
         self,
@@ -190,6 +199,7 @@ class JobDefinition(PipelineDefinition):
             tags=self.tags,
             op_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,
+            assets_info=self.assets_info,
         ).get_job_def_for_op_selection(op_selection)
 
         tags = None
@@ -254,6 +264,8 @@ class JobDefinition(PipelineDefinition):
             op_retry_policy=self._solid_retry_policy,
             graph_def=sub_graph,
             version_strategy=self.version_strategy,
+            # TODO: subset this structure
+            assets_info=self.assets_info,
             _op_selection_data=OpSelectionData(
                 op_selection=op_selection,
                 resolved_op_selection=set(
@@ -313,6 +325,7 @@ class JobDefinition(PipelineDefinition):
             hook_defs=hook_defs | self.hook_defs,
             description=self._description,
             op_retry_policy=self._solid_retry_policy,
+            assets_info=self.assets_info,
             _op_selection_data=self._op_selection_data,
         )
 
