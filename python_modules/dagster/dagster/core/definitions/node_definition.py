@@ -76,6 +76,7 @@ class NodeDefinition(NamedConfigurableDefinition):
 
     @property
     def input_defs(self) -> Sequence["InputDefinition"]:
+        print(";;l;l;l;l")
         return self._input_defs
 
     @property

@@ -4,11 +4,16 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetsDefinition,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
+    GraphOut,
     IOManager,
+    Out,
     ResourceDefinition,
+    graph,
     io_manager,
+    op,
 )
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
 from dagster.core.snap import DependencyStructureIndex
@@ -20,7 +25,10 @@ from dagster.utils import safe_tempfile_path
 
 
 def _asset_keys_for_node(result, node_name):
-    return {mat.asset_key for mat in result.asset_materializations_for_node(node_name)}
+    mats = result.asset_materializations_for_node(node_name)
+    ret = {mat.asset_key for mat in mats}
+    assert len(mats) == len(ret)
+    return ret
 
 
 def test_single_asset_pipeline():
@@ -334,3 +342,259 @@ def test_multiple_non_argument_deps():
     assert result.output_for_node("qux") == 1
     assert _asset_keys_for_node(result, "namespace__bar") == {AssetKey(["namespace", "bar"])}
     assert _asset_keys_for_node(result, "qux") == {AssetKey("qux")}
+
+
+def test_basic_graph_asset():
+    @op
+    def return_one():
+        return 1
+
+    @op
+    def add_one(in1):
+        pass
+
+    @graph
+    def create_cool_thing():
+        return add_one(add_one(return_one()))
+
+    cool_thing_asset = AssetsDefinition(
+        input_names_by_asset_key={},
+        output_names_by_asset_key={AssetKey("cool_thing"): "result"},
+        node_def=create_cool_thing,
+    )
+    job = build_assets_job("graph_asset_job", [cool_thing_asset])
+
+    result = job.execute_in_process()
+    assert _asset_keys_for_node(result, "create_cool_thing.add_one_2") == {AssetKey("cool_thing")}
+
+
+def test_input_mapped_graph_asset():
+    @asset
+    def a():
+        return "a"
+
+    @asset
+    def b():
+        return "b"
+
+    @op
+    def double_string(s):
+        return s * 2
+
+    @op
+    def combine_strings(s1, s2):
+        return s1 + s2
+
+    @graph
+    def create_cool_thing(a, b):
+        da = double_string(double_string(a))
+        db = double_string(b)
+        return combine_strings(da, db)
+
+    cool_thing_asset = AssetsDefinition(
+        input_names_by_asset_key={AssetKey("a"): "a", AssetKey("b"): "b"},
+        output_names_by_asset_key={AssetKey("cool_thing"): "result"},
+        node_def=create_cool_thing,
+    )
+
+    job = build_assets_job("graph_asset_job", [a, b, cool_thing_asset])
+
+    result = job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("create_cool_thing.combine_strings") == "aaaabb"
+    assert _asset_keys_for_node(result, "create_cool_thing") == {AssetKey("cool_thing")}
+    assert _asset_keys_for_node(result, "create_cool_thing.combine_strings") == {
+        AssetKey("cool_thing")
+    }
+
+
+def test_output_mapped_same_op_graph_asset():
+    @asset
+    def a():
+        return "a"
+
+    @asset
+    def b():
+        return "b"
+
+    @op
+    def double_string(s):
+        return s * 2
+
+    @op(out={"ns1": Out(), "ns2": Out()})
+    def combine_strings_and_split(s1, s2):
+        return (s1 + s2, s2 + s1)
+
+    @graph(out={"o1": GraphOut(), "o2": GraphOut()})
+    def create_cool_things(a, b):
+        da = double_string(double_string(a))
+        db = double_string(b)
+        o1, o2 = combine_strings_and_split(da, db)
+        return o1, o2
+
+    @asset
+    def out_asset1_plus_one(out_asset1):
+        return out_asset1 + "one"
+
+    @asset
+    def out_asset2_plus_one(out_asset2):
+        return out_asset2 + "one"
+
+    complex_asset = AssetsDefinition(
+        input_names_by_asset_key={AssetKey("a"): "a", AssetKey("b"): "b"},
+        output_names_by_asset_key={AssetKey("out_asset1"): "o1", AssetKey("out_asset2"): "o2"},
+        node_def=create_cool_things,
+    )
+
+    job = build_assets_job(
+        "graph_asset_job", [a, b, complex_asset, out_asset1_plus_one, out_asset2_plus_one]
+    )
+
+    result = job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("out_asset1_plus_one") == "aaaabbone"
+    assert result.output_for_node("out_asset2_plus_one") == "bbaaaaone"
+
+    assert _asset_keys_for_node(result, "create_cool_things") == {
+        AssetKey("out_asset1"),
+        AssetKey("out_asset2"),
+    }
+    assert _asset_keys_for_node(result, "create_cool_things.combine_strings_and_split") == {
+        AssetKey("out_asset1"),
+        AssetKey("out_asset2"),
+    }
+
+
+def test_output_mapped_different_op_graph_asset():
+    @asset
+    def a():
+        return "a"
+
+    @asset
+    def b():
+        return "b"
+
+    @op
+    def double_string(s):
+        return s * 2
+
+    @op(out={"ns1": Out(), "ns2": Out()})
+    def combine_strings_and_split(s1, s2):
+        return (s1 + s2, s2 + s1)
+
+    @graph(out={"o1": GraphOut(), "o2": GraphOut()})
+    def create_cool_things(a, b):
+        ab, ba = combine_strings_and_split(a, b)
+        dab = double_string(ab)
+        dba = double_string(ba)
+        return dab, dba
+
+    @asset
+    def out_asset1_plus_one(out_asset1):
+        return out_asset1 + "one"
+
+    @asset
+    def out_asset2_plus_one(out_asset2):
+        return out_asset2 + "one"
+
+    complex_asset = AssetsDefinition(
+        input_names_by_asset_key={AssetKey("a"): "a", AssetKey("b"): "b"},
+        output_names_by_asset_key={AssetKey("out_asset1"): "o1", AssetKey("out_asset2"): "o2"},
+        node_def=create_cool_things,
+    )
+
+    job = build_assets_job(
+        "graph_asset_job", [a, b, complex_asset, out_asset1_plus_one, out_asset2_plus_one]
+    )
+
+    result = job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("out_asset1_plus_one") == "ababone"
+    assert result.output_for_node("out_asset2_plus_one") == "babaone"
+
+    assert _asset_keys_for_node(result, "create_cool_things") == {
+        AssetKey("out_asset1"),
+        AssetKey("out_asset2"),
+    }
+    assert _asset_keys_for_node(result, "create_cool_things.double_string") == {
+        AssetKey("out_asset1")
+    }
+    assert _asset_keys_for_node(result, "create_cool_things.double_string_2") == {
+        AssetKey("out_asset2")
+    }
+
+
+def test_nasty_nested_graph_assets():
+    @op
+    def add_one(i):
+        return i + 1
+
+    @graph
+    def add_three(i):
+        return add_one(add_one(add_one(i)))
+
+    @graph
+    def add_five(i):
+        return add_one(add_three(add_one(i)))
+
+    @op
+    def get_sum(a, b):
+        return a + b
+
+    @graph
+    def sum_plus_one(a, b):
+        return add_one(get_sum(a, b))
+
+    @asset
+    def zero():
+        return 0
+
+    @graph(out={"eight": GraphOut(), "five": GraphOut()})
+    def create_eight_and_five(zero):
+        return add_five(add_three(zero)), add_five(zero)
+
+    @graph(out={"thirteen": GraphOut(), "six": GraphOut()})
+    def create_thirteen_and_six(eight, five, zero):
+        return add_five(eight), sum_plus_one(five, zero)
+
+    @graph
+    def create_twenty(thirteen, six):
+        return sum_plus_one(thirteen, six)
+
+    eight_and_five = AssetsDefinition(
+        input_names_by_asset_key={AssetKey("zero"): "zero"},
+        output_names_by_asset_key={AssetKey("eight"): "eight", AssetKey("five"): "five"},
+        node_def=create_eight_and_five,
+    )
+
+    thirteen_and_six = AssetsDefinition(
+        input_names_by_asset_key={
+            AssetKey("eight"): "eight",
+            AssetKey("five"): "five",
+            AssetKey("zero"): "zero",
+        },
+        output_names_by_asset_key={AssetKey("thirteen"): "thirteen", AssetKey("six"): "six"},
+        node_def=create_thirteen_and_six,
+    )
+
+    twenty = AssetsDefinition(
+        input_names_by_asset_key={AssetKey("thirteen"): "thirteen", AssetKey("six"): "six"},
+        output_names_by_asset_key={AssetKey("twenty"): "result"},
+        node_def=create_twenty,
+    )
+
+    job = build_assets_job("graph_asset_job", [zero, eight_and_five, thirteen_and_six, twenty])
+
+    result = job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("create_thirteen_and_six", "six") == 6
+    assert result.output_for_node("create_twenty") == 20
+    assert _asset_keys_for_node(result, "create_eight_and_five") == {
+        AssetKey("eight"),
+        AssetKey("five"),
+    }
+    assert _asset_keys_for_node(result, "create_thirteen_and_six") == {
+        AssetKey("thirteen"),
+        AssetKey("six"),
+    }
+    assert _asset_keys_for_node(result, "create_twenty") == {AssetKey("twenty")}

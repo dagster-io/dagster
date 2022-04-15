@@ -2,6 +2,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 from dagster import check
+from dagster.core.definitions.assets_info import AssetOutputInfo
 from dagster.core.definitions.events import (
     AssetKey,
     AssetMaterialization,
@@ -238,14 +239,23 @@ class OutputContext:
         return self._resources
 
     @property
+    def asset_info(self) -> Optional[AssetOutputInfo]:
+        from dagster.core.definitions.job_definition import JobDefinition
+
+        if not self._name:
+            return None
+        if not isinstance(self.step_context.pipeline_def, JobDefinition):
+            return None
+        return self.step_context.pipeline_def.assets_info.asset_info_for_output(
+            node_handle=self.step_context.solid_handle, output_name=self.name
+        )
+
+    @property
     def asset_key(self) -> Optional[AssetKey]:
-        matching_output_defs = [
-            output_def
-            for output_def in cast(SolidDefinition, self._solid_def).output_defs
-            if output_def.name == self.name
-        ]
-        check.invariant(len(matching_output_defs) == 1)
-        return matching_output_defs[0].get_asset_key(self)
+        asset_info = self.asset_info
+        if asset_info is None:
+            return None
+        return self.asset_info.asset_key
 
     @property
     def step_context(self) -> "StepExecutionContext":

@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
 
 from dagster import check
+from dagster.core.definitions.assets_info import AssetOutputInfo
 from dagster.core.definitions.events import AssetKey, AssetObservation
 from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster.core.definitions.op_definition import OpDefinition
@@ -205,16 +206,15 @@ class InputContext:
 
     @property
     def asset_key(self) -> Optional[AssetKey]:
+        from dagster.core.definitions.job_definition import JobDefinition
+
         if not self._name:
             return None
-
-        matching_input_defs = [
-            input_def
-            for input_def in cast(SolidDefinition, self._solid_def).input_defs
-            if input_def.name == self.name
-        ]
-        check.invariant(len(matching_input_defs) == 1)
-        return matching_input_defs[0].get_asset_key(self)
+        if not isinstance(self.step_context.pipeline_def, JobDefinition):
+            return None
+        return self.step_context.pipeline_def.assets_info.asset_key_for_input(
+            node_handle=self.step_context.solid_handle, input_name=self.name
+        )
 
     @property
     def step_context(self) -> "StepExecutionContext":

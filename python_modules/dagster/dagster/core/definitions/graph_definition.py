@@ -56,6 +56,7 @@ if TYPE_CHECKING:
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster.core.instance import DagsterInstance
 
+    from .assets_info import AssetsJobInfo
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
     from .partition import PartitionedConfig, PartitionsDefinition
@@ -461,6 +462,7 @@ class GraphDefinition(NodeDefinition):
         version_strategy: Optional[VersionStrategy] = None,
         op_selection: Optional[List[str]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
+        assets_info: Optional["AssetsJobInfo"] = None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -509,6 +511,8 @@ class GraphDefinition(NodeDefinition):
             partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition
                 keys that can parameterize the job. If this argument is supplied, the config
                 argument can't also be supplied.
+            assets_info (Optional[AssetsJobInfo]): Top-level information about the assets that this
+                job will produce.
 
         Returns:
             JobDefinition
@@ -581,6 +585,7 @@ class GraphDefinition(NodeDefinition):
             hook_defs=hooks,
             version_strategy=version_strategy,
             op_retry_policy=op_retry_policy,
+            assets_info=assets_info,
         ).get_job_def_for_op_selection(op_selection)
 
     def coerce_to_job(self):

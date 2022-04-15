@@ -19,6 +19,7 @@ from .node_definition import NodeDefinition
 from .partition import PartitionsDefinition
 
 if TYPE_CHECKING:
+    from dagster.core.asset_defs.assets import AssetsDefinition
     from dagster.core.execution.context.output import OutputContext
 
 
@@ -158,10 +159,55 @@ class AssetsJobInfo:
     def from_graph(graph_def: GraphDefinition) -> "AssetsJobInfo":
         """Scrape asset info off of InputDefinition/OutputDefinition instances"""
         check.inst_param(graph_def, "graph_def", GraphDefinition)
-        asset_by_input, asset_by_output, asset_deps = _assets_job_info_for_node(graph_def, None)
+        asset_key_by_input, asset_info_by_output, asset_deps = _assets_job_info_for_node(
+            graph_def, None
+        )
         return AssetsJobInfo(
-            asset_key_by_node_input_handle=asset_by_input,
-            asset_info_by_node_output_handle=asset_by_output,
+            asset_key_by_node_input_handle=asset_key_by_input,
+            asset_info_by_node_output_handle=asset_info_by_output,
+            asset_deps=asset_deps,
+        )
+
+    @staticmethod
+    def from_graph_and_assets_node_mapping(
+        graph_def: GraphDefinition,
+        assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
+    ) -> "AssetsJobInfo":
+        """
+        Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
+        corresponding AssetsDefinition objects.
+
+        Args:
+            graph_def (GraphDefinition): The graph for the JobDefinition that we're generating
+                this AssetsJobInfo for.
+            assets_defs_by_node_handle (Mapping[NodeHandle, AssetsDefinition]): A mapping from
+                a NodeHandle pointing to the node in the graph where the AssetsDefinition ended up.
+        """
+        check.inst_param(graph_def, "graph_def", GraphDefinition)
+        check.dict_param(
+            assets_defs_by_node_handle, "assets_defs_by_node_handle", key_type=NodeHandle
+        )
+
+        asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
+        asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
+        asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
+        for node_handle, assets_def in assets_defs_by_node_handle.items():
+            asset_deps.update(assets_def.asset_deps)
+            for asset_key, input_def in assets_def.input_defs_by_asset_key.items():
+                node_input_handle = NodeInputHandle(node_handle, input_def.name)
+                asset_key_by_input[node_input_handle] = asset_key
+            for asset_key, output_def in assets_def.output_defs_by_asset_key.items():
+                # for outputs, must resolve handle to the underlying op output
+                output_def, inner_node_handle = assets_def.node_def.resolve_output_to_origin(
+                    output_def.name, handle=node_handle
+                )
+                node_output_handle = NodeOutputHandle(inner_node_handle, output_def.name)
+                asset_info_by_output[node_output_handle] = AssetOutputInfo(
+                    asset_key, asset_partitions_def=assets_def.partitions_def
+                )
+        return AssetsJobInfo(
+            asset_key_by_node_input_handle=asset_key_by_input,
+            asset_info_by_node_output_handle=asset_info_by_output,
             asset_deps=asset_deps,
         )
 

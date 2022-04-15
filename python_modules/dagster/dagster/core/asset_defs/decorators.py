@@ -220,7 +220,7 @@ class _Asset:
                 for input_name, in_def in asset_ins.items()
             },
             output_names_by_asset_key={out_asset_key: "result"},
-            op=op,
+            node_def=op,
             partitions_def=self.partitions_def,
             partition_mappings={
                 cast(AssetKey, asset_ins[input_name].asset_key): partition_mapping
@@ -303,7 +303,7 @@ def multi_asset(
             output_names_by_asset_key={
                 cast(AssetKey, out_def.asset_key): output_name for output_name, out_def in asset_outs.items()  # type: ignore
             },
-            op=op,
+            node_def=op,
         )
 
     return inner
