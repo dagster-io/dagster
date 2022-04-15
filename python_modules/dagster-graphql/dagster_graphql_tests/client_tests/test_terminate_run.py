@@ -14,6 +14,7 @@ from .conftest import MockClient, python_client_test_suite
 
 RUN_ID = "foo"
 
+
 @python_client_test_suite
 def test_terminate_run_status_success(mock_client: MockClient):
     expected_result = None
@@ -22,6 +23,7 @@ def test_terminate_run_status_success(mock_client: MockClient):
 
     actual_result = mock_client.python_client.terminate_run(RUN_ID)
     assert actual_result == expected_result
+
 
 @python_client_test_suite
 def test_terminate_run_not_failure(mock_client: MockClient):
@@ -33,6 +35,7 @@ def test_terminate_run_not_failure(mock_client: MockClient):
         mock_client.python_client.terminate_run(RUN_ID)
         assert e.value.message == expected_result
 
+
 @python_client_test_suite
 def test_terminate_run_not_found(mock_client: MockClient):
     expected_result = "Run Id foo not found"
@@ -42,6 +45,7 @@ def test_terminate_run_not_found(mock_client: MockClient):
         mock_client.mock_gql_client.execute.return_value = response
         mock_client.python_client.terminate_run(RUN_ID)
         assert e.value.message == expected_result
+
 
 @python_client_test_suite
 def test_terminate_run_python_error(mock_client: MockClient):

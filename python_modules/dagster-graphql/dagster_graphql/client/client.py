@@ -444,8 +444,6 @@ class DagsterGraphQLClient:
             return
 
         elif query_result_type == "RunNotFoundError":
-            raise DagsterGraphQLClientError(
-                "RunNotFoundError", f"Run Id {run_id} not found"
-            )
+            raise DagsterGraphQLClientError("RunNotFoundError", f"Run Id {run_id} not found")
         else:
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
