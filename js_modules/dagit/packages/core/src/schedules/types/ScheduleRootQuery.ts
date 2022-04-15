@@ -15,20 +15,6 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_partitionSet {
   name: string;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
-}
-
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
@@ -81,7 +67,8 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState {
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
-  repositoryOrigin: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin;
+  repositoryName: string;
+  repositoryLocationName: string;
   typeSpecificData: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData | null;
   runs: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_runs[];
   ticks: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks[];

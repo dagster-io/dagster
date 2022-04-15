@@ -15,20 +15,6 @@ export interface ScheduleFragment_partitionSet {
   name: string;
 }
 
-export interface ScheduleFragment_scheduleState_repositoryOrigin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface ScheduleFragment_scheduleState_repositoryOrigin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: ScheduleFragment_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
-}
-
 export interface ScheduleFragment_scheduleState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
@@ -81,7 +67,8 @@ export interface ScheduleFragment_scheduleState {
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
-  repositoryOrigin: ScheduleFragment_scheduleState_repositoryOrigin;
+  repositoryName: string;
+  repositoryLocationName: string;
   typeSpecificData: ScheduleFragment_scheduleState_typeSpecificData | null;
   runs: ScheduleFragment_scheduleState_runs[];
   ticks: ScheduleFragment_scheduleState_ticks[];
