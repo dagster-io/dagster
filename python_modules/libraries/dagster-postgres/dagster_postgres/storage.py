@@ -73,24 +73,36 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
 
     @property
     def event_storage_data(self) -> Optional[ConfigurableClassData]:
-        return ConfigurableClassData(
-            "dagster_postgres",
-            "PostgresEventLogStorage",
-            self.inst_data.config_yaml,
-        ) if self.inst_data else None
+        return (
+            ConfigurableClassData(
+                "dagster_postgres",
+                "PostgresEventLogStorage",
+                self.inst_data.config_yaml,
+            )
+            if self.inst_data
+            else None
+        )
 
     @property
     def run_storage_data(self) -> Optional[ConfigurableClassData]:
-        return ConfigurableClassData(
-            "dagster_postgres",
-            "PostgresRunStorage",
-            self.inst_data.config_yaml,
-        ) if self.inst_data else None
+        return (
+            ConfigurableClassData(
+                "dagster_postgres",
+                "PostgresRunStorage",
+                self.inst_data.config_yaml,
+            )
+            if self.inst_data
+            else None
+        )
 
     @property
     def schedule_storage_data(self) -> Optional[ConfigurableClassData]:
-        return ConfigurableClassData(
-            "dagster_postgres",
-            "PostgresScheduleStorage",
-            self.inst_data.config_yaml,
-        ) if self.inst_data else None
+        return (
+            ConfigurableClassData(
+                "dagster_postgres",
+                "PostgresScheduleStorage",
+                self.inst_data.config_yaml,
+            )
+            if self.inst_data
+            else None
+        )

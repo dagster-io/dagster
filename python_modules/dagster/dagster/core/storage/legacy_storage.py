@@ -1,4 +1,5 @@
 from dagster import check
+from dagster.serdes import ConfigurableClassData
 
 from .base_storage import DagsterStorage
 from .event_log.base import EventLogStorage
@@ -29,14 +30,14 @@ class LegacyStorage(DagsterStorage):
     def schedule_storage(self) -> ScheduleStorage:
         return self._schedule_storage
 
-    @abstractproperty
+    @property
     def event_storage_data(self) -> ConfigurableClassData:
         return self.event_log_storage.inst_data
 
-    @abstractproperty
+    @property
     def run_storage_data(self) -> ConfigurableClassData:
         return self.run_storage.inst_data
 
-    @abstractproperty
+    @property
     def schedule_storage_data(self) -> ConfigurableClassData:
         return self.schedule_storage.inst_data

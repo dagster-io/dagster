@@ -1,6 +1,8 @@
 import os
 from typing import Optional
 
+import yaml
+
 from dagster import check
 from dagster.config.source import StringSource
 from dagster.serdes import ConfigurableClass, ConfigurableClassData

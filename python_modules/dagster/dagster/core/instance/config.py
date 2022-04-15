@@ -3,7 +3,7 @@ import warnings
 
 from dagster import Array, Bool, check
 from dagster.config import Field, Permissive, Selector
-from dagster.config.source import StringSource, IntSource
+from dagster.config.source import IntSource, StringSource
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.serdes import class_from_code_pointer
@@ -73,11 +73,10 @@ def dagster_instance_config(
                 "`event_log_storage`, and `schedule_storage` config entries."
             ),
             [],
-            None
+            None,
         )
     elif "storage" in dagster_config_dict:
         if len(dagster_config_dict["storage"]) != 1:
-            storage_config_keys = ["postgres", "mysql", "sqlite", "custom"]
             raise DagsterInvalidConfigError(
                 (
                     f"Errors whilst loading dagster storage at {config_filename}, Expected one of:"
@@ -101,6 +100,7 @@ def dagster_instance_config(
 def config_field_for_configurable_class():
     return Field(configurable_class_schema(), is_required=False)
 
+
 def pg_config():
     return {
         "postgres_url": Field(StringSource, is_required=False),
@@ -118,6 +118,7 @@ def pg_config():
         "should_autocreate_tables": Field(bool, is_required=False, default_value=True),
     }
 
+
 def mysql_config():
     return Selector(
         {
@@ -132,13 +133,18 @@ def mysql_config():
         }
     )
 
+
 def config_field_for_storage():
-    return Field({
-        "postgres": Field(pg_config(), is_required=False),
-        "mysql": Field(mysql_config(), is_required=False),
-        "sqlite": Field({ "base_dir": str }, is_required=False),
-        "custom": Field(configurable_class_schema(), is_required=False),
-    }, is_required=False)
+    return Field(
+        {
+            "postgres": Field(pg_config(), is_required=False),
+            "mysql": Field(mysql_config(), is_required=False),
+            "sqlite": Field({"base_dir": str}, is_required=False),
+            "custom": Field(configurable_class_schema(), is_required=False),
+        },
+        is_required=False,
+    )
+
 
 def configurable_class_schema():
     return {"module": str, "class": str, "config": Field(Permissive())}

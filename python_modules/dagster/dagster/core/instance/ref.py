@@ -4,7 +4,6 @@ from typing import Dict, NamedTuple, Optional, Union
 import yaml
 
 from dagster import check
-from dagster.core.errors import DagsterInvalidConfigError
 from dagster.serdes import ConfigurableClassData, class_from_code_pointer, whitelist_for_serdes
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
@@ -33,12 +32,14 @@ def configurable_class_data(config_field):
         yaml.dump(check.opt_dict_elem(config_field, "config"), default_flow_style=False),
     )
 
+
 def configurable_class_data_or_default(config_value, field_name, default):
     return (
         configurable_class_data(config_value[field_name])
         if config_value.get(field_name)
         else default
     )
+
 
 @whitelist_for_serdes
 class LegacyStorageRef(
@@ -79,9 +80,10 @@ class LegacyStorageRef(
             self.schedule_storage_data.rehydrate() if self.schedule_storage_data else None,
         )
 
+
 def configurable_storage_data(config_field) -> LegacyStorageRef:
-    if 'postgres' in config_field:
-        config_yaml=yaml.dump(config_field["postgres"], default_flow_style=False)
+    if "postgres" in config_field:
+        config_yaml = yaml.dump(config_field["postgres"], default_flow_style=False)
         return LegacyStorageRef(
             run_storage_data=ConfigurableClassData(
                 module_name="dagster_postgres",
@@ -99,8 +101,8 @@ def configurable_storage_data(config_field) -> LegacyStorageRef:
                 config_yaml=config_yaml,
             ),
         )
-    elif 'mysql' in config_field:
-        config_yaml=yaml.dump(config_field["mysql"], default_flow_style=False)
+    elif "mysql" in config_field:
+        config_yaml = yaml.dump(config_field["mysql"], default_flow_style=False)
         return LegacyStorageRef(
             run_storage_data=ConfigurableClassData(
                 module_name="dagster_mysql",
@@ -118,8 +120,8 @@ def configurable_storage_data(config_field) -> LegacyStorageRef:
                 config_yaml=config_yaml,
             ),
         )
-    elif 'sqlite' in config_field:
-        base_dir = check.str_elem(config_field['sqlite'], 'base_dir')
+    elif "sqlite" in config_field:
+        base_dir = check.str_elem(config_field["sqlite"], "base_dir")
         return LegacyStorageRef(
             run_storage_data=ConfigurableClassData(
                 "dagster.core.storage.runs",
@@ -138,8 +140,9 @@ def configurable_storage_data(config_field) -> LegacyStorageRef:
             ),
         )
     else:
-        assert 'custom' in config_field
-        return configurable_class_data(config_field['custom'])
+        assert "custom" in config_field
+        return configurable_class_data(config_field["custom"])
+
 
 @whitelist_for_serdes
 class InstanceRef(
@@ -213,7 +216,7 @@ class InstanceRef(
             ),
             storage_data=check.opt_inst_param(
                 storage_data, "storage_data", (ConfigurableClassData, LegacyStorageRef)
-            )
+            ),
         )
 
     @staticmethod
@@ -313,13 +316,13 @@ class InstanceRef(
                 event_storage_data = storage.event_storage_data
                 schedule_storage_data = storage.schedule_storage_data
         else:
-            run_storage_data=configurable_class_data_or_default(
+            run_storage_data = configurable_class_data_or_default(
                 config_value, "run_storage", defaults["run_storage"]
             )
-            event_storage_data=configurable_class_data_or_default(
+            event_storage_data = configurable_class_data_or_default(
                 config_value, "event_log_storage", defaults["event_log_storage"]
             )
-            schedule_storage_data=configurable_class_data_or_default(
+            schedule_storage_data = configurable_class_data_or_default(
                 config_value, "schedule_storage", defaults["schedule_storage"]
             )
 
@@ -332,7 +335,7 @@ class InstanceRef(
                 storage_data = LegacyStorageRef(
                     run_storage_data=run_storage_data,
                     event_storage_data=event_storage_data,
-                    schedule_storage_data=schedule_storage_data
+                    schedule_storage_data=schedule_storage_data,
                 )
             else:
                 storage_data = defaults["storage"]
