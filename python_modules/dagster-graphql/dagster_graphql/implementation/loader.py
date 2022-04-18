@@ -278,13 +278,16 @@ class BatchMaterializationLoader:
         self._instance = instance
         self._asset_keys: List[AssetKey] = list(asset_keys)
         self._fetched = False
-        self._materializations: Dict[AssetKey, EventLogEntry] = {}
+        self._materializations: Mapping[AssetKey, Optional[EventLogEntry]] = {}
 
-    def get_latest_materialization_for_asset_key(self, asset_key: AssetKey) -> EventLogEntry:
+    def get_latest_materialization_for_asset_key(
+        self, asset_key: AssetKey
+    ) -> Optional[EventLogEntry]:
         if asset_key not in self._asset_keys:
             check.failed(
                 f"Asset key {asset_key} not recognized for this loader.  Expected one of: {self._asset_keys}"
             )
+
         if self._materializations.get(asset_key) is None:
             self._fetch()
         return self._materializations.get(asset_key)

@@ -14,7 +14,6 @@ from dagster.core.executor.init import InitExecutorContext
 from dagster.core.executor.step_delegating import StepDelegatingExecutor
 from dagster.core.executor.step_delegating.step_handler import StepHandler
 from dagster.core.executor.step_delegating.step_handler.base import StepHandlerContext
-from dagster.core.types.dagster_type import Optional
 from dagster.utils import frozentags, merge_dicts
 
 from .container_context import K8sContainerContext

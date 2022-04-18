@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union
 
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -34,13 +34,13 @@ class GrapheneAssetDependency(graphene.ObjectType):
         name = "AssetDependency"
 
     asset = graphene.NonNull("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
-    inputName = graphene.NonNull(graphene.String)
+    inputName = graphene.String()
 
     def __init__(
         self,
         repository_location: RepositoryLocation,
         external_repository: ExternalRepository,
-        input_name: str,
+        input_name: Optional[str],
         asset_key: AssetKey,
         materialization_loader: Optional[BatchMaterializationLoader] = None,
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
@@ -153,7 +153,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def external_asset_node(self) -> ExternalAssetNode:
         return self._external_asset_node
 
-    def get_partition_keys(self) -> List[str]:
+    def get_partition_keys(self) -> Sequence[str]:
         # TODO: Add functionality for dynamic partitions definition
         partitions_def_data = self._external_asset_node.partitions_def_data
         if partitions_def_data:
@@ -168,7 +168,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_assetMaterializations(
         self, graphene_info, **kwargs
-    ) -> List[GrapheneMaterializationEvent]:
+    ) -> Sequence[GrapheneMaterializationEvent]:
         from ..implementation.fetch_assets import get_asset_materializations
 
         beforeTimestampMillis: Optional[str] = kwargs.get("beforeTimestampMillis")
@@ -274,7 +274,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             for dep in self._external_asset_node.dependencies
         ]
 
-    def resolve_dependencies(self, graphene_info) -> List[GrapheneAssetDependency]:
+    def resolve_dependencies(self, graphene_info) -> Sequence[GrapheneAssetDependency]:
         if not self._external_asset_node.dependencies:
             return []
 
@@ -293,10 +293,10 @@ class GrapheneAssetNode(graphene.ObjectType):
             for dep in self._external_asset_node.dependencies
         ]
 
-    def resolve_jobNames(self, _graphene_info) -> List[str]:
+    def resolve_jobNames(self, _graphene_info) -> Sequence[str]:
         return self._external_asset_node.job_names
 
-    def resolve_jobs(self, _graphene_info) -> List[GraphenePipeline]:
+    def resolve_jobs(self, _graphene_info) -> Sequence[GraphenePipeline]:
         job_names = self._external_asset_node.job_names or []
         return [
             GraphenePipeline(self._external_repository.get_full_external_pipeline(job_name))
@@ -306,7 +306,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_latestMaterializationByPartition(
         self, graphene_info, **kwargs
-    ) -> List[Optional[GrapheneMaterializationEvent]]:
+    ) -> Sequence[Optional[GrapheneMaterializationEvent]]:
         from ..implementation.fetch_assets import get_asset_materializations
 
         get_partition = (
@@ -342,7 +342,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_materializationCountByPartition(
         self, graphene_info
-    ) -> List[GrapheneMaterializationCount]:
+    ) -> Sequence[GrapheneMaterializationCount]:
         asset_key = self._external_asset_node.asset_key
         partition_keys = self.get_partition_keys()
 
@@ -355,7 +355,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             for partition_key in partition_keys
         ]
 
-    def resolve_metadata_entries(self, _graphene_info) -> List[GrapheneMetadataEntry]:
+    def resolve_metadata_entries(self, _graphene_info) -> Sequence[GrapheneMetadataEntry]:
         return list(iterate_metadata_entries(self._external_asset_node.metadata_entries))
 
     def resolve_op(
@@ -374,7 +374,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             return str(partitions_def_data.get_partitions_definition())
         return None
 
-    def resolve_partitionKeys(self, _graphene_info) -> List[str]:
+    def resolve_partitionKeys(self, _graphene_info) -> Sequence[str]:
         return self.get_partition_keys()
 
     def resolve_repository(self, graphene_info) -> "GrapheneRepository":

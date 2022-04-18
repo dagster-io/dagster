@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from dagster_fivetran.types import FivetranOutput
 
-import dagster._check as check
+import dagster.check as check
 from dagster import AssetMaterialization, MetadataValue
 
 

@@ -8,6 +8,7 @@ from dagster.cli.api import ExecuteRunArgs
 from dagster.core.events import EngineEventData
 from dagster.core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
 from dagster.core.launcher.base import CheckRunHealthResult, WorkerStatus
+from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.grpc.types import ResumeRunArgs
