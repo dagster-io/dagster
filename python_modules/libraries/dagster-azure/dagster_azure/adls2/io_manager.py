@@ -75,6 +75,7 @@ class PickledObjectADLS2IOManager(IOManager):
             lease_client.acquire(lease_duration=self.lease_duration)
             yield lease_client.id
         finally:
+            # cannot release a lease on a file that no longer exists, so need to check 
             if not is_rm:
                 lease_client.release()
 
