@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import subprocess
@@ -546,3 +547,48 @@ def test_sensor_timeout():
             )
     finally:
         process.terminate()
+
+
+def test_load_with_container_context(capfd):
+    port = find_free_port()
+    python_file = file_relative_path(__file__, "grpc_repo.py")
+
+    container_context = {
+        "k8s": {
+            "image_pull_policy": "Never",
+            "image_pull_secrets": [{"name": "your_secret"}],
+        }
+    }
+
+    subprocess_args = [
+        "dagster",
+        "api",
+        "grpc",
+        "--port",
+        str(port),
+        "--python-file",
+        python_file,
+        "--container-context",
+        json.dumps(container_context),
+    ]
+
+    process = subprocess.Popen(subprocess_args)
+
+    try:
+
+        client = DagsterGrpcClient(port=port, host="localhost")
+
+        wait_for_grpc_server(process, client, subprocess_args)
+        assert client.ping("foobar") == "foobar"
+
+        list_repositories_response = sync_list_repositories_grpc(client)
+        assert list_repositories_response.entry_point == ["dagster"]
+        assert list_repositories_response.executable_path == sys.executable
+        assert list_repositories_response.container_context == container_context
+
+    finally:
+        process.terminate()
+
+    out, _err = capfd.readouterr()
+
+    assert f"Started Dagster code server for file {python_file} on port {port} in process" in out

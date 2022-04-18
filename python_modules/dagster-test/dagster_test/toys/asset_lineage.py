@@ -2,14 +2,12 @@ import datetime
 import os
 import random
 import string
-import warnings
 
 import pandas as pd
 
 from dagster import (
     Array,
     AssetKey,
-    ExperimentalWarning,
     Field,
     MetadataEntry,
     MetadataValue,
@@ -23,8 +21,6 @@ from dagster import (
 )
 from dagster.core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster.core.storage.io_manager import io_manager
-
-warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
 
 def get_date_partitions():
@@ -187,6 +183,3 @@ def daily_top_action(_, df1, df2):
 def asset_lineage_pipeline():
     reviews, comments = split_action_types(download_data())
     daily_top_action(top_10_reviews(reviews), top_10_comments(comments))
-
-
-warnings.resetwarnings()

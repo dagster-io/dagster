@@ -5062,7 +5062,7 @@ __metadata:
     "@testing-library/jest-dom": ^5.16.1
     "@testing-library/react": ^12.1.2
     "@testing-library/user-event": ^12.1.10
-    "@types/codemirror": ^0.0.80
+    "@types/codemirror": ^5.60.5
     "@types/color": ^3.0.2
     "@types/dagre": ^0.7.42
     "@types/faker": ^5.1.7
@@ -5094,7 +5094,7 @@ __metadata:
     chartjs-adapter-date-fns: ^2.0.0
     chartjs-plugin-zoom: ^1.1.1
     child-process: ^1.0.2
-    codemirror: ^5.58.2
+    codemirror: ^5.65.2
     color: ^3.0.0
     cronstrue: ^1.84.0
     dagre: ^0.8.2
@@ -5107,7 +5107,6 @@ __metadata:
     fuse.js: ^6.4.2
     graphql: ^15.5.0
     graphql.macro: ^1.4.2
-    highlight.js: ^10.4.0
     identity-obj-proxy: ^3.0.0
     jest: ^26.6.3
     jest-environment-jsdom-sixteen: ^1.0.3
@@ -5157,33 +5156,25 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@dagster-io/eslint-config@^1.0.1, @dagster-io/eslint-config@workspace:*, @dagster-io/eslint-config@workspace:packages/eslint-config":
+"@dagster-io/eslint-config@1.0.2, @dagster-io/eslint-config@^1.0.1, @dagster-io/eslint-config@workspace:*, @dagster-io/eslint-config@workspace:packages/eslint-config":
   version: 0.0.0-use.local
   resolution: "@dagster-io/eslint-config@workspace:packages/eslint-config"
   dependencies:
     "@typescript-eslint/eslint-plugin": 5.8.0
     "@typescript-eslint/parser": 5.8.0
+    eslint: ^8.6.0
     eslint-config-prettier: 8.3.0
     eslint-plugin-import: 2.26.0
     eslint-plugin-jsx-a11y: 6.5.1
     eslint-plugin-prettier: ^4.0.0
     eslint-plugin-react: 7.27.1
     eslint-plugin-react-hooks: 4.3.0
+    prettier: 2.2.1
   peerDependencies:
     eslint: ^8.6.0
     prettier: 2.2.1
   languageName: unknown
   linkType: soft
-
-"@dagster-io/eslint-config@npm:1.0.0":
-  version: 1.0.0
-  resolution: "@dagster-io/eslint-config@npm:1.0.0"
-  peerDependencies:
-    eslint: ^8.6.0
-    prettier: 2.2.1
-  checksum: ee3342b1badcab24ab916cefca4229299757391de6dba2fceaab1bc4c187397a7ae04b0e932257984b452d322f75571179d4ff892d1e7f39199a7be3b6867c3c
-  languageName: node
-  linkType: hard
 
 "@dagster-io/react-scripts@npm:5.0.2":
   version: 5.0.2
@@ -5263,7 +5254,7 @@ __metadata:
     "@babel/preset-env": ^7.16.7
     "@babel/preset-react": ^7.16.7
     "@babel/preset-typescript": ^7.16.7
-    "@dagster-io/eslint-config": 1.0.0
+    "@dagster-io/eslint-config": 1.0.2
     "@mdx-js/react": ^1.6.22
     "@rollup/plugin-babel": ^5.3.1
     "@rollup/plugin-commonjs": ^21.0.3
@@ -5300,7 +5291,6 @@ __metadata:
     deepmerge: ^4.2.2
     eslint: ^8.6.0
     eslint-plugin-storybook: ^0.5.5
-    highlight.js: 11.5.0
     jest: ^27.4.7
     lodash.isequal: ^4.5.0
     nearest-color: ^0.4.4
@@ -8472,12 +8462,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/codemirror@npm:^0.0.80":
-  version: 0.0.80
-  resolution: "@types/codemirror@npm:0.0.80"
+"@types/codemirror@npm:^5.60.5":
+  version: 5.60.5
+  resolution: "@types/codemirror@npm:5.60.5"
   dependencies:
     "@types/tern": "*"
-  checksum: 9cdbd275673c3c58ceea4ff64e0c6692169d0f31ce41b43a09aadcdb6872dcc549b4cd203abc9b653d7a9c3aaffd1f49a5e53e58fcd39c2c5b6f1eca765e6230
+  checksum: 423b6378b6415b626d9f54d37d69477f96940b30a695d4ec36402feb59a96f7ab42d1c17b8472fbb222a0966f6061deee234e37bcd3e34c75836e989dc95929d
   languageName: node
   linkType: hard
 
@@ -12881,10 +12871,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"codemirror@npm:^5.58.2":
-  version: 5.61.0
-  resolution: "codemirror@npm:5.61.0"
-  checksum: d9081d4937fc237c972e12538721b47817a08557a30d692b32e09849977e5d91ca6c8984cdea417cf11a163fdbc3c7139fd66cefc6fcf32047c8cbecd21d2715
+"codemirror@npm:^5.65.2":
+  version: 5.65.2
+  resolution: "codemirror@npm:5.65.2"
+  checksum: 8e13511319aa8b4772a4406952d89ecef63f4518fa17a3893270d9835ade59d67a94bc83918d881901abb57ed68cbbe697e720a01a43e1aae43fc0f03a6591b1
   languageName: node
   linkType: hard
 
@@ -17352,24 +17342,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"highlight.js@npm:11.5.0":
-  version: 11.5.0
-  resolution: "highlight.js@npm:11.5.0"
-  checksum: a4339278d5be464fa29047fd00bc91f3d3966f5acbbb861ec51a09f3eea7c79ca63c2e0a2ba0c7b3d3663ee56b11c6470ab2759c7278e0d11af5cb0efa26e6eb
-  languageName: node
-  linkType: hard
-
 "highlight.js@npm:^10.1.1, highlight.js@npm:~10.7.0":
   version: 10.7.3
   resolution: "highlight.js@npm:10.7.3"
   checksum: defeafcd546b535d710d8efb8e650af9e3b369ef53e28c3dc7893eacfe263200bba4c5fcf43524ae66d5c0c296b1af0870523ceae3e3104d24b7abf6374a4fea
-  languageName: node
-  linkType: hard
-
-"highlight.js@npm:^10.4.0":
-  version: 10.7.2
-  resolution: "highlight.js@npm:10.7.2"
-  checksum: af09b434070c81ed154b4c990bee61a8c1295887554abc7884eb2544c48bff208e237e7ce1b324ebe94abe0f942e15e2c11dff1b1ed22a79a3c4a0d8a900a921
   languageName: node
   linkType: hard
 

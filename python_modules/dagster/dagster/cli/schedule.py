@@ -299,7 +299,9 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
             try:
                 external_schedule = external_repo.get_external_schedule(schedule_name)
                 instance.stop_schedule(
-                    external_schedule.get_external_origin_id(), external_schedule
+                    external_schedule.get_external_origin_id(),
+                    external_schedule.selector_id,
+                    external_schedule,
                 )
             except DagsterInvariantViolationError as ex:
                 raise click.UsageError(ex)
@@ -409,6 +411,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                             )
                             instance.stop_schedule(
                                 schedule_state.instigator_origin_id,
+                                external_schedule.selector_id,
                                 external_schedule,
                             )
                             instance.start_schedule(external_schedule)
@@ -434,7 +437,11 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                     )
 
                 try:
-                    instance.stop_schedule(schedule_state.instigator_origin_id, external_schedule)
+                    instance.stop_schedule(
+                        schedule_state.instigator_origin_id,
+                        external_schedule.selector_id,
+                        external_schedule,
+                    )
                     instance.start_schedule(external_schedule)
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)

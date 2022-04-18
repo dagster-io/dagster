@@ -27,7 +27,7 @@ export const TimestampDisplay = (props: Props) => {
           timestamp: {unix: timestamp},
           locale,
           timezone: timezone || userTimezone,
-          timeFormat: timeFormat,
+          timeFormat,
         })}
       </TabularNums>
       {timezone && timezone !== userTimezone ? (

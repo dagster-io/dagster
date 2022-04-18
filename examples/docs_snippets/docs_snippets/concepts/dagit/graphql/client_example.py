@@ -1,4 +1,4 @@
-"""isort:skip_file"""
+# isort: skip_file
 # pylint: disable=W0404
 # start_setup_marker
 from dagster_graphql import DagsterGraphQLClient

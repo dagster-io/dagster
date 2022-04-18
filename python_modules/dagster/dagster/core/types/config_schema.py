@@ -1,11 +1,11 @@
 import hashlib
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Generator, Optional
+from typing import TYPE_CHECKING, AbstractSet, Callable, Iterator, Optional, Union
 
 from dagster import check
 from dagster.config.config_type import ConfigType
 from dagster.core.decorator_utils import get_function_params, validate_expected_params
-from dagster.core.definitions.events import AssetMaterialization
+from dagster.core.definitions.events import AssetMaterialization, Materialization
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import ensure_gen
 from dagster.utils.backcompat import experimental_arg_warning
@@ -64,7 +64,7 @@ class DagsterTypeMaterializer(ABC):
     @abstractmethod
     def materialize_runtime_values(
         self, _context: "StepExecutionContext", _config_value: object, _runtime_value: object
-    ) -> object:
+    ) -> Iterator[Union[AssetMaterialization, Materialization]]:
         """
         How to materialize a runtime value given configuration.
         """
@@ -215,7 +215,7 @@ class DagsterTypeMaterializerForDecorator(DagsterTypeMaterializer):
 
     def materialize_runtime_values(
         self, context: "StepExecutionContext", config_value: object, runtime_value: object
-    ) -> Generator[AssetMaterialization, Any, Any]:
+    ) -> Iterator[Union[Materialization, AssetMaterialization]]:
         return ensure_gen(self._func(context, config_value, runtime_value))
 
     def required_resource_keys(self) -> AbstractSet[str]:

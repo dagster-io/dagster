@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
+import kubernetes
+
 from dagster import check
 from dagster.config.validate import process_config
 from dagster.core.errors import DagsterInvalidConfigError
@@ -10,6 +12,7 @@ if TYPE_CHECKING:
     from . import K8sRunLauncher
 
 from .job import DagsterK8sJobConfig
+from .models import k8s_snake_case_dict
 
 
 def _dedupe_list(values):
@@ -59,8 +62,14 @@ class K8sContainerContext(
             env_config_maps=check.opt_list_param(env_config_maps, "env_config_maps"),
             env_secrets=check.opt_list_param(env_secrets, "env_secrets"),
             env_vars=check.opt_list_param(env_vars, "env_vars"),
-            volume_mounts=check.opt_list_param(volume_mounts, "volume_mounts"),
-            volumes=check.opt_list_param(volumes, "volumes"),
+            volume_mounts=[
+                k8s_snake_case_dict(kubernetes.client.V1VolumeMount, mount)
+                for mount in check.opt_list_param(volume_mounts, "volume_mounts")
+            ],
+            volumes=[
+                k8s_snake_case_dict(kubernetes.client.V1Volume, volume)
+                for volume in check.opt_list_param(volumes, "volumes")
+            ],
             labels=check.opt_dict_param(labels, "labels"),
             namespace=check.opt_str_param(namespace, "namespace"),
         )

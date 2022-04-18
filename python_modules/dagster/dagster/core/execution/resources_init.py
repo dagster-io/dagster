@@ -368,7 +368,7 @@ def get_required_resource_keys_for_step(pipeline_def, execution_step, execution_
 
     # add input type, input loader, and input io manager resource keys
     for step_input in execution_step.step_inputs:
-        input_def = step_input.source.get_input_def(pipeline_def)
+        input_def = solid_def.input_def_named(step_input.name)
 
         resource_keys = resource_keys.union(input_def.dagster_type.required_resource_keys)
 

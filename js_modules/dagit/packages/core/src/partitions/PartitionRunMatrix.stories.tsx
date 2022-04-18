@@ -48,10 +48,10 @@ function buildOpHandles(opNames: string[], deps: string[]) {
       __typename: 'SolidHandle',
       handleID: name,
       solid: {
-        name: name,
+        name,
         definition: {
           __typename: 'SolidDefinition',
-          name: name,
+          name,
         },
         inputs: [],
         outputs: [],
@@ -83,11 +83,11 @@ function buildRun(
   const startTime = new Date(isoDateString).getTime() / 1000;
   const result: PartitionSetLoaderRunFragment = {
     __typename: 'Run',
-    id: id,
+    id,
     runId: id,
     status: RunStatus.SUCCESS,
     stats: {
-      id: id,
+      id,
       startTime,
       endTime: startTime + 1,
       materializations: 0,
@@ -96,13 +96,13 @@ function buildRun(
     stepStats: Object.entries(statuses).map(([key, status]) => ({
       __typename: 'RunStepStats',
       stepKey: key,
-      status: status,
-      startTime: startTime,
+      status,
+      startTime,
       endTime: startTime + 1,
       materializations: [],
       expectationResults: [],
     })),
-    tags: tags,
+    tags,
   };
 
   return result;
@@ -266,7 +266,7 @@ export const LargeDataset = () => {
       }
       results.push({
         name: date.format('YYYY-MM-DD'),
-        runs: runs,
+        runs,
       });
     }
     return results;

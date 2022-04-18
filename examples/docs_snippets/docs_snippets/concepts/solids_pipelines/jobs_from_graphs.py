@@ -1,4 +1,4 @@
-"""isort:skip_file"""
+# isort: skip_file
 
 # start_define_graph
 from dagster import graph, op

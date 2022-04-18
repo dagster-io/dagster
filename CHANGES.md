@@ -1,5 +1,46 @@
 # Changelog
 
+# 0.14.9
+
+### New
+
+- Added a parameter in `dagster.yaml` that can be used to increase the time that Dagster waits when spinning up a gRPC server before timing out. For more information, see https://docs.dagster.io/deployment/dagster-instance#code-servers.
+- Added a new graphQL field `assetMaterializations` that can be queried off of a `DagsterRun` field.  You can use this field to fetch the set of asset materialization events generated in a given run within a GraphQL query.
+- Docstrings on functions decorated with the `@resource` decorator will now be used as resource descriptions, if no description is explicitly provided.
+- You can now point  `dagit -m` or `dagit -f` at a module or file that has asset definitions but no jobs or asset groups, and all the asset definitions will be loaded into Dagit.
+- `AssetGroup` now has a `materialize` method which executes an in-process run to materialize all the assets in the group.
+- `AssetGroup`s can now contain assets with different `partition_defs`.
+- Asset materializations produced by the default asset IO manager, `fs_asset_io_manager`, now include the path of the file where the values were saved.
+- You can now disable the `max_concurrent_runs` limit on the `QueuedRunCoordinator` by setting it to `-1`. Use this if you only want to limit runs using `tag_concurrency_limits`.
+- [dagit] Asset graphs are now rendered asynchronously, which means that Dagit will no longer freeze when rendering a large asset graph.
+- [dagit] When viewing an asset graph, you can now double-click on an asset to zoom in, and you can use arrow keys to navigate between selected assets.
+- [dagit] The “show whitespace” setting in the Launchpad is now persistent.
+- [dagit] A bulk selection checkbox has been added to the repository filter in navigation or Instance Overview.
+- [dagit] A “Copy config” button has been added to the run configuration dialog on Run pages.
+- [dagit] An “Open in Launchpad” button has been added to the run details page.
+- [dagit] The Run page now surfaces more information about start time and elapsed time in the header.
+- [dagster-dbt] The dbt_cloud_resource has a new `get_runs()` function to get a list of runs matching certain paramters from the dbt Cloud API (thanks @[kstennettlull](https://github.com/kstennettlull)!)
+- [dagster-snowflake] Added an `authenticator` field to the connection arguments for the `snowflake_resource` (thanks @swotai!).
+- [celery-docker] The celery docker executor has a new configuration entry `container_kwargs` that allows you to specify additional arguments to pass to your docker containers when they are run.
+
+### Bugfixes
+
+- Fixed an issue where loading a Dagster repository would fail if it included a function to lazily load a job, instead of a JobDefinition.
+- Fixed an issue where trying to stop an unloadable schedule or sensor within Dagit would fail with an error.
+- Fixed telemetry contention bug on windows when running the daemon.
+- [dagit] Fixed a bug where the Dagit homepage would claim that no jobs or pipelines had been loaded, even though jobs appeared in the sidebar.
+- [dagit] When filtering runs by tag, tag values that contained the `:` character would fail to parse correctly, and filtering would therefore fail. This has been fixed.
+- [dagster-dbt] When running the “build” command using the dbt_cli_resource, the run_results.json file will no longer be ignored, allowing asset materializations to be produced from the resulting output.
+- [dagster-airbyte] Responses from the Airbyte API with a 204 status code (like you would get from /connections/delete) will no longer produce raise an error (thanks @HAMZA310!)
+- [dagster-shell] Fixed a bug where shell ops would not inherit environment variables if any environment variables were added for ops (thanks @kbd!)
+- [dagster-postgres] usernames are now urlqouted in addition to passwords
+
+### Documentation
+
+- Instructions for Macs with M1 chips added to contributor setup guide.
+- Added a short introductory tutorial for software-defined assets: https://docs.dagster.io/guides/dagster/asset-tutorial.
+- Fixed a typo in docs for deploying with Helm (Thanks @LeoHuckvale!)
+
 # 0.14.8
 
 ### New

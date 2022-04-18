@@ -2,23 +2,29 @@ import {gql} from '@apollo/client';
 import {
   Button,
   Colors,
-  DialogBody,
   DialogFooter,
   Dialog,
   Group,
-  HighlightedCodeBlock,
   Icon,
+  MenuItem,
+  Menu,
   MetadataTable,
+  Popover,
   Tooltip,
-  IconName,
+  Subheading,
+  Box,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import * as yaml from 'yaml';
 
 import {AppContext} from '../app/AppContext';
+import {SharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
+import {AnchorButton} from '../ui/AnchorButton';
+import {DagitReadOnlyCodeMirror} from '../ui/DagitCodeMirror';
+import {workspacePathFromRunDetails} from '../workspace/workspacePath';
 
 import {RunTags} from './RunTags';
 import {TimeElapsed} from './TimeElapsed';
@@ -116,31 +122,57 @@ export const RunDetails: React.FC<{
 
 export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({run, isJob}) => {
   const [showDialog, setShowDialog] = React.useState(false);
-  const [copyIcon, setCopyIcon] = React.useState<IconName>('copy_to_clipboard');
   const {rootServerURI} = React.useContext(AppContext);
   const runConfigYaml = yaml.stringify(run.runConfig) || '';
   const copy = useCopyToClipboard();
 
   const copyConfig = () => {
     copy(runConfigYaml);
-    setCopyIcon('copy_to_clipboard_done');
-    setTimeout(() => setCopyIcon('copy_to_clipboard'), 2000);
+    SharedToaster.show({
+      intent: 'success',
+      icon: 'copy_to_clipboard_done',
+      message: 'Copied!',
+    });
   };
 
   return (
     <div>
       <Group direction="row" spacing={8}>
+        <AnchorButton
+          icon={<Icon name="edit" />}
+          to={workspacePathFromRunDetails({
+            id: run.id,
+            repositoryName: run.repositoryOrigin?.repositoryName,
+            repositoryLocationName: run.repositoryOrigin?.repositoryLocationName,
+            pipelineName: run.pipelineName,
+            isJob,
+          })}
+        >
+          Open in Launchpad
+        </AnchorButton>
         <Button icon={<Icon name="tag" />} onClick={() => setShowDialog(true)}>
           View tags and config
         </Button>
-        <Tooltip content="Loadable in dagit-debug" position="bottom-right">
-          <Button
-            icon={<Icon name="download_for_offline" />}
-            onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
-          >
-            Debug file
-          </Button>
-        </Tooltip>
+        <Popover
+          position="bottom-right"
+          content={
+            <Menu>
+              <Tooltip
+                content="Loadable in dagit-debug"
+                position="bottom-right"
+                targetTagName="div"
+              >
+                <MenuItem
+                  text="Download debug file"
+                  icon={<Icon name="download_for_offline" />}
+                  onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
+                />
+              </Tooltip>
+            </Menu>
+          }
+        >
+          <Button icon={<Icon name="expand_more" />} />
+        </Popover>
       </Group>
       <Dialog
         isOpen={showDialog}
@@ -148,22 +180,28 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
         style={{width: '800px'}}
         title="Run configuration"
       >
-        <DialogBody>
-          <Group direction="column" spacing={20}>
-            <Group direction="column" spacing={12}>
-              <div style={{fontSize: '16px', fontWeight: 600}}>Tags</div>
-              <div>
-                <RunTags tags={run.tags} mode={isJob ? null : run.mode} />
-              </div>
-            </Group>
-            <Group direction="column" spacing={12}>
-              <div style={{fontSize: '16px', fontWeight: 600}}>Config</div>
-              <HighlightedCodeBlock value={runConfigYaml} language="yaml" />
-            </Group>
-          </Group>
-        </DialogBody>
-        <DialogFooter>
-          <Button icon={<Icon name={copyIcon} />} onClick={() => copyConfig()} intent="none">
+        <Box flex={{direction: 'column', gap: 20}}>
+          <Box flex={{direction: 'column', gap: 12}} padding={{top: 16, horizontal: 24}}>
+            <Subheading>Tags</Subheading>
+            <div>
+              <RunTags tags={run.tags} mode={isJob ? null : run.mode} />
+            </div>
+          </Box>
+          <div>
+            <Box
+              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+              padding={{left: 24, bottom: 16}}
+            >
+              <Subheading>Config</Subheading>
+            </Box>
+            <DagitReadOnlyCodeMirror
+              value={runConfigYaml}
+              options={{lineNumbers: true, mode: 'yaml'}}
+            />
+          </div>
+        </Box>
+        <DialogFooter topBorder>
+          <Button onClick={() => copyConfig()} intent="none">
             Copy config
           </Button>
           <Button onClick={() => setShowDialog(false)} intent="primary">

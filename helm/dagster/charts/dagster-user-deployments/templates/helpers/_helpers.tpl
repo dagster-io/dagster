@@ -91,3 +91,36 @@ DAGSTER_K8S_INSTANCE_CONFIG_MAP: "{{ template "dagster.fullname" .}}-instance"
 DAGSTER_K8S_PIPELINE_RUN_NAMESPACE: "{{ .Release.Namespace }}"
 DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pipeline-env"
 {{- end -}}
+
+
+{{- define "dagsterUserDeployments.k8sContainerContext" -}}
+  {{- $ := index . 0 }}
+  {{- with index . 1 }}
+  k8s:
+    image_pull_policy: {{ .image.pullPolicy }}
+    env_config_maps:
+    - {{ include "dagster.fullname" $ }}-{{ .name }}-user-env
+    {{- range $envConfigMap := .envConfigMaps }}
+    {{- if hasKey $envConfigMap "name" }}
+    - {{ $envConfigMap.name }}
+    {{- end }}
+    {{- end }}
+    {{- if .envSecrets }}
+    env_secrets:
+    {{- range $envSecret := .envSecrets }}
+    {{- if hasKey $envSecret "name" }}
+    - {{ $envSecret.name }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- if .volumeMounts }}
+    volume_mounts: {{- .volumeMounts | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if .volumes }}
+    volumes: {{- .volumes | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if .labels }}
+    labels: {{- .labels | toYaml | nindent 6 }}
+    {{- end }}
+  {{- end }}
+{{- end -}}

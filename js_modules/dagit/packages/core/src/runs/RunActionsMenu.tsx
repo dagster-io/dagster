@@ -1,7 +1,6 @@
 import {gql, useLazyQuery, useMutation} from '@apollo/client';
 import {
   Button,
-  HighlightedCodeBlock,
   Icon,
   MenuDivider,
   MenuExternalLink,
@@ -9,18 +8,22 @@ import {
   Menu,
   Popover,
   Tooltip,
+  DialogFooter,
+  Dialog,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 import * as yaml from 'yaml';
 
 import {AppContext} from '../app/AppContext';
-import {showCustomAlert} from '../app/CustomAlertProvider';
+import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
+import {useCopyToClipboard} from '../app/browser';
+import {DagitReadOnlyCodeMirror} from '../ui/DagitCodeMirror';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
-import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
+import {workspacePathFromRunDetails} from '../workspace/workspacePath';
 
 import {DeletionDialog} from './DeletionDialog';
 import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from './RunFragments';
@@ -40,11 +43,15 @@ export const RunActionsMenu: React.FC<{
   run: RunTableRunFragment;
 }> = React.memo(({run}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
-  const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');
+  const [visibleDialog, setVisibleDialog] = React.useState<
+    'none' | 'terminate' | 'delete' | 'config'
+  >('none');
 
   const {rootServerURI} = React.useContext(AppContext);
   const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
   const history = useHistory();
+
+  const copyConfig = useCopyToClipboard();
 
   const [reexecute] = useMutation<LaunchPipelineReexecution>(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {
     onCompleted: refetch,
@@ -73,22 +80,6 @@ export const RunActionsMenu: React.FC<{
   const isFinished = doneStatuses.has(run.status);
   const isJob = !!(repoMatch && isThisThingAJob(repoMatch?.match, run.pipelineName));
 
-  const launchpadPath = () => {
-    const path = `/playground/setup-from-run/${run.id}`;
-
-    if (repoMatch) {
-      return workspacePipelinePath({
-        repoName: repoMatch.match.repository.name,
-        repoLocation: repoMatch.match.repositoryLocation.name,
-        pipelineName: run.pipelineName,
-        isJob,
-        path,
-      });
-    }
-
-    return workspacePipelinePathGuessRepo(run.pipelineName, isJob, path);
-  };
-
   const infoReady = called ? !loading : false;
   return (
     <>
@@ -99,12 +90,7 @@ export const RunActionsMenu: React.FC<{
               text={loading ? 'Loading Configuration...' : 'View Configuration...'}
               disabled={!runConfigYaml}
               icon="open_in_new"
-              onClick={() =>
-                showCustomAlert({
-                  title: 'Config',
-                  body: <HighlightedCodeBlock value={runConfigYaml || ''} language="yaml" />,
-                })
-              }
+              onClick={() => setVisibleDialog('config')}
             />
             <MenuDivider />
             <>
@@ -118,7 +104,13 @@ export const RunActionsMenu: React.FC<{
                   text="Open in Launchpad..."
                   disabled={!infoReady}
                   icon="edit"
-                  to={launchpadPath()}
+                  to={workspacePathFromRunDetails({
+                    id: run.id,
+                    pipelineName: run.pipelineName,
+                    repositoryName: repoMatch?.match.repository.name,
+                    repositoryLocationName: repoMatch?.match.repositoryLocation.name,
+                    isJob,
+                  })}
                 />
               </Tooltip>
               <Tooltip
@@ -200,6 +192,36 @@ export const RunActionsMenu: React.FC<{
           selectedRuns={{[run.id]: run.canTerminate}}
         />
       ) : null}
+      <Dialog
+        isOpen={visibleDialog === 'config'}
+        title="Config"
+        canOutsideClickClose
+        canEscapeKeyClose
+        onClose={closeDialogs}
+      >
+        <DagitReadOnlyCodeMirror
+          value={runConfigYaml || ''}
+          options={{lineNumbers: true, mode: 'yaml'}}
+        />
+        <DialogFooter topBorder>
+          <Button
+            intent="none"
+            onClick={() => {
+              copyConfig(runConfigYaml || '');
+              SharedToaster.show({
+                intent: 'success',
+                icon: 'copy_to_clipboard_done',
+                message: 'Copied!',
+              });
+            }}
+          >
+            Copy config
+          </Button>
+          <Button intent="primary" onClick={closeDialogs}>
+            OK
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </>
   );
 });

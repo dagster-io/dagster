@@ -16,6 +16,7 @@ export interface JobMetadataQuery_pipelineOrError_PipelineNotFoundError {
 export interface JobMetadataQuery_pipelineOrError_Pipeline_schedules_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   status: InstigationStatus;
 }
 
@@ -37,6 +38,7 @@ export interface JobMetadataQuery_pipelineOrError_Pipeline_sensors_targets {
 export interface JobMetadataQuery_pipelineOrError_Pipeline_sensors_sensorState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   status: InstigationStatus;
 }
 

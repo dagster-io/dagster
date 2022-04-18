@@ -1,4 +1,4 @@
-"""isort:skip_file"""
+# isort: skip_file
 
 from .partitioned_job import my_partitioned_config
 

@@ -78,6 +78,7 @@ def define_inty_job():
 
 
 @pytest.mark.nettest
+@pytest.mark.skip("https://github.com/dagster-io/dagster/issues/7421")
 def test_adls2_pickle_io_manager_execution(storage_account, file_system, credential):
     job = define_inty_job()
 
@@ -150,6 +151,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
     assert io_manager.load_input(context) == 2
 
 
+@pytest.mark.skip("https://github.com/dagster-io/dagster/issues/7421")
 def test_asset_io_manager(storage_account, file_system, credential):
     _id = f"{uuid4()}".replace("-", "")
 

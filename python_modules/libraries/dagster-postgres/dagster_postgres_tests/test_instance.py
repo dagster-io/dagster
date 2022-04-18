@@ -1,9 +1,10 @@
 import tempfile
+from urllib.parse import unquote, urlparse
 
 import pytest
 import sqlalchemy as db
 import yaml
-from dagster_postgres.utils import get_conn
+from dagster_postgres.utils import get_conn, get_conn_string
 
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.test_utils import instance_for_test
@@ -222,3 +223,25 @@ def test_specify_pg_params(hostname):
         assert instance._run_storage.postgres_url == postgres_url
         assert instance._schedule_storage.postgres_url == postgres_url
         # pylint: enable=protected-access
+
+
+def test_conn_str():
+    username = "has@init"
+    password = "full:of:junk!@?"
+    db_name = "dagster"
+    hostname = "database-city.com"
+
+    conn_str = get_conn_string(
+        username=username,
+        password=password,
+        db_name=db_name,
+        hostname=hostname,
+    )
+    assert (
+        conn_str
+        == r"postgresql://has%40init:full%3Aof%3Ajunk%21%40%3F@database-city.com:5432/dagster"
+    )
+    parsed = urlparse(conn_str)
+    assert unquote(parsed.username) == username
+    assert unquote(parsed.password) == password
+    assert parsed.hostname == hostname

@@ -149,9 +149,6 @@ class GrapheneStopSensorMutationResult(graphene.ObjectType):
         )
 
     def resolve_instigationState(self, _graphene_info):
-        if not self._instigator_state:
-            return None
-
         return GrapheneInstigationState(instigator_state=self._instigator_state)
 
 
@@ -166,14 +163,15 @@ class GrapheneStopSensorMutation(graphene.Mutation):
 
     class Arguments:
         job_origin_id = graphene.NonNull(graphene.String)
+        job_selector_id = graphene.NonNull(graphene.String)
 
     class Meta:
         name = "StopSensorMutation"
 
     @capture_error
     @check_permission(Permissions.EDIT_SENSOR)
-    def mutate(self, graphene_info, job_origin_id):
-        return stop_sensor(graphene_info, job_origin_id)
+    def mutate(self, graphene_info, job_origin_id, job_selector_id):
+        return stop_sensor(graphene_info, job_origin_id, job_selector_id)
 
 
 class GrapheneSetSensorCursorMutation(graphene.Mutation):

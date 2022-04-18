@@ -8,9 +8,11 @@ from click.testing import CliRunner
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster.core.telemetry import (
+    TELEMETRY_STR,
     UPDATE_REPO_STATS,
     cleanup_telemetry_logger,
     get_or_create_dir_from_dagster_home,
+    get_or_set_instance_id,
     hash_name,
     log_workspace_stats,
     write_telemetry_log_line,
@@ -221,3 +223,13 @@ def test_write_telemetry_log_line_writes_to_dagster_home():
 
         # Needed to avoid file contention issues on windows with the telemetry log file
         cleanup_telemetry_logger()
+
+
+def test_set_instance_id_from_empty_file():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with environ({"DAGSTER_HOME": temp_dir}):
+            # Write an empty file to the path
+            open(
+                os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml"), "w"
+            ).close()
+            assert get_or_set_instance_id()

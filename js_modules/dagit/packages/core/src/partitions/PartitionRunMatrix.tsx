@@ -11,7 +11,6 @@ import {
   Popover,
   FontFamily,
 } from '@dagster-io/ui';
-import qs from 'qs';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -19,6 +18,7 @@ import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
 import {useViewport} from '../gantt/useViewport';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
+import {linkToRunEvent} from '../runs/RunUtils';
 import {RunFilterToken} from '../runs/RunsFilterInput';
 import {MenuLink} from '../ui/MenuLink';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -604,11 +604,6 @@ const PartitionStepSquare: React.FC<{
     return content;
   }
 
-  const lastRunHref = `/instance/runs/${runs[runs.length - 1].runId}?${qs.stringify({
-    selection: name,
-    logs: `step:${name}`,
-  })}`;
-
   return (
     <Popover
       interactionKind="click"
@@ -617,7 +612,11 @@ const PartitionStepSquare: React.FC<{
       onClosed={() => setOpened(false)}
       content={
         <Menu>
-          <MenuLink icon="open_in_new" text="Show Logs From Last Run" to={lastRunHref} />
+          <MenuLink
+            icon="open_in_new"
+            text="Show Logs From Last Run"
+            to={linkToRunEvent(runs[runs.length - 1], {stepKey: name})}
+          />
           <MenuItem
             icon="settings_backup_restore"
             text={`View Runs (${runs.length})`}

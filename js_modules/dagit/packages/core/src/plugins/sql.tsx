@@ -1,7 +1,8 @@
-import {Button, DialogBody, DialogFooter, Dialog, HighlightedCodeBlock, Icon} from '@dagster-io/ui';
+import {Button, DialogFooter, Dialog, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {IPluginSidebarProps} from '../plugins';
+import {DagitReadOnlyCodeMirror} from '../ui/DagitCodeMirror';
 
 export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
   const [open, setOpen] = React.useState(false);
@@ -26,24 +27,15 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
       <Dialog
         icon="info"
         onClose={() => setOpen(false)}
-        style={{width: '80vw', maxWidth: 900, height: 615}}
+        style={{width: '80vw', maxWidth: 900}}
         title={`SQL: ${props.definition.name}`}
         isOpen={open}
       >
-        <DialogBody>
-          <HighlightedCodeBlock
-            language="sql"
-            value={sql.value}
-            style={{
-              height: 510,
-              padding: 10,
-              overflow: 'scroll',
-              fontSize: '0.9em',
-            }}
-          />
-        </DialogBody>
-        <DialogFooter>
-          <Button onClick={() => setOpen(false)}>Close</Button>
+        <DagitReadOnlyCodeMirror options={{lineNumbers: true, mode: 'sql'}} value={sql.value} />
+        <DialogFooter topBorder>
+          <Button intent="primary" onClick={() => setOpen(false)}>
+            Close
+          </Button>
         </DialogFooter>
       </Dialog>
     </div>

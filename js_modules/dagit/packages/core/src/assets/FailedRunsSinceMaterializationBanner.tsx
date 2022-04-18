@@ -2,7 +2,7 @@ import {Warning} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
-import {LiveDataForNode, __ASSET_GROUP} from '../asset-graph/Utils';
+import {isAssetGroup, LiveDataForNode} from '../asset-graph/Utils';
 import {titleForRun} from '../runs/RunUtils';
 import {runsPathWithFilters} from '../runs/RunsFilterInput';
 
@@ -14,7 +14,7 @@ export const FailedRunsSinceMaterializationBanner: React.FC<{liveData?: LiveData
   if (runsSinceMaterialization) {
     const {jobNames, count} = runsSinceMaterialization;
     const jobNamesCleaned = jobNames.map((j) =>
-      j === __ASSET_GROUP ? 'Asset materialization runs' : j,
+      isAssetGroup(j) ? 'Asset materialization runs' : j,
     );
     const jobNamesSummary =
       jobNamesCleaned.length > 1

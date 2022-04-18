@@ -27,7 +27,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
   const {canStartSensor, canStopSensor} = usePermissions();
 
   const {jobOriginId, name, sensorState} = sensor;
-  const {status} = sensorState;
+  const {status, selectorId} = sensorState;
   const sensorSelector = {
     ...repoAddressToSelector(repoAddress),
     sensorName: name,
@@ -43,7 +43,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
 
   const onChangeSwitch = () => {
     if (status === InstigationStatus.RUNNING) {
-      stopSensor({variables: {jobOriginId}});
+      stopSensor({variables: {jobOriginId, jobSelectorId: selectorId}});
     } else {
       startSensor({variables: {sensorSelector}});
     }
@@ -92,6 +92,7 @@ export const SENSOR_SWITCH_FRAGMENT = gql`
     name
     sensorState {
       id
+      selectorId
       status
     }
   }

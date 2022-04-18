@@ -202,6 +202,9 @@ class StaticPartitionsDefinition(
     ) -> List[Partition[str]]:
         return self._partitions
 
+    def __hash__(self):
+        return hash(self.__repr__())
+
     def __eq__(self, other) -> bool:
         return (
             isinstance(other, StaticPartitionsDefinition)

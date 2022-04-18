@@ -234,7 +234,11 @@ def execute_stop_command(sensor_name, cli_args, print_fn):
             check_repo_and_scheduler(external_repo, instance)
             try:
                 external_sensor = external_repo.get_external_sensor(sensor_name)
-                instance.stop_sensor(external_sensor.get_external_origin_id(), external_sensor)
+                instance.stop_sensor(
+                    external_sensor.get_external_origin_id(),
+                    external_sensor.selector_id,
+                    external_sensor,
+                )
             except DagsterInvariantViolationError as ex:
                 raise click.UsageError(ex)
 
