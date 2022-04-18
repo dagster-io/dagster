@@ -9,16 +9,30 @@
  * try to remove it.
  */
 
-import {layoutAssetGraph} from '../asset-graph/layout';
-import {layoutOpGraph} from '../graph/layout';
-const ctx: Worker = self as any;
+self.addEventListener('message', (event) => {
+  const {data} = event;
 
-ctx.addEventListener('message', (event) => {
-  if (event.data.type === 'layoutOpGraph') {
-    const {ops, parentOp} = event.data;
-    ctx.postMessage(layoutOpGraph(ops, parentOp));
-  } else if (event.data.type === 'layoutAssetGraph') {
-    const {graphData} = event.data;
-    ctx.postMessage(layoutAssetGraph(graphData));
+  // Before we attempt any imports, manually set the Webpack public path to the static path root.
+  // This allows us to import paths when a path-prefix value has been set.
+  if (data.staticPathRoot) {
+    __webpack_public_path__ = data.staticPathRoot;
+  }
+
+  switch (data.type) {
+    case 'layoutOpGraph': {
+      import('../graph/layout').then(({layoutOpGraph}) => {
+        const {ops, parentOp} = data;
+        self.postMessage(layoutOpGraph(ops, parentOp));
+      });
+      break;
+    }
+    case 'layoutAssetGraph': {
+      import('../asset-graph/layout').then(({layoutAssetGraph}) => {
+        const {graphData} = data;
+        self.postMessage(layoutAssetGraph(graphData));
+      });
+    }
   }
 });
+
+export {};
