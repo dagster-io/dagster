@@ -146,21 +146,53 @@ def define_inty_job():
 #     assert io_manager.load_input(context) == 2
 
 
-def test_asset_io_manager(storage_account, file_system, credential):
+# def test_asset_io_manager(storage_account, file_system, credential):
+#     @asset
+#     def upstream():
+#         return 2
+
+#     @asset
+#     def downstream(upstream):
+#         assert upstream == 2
+#         return 1 + upstream
+
+#     asset_group = AssetGroup(
+#         [upstream, downstream],
+#         resource_defs={"io_manager": adls2_pickle_asset_io_manager, "adls2": adls2_resource},
+#     )
+#     asset_job = asset_group.build_job(name="my_asset_job")
+
+#     run_config = {
+#         "resources": {
+#             "io_manager": {"config": {"adls2_file_system": file_system}},
+#             "adls2": {
+#                 "config": {"storage_account": storage_account, "credential": {"key": credential}}
+#             },
+#         }
+#     }
+
+#     result = asset_job.execute_in_process(run_config=run_config)
+#     assert result.success
+
+
+def test_locking(storage_account, file_system, credential):
     @asset
     def upstream():
         return 2
 
     @asset
-    def downstream(upstream):
-        assert upstream == 2
-        return 1 + upstream
+    def downstream_1(upstream):
+        return upstream + 1
+
+    @asset
+    def downstream_2(upstream):
+        return upstream + 2
 
     asset_group = AssetGroup(
-        [upstream, downstream],
+        [upstream, downstream_1, downstream_2],
         resource_defs={"io_manager": adls2_pickle_asset_io_manager, "adls2": adls2_resource},
     )
-    asset_job = asset_group.build_job(name="my_asset_job")
+    asset_job = asset_group.build_job(name="my_asset_job_with_multi_access")
 
     run_config = {
         "resources": {
@@ -174,25 +206,25 @@ def test_asset_io_manager(storage_account, file_system, credential):
     result = asset_job.execute_in_process(run_config=run_config)
     assert result.success
 
-    assert False
+    result = asset_job.execute_in_process(run_config=run_config)
+    assert result.success
 
 
+# def test_asset_io_manager_isolation(storage_account, file_system, credential):
+#     adls_resource = _adls2_resource_from_config(
+#         {
+#             "storage_account": storage_account,
+#             "credential": {
+#                 "key": credential
+#             }
+#         }
+#     )
 
-def test_asset_io_manager_isolation(storage_account, file_system, credential):
-    adls_resource = _adls2_resource_from_config(
-        {
-            "storage_account": storage_account,
-            "credential": {
-                "key": credential
-            }
-        }
-    )
+#     io_mgr = PickledObjectADLS2IOManager(
+#         file_system=file_system,
+#         client=adls_resource.adls2_client,
+#         blob_client=adls_resource.blob_client,
+#         prefix="isolation_test",
+#     )
 
-    io_mgr = PickledObjectADLS2IOManager(
-        file_system=file_system,
-        client=adls_resource.adls2_client,
-        blob_client=adls_resource.blob_client,
-        prefix="isolation_test",
-    )
-
-    # io_mgr.
+#     # io_mgr.
