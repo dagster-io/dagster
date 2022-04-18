@@ -22,9 +22,9 @@ if TYPE_CHECKING:
     from dagster.core.execution.context.output import OutputContext
 
 
-class AssetInfo(
+class AssetOutputInfo(
     NamedTuple(
-        "_AssetInfo",
+        "_AssetOutputInfo",
         [
             ("asset_key", AssetKey),
             ("asset_partitions_fn", Callable[["OutputContext"], Optional[AbstractSet[str]]]),
@@ -32,7 +32,7 @@ class AssetInfo(
         ],
     )
 ):
-    """Defines all of the asset-related information for a given input or output.
+    """Defines all of the asset-related information for a given output.
 
     Args:
         asset_key (AssetKey): The AssetKey
@@ -66,8 +66,8 @@ class AssetInfo(
 def _assets_job_info_for_node(
     node_def: NodeDefinition, node_handle: Optional[NodeHandle]
 ) -> Tuple[
-    Mapping[NodeInputHandle, AssetInfo],
-    Mapping[NodeOutputHandle, AssetInfo],
+    Mapping[NodeInputHandle, AssetKey],
+    Mapping[NodeOutputHandle, AssetOutputInfo],
     Mapping[AssetKey, AbstractSet[AssetKey]],
 ]:
     """
@@ -77,8 +77,8 @@ def _assets_job_info_for_node(
     check.inst_param(node_def, "node_def", NodeDefinition)
     check.opt_inst_param(node_handle, "node_handle", NodeHandle)
 
-    asset_info_by_input: Dict[NodeInputHandle, AssetInfo] = {}
-    asset_info_by_output: Dict[NodeOutputHandle, AssetInfo] = {}
+    asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
+    asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
     asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
     if not isinstance(node_def, GraphDefinition):
         # must be in an op (or solid)
@@ -90,15 +90,12 @@ def _assets_job_info_for_node(
             if input_key:
                 input_asset_keys.add(input_key)
                 input_handle = NodeInputHandle(node_handle, input_def.name)
-                asset_info_by_input[input_handle] = AssetInfo(
-                    asset_key=input_key,
-                    asset_partitions_fn=input_def.get_asset_partitions,
-                )
+                asset_key_by_input[input_handle] = input_key
         for output_def in node_def.output_defs:
             output_key = output_def.hardcoded_asset_key
             if output_key:
                 output_handle = NodeOutputHandle(node_handle, output_def.name)
-                asset_info_by_output[output_handle] = AssetInfo(
+                asset_info_by_output[output_handle] = AssetOutputInfo(
                     asset_key=output_key,
                     asset_partitions_fn=output_def.get_asset_partitions,
                     asset_partitions_def=output_def.asset_partitions_def,
@@ -108,14 +105,14 @@ def _assets_job_info_for_node(
     else:
         # keep recursing through structure
         for sub_node_name, sub_node in node_def.node_dict.items():
-            n_asset_info_by_input, n_asset_info_by_output, n_asset_deps = _assets_job_info_for_node(
+            n_asset_key_by_input, n_asset_info_by_output, n_asset_deps = _assets_job_info_for_node(
                 node_def=sub_node.definition,
                 node_handle=NodeHandle(sub_node_name, parent=node_handle),
             )
-            asset_info_by_input.update(n_asset_info_by_input)
+            asset_key_by_input.update(n_asset_key_by_input)
             asset_info_by_output.update(n_asset_info_by_output)
             asset_deps.update(n_asset_deps)
-    return asset_info_by_input, asset_info_by_output, asset_deps
+    return asset_key_by_input, asset_info_by_output, asset_deps
 
 
 class AssetsJobInfo:
@@ -125,31 +122,33 @@ class AssetsJobInfo:
     dependencies between each asset.
 
     Args:
-        asset_info_by_node_input_handle (Mapping[NodeInputHandle, AssetInfo], optional): A mapping
-            from a unique input in the underlying graph to the associated AssetInfo.
-        asset_info_by_node_output_handle (Mapping[NodeOutputHandle, AssetInfo], optional): A mapping
-            from a unique output in the underlying graph to the associated AssetInfo.
+        asset_key_by_node_input_handle (Mapping[NodeInputHandle, AssetOutputInfo], optional): A mapping
+            from a unique input in the underlying graph to the associated AssetKey that it loads from.
+        asset_info_by_node_output_handle (Mapping[NodeOutputHandle, AssetOutputInfo], optional): A mapping
+            from a unique output in the underlying graph to the associated AssetOutputInfo.
         asset_deps (Mapping[AssetKey, AbstractSet[AssetKey]], optional): Records the upstream asset
             keys for each asset key produced by this job.
     """
 
     def __init__(
         self,
-        asset_info_by_node_input_handle: Optional[Mapping[NodeInputHandle, AssetInfo]] = None,
-        asset_info_by_node_output_handle: Optional[Mapping[NodeOutputHandle, AssetInfo]] = None,
+        asset_key_by_node_input_handle: Optional[Mapping[NodeInputHandle, AssetKey]] = None,
+        asset_info_by_node_output_handle: Optional[
+            Mapping[NodeOutputHandle, AssetOutputInfo]
+        ] = None,
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
     ):
-        self._asset_info_by_node_input_handle = check.opt_dict_param(
-            asset_info_by_node_input_handle,
-            "asset_info_by_node_input_handle",
+        self._asset_key_by_node_input_handle = check.opt_dict_param(
+            asset_key_by_node_input_handle,
+            "asset_key_by_node_input_handle",
             key_type=NodeInputHandle,
-            value_type=AssetInfo,
+            value_type=AssetKey,
         )
         self._asset_info_by_node_output_handle = check.opt_dict_param(
             asset_info_by_node_output_handle,
             "asset_info_by_node_output_handle",
             key_type=NodeOutputHandle,
-            value_type=AssetInfo,
+            value_type=AssetOutputInfo,
         )
         self._asset_deps = check.opt_dict_param(
             asset_deps, "asset_deps", key_type=AssetKey, value_type=set
@@ -161,7 +160,7 @@ class AssetsJobInfo:
         check.inst_param(graph_def, "graph_def", GraphDefinition)
         asset_by_input, asset_by_output, asset_deps = _assets_job_info_for_node(graph_def, None)
         return AssetsJobInfo(
-            asset_info_by_node_input_handle=asset_by_input,
+            asset_key_by_node_input_handle=asset_by_input,
             asset_info_by_node_output_handle=asset_by_output,
             asset_deps=asset_deps,
         )
@@ -173,12 +172,12 @@ class AssetsJobInfo:
         )
         return self._asset_deps[asset_key]
 
-    def asset_info_for_input(self, node_handle: NodeHandle, input_name: str) -> Optional[AssetInfo]:
-        return self._asset_info_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))
+    def asset_key_for_input(self, node_handle: NodeHandle, input_name: str) -> Optional[AssetKey]:
+        return self._asset_key_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))
 
     def asset_info_for_output(
         self, node_handle: NodeHandle, output_name: str
-    ) -> Optional[AssetInfo]:
+    ) -> Optional[AssetOutputInfo]:
         return self._asset_info_by_node_output_handle.get(
             NodeOutputHandle(node_handle, output_name)
         )
