@@ -9,6 +9,7 @@ import {isAssetGroup} from '../asset-graph/Utils';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {RunsFilter} from '../types/globalTypes';
 import {
   findRepositoryAmongOptions,
   isThisThingAJob,
@@ -28,6 +29,7 @@ import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 interface RunTableProps {
   runs: RunTableRunFragment[];
+  filter?: RunsFilter;
   onSetFilter: (search: RunFilterToken[]) => void;
   nonIdealState?: React.ReactNode;
   actionBarComponents?: React.ReactNode;
@@ -37,7 +39,7 @@ interface RunTableProps {
 }
 
 export const RunTable = (props: RunTableProps) => {
-  const {runs, onSetFilter, nonIdealState, highlightedIds, actionBarComponents} = props;
+  const {runs, filter, onSetFilter, nonIdealState, highlightedIds, actionBarComponents} = props;
   const allIds = runs.map((r) => r.runId);
 
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(allIds);
@@ -48,6 +50,7 @@ export const RunTable = (props: RunTableProps) => {
   const {options} = useRepositoryOptions();
 
   if (runs.length === 0) {
+    const anyFilter = Object.keys(filter || {}).length;
     return (
       <div>
         {actionBarComponents ? (
@@ -57,8 +60,12 @@ export const RunTable = (props: RunTableProps) => {
           {nonIdealState || (
             <NonIdealState
               icon="run"
-              title="No runs to display"
-              description="Use the Launchpad to launch a run."
+              title={anyFilter ? 'No matching runs' : 'No runs to display'}
+              description={
+                anyFilter
+                  ? 'No runs were found for this filter.'
+                  : 'Use the Launchpad to launch a run.'
+              }
             />
           )}
         </Box>
