@@ -80,13 +80,6 @@ line_length=100
 # section in the "Rule/options reference" doc.
 
 [tool.pylint.master]
-# As of pylint v2.12.2, `ignore` and `ignore-patterns` are broken and do not correctly filter
-# directories. So we have to use `ignore-paths`. This should be fixed in 2.13.0-- then we filter
-# basenames `snapshots` and `vendor`.
-ignore-paths = [
-  # 'snapshots',
-  'python_modules/libraries/dagster-airflow/dagster_airflow/vendor'
-]
 
 # Minimum python version supported by Dagster.
 py-version = 3.6
@@ -126,4 +119,8 @@ disable=[
 
   # This rule is incompatible with SDAs, which have parameters named the same as upstream assets.
   'redefined-outer-name',
+
+  # Subclassing without calling super init is used frequently throughout the
+  # internal repo, so we disable for OSS in the interest of consistency.
+  'super-init-not-called',
 ]
