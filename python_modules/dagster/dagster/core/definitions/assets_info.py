@@ -166,11 +166,7 @@ class AssetsJobInfo:
         )
 
     @property
-    def asset_info_by_node_input_handle(self) -> Mapping[NodeInputHandle, AssetInfo]:
-        return self._asset_info_by_node_input_handle
-
-    @property
-    def asset_info_by_node_output_handle(self) -> Mapping[NodeOutputHandle, AssetInfo]:
+    def asset_info_by_node_output_handle(self) -> Mapping[NodeOutputHandle, AssetOutputInfo]:
         return self._asset_info_by_node_output_handle
 
     def upstream_assets(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
