@@ -292,8 +292,9 @@ class InputContext:
 
         partition_key_range = self.asset_partition_key_range
         return TimeWindow(
-            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
-            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
+            # mypy thinks partitions_def is <nothing> here because ????
+            partitions_def.time_window_for_partition_key(partition_key_range.start).start,  # type: ignore
+            partitions_def.time_window_for_partition_key(partition_key_range.end).end,  # type: ignore
         )
 
     def consume_events(self) -> Iterator["DagsterEvent"]:

@@ -1,6 +1,18 @@
 import hashlib
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, NamedTuple, Optional, Set, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
+)
 
 from dagster import check
 from dagster.core.definitions import InputDefinition, NodeHandle, PipelineDefinition
@@ -85,8 +97,8 @@ def join_and_hash(*args) -> Optional[str]:
     if None in lst:
         return None
 
-    lst = cast(List[str], lst)
-    unhashed = "".join(sorted(lst))
+    str_lst = cast(List[str], lst)
+    unhashed = "".join(sorted(str_lst))
     return hashlib.sha1(unhashed.encode("utf-8")).hexdigest()
 
 
@@ -101,27 +113,18 @@ class StepInputSource(ABC):
     def step_output_handle_dependencies(self) -> List[StepOutputHandle]:
         return []
 
-    def get_input_def(self, pipeline_def: PipelineDefinition) -> InputDefinition:
-        return pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
-
-    @property
     @abstractmethod
-    def solid_handle(self) -> NodeHandle:
-        pass
-
-    @property
-    @abstractmethod
-    def input_name(self) -> str:
-        pass
-
-    @abstractmethod
-    def load_input_object(self, step_context: "StepExecutionContext"):
+    def load_input_object(self, step_context: "StepExecutionContext", input_def: InputDefinition):
         raise NotImplementedError()
 
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
 
-    def get_asset_lineage(self, _step_context: "StepExecutionContext") -> List[AssetLineageInfo]:
+    def get_asset_lineage(
+        self,
+        _step_context: "StepExecutionContext",
+        _input_def: InputDefinition,
+    ) -> List[AssetLineageInfo]:
         return []
 
     @abstractmethod
@@ -139,14 +142,32 @@ class StepInputSource(ABC):
 class FromRootInputManager(
     NamedTuple(
         "_FromRootInputManager",
-        [("solid_handle", NodeHandle), ("input_name", str)],
+        [
+            ("solid_handle", NodeHandle),
+            ("input_name", str),
+        ],
     ),
     StepInputSource,
 ):
-    def load_input_object(self, step_context: "StepExecutionContext") -> Iterator["DagsterEvent"]:
+    """
+    Load input value via a RootInputManager.
+    """
+
+    def load_input_object(
+        self,
+        step_context: "StepExecutionContext",
+        input_def: InputDefinition,
+    ) -> Iterator["DagsterEvent"]:
         from dagster.core.events import DagsterEvent
 
-        input_def = self.get_input_def(step_context.pipeline_def)
+        check.invariant(
+            step_context.solid_handle == self.solid_handle and input_def.name == self.input_name,
+            "RootInputManager source must be op input and not one along compostion mapping. "
+            f"Loading for op {step_context.solid_handle}.{input_def.name} "
+            f"but source is {self.solid_handle}.{self.input_name}.",
+        )
+
+        input_def = step_context.solid_def.input_def_named(input_def.name)
 
         solid_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
         config_data = solid_config.inputs.get(self.input_name) if solid_config else None
@@ -215,7 +236,8 @@ class FromRootInputManager(
         )
 
     def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
-        input_def = self.get_input_def(pipeline_def)
+        input_def = pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
+
         return {input_def.root_manager_key}
 
 
@@ -225,24 +247,38 @@ class FromStepOutput(
         "_FromStepOutput",
         [
             ("step_output_handle", StepOutputHandle),
+            ("fan_in", bool),
+            # deprecated, preserved for back-compat
             ("solid_handle", NodeHandle),
             ("input_name", str),
-            ("fan_in", bool),
         ],
     ),
     StepInputSource,
 ):
-    """This step input source is the output of a previous step"""
+    """
+    This step input source is the output of a previous step.
+    Source handle may refer to graph in case of input mapping.
+    """
 
-    def __new__(cls, step_output_handle, solid_handle, input_name, fan_in):
-        return super(FromStepOutput, cls).__new__(
+    def __new__(
+        cls,
+        step_output_handle: StepOutputHandle,
+        fan_in: bool,
+        # deprecated, preserved for back-compat
+        solid_handle: Optional[NodeHandle] = None,
+        input_name: Optional[str] = None,
+    ):
+        return super().__new__(
             cls,
             step_output_handle=check.inst_param(
                 step_output_handle, "step_output_handle", StepOutputHandle
             ),
-            solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
-            input_name=check.str_param(input_name, "input_name"),
             fan_in=check.bool_param(fan_in, "fan_in"),
+            # add placeholder values for back-compat
+            solid_handle=check.opt_inst_param(
+                solid_handle, "solid_handle", NodeHandle, default=NodeHandle("", None)
+            ),
+            input_name=check.opt_str_param(input_name, "input_handle", default=""),
         )
 
     @property
@@ -253,17 +289,19 @@ class FromStepOutput(
     def step_output_handle_dependencies(self) -> List[StepOutputHandle]:
         return [self.step_output_handle]
 
-    def get_load_context(self, step_context: "StepExecutionContext") -> "InputContext":
+    def get_load_context(
+        self,
+        step_context: "StepExecutionContext",
+        input_def: InputDefinition,
+    ) -> "InputContext":
         io_manager_key = step_context.execution_plan.get_manager_key(
             self.step_output_handle, step_context.pipeline_def
         )
         resource_config = step_context.resolved_run_config.resources[io_manager_key].config
         resources = build_resources_for_manager(io_manager_key, step_context)
 
-        input_def = self.get_input_def(step_context.pipeline_def)
-
-        solid_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
-        config_data = solid_config.inputs.get(self.input_name) if solid_config else None
+        solid_config = step_context.resolved_run_config.solids.get(str(step_context.solid_handle))
+        config_data = solid_config.inputs.get(input_def.name) if solid_config else None
 
         return step_context.for_input_manager(
             input_def.name,
@@ -275,7 +313,11 @@ class FromStepOutput(
             resources,
         )
 
-    def load_input_object(self, step_context: "StepExecutionContext") -> Iterator["DagsterEvent"]:
+    def load_input_object(
+        self,
+        step_context: "StepExecutionContext",
+        input_def: InputDefinition,
+    ) -> Iterator["DagsterEvent"]:
         from dagster.core.events import DagsterEvent
 
         source_handle = self.step_output_handle
@@ -285,20 +327,20 @@ class FromStepOutput(
         input_manager = step_context.get_io_manager(source_handle)
         check.invariant(
             isinstance(input_manager, IOManager),
-            f'Input "{self.input_name}" for step "{step_context.step.key}" is depending on '
+            f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
             f'the manager of upstream output "{source_handle.output_name}" from step '
             f'"{source_handle.step_key}" to load it, but that manager is not an IOManager. '
             f"Please ensure that the resource returned for resource key "
             f'"{manager_key}" is an IOManager.',
         )
-        load_input_context = self.get_load_context(step_context)
+        load_input_context = self.get_load_context(step_context, input_def)
         yield from _load_input_with_input_manager(input_manager, load_input_context)
 
         metadata_entries = load_input_context.consume_metadata_entries()
 
         yield DagsterEvent.loaded_input(
             step_context,
-            input_name=self.input_name,
+            input_name=input_def.name,
             manager_key=manager_key,
             upstream_output_name=source_handle.output_name,
             upstream_step_key=source_handle.step_key,
@@ -326,13 +368,16 @@ class FromStepOutput(
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
 
-    def get_asset_lineage(self, step_context: "StepExecutionContext") -> List[AssetLineageInfo]:
+    def get_asset_lineage(
+        self,
+        step_context: "StepExecutionContext",
+        input_def: InputDefinition,
+    ) -> List[AssetLineageInfo]:
         source_handle = self.step_output_handle
         input_manager = step_context.get_io_manager(source_handle)
-        load_context = self.get_load_context(step_context)
+        load_context = self.get_load_context(step_context, input_def)
 
         # check input_def
-        input_def = self.get_input_def(step_context.pipeline_def)
         if input_def.is_asset:
             lineage_info = _get_asset_lineage_from_fns(
                 load_context, input_def.get_asset_key, input_def.get_asset_partitions
@@ -366,19 +411,55 @@ class FromStepOutput(
 
 @whitelist_for_serdes
 class FromConfig(
-    NamedTuple("_FromConfig", [("solid_handle", NodeHandle), ("input_name", str)]),
+    NamedTuple(
+        "_FromConfig",
+        [
+            ("solid_handle", Optional[NodeHandle]),
+            ("input_name", str),
+        ],
+    ),
     StepInputSource,
 ):
-    """This step input source is configuration to be passed to a type loader"""
+    """
+    This step input source is configuration to be passed to a type loader.
 
-    def __new__(cls, solid_handle: NodeHandle, input_name: str):
+    A None solid_handle implies the inputs were provided at the root graph level.
+    """
+
+    def __new__(cls, solid_handle: Optional[NodeHandle], input_name: str):
         return super(FromConfig, cls).__new__(
             cls,
             solid_handle=solid_handle,
             input_name=input_name,
         )
 
-    def load_input_object(self, step_context: "StepExecutionContext") -> Any:
+    def get_associated_input_def(self, pipeline_def: PipelineDefinition) -> InputDefinition:
+        """
+        Returns the InputDefinition along the potential composition InputMapping chain
+        that the config was provided at.
+        """
+        if self.solid_handle:
+            return pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
+        else:
+            return pipeline_def.graph.input_def_named(self.input_name)
+
+    def get_associated_config(self, resolved_run_config: ResolvedRunConfig):
+        """
+        Returns the config specified, potentially specified at any point along graph composition
+        including the root.
+        """
+        if self.solid_handle:
+            op_config = resolved_run_config.solids.get(str(self.solid_handle))
+            return op_config.inputs.get(self.input_name) if op_config else None
+        else:
+            input_config = resolved_run_config.inputs
+            return input_config.get(self.input_name) if input_config else None
+
+    def load_input_object(
+        self,
+        step_context: "StepExecutionContext",
+        input_def: InputDefinition,
+    ) -> Any:
         with user_code_error_boundary(
             DagsterTypeLoadingError,
             msg_fn=lambda: (
@@ -387,15 +468,12 @@ class FromConfig(
             ),
             log_manager=step_context.log,
         ):
-            dagster_type = self.get_input_def(step_context.pipeline_def).dagster_type
-
-            solid_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
-            config_data = solid_config.inputs.get(self.input_name) if solid_config else None
-
+            dagster_type = self.get_associated_input_def(step_context.pipeline_def).dagster_type
+            config_data = self.get_associated_config(step_context.resolved_run_config)
             return dagster_type.loader.construct_from_config_value(step_context, config_data)
 
     def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
-        input_def = self.get_input_def(pipeline_def)
+        input_def = self.get_associated_input_def(pipeline_def)
         return (
             input_def.dagster_type.loader.required_resource_keys()
             if input_def.dagster_type.loader
@@ -408,67 +486,10 @@ class FromConfig(
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
-        solid_config = resolved_run_config.solids.get(str(self.solid_handle))
-        config_data = solid_config.inputs.get(self.input_name) if solid_config else None
 
-        solid_def = pipeline_def.get_solid(self.solid_handle)
-        dagster_type = solid_def.input_def_named(self.input_name).dagster_type
-        return dagster_type.loader.compute_loaded_input_version(config_data)
-
-
-@whitelist_for_serdes
-class FromRootInputConfig(
-    NamedTuple("_FromRootInputConfig", [("input_name", str)]),
-    StepInputSource,
-):
-    """This step input source is configuration to be passed to a type loader"""
-
-    def __new__(cls, input_name: str):
-        return super(FromRootInputConfig, cls).__new__(
-            cls,
-            input_name=input_name,
-        )
-
-    def get_input_def(self, pipeline_def: PipelineDefinition) -> InputDefinition:
-        return pipeline_def.graph.input_def_named(self.input_name)
-
-    def load_input_object(self, step_context: "StepExecutionContext") -> Any:
-        with user_code_error_boundary(
-            DagsterTypeLoadingError,
-            msg_fn=lambda: (f'Error occurred while loading top-level input "{self.input_name}": '),
-            log_manager=step_context.log,
-        ):
-            dagster_type = self.get_input_def(step_context.pipeline_def).dagster_type
-
-            input_config = step_context.resolved_run_config.inputs
-            config_data = input_config.get(self.input_name) if input_config else None
-
-            return dagster_type.loader.construct_from_config_value(step_context, config_data)
-
-    def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
-        input_def = self.get_input_def(pipeline_def)
-        return (
-            input_def.dagster_type.loader.required_resource_keys()
-            if input_def.dagster_type.loader
-            else set()
-        )
-
-    @property
-    def solid_handle(self):
-        raise DagsterInvariantViolationError(
-            "Solid handle is not set on the root input config source."
-        )
-
-    def compute_version(
-        self,
-        step_versions: Dict[str, Optional[str]],
-        pipeline_def: PipelineDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        input_config = resolved_run_config.inputs
-        config_data = input_config.get(self.input_name) if input_config else None
-
-        dagster_type = self.get_input_def(pipeline_def).dagster_type
+        config_data = self.get_associated_config(resolved_run_config)
+        input_def = self.get_associated_input_def(pipeline_def)
+        dagster_type = input_def.dagster_type
         return dagster_type.loader.compute_loaded_input_version(config_data)
 
 
@@ -476,11 +497,16 @@ class FromRootInputConfig(
 class FromDefaultValue(
     NamedTuple(
         "_FromDefaultValue",
-        [("solid_handle", NodeHandle), ("input_name", str)],
+        [
+            ("solid_handle", NodeHandle),
+            ("input_name", str),
+        ],
     ),
     StepInputSource,
 ):
-    """This step input source is the default value declared on the InputDefinition"""
+    """
+    This step input source is the default value declared on an InputDefinition.
+    """
 
     def __new__(cls, solid_handle: NodeHandle, input_name: str):
         return super(FromDefaultValue, cls).__new__(cls, solid_handle, input_name)
@@ -490,7 +516,11 @@ class FromDefaultValue(
             self.input_name
         )
 
-    def load_input_object(self, step_context: "StepExecutionContext"):
+    def load_input_object(
+        self,
+        step_context: "StepExecutionContext",
+        input_def: InputDefinition,
+    ):
         return self._load_value(step_context.pipeline_def)
 
     def compute_version(
@@ -507,24 +537,37 @@ class FromMultipleSources(
     NamedTuple(
         "_FromMultipleSources",
         [
+            ("sources", Sequence[StepInputSource]),
+            # deprecated, preserved for back-compat
             ("solid_handle", NodeHandle),
             ("input_name", str),
-            ("sources", List[StepInputSource]),
         ],
     ),
     StepInputSource,
 ):
     """This step input is fans-in multiple sources in to a single input. The input will receive a list."""
 
-    def __new__(cls, solid_handle: NodeHandle, input_name: str, sources):
+    def __new__(
+        cls,
+        sources: Sequence[StepInputSource],
+        # deprecated, preserved for back-compat
+        solid_handle: Optional[NodeHandle] = None,
+        input_name: Optional[str] = None,
+    ):
         check.list_param(sources, "sources", StepInputSource)
         for source in sources:
             check.invariant(
                 not isinstance(source, FromMultipleSources),
                 "Can not have multiple levels of FromMultipleSources StepInputSource",
             )
-        return super(FromMultipleSources, cls).__new__(
-            cls, solid_handle=solid_handle, input_name=input_name, sources=sources
+        return super().__new__(
+            cls,
+            sources=sources,
+            # add placeholder values for back-compat
+            solid_handle=check.opt_inst_param(
+                solid_handle, "solid_handle", NodeHandle, default=NodeHandle("", None)
+            ),
+            input_name=check.opt_str_param(input_name, "input_handle", default=""),
         )
 
     @property
@@ -543,7 +586,11 @@ class FromMultipleSources(
 
         return handles
 
-    def load_input_object(self, step_context):
+    def load_input_object(
+        self,
+        step_context: "StepExecutionContext",
+        input_def: InputDefinition,
+    ):
         from dagster.core.events import DagsterEvent
 
         values = []
@@ -555,12 +602,14 @@ class FromMultipleSources(
 
         for inner_source in self.sources:
             if (
-                inner_source.step_output_handle_dependencies
+                isinstance(inner_source, FromStepOutput)
                 and inner_source.step_output_handle in source_handles_to_skip
             ):
                 continue
 
-            for event_or_input_value in ensure_gen(inner_source.load_input_object(step_context)):
+            for event_or_input_value in ensure_gen(
+                inner_source.load_input_object(step_context, input_def)
+            ):
                 if isinstance(event_or_input_value, DagsterEvent):
                     yield event_or_input_value
                 else:
@@ -582,11 +631,13 @@ class FromMultipleSources(
             ]
         )
 
-    def get_asset_lineage(self, step_context: "StepExecutionContext") -> List[AssetLineageInfo]:
+    def get_asset_lineage(
+        self, step_context: "StepExecutionContext", input_def: InputDefinition
+    ) -> List[AssetLineageInfo]:
         return [
             relation
             for source in self.sources
-            for relation in source.get_asset_lineage(step_context)
+            for relation in source.get_asset_lineage(step_context, input_def)
         ]
 
 
@@ -618,6 +669,7 @@ class FromPendingDynamicStepOutput(
         "_FromPendingDynamicStepOutput",
         [
             ("step_output_handle", StepOutputHandle),
+            # deprecated, preserved for back-compat
             ("solid_handle", NodeHandle),
             ("input_name", str),
         ],
@@ -631,19 +683,23 @@ class FromPendingDynamicStepOutput(
     def __new__(
         cls,
         step_output_handle: StepOutputHandle,
-        solid_handle: NodeHandle,
-        input_name: str,
+        # deprecated, preserved for back-compat
+        solid_handle: Optional[NodeHandle] = None,
+        input_name: Optional[str] = None,
     ):
         # Model the unknown mapping key from known execution step
         # using a StepOutputHandle with None mapping_key.
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
         check.invariant(step_output_handle.mapping_key is None)
 
-        return super(FromPendingDynamicStepOutput, cls).__new__(
+        return super().__new__(
             cls,
             step_output_handle=step_output_handle,
-            solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
-            input_name=check.str_param(input_name, "input_name"),
+            # add placeholder values for back-compat
+            solid_handle=check.opt_inst_param(
+                solid_handle, "solid_handle", NodeHandle, default=NodeHandle("", None)
+            ),
+            input_name=check.opt_str_param(input_name, "input_handle", default=""),
         )
 
     @property
@@ -662,8 +718,6 @@ class FromPendingDynamicStepOutput(
                 output_name=self.step_output_handle.output_name,
                 mapping_key=mapping_key,
             ),
-            solid_handle=self.solid_handle,
-            input_name=self.input_name,
             fan_in=False,
         )
 
@@ -674,9 +728,6 @@ class FromPendingDynamicStepOutput(
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
 
-    def get_input_def(self, pipeline_def: PipelineDefinition) -> InputDefinition:
-        return pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
-
 
 @whitelist_for_serdes
 class FromUnresolvedStepOutput(
@@ -684,6 +735,7 @@ class FromUnresolvedStepOutput(
         "_FromUnresolvedStepOutput",
         [
             ("unresolved_step_output_handle", UnresolvedStepOutputHandle),
+            # deprecated, preserved for back-compat
             ("solid_handle", NodeHandle),
             ("input_name", str),
         ],
@@ -697,18 +749,22 @@ class FromUnresolvedStepOutput(
     def __new__(
         cls,
         unresolved_step_output_handle: UnresolvedStepOutputHandle,
-        solid_handle: NodeHandle,
-        input_name: str,
+        # deprecated, preserved for back-compat
+        solid_handle: Optional[NodeHandle] = None,
+        input_name: Optional[str] = None,
     ):
-        return super(FromUnresolvedStepOutput, cls).__new__(
+        return super().__new__(
             cls,
             unresolved_step_output_handle=check.inst_param(
                 unresolved_step_output_handle,
                 "unresolved_step_output_handle",
                 UnresolvedStepOutputHandle,
             ),
-            solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
-            input_name=check.str_param(input_name, "input_name"),
+            # add placeholder values for back-compat
+            solid_handle=check.opt_inst_param(
+                solid_handle, "solid_handle", NodeHandle, default=NodeHandle("", None)
+            ),
+            input_name=check.opt_str_param(input_name, "input_handle", default=""),
         )
 
     @property
@@ -723,8 +779,6 @@ class FromUnresolvedStepOutput(
         check.str_param(mapping_key, "mapping_key")
         return FromStepOutput(
             step_output_handle=self.unresolved_step_output_handle.resolve(mapping_key),
-            solid_handle=self.solid_handle,
-            input_name=self.input_name,
             fan_in=False,
         )
 
@@ -734,9 +788,6 @@ class FromUnresolvedStepOutput(
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
 
-    def get_input_def(self, pipeline_def: PipelineDefinition) -> InputDefinition:
-        return pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
-
 
 @whitelist_for_serdes
 class FromDynamicCollect(
@@ -744,11 +795,29 @@ class FromDynamicCollect(
         "_FromDynamicCollect",
         [
             ("source", Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput]),
+            # deprecated, preserved for back-compat
             ("solid_handle", NodeHandle),
             ("input_name", str),
         ],
     ),
 ):
+    def __new__(
+        cls,
+        source: Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput],
+        # deprecated, preserved for back-compat
+        solid_handle: Optional[NodeHandle] = None,
+        input_name: Optional[str] = None,
+    ):
+        return super().__new__(
+            cls,
+            source=source,
+            # add placeholder values for back-compat
+            solid_handle=check.opt_inst_param(
+                solid_handle, "solid_handle", NodeHandle, default=NodeHandle("", None)
+            ),
+            input_name=check.opt_str_param(input_name, "input_handle", default=""),
+        )
+
     @property
     def resolved_by_step_key(self) -> str:
         return self.source.resolved_by_step_key
@@ -760,16 +829,11 @@ class FromDynamicCollect(
     def get_step_output_handle_dep_with_placeholder(self) -> StepOutputHandle:
         return self.source.get_step_output_handle_dep_with_placeholder()
 
-    def get_input_def(self, pipeline_def: PipelineDefinition) -> InputDefinition:
-        return pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
-
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
 
     def resolve(self, mapping_keys):
         return FromMultipleSources(
-            solid_handle=self.solid_handle,
-            input_name=self.input_name,
             sources=[self.source.resolve(map_key) for map_key in mapping_keys],
         )
 
@@ -838,3 +902,16 @@ StepInputSourceUnion = Union[
 ]
 
 StepInputSourceTypes = StepInputSourceUnion.__args__  # type: ignore
+
+# GRAVEYARD
+# kept around to prevent problematic deserialization
+
+
+@whitelist_for_serdes
+class FromRootInputConfig(
+    NamedTuple("_FromRootInputConfig", [("input_name", str)]),
+    StepInputSource,
+):
+    """
+    DEPRECATED replaced by FromConfig with None node handle
+    """

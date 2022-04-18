@@ -47,7 +47,7 @@ from dagster.core.storage.io_manager import IOManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
+from dagster.core.types.dagster_type import DagsterType
 
 from .input import InputContext
 from .output import OutputContext, get_output_context
@@ -559,7 +559,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log metadata for dynamic output '{output_def.name}' without providing a mapping key. When logging metadata for a dynamic output, it is necessary to provide a mapping key."
             )
 
-        output_name = output_def.name
         if output_name in self._output_metadata:
             if not mapping_key or mapping_key in self._output_metadata[output_name]:
                 raise DagsterInvariantViolationError(
@@ -744,24 +743,24 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 "Tried to get asset partitions for an output that correponds to a partitioned "
                 "asset that is not partitioned with a TimeWindowPartitionsDefinition."
             )
-
         partition_key_range = self.asset_partition_key_range_for_output(output_name)
         return TimeWindow(
-            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
-            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
+            # mypy thinks partitions_def is <nothing> here because ????
+            partitions_def.time_window_for_partition_key(partition_key_range.start).start,  # type: ignore
+            partitions_def.time_window_for_partition_key(partition_key_range.end).end,  # type: ignore
         )
 
     def get_input_lineage(self) -> List[AssetLineageInfo]:
         if not self._input_lineage:
 
             for step_input in self.step.step_inputs:
-                input_def = step_input.source.get_input_def(self.pipeline_def)
+                input_def = self.solid_def.input_def_named(step_input.name)
                 dagster_type = input_def.dagster_type
 
-                if dagster_type.kind == DagsterTypeKind.NOTHING:
+                if dagster_type.is_nothing:
                     continue
 
-                self._input_lineage.extend(step_input.source.get_asset_lineage(self))
+                self._input_lineage.extend(step_input.source.get_asset_lineage(self, input_def))
 
         self._input_lineage = _dedup_asset_lineage(self._input_lineage)
 

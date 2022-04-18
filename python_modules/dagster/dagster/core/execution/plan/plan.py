@@ -42,7 +42,6 @@ from dagster.core.execution.retries import RetryMode, RetryState
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.core.utils import toposort
 
 from ..context.output import get_output_context
@@ -54,7 +53,6 @@ from .inputs import (
     FromDynamicCollect,
     FromMultipleSources,
     FromPendingDynamicStepOutput,
-    FromRootInputConfig,
     FromRootInputManager,
     FromStepOutput,
     FromUnresolvedStepOutput,
@@ -404,14 +402,14 @@ def get_root_graph_input_source(
     plan_builder: _PlanBuilder,
     input_name: str,
     input_def: InputDefinition,
-) -> Optional[FromRootInputConfig]:
+) -> Optional[FromConfig]:
 
     input_config = plan_builder.resolved_run_config.inputs
 
     if input_config and input_name in input_config:
-        return FromRootInputConfig(input_name=input_name)
+        return FromConfig(solid_handle=None, input_name=input_name)
 
-    if input_def.dagster_type.kind == DagsterTypeKind.NOTHING:
+    if input_def.dagster_type.is_nothing:
         return None
 
     # Otherwise we throw an error.
@@ -469,21 +467,15 @@ def get_step_input_source(
         if isinstance(step_output_handle, UnresolvedStepOutputHandle):
             return FromUnresolvedStepOutput(
                 unresolved_step_output_handle=step_output_handle,
-                solid_handle=handle,
-                input_name=input_name,
             )
 
         if solid_output_handle.output_def.is_dynamic:
             return FromPendingDynamicStepOutput(
                 step_output_handle=step_output_handle,
-                solid_handle=handle,
-                input_name=input_name,
             )
 
         return FromStepOutput(
             step_output_handle=step_output_handle,
-            solid_handle=handle,
-            input_name=input_name,
             fan_in=False,
         )
 
@@ -505,8 +497,6 @@ def get_step_input_source(
                 sources.append(
                     FromStepOutput(
                         step_output_handle=step_output_handle,
-                        solid_handle=handle,
-                        input_name=input_name,
                         fan_in=True,
                     )
                 )
@@ -526,29 +516,21 @@ def get_step_input_source(
                     check.failed(f"Unexpected parent mapped input source type {source}")
                 sources.append(source)
 
-        return FromMultipleSources(solid_handle=handle, input_name=input_name, sources=sources)
+        return FromMultipleSources(sources=sources)
 
     if dependency_structure.has_dynamic_fan_in_dep(input_handle):
         solid_output_handle = dependency_structure.get_dynamic_fan_in_dep(input_handle)
         step_output_handle = plan_builder.get_output_handle(solid_output_handle)
         if isinstance(step_output_handle, UnresolvedStepOutputHandle):
             return FromDynamicCollect(
-                solid_handle=handle,
-                input_name=input_name,
                 source=FromUnresolvedStepOutput(
                     unresolved_step_output_handle=step_output_handle,
-                    solid_handle=handle,
-                    input_name=input_name,
                 ),
             )
         elif solid_output_handle.output_def.is_dynamic:
             return FromDynamicCollect(
-                solid_handle=handle,
-                input_name=input_name,
                 source=FromPendingDynamicStepOutput(
                     step_output_handle=step_output_handle,
-                    solid_handle=handle,
-                    input_name=input_name,
                 ),
             )
 
@@ -573,7 +555,7 @@ def get_step_input_source(
     # the output of another solid or provided via run config.
 
     # We will allow this for "Nothing" type inputs and continue.
-    if input_def.dagster_type.kind == DagsterTypeKind.NOTHING:
+    if input_def.dagster_type.is_nothing:
         return None
 
     # Otherwise we throw an error.
