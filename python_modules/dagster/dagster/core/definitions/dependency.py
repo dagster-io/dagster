@@ -423,30 +423,6 @@ class NodeInputHandle(
     A structured object to uniquely identify inputs in the potentially recursive graph structure.
     """
 
-    def __new__(cls, node_handle: NodeHandle, input_name: str):
-        return super(NodeInputHandle, cls).__new__(
-            cls,
-            check.inst_param(node_handle, "node_handle", NodeHandle),
-            check.inst_param(input_name, "input_name", str),
-        )
-
-    def _inner_str(self) -> str:
-        return struct_to_string(
-            "NodeInputHandle", node_handle=str(self.node_handle), input_name=self.input_name
-        )
-
-    def __str__(self):
-        return self._inner_str()
-
-    def __repr__(self):
-        return self._inner_str()
-
-    def __hash__(self):
-        return hash((self.node_handle, self.input_name))
-
-    def __eq__(self, other):
-        return self.node_handle == other.node_handle and self.input_name == other.input_name
-
 
 class NodeOutputHandle(
     NamedTuple("_NodeOutputHandle", [("node_handle", NodeHandle), ("output_name", str)])
@@ -454,30 +430,6 @@ class NodeOutputHandle(
     """
     A structured object to uniquely identify outputs in the potentially recursive graph structure.
     """
-
-    def __new__(cls, node_handle: NodeHandle, output_name: str):
-        return super(NodeOutputHandle, cls).__new__(
-            cls,
-            check.inst_param(node_handle, "node_handle", NodeHandle),
-            check.inst_param(output_name, "output_name", str),
-        )
-
-    def _inner_str(self) -> str:
-        return struct_to_string(
-            "NodeOutputHandle", node_handle=str(self.node_handle), output_name=self.output_name
-        )
-
-    def __str__(self):
-        return self._inner_str()
-
-    def __repr__(self):
-        return self._inner_str()
-
-    def __hash__(self):
-        return hash((self.node_handle, self.output_name))
-
-    def __eq__(self, other):
-        return self.node_handle == other.node_handle and self.output_name == other.output_name
 
 
 # previous name for NodeHandle was SolidHandle
