@@ -20,7 +20,7 @@ from dagster.core.definitions import (
     RepositoryDefinition,
     ScheduleDefinition,
 )
-from dagster.core.definitions.assets_info import AssetInfo
+from dagster.core.definitions.assets_info import AssetOutputInfo
 from dagster.core.definitions.dependency import NodeOutputHandle
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.metadata import MetadataEntry
@@ -766,7 +766,7 @@ def external_asset_graph_from_defs(
     node_defs_by_asset_key: Dict[
         AssetKey, List[Tuple[NodeOutputHandle, JobDefinition]]
     ] = defaultdict(list)
-    asset_info_by_asset_key: Dict[AssetKey, AssetInfo] = dict()
+    asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
 
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
     dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
