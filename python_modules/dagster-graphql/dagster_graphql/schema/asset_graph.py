@@ -248,16 +248,16 @@ class GrapheneAssetNode(graphene.ObjectType):
             for dep in depended_by_asset_nodes
         ]
 
-    def resolve_dependedByKeys(self, _graphene_info) -> List[GrapheneAssetKey]:
+    def resolve_dependedByKeys(self, _graphene_info) -> Sequence[GrapheneAssetKey]:
         # CrossRepoAssetDependedByLoader class loads all cross-repo asset dependencies workspace-wide.
         # In order to avoid recomputing workspace-wide values per asset node, we add a loader
         # that batch loads all cross-repo dependencies for the whole workspace.
-        check.invariant(
+        depended_by_loader = check.not_none(
             self._depended_by_loader,
             "depended_by_loader must exist in order to resolve dependedBy nodes",
         )
 
-        depended_by_asset_nodes = self._depended_by_loader.get_cross_repo_dependent_assets(
+        depended_by_asset_nodes = depended_by_loader.get_cross_repo_dependent_assets(
             self._repository_location.name,
             self._external_repository.name,
             self._external_asset_node.asset_key,
