@@ -12,7 +12,9 @@ from ..repository_definition import (
     CachingRepositoryData,
     RepositoryData,
     RepositoryDefinition,
+    is_resource_dict,
 )
+from ..resource_definition import ResourceDefinition
 from ..schedule_definition import ScheduleDefinition
 from ..sensor_definition import SensorDefinition
 
@@ -43,6 +45,7 @@ class _Repository:
                     or isinstance(definition, SensorDefinition)
                     or isinstance(definition, GraphDefinition)
                     or isinstance(definition, AssetGroup)
+                    or is_resource_dict(definition)
                 ):
                     bad_definitions.append((i, type(definition)))
             if bad_definitions:
@@ -55,7 +58,7 @@ class _Repository:
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: all elements of list "
                     "must be of type JobDefinition, GraphDefinition, PipelineDefinition, "
-                    "PartitionSetDefinition, ScheduleDefinition, or SensorDefinition. "
+                    "PartitionSetDefinition, ScheduleDefinition, SensorDefinition, or dictionary of resources. "
                     f"Got {bad_definitions_str}."
                 )
             repository_data = CachingRepositoryData.from_list(repository_definitions)

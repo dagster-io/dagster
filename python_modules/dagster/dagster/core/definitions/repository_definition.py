@@ -26,6 +26,7 @@ from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .job_definition import JobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
+from .resource_definition import ResourceDefinition
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
 from .utils import check_valid_name
@@ -629,6 +630,7 @@ class CachingRepositoryData(RepositoryData):
         sensors: Dict[str, SensorDefinition] = {}
         source_assets: Dict[AssetKey, SourceAsset] = {}
         encountered_asset_group = False
+        default_resources_dict: Optional[Dict[str, ResourceDefinition]] = None
         for definition in repository_definitions:
             if isinstance(definition, PipelineDefinition):
                 if (
@@ -710,6 +712,13 @@ class CachingRepositoryData(RepositoryData):
                     source_asset.key: source_asset for source_asset in asset_group.source_assets
                 }
 
+            elif is_resource_dict(definition):
+                if not default_resources_dict:
+                    default_resources_dict = definition
+                else:
+                    check.failed(
+                        f"Provided multiple resource dictionaries to repository, please provide only one."
+                    )
             else:
                 check.failed(f"Unexpected repository entry {definition}")
 
@@ -1164,3 +1173,16 @@ class RepositoryDefinition:
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.
     def __call__(self, *args, **kwargs):
         return self
+
+
+def is_resource_dict(defn: Any) -> bool:
+    if not isinstance(defn, dict):
+        return False
+
+    the_dict = defn
+    return all(
+        [
+            isinstance(key, str) and isinstance(val, ResourceDefinition)
+            for key, val in the_dict.items()
+        ]
+    )
