@@ -625,6 +625,7 @@ class CachingRepositoryData(RepositoryData):
         from dagster.core.asset_defs import AssetGroup
 
         pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
+        graph_defs: Dict[str, GraphDefinition] = {}
         partition_sets: Dict[str, PartitionSetDefinition] = {}
         schedules: Dict[str, ScheduleDefinition] = {}
         sensors: Dict[str, SensorDefinition] = {}
@@ -686,14 +687,14 @@ class CachingRepositoryData(RepositoryData):
                         )
                     partition_sets[partition_set_def.name] = partition_set_def
             elif isinstance(definition, GraphDefinition):
-                coerced = definition.coerce_to_job()
-                if coerced.name in pipelines_or_jobs:
+                graph_def = definition
+                if graph_def.name in graph_defs:
                     raise DagsterInvalidDefinitionError(
-                        "Duplicate {target_type} definition found for graph '{name}'".format(
-                            target_type=coerced.target_type, name=coerced.name
+                        "Duplicate graph definition found for graph '{name}'".format(
+                            name=graph_def.name
                         )
                     )
-                pipelines_or_jobs[coerced.name] = coerced
+                graph_defs[definition.name] = graph_def
 
             elif isinstance(definition, AssetGroup):
                 if combined_asset_group:
@@ -721,11 +722,24 @@ class CachingRepositoryData(RepositoryData):
 
         pipelines: Dict[str, PipelineDefinition] = {}
         jobs: Dict[str, JobDefinition] = {}
+
         for name, pipeline_or_job in pipelines_or_jobs.items():
             if isinstance(pipeline_or_job, JobDefinition):
                 jobs[name] = pipeline_or_job
             else:
                 pipelines[name] = pipeline_or_job
+
+        for name, graph_def in graph_defs.items():
+            coerced_with_defaults = graph_def.to_job(resource_defs=default_resources_dict)
+            if name in jobs:
+                check.failed(
+                    f"Error when coercing graph '{name}' to job: A job already exists with name '{name}'."
+                )
+            if name in pipelines:
+                check.failed(
+                    f"Error when coercing graph '{name}' to job: A pipeline already exists with name '{name}'."
+                )
+            jobs[name] = coerced_with_defaults
 
         return CachingRepositoryData(
             pipelines=pipelines,

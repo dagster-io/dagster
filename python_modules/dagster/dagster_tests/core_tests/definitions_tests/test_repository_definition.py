@@ -301,7 +301,10 @@ def test_bare_graph_with_resources():
     def bare():
         needy()
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Failed attempting to coerce Graph"):
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource key 'stuff' is required by solid 'needy', but is not provided.",
+    ):
 
         @repository
         def _test():
@@ -349,12 +352,12 @@ def test_job_with_partitions():
 
 
 def test_dupe_graph_defs():
-    @solid
+    @op
     def noop():
         pass
 
-    @pipeline(name="foo")
-    def pipe_foo():
+    @job(name="foo")
+    def job_foo():
         noop()
 
     @graph(name="foo")
@@ -362,22 +365,22 @@ def test_dupe_graph_defs():
         noop()
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
-        # expect to change as migrate to graph/job
-        match="Duplicate pipeline definition found for pipeline 'foo'",
+        CheckError,
+        match="Error when coercing graph 'foo' to job: A job already exists with name 'foo'.",
     ):
 
         @repository
-        def _pipe_collide():
-            return [graph_foo, pipe_foo]
+        def _job_collide():
+            return [graph_foo, job_foo]
+
+    @pipeline(name="foo")
+    def pipe_foo():
+        noop()
 
     def get_collision_repo():
         @repository
         def graph_collide():
-            return [
-                graph_foo.to_job(name="bar"),
-                pipe_foo,
-            ]
+            return [graph_foo.to_job(name="bar"), pipe_foo]
 
         return graph_collide
 
@@ -387,13 +390,6 @@ def test_dupe_graph_defs():
     ):
 
         get_collision_repo().get_all_pipelines()
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Op/Graph/Solid definition names must be unique within a repository",
-    ):
-
-        get_collision_repo().get_all_jobs()
 
 
 def test_job_pipeline_collision():
@@ -519,7 +515,8 @@ def test_list_dupe_graph():
         pass
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="Duplicate job definition found for graph 'foo'"
+        CheckError,
+        match="Error when coercing graph 'foo' to job: A job already exists with name 'foo'.",
     ):
 
         @repository
@@ -664,3 +661,36 @@ def test_repo_with_resources():
         @repository
         def the_repo_multiple_resource_dicts():
             return [{"foo": the_resource}, {"foo": the_resource}]
+
+
+def test_graph_default_resources():
+    @resource
+    def the_resource():
+        return "hello"
+
+    @op(required_resource_keys={"foo"})
+    def the_op(context):
+        assert context.resources.foo == "hello"
+
+    @graph
+    def the_graph():
+        the_op()
+
+    @repository
+    def the_repo():
+        return [{"foo": the_resource}, the_graph]
+
+    jobs = the_repo.get_all_jobs()
+    coerced_job = jobs[0]
+    assert coerced_job.name == "the_graph"
+    result = coerced_job.execute_in_process()
+    assert result.success
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource key 'foo' is required by op 'the_op', but is not provided.",
+    ):
+
+        @repository
+        def the_repo_doesnt_satisfy_resource_reqs():
+            return [{"bar": the_resource}, the_graph]
