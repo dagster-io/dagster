@@ -7,6 +7,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Mapping,
     Optional,
     Set,
     Tuple,
@@ -585,14 +586,16 @@ class GraphDefinition(NodeDefinition):
             asset_layer=asset_layer,
         ).get_job_def_for_op_selection(op_selection)
 
-    def coerce_to_job(self):
+    def coerce_to_job(
+        self, resource_defs: Optional[Mapping[str, ResourceDefinition]] = None
+    ) -> "JobDefinition":
         # attempt to coerce a Graph in to a Job, raising a useful error if it doesn't work
         try:
-            return self.to_job()
+            return self.to_job(resource_defs=resource_defs)
         except DagsterInvalidDefinitionError as err:
             raise DagsterInvalidDefinitionError(
-                f"Failed attempting to coerce Graph {self.name} in to a Job. "
-                "Use to_job instead, passing the required information."
+                f"Failed attempting to coerce graph '{self.name}' into a job "
+                f"using provided repo-level defaults: {str(err)} "
             ) from err
 
     def _get_config_schema(

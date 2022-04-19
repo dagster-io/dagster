@@ -626,7 +626,7 @@ class CachingRepositoryData(RepositoryData):
         from dagster.core.asset_defs import AssetGroup
 
         pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
-        coerced_graphs: Dict[str, JobDefinition] = {}
+        graph_defs: Dict[str, GraphDefinition] = {}
         partition_sets: Dict[str, PartitionSetDefinition] = {}
         schedules: Dict[str, ScheduleDefinition] = {}
         sensors: Dict[str, SensorDefinition] = {}
@@ -681,15 +681,14 @@ class CachingRepositoryData(RepositoryData):
                         )
                     partition_sets[partition_set_def.name] = partition_set_def
             elif isinstance(definition, GraphDefinition):
-                coerced = definition.coerce_to_job()
-                if coerced.name in pipelines_or_jobs:
+                graph_def = definition
+                if graph_def.name in graph_defs:
                     raise DagsterInvalidDefinitionError(
-                        "Duplicate {target_type} definition found for graph '{name}'".format(
-                            target_type=coerced.target_type, name=coerced.name
+                        "Duplicate graph definition found for graph '{name}'".format(
+                            name=graph_def.name
                         )
                     )
-                pipelines_or_jobs[coerced.name] = coerced
-                coerced_graphs[coerced.name] = coerced
+                graph_defs[definition.name] = graph_def
 
             elif isinstance(definition, AssetGroup):
                 if combined_asset_group:
@@ -715,23 +714,31 @@ class CachingRepositoryData(RepositoryData):
                 for source_asset in combined_asset_group.source_assets
             }
 
+        # Scan for duplicates before retrieving sensor/schedule targets to preserve existing error behavior: that is, schedule/sensor targets just overwrite duplicate job/pipeline/graph defs, and do not cause an error, but graph coercion does.
+        for name, graph_def in graph_defs.items():
+            if name in pipelines_or_jobs:
+                check.failed(
+                    f"Error when coercing graph '{name}' to job: A {pipelines_or_jobs[name].target_type} already exists with name '{name}'."
+                )
+
         for name, sensor_def in sensors.items():
             if sensor_def.has_loadable_targets():
                 targets = sensor_def.load_targets()
                 for target in targets:
-                    _process_and_validate_target(
-                        sensor_def, coerced_graphs, pipelines_or_jobs, target
-                    )
+                    _process_and_validate_target(sensor_def, graph_defs, pipelines_or_jobs, target)
 
         for name, schedule_def in schedules.items():
             if schedule_def.has_loadable_target():
                 target = schedule_def.load_target()
-                _process_and_validate_target(
-                    schedule_def, coerced_graphs, pipelines_or_jobs, target
-                )
+                _process_and_validate_target(schedule_def, graph_defs, pipelines_or_jobs, target)
+
+        for name, graph_def in graph_defs.items():
+            coerced_with_defaults = graph_def.coerce_to_job(resource_defs=default_resources_dict)
+            pipelines_or_jobs[name] = coerced_with_defaults
 
         pipelines: Dict[str, PipelineDefinition] = {}
         jobs: Dict[str, JobDefinition] = {}
+
         for name, pipeline_or_job in pipelines_or_jobs.items():
             if isinstance(pipeline_or_job, JobDefinition):
                 jobs[name] = pipeline_or_job
@@ -1185,41 +1192,39 @@ class RepositoryDefinition:
 
 def _process_and_validate_target(
     schedule_or_sensor_def: Union[SensorDefinition, ScheduleDefinition],
-    coerced_graphs: Dict[str, JobDefinition],
+    graph_defs: Dict[str, GraphDefinition],
     pipelines_or_jobs: Dict[str, PipelineDefinition],
     target: Union[GraphDefinition, PipelineDefinition],
 ):
-    # This function modifies the state of coerced_graphs.
+    # This function modifies the state of graph_defs.
     targeter = (
         f"schedule '{schedule_or_sensor_def.name}'"
         if isinstance(schedule_or_sensor_def, ScheduleDefinition)
         else f"sensor '{schedule_or_sensor_def.name}'"
     )
     if isinstance(target, GraphDefinition):
-        if target.name not in coerced_graphs:
-            # Since this is a graph we have to coerce, is not possible to be
-            # the same definition by reference equality
-            if target.name in pipelines_or_jobs:
-                dupe_target_type = pipelines_or_jobs[target.name].target_type
-                warnings.warn(
-                    _get_error_msg_for_target_conflict(
-                        targeter, "graph", target.name, dupe_target_type
-                    )
-                )
-        elif coerced_graphs[target.name].graph != target:
+        # Since this is a graph we have to coerce, is not possible to be
+        # the same definition by reference equality
+        if target.name in pipelines_or_jobs:
+            dupe_target_type = pipelines_or_jobs[target.name].target_type
+            warnings.warn(
+                _get_error_msg_for_target_conflict(targeter, "graph", target.name, dupe_target_type)
+            )
+        elif target.name in graph_defs and graph_defs[target.name] != target:
             warnings.warn(
                 _get_error_msg_for_target_conflict(targeter, "graph", target.name, "graph")
             )
-        coerced_job = target.coerce_to_job()
-        coerced_graphs[target.name] = coerced_job
-        pipelines_or_jobs[target.name] = coerced_job
+        graph_defs[target.name] = target
     else:
         if target.name in pipelines_or_jobs and pipelines_or_jobs[target.name] != target:
-            dupe_target_type = (
-                pipelines_or_jobs[target.name].target_type
-                if target.name not in coerced_graphs
-                else "graph"
+            dupe_target_type = pipelines_or_jobs[target.name].target_type
+            warnings.warn(
+                _get_error_msg_for_target_conflict(
+                    targeter, target.target_type, target.name, dupe_target_type
+                )
             )
+        elif target.name in graph_defs:
+            dupe_target_type = "graph"
             warnings.warn(
                 _get_error_msg_for_target_conflict(
                     targeter, target.target_type, target.name, dupe_target_type
