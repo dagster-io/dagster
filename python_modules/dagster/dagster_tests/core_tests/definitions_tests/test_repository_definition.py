@@ -22,6 +22,7 @@ from dagster import (
     op,
     pipeline,
     repository,
+    resource,
     schedule,
     sensor,
     solid,
@@ -644,3 +645,22 @@ def test_multiple_asset_groups_one_repo():
         AssetKey(["asset1"]),
         AssetKey(["asset2"]),
     }
+
+
+def test_repo_with_resources():
+    @resource
+    def the_resource():
+        pass
+
+    @repository
+    def the_repo():
+        return [{"foo": the_resource}]
+
+    with pytest.raises(
+        CheckError,
+        match="Provided multiple resource dictionaries to repository, please provide only one.",
+    ):
+
+        @repository
+        def the_repo_multiple_resource_dicts():
+            return [{"foo": the_resource}, {"foo": the_resource}]
