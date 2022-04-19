@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-restricted-imports
+import {GraphData} from '../../src/asset-graph/Utils';
+import {layoutAssetGraph} from '../../src/asset-graph/layout';
 import {ILayoutOp, layoutOpGraph} from '../../src/graph/layout';
-import {GraphData} from '../../src/workspace/asset-graph/Utils';
-import {layoutAssetGraph} from '../../src/workspace/asset-graph/layout';
 
 type WorkerMessageData =
   | {type: 'layoutOpGraph'; ops: ILayoutOp[]; parentOp: ILayoutOp}

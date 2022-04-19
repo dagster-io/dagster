@@ -14,6 +14,7 @@ import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
+import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {
   GraphExplorerOptions,
@@ -165,7 +166,11 @@ const AssetGraphExplorerWithData: React.FC<
     : Object.values(assetGraphData.nodes).filter((a) => !isSourceAsset(a.definition));
 
   const onSelectNode = React.useCallback(
-    async (e: React.MouseEvent<any>, assetKey: {path: string[]}, node: GraphNode | null) => {
+    async (
+      e: React.MouseEvent<any> | React.KeyboardEvent<any>,
+      assetKey: {path: string[]},
+      node: GraphNode | null,
+    ) => {
       e.stopPropagation();
 
       const token = tokenForAssetKey(assetKey);
@@ -219,6 +224,21 @@ const AssetGraphExplorerWithData: React.FC<
     viewportEl.current?.autocenter();
   }, [layout, viewportEl]);
 
+  const onClickBackground = () =>
+    onChangeExplorerPath(
+      {...explorerPath, pipelineName: explorerPath.pipelineName, opNames: []},
+      'replace',
+    );
+
+  const onArrowKeyDown = (e: React.KeyboardEvent<any>, dir: string) => {
+    const nextId = layout && closestNodeInDirection(layout, lastSelectedNode.id, dir);
+    const node = nextId && assetGraphData.nodes[nextId];
+    if (node && viewportEl.current) {
+      onSelectNode(e, node.assetKey, node);
+      viewportEl.current.smoothZoomToSVGBox(layout.nodes[nextId].bounds);
+    }
+  };
+
   return (
     <SplitPanelContainer
       identifier="explorer"
@@ -241,13 +261,12 @@ const AssetGraphExplorerWithData: React.FC<
               interactor={SVGViewport.Interactors.PanAndZoom}
               graphWidth={layout.width}
               graphHeight={layout.height}
-              onKeyDown={() => {}}
-              onClick={() =>
-                onChangeExplorerPath(
-                  {...explorerPath, pipelineName: explorerPath.pipelineName, opNames: []},
-                  'replace',
-                )
-              }
+              onClick={onClickBackground}
+              onArrowKeyDown={onArrowKeyDown}
+              onDoubleClick={(e) => {
+                viewportEl.current?.autocenter(true);
+                e.stopPropagation();
+              }}
               maxZoom={1.2}
               maxAutocenterZoom={1.0}
             >
@@ -275,6 +294,10 @@ const AssetGraphExplorerWithData: React.FC<
                         {...bounds}
                         key={id}
                         onClick={(e) => onSelectNode(e, {path}, graphNode)}
+                        onDoubleClick={(e) => {
+                          viewportEl.current?.smoothZoomToSVGBox(bounds, 1.2);
+                          e.stopPropagation();
+                        }}
                         style={{overflow: 'visible'}}
                       >
                         {!graphNode || !graphNode.definition.opName ? (
@@ -386,18 +409,6 @@ const SVGContainer = styled.svg`
 `;
 
 // Helpers
-
-const isNodeOffscreen = (
-  layoutNode: {x: number; y: number; width: number; height: number},
-  bounds: {top: number; left: number; right: number; bottom: number},
-) => {
-  return (
-    layoutNode.x + layoutNode.width < bounds.left ||
-    layoutNode.y + layoutNode.height < bounds.top ||
-    layoutNode.x > bounds.right ||
-    layoutNode.y > bounds.bottom
-  );
-};
 
 const graphDirectionOf = ({
   graph,

@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 import pytest
 from dagster_azure.adls2 import create_adls2_client
 from dagster_azure.adls2.io_manager import (
@@ -10,6 +12,8 @@ from dagster_azure.blob import create_blob_client
 
 from dagster import (
     AssetGroup,
+    AssetIn,
+    AssetKey,
     DagsterInstance,
     DynamicOutput,
     DynamicOutputDefinition,
@@ -147,11 +151,15 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
 
 def test_asset_io_manager(storage_account, file_system, credential):
-    @asset
+    _id = f"{uuid4()}".replace("-", "")
+
+    @asset(name=f"upstream_{_id}")
     def upstream():
         return 2
 
-    @asset
+    @asset(
+        name=f"downstream_{_id}", ins={"upstream": AssetIn(asset_key=AssetKey([f"upstream_{_id}"]))}
+    )
     def downstream(upstream):
         assert upstream == 2
         return 1 + upstream

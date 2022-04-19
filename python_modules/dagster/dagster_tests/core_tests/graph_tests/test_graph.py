@@ -6,6 +6,7 @@ import pytest
 from dagster import (
     ConfigMapping,
     DagsterInstance,
+    DagsterTypeCheckDidNotPass,
     Enum,
     Field,
     In,
@@ -1028,3 +1029,46 @@ def test_run_id_execute_in_process():
         result = blank.alias("some_name").execute_in_process(instance=instance, run_id="baz")
         assert result.success
         assert instance.get_run_by_id("baz")
+
+
+def test_graphs_break_type_checks():
+    # Test to ensure we use grab the type from correct input def along mapping chains for type checks.
+
+    @op
+    def emit_str():
+        return "one"
+
+    @op
+    def echo_int(y: int):
+        assert isinstance(y, int), "type checks should fail before op invocation"
+        return y
+
+    @graph
+    def no_repro():
+        echo_int(emit_str())
+
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        no_repro.execute_in_process()
+
+    @graph
+    def map_any(x):
+        echo_int(x)
+
+    @graph
+    def repro():
+        map_any(emit_str())
+
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        repro.execute_in_process()
+
+    @graph
+    def map_str(x: str):
+
+        echo_int(x)
+
+    @graph
+    def repro_2():
+        map_str(emit_str())
+
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        repro_2.execute_in_process()

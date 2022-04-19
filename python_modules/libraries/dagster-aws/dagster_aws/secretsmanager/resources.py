@@ -197,7 +197,7 @@ def secretsmanager_secrets_resource(context):
     )
 
     secret_arns = merge_dicts(
-        (get_tagged_secrets(secrets_manager, secrets_tag) if secrets_tag else {}),
+        (get_tagged_secrets(secrets_manager, [secrets_tag]) if secrets_tag else {}),
         get_secrets_from_arns(secrets_manager, secrets),
     )
 

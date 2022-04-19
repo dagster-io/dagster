@@ -85,8 +85,8 @@ const buildGraphQueryItems = (nodes: AssetNode[]) => {
   for (const node of nodes) {
     const name = tokenForAssetKey(node.assetKey);
     items[name] = {
-      node: node,
-      name: name,
+      node,
+      name,
       inputs: node.dependencyKeys.map((key) => ({
         dependsOn: [{solid: {name: tokenForAssetKey(key)}}],
       })),

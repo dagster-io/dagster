@@ -1,37 +1,25 @@
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 import dateutil
 
-from dagster import AssetMaterialization, MetadataEntry, MetadataValue, check
+from dagster import AssetMaterialization, MetadataValue, check
+from dagster.core.definitions.metadata import RawMetadataValue
 
 from .types import DbtOutput
 
 
-def _get_asset_materialization(
-    unique_id: str, asset_key_prefix: List[str], metadata: List[MetadataEntry]
-) -> AssetMaterialization:
-    return AssetMaterialization(
-        description=f"dbt node: {unique_id}",
-        metadata_entries=metadata,
-        asset_key=asset_key_prefix + unique_id.split("."),
-    )
+def _node_result_to_metadata(node_result: Dict[str, Any]) -> Mapping[str, RawMetadataValue]:
+    return {
+        "Materialization Strategy": node_result["config"]["materialized"],
+        "Database": node_result["database"],
+        "Schema": node_result["schema"],
+        "Alias": node_result["alias"],
+        "Description": node_result["description"],
+    }
 
 
-def _node_result_to_metadata(node_result: Dict[str, Any]) -> List[MetadataEntry]:
-    return [
-        MetadataEntry(
-            "Materialization Strategy",
-            value=node_result["config"]["materialized"],
-        ),
-        MetadataEntry("Database", value=node_result["database"]),
-        MetadataEntry("Schema", value=node_result["schema"]),
-        MetadataEntry("Alias", value=node_result["alias"]),
-        MetadataEntry("Description", value=node_result["description"]),
-    ]
-
-
-def _timing_to_metadata(timings: List[Dict[str, Any]]) -> List[MetadataEntry]:
-    metadata = []
+def _timing_to_metadata(timings: List[Dict[str, Any]]) -> Mapping[str, RawMetadataValue]:
+    metadata = {}
     for timing in timings:
         if timing["name"] == "execute":
             desc = "Execution"
@@ -43,14 +31,12 @@ def _timing_to_metadata(timings: List[Dict[str, Any]]) -> List[MetadataEntry]:
         started_at = dateutil.parser.isoparse(timing["started_at"])
         completed_at = dateutil.parser.isoparse(timing["completed_at"])
         duration = completed_at - started_at
-        metadata.extend(
-            [
-                MetadataEntry(f"{desc} Started At", value=started_at.isoformat(timespec="seconds")),
-                MetadataEntry(
-                    f"{desc} Completed At", value=started_at.isoformat(timespec="seconds")
-                ),
-                MetadataEntry(f"{desc} Duration", value=duration.total_seconds()),
-            ]
+        metadata.update(
+            {
+                f"{desc} Started At": started_at.isoformat(timespec="seconds"),
+                f"{desc} Completed At": started_at.isoformat(timespec="seconds"),
+                f"{desc} Duration": duration.total_seconds(),
+            }
         )
     return metadata
 
@@ -79,15 +65,14 @@ def result_to_materialization(
         return None
 
     # all versions represent timing the same way
-    metadata = [
-        MetadataEntry("Execution Time (seconds)", value=result["execution_time"])
-    ] + _timing_to_metadata(result["timing"])
+    metadata = {"Execution Time (seconds)": result["execution_time"]}
+    metadata.update(_timing_to_metadata(result["timing"]))
 
     # working with a response that contains the node block (RPC and CLI 0.18.x)
     if "node" in result:
 
         unique_id = result["node"]["unique_id"]
-        metadata += _node_result_to_metadata(result["node"])
+        metadata.update(_node_result_to_metadata(result["node"]))
     else:
         unique_id = result["unique_id"]
 
@@ -98,13 +83,11 @@ def result_to_materialization(
         return None
 
     if docs_url:
-        metadata = [
-            MetadataEntry("docs_url", value=MetadataValue.url(f"{docs_url}#!/model/{unique_id}"))
-        ] + metadata
+        metadata["docs_url"] = MetadataValue.url(f"{docs_url}#!/model/{unique_id}")
 
     return AssetMaterialization(
         description=f"dbt node: {unique_id}",
-        metadata_entries=metadata,
+        metadata=metadata,
         asset_key=asset_key_prefix + id_prefix,
     )
 

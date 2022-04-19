@@ -111,16 +111,19 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         tag_concurrency_limits = run_queue_config.tag_concurrency_limits
 
         in_progress_runs = self._get_in_progress_runs(instance)
-        max_runs_to_launch = max_concurrent_runs - len(in_progress_runs)
 
-        # Possibly under 0 if runs were launched without queuing
-        if max_runs_to_launch <= 0:
-            self._logger.info(
-                "{} runs are currently in progress. Maximum is {}, won't launch more.".format(
-                    len(in_progress_runs), max_concurrent_runs
+        max_concurrent_runs_enabled = max_concurrent_runs != -1  # setting to -1 disables the limit
+        if max_concurrent_runs_enabled:
+            max_runs_to_launch = max_concurrent_runs - len(in_progress_runs)
+
+            # Possibly under 0 if runs were launched without queuing
+            if max_runs_to_launch <= 0:
+                self._logger.info(
+                    "{} runs are currently in progress. Maximum is {}, won't launch more.".format(
+                        len(in_progress_runs), max_concurrent_runs
+                    )
                 )
-            )
-            return
+                return
 
         queued_runs = self._get_queued_runs(instance)
 
@@ -139,7 +142,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         )
 
         for run in sorted_runs:
-            if num_dequeued_runs >= max_runs_to_launch:
+            if max_concurrent_runs_enabled and num_dequeued_runs >= max_runs_to_launch:
                 break
 
             if tag_concurrency_limits_counter.is_run_blocked(run):

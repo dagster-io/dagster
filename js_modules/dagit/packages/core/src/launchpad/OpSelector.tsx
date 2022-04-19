@@ -70,7 +70,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
   const {data, loading} = useQuery<OpSelectorQuery>(SOLID_SELECTOR_QUERY, {
-    variables: {selector: selector, requestScopeHandleID: flattenGraphs ? undefined : ''},
+    variables: {selector, requestScopeHandleID: flattenGraphs ? undefined : ''},
     fetchPolicy: 'cache-and-network',
   });
 
@@ -147,7 +147,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
             linkToPreview={{
               repoName: repoAddress.name,
               repoLocation: repoAddress.location,
-              pipelineName: pipelineName,
+              pipelineName,
               isJob,
             }}
             flattenGraphsEnabled={flattenGraphsEnabled}

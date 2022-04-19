@@ -11,17 +11,16 @@ import 'codemirror/addon/search/jump-to-line';
 import 'codemirror/addon/search/search';
 import 'codemirror/addon/search/searchcursor';
 import 'codemirror/keymap/sublime';
-import 'codemirror/lib/codemirror.css';
 import './codemirror-yaml/lint'; // Patch lint
 import './codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
 
-import {Colors, FontFamily, Icons} from '@dagster-io/ui';
 import {Editor} from 'codemirror';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
-import {Controlled as CodeMirrorReact} from 'react-codemirror2';
 import {createGlobalStyle} from 'styled-components/macro';
 import * as yaml from 'yaml';
+
+import {DagitCodeMirror} from '../ui/DagitCodeMirror';
 
 import {ConfigEditorHelpContext} from './ConfigEditorHelpContext';
 import {
@@ -47,104 +46,11 @@ const performLint = debounce((editor: any) => {
   editor.performLint();
 }, 1000);
 
-const CodeMirrorShimStyle = createGlobalStyle`
-  .react-codemirror2 {
-    height: 100%;
-    flex: 1;
-    position: relative;
-  }
-  
-  .react-codemirror2 .CodeMirror {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+const ConfigEditorStyle = createGlobalStyle`
+  .react-codemirror2 .CodeMirror.cm-s-config-editor {
     height: initial;
-    font-family: ${FontFamily.monospace};
-    font-size: 16px;
-
-    /* Note: Theme overrides */
-    &.cm-s-default .cm-comment {
-      color: #999;
-    }
-  }
-  .CodeMirror-gutter-elt {
-    .CodeMirror-lint-marker-error {
-      background-image: none;
-      background: ${Colors.Red500};
-      mask-image: url(${Icons.error});
-      mask-size: cover;
-      margin-bottom: 2px;
-    }
-  }
-
-  .CodeMirror-hint,
-  .CodeMirror-lint-marker-error,
-  .CodeMirror-lint-marker-warning,
-  .CodeMirror-lint-message-error,
-  .CodeMirror-lint-message-warning {
-    font-family: ${FontFamily.monospace};
-    font-size: 16px;
-  }
-
-  .react-codemirror2 .CodeMirror.cm-s-dagit {
-    .cm-atom {
-      color: ${Colors.Blue700};
-    }
-
-    .cm-comment {
-      color: ${Colors.Gray400};
-    }
-
-    .cm-meta {
-      color: ${Colors.Gray700};
-    }
-
-    .cm-number {
-      color: ${Colors.Red700};
-    }
-
-    .cm-string {
-      color: ${Colors.Green700};
-    }
-
-    .cm-string-2 {
-      color: ${Colors.Olive700};
-    }
-
-    .cm-variable-2 {
-      color: ${Colors.Blue500};
-    }
-
-    .cm-keyword {
-      color: ${Colors.Yellow700};
-    }
-
-    .CodeMirror-selected {
-      background-color: ${Colors.Blue50};
-    }
-
-    .CodeMirror-gutters {
-      background-color: ${Colors.Gray50};
-    }
-  }
-
-  div.CodeMirror-lint-tooltip {
-    background: rgba(255, 247, 231, 1);
-    border: 1px solid ${Colors.Gray200};
-  }
-
-  .CodeMirror-lint-message {
-    background: transparent;
-  }
-  .CodeMirror-lint-message.CodeMirror-lint-message-error {
-    background: transparent;
-  }
-
-  /* Ensure that hints aren't vertically cutoff*/
-  .CodeMirror-hint div {
-    max-height: none !important;
+    position: absolute;
+    inset: 0;
   }
 `;
 
@@ -203,7 +109,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     const offsetFromTop = 20;
 
     this._editor?.scrollIntoView({
-      left: left,
+      left,
       right: left,
       top: top - offsetFromTop,
       bottom: top + (clientHeight - offsetFromTop),
@@ -246,14 +152,14 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
 
     return (
       <div style={{flex: 1, position: 'relative'}}>
-        <CodeMirrorShimStyle />
+        <ConfigEditorStyle />
         {this.props.showWhitespace ? <CodeMirrorWhitespaceStyle /> : null}
-        <CodeMirrorReact
+        <DagitCodeMirror
           value={this.props.configCode}
+          theme={['config-editor']}
           options={
             {
               mode: 'yaml',
-              theme: 'dagit',
               lineNumbers: true,
               readOnly: this.props.readOnly,
               indentUnit: 2,

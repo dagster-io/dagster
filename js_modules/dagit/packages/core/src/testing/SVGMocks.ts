@@ -12,7 +12,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
   'airline_demo_ingest_pipeline',
   'airline_demo_warehouse_pipeline',
 ].map((name) => ({
-  name: name,
+  name,
   query: PIPELINE_EXPLORER_ROOT_QUERY,
   variables: {
     pipelineSelector: {
@@ -44,7 +44,7 @@ MOCKS.push({
 
 MOCKS.push(
   ...['composition', 'log_spew', 'many_events'].map((name) => ({
-    name: name,
+    name,
     query: PIPELINE_EXPLORER_ROOT_QUERY,
     variables: {
       pipelineSelector: {

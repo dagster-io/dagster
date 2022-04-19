@@ -41,7 +41,7 @@ export const AssetValueGraph: React.FC<{
   }
 
   const graphData = {
-    labels: labels,
+    labels,
     datasets: [
       {
         label: props.label,

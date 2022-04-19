@@ -405,7 +405,25 @@
             "path": "/guides/dagster/memoization"
           },
           {
-            "title": "Software-Defined Assets (Experimental)",
+            "title": "Software-Defined Assets Tutorial (Experimental)",
+            "path": "/guides/dagster/asset-tutorial",
+            "children":  [
+              {
+                "title": "Defining an Asset",
+                "path": "/guides/dagster/asset-tutorial/defining-an-asset"
+              },
+              {
+                "title": "Building Graphs of Assets",
+                "path": "/guides/dagster/asset-tutorial/asset-graph"
+              },
+              {
+                "title": "Testing Assets",
+                "path": "/guides/dagster/asset-tutorial/testing-assets"
+              }
+            ]
+          },
+          {
+            "title": "Software-Defined Assets with Pandas and PySpark (Experimental)",
             "path": "/guides/dagster/software-defined-assets"
           },
           {

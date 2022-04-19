@@ -42,7 +42,6 @@ from dagster.core.execution.retries import RetryMode, RetryState
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.core.utils import toposort
 
 from ..context.output import get_output_context
@@ -54,7 +53,6 @@ from .inputs import (
     FromDynamicCollect,
     FromMultipleSources,
     FromPendingDynamicStepOutput,
-    FromRootInputConfig,
     FromRootInputManager,
     FromStepOutput,
     FromUnresolvedStepOutput,
@@ -237,17 +235,15 @@ class _PlanBuilder:
         # Expects that if step_keys_to_execute was set, that the `plan` variable will have the
         # reflected step_keys_to_execute
         if pipeline_def.is_using_memoization(self._tags) and len(step_output_versions) == 0:
-            if self.step_keys_to_execute is not None:
-                raise DagsterInvariantViolationError(
-                    "Cannot use both memoization and re-execution at this time."
-                )
             if self._instance_ref is None:
                 raise DagsterInvariantViolationError(
                     "Attempted to build memoized execution plan without providing a persistent "
                     "DagsterInstance to create_execution_plan."
                 )
             instance = DagsterInstance.from_ref(self._instance_ref)
-            plan = plan.build_memoized_plan(pipeline_def, self.resolved_run_config, instance)
+            plan = plan.build_memoized_plan(
+                pipeline_def, self.resolved_run_config, instance, self.step_keys_to_execute
+            )
 
         return plan
 
@@ -406,14 +402,14 @@ def get_root_graph_input_source(
     plan_builder: _PlanBuilder,
     input_name: str,
     input_def: InputDefinition,
-) -> Optional[FromRootInputConfig]:
+) -> Optional[FromConfig]:
 
     input_config = plan_builder.resolved_run_config.inputs
 
     if input_config and input_name in input_config:
-        return FromRootInputConfig(input_name=input_name)
+        return FromConfig(solid_handle=None, input_name=input_name)
 
-    if input_def.dagster_type.kind == DagsterTypeKind.NOTHING:
+    if input_def.dagster_type.is_nothing:
         return None
 
     # Otherwise we throw an error.
@@ -471,21 +467,15 @@ def get_step_input_source(
         if isinstance(step_output_handle, UnresolvedStepOutputHandle):
             return FromUnresolvedStepOutput(
                 unresolved_step_output_handle=step_output_handle,
-                solid_handle=handle,
-                input_name=input_name,
             )
 
         if solid_output_handle.output_def.is_dynamic:
             return FromPendingDynamicStepOutput(
                 step_output_handle=step_output_handle,
-                solid_handle=handle,
-                input_name=input_name,
             )
 
         return FromStepOutput(
             step_output_handle=step_output_handle,
-            solid_handle=handle,
-            input_name=input_name,
             fan_in=False,
         )
 
@@ -507,8 +497,6 @@ def get_step_input_source(
                 sources.append(
                     FromStepOutput(
                         step_output_handle=step_output_handle,
-                        solid_handle=handle,
-                        input_name=input_name,
                         fan_in=True,
                     )
                 )
@@ -528,29 +516,21 @@ def get_step_input_source(
                     check.failed(f"Unexpected parent mapped input source type {source}")
                 sources.append(source)
 
-        return FromMultipleSources(solid_handle=handle, input_name=input_name, sources=sources)
+        return FromMultipleSources(sources=sources)
 
     if dependency_structure.has_dynamic_fan_in_dep(input_handle):
         solid_output_handle = dependency_structure.get_dynamic_fan_in_dep(input_handle)
         step_output_handle = plan_builder.get_output_handle(solid_output_handle)
         if isinstance(step_output_handle, UnresolvedStepOutputHandle):
             return FromDynamicCollect(
-                solid_handle=handle,
-                input_name=input_name,
                 source=FromUnresolvedStepOutput(
                     unresolved_step_output_handle=step_output_handle,
-                    solid_handle=handle,
-                    input_name=input_name,
                 ),
             )
         elif solid_output_handle.output_def.is_dynamic:
             return FromDynamicCollect(
-                solid_handle=handle,
-                input_name=input_name,
                 source=FromPendingDynamicStepOutput(
                     step_output_handle=step_output_handle,
-                    solid_handle=handle,
-                    input_name=input_name,
                 ),
             )
 
@@ -575,7 +555,7 @@ def get_step_input_source(
     # the output of another solid or provided via run config.
 
     # We will allow this for "Nothing" type inputs and continue.
-    if input_def.dagster_type.kind == DagsterTypeKind.NOTHING:
+    if input_def.dagster_type.is_nothing:
         return None
 
     # Otherwise we throw an error.
@@ -826,6 +806,7 @@ class ExecutionPlan(
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
         instance: DagsterInstance,
+        selected_step_keys: Optional[List[str]],
     ) -> "ExecutionPlan":
         """
         Returns:
@@ -907,8 +888,13 @@ class ExecutionPlan(
                 if not io_manager.has_output(context):
                     unmemoized_step_keys.add(step_output_handle.step_key)
 
+        if selected_step_keys is not None:
+            # Take the intersection unmemoized steps and selected steps
+            step_keys_to_execute = list(unmemoized_step_keys & set(selected_step_keys))
+        else:
+            step_keys_to_execute = list(unmemoized_step_keys)
         return self.build_subset_plan(
-            list(unmemoized_step_keys),
+            step_keys_to_execute,
             pipeline_def,
             resolved_run_config,
             step_output_versions=step_output_versions,

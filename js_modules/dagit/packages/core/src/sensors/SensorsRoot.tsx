@@ -28,7 +28,7 @@ export const SensorsRoot = (props: Props) => {
 
   const queryResult = useQuery<SensorsRootQuery>(SENSORS_ROOT_QUERY, {
     variables: {
-      repositorySelector: repositorySelector,
+      repositorySelector,
       instigationType: InstigationType.SENSOR,
     },
     fetchPolicy: 'cache-and-network',

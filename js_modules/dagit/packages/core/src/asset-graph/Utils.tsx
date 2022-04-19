@@ -17,7 +17,11 @@ import {
 type AssetNode = AssetGraphQuery_assetNodes;
 type AssetKey = AssetGraphQuery_assetNodes_assetKey;
 
-export const __ASSET_GROUP = '__ASSET_GROUP';
+export const __ASSET_GROUP_PREFIX = '__ASSET_GROUP';
+
+export function isAssetGroup(jobName: string) {
+  return jobName.startsWith(__ASSET_GROUP_PREFIX);
+}
 
 // IMPORTANT: We use this, rather than AssetNode.id throughout this file because
 // the GraphQL interface exposes dependencyKeys, not dependencyIds. We also need
@@ -72,7 +76,7 @@ export const buildGraphData = (assetNodes: AssetNode[]) => {
     });
 
     data.nodes[id] = {
-      id: id,
+      id,
       assetKey: definition.assetKey,
       definition,
     };
@@ -89,7 +93,7 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
     },
     nodes: {
       [id]: {
-        id: id,
+        id,
         assetKey: assetNode.assetKey,
         definition: {...assetNode, dependencyKeys: [], dependedByKeys: []},
       },
@@ -158,7 +162,7 @@ export interface LiveDataForNode {
   inProgressRunIds: string[]; // run in progress and step in progress
   runWhichFailedToMaterialize: RepositoryLiveFragment_latestRunByStep_run | null;
   lastMaterialization: AssetGraphLiveQuery_assetNodes_assetMaterializations | null;
-  lastStepStart: number;
+  lastChanged: number;
 }
 export interface LiveData {
   [assetId: GraphId]: LiveDataForNode;
@@ -178,15 +182,10 @@ export const buildLiveData = (
       console.warn(`buildLiveData could not find the graph node matching ${graphId}`);
       continue;
     }
-
     const lastMaterialization = liveNode.assetMaterializations[0] || null;
-    const lastStepStart = lastMaterialization?.stepStats?.startTime || 0;
+    const lastChanged = Number(lastMaterialization?.timestamp || 0) / 1000;
     const isPartitioned = graphNode.definition.partitionDefinition;
-    const repo = repos.find(
-      (r) =>
-        r.location.name === liveNode.repository.location.name &&
-        r.name === liveNode.repository.name,
-    );
+    const repo = repos.find((r) => r.id === liveNode.repository.id);
 
     const runs = repo?.inProgressRunsByStep.find((r) => r.stepKey === liveNode.opName);
     const info = repo?.latestRunByStep.find((r) => r.stepKey === liveNode.opName);
@@ -200,7 +199,7 @@ export const buildLiveData = (
       null;
 
     data[graphId] = {
-      lastStepStart,
+      lastChanged,
       lastMaterialization,
       inProgressRunIds: runs?.inProgressRuns.map((r) => r.id) || [],
       unstartedRunIds: runs?.unstartedRuns.map((r) => r.id) || [],
@@ -234,13 +233,13 @@ function findComputeStatusForId(
     // and only shows "upstream changed" for upstreams in the same job
     return 'good';
   }
-  const ts = data[assetId].lastStepStart;
+  const ts = data[assetId].lastChanged;
   const upstreamIds = Object.keys(upstream[assetId] || {});
   if (data[assetId].computeStatus !== 'unknown') {
     return data[assetId].computeStatus;
   }
 
-  return upstreamIds.some((uid) => data[uid]?.lastStepStart > ts)
+  return upstreamIds.some((uid) => data[uid]?.lastChanged > ts)
     ? 'old'
     : upstreamIds.some((uid) => findComputeStatusForId(data, upstream, uid) !== 'good')
     ? 'old'

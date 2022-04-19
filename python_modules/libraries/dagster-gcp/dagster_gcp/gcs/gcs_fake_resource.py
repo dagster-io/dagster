@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union
+from typing import AbstractSet, Dict, Optional, Union
 
 
 class FakeGCSBlob:
@@ -90,3 +90,10 @@ class FakeGCSClient:
                 yield blob
             elif prefix in blob.name:
                 yield blob
+
+    def get_all_blob_paths(self) -> AbstractSet[str]:
+        return {
+            f"{bucket.name}/{blob.name}"
+            for bucket in self.buckets.values()
+            for blob in bucket.blobs.values()
+        }

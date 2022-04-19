@@ -66,12 +66,19 @@ export const tokenizedValuesFromString = (str: string, providers: SuggestionProv
 export const tokenizedValuesFromStringArray = (tokens: string[], providers: SuggestionProvider[]) =>
   tokens.map((token) => tokenizedValueFromString(token, providers));
 
+export const tokenizeString = (str: string): [string, string] => {
+  const colonAt = str.indexOf(':');
+  if (colonAt === -1) {
+    return [str, ''];
+  }
+  return [str.slice(0, colonAt), str.slice(colonAt + 1)];
+};
+
 export function tokenizedValueFromString(
   str: string,
   providers: SuggestionProvider[],
 ): TokenizingFieldValue {
-  const [token = '', value = ''] = str.split(':');
-
+  const [token, value] = tokenizeString(str);
   if (findProviderByToken(token, providers)) {
     if (token && value) {
       return {token, value};

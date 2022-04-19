@@ -1,4 +1,4 @@
-from typing import Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
@@ -256,6 +256,8 @@ class ListRepositoriesResponse(
             ("executable_path", Optional[str]),
             ("repository_code_pointer_dict", Dict[str, CodePointer]),
             ("entry_point", Optional[List[str]]),
+            ("container_image", Optional[str]),
+            ("container_context", Optional[Dict[str, Any]]),
         ],
     )
 ):
@@ -265,6 +267,8 @@ class ListRepositoriesResponse(
         executable_path=None,
         repository_code_pointer_dict=None,
         entry_point=None,
+        container_image=None,
+        container_context=None,
     ):
         return super(ListRepositoriesResponse, cls).__new__(
             cls,
@@ -281,6 +285,12 @@ class ListRepositoriesResponse(
             entry_point=(
                 frozenlist(check.list_param(entry_point, "entry_point", of_type=str))
                 if entry_point != None
+                else None
+            ),
+            container_image=check.opt_str_param(container_image, "container_image"),
+            container_context=(
+                check.dict_param(container_context, "container_context")
+                if container_context != None
                 else None
             ),
         )

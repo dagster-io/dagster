@@ -21,20 +21,6 @@ export interface RepositorySchedulesFragment_schedules_partitionSet {
   name: string;
 }
 
-export interface RepositorySchedulesFragment_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface RepositorySchedulesFragment_schedules_scheduleState_repositoryOrigin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: RepositorySchedulesFragment_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
-}
-
 export interface RepositorySchedulesFragment_schedules_scheduleState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
@@ -83,10 +69,12 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_ticks {
 export interface RepositorySchedulesFragment_schedules_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
-  repositoryOrigin: RepositorySchedulesFragment_schedules_scheduleState_repositoryOrigin;
+  repositoryName: string;
+  repositoryLocationName: string;
   typeSpecificData: RepositorySchedulesFragment_schedules_scheduleState_typeSpecificData | null;
   runs: RepositorySchedulesFragment_schedules_scheduleState_runs[];
   ticks: RepositorySchedulesFragment_schedules_scheduleState_ticks[];

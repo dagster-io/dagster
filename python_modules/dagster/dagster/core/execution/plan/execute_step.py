@@ -1,4 +1,5 @@
 import inspect
+import warnings
 from collections import defaultdict
 from typing import AbstractSet, Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
 
@@ -40,9 +41,9 @@ from dagster.core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster.core.execution.resolve_versions import resolve_step_output_versions
 from dagster.core.storage.io_manager import IOManager
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
+from dagster.core.types.dagster_type import DagsterType
 from dagster.utils import ensure_gen, iterate_with_context
-from dagster.utils.backcompat import experimental_functionality_warning
+from dagster.utils.backcompat import ExperimentalWarning, experimental_functionality_warning
 from dagster.utils.timing import time_execution_scope
 
 from .compute import SolidOutputUnion
@@ -134,7 +135,7 @@ def _step_output_error_checked_user_event_sequence(
     for step_output in step.step_outputs:
         step_output_def = step_context.solid_def.output_def_named(step_output.name)
         if not step_context.has_seen_output(step_output_def.name) and not step_output_def.optional:
-            if step_output_def.dagster_type.kind == DagsterTypeKind.NOTHING:
+            if step_output_def.dagster_type.is_nothing:
                 step_context.log.info(
                     f'Emitting implicit Nothing for output "{step_output_def.name}" on {op_label}'
                 )
@@ -185,13 +186,21 @@ def _create_step_input_event(
 
 
 def _type_checked_event_sequence_for_input(
-    step_context: StepExecutionContext, input_name: str, input_value: Any
+    step_context: StepExecutionContext,
+    input_name: str,
+    input_value: Any,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
     check.str_param(input_name, "input_name")
 
     step_input = step_context.step.step_input_named(input_name)
-    input_def = step_input.source.get_input_def(step_context.pipeline_def)
+    input_def = step_context.solid_def.input_def_named(step_input.name)
+
+    check.invariant(
+        input_def.name == input_name,
+        f"InputDefinition name does not match, expected {input_name} got {input_def.name}",
+    )
+
     dagster_type = input_def.dagster_type
     type_check_context = step_context.for_type(dagster_type)
     input_type = type(input_value)
@@ -298,12 +307,15 @@ def core_dagster_event_sequence_for_step(
     inputs = {}
 
     for step_input in step_context.step.step_inputs:
-        input_def = step_input.source.get_input_def(step_context.pipeline_def)
+        input_def = step_context.solid_def.input_def_named(step_input.name)
         dagster_type = input_def.dagster_type
 
-        if dagster_type.kind == DagsterTypeKind.NOTHING:
+        if dagster_type.is_nothing:
             continue
-        for event_or_input_value in ensure_gen(step_input.source.load_input_object(step_context)):
+
+        for event_or_input_value in ensure_gen(
+            step_input.source.load_input_object(step_context, input_def)
+        ):
             if isinstance(event_or_input_value, DagsterEvent):
                 yield event_or_input_value
             else:
@@ -484,11 +496,14 @@ def _get_output_asset_materializations(
                     metadata_mapping[partition].append(entry)
 
         for partition in asset_partitions:
-            yield AssetMaterialization(
-                asset_key=asset_key,
-                partition=partition,
-                metadata_entries=metadata_mapping[partition],
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+                yield AssetMaterialization(
+                    asset_key=asset_key,
+                    partition=partition,
+                    metadata_entries=metadata_mapping[partition],
+                )
     else:
         for entry in all_metadata:
             if isinstance(entry, PartitionMetadataEntry):
@@ -496,7 +511,10 @@ def _get_output_asset_materializations(
                     f"Output {output_def.name} got a PartitionMetadataEntry ({entry}), but "
                     "is not associated with any specific partitions."
                 )
-        yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+            yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata)
 
 
 def _store_output(
@@ -574,15 +592,19 @@ def _store_output(
             raise DagsterInvariantViolationError(
                 f"When handling output '{output_context.name}' of {output_context.solid_def.node_type_str} '{output_context.solid_def.name}', received a materialization with metadata, while context.add_output_metadata was used within the same call to handle_output. Due to potential conflicts, this is not allowed. Please specify metadata in one place within the `handle_output` function."
             )
+
         if manager_metadata_entries:
-            materialization = AssetMaterialization(
-                asset_key=materialization.asset_key,
-                description=materialization.description,
-                metadata_entries=manager_metadata_entries,
-                partition=materialization.partition,
-                tags=materialization.tags,
-                metadata=None,
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+                materialization = AssetMaterialization(
+                    asset_key=materialization.asset_key,
+                    description=materialization.description,
+                    metadata_entries=manager_metadata_entries,
+                    partition=materialization.partition,
+                    tags=materialization.tags,
+                    metadata=None,
+                )
         yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
 
     asset_key, partitions = _asset_key_and_partitions_for_output(
@@ -641,7 +663,12 @@ def _create_type_materializations(
                 ):
                     output_def = step_context.solid_def.output_def_named(step_output.name)
                     dagster_type = output_def.dagster_type
-                    materializations = dagster_type.materializer.materialize_runtime_values(
+                    materializer = dagster_type.materializer
+                    if materializer is None:
+                        check.failed(
+                            "Unexpected attempt to materialize with no materializer available on dagster_type"
+                        )
+                    materializations = materializer.materialize_runtime_values(
                         step_context, output_spec, value
                     )
 

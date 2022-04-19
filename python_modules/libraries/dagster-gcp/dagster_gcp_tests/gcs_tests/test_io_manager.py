@@ -16,6 +16,8 @@ from dagster import (
     Int,
     Out,
     PipelineRun,
+    ResourceDefinition,
+    StaticPartitionsDefinition,
     asset,
     build_input_context,
     build_output_context,
@@ -166,15 +168,26 @@ def test_asset_io_manager(gcs_bucket):
     def downstream(upstream):
         return 1 + upstream
 
+    @asset(partitions_def=StaticPartitionsDefinition(["apple", "orange"]))
+    def partitioned():
+        return 8
+
+    fake_gcs_client = FakeGCSClient()
     asset_group = AssetGroup(
-        [upstream, downstream],
-        resource_defs={"io_manager": gcs_pickle_asset_io_manager, "gcs": mock_gcs_resource},
+        [upstream, downstream, partitioned],
+        resource_defs={
+            "io_manager": gcs_pickle_asset_io_manager.configured(
+                {"gcs_bucket": gcs_bucket, "gcs_prefix": "assets"}
+            ),
+            "gcs": ResourceDefinition.hardcoded_resource(fake_gcs_client),
+        },
     )
     asset_job = asset_group.build_job(name="my_asset_job")
 
-    run_config = {
-        "resources": {"io_manager": {"config": {"gcs_bucket": gcs_bucket, "gcs_prefix": "assets"}}}
-    }
-
-    result = asset_job.execute_in_process(run_config=run_config)
+    result = asset_job.execute_in_process(partition_key="apple")
     assert result.success
+    assert fake_gcs_client.get_all_blob_paths() == {
+        f"{gcs_bucket}/assets/upstream",
+        f"{gcs_bucket}/assets/downstream",
+        f"{gcs_bucket}/assets/partitioned/apple",
+    }

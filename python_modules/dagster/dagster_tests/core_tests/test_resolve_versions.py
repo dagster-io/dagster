@@ -177,7 +177,7 @@ def test_memoized_plan_memoized_results():
         ] = 4
 
         memoized_plan = plan.build_memoized_plan(
-            versioned_pipeline, resolved_run_config, instance=None
+            versioned_pipeline, resolved_run_config, instance=None, selected_step_keys=None
         )
 
         assert memoized_plan.step_keys_to_execute == ["versioned_solid_takes_input"]
@@ -470,7 +470,10 @@ def test_memoized_inner_solid():
             (step_output_handle.step_key, step_output_handle.output_name, step_output_version)
         ] = 4
         memoized_plan = unmemoized_plan.build_memoized_plan(
-            wrap_pipeline, ResolvedRunConfig.build(wrap_pipeline), instance=None
+            wrap_pipeline,
+            ResolvedRunConfig.build(wrap_pipeline),
+            instance=None,
+            selected_step_keys=None,
         )
         assert len(memoized_plan.step_keys_to_execute) == 0
 

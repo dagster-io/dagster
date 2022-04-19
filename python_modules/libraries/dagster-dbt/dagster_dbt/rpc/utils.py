@@ -6,7 +6,7 @@ from typing import Dict, List
 from requests import Response
 from requests.exceptions import RequestException
 
-from dagster import Failure, MetadataEntry, RetryRequested
+from dagster import Failure, RetryRequested
 from dagster.core.execution.context.compute import SolidExecutionContext
 
 
@@ -50,35 +50,33 @@ def raise_for_rpc_error(context: SolidExecutionContext, resp: Response) -> None:
         elif error["code"] == DBTErrors.project_compile_failure_error.value:
             raise Failure(
                 description=error["message"],
-                metadata_entries=[
-                    MetadataEntry("RPC Error Code", value=str(error["code"])),
-                    MetadataEntry("RPC Error Cause", value=error["data"]["cause"]["message"]),
-                ],
+                metadata={
+                    "RPC Error Code": str(error["code"]),
+                    "RPC Error Cause": error["data"]["cause"]["message"],
+                },
             )
         elif error["code"] == DBTErrors.rpc_process_killed_error.value:
             raise Failure(
                 description=error["message"],
-                metadata_entries=[
-                    MetadataEntry("RPC Error Code", value=str(error["code"])),
-                    MetadataEntry("RPC Signum", value=str(error["data"]["signum"])),
-                    MetadataEntry("RPC Error Message", value=error["data"]["message"]),
-                ],
+                metadata={
+                    "RPC Error Code": str(error["code"]),
+                    "RPC Signum": str(error["data"]["signum"]),
+                    "RPC Error Message": error["data"]["message"],
+                },
             )
         elif error["code"] == DBTErrors.rpc_timeout_error.value:
             raise Failure(
                 description=error["message"],
-                metadata_entries=[
-                    MetadataEntry("RPC Error Code", value=str(error["code"])),
-                    MetadataEntry("RPC Timeout", value=str(error["data"]["timeout"])),
-                    MetadataEntry("RPC Error Message", value=error["data"]["message"]),
-                ],
+                metadata={
+                    "RPC Error Code": str(error["code"]),
+                    "RPC Timeout": str(error["data"]["timeout"]),
+                    "RPC Error Message": error["data"]["message"],
+                },
             )
         else:
             raise Failure(
                 description=error["message"],
-                metadata_entries=[
-                    MetadataEntry("RPC Error Code", value=str(error["code"])),
-                ],
+                metadata={"RPC Error Code": str(error["code"])},
             )
 
 

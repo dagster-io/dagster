@@ -46,4 +46,5 @@ export interface StopSchedule {
 
 export interface StopScheduleVariables {
   scheduleOriginId: string;
+  scheduleSelectorId: string;
 }

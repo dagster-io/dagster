@@ -1,5 +1,7 @@
 import pickle
+from contextlib import contextmanager
 
+from azure.storage.filedatalake import DataLakeLeaseClient
 from dagster_azure.adls2.utils import ResourceNotFoundError
 
 from dagster import Field, IOManager, StringSource, check, io_manager
@@ -38,8 +40,10 @@ class PickledObjectADLS2IOManager(IOManager):
         check.str_param(key, "key")
         check.param_invariant(len(key) > 0, "key")
 
-        # This operates recursively already so is nice and simple.
-        self.file_system_client.delete_file(key)
+        file_client = self.file_system_client.get_file_client(key)
+        with self._acquire_lease(file_client, is_rm=True) as lease:
+            # This operates recursively already so is nice and simple.
+            file_client.delete_file(lease=lease)
 
     def _has_object(self, key):
         check.str_param(key, "key")
@@ -62,6 +66,17 @@ class PickledObjectADLS2IOManager(IOManager):
             key=key,
         )
 
+    @contextmanager
+    def _acquire_lease(self, client, is_rm=False):
+        lease_client = DataLakeLeaseClient(client=client)
+        try:
+            lease_client.acquire(lease_duration=self.lease_duration)
+            yield lease_client.id
+        finally:
+            # cannot release a lease on a file that no longer exists, so need to check
+            if not is_rm:
+                lease_client.release()
+
     def load_input(self, context):
         key = self._get_path(context.upstream_output)
         context.log.debug(f"Loading ADLS2 object from: {self._uri_for_key(key)}")
@@ -82,7 +97,7 @@ class PickledObjectADLS2IOManager(IOManager):
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
 
         file = self.file_system_client.create_file(key)
-        with file.acquire_lease(self.lease_duration) as lease:
+        with self._acquire_lease(file) as lease:
             file.upload_data(pickled_obj, lease=lease, overwrite=True)
 
 
@@ -136,7 +151,7 @@ def adls2_pickle_io_manager(init_context):
 
 class PickledObjectADLS2AssetIOManager(PickledObjectADLS2IOManager):
     def _get_path(self, context):
-        return "/".join([self.prefix, *context.asset_key.path])
+        return "/".join([self.prefix, *context.get_asset_output_identifier()])
 
 
 @io_manager(

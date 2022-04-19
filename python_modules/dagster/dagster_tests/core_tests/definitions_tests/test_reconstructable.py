@@ -158,6 +158,7 @@ def test_reconstruct_from_origin():
             ),
             container_image="my_image",
             entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
+            container_context={"docker": {"registry": "my_reg"}},
         ),
     )
 
@@ -167,3 +168,4 @@ def test_reconstruct_from_origin():
     assert recon_pipeline.repository.pointer == origin.repository_origin.code_pointer
     assert recon_pipeline.repository.container_image == origin.repository_origin.container_image
     assert recon_pipeline.repository.executable_path == origin.repository_origin.executable_path
+    assert recon_pipeline.repository.container_context == origin.repository_origin.container_context

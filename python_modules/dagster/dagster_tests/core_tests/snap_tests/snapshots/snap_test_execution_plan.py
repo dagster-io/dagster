@@ -68,10 +68,10 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
           "source": {
             "__class__": "FromStepOutput",
             "fan_in": false,
-            "input_name": "num",
+            "input_name": "",
             "solid_handle": {
               "__class__": "SolidHandle",
-              "name": "solid_two",
+              "name": "",
               "parent": null
             },
             "step_output_handle": {
@@ -278,10 +278,10 @@ snapshots['test_create_with_composite 1'] = '''{
           "source": {
             "__class__": "FromStepOutput",
             "fan_in": false,
-            "input_name": "num_one",
+            "input_name": "",
             "solid_handle": {
               "__class__": "SolidHandle",
-              "name": "add",
+              "name": "",
               "parent": null
             },
             "step_output_handle": {
@@ -307,10 +307,10 @@ snapshots['test_create_with_composite 1'] = '''{
           "source": {
             "__class__": "FromStepOutput",
             "fan_in": false,
-            "input_name": "num_two",
+            "input_name": "",
             "solid_handle": {
               "__class__": "SolidHandle",
-              "name": "add",
+              "name": "",
               "parent": null
             },
             "step_output_handle": {
@@ -377,15 +377,11 @@ snapshots['test_create_with_composite 1'] = '''{
           "source": {
             "__class__": "FromStepOutput",
             "fan_in": false,
-            "input_name": "num",
+            "input_name": "",
             "solid_handle": {
               "__class__": "SolidHandle",
-              "name": "add_one",
-              "parent": {
-                "__class__": "SolidHandle",
-                "name": "comp_1",
-                "parent": null
-              }
+              "name": "",
+              "parent": null
             },
             "step_output_handle": {
               "__class__": "StepOutputHandle",
@@ -507,15 +503,11 @@ snapshots['test_create_with_composite 1'] = '''{
           "source": {
             "__class__": "FromStepOutput",
             "fan_in": false,
-            "input_name": "num",
+            "input_name": "",
             "solid_handle": {
               "__class__": "SolidHandle",
-              "name": "add_one",
-              "parent": {
-                "__class__": "SolidHandle",
-                "name": "comp_2",
-                "parent": null
-              }
+              "name": "",
+              "parent": null
             },
             "step_output_handle": {
               "__class__": "StepOutputHandle",

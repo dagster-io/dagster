@@ -110,15 +110,23 @@ export interface AppProviderProps {
   config: {
     apolloLinks: ApolloLink[];
     basePath?: string;
-    telemetryEnabled?: boolean;
     headers?: {[key: string]: string};
     origin: string;
+    staticPathRoot?: string;
+    telemetryEnabled?: boolean;
   };
 }
 
 export const AppProvider: React.FC<AppProviderProps> = (props) => {
   const {appCache, config} = props;
-  const {apolloLinks, basePath = '', headers = {}, origin, telemetryEnabled = false} = config;
+  const {
+    apolloLinks,
+    basePath = '',
+    headers = {},
+    origin,
+    staticPathRoot = '/',
+    telemetryEnabled = false,
+  } = config;
 
   const graphqlPath = `${basePath}/graphql`;
   const rootServerURI = `${origin}${basePath}`;
@@ -158,9 +166,10 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
     () => ({
       basePath,
       rootServerURI,
+      staticPathRoot,
       telemetryEnabled,
     }),
-    [basePath, rootServerURI, telemetryEnabled],
+    [basePath, rootServerURI, staticPathRoot, telemetryEnabled],
   );
 
   return (

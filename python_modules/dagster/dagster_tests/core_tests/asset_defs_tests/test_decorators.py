@@ -8,6 +8,7 @@ from dagster import (
     OpExecutionContext,
     Out,
     Output,
+    StaticPartitionsDefinition,
     String,
     build_op_context,
     check,
@@ -326,3 +327,13 @@ def test_invoking_asset_with_context():
     ctx = build_op_context()
     out = asset_with_context(ctx, 1)
     assert out == 1
+
+
+def test_partitions_def():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+    @asset(partitions_def=partitions_def)
+    def my_asset():
+        pass
+
+    assert my_asset.partitions_def == partitions_def
