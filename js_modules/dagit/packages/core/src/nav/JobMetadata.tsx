@@ -29,6 +29,9 @@ export const JobMetadata: React.FC<Props> = (props) => {
         repositoryName: repoAddress.name,
         repositoryLocationName: repoAddress.location,
       },
+      runsFilter: {
+        pipelineName,
+      },
     },
   });
 
