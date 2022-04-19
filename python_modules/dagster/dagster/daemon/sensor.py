@@ -204,12 +204,12 @@ def execute_sensor_iteration(
     check.inst_param(instance, "instance", DagsterInstance)
 
     workspace_snapshot = {
-        location_entry.origin: location_entry
+        location_entry.origin.location_name: location_entry
         for location_entry in workspace.get_workspace_snapshot().values()
     }
 
     all_sensor_states = {
-        sensor_state.origin.get_id(): sensor_state
+        sensor_state.selector_id: sensor_state
         for sensor_state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
     }
 
@@ -219,11 +219,11 @@ def execute_sensor_iteration(
         if repo_location:
             for repo in repo_location.get_repositories().values():
                 for sensor in repo.get_external_sensors():
-                    origin_id = sensor.get_external_origin().get_id()
+                    selector_id = sensor.selector_id
                     if sensor.get_current_instigator_state(
-                        all_sensor_states.get(origin_id)
+                        all_sensor_states.get(selector_id)
                     ).is_running:
-                        sensors[origin_id] = sensor
+                        sensors[selector_id] = sensor
         elif location_entry.load_error and log_verbose_checks:
             logger.warning(
                 f"Could not load location {location_entry.origin.location_name} to check for sensors due to the following error: {location_entry.load_error}"
@@ -231,9 +231,9 @@ def execute_sensor_iteration(
 
     if log_verbose_checks:
         unloadable_sensor_states = {
-            origin_id: sensor_state
-            for origin_id, sensor_state in all_sensor_states.items()
-            if origin_id not in sensors and sensor_state.status == InstigatorStatus.RUNNING
+            selector_id: sensor_state
+            for selector_id, sensor_state in all_sensor_states.items()
+            if selector_id not in sensors and sensor_state.status == InstigatorStatus.RUNNING
         }
 
         for sensor_state in unloadable_sensor_states.values():
@@ -245,16 +245,15 @@ def execute_sensor_iteration(
             repo_location_name = repo_location_origin.location_name
             repo_name = sensor_state.origin.external_repository_origin.repository_name
             if (
-                repo_location_origin not in workspace_snapshot
-                or not workspace_snapshot[repo_location_origin].repository_location
+                repo_location_name not in workspace_snapshot
+                or not workspace_snapshot[repo_location_name].repository_location
             ):
                 logger.warning(
                     f"Sensor {sensor_name} was started from a location "
-                    f"{repo_location_name} that can no longer be found in the workspace, or has "
-                    "metadata that has changed since the sensor was started. You can turn off "
-                    "this sensor in the Dagit UI from the Status tab."
+                    f"{repo_location_name} that can no longer be found in the workspace. "
+                    "You can turn off this sensor in the Dagit UI from the Status tab."
                 )
-            elif not workspace_snapshot[repo_location_origin].repository_location.has_repository(
+            elif not workspace_snapshot[repo_location_name].repository_location.has_repository(
                 repo_name
             ):
                 logger.warning(
@@ -282,7 +281,7 @@ def execute_sensor_iteration(
         sensor_debug_crash_flags = debug_crash_flags.get(sensor_name) if debug_crash_flags else None
         error_info = None
         try:
-            sensor_state = all_sensor_states.get(external_sensor.get_external_origin().get_id())
+            sensor_state = all_sensor_states.get(external_sensor.selector_id)
             if not sensor_state:
                 assert external_sensor.default_status == DefaultSensorStatus.RUNNING
                 sensor_state = InstigatorState(
