@@ -11,11 +11,8 @@ from typing import (
     Union,
     cast,
     overload,
-<<<<<<< HEAD
-=======
     Tuple,
     List,
->>>>>>> 847497c193 (add assets_definition decorator)
 )
 
 from dagster import check
@@ -360,11 +357,11 @@ def assets_definition(
         )
         op_def = name
         return AssetsDefinition(
-            asset_key_by_input_name=_infer_asset_keys_by_input_name(
+            input_names_by_asset_key=_infer_input_names_by_asset_key(
                 op_def,
                 asset_keys_by_input_name,
             ),
-            asset_key_by_output_name=_infer_asset_keys_by_output_name(
+            output_names_by_asset_key=_infer_output_names_by_asset_key(
                 op_def, asset_keys_by_output_name
             ),
             op=op_def,
@@ -376,15 +373,15 @@ def assets_definition(
             "assets_definition decorator can only be applied to an OpDefinition",
         )
         return AssetsDefinition(
-            asset_key_by_input_name=_infer_asset_keys_by_input_name(
+            input_names_by_asset_key=_infer_input_names_by_asset_key(
                 op_def,
                 asset_keys_by_input_name,
             ),
-            asset_key_by_output_name=_infer_asset_keys_by_output_name(
+            output_names_by_asset_key=_infer_output_names_by_asset_key(
                 op_def, asset_keys_by_output_name
             ),
             op=op_def,
-            asset_deps=internal_asset_deps or None,
+            # asset_deps=internal_asset_deps or None,
         )
 
     return inner
@@ -399,9 +396,9 @@ def _get_input_param_names(fn_params: List[str]) -> List[str]:
     ]
 
 
-def _infer_asset_keys_by_input_name(
+def _infer_input_names_by_asset_key(
     op_def: OpDefinition, asset_keys_by_input_name: Dict[str, AssetKey]
-) -> Dict[str, AssetKey]:
+) -> Dict[AssetKey, str]:
     # Infer non-argument deps for inputs with type In(nothing) with AssetKey(input_name)
 
     params = get_function_params(op_def.compute_fn.decorated_fn)
@@ -418,18 +415,18 @@ def _infer_asset_keys_by_input_name(
     all_input_names = set(input_param_names) | op_def.ins.keys()
     # If asset key is not supplied in asset_keys_by_input_name, create asset key
     # from input name
-    inferred_asset_keys_by_input_name: Dict[str, AssetKey] = {
-        input_name: asset_keys_by_input_name.get(input_name, AssetKey([input_name]))
+    inferred_input_names_by_asset_key: Dict[AssetKey, str] = {
+        asset_keys_by_input_name.get(input_name, AssetKey([input_name])): input_name
         for input_name in all_input_names
     }
 
-    return inferred_asset_keys_by_input_name
+    return inferred_input_names_by_asset_key
 
 
-def _infer_asset_keys_by_output_name(
+def _infer_output_names_by_asset_key(
     op_def: OpDefinition, asset_keys_by_output_name: Dict[str, AssetKey]
-):
-    inferred_asset_keys_by_output_name: Dict[str, AssetKey] = asset_keys_by_output_name.copy()
+) -> Dict[AssetKey, str]:
+    inferred_output_name_by_asset_key: Dict[AssetKey, str] = {asset_key: output_name for output_name, asset_key in asset_keys_by_output_name.items()}
     op_outs = op_def.outs
 
     for output_name, asset_key in asset_keys_by_output_name.items():
@@ -440,10 +437,10 @@ def _infer_asset_keys_by_output_name(
             )
 
     for output_name in op_outs:
-        if output_name not in inferred_asset_keys_by_output_name:
-            inferred_asset_keys_by_output_name[output_name] = AssetKey([output_name])
+        if output_name not in inferred_output_name_by_asset_key:
+            inferred_output_name_by_asset_key[AssetKey([output_name])] = output_name
 
-    return inferred_asset_keys_by_output_name
+    return inferred_output_name_by_asset_key
 
 
 def build_asset_outs(

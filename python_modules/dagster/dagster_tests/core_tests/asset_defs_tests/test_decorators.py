@@ -342,10 +342,6 @@ def test_partitions_def():
 
     assert my_asset.partitions_def == partitions_def
 
-def _invert_dict(input_dict):
-    return {v: k for k, v in input_dict.items()}
-
-
 def test_asset_definition_decorator():
     @assets_definition(
         asset_keys_by_input_name={"x": AssetKey("x_asset"), "y": AssetKey("y_asset")},
@@ -356,8 +352,8 @@ def test_asset_definition_decorator():
         yield Output(1, "a")
         yield Output(2, "b")
 
-    output_def_by_asset_key = _invert_dict(multi_asset_op.asset_key_by_output_def)
-    input_def_by_asset_key = _invert_dict(multi_asset_op.asset_key_by_input_def)
+    output_def_by_asset_key = multi_asset_op.output_defs_by_asset_key
+    input_def_by_asset_key = multi_asset_op.input_defs_by_asset_key
 
     assert output_def_by_asset_key[AssetKey("a_asset")].name == "a"
     assert output_def_by_asset_key[AssetKey("b_asset")].name == "b"
@@ -372,8 +368,8 @@ def test_asset_definition_no_names_specified():
         yield Output(1, "a")
         yield Output(2, "b")
 
-    output_def_by_asset_key = _invert_dict(multi_asset_op.asset_key_by_output_def)
-    input_def_by_asset_key = _invert_dict(multi_asset_op.asset_key_by_input_def)
+    output_def_by_asset_key = multi_asset_op.output_defs_by_asset_key
+    input_def_by_asset_key = multi_asset_op.input_defs_by_asset_key
 
     assert output_def_by_asset_key[AssetKey("a")].name == "a"
     assert output_def_by_asset_key[AssetKey("b")].name == "b"
@@ -389,7 +385,7 @@ def test_assets_no_ins_outs():
         yield Output(1, "a")
         yield Output(2, "b")
 
-    input_def_by_asset_key = _invert_dict(multi_asset_op.asset_key_by_input_def)
+    input_def_by_asset_key = multi_asset_op.input_defs_by_asset_key
     assert input_def_by_asset_key[AssetKey("x_asset")].name == "x"
     assert input_def_by_asset_key[AssetKey("y")].name == "y"
 
@@ -404,8 +400,8 @@ def test_partial_asset_keys_provided():
         yield Output(1, "a")
         yield Output(2, "b")
 
-    output_def_by_asset_key = _invert_dict(multi_asset_op.asset_key_by_output_def)
-    input_def_by_asset_key = _invert_dict(multi_asset_op.asset_key_by_input_def)
+    output_def_by_asset_key = multi_asset_op.output_defs_by_asset_key
+    input_def_by_asset_key = multi_asset_op.input_defs_by_asset_key
 
     assert output_def_by_asset_key[AssetKey("a_asset")].name == "a"
     assert output_def_by_asset_key[AssetKey("b")].name == "b"
@@ -419,8 +415,8 @@ def test_default_assets_and_op_definition():
     def my_op():
         return 5, 6
 
-    output_def_by_asset_key = _invert_dict(my_op.asset_key_by_output_def)
-    input_def_by_asset_key = _invert_dict(my_op.asset_key_by_input_def)
+    output_def_by_asset_key = my_op.output_defs_by_asset_key
+    input_def_by_asset_key = my_op.input_defs_by_asset_key
 
     assert input_def_by_asset_key == {}
     assert output_def_by_asset_key[AssetKey("result_asset")].name == "result"
