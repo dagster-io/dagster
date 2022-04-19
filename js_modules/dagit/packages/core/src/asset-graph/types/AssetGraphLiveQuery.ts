@@ -36,27 +36,17 @@ export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_no
   inProgressRuns: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep_inProgressRuns[];
 }
 
-export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_LatestRun_run {
+export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_run {
   __typename: "Run";
   id: string;
   status: RunStatus;
 }
 
-export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_LatestRun {
+export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep {
   __typename: "LatestRun";
   stepKey: string;
-  run: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_LatestRun_run | null;
+  run: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_run | null;
 }
-
-export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_JobRunsCount {
-  __typename: "JobRunsCount";
-  stepKey: string;
-  jobNames: string[];
-  count: number;
-  sinceLatestMaterialization: boolean;
-}
-
-export type AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep = AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_LatestRun | AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_JobRunsCount;
 
 export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes {
   __typename: "Repository";

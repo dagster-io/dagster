@@ -87,7 +87,7 @@ type Repository {
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
   inProgressRunsByStep: [InProgressRunsByStep!]!
-  latestRunByStep: [RunStatsByStep!]!
+  latestRunByStep: [LatestRun!]!
 }
 
 type RepositoryLocation {
@@ -1390,18 +1390,9 @@ type InProgressRunsByStep {
   inProgressRuns: [Run!]!
 }
 
-union RunStatsByStep = LatestRun | JobRunsCount
-
 type LatestRun {
   stepKey: String!
   run: Run
-}
-
-type JobRunsCount {
-  stepKey: String!
-  jobNames: [String!]!
-  count: Int!
-  sinceLatestMaterialization: Boolean!
 }
 
 input RepositorySelector {
