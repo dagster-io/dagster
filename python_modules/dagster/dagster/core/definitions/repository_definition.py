@@ -23,7 +23,7 @@ from dagster.utils import merge_dicts
 
 from .events import AssetKey
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
-from .job_definition import JobDefinition
+from .job_definition import JobDefinition, PendingJobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
 from .resource_definition import ResourceDefinition
@@ -625,6 +625,7 @@ class CachingRepositoryData(RepositoryData):
         from dagster.core.asset_defs import AssetGroup
 
         pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
+        partial_job_defs: Dict[str, PendingJobDefinition] = {}
         graph_defs: Dict[str, GraphDefinition] = {}
         partition_sets: Dict[str, PartitionSetDefinition] = {}
         schedules: Dict[str, ScheduleDefinition] = {}
@@ -701,6 +702,19 @@ class CachingRepositoryData(RepositoryData):
                     combined_asset_group += definition
                 else:
                     combined_asset_group = definition
+
+            elif isinstance(definition, PendingJobDefinition):
+                partial_job_def = definition
+                if partial_job_def.name in partial_job_defs:
+                    raise DagsterInvalidDefinitionError(
+                        f"Duplicate job definition found for job '{partial_job_def.name}'"
+                    )
+                elif partial_job_def.name in pipelines_or_jobs:
+                    raise DagsterInvalidDefinitionError(
+                        f"Duplicate {pipelines_or_jobs[partial_job_def.name].target_type} found for job '{name}'"
+                    )
+                partial_job_defs[partial_job_def.name] = partial_job_def
+
             elif is_resource_dict(definition):
                 if not default_resources_dict:
                     default_resources_dict = definition
@@ -739,7 +753,13 @@ class CachingRepositoryData(RepositoryData):
                 check.failed(
                     f"Error when coercing graph '{name}' to job: A pipeline already exists with name '{name}'."
                 )
-            jobs[name] = coerced_with_defaults
+            jobs[name] = cast(JobDefinition, coerced_with_defaults)
+
+        for name, partial_job_def in partial_job_defs.items():
+            job_def_defaults_applied = partial_job_def.coerce_to_job_def(
+                resource_defs=default_resources_dict or {}
+            )
+            jobs[name] = job_def_defaults_applied
 
         return CachingRepositoryData(
             pipelines=pipelines,
