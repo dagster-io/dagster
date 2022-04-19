@@ -124,6 +124,7 @@ if __name__ == "__main__":
             ],
             "mypy": [
                 "mypy==0.940",
+                "types-chardet",  # chardet is a 2+-order dependency of some Dagster libs
                 "types-croniter",  # version will be resolved against croniter
                 "types-mock",  # version will be resolved against mock
                 "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)
@@ -132,6 +133,7 @@ if __name__ == "__main__":
                 "types-PyYAML",  # version will be resolved against PyYAML
                 "types-pytz",  # version will be resolved against pytz
                 "types-requests",  # version will be resolved against requests
+                "types-six",  # needed but not specified by grpcio
                 "types-tabulate",  # version will be resolved against tabulate
                 "types-toml",  # version will be resolved against toml
             ],
