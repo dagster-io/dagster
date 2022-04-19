@@ -40,12 +40,10 @@ class PickledObjectADLS2IOManager(IOManager):
         check.str_param(key, "key")
         check.param_invariant(len(key) > 0, "key")
 
-        # This operates recursively already so is nice and simple.
         file_client = self.file_system_client.get_file_client(key)
         with self._acquire_lease(file_client, is_rm=True) as lease:
+            # This operates recursively already so is nice and simple.
             file_client.delete_file(lease=lease)
-
-        self.file_system_client.delete_file(key)
 
     def _has_object(self, key):
         check.str_param(key, "key")
@@ -75,7 +73,7 @@ class PickledObjectADLS2IOManager(IOManager):
             lease_client.acquire(lease_duration=self.lease_duration)
             yield lease_client.id
         finally:
-            # cannot release a lease on a file that no longer exists, so need to check 
+            # cannot release a lease on a file that no longer exists, so need to check
             if not is_rm:
                 lease_client.release()
 
