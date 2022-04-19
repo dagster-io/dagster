@@ -9,6 +9,7 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     PipelineDefinition,
+    ResourceDefinition,
     SensorDefinition,
     SolidDefinition,
     SourceAsset,
@@ -669,3 +670,22 @@ def test_graph_default_resources():
         @repository
         def the_repo_doesnt_satisfy_resource_reqs():
             return [{"bar": the_resource}, the_graph]
+
+
+def test_job_partial_resource_spec():
+    @op(required_resource_keys={"foo", "bar"})
+    def the_op(context):
+        assert context.resources.foo == "hello"
+        assert context.resources.bar == "goodbye"
+
+    @job(resource_defs={"foo": ResourceDefinition.hardcoded_resource("hello")})
+    def the_job():
+        the_op()
+
+    @repository
+    def the_repo():
+        [{"bar": ResourceDefinition.hardcoded_resource("goodbye")}, the_job]
+
+    job_with_defaults_applied = the_repo.get_all_jobs()[0]
+    result = job_with_defaults_applied.execute_in_process()
+    assert result.success
