@@ -27,6 +27,8 @@ class _Repository:
     def __call__(self, fn: Callable[[], Any]) -> RepositoryDefinition:
         from dagster.core.asset_defs import AssetGroup
 
+        from ..job_definition import PartialJobDefinition
+
         check.callable_param(fn, "fn")
 
         if not self.name:
@@ -45,6 +47,7 @@ class _Repository:
                     or isinstance(definition, SensorDefinition)
                     or isinstance(definition, GraphDefinition)
                     or isinstance(definition, AssetGroup)
+                    or isinstance(definition, PartialJobDefinition)
                     or is_resource_dict(definition)
                 ):
                     bad_definitions.append((i, type(definition)))

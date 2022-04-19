@@ -6,6 +6,7 @@ from typing import (
     Dict,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Tuple,
     Type,
@@ -35,6 +36,7 @@ from dagster.core.selector.subset_selector import (
 )
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.utils import str_format_set
+from dagster.utils import merge_dicts
 
 from .config import ConfigMapping
 from .executor_definition import ExecutorDefinition
@@ -50,6 +52,7 @@ from .run_request import RunRequest
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
+    from dagster.core.definitions.partition import PartitionedConfig
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster.core.instance import DagsterInstance
     from dagster.core.snap import PipelineSnapshot
@@ -236,7 +239,7 @@ class JobDefinition(PipelineDefinition):
 
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
 
-        resolved_op_selection_dict = parse_op_selection(self, op_selection)
+        resolved_op_selection_dict = parse_op_selection(self.graph, op_selection)
 
         sub_graph = get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
 
@@ -460,3 +463,86 @@ def get_subselected_graph_definition(
             f"The attempted subset {str_format_set(resolved_op_selection_dict)} for graph "
             f"{graph.name} results in an invalid graph."
         ) from exc
+
+
+class PartialJobDefinition(NamedTuple):
+    resource_defs: Optional[Dict[str, ResourceDefinition]]
+    loggers: Optional[Dict[str, LoggerDefinition]]
+    executor_defs: Optional[List[ExecutorDefinition]]
+    config_mapping: Optional[ConfigMapping]
+    partitioned_config: Optional["PartitionedConfig"]
+    graph_def: GraphDefinition
+    name: Optional[str] = None
+    description: Optional[str] = None
+    preset_defs: Optional[List[PresetDefinition]] = None
+    tags: Optional[Dict[str, Any]] = None
+    hook_defs: Optional[AbstractSet[HookDefinition]] = None
+    op_retry_policy: Optional[RetryPolicy] = None
+    version_strategy: Optional[VersionStrategy] = None
+    op_selection_data: Optional[OpSelectionData] = None
+
+    def coerce_to_job_def(self, resource_defs: Dict[str, ResourceDefinition]) -> JobDefinition:
+        override_resource_defs = self.resource_defs
+        loggers = self.loggers
+        executor_def = self.executor_defs[0] if self.executor_defs else None
+
+        resource_defs = merge_dicts(
+            resource_defs, override_resource_defs if override_resource_defs else {}
+        )
+
+        mode_def = ModeDefinition(
+            resource_defs=resource_defs,
+            logger_defs=self.loggers,
+            executor_defs=self.executor_defs,
+            _config_mapping=self.config_mapping,
+            _partitioned_config=self.partitioned_config,
+        )
+
+        return JobDefinition(
+            mode_def=mode_def,
+            graph_def=self.graph_def,
+            name=self.name,
+            description=self.description,
+            preset_defs=self.preset_defs,
+            tags=self.tags,
+            hook_defs=self.hook_defs,
+            op_retry_policy=self.op_retry_policy,
+            version_strategy=self.version_strategy,
+            _op_selection_data=self.op_selection_data,
+        )
+
+    def get_job_def_for_op_selection(
+        self,
+        op_selection: Optional[List[str]] = None,
+    ) -> "PartialJobDefinition":
+        if not op_selection:
+            return self
+
+        op_selection = check.opt_list_param(op_selection, "op_selection", str)
+
+        resolved_op_selection_dict = parse_op_selection(self.graph_def, op_selection)
+
+        sub_graph = get_subselected_graph_definition(self.graph_def, resolved_op_selection_dict)
+
+        return PartialJobDefinition(
+            name=self.name,
+            description=self.description,
+            resource_defs=self.resource_defs,
+            loggers=self.loggers,
+            executor_defs=self.executor_defs,
+            config_mapping=self.config_mapping,
+            partitioned_config=self.partitioned_config,
+            preset_defs=self.preset_defs,
+            tags=self.tags,
+            hook_defs=self.hook_defs,
+            op_retry_policy=self.op_retry_policy,
+            graph_def=sub_graph,
+            version_strategy=self.version_strategy,
+            op_selection_data=OpSelectionData(
+                op_selection=op_selection,
+                resolved_op_selection=set(
+                    resolved_op_selection_dict.keys()
+                ),  # equivalent to solids_to_execute. currently only gets top level nodes.
+                parent_job_def=self,  # used by pipeline snapshot lineage
+            ),
+        )

@@ -678,14 +678,27 @@ def test_job_partial_resource_spec():
         assert context.resources.foo == "hello"
         assert context.resources.bar == "goodbye"
 
-    @job(resource_defs={"foo": ResourceDefinition.hardcoded_resource("hello")})
-    def the_job():
+    @graph
+    def the_graph():
         the_op()
+
+    the_job = the_graph.to_job(
+        resource_defs={"foo": ResourceDefinition.hardcoded_resource("hello")}, partial=True
+    )
 
     @repository
     def the_repo():
-        [{"bar": ResourceDefinition.hardcoded_resource("goodbye")}, the_job]
+        return [{"bar": ResourceDefinition.hardcoded_resource("goodbye")}, the_job]
 
     job_with_defaults_applied = the_repo.get_all_jobs()[0]
     result = job_with_defaults_applied.execute_in_process()
     assert result.success
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource key 'bar' is required by op 'the_op', but is not provided.",
+    ):
+
+        @repository
+        def the_repo_doesnt_satisfy_resource_reqs():
+            return [{"baz": ResourceDefinition.hardcoded_resource("blah")}, the_job]

@@ -56,7 +56,7 @@ if TYPE_CHECKING:
     from dagster.core.instance import DagsterInstance
 
     from .executor_definition import ExecutorDefinition
-    from .job_definition import JobDefinition
+    from .job_definition import JobDefinition, PartialJobDefinition
     from .partition import PartitionedConfig, PartitionsDefinition
     from .solid_definition import SolidDefinition
 
@@ -460,7 +460,8 @@ class GraphDefinition(NodeDefinition):
         version_strategy: Optional[VersionStrategy] = None,
         op_selection: Optional[List[str]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
-    ) -> "JobDefinition":
+        partial: Optional[bool] = False,
+    ) -> Union["JobDefinition", "PartialJobDefinition"]:
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
 
@@ -513,7 +514,7 @@ class GraphDefinition(NodeDefinition):
             JobDefinition
         """
         from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
-        from .job_definition import JobDefinition
+        from .job_definition import JobDefinition, PartialJobDefinition
         from .partition import PartitionedConfig, PartitionsDefinition
 
         job_name = check_valid_name(name or self.name)
@@ -564,21 +565,38 @@ class GraphDefinition(NodeDefinition):
                 f"is an object of type {type(config)}"
             )
 
-        return JobDefinition(
-            name=job_name,
-            description=description or self.description,
-            graph_def=self,
-            resource_defs=resource_defs_with_defaults,
-            logger_defs=logger_defs,
-            executor_def=executor_def,
-            config_mapping=config_mapping,
-            partitioned_config=partitioned_config,
-            preset_defs=presets,
-            tags=tags,
-            hook_defs=hooks,
-            version_strategy=version_strategy,
-            op_retry_policy=op_retry_policy,
-        ).get_job_def_for_op_selection(op_selection)
+        if partial:
+            return PartialJobDefinition(
+                name=job_name,
+                description=description or self.description,
+                graph_def=self,
+                resource_defs=resource_defs_with_defaults,
+                loggers=logger_defs,
+                executor_defs=[executor_def],
+                config_mapping=config_mapping,
+                partitioned_config=partitioned_config,
+                preset_defs=presets,
+                tags=tags,
+                hook_defs=hooks,
+                version_strategy=version_strategy,
+                op_retry_policy=op_retry_policy,
+            ).get_job_def_for_op_selection(op_selection)
+        else:
+            return JobDefinition(
+                name=job_name,
+                description=description or self.description,
+                graph_def=self,
+                resource_defs=resource_defs_with_defaults,
+                logger_defs=logger_defs,
+                executor_def=executor_def,
+                config_mapping=config_mapping,
+                partitioned_config=partitioned_config,
+                preset_defs=presets,
+                tags=tags,
+                hook_defs=hooks,
+                version_strategy=version_strategy,
+                op_retry_policy=op_retry_policy,
+            ).get_job_def_for_op_selection(op_selection)
 
     def coerce_to_job(self):
         # attempt to coerce a Graph in to a Job, raising a useful error if it doesn't work
@@ -650,7 +668,7 @@ class GraphDefinition(NodeDefinition):
         from dagster.core.instance import DagsterInstance
 
         from .executor_definition import execute_in_process_executor
-        from .job_definition import JobDefinition
+        from .job_definition import JobDefinition, PartialJobDefinition
 
         instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         resources = check.opt_dict_param(resources, "resources", key_type=str)

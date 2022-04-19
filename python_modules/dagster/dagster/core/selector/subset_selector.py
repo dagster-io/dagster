@@ -1,14 +1,16 @@
 import re
 import sys
 from collections import defaultdict, deque
-from typing import TYPE_CHECKING, AbstractSet, Dict, List, NamedTuple
+from typing import TYPE_CHECKING, AbstractSet, Dict, List, NamedTuple, Union
 
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.utils import check
 
 if TYPE_CHECKING:
-    from dagster.core.definitions.job_definition import JobDefinition
+    from dagster.core.definitions.graph_definition import GraphDefinition
+
+    from ..definitions.job_definition import JobDefinition, PartialJobDefinition
 
 MAX_NUM = sys.maxsize
 
@@ -19,7 +21,7 @@ class OpSelectionData(
         [
             ("op_selection", List[str]),
             ("resolved_op_selection", AbstractSet[str]),
-            ("parent_job_def", "JobDefinition"),
+            ("parent_job_def", Union["JobDefinition", "PartialJobDefinition"]),
         ],
     )
 ):
@@ -33,7 +35,7 @@ class OpSelectionData(
     """
 
     def __new__(cls, op_selection, resolved_op_selection, parent_job_def):
-        from dagster.core.definitions.job_definition import JobDefinition
+        from dagster.core.definitions.job_definition import JobDefinition, PartialJobDefinition
 
         return super(OpSelectionData, cls).__new__(
             cls,
@@ -45,7 +47,7 @@ class OpSelectionData(
         )
 
 
-def generate_dep_graph(pipeline_def):
+def generate_dep_graph(graph_def):
     """'pipeline to dependency graph. It currently only supports top-level solids.
 
     Args:
@@ -71,9 +73,9 @@ def generate_dep_graph(pipeline_def):
             ```
     """
     dependency_structure = check.inst_param(
-        pipeline_def.dependency_structure, "dependency_structure", DependencyStructure
+        graph_def.dependency_structure, "dependency_structure", DependencyStructure
     )
-    item_names = [i.name for i in pipeline_def.solids]
+    item_names = [i.name for i in graph_def.solids]
 
     # defaultdict isn't appropriate because we also want to include items without dependencies
     graph = {"upstream": {}, "downstream": {}}
@@ -210,7 +212,7 @@ def convert_dot_seperated_string_to_dict(tree, splits):
     return tree
 
 
-def parse_op_selection(job_def: "JobDefinition", op_selection: List[str]) -> Dict:
+def parse_op_selection(graph_def: "GraphDefinition", op_selection: List[str]) -> Dict:
     """
     Examples:
         ["subgraph.return_one", "subgraph.adder", "subgraph.add_one", "add_one"]
@@ -230,11 +232,11 @@ def parse_op_selection(job_def: "JobDefinition", op_selection: List[str]) -> Dic
 
     return {
         top_level_op: LeafNodeSelection
-        for top_level_op in parse_solid_selection(job_def, op_selection)
+        for top_level_op in parse_solid_selection(graph_def, op_selection)
     }
 
 
-def parse_solid_selection(pipeline_def, solid_selection):
+def parse_solid_selection(graph_def, solid_selection):
     """Take pipeline definition and a list of solid selection queries (inlcuding names of solid
         invocations. See syntax examples below) and return a set of the qualified solid names.
 
@@ -265,9 +267,9 @@ def parse_solid_selection(pipeline_def, solid_selection):
 
     # special case: select all
     if len(solid_selection) == 1 and solid_selection[0] == "*":
-        return frozenset(pipeline_def.graph.node_names())
+        return frozenset(graph_def.node_names())
 
-    graph = generate_dep_graph(pipeline_def)
+    graph = generate_dep_graph(graph_def)
     solids_set = set()
 
     # loop over clauses
@@ -275,10 +277,8 @@ def parse_solid_selection(pipeline_def, solid_selection):
         subset = clause_to_subset(graph, clause)
         if len(subset) == 0:
             raise DagsterInvalidSubsetError(
-                "No qualified {node_type} to execute found for {selection_type}={requested}".format(
-                    requested=solid_selection,
-                    node_type="ops" if pipeline_def.is_job else "solids",
-                    selection_type="op_selection" if pipeline_def.is_job else "solid_selection",
+                "No qualified ops to execute found for op_selection={requested}".format(
+                    requested=solid_selection
                 )
             )
         solids_set.update(subset)
