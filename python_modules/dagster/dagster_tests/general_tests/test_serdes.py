@@ -418,9 +418,7 @@ def test_from_storage_dict():
 
     new_map = WhitelistMap.create()
 
-    @_whitelist_for_serdes(
-        whitelist_map=new_map, serializer=CompatSerializer
-    )
+    @_whitelist_for_serdes(whitelist_map=new_map, serializer=CompatSerializer)
     class MyThing(NamedTuple):
         new_name: str
 
@@ -499,9 +497,7 @@ def test_skip_when_empty():
         def skip_when_empty(cls) -> Set[str]:
             return {"bar"}
 
-    @_whitelist_for_serdes(
-        whitelist_map=test_map, serializer=SkipWhenEmptySerializer
-    )
+    @_whitelist_for_serdes(whitelist_map=test_map, serializer=SkipWhenEmptySerializer)
     class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):
         def __new__(cls, foo, bar=None):
             return super(SameSnapshotTuple, cls).__new__(  # pylint: disable=bad-super-call

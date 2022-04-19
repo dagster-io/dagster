@@ -94,8 +94,6 @@ class DagsterChecker(BaseChecker):
 
 
 def register_solid_transform():
-    import astroid
-
     def _is_solid_or_op(node):
         if not node.decorators:
             return False

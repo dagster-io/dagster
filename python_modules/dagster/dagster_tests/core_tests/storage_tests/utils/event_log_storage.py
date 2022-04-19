@@ -1,5 +1,5 @@
 import datetime
-import logging   # pylint: disable=unused-import; used by mock in string form
+import logging  # pylint: disable=unused-import; used by mock in string form
 import re
 import time
 from collections import Counter
@@ -40,10 +40,7 @@ from dagster.core.events import (
     StepExpectationResultData,
     StepMaterializationData,
 )
-from dagster.core.events.log import (
-    EventLogEntry,
-    construct_event_logger,
-)
+from dagster.core.events.log import EventLogEntry, construct_event_logger
 from dagster.core.execution.api import execute_run
 from dagster.core.execution.plan.handle import StepHandle
 from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
@@ -1938,7 +1935,7 @@ class TestEventLogStorage:
             return 1
 
         @asset
-        def second_asset(my_asset):   # pylint: disable=unused-argument
+        def second_asset(my_asset):  # pylint: disable=unused-argument
             return 2
 
         with instance_for_test() as instance:
@@ -1946,7 +1943,7 @@ class TestEventLogStorage:
                 storage.register_instance(instance)
 
             my_asset_key = AssetKey("my_asset")
-            second_asset_key = AssetKey("second_asset")   # pylint: disable=unused-variable
+            second_asset_key = AssetKey("second_asset")  # pylint: disable=unused-variable
             # storage.get_asset_records([my_asset_key, second_asset_key])
 
             assert len(storage.get_asset_records()) == 0

@@ -60,7 +60,9 @@ def test_instigators_table_backcompat(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8") as template_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
@@ -77,10 +79,8 @@ def test_instigators_table_backcompat(hostname, conn_string):
 def test_jobs_selector_id_migration(hostname, conn_string):
     import sqlalchemy as db
 
-    from dagster.core.storage.schedules.migration import \
-        SCHEDULE_JOBS_SELECTOR_ID
-    from dagster.core.storage.schedules.schema import (InstigatorsTable,
-                                                       JobTable, JobTickTable)
+    from dagster.core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
+    from dagster.core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
 
     _reconstruct_from_file(
         hostname,
@@ -89,7 +89,9 @@ def test_jobs_selector_id_migration(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8") as template_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)

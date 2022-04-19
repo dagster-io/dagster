@@ -2,11 +2,11 @@ import astroid
 import pylint.testutils
 import pytest
 
-from dagster.utils.linter import define_dagster_checker
+from dagster.utils.linter import DagsterChecker
 
 
 class TestDagsterChecker(pylint.testutils.CheckerTestCase):
-    CHECKER_CLASS = define_dagster_checker()
+    CHECKER_CLASS = DagsterChecker
 
     def test_finally_yield(self):
         yield_node = astroid.extract_node(
