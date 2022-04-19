@@ -92,15 +92,15 @@ class AirbyteResource:
         raise Failure("Exceeded max number of retries.")
 
     def start_sync(self, connection_id: str) -> dict:
-        return check.is_dict(
+        return check.not_none(
             self.make_request(endpoint="/connections/sync", data={"connectionId": connection_id})
         )
 
     def get_job_status(self, job_id: int) -> dict:
-        return check.is_dict(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
+        return check.not_none(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
 
     def get_connection_details(self, connection_id: str) -> dict:
-        return check.is_dict(
+        return check.not_none(
             self.make_request(endpoint="/connections/get", data={"connectionId": connection_id})
         )
 
