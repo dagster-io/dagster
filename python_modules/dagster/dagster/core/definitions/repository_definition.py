@@ -27,6 +27,7 @@ from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .job_definition import JobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
+from .resource_definition import ResourceDefinition
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
 from .utils import check_valid_name
@@ -631,6 +632,7 @@ class CachingRepositoryData(RepositoryData):
         sensors: Dict[str, SensorDefinition] = {}
         source_assets: Dict[AssetKey, SourceAsset] = {}
         combined_asset_group = None
+        default_resources_dict: Optional[Dict[str, ResourceDefinition]] = None
         for definition in repository_definitions:
             if isinstance(definition, PipelineDefinition):
                 if (
@@ -694,6 +696,13 @@ class CachingRepositoryData(RepositoryData):
                     combined_asset_group += definition
                 else:
                     combined_asset_group = definition
+            elif is_resource_dict(definition):
+                if not default_resources_dict:
+                    default_resources_dict = definition
+                else:
+                    check.failed(
+                        f"Provided multiple resource dictionaries to repository, please provide only one."
+                    )
             else:
                 check.failed(f"Unexpected repository entry {definition}")
 
@@ -1221,3 +1230,16 @@ def _process_and_validate_target(
 
 def _get_error_msg_for_target_conflict(targeter, target_type, target_name, dupe_target_type):
     return f"{targeter} targets {target_type} '{target_name}', but a different {dupe_target_type} with the same name was provided. The {target_type} provided to {targeter} will override the existing {dupe_target_type}, but in Dagster 0.15.0, this will result in an error. Disambiguate between these by providing a separate name to one of them."
+
+
+def is_resource_dict(defn: Any) -> bool:
+    if not isinstance(defn, dict):
+        return False
+
+    the_dict = defn
+    return all(
+        [
+            isinstance(key, str) and isinstance(val, ResourceDefinition)
+            for key, val in the_dict.items()
+        ]
+    )

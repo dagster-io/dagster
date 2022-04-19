@@ -22,6 +22,7 @@ from dagster import (
     op,
     pipeline,
     repository,
+    resource,
     schedule,
     sensor,
     solid,
@@ -829,3 +830,22 @@ def test_dupe_jobs_pipelines_invalid():
         @repository
         def the_repo_dupe_graph_pipeline_invalid_schedule_graph():
             return [the_graph, the_schedule]
+
+
+def test_repo_with_resources():
+    @resource
+    def the_resource():
+        pass
+
+    @repository
+    def the_repo():
+        return [{"foo": the_resource}]
+
+    with pytest.raises(
+        CheckError,
+        match="Provided multiple resource dictionaries to repository, please provide only one.",
+    ):
+
+        @repository
+        def the_repo_multiple_resource_dicts():
+            return [{"foo": the_resource}, {"foo": the_resource}]
