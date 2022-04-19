@@ -2,7 +2,7 @@ import {Warning} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
-import {isAssetGroup, LiveDataForNode} from '../asset-graph/Utils';
+import {LiveDataForNode} from '../asset-graph/Utils';
 import {titleForRun} from '../runs/RunUtils';
 
 export const FailedRunsSinceMaterializationBanner: React.FC<{liveData?: LiveDataForNode}> = ({
