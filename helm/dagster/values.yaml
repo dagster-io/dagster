@@ -268,7 +268,7 @@ dagster-user-deployments:
       # Whether or not to include configuration specified for this user code deployment in the pods
       # launched for runs from that deployment
       includeConfigInLaunchedRuns:
-        enabled: false
+        enabled: true
 
       # Additional environment variables to set.
       # A Kubernetes ConfigMap will be created with these environment variables. See:
