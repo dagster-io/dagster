@@ -5,7 +5,7 @@ import * as React from 'react';
 import {BaseButton} from './BaseButton';
 import {Colors} from './Colors';
 import {Spinner} from './Spinner';
-import {StyledButton, StyledButtonText} from './StyledButton';
+import {ButtonJoinState, StyledButton, StyledButtonText} from './StyledButton';
 
 type BlueprintIntent = React.ComponentProps<typeof BlueprintButton>['intent'];
 type BlueprintOutlined = React.ComponentProps<typeof BlueprintButton>['outlined'];
@@ -87,11 +87,12 @@ export const intentToSpinnerColor = (intent: BlueprintIntent, outlined: Blueprin
   return !intent || intent === 'none' ? Colors.Gray600 : Colors.White;
 };
 
+interface ButtonProps extends React.ComponentProps<typeof BlueprintButton> {
+  joined?: ButtonJoinState;
+}
+
 export const Button = React.forwardRef(
-  (
-    props: React.ComponentProps<typeof BlueprintButton>,
-    ref: React.ForwardedRef<HTMLButtonElement>,
-  ) => {
+  (props: ButtonProps, ref: React.ForwardedRef<HTMLButtonElement>) => {
     const {children, icon, intent, loading, outlined, rightIcon, ...rest} = props;
 
     let iconOrSpinner = icon;

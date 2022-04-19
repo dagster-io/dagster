@@ -1,6 +1,7 @@
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
+import {Box} from './Box';
 import {Button} from './Button';
 import {Group} from './Group';
 import {Icon} from './Icon';
@@ -123,6 +124,49 @@ export const Truncation = () => {
       <Button style={{maxWidth: '250px'}}>
         Four score and seven years ago our fathers brought forth on this continent
       </Button>
+    </Group>
+  );
+};
+
+export const Joined = () => {
+  return (
+    <Group direction="column" spacing={8}>
+      <Box flex={{justifyContent: 'center'}}>
+        <Button joined="right">Main Action</Button>
+        <Button joined="left" icon={<Icon name="expand_more" />}></Button>
+      </Box>
+      <Box>
+        <Button joined="right">Left</Button>
+        <Button joined="both">Center</Button>
+        <Button joined="left">Right</Button>
+      </Box>
+      <Box>
+        <Button icon={<Icon name="star" />} joined="right">
+          Left
+        </Button>
+        <Button icon={<Icon name="star" />} joined="both">
+          Center
+        </Button>
+        <Button icon={<Icon name="star" />} joined="left">
+          Right
+        </Button>
+      </Box>
+      <Box>
+        <Button rightIcon={<Icon name="wysiwyg" />} joined="right">
+          Left
+        </Button>
+        <Button rightIcon={<Icon name="wysiwyg" />} joined="both">
+          Center
+        </Button>
+        <Button rightIcon={<Icon name="wysiwyg" />} joined="left">
+          Right
+        </Button>
+      </Box>
+      <Box>
+        <Button icon={<Icon name="cached" />} joined="right"></Button>
+        <Button icon={<Icon name="wysiwyg" />} joined="both"></Button>
+        <Button icon={<Icon name="close" />} joined="left"></Button>
+      </Box>
     </Group>
   );
 };

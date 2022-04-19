@@ -4,10 +4,13 @@ import {IconWrapper} from './Icon';
 import {SpinnerWrapper} from './Spinner';
 import {FontFamily} from './styles';
 
+export type ButtonJoinState = 'left' | 'right' | 'both';
+
 interface StyledButtonProps {
   $fillColor: string;
   $strokeColor: string;
   $textColor: string;
+  $joined?: ButtonJoinState;
 }
 
 export const StyledButton = styled.button<StyledButtonProps>`
@@ -15,6 +18,20 @@ export const StyledButton = styled.button<StyledButtonProps>`
   background-color: ${({$fillColor}) => $fillColor || 'transparent'};
   border: none;
   border-radius: 8px;
+
+  ${({$joined}) =>
+    $joined
+      ? `
+  ${$joined !== 'right' ? 'border-top-left-radius: 0;' : ''}
+  ${$joined !== 'right' ? 'border-bottom-left-radius: 0;' : ''}
+  ${$joined !== 'left' ? 'border-top-right-radius: 0;' : ''}
+  ${$joined !== 'left' ? 'border-bottom-right-radius: 0;' : ''}
+  border-left: ${$joined !== 'right' ? `1px solid rgba(255,255,255,0.2)` : 'transparent'};
+  margin-left: 0;
+  ${$joined === 'right' ? 'padding-right: 8px;' : null}
+  `
+      : ''};
+
   color: ${({$textColor}) => $textColor};
   cursor: pointer;
   display: inline-flex;
