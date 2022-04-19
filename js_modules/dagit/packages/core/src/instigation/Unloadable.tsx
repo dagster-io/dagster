@@ -8,9 +8,9 @@ import {
   STOP_SCHEDULE_MUTATION,
 } from '../schedules/ScheduleMutations';
 import {humanCronString} from '../schedules/humanCronString';
-import {StopSchedule} from '../schedules/types/StopSchedule';
+import {StopSchedule, StopScheduleVariables} from '../schedules/types/StopSchedule';
 import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from '../sensors/SensorMutations';
-import {StopSensor} from '../sensors/types/StopSensor';
+import {StopSensor, StopSensorVariables} from '../sensors/types/StopSensor';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {InstigatorSelectorInformation} from '../workspace/RepositoryInformation';
 
@@ -125,9 +125,12 @@ const UnloadableScheduleInfo = () => (
 const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) => {
   const {id, selectorId, name, status, ticks} = sensorState;
 
-  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor>(STOP_SENSOR_MUTATION, {
-    onCompleted: displaySensorMutationErrors,
-  });
+  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor, StopSensorVariables>(
+    STOP_SENSOR_MUTATION,
+    {
+      onCompleted: displaySensorMutationErrors,
+    },
+  );
   const confirm = useConfirmation();
 
   const onChangeSwitch = async () => {
@@ -180,12 +183,12 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
 const ScheduleStateRow: React.FC<{
   scheduleState: InstigationStateFragment;
 }> = ({scheduleState}) => {
-  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<StopSchedule>(
-    STOP_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors,
-    },
-  );
+  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<
+    StopSchedule,
+    StopScheduleVariables
+  >(STOP_SCHEDULE_MUTATION, {
+    onCompleted: displayScheduleMutationErrors,
+  });
   const confirm = useConfirmation();
   const {id, selectorId, name, ticks, status, typeSpecificData} = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;

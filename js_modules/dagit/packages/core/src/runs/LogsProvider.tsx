@@ -7,10 +7,13 @@ import {WebSocketContext} from '../app/WebSocketProvider';
 import {RunStatus} from '../types/globalTypes';
 
 import {RunFragments} from './RunFragments';
-import {PipelineRunLogsSubscription} from './types/PipelineRunLogsSubscription';
+import {
+  PipelineRunLogsSubscription,
+  PipelineRunLogsSubscriptionVariables,
+} from './types/PipelineRunLogsSubscription';
 import {PipelineRunLogsSubscriptionStatusFragment} from './types/PipelineRunLogsSubscriptionStatusFragment';
 import {RunDagsterRunEventFragment} from './types/RunDagsterRunEventFragment';
-import {RunLogsQuery} from './types/RunLogsQuery';
+import {RunLogsQuery, RunLogsQueryVariables} from './types/RunLogsQuery';
 
 export interface LogFilterValue extends TokenizingFieldValue {
   token?: 'step' | 'type' | 'query';
@@ -153,29 +156,32 @@ const useLogsProviderWithSubscription = (runId: string) => {
 
   const {nodes, cursor, loading} = state;
 
-  useSubscription<PipelineRunLogsSubscription>(PIPELINE_RUN_LOGS_SUBSCRIPTION, {
-    fetchPolicy: 'no-cache',
-    variables: {runId, after: cursor},
-    onSubscriptionData: ({subscriptionData}) => {
-      const logs = subscriptionData.data?.pipelineRunLogs;
-      if (!logs || logs.__typename === 'PipelineRunLogsSubscriptionFailure') {
-        return;
-      }
+  useSubscription<PipelineRunLogsSubscription, PipelineRunLogsSubscriptionVariables>(
+    PIPELINE_RUN_LOGS_SUBSCRIPTION,
+    {
+      fetchPolicy: 'no-cache',
+      variables: {runId, after: cursor},
+      onSubscriptionData: ({subscriptionData}) => {
+        const logs = subscriptionData.data?.pipelineRunLogs;
+        if (!logs || logs.__typename === 'PipelineRunLogsSubscriptionFailure') {
+          return;
+        }
 
-      const {messages, hasMorePastEvents} = logs;
-      const nextPipelineStatus = pipelineStatusFromMessages(messages);
+        const {messages, hasMorePastEvents} = logs;
+        const nextPipelineStatus = pipelineStatusFromMessages(messages);
 
-      // If we're still loading past events, don't sync to the cache -- event chunks could
-      // give us `status` values that don't match the actual state of the run.
-      if (nextPipelineStatus && !hasMorePastEvents) {
-        syncPipelineStatusToApolloCache(nextPipelineStatus);
-      }
+        // If we're still loading past events, don't sync to the cache -- event chunks could
+        // give us `status` values that don't match the actual state of the run.
+        if (nextPipelineStatus && !hasMorePastEvents) {
+          syncPipelineStatusToApolloCache(nextPipelineStatus);
+        }
 
-      // Maintain a queue of messages as they arrive, and call the throttled setter.
-      queue.current = [...queue.current, ...messages];
-      throttledSetNodes(hasMorePastEvents);
+        // Maintain a queue of messages as they arrive, and call the throttled setter.
+        queue.current = [...queue.current, ...messages];
+        throttledSetNodes(hasMorePastEvents);
+      },
     },
-  });
+  );
 
   return React.useMemo(
     () => (nodes !== null ? {allNodes: nodes, loading} : {allNodes: [], loading}),
@@ -205,42 +211,45 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
   const [nodes, setNodes] = React.useState<LogNode[]>(() => []);
   const [after, setAfter] = React.useState<number>(-1);
 
-  const {stopPolling, startPolling} = useQuery<RunLogsQuery>(RUN_LOGS_QUERY, {
-    notifyOnNetworkStatusChange: true,
-    variables: {runId, after},
-    pollInterval: POLL_INTERVAL,
-    onCompleted: (data: RunLogsQuery) => {
-      // We have to stop polling in order to update the `after` value.
-      stopPolling();
+  const {stopPolling, startPolling} = useQuery<RunLogsQuery, RunLogsQueryVariables>(
+    RUN_LOGS_QUERY,
+    {
+      notifyOnNetworkStatusChange: true,
+      variables: {runId, after},
+      pollInterval: POLL_INTERVAL,
+      onCompleted: (data: RunLogsQuery) => {
+        // We have to stop polling in order to update the `after` value.
+        stopPolling();
 
-      const slice = () => {
-        const count = nodes.length;
-        if (data?.pipelineRunOrError.__typename === 'Run') {
-          return data?.pipelineRunOrError.events.map((event, ii) => ({
-            ...event,
-            clientsideKey: `csk${count + ii}`,
-          }));
+        const slice = () => {
+          const count = nodes.length;
+          if (data?.pipelineRunOrError.__typename === 'Run') {
+            return data?.pipelineRunOrError.events.map((event, ii) => ({
+              ...event,
+              clientsideKey: `csk${count + ii}`,
+            }));
+          }
+          return [];
+        };
+
+        const newSlice = slice();
+        setNodes((current) => [...current, ...newSlice]);
+        setAfter((current) => current + newSlice.length);
+
+        const status =
+          data?.pipelineRunOrError.__typename === 'Run' ? data?.pipelineRunOrError.status : null;
+
+        if (
+          status &&
+          status !== RunStatus.FAILURE &&
+          status !== RunStatus.SUCCESS &&
+          status !== RunStatus.CANCELED
+        ) {
+          startPolling(POLL_INTERVAL);
         }
-        return [];
-      };
-
-      const newSlice = slice();
-      setNodes((current) => [...current, ...newSlice]);
-      setAfter((current) => current + newSlice.length);
-
-      const status =
-        data?.pipelineRunOrError.__typename === 'Run' ? data?.pipelineRunOrError.status : null;
-
-      if (
-        status &&
-        status !== RunStatus.FAILURE &&
-        status !== RunStatus.SUCCESS &&
-        status !== RunStatus.CANCELED
-      ) {
-        startPolling(POLL_INTERVAL);
-      }
+      },
     },
-  });
+  );
 
   return (
     <>

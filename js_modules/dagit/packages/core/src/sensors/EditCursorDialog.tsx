@@ -11,6 +11,11 @@ import {SharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {SensorSelector} from '../types/globalTypes';
 
+import {
+  SetSensorCursorMutation,
+  SetSensorCursorMutationVariables,
+} from './types/SetSensorCursorMutation';
+
 export const EditCursorDialog: React.FC<{
   cursor: string;
   sensorSelector: SensorSelector;
@@ -18,7 +23,9 @@ export const EditCursorDialog: React.FC<{
 }> = ({sensorSelector, cursor, onClose}) => {
   const [cursorValue, setCursorValue] = React.useState(cursor);
   const [isSaving, setIsSaving] = React.useState(false);
-  const [requestSet] = useMutation(SET_CURSOR_MUTATION);
+  const [requestSet] = useMutation<SetSensorCursorMutation, SetSensorCursorMutationVariables>(
+    SET_CURSOR_MUTATION,
+  );
 
   const onSave = async () => {
     setIsSaving(true);
@@ -27,7 +34,7 @@ export const EditCursorDialog: React.FC<{
     });
     if (data?.setSensorCursor.__typename === 'Sensor') {
       SharedToaster.show({message: 'Cursor value updated', intent: 'success'});
-    } else {
+    } else if (data?.setSensorCursor) {
       const error = data.setSensorCursor;
       SharedToaster.show({
         intent: 'danger',
@@ -40,7 +47,12 @@ export const EditCursorDialog: React.FC<{
               onClick={() => {
                 showCustomAlert({
                   title: 'Python Error',
-                  body: <PythonErrorInfo error={error} />,
+                  body:
+                    error.__typename === 'PythonError' ? (
+                      <PythonErrorInfo error={error} />
+                    ) : (
+                      'Sensor not found'
+                    ),
                 });
               }}
             >

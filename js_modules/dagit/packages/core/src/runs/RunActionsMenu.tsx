@@ -35,8 +35,14 @@ import {
   handleLaunchResult,
 } from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
-import {LaunchPipelineReexecution} from './types/LaunchPipelineReexecution';
-import {PipelineEnvironmentYamlQuery} from './types/PipelineEnvironmentYamlQuery';
+import {
+  LaunchPipelineReexecution,
+  LaunchPipelineReexecutionVariables,
+} from './types/LaunchPipelineReexecution';
+import {
+  PipelineEnvironmentYamlQuery,
+  PipelineEnvironmentYamlQueryVariables,
+} from './types/PipelineEnvironmentYamlQuery';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 export const RunActionsMenu: React.FC<{
@@ -53,16 +59,19 @@ export const RunActionsMenu: React.FC<{
 
   const copyConfig = useCopyToClipboard();
 
-  const [reexecute] = useMutation<LaunchPipelineReexecution>(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {
-    onCompleted: refetch,
-  });
-
-  const [loadEnv, {called, loading, data}] = useLazyQuery<PipelineEnvironmentYamlQuery>(
-    PIPELINE_ENVIRONMENT_YAML_QUERY,
+  const [reexecute] = useMutation<LaunchPipelineReexecution, LaunchPipelineReexecutionVariables>(
+    LAUNCH_PIPELINE_REEXECUTION_MUTATION,
     {
-      variables: {runId: run.runId},
+      onCompleted: refetch,
     },
   );
+
+  const [loadEnv, {called, loading, data}] = useLazyQuery<
+    PipelineEnvironmentYamlQuery,
+    PipelineEnvironmentYamlQueryVariables
+  >(PIPELINE_ENVIRONMENT_YAML_QUERY, {
+    variables: {runId: run.runId},
+  });
 
   const closeDialogs = () => {
     setVisibleDialog('none');

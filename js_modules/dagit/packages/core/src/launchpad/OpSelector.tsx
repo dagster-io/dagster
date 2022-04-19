@@ -13,7 +13,7 @@ import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {OpSelectorQuery} from './types/OpSelectorQuery';
+import {OpSelectorQuery, OpSelectorQueryVariables} from './types/OpSelectorQuery';
 
 interface IOpSelectorProps {
   pipelineName: string;
@@ -69,10 +69,13 @@ export const OpSelector = (props: IOpSelectorProps) => {
   const selector = {...repoAddressToSelector(repoAddress), pipelineName};
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
-  const {data, loading} = useQuery<OpSelectorQuery>(SOLID_SELECTOR_QUERY, {
-    variables: {selector, requestScopeHandleID: flattenGraphs ? undefined : ''},
-    fetchPolicy: 'cache-and-network',
-  });
+  const {data, loading} = useQuery<OpSelectorQuery, OpSelectorQueryVariables>(
+    SOLID_SELECTOR_QUERY,
+    {
+      variables: {selector, requestScopeHandleID: flattenGraphs ? undefined : ''},
+      fetchPolicy: 'cache-and-network',
+    },
+  );
 
   const query = props.query || '*';
 

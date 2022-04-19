@@ -15,7 +15,7 @@ import {RepoAddress} from '../workspace/types';
 import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
 import {SensorsTable} from './SensorsTable';
-import {SensorsRootQuery} from './types/SensorsRootQuery';
+import {SensorsRootQuery, SensorsRootQueryVariables} from './types/SensorsRootQuery';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -26,7 +26,7 @@ export const SensorsRoot = (props: Props) => {
   useDocumentTitle('Sensors');
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const queryResult = useQuery<SensorsRootQuery>(SENSORS_ROOT_QUERY, {
+  const queryResult = useQuery<SensorsRootQuery, SensorsRootQueryVariables>(SENSORS_ROOT_QUERY, {
     variables: {
       repositorySelector,
       instigationType: InstigationType.SENSOR,

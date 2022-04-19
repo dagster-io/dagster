@@ -33,6 +33,7 @@ import {
 } from './types/ConfigEditorGeneratorPipelineFragment';
 import {
   ConfigPartitionsQuery,
+  ConfigPartitionsQueryVariables,
   ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
 } from './types/ConfigPartitionsQuery';
 
@@ -146,10 +147,13 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
   (props) => {
     const {partitionSetName, value, onSelect, repoAddress} = props;
     const repositorySelector = repoAddressToSelector(repoAddress);
-    const {data, loading} = useQuery<ConfigPartitionsQuery>(CONFIG_PARTITIONS_QUERY, {
-      variables: {repositorySelector, partitionSetName},
-      fetchPolicy: 'network-only',
-    });
+    const {data, loading} = useQuery<ConfigPartitionsQuery, ConfigPartitionsQueryVariables>(
+      CONFIG_PARTITIONS_QUERY,
+      {
+        variables: {repositorySelector, partitionSetName},
+        fetchPolicy: 'network-only',
+      },
+    );
 
     const [sortOrder, setSortOrder] = React.useState('asc');
 

@@ -8,7 +8,7 @@ import {Loading} from '../ui/Loading';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
-import {AssetEntryRootQuery} from './types/AssetEntryRootQuery';
+import {AssetEntryRootQuery, AssetEntryRootQueryVariables} from './types/AssetEntryRootQuery';
 
 export const AssetEntryRoot = () => {
   const params = useParams();
@@ -17,9 +17,12 @@ export const AssetEntryRoot = () => {
     .filter((x: string) => x)
     .map(decodeURIComponent);
 
-  const queryResult = useQuery<AssetEntryRootQuery>(ASSET_ENTRY_ROOT_QUERY, {
-    variables: {assetKey: {path: currentPath}},
-  });
+  const queryResult = useQuery<AssetEntryRootQuery, AssetEntryRootQueryVariables>(
+    ASSET_ENTRY_ROOT_QUERY,
+    {
+      variables: {assetKey: {path: currentPath}},
+    },
+  );
 
   return queryResult.loading ? (
     <Page>

@@ -16,9 +16,13 @@ import {RepoAddress} from '../workspace/types';
 import {ScheduleDetails} from './ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
-import {PreviousRunsForScheduleQuery} from './types/PreviousRunsForScheduleQuery';
+import {
+  PreviousRunsForScheduleQuery,
+  PreviousRunsForScheduleQueryVariables,
+} from './types/PreviousRunsForScheduleQuery';
 import {
   ScheduleRootQuery,
+  ScheduleRootQueryVariables,
   ScheduleRootQuery_scheduleOrError_Schedule as Schedule,
 } from './types/ScheduleRootQuery';
 
@@ -41,7 +45,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
 
   const [selectedTab, setSelectedTab] = React.useState<string>('ticks');
 
-  const queryResult = useQuery<ScheduleRootQuery>(SCHEDULE_ROOT_QUERY, {
+  const queryResult = useQuery<ScheduleRootQuery, ScheduleRootQueryVariables>(SCHEDULE_ROOT_QUERY, {
     variables: {
       scheduleSelector,
     },
@@ -112,18 +116,21 @@ export const SchedulePreviousRuns: React.FC<{
   tabs?: React.ReactElement;
   highlightedIds?: string[];
 }> = ({schedule, highlightedIds, tabs}) => {
-  const {data} = useQuery<PreviousRunsForScheduleQuery>(PREVIOUS_RUNS_FOR_SCHEDULE_QUERY, {
-    fetchPolicy: 'cache-and-network',
-    variables: {
-      limit: 20,
-      filter: {
-        pipelineName: schedule.pipelineName,
-        tags: [{key: DagsterTag.ScheduleName, value: schedule.name}],
+  const {data} = useQuery<PreviousRunsForScheduleQuery, PreviousRunsForScheduleQueryVariables>(
+    PREVIOUS_RUNS_FOR_SCHEDULE_QUERY,
+    {
+      fetchPolicy: 'cache-and-network',
+      variables: {
+        limit: 20,
+        filter: {
+          pipelineName: schedule.pipelineName,
+          tags: [{key: DagsterTag.ScheduleName, value: schedule.name}],
+        },
       },
+      partialRefetch: true,
+      pollInterval: 15 * 1000,
     },
-    partialRefetch: true,
-    pollInterval: 15 * 1000,
-  });
+  );
 
   if (!data) {
     return null;

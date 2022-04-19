@@ -11,6 +11,7 @@ import {
   Delete_deletePipelineRun_RunNotFoundError,
   Delete_deletePipelineRun_PythonError,
   Delete_deletePipelineRun_UnauthorizedError,
+  DeleteVariables,
 } from './types/Delete';
 
 export interface Props {
@@ -113,7 +114,7 @@ export const DeletionDialog = (props: Props) => {
     }
   }, [isOpen, selectedRuns]);
 
-  const [destroy] = useMutation<Delete>(DELETE_MUTATION);
+  const [destroy] = useMutation<Delete, DeleteVariables>(DELETE_MUTATION);
 
   const mutate = async () => {
     dispatch({type: 'start'});

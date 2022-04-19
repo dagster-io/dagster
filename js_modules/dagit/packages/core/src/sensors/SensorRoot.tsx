@@ -14,7 +14,7 @@ import {SensorDetails} from './SensorDetails';
 import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
 import {SensorPreviousRuns} from './SensorPreviousRuns';
-import {SensorRootQuery} from './types/SensorRootQuery';
+import {SensorRootQuery, SensorRootQueryVariables} from './types/SensorRootQuery';
 
 const INTERVAL = 15 * 1000;
 
@@ -28,7 +28,7 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
   };
 
   const [selectedTab, setSelectedTab] = React.useState<string>('ticks');
-  const queryResult = useQuery<SensorRootQuery>(SENSOR_ROOT_QUERY, {
+  const queryResult = useQuery<SensorRootQuery, SensorRootQueryVariables>(SENSOR_ROOT_QUERY, {
     variables: {
       sensorSelector,
     },

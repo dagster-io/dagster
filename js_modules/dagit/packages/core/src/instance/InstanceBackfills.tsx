@@ -60,6 +60,7 @@ import {
   InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs,
 } from './types/InstanceBackfillsQuery';
 import {InstanceHealthForBackfillsQuery} from './types/InstanceHealthForBackfillsQuery';
+import {resumeBackfill, resumeBackfillVariables} from './types/resumeBackfill';
 
 type Backfill = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results;
 type BackfillRun = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs;
@@ -170,7 +171,9 @@ const INSTANCE_HEALTH_FOR_BACKFILLS_QUERY = gql`
 
 const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: () => void}) => {
   const [terminationBackfill, setTerminationBackfill] = React.useState<Backfill>();
-  const [resumeBackfill] = useMutation(RESUME_BACKFILL_MUTATION);
+  const [resumeBackfill] = useMutation<resumeBackfill, resumeBackfillVariables>(
+    RESUME_BACKFILL_MUTATION,
+  );
   const [cancelRunBackfill, setCancelRunBackfill] = React.useState<Backfill>();
   const {canCancelPartitionBackfill} = usePermissions();
 
@@ -199,7 +202,7 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
         icon: 'error',
         intent: 'danger',
       });
-    } else {
+    } else if (data && data.resumePartitionBackfill.__typename === 'PythonError') {
       const error = data.resumePartitionBackfill;
       SharedToaster.show({
         message: <div>An unexpected error occurred. This backfill was not retried.</div>,

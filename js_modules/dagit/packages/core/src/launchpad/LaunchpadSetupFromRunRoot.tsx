@@ -17,7 +17,7 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
-import {ConfigForRunQuery} from './types/ConfigForRunQuery';
+import {ConfigForRunQuery, ConfigForRunQueryVariables} from './types/ConfigForRunQuery';
 
 export const LaunchpadSetupFromRunRoot: React.FC<{repoAddress: RepoAddress}> = (props) => {
   const {repoAddress} = props;
@@ -64,7 +64,10 @@ const LaunchpadSetupFromRunAllowedRoot: React.FC<Props> = (props) => {
 
   const [storageData, onSave] = useExecutionSessionStorage(repoAddress, pipelineName);
 
-  const {data, loading} = useQuery<ConfigForRunQuery>(CONFIG_FOR_RUN_QUERY, {variables: {runId}});
+  const {data, loading} = useQuery<ConfigForRunQuery, ConfigForRunQueryVariables>(
+    CONFIG_FOR_RUN_QUERY,
+    {variables: {runId}},
+  );
   const runOrError = data?.runOrError;
   const run = runOrError?.__typename === 'Run' ? runOrError : null;
 

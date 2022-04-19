@@ -6,7 +6,10 @@ import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {RepoAddress} from '../workspace/types';
 
-import {PreviousRunsForSensorQuery} from './types/PreviousRunsForSensorQuery';
+import {
+  PreviousRunsForSensorQuery,
+  PreviousRunsForSensorQueryVariables,
+} from './types/PreviousRunsForSensorQuery';
 import {SensorFragment} from './types/SensorFragment';
 
 const RUNS_LIMIT = 20;
@@ -17,16 +20,19 @@ export const SensorPreviousRuns: React.FC<{
   tabs?: React.ReactElement;
   highlightedIds?: string[];
 }> = ({sensor, highlightedIds, tabs}) => {
-  const {data} = useQuery<PreviousRunsForSensorQuery>(PREVIOUS_RUNS_FOR_SENSOR_QUERY, {
-    fetchPolicy: 'cache-and-network',
-    variables: {
-      limit: RUNS_LIMIT,
-      filter: {
-        pipelineName: sensor.targets?.length === 1 ? sensor.targets[0].pipelineName : undefined,
-        tags: [{key: DagsterTag.SensorName, value: sensor.name}],
+  const {data} = useQuery<PreviousRunsForSensorQuery, PreviousRunsForSensorQueryVariables>(
+    PREVIOUS_RUNS_FOR_SENSOR_QUERY,
+    {
+      fetchPolicy: 'cache-and-network',
+      variables: {
+        limit: RUNS_LIMIT,
+        filter: {
+          pipelineName: sensor.targets?.length === 1 ? sensor.targets[0].pipelineName : undefined,
+          tags: [{key: DagsterTag.SensorName, value: sensor.name}],
+        },
       },
     },
-  });
+  );
 
   if (!data || data.pipelineRunsOrError.__typename !== 'Runs') {
     return null;

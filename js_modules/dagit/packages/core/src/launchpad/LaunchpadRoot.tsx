@@ -15,7 +15,7 @@ import {
 } from './ConfigEditorConfigPicker';
 import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
-import {LaunchpadRootQuery} from './types/LaunchpadRootQuery';
+import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadRootQuery';
 
 const LaunchpadSessionContainer = React.lazy(() => import('./LaunchpadSessionContainer'));
 
@@ -49,11 +49,14 @@ const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
 
   const {name: repositoryName, location: repositoryLocationName} = repoAddress;
 
-  const result = useQuery<LaunchpadRootQuery>(PIPELINE_EXECUTION_ROOT_QUERY, {
-    variables: {repositoryName, repositoryLocationName, pipelineName},
-    fetchPolicy: 'cache-and-network',
-    partialRefetch: true,
-  });
+  const result = useQuery<LaunchpadRootQuery, LaunchpadRootQueryVariables>(
+    PIPELINE_EXECUTION_ROOT_QUERY,
+    {
+      variables: {repositoryName, repositoryLocationName, pipelineName},
+      fetchPolicy: 'cache-and-network',
+      partialRefetch: true,
+    },
+  );
 
   const pipelineOrError = result?.data?.pipelineOrError;
   const partitionSetsOrError = result?.data?.partitionSetsOrError;

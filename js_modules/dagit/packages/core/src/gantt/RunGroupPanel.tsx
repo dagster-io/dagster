@@ -13,6 +13,7 @@ import {RunStateSummary, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 
 import {
   RunGroupPanelQuery,
+  RunGroupPanelQueryVariables,
   RunGroupPanelQuery_runGroupOrError_RunGroup_runs,
 } from './types/RunGroupPanelQuery';
 
@@ -27,11 +28,14 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
   runId,
   runStatusLastChangedAt,
 }) => {
-  const {data, refetch} = useQuery<RunGroupPanelQuery>(RUN_GROUP_PANEL_QUERY, {
-    variables: {runId},
-    fetchPolicy: 'cache-and-network',
-    pollInterval: 15000, // 15s
-  });
+  const {data, refetch} = useQuery<RunGroupPanelQuery, RunGroupPanelQueryVariables>(
+    RUN_GROUP_PANEL_QUERY,
+    {
+      variables: {runId},
+      fetchPolicy: 'cache-and-network',
+      pollInterval: 15000, // 15s
+    },
+  );
 
   // Because the RunGroupPanel makes it's own query for the runs and their statuses,
   // the log + gantt chart UI can show that the run is "completed" for up to 15s before
