@@ -35,7 +35,7 @@ export const TextInput = React.forwardRef(
 
 TextInput.displayName = 'TextInput';
 
-const Container = styled.div<{$disabled: boolean}>`
+export const TextInputContainerStyles = css`
   align-items: center;
   color: ${Colors.Gray600};
   display: inline-flex;
@@ -46,6 +46,10 @@ const Container = styled.div<{$disabled: boolean}>`
   font-size: 14px;
   font-weight: 400;
   position: relative;
+`;
+
+const Container = styled.div<{$disabled: boolean}>`
+  ${TextInputContainerStyles}
 
   ${IconWrapper}:first-child {
     position: absolute;
@@ -60,19 +64,13 @@ const Container = styled.div<{$disabled: boolean}>`
   }
 `;
 
-interface StyledInputProps {
-  $hasIcon: boolean;
-  $strokeColor: string;
-}
-
-const StyledInput = styled.input<StyledInputProps>`
+export const TextInputStyles = css`
   border: none;
   border-radius: 8px;
-  box-shadow: ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px,
-    ${Colors.KeylineGray} inset 2px 2px 1.5px;
+  box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px;
   flex-grow: 1;
   line-height: 20px;
-  padding: ${({$hasIcon}) => ($hasIcon ? '6px 6px 6px 28px' : '6px 6px 6px 12px')};
+  padding: 6px 6px 6px 12px;
   margin: 0;
   transition: box-shadow 150ms;
 
@@ -87,8 +85,26 @@ const StyledInput = styled.input<StyledInputProps>`
   }
 
   :focus {
+    box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px,
+      rgba(58, 151, 212, 0.6) 0 0 0 3px;
+    outline: none;
+  }
+`;
+
+interface StyledInputProps {
+  $hasIcon: boolean;
+  $strokeColor: string;
+}
+
+const StyledInput = styled.input<StyledInputProps>`
+  ${TextInputStyles}
+
+  box-shadow: ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px,
+    ${Colors.KeylineGray} inset 2px 2px 1.5px;
+  padding: ${({$hasIcon}) => ($hasIcon ? '6px 6px 6px 28px' : '6px 6px 6px 12px')};
+
+  :focus {
     box-shadow: ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px,
       ${Colors.KeylineGray} inset 2px 2px 1.5px, rgba(58, 151, 212, 0.6) 0 0 0 3px;
-    outline: none;
   }
 `;
