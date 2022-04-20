@@ -5,6 +5,8 @@ import pytest
 from dagster import (
     AssetKey,
     DagsterInvalidDefinitionError,
+    GraphIn,
+    GraphOut,
     In,
     Nothing,
     OpExecutionContext,
@@ -13,6 +15,7 @@ from dagster import (
     String,
     build_op_context,
     check,
+    graph,
     op,
     resource,
 )
@@ -330,9 +333,6 @@ def test_invoking_asset_with_context():
     ctx = build_op_context()
     out = asset_with_context(ctx, 1)
     assert out == 1
-<<<<<<< HEAD
-=======
-
 
 def test_partitions_def():
     partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
@@ -438,9 +438,6 @@ def test_assets_definition_errors_when_not_op_decorated():
         @resource
         def my_op():
             return 5, 6
-<<<<<<< HEAD
->>>>>>> d8f0689a93 (first stab)
-=======
 
 
 def test_internal_asset_deps():
@@ -451,4 +448,54 @@ def test_internal_asset_deps():
         def multi_asset_op(context):
             yield Output(1, "a")
             yield Output(2, "b")
->>>>>>> 42bf30542d (add internal_asset deps)
+
+def _invert_dict(input_dict):
+    return {value: key for key, value in input_dict.items()}
+
+def test_graph_asset_decorator_inputs():
+    @op
+    def my_op(x, y):
+        return x
+
+    @assets_definition(asset_keys_by_input_name={"x": AssetKey("x_asset")})
+    @graph(ins={"x": GraphIn()})
+    def my_graph(x, y):
+        my_op(x, y)
+
+    input_defs_by_asset_key = _invert_dict(my_graph.asset_keys_by_input_def)
+    assert input_defs_by_asset_key[AssetKey("x_asset")].name == "x"
+    assert input_defs_by_asset_key[AssetKey("y")].name == "y"
+
+def test_graph_asset_decorator_outputs():
+    @op
+    def x_op(x):
+        return x
+
+    @op
+    def y_op(y):
+        return y
+
+    @assets_definition(asset_keys_by_output_name={"y": AssetKey("y_asset")})
+    @graph(out={"x": GraphOut(), "y": GraphOut()})
+    def my_graph(x, y):
+        return {"x": x_op(x), "y": y_op(y)}
+
+    output_defs_by_asset_key = _invert_dict(my_graph.asset_keys_by_output_def)
+    assert output_defs_by_asset_key[AssetKey("y_asset")].name == "y"
+    assert output_defs_by_asset_key[AssetKey("x")].name == "x"
+
+def test_graph_asset_decorator_no_args():
+    @op
+    def my_op(x, y):
+        return x
+
+    @assets_definition
+    @graph
+    def my_graph(x, y):
+        return my_op(x, y)
+
+    input_defs_by_asset_key = _invert_dict(my_graph.asset_keys_by_input_def)
+    output_defs_by_asset_key = _invert_dict(my_graph.asset_keys_by_output_def)
+    assert input_defs_by_asset_key[AssetKey("x")].name == "x"
+    assert input_defs_by_asset_key[AssetKey("y")].name == "y"
+    assert output_defs_by_asset_key[AssetKey("result")].name == "result"
