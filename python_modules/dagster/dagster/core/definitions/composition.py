@@ -628,10 +628,8 @@ class PendingNodeInvocation:
         ephemeral_job = JobDefinition(
             name=self.given_alias,
             graph_def=self.node_def,
-            mode_def=ModeDefinition(
-                executor_defs=[execute_in_process_executor],
-                resource_defs=wrap_resources_for_execution(resources),
-            ),
+            executor_def=execute_in_process_executor,
+            resource_defs=wrap_resources_for_execution(resources),
             tags=self.tags,
             hook_defs=self.hook_defs,
             op_retry_policy=self.retry_policy,

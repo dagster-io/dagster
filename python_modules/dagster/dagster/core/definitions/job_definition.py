@@ -37,6 +37,10 @@ from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.utils import str_format_set
 
 from .executor_definition import ExecutorDefinition
+from .resource_definition import ResourceDefinition
+from .config import ConfigMapping
+from .partition import PartitionedConfig
+from .logger_definition import LoggerDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .mode import ModeDefinition
@@ -56,8 +60,12 @@ if TYPE_CHECKING:
 class JobDefinition(PipelineDefinition):
     def __init__(
         self,
-        mode_def: ModeDefinition,
         graph_def: GraphDefinition,
+        resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
+        executor_def: Optional[ExecutorDefinition] = None,
+        logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
+        config_mapping: Optional[ConfigMapping] = None,
+        partitioned_config: Optional[PartitionedConfig] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         preset_defs: Optional[List[PresetDefinition]] = None,
@@ -67,6 +75,14 @@ class JobDefinition(PipelineDefinition):
         version_strategy: Optional[VersionStrategy] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
     ):
+
+        mode_def = ModeDefinition(
+            resource_defs=resource_defs,
+            logger_defs=logger_defs,
+            executor_defs=[executor_def] if executor_def else None,
+            _config_mapping=config_mapping,
+            _partitioned_config=partitioned_config,
+        )
 
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
         self._op_selection_data = check.opt_inst_param(
@@ -98,11 +114,23 @@ class JobDefinition(PipelineDefinition):
 
     @property
     def executor_def(self) -> ExecutorDefinition:
-        return self.mode_definitions[0].executor_defs[0]
+        return self.get_mode_definition().executor_defs[0]
 
     @property
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
-        return self.mode_definitions[0].resource_defs
+        return self.get_mode_definition().resource_defs
+
+    @property
+    def partitioned_config(self) -> Optional[PartitionedConfig]:
+        return self.get_mode_definition().partitioned_config
+
+    @property
+    def config_mapping(self) -> Optional[ConfigMapping]:
+        return self.get_mode_definition().config_mapping
+
+    @property
+    def loggers(self) -> Mapping[str, LoggerDefinition]:
+        return self.get_mode_definition().loggers
 
     def execute_in_process(
         self,
@@ -149,28 +177,17 @@ class JobDefinition(PipelineDefinition):
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
         partition_key = check.opt_str_param(partition_key, "partition_key")
 
-        check.invariant(
-            len(self._mode_definitions) == 1,
-            "execute_in_process only supported on job / single mode pipeline",
-        )
-
-        base_mode = self.get_mode_definition()
-        # create an ephemeral in process mode by replacing the executor_def and
-        # switching the default fs io_manager to in mem, if another was not set
-        in_proc_mode = ModeDefinition(
-            name="in_process",
-            executor_defs=[execute_in_process_executor],
-            resource_defs=_swap_default_io_man(base_mode.resource_defs, self),
-            logger_defs=base_mode.loggers,
-            _config_mapping=base_mode.config_mapping,
-            _partitioned_config=base_mode.partitioned_config,
-        )
-
+        resource_defs = dict(self.resource_defs)
+        logger_defs = dict(self.loggers)
         ephemeral_job = JobDefinition(
             name=self._name,
             graph_def=self._graph_def,
-            mode_def=in_proc_mode,
+            resource_defs=_swap_default_io_man(resource_defs, self),
+            executor_def=execute_in_process_executor,
+            logger_defs=logger_defs,
             hook_defs=self.hook_defs,
+            config_mapping=self.config_mapping,
+            partitioned_config=self.partitioned_config,
             tags=self.tags,
             op_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,
@@ -178,7 +195,7 @@ class JobDefinition(PipelineDefinition):
 
         tags = None
         if partition_key:
-            if not base_mode.partitioned_config:
+            if not self.partitioned_config:
                 check.failed(
                     f"Provided partition key `{partition_key}` for job `{self._name}` without a partitioned config"
                 )
@@ -227,7 +244,11 @@ class JobDefinition(PipelineDefinition):
         return JobDefinition(
             name=self.name,
             description=self.description,
-            mode_def=self.get_mode_definition(),
+            resource_defs=dict(self.resource_defs),
+            logger_defs=dict(self.loggers),
+            executor_def=self.executor_def,
+            config_mapping=self.config_mapping,
+            partitioned_config=self.partitioned_config,
             preset_defs=self.preset_defs,
             tags=self.tags,
             hook_defs=self.hook_defs,
@@ -244,8 +265,6 @@ class JobDefinition(PipelineDefinition):
         )
 
     def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
-        if not self.is_single_mode:
-            return None
 
         mode = self.get_mode_definition()
         if not mode.partitioned_config:
@@ -285,7 +304,11 @@ class JobDefinition(PipelineDefinition):
         job_def = JobDefinition(
             name=self.name,
             graph_def=self._graph_def,
-            mode_def=self.mode_definitions[0],
+            resource_defs=dict(self.resource_defs),
+            logger_defs=dict(self.loggers),
+            executor_def=self.executor_def,
+            partitioned_config=self.partitioned_config,
+            config_mapping=self.config_mapping,
             preset_defs=self.preset_defs,
             tags=self.tags,
             hook_defs=hook_defs | self.hook_defs,

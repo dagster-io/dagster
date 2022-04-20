@@ -569,13 +569,11 @@ class GraphDefinition(NodeDefinition):
             name=job_name,
             description=description or self.description,
             graph_def=self,
-            mode_def=ModeDefinition(
-                resource_defs=resource_defs_with_defaults,
-                logger_defs=logger_defs,
-                executor_defs=[executor_def],
-                _config_mapping=config_mapping,
-                _partitioned_config=partitioned_config,
-            ),
+            resource_defs=resource_defs_with_defaults,
+            logger_defs=logger_defs,
+            executor_def=executor_def,
+            config_mapping=config_mapping,
+            partitioned_config=partitioned_config,
             preset_defs=presets,
             tags=tags,
             hook_defs=hooks,
@@ -605,11 +603,9 @@ class GraphDefinition(NodeDefinition):
             JobDefinition(
                 name=self.name,
                 graph_def=self,
-                mode_def=ModeDefinition(
-                    resource_defs=resource_defs,
-                    executor_defs=[executor_def],
-                    logger_defs=logger_defs,
-                ),
+                resource_defs=resource_defs,
+                executor_def=executor_def,
+                logger_defs=logger_defs,
             )
             .get_run_config_schema("default")
             .run_config_schema_type
@@ -661,11 +657,12 @@ class GraphDefinition(NodeDefinition):
         resources = check.opt_dict_param(resources, "resources", key_type=str)
 
         resource_defs = wrap_resources_for_execution(resources)
-        in_proc_mode = ModeDefinition(
-            executor_defs=[execute_in_process_executor], resource_defs=resource_defs
-        )
+
         ephemeral_job = JobDefinition(
-            name=self._name, graph_def=self, mode_def=in_proc_mode
+            name=self._name,
+            graph_def=self,
+            executor_def=execute_in_process_executor,
+            resource_defs=resource_defs,
         ).get_job_def_for_op_selection(op_selection)
 
         run_config = run_config if run_config is not None else {}
