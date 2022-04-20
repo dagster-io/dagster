@@ -14,9 +14,10 @@ import {WebSocketStatus} from './WebSocketProvider';
 
 interface Props {
   searchPlaceholder: string;
+  rightOfSearchBar?: React.ReactNode;
 }
 
-export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
+export const AppTopNav: React.FC<Props> = ({children, rightOfSearchBar, searchPlaceholder}) => {
   const history = useHistory();
 
   return (
@@ -24,6 +25,7 @@ export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
       <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
         <AppTopNavLogo />
         <SearchDialog searchPlaceholder={searchPlaceholder} />
+        {rightOfSearchBar}
       </Box>
       <Box flex={{direction: 'row', alignItems: 'center'}}>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
