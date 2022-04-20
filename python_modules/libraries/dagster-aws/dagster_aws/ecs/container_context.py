@@ -30,13 +30,24 @@ ECS_CONTAINER_CONTEXT_SCHEMA = {
             "environment variables in the container."
         ),
     ),
+    "execution_role_arn": Field(
+        StringSource,
+        is_required=False,
+        description="The Amazon Resource Name (ARN) of the task execution role that "
+        "grants the Amazon ECS container agent permission to make AWS API calls on "
+        "your behalf. See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html",
+    ),
 }
 
 
 class EcsContainerContext(
     NamedTuple(
         "_EcsContainerContext",
-        [("secrets", List[Any]), ("secrets_tags", List[str])],
+        [
+            ("secrets", List[Any]),
+            ("secrets_tags", List[str]),
+            ("execution_role_arn", Optional[str]),
+        ],
     )
 ):
     """Encapsulates configuration that can be applied to an ECS task running Dagster code."""
@@ -45,17 +56,20 @@ class EcsContainerContext(
         cls,
         secrets: Optional[List[Any]] = None,
         secrets_tags: Optional[List[str]] = None,
+        execution_role_arn: Optional[str] = None,
     ):
         return super(EcsContainerContext, cls).__new__(
             cls,
             secrets=check.opt_list_param(secrets, "secrets"),
             secrets_tags=check.opt_list_param(secrets_tags, "secrets_tags"),
+            execution_role_arn=check.opt_str_param(execution_role_arn, "execution_role_arn"),
         )
 
     def merge(self, other: "EcsContainerContext") -> "EcsContainerContext":
         return EcsContainerContext(
             secrets=other.secrets + self.secrets,
             secrets_tags=other.secrets_tags + self.secrets_tags,
+            execution_role_arn=other.execution_role_arn or self.execution_role_arn,
         )
 
     def get_secrets_dict(self, secrets_manager) -> Mapping[str, str]:
@@ -72,6 +86,7 @@ class EcsContainerContext(
                 EcsContainerContext(
                     secrets=run_launcher.secrets,
                     secrets_tags=run_launcher.secrets_tags,
+                    execution_role_arn=run_launcher.execution_role_arn,
                 )
             )
 
@@ -111,4 +126,5 @@ class EcsContainerContext(
         return EcsContainerContext(
             secrets=processed_context_value.get("secrets"),
             secrets_tags=processed_context_value.get("secrets_tags"),
+            execution_role_arn=processed_context_value.get("execution_role_arn"),
         )

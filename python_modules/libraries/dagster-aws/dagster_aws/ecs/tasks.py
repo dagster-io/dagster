@@ -42,6 +42,7 @@ def default_ecs_task_definition(
     command=None,
     secrets=None,
     include_sidecars=False,
+    execution_role_arn=None,
 ):
     # Start with the current process's task's definition but remove
     # extra keys that aren't useful for creating a new task definition
@@ -54,6 +55,9 @@ def default_ecs_task_definition(
         for key in expected_keys
         if key in metadata.task_definition.keys()
     )
+
+    if execution_role_arn:
+        task_definition["executionRoleArn"] = execution_role_arn
 
     # The current process might not be running in a container that has the
     # pipeline's code installed. Inherit most of the process's container

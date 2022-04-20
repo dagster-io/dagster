@@ -30,6 +30,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         secrets=None,
         secrets_tag="dagster",
         include_sidecars=False,
+        execution_role_arn=None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -57,6 +58,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         self.secrets_tags = [secrets_tag] if secrets_tag else []
         self.include_sidecars = include_sidecars
+
+        self.execution_role_arn = check.opt_str_param(execution_role_arn, "execution_role_arn")
 
         if self.task_definition:
             task_definition = self.ecs.describe_task_definition(taskDefinition=task_definition)
@@ -126,6 +129,13 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     "Whether each run should use the same sidecars as the task that launches it. "
                     "Defaults to False."
                 ),
+            ),
+            "execution_role_arn": Field(
+                StringSource,
+                is_required=False,
+                description="The Amazon Resource Name (ARN) of the task execution role that "
+                "grants the Amazon ECS container agent permission to make AWS API calls on "
+                "your behalf. See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html",
             ),
         }
 
@@ -309,13 +319,15 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             ]
 
         container_definitions = task_definition.get("containerDefinitions", [{}])
-        for container_definition in container_definitions:
-            if (
-                container_definition.get("image") == image
-                and container_definition.get("name") == self.container_name
-                and container_definition.get("secrets") == secrets_definition.get("secrets", [])
-            ):
-                return task_definition
+
+        if container_context.execution_role_arn == task_definition.get("executionRoleArn"):
+            for container_definition in container_definitions:
+                if (
+                    container_definition.get("image") == image
+                    and container_definition.get("name") == self.container_name
+                    and container_definition.get("secrets") == secrets_definition.get("secrets", [])
+                ):
+                    return task_definition
 
         return default_ecs_task_definition(
             self.ecs,
