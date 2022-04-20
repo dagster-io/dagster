@@ -13,7 +13,10 @@ import {findRepoContainingPipeline} from '../workspace/findRepoContainingPipelin
 import {RepoAddress} from '../workspace/types';
 
 import {TypeList, TYPE_LIST_FRAGMENT} from './TypeList';
-import {TypeListContainerQuery} from './types/TypeListContainerQuery';
+import {
+  TypeListContainerQuery,
+  TypeListContainerQueryVariables,
+} from './types/TypeListContainerQuery';
 
 interface ITypeListContainerProps {
   explorerPath: ExplorerPath;
@@ -37,11 +40,14 @@ export const TypeListContainer: React.FC<ITypeListContainerProps> = ({
     return buildPipelineSelector(repoAddress, pipelineName);
   }, [options, pipelineName, repoAddress, snapshotId]);
 
-  const queryResult = useQuery<TypeListContainerQuery>(TYPE_LIST_CONTAINER_QUERY, {
-    fetchPolicy: 'cache-and-network',
-    variables: {pipelineSelector},
-    skip: !pipelineSelector,
-  });
+  const queryResult = useQuery<TypeListContainerQuery, TypeListContainerQueryVariables>(
+    TYPE_LIST_CONTAINER_QUERY,
+    {
+      fetchPolicy: 'cache-and-network',
+      variables: {pipelineSelector: pipelineSelector!},
+      skip: !pipelineSelector,
+    },
+  );
 
   if (!pipelineSelector) {
     return (

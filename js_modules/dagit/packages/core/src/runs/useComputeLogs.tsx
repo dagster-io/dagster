@@ -5,7 +5,10 @@ import {ComputeIOType} from '../types/globalTypes';
 
 import {COMPUTE_LOG_CONTENT_FRAGMENT, MAX_STREAMING_LOG_BYTES} from './ComputeLogContent';
 import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragment';
-import {ComputeLogsSubscription} from './types/ComputeLogsSubscription';
+import {
+  ComputeLogsSubscription,
+  ComputeLogsSubscriptionVariables,
+} from './types/ComputeLogsSubscription';
 import {ComputeLogsSubscriptionFragment} from './types/ComputeLogsSubscriptionFragment';
 
 const slice = (s: string) =>
@@ -69,27 +72,33 @@ const initialState: State = {
 export const useComputeLogs = (runId: string, stepKey?: string) => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
-  useSubscription<ComputeLogsSubscription>(COMPUTE_LOGS_SUBSCRIPTION, {
-    fetchPolicy: 'no-cache',
-    variables: {runId, stepKey, ioType: ComputeIOType.STDOUT, cursor: null},
-    skip: !stepKey,
-    onSubscriptionData: ({subscriptionData}) => {
-      if (stepKey) {
-        dispatch({type: 'stdout', stepKey, log: subscriptionData.data?.computeLogs || null});
-      }
+  useSubscription<ComputeLogsSubscription, ComputeLogsSubscriptionVariables>(
+    COMPUTE_LOGS_SUBSCRIPTION,
+    {
+      fetchPolicy: 'no-cache',
+      variables: {runId, stepKey: stepKey!, ioType: ComputeIOType.STDOUT, cursor: null},
+      skip: !stepKey,
+      onSubscriptionData: ({subscriptionData}) => {
+        if (stepKey) {
+          dispatch({type: 'stdout', stepKey, log: subscriptionData.data?.computeLogs || null});
+        }
+      },
     },
-  });
+  );
 
-  useSubscription<ComputeLogsSubscription>(COMPUTE_LOGS_SUBSCRIPTION, {
-    fetchPolicy: 'no-cache',
-    variables: {runId, stepKey, ioType: ComputeIOType.STDERR, cursor: null},
-    skip: !stepKey,
-    onSubscriptionData: ({subscriptionData}) => {
-      if (stepKey) {
-        dispatch({type: 'stderr', stepKey, log: subscriptionData.data?.computeLogs || null});
-      }
+  useSubscription<ComputeLogsSubscription, ComputeLogsSubscriptionVariables>(
+    COMPUTE_LOGS_SUBSCRIPTION,
+    {
+      fetchPolicy: 'no-cache',
+      variables: {runId, stepKey: stepKey!, ioType: ComputeIOType.STDERR, cursor: null},
+      skip: !stepKey,
+      onSubscriptionData: ({subscriptionData}) => {
+        if (stepKey) {
+          dispatch({type: 'stderr', stepKey, log: subscriptionData.data?.computeLogs || null});
+        }
+      },
     },
-  });
+  );
 
   return state;
 };

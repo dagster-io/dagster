@@ -14,21 +14,24 @@ import {SCHEDULES_ROOT_QUERY} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
 import {SchedulesNextTicks} from './SchedulesNextTicks';
 import {SchedulesTable} from './SchedulesTable';
-import {SchedulesRootQuery} from './types/SchedulesRootQuery';
+import {SchedulesRootQuery, SchedulesRootQueryVariables} from './types/SchedulesRootQuery';
 
 export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useDocumentTitle('Schedules');
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const queryResult = useQuery<SchedulesRootQuery>(SCHEDULES_ROOT_QUERY, {
-    variables: {
-      repositorySelector,
-      instigationType: InstigationType.SCHEDULE,
+  const queryResult = useQuery<SchedulesRootQuery, SchedulesRootQueryVariables>(
+    SCHEDULES_ROOT_QUERY,
+    {
+      variables: {
+        repositorySelector,
+        instigationType: InstigationType.SCHEDULE,
+      },
+      fetchPolicy: 'cache-and-network',
+      pollInterval: 50 * 1000,
+      partialRefetch: true,
     },
-    fetchPolicy: 'cache-and-network',
-    pollInterval: 50 * 1000,
-    partialRefetch: true,
-  });
+  );
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>

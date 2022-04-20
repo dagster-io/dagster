@@ -27,6 +27,7 @@ import {OpDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
 import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from './OpTypeSignature';
 import {
   OpsRootQuery,
+  OpsRootQueryVariables,
   OpsRootQuery_repositoryOrError_Repository_usedSolids,
 } from './types/OpsRootQuery';
 
@@ -122,7 +123,7 @@ export const OpsRoot: React.FC<Props> = (props) => {
   useDocumentTitle('Ops');
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const queryResult = useQuery<OpsRootQuery>(OPS_ROOT_QUERY, {
+  const queryResult = useQuery<OpsRootQuery, OpsRootQueryVariables>(OPS_ROOT_QUERY, {
     variables: {repositorySelector},
   });
 

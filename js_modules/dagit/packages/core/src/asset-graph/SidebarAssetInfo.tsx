@@ -23,14 +23,14 @@ import {RepoAddress} from '../workspace/types';
 
 import {LiveDataForNode, displayNameForAssetKey} from './Utils';
 import {SidebarAssetFragment} from './types/SidebarAssetFragment';
-import {SidebarAssetQuery} from './types/SidebarAssetQuery';
+import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetQuery';
 
 export const SidebarAssetInfo: React.FC<{
   assetKey: AssetKey;
   liveData: LiveDataForNode;
 }> = ({assetKey, liveData}) => {
   const partitionHealthData = usePartitionHealthData([assetKey]);
-  const {data} = useQuery<SidebarAssetQuery>(SIDEBAR_ASSET_QUERY, {
+  const {data} = useQuery<SidebarAssetQuery, SidebarAssetQueryVariables>(SIDEBAR_ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
     fetchPolicy: 'cache-and-network',
   });

@@ -25,6 +25,7 @@ import {
   Terminate_terminatePipelineExecution_PythonError,
   Terminate_terminatePipelineExecution_UnauthorizedError,
   Terminate_terminatePipelineExecution_TerminateRunFailure,
+  TerminateVariables,
 } from './types/Terminate';
 
 export interface Props {
@@ -137,7 +138,7 @@ export const TerminationDialog = (props: Props) => {
     }
   }, [isOpen, selectedRuns]);
 
-  const [terminate] = useMutation<Terminate>(TERMINATE_MUTATION);
+  const [terminate] = useMutation<Terminate, TerminateVariables>(TERMINATE_MUTATION);
   const policy = state.mustForce
     ? TerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY
     : TerminateRunPolicy.SAFE_TERMINATE;

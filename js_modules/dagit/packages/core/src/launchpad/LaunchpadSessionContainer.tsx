@@ -60,7 +60,10 @@ import {
 } from './types/ConfigPartitionSelectionQuery';
 import {LaunchpadSessionContainerPartitionSetsFragment} from './types/LaunchpadSessionContainerPartitionSetsFragment';
 import {LaunchpadSessionContainerPipelineFragment} from './types/LaunchpadSessionContainerPipelineFragment';
-import {PipelineExecutionConfigSchemaQuery} from './types/PipelineExecutionConfigSchemaQuery';
+import {
+  PipelineExecutionConfigSchemaQuery,
+  PipelineExecutionConfigSchemaQueryVariables,
+} from './types/PipelineExecutionConfigSchemaQuery';
 import {PreviewConfigQuery, PreviewConfigQueryVariables} from './types/PreviewConfigQuery';
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
@@ -181,14 +184,14 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     solidSelection: currentSession?.solidSelection || undefined,
   };
 
-  const configResult = useQuery<PipelineExecutionConfigSchemaQuery>(
-    PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY,
-    {
-      variables: {selector: pipelineSelector, mode: currentSession?.mode},
-      fetchPolicy: 'cache-and-network',
-      partialRefetch: true,
-    },
-  );
+  const configResult = useQuery<
+    PipelineExecutionConfigSchemaQuery,
+    PipelineExecutionConfigSchemaQueryVariables
+  >(PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY, {
+    variables: {selector: pipelineSelector, mode: currentSession?.mode},
+    fetchPolicy: 'cache-and-network',
+    partialRefetch: true,
+  });
 
   const configSchemaOrError = configResult?.data?.runConfigSchemaOrError;
 

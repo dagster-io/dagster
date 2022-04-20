@@ -7,6 +7,7 @@ import {doneStatuses} from '../runs/RunStatuses';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {BulkActionStatus} from '../types/globalTypes';
 
+import {CancelBackfill, CancelBackfillVariables} from './types/CancelBackfill';
 import {InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results} from './types/InstanceBackfillsQuery';
 
 type Backfill = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results;
@@ -17,7 +18,9 @@ interface Props {
   onComplete: () => void;
 }
 export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props) => {
-  const [cancelBackfill] = useMutation(CANCEL_BACKFILL_MUTATION);
+  const [cancelBackfill] = useMutation<CancelBackfill, CancelBackfillVariables>(
+    CANCEL_BACKFILL_MUTATION,
+  );
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   if (!backfill) {

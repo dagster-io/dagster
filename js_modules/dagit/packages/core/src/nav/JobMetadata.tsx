@@ -11,7 +11,7 @@ import {RepoAddress} from '../workspace/types';
 import {LatestRunTag} from './LatestRunTag';
 import {ScheduleOrSensorTag} from './ScheduleOrSensorTag';
 import {JobMetadataFragment as Job} from './types/JobMetadataFragment';
-import {JobMetadataQuery} from './types/JobMetadataQuery';
+import {JobMetadataQuery, JobMetadataQueryVariables} from './types/JobMetadataQuery';
 import {RunMetadataFragment} from './types/RunMetadataFragment';
 
 interface Props {
@@ -22,8 +22,11 @@ interface Props {
 export const JobMetadata: React.FC<Props> = (props) => {
   const {pipelineName, repoAddress} = props;
 
-  const {data} = useQuery<JobMetadataQuery>(JOB_METADATA_QUERY, {
+  const {data} = useQuery<JobMetadataQuery, JobMetadataQueryVariables>(JOB_METADATA_QUERY, {
     variables: {
+      runsFilter: {
+        pipelineName,
+      },
       params: {
         pipelineName,
         repositoryName: repoAddress.name,
@@ -191,7 +194,7 @@ const JOB_METADATA_FRAGMENT = gql`
 `;
 
 const JOB_METADATA_QUERY = gql`
-  query JobMetadataQuery($params: PipelineSelector!, $runsFilter: RunsFilter) {
+  query JobMetadataQuery($params: PipelineSelector!, $runsFilter: RunsFilter!) {
     pipelineOrError(params: $params) {
       ... on Pipeline {
         id

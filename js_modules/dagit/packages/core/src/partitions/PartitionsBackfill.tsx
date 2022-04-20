@@ -46,9 +46,15 @@ import {
   TopLabel,
   TopLabelTilted,
 } from './RunMatrixUtils';
-import {LaunchPartitionBackfill} from './types/LaunchPartitionBackfill';
-import {PartitionStatusQuery} from './types/PartitionStatusQuery';
-import {PartitionsBackfillSelectorQuery} from './types/PartitionsBackfillSelectorQuery';
+import {
+  LaunchPartitionBackfill,
+  LaunchPartitionBackfillVariables,
+} from './types/LaunchPartitionBackfill';
+import {PartitionStatusQuery, PartitionStatusQueryVariables} from './types/PartitionStatusQuery';
+import {
+  PartitionsBackfillSelectorQuery,
+  PartitionsBackfillSelectorQueryVariables,
+} from './types/PartitionsBackfillSelectorQuery';
 
 const OVERSCROLL = 200;
 const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
@@ -106,25 +112,25 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     };
   }, [onLaunch]);
 
-  const {loading, data} = useQuery<PartitionsBackfillSelectorQuery>(
-    PARTITIONS_BACKFILL_SELECTOR_QUERY,
-    {
-      variables: {
-        repositorySelector,
-        partitionSetName,
-        pipelineSelector: {
-          ...repositorySelector,
-          pipelineName,
-        },
+  const {loading, data} = useQuery<
+    PartitionsBackfillSelectorQuery,
+    PartitionsBackfillSelectorQueryVariables
+  >(PARTITIONS_BACKFILL_SELECTOR_QUERY, {
+    variables: {
+      repositorySelector,
+      partitionSetName,
+      pipelineSelector: {
+        ...repositorySelector,
+        pipelineName,
       },
-      fetchPolicy: 'network-only',
     },
-  );
+    fetchPolicy: 'network-only',
+  });
 
-  const [
-    queryStatuses,
-    {loading: statusesLoading, data: statusesData},
-  ] = useLazyQuery<PartitionStatusQuery>(PARTITION_STATUS_QUERY, {
+  const [queryStatuses, {loading: statusesLoading, data: statusesData}] = useLazyQuery<
+    PartitionStatusQuery,
+    PartitionStatusQueryVariables
+  >(PARTITION_STATUS_QUERY, {
     variables: {
       repositorySelector,
       partitionSetName,
@@ -546,9 +552,10 @@ const LaunchBackfillButton: React.FC<{
 }) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const mounted = React.useRef(true);
-  const [launchBackfill, {loading}] = useMutation<LaunchPartitionBackfill>(
-    LAUNCH_PARTITION_BACKFILL_MUTATION,
-  );
+  const [launchBackfill, {loading}] = useMutation<
+    LaunchPartitionBackfill,
+    LaunchPartitionBackfillVariables
+  >(LAUNCH_PARTITION_BACKFILL_MUTATION);
 
   React.useEffect(() => {
     mounted.current = true;
