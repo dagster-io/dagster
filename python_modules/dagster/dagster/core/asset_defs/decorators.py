@@ -22,9 +22,11 @@ from dagster.core.definitions import OpDefinition
 from dagster.core.definitions.decorators.op_decorator import _Op
 from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.graph_definition import GraphDefinition
 from dagster.core.definitions.input import In
 from dagster.core.definitions.output import Out
 from dagster.core.definitions.partition import PartitionsDefinition
+from dagster.core.definitions.solid_definition import NodeDefinition
 from dagster.core.definitions.utils import NoValueSentinel
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType
@@ -319,27 +321,27 @@ def assets_definition(
     asset_keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
     asset_keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
-) -> Callable[[OpDefinition], AssetsDefinition]:
+) -> Callable[[NodeDefinition], AssetsDefinition]:
     """Create a definition of multiple assets which share the same computation and same upstream assets.
 
     Each argument to the decorated function references an upstream asset that these assets depends on.
     The name of the argument designates the name of the upstream asset.
 
     Args:
-        name (Optional[str]): The name of the op that generates the assets.
+        name (Optional[str]): The name of the op/graph that generates the assets.
         asset_keys_by_input_name: (Optional[Dict[str, AssetKey]]): A mapping of the input names of the
             decorated function to the input asset keys they represent. Input names are the keys
-            of the ins dictionary provided in the op decorator, or the parameter names of the decorated
+            of the ins dictionary provided in the op/graph decorator, or the parameter names of the decorated
             function if the ins dictionary is not specified.
         asset_keys_by_output_name: (Optional[Dict[str, AssetKey]]): A mapping of the output names of the
             decorated function to the output asset keys they represent. Output names are the keys
-            of the outs dictionary provided in the op decorator, or the parameter names of the decorated
+            of the outs dictionary provided in the op/graph decorator, or the parameter names of the decorated
             function if the outs dictionary is not specified.
         internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
-            that all assets produced by an op depend on all assets that are consumed by that
-            op. If this default is not correct, you pass in a map of output names to a
+            that all assets produced by an op/graph depend on all assets that are consumed by that
+            op/graph. If this default is not correct, you pass in a map of output names to a
             corrected set of AssetKeys that they depend on. Any AssetKeys in this list must be either
-            used as input to the asset or produced within the op.
+            used as input to the asset or produced within the op/graph.
     """
     asset_keys_by_input_name = check.opt_dict_param(
         asset_keys_by_input_name, "asset_keys_by_input_name", key_type=str, value_type=AssetKey
@@ -353,28 +355,28 @@ def assets_definition(
 
     if callable(name):
         check.invariant(
-            isinstance(name, OpDefinition),
-            "assets_definition decorator can only be applied to an OpDefinition",
+            isinstance(name, OpDefinition) or isinstance(name, GraphDefinition),
+            "Decorator can only be applied to an OpDefinition or GraphDefinition",
         )
-        op_def = name
+        node_def = name
         return AssetsDefinition(
-            input_names_by_asset_key=_infer_input_names_by_asset_key(
-                op_def,
+            asset_keys_by_input_name=_invert_dict(_infer_input_names_by_asset_key(
+                node_def,
                 asset_keys_by_input_name or {},
-            ),
-            output_names_by_asset_key=_infer_output_names_by_asset_key(
-                op_def, asset_keys_by_output_name or {}
-            ),
-            op=op_def,
+            )),
+            asset_keys_by_output_name=_invert_dict(_infer_output_names_by_asset_key(
+                node_def, asset_keys_by_output_name or {}
+            )),
+            node_def=node_def,
         )
 
-    def inner(op_def: OpDefinition) -> AssetsDefinition:
+    def inner(node_def: NodeDefinition) -> AssetsDefinition:
         check.invariant(
-            isinstance(op_def, OpDefinition),
-            "assets_definition decorator can only be applied to an OpDefinition",
+            isinstance(node_def, OpDefinition) or isinstance(node_def, GraphDefinition),
+            "Decorator can only be applied to an OpDefinition or GraphDefinition",
         )
         output_names_by_asset_key = _infer_output_names_by_asset_key(
-            op_def, asset_keys_by_output_name or {}
+            node_def, asset_keys_by_output_name or {}
         )
         asset_key_by_output_name = {
             output_name: asset_key for asset_key, output_name in output_names_by_asset_key.items()
@@ -389,17 +391,19 @@ def assets_definition(
                 transformed_internal_asset_deps[asset_key_by_output_name[output_name]] = asset_keys
 
         return AssetsDefinition(
-            input_names_by_asset_key=_infer_input_names_by_asset_key(
-                op_def,
+            asset_keys_by_input_name=_invert_dict(_infer_input_names_by_asset_key(
+                node_def,
                 asset_keys_by_input_name or {},
-            ),
-            output_names_by_asset_key=output_names_by_asset_key,
-            op=op_def,
+            )),
+            asset_keys_by_output_name=_invert_dict(output_names_by_asset_key),
+            node_def=node_def,
             asset_deps=transformed_internal_asset_deps or None,
         )
 
     return inner
 
+def _invert_dict(input_dict):
+    return {value: key for key, value in input_dict.items()}
 
 def _get_input_param_names(fn_params: List[funcsigs.Parameter]) -> List[str]:
     is_context_provided = len(fn_params) > 0 and fn_params[0].name in get_valid_name_permutations(
@@ -411,24 +415,29 @@ def _get_input_param_names(fn_params: List[funcsigs.Parameter]) -> List[str]:
 
 
 def _infer_input_names_by_asset_key(
-    op_def: OpDefinition, asset_keys_by_input_name: Mapping[str, AssetKey]
+    node_def: NodeDefinition, asset_keys_by_input_name: Mapping[str, AssetKey]
 ) -> Mapping[AssetKey, str]:
     # Infer non-argument deps for inputs with type In(nothing) with AssetKey(input_name)
 
-    input_param_names = []
-    if isinstance(op_def.compute_fn, DecoratedSolidFunction):
-        params = get_function_params(op_def.compute_fn.decorated_fn)
-        input_param_names = _get_input_param_names(params)
+    all_input_names = []
+    if isinstance(node_def, OpDefinition):
+        input_param_names = []
+        if isinstance(node_def.compute_fn, DecoratedSolidFunction):
+            params = get_function_params(node_def.compute_fn.decorated_fn)
+            input_param_names = _get_input_param_names(params)
+
+        all_input_names = set(input_param_names) | node_def.ins.keys()
+    elif isinstance(node_def, GraphDefinition):
+        all_input_names = [graph_input.definition.name for graph_input in node_def.input_mappings]
 
     for in_key in asset_keys_by_input_name.keys():
-        if in_key not in input_param_names:
+        if in_key not in all_input_names:
             raise DagsterInvalidDefinitionError(
                 f"Key '{in_key}' in provided asset_keys_by_input_name dict does not correspond to "
                 "any key provided in the ins dictionary of the decorated op or any argument "
                 "to the decorated function"
             )
 
-    all_input_names = set(input_param_names) | op_def.ins.keys()
     # If asset key is not supplied in asset_keys_by_input_name, create asset key
     # from input name
     inferred_input_names_by_asset_key: Dict[AssetKey, str] = {
@@ -440,24 +449,27 @@ def _infer_input_names_by_asset_key(
 
 
 def _infer_output_names_by_asset_key(
-    op_def: OpDefinition, asset_keys_by_output_name: Mapping[str, AssetKey]
+    node_def: NodeDefinition, asset_keys_by_output_name: Mapping[str, AssetKey]
 ) -> Mapping[AssetKey, str]:
     inferred_output_name_by_asset_key: Dict[AssetKey, str] = {
         asset_key: output_name for output_name, asset_key in asset_keys_by_output_name.items()
     }
-    op_outs = op_def.outs
+    output_names = []
+    if isinstance(node_def, OpDefinition):
+        output_names = node_def.outs
+    elif isinstance(node_def, GraphDefinition):
+        output_names = [output.definition.name for output in node_def.output_mappings]
 
     for output_name in asset_keys_by_output_name.keys():
-        if output_name not in op_outs:
+        if output_name not in output_names:
             raise DagsterInvalidDefinitionError(
                 f"Key {output_name} in provided asset_keys_by_output_name does not correspond "
                 "to any key provided in the out dictionary of the decorated op"
             )
 
-    for output_name in op_outs:
-        if output_name not in inferred_output_name_by_asset_key:
+    for output_name in output_names:
+        if output_name not in inferred_output_name_by_asset_key.values():
             inferred_output_name_by_asset_key[AssetKey([output_name])] = output_name
-
     return inferred_output_name_by_asset_key
 
 
