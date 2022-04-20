@@ -199,9 +199,10 @@ export interface JobOrPipelineSelector {
 
 export interface LaunchBackfillParams {
   selector: PartitionSetSelector;
-  partitionNames: string[];
+  partitionNames?: string[] | null;
   reexecutionSteps?: string[] | null;
   fromFailure?: boolean | null;
+  allPartitions?: boolean | null;
   tags?: ExecutionTag[] | null;
   forceSynchronousSubmission?: boolean | null;
 }

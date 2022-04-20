@@ -131,9 +131,10 @@ class GraphenePartitionSetSelector(graphene.InputObjectType):
 
 class GrapheneLaunchBackfillParams(graphene.InputObjectType):
     selector = graphene.NonNull(GraphenePartitionSetSelector)
-    partitionNames = non_null_list(graphene.String)
+    partitionNames = graphene.List(graphene.NonNull(graphene.String))
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
     fromFailure = graphene.Boolean()
+    allPartitions = graphene.Boolean()
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
     forceSynchronousSubmission = graphene.Boolean()
 

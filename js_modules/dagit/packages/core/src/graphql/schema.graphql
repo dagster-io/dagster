@@ -2018,9 +2018,10 @@ type LaunchBackfillSuccess {
 
 input LaunchBackfillParams {
   selector: PartitionSetSelector!
-  partitionNames: [String!]!
+  partitionNames: [String!]
   reexecutionSteps: [String!]
   fromFailure: Boolean
+  allPartitions: Boolean
   tags: [ExecutionTag!]
   forceSynchronousSubmission: Boolean
 }
