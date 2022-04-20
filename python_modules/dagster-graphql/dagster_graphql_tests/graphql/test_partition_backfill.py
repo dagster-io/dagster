@@ -291,3 +291,36 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["numRequested"] == 0
         assert result.data["partitionBackfillOrError"]["numTotal"] == 2
         assert result.data["partitionBackfillOrError"]["fromFailure"]
+
+    def test_launch_backfill_with_all_partitions_flag(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
+        partition_set_selector = {
+            "repositorySelector": repository_selector,
+            "partitionSetName": "chained_integer_partition",
+        }
+
+        result = execute_dagster_graphql_and_finish_runs(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": partition_set_selector,
+                    "allPartitions": True,
+                }
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
+
+        result = execute_dagster_graphql(
+            graphql_context, PARTITION_PROGRESS_QUERY, variables={"backfillId": backfill_id}
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
+        assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
+        assert result.data["partitionBackfillOrError"]["numRequested"] == 0
+        assert result.data["partitionBackfillOrError"]["numTotal"] == 10
