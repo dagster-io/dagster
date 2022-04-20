@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 
+from packaging.version import parse
 from sqlalchemy.pool import NullPool
 
 from dagster import StringSource, check
@@ -82,8 +83,11 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     @property
     def supports_batch_queries(self):
-        return (
-            get_sqlite_version() > MINIMUM_SQLITE_BATCH_VERSION and super().supports_batch_queries
+        if not super().supports_batch_queries:
+            return False
+
+        return super().supports_batch_queries and parse(get_sqlite_version()) >= parse(
+            MINIMUM_SQLITE_BATCH_VERSION
         )
 
     def upgrade(self):
