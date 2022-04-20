@@ -183,7 +183,7 @@ class MayHaveInstanceWeakref:
     """Mixin for classes that can have a weakref back to a Dagster instance."""
 
     def __init__(self):
-        self._instance_weakref: weakref.ReferenceType["DagsterInstance"] = None
+        self._instance_weakref: Optional[weakref.ReferenceType["DagsterInstance"]] = None
 
     @property
     def _instance(self) -> "DagsterInstance":

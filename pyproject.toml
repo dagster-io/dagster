@@ -120,7 +120,4 @@ disable=[
   # This rule is incompatible with SDAs, which have parameters named the same as upstream assets.
   'redefined-outer-name',
 
-  # Subclassing without calling super init is used frequently throughout the
-  # internal repo, so we disable for OSS in the interest of consistency.
-  'super-init-not-called',
 ]
