@@ -342,6 +342,7 @@ def test_partitions_def():
 
     assert my_asset.partitions_def == partitions_def
 
+
 def test_asset_definition_decorator():
     @assets_definition(
         asset_keys_by_input_name={"x": AssetKey("x_asset"), "y": AssetKey("y_asset")},
@@ -436,3 +437,13 @@ def test_assets_definition_errors_when_not_op_decorated():
         @resource
         def my_op():
             return 5, 6
+
+
+def test_internal_asset_deps():
+    with pytest.raises(Exception):
+
+        @assets_definition(internal_asset_deps={"non_exist_output_name": AssetKey("b")})
+        @op(out={"a": Out(), "b": Out()})
+        def multi_asset_op(context):
+            yield Output(1, "a")
+            yield Output(2, "b")

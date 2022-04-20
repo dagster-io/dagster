@@ -335,8 +335,8 @@ def assets_definition(
             of the outs dictionary provided in the op decorator, or the parameter names of the decorated
             function if the outs dictionary is not specified.
         internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
-            that all assets produced by a multi_asset depend on all assets that are consumed by that
-            multi asset. If this default is not correct, you pass in a map of output names to a
+            that all assets produced by an op depend on all assets that are consumed by that
+            op. If this default is not correct, you pass in a map of output names to a
             corrected set of AssetKeys that they depend on. Any AssetKeys in this list must be either
             used as input to the asset or produced within the op.
     """
@@ -372,16 +372,28 @@ def assets_definition(
             isinstance(op_def, OpDefinition),
             "assets_definition decorator can only be applied to an OpDefinition",
         )
+        output_names_by_asset_key = _infer_output_names_by_asset_key(
+            op_def, asset_keys_by_output_name
+        )
+        asset_key_by_output_name = {
+            output_name: asset_key for asset_key, output_name in output_names_by_asset_key.items()
+        }
+        transformed_internal_asset_deps = {}
+        for output_name, asset_keys in internal_asset_deps:
+            check.invariant(
+                output_name in asset_key_by_output_name,
+                f"output_name {output_name} specified in internal_asset_deps does not exist in the decorated function",
+            )
+            transformed_internal_asset_deps[asset_key_by_output_name[output_name]] = asset_keys
+
         return AssetsDefinition(
             input_names_by_asset_key=_infer_input_names_by_asset_key(
                 op_def,
                 asset_keys_by_input_name,
             ),
-            output_names_by_asset_key=_infer_output_names_by_asset_key(
-                op_def, asset_keys_by_output_name
-            ),
+            output_names_by_asset_key=output_names_by_asset_key,
             op=op_def,
-            # asset_deps=internal_asset_deps or None,
+            asset_deps=transformed_internal_asset_deps or None,
         )
 
     return inner
@@ -426,7 +438,9 @@ def _infer_input_names_by_asset_key(
 def _infer_output_names_by_asset_key(
     op_def: OpDefinition, asset_keys_by_output_name: Dict[str, AssetKey]
 ) -> Dict[AssetKey, str]:
-    inferred_output_name_by_asset_key: Dict[AssetKey, str] = {asset_key: output_name for output_name, asset_key in asset_keys_by_output_name.items()}
+    inferred_output_name_by_asset_key: Dict[AssetKey, str] = {
+        asset_key: output_name for output_name, asset_key in asset_keys_by_output_name.items()
+    }
     op_outs = op_def.outs
 
     for output_name, asset_key in asset_keys_by_output_name.items():

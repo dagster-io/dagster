@@ -16,6 +16,7 @@ class AssetsDefinition:
         op: OpDefinition,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]] = None,
+        asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
     ):
         self._op = op
         self._input_defs_by_asset_key = {
@@ -29,6 +30,19 @@ class AssetsDefinition:
         }
         self._partitions_def = partitions_def
         self._partition_mappings = partition_mappings or {}
+
+        # if not specified assume all output assets depend on all input assets
+        all_input_asset_keys = self.input_defs_by_asset_key.keys()
+        self._asset_deps = asset_deps or {
+            out_asset_key: all_input_asset_keys for out_asset_key in self.asset_keys
+        }
+        check.invariant(
+            set(self._asset_deps.keys()) == self.asset_keys,
+            "The set of asset keys with dependencies specified in the asset_deps argument must "
+            "equal the set of asset keys produced by this AssetsDefinition. \n"
+            f"asset_deps keys: {set(self._asset_deps.keys())} \n"
+            f"expected keys: {self.asset_keys}",
+        )
 
     def __call__(self, *args, **kwargs):
         return self._op(*args, **kwargs)
@@ -48,6 +62,10 @@ class AssetsDefinition:
     @property
     def input_defs_by_asset_key(self):
         return self._input_defs_by_asset_key
+
+    @property
+    def asset_deps(self) -> Mapping[AssetKey, AbstractSet[AssetKey]]:
+        return self._asset_deps
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
