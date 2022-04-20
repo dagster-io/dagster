@@ -39,6 +39,7 @@ from dagster.core.utils import str_format_set
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
+from .metadata import RawMetadataValue, normalize_metadata
 from .mode import ModeDefinition
 from .partition import PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
@@ -62,6 +63,7 @@ class JobDefinition(PipelineDefinition):
         description: Optional[str] = None,
         preset_defs: Optional[List[PresetDefinition]] = None,
         tags: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
@@ -72,13 +74,19 @@ class JobDefinition(PipelineDefinition):
         self._op_selection_data = check.opt_inst_param(
             _op_selection_data, "_op_selection_data", OpSelectionData
         )
+        self._metadata = normalize_metadata(metadata, [])
+
+        all_tags = tags
+        for m in self._metadata:
+            if m.entry_data.searchable:
+                all_tags[m.label] = m.entry_data.value_string()
 
         super(JobDefinition, self).__init__(
             name=name,
             description=description,
             mode_defs=[mode_def],
             preset_defs=preset_defs,
-            tags=tags,
+            tags=all_tags,
             hook_defs=hook_defs,
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,

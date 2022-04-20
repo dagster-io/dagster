@@ -9,6 +9,7 @@ from ..graph_definition import GraphDefinition
 from ..hook_definition import HookDefinition
 from ..job_definition import JobDefinition
 from ..logger_definition import LoggerDefinition
+from ..metadata import RawMetadataValue
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
 from ..version_strategy import VersionStrategy
@@ -24,6 +25,7 @@ class _Job:
         name: Optional[str] = None,
         description: Optional[str] = None,
         tags: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
         config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
@@ -36,6 +38,7 @@ class _Job:
         self.name = name
         self.description = description
         self.tags = tags
+        self.metadata = metadata
         self.resource_defs = resource_defs
         self.config = config
         self.logger_defs = logger_defs
@@ -80,6 +83,7 @@ class _Job:
             config=config_mapping,
             positional_inputs=positional_inputs,
             tags=self.tags,
+            metadata=self.metadata,
         )
 
         job_def = graph_def.to_job(
@@ -87,6 +91,7 @@ class _Job:
             resource_defs=self.resource_defs,
             config=self.config,
             tags=self.tags,
+            metadata=self.metadata,
             logger_defs=self.logger_defs,
             executor_def=self.executor_def,
             hooks=self.hooks,
@@ -110,6 +115,7 @@ def job(
     resource_defs: Optional[Dict[str, ResourceDefinition]] = ...,
     config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = ...,
     tags: Optional[Dict[str, Any]] = ...,
+    metadata: Optional[Dict[str, RawMetadataValue]] = ...,
     logger_defs: Optional[Dict[str, LoggerDefinition]] = ...,
     executor_def: Optional["ExecutorDefinition"] = ...,
     hooks: Optional[AbstractSet[HookDefinition]] = ...,
@@ -125,6 +131,7 @@ def job(
     resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
     config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
     tags: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Dict[str, RawMetadataValue]] = None,
     logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
@@ -191,6 +198,7 @@ def job(
         resource_defs=resource_defs,
         config=config,
         tags=tags,
+        metadata=metadata,
         logger_defs=logger_defs,
         executor_def=executor_def,
         hooks=hooks,

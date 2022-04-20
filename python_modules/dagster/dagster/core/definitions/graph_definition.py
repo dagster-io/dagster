@@ -46,6 +46,7 @@ from .dependency import (
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .logger_definition import LoggerDefinition
+from .metadata import RawMetadataValue, normalize_metadata
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
@@ -185,6 +186,7 @@ class GraphDefinition(NodeDefinition):
         output_mappings: Optional[List[OutputMapping]] = None,
         config: Optional[ConfigMapping] = None,
         tags: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         **kwargs,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)
@@ -213,12 +215,18 @@ class GraphDefinition(NodeDefinition):
 
         self._config_mapping = check.opt_inst_param(config, "config", ConfigMapping)
 
+        self._metadata = normalize_metadata(metadata, [])
+        all_tags = tags
+        for m in self._metadata:
+            if m.entry_data.searchable:
+                all_tags[m.label] = m.entry_data.value_string()
+
         super(GraphDefinition, self).__init__(
             name=name,
             description=description,
             input_defs=input_defs,
             output_defs=[output_mapping.definition for output_mapping in self._output_mappings],
-            tags=tags,
+            tags=all_tags,
             **kwargs,
         )
 
@@ -454,6 +462,7 @@ class GraphDefinition(NodeDefinition):
         resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
         config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
         tags: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
@@ -578,6 +587,7 @@ class GraphDefinition(NodeDefinition):
             ),
             preset_defs=presets,
             tags=tags,
+            metadata=metadata,
             hook_defs=hooks,
             version_strategy=version_strategy,
             op_retry_policy=op_retry_policy,
