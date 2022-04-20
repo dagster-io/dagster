@@ -633,4 +633,7 @@ def grpc_health_check_command(port=None, socket=None, host="localhost", use_ssl=
     client = DagsterGrpcClient(port=port, socket=socket, host=host, use_ssl=use_ssl)
     status = client.health_check_query()
     if status != "SERVING":
+        click.echo(f"Unable to connect to gRPC server: {status}")
         sys.exit(1)
+    else:
+        click.echo("gRPC connection successful")
