@@ -3,9 +3,10 @@ import warnings
 import pytest
 
 from dagster import (
-    Nothing,
     AssetKey,
     DagsterInvalidDefinitionError,
+    In,
+    Nothing,
     OpExecutionContext,
     Out,
     Output,
@@ -14,7 +15,6 @@ from dagster import (
     build_op_context,
     check,
     op,
-    In,
     resource,
 )
 from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
