@@ -1,4 +1,4 @@
-import {gql, useLazyQuery, useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -17,7 +17,7 @@ import {
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {isAssetGroup} from '../asset-graph/Utils';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
@@ -104,24 +104,27 @@ const initialState: State = {
 export const InstanceOverviewPage = () => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
+  const {searchValue} = state;
 
-  const queryResult = useQuery<InstanceOverviewInitialQuery>(INSTANCE_OVERVIEW_INITIAL_QUERY, {
+  const queryResultOverview = useQuery<InstanceOverviewInitialQuery>(
+    INSTANCE_OVERVIEW_INITIAL_QUERY,
+    {
+      fetchPolicy: 'network-only',
+      notifyOnNetworkStatusChange: true,
+    },
+  );
+  const {data, loading} = queryResultOverview;
+
+  const queryResultLastRuns = useQuery<LastTenRunsPerJobQuery>(LAST_TEN_RUNS_PER_JOB_QUERY, {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
   });
-  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
-  const {data, loading} = queryResult;
+  const {data: lastTenRunsData} = queryResultLastRuns;
 
-  const [retrieveLastTenRuns, {data: lastTenRunsData}] = useLazyQuery<LastTenRunsPerJobQuery>(
-    LAST_TEN_RUNS_PER_JOB_QUERY,
-    {fetchPolicy: 'network-only', pollInterval: FIFTEEN_SECONDS},
+  const refreshState = useMergedRefresh(
+    useQueryRefreshAtInterval(queryResultLastRuns, FIFTEEN_SECONDS),
+    useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS),
   );
-
-  const {searchValue} = state;
-
-  React.useEffect(() => {
-    retrieveLastTenRuns();
-  }, [retrieveLastTenRuns]);
 
   const bucketed = React.useMemo(() => {
     const failed = [];

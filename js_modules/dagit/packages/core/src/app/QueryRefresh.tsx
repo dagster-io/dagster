@@ -25,6 +25,13 @@ export interface QueryRefreshState {
  * You can choose to use this hook alone (no UI) or pass the returned refreshState object to
  * <QueryRefreshCountdown /> to display the refresh status.
  *
+ * Important: Required useQuery Options:
+ *
+ * - When using this hook, pass useQuery the `notifyOnNetworkStatusChange: true` option.
+ *   This allows the hook to observe how long the request spends in-flight. This option
+ *   is NOT necessary if you pass cache-and-network, but IS necessary if you use network-only
+ *   or the default cache-first fetchPolicy.
+ *
  */
 export function useQueryRefreshAtInterval(queryResult: QueryResult<any, any>, intervalMs: number) {
   const timer = React.useRef<number>();
@@ -78,7 +85,7 @@ export function useQueryRefreshAtInterval(queryResult: QueryResult<any, any>, in
 
     // Schedule the next refretch
     timer.current = window.setTimeout(() => {
-      if (document.hidden) {
+      if (document.visibilityState === 'hidden') {
         // If the document is no longer visible, mark that we have skipped an update rather
         // then updating in the background. We'll refresh when we return to the foreground.
         documentVisiblityDidInterrupt.current = true;
@@ -109,6 +116,32 @@ export function useQueryRefreshAtInterval(queryResult: QueryResult<any, any>, in
     }),
     [nextFireMs, nextFireDelay, queryResult.networkStatus, queryResult.refetch],
   );
+}
+
+/**
+ * This hook allows you to hook a single QueryRefreshCountdown component to more than
+ * one useQueryRefreshAtInterval. The QueryRefreshCountdown will reflect the countdown
+ * state of the FIRST query, but clicking the refresh button will trigger them all.
+ *
+ * Note: If you use this hook, you should pass the same interval to each
+ * useQueryRefreshAtInterval.
+ */
+export function useMergedRefresh(
+  ...args: [QueryRefreshState, ...QueryRefreshState[]]
+): QueryRefreshState {
+  return React.useMemo(() => {
+    const refetch: ObservableQuery['refetch'] = async () => {
+      const [ar] = await Promise.all(args.map((s) => s?.refetch()));
+      return ar!;
+    };
+    return {
+      nextFireMs: args[0].nextFireMs,
+      nextFireDelay: args[0].nextFireDelay,
+      networkStatus: args[0].networkStatus,
+      refetch,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, args);
 }
 
 export const QueryRefreshCountdown = ({refreshState}: {refreshState: QueryRefreshState}) => {

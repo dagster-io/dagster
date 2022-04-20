@@ -27,6 +27,7 @@ const InstanceConfigStyle = createGlobalStyle`
 export const InstanceConfig = React.memo(() => {
   const queryResult = useQuery<InstanceConfigQuery>(INSTANCE_CONFIG_QUERY, {
     fetchPolicy: 'cache-and-network',
+    notifyOnNetworkStatusChange: true,
   });
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);

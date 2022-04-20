@@ -3,6 +3,7 @@ import {Box, NonIdealState} from '@dagster-io/ui';
 import React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
@@ -32,9 +33,11 @@ export const SensorsRoot = (props: Props) => {
       instigationType: InstigationType.SENSOR,
     },
     fetchPolicy: 'cache-and-network',
-    pollInterval: 50 * 1000,
     partialRefetch: true,
+    notifyOnNetworkStatusChange: true,
   });
+
+  useQueryRefreshAtInterval(queryResult, 50 * 1000);
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
