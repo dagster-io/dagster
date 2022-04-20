@@ -40,6 +40,10 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         self._max_concurrent_runs = check.opt_int_param(
             max_concurrent_runs, "max_concurrent_runs", 10
         )
+        check.invariant(
+            self._max_concurrent_runs >= -1,
+            "Negative values other than -1 (which disables the limit) for max_concurrent_runs are disallowed.",
+        )
         self._tag_concurrency_limits = check.opt_list_param(
             tag_concurrency_limits,
             "tag_concurrency_limits",
@@ -70,7 +74,9 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             "max_concurrent_runs": Field(
                 config=IntSource,
                 is_required=False,
-                description="The maximum number of runs that are allowed to be in progress at once",
+                description="The maximum number of runs that are allowed to be in progress at once. "
+                "Defaults to 10. Set to -1 to disable the limit. Set to 0 to stop any runs from launching. "
+                "Any other negative values are disallowed.",
             ),
             "tag_concurrency_limits": Field(
                 config=Noneable(

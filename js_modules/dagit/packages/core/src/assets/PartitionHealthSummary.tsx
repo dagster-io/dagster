@@ -3,7 +3,7 @@ import {Tooltip, Spinner, Box, Colors} from '@dagster-io/ui';
 import {fromPairs} from 'lodash';
 import React from 'react';
 
-import {displayNameForAssetKey} from '../app/Util';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assembleIntoSpans} from '../partitions/PartitionRangeInput';
 
 import {AssetKey} from './types';

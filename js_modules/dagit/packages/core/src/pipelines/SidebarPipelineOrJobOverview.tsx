@@ -25,7 +25,7 @@ export const SidebarPipelineOrJobOverview: React.FC<{
     {
       fetchPolicy: 'cache-and-network',
       partialRefetch: true,
-      variables: {pipelineSelector: pipelineSelector},
+      variables: {pipelineSelector},
     },
   );
 

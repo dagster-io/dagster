@@ -1,34 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Button,
-  ButtonLink,
-  Colors,
-  DialogFooter,
-  Dialog,
-  StyledTable,
-  Table,
-  Tag,
-  Subheading,
-  Tooltip,
-  FontFamily,
-} from '@dagster-io/ui';
+import {Box, Button, ButtonLink, Colors, DialogFooter, Dialog, Table, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {timingStringForStatus} from '../runs/RunDetails';
-import {RunStatusIndicator} from '../runs/RunStatusDots';
-import {RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
-import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
-import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {humanCronString} from '../schedules/humanCronString';
-import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitchFragment';
-import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
-import {SensorSwitchFragment} from '../sensors/types/SensorSwitchFragment';
-import {RunStatus} from '../types/globalTypes';
+import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
+import {LatestRunTag} from './LatestRunTag';
+import {ScheduleOrSensorTag} from './ScheduleOrSensorTag';
 import {JobMetadataFragment as Job} from './types/JobMetadataFragment';
 import {JobMetadataQuery} from './types/JobMetadataQuery';
 import {RunMetadataFragment} from './types/RunMetadataFragment';
@@ -48,9 +29,6 @@ export const JobMetadata: React.FC<Props> = (props) => {
         repositoryName: repoAddress.name,
         repositoryLocationName: repoAddress.location,
       },
-      runsFilter: {
-        pipelineName,
-      },
     },
   });
 
@@ -61,20 +39,18 @@ export const JobMetadata: React.FC<Props> = (props) => {
     return null;
   }, [data]);
 
-  const runs = React.useMemo(() => {
+  const runsForAssetScan = React.useMemo(() => {
     if (data?.pipelineRunsOrError && data.pipelineRunsOrError.__typename === 'Runs') {
       return data.pipelineRunsOrError.results;
     }
     return [];
   }, [data]);
 
-  const lastRun = runs[0] || null;
-
   return (
     <>
       {job ? <JobScheduleOrSensorTag job={job} repoAddress={repoAddress} /> : null}
-      {lastRun ? <LatestRunTag run={lastRun} /> : null}
-      {runs.length ? <RelatedAssetsTag runs={runs} /> : null}
+      <LatestRunTag pipelineName={pipelineName} />
+      {runsForAssetScan ? <RelatedAssetsTag runs={runsForAssetScan} /> : null}
     </>
   );
 };
@@ -103,281 +79,6 @@ const JobScheduleOrSensorTag: React.FC<{
       sensors={matchingSensors}
       repoAddress={repoAddress}
     />
-  );
-};
-
-export const ScheduleOrSensorTag: React.FC<{
-  schedules: ScheduleSwitchFragment[];
-  sensors: SensorSwitchFragment[];
-  repoAddress: RepoAddress;
-  showSwitch?: boolean;
-}> = ({schedules, sensors, repoAddress, showSwitch = true}) => {
-  const [open, setOpen] = React.useState(false);
-
-  const scheduleCount = schedules.length;
-  const sensorCount = sensors.length;
-
-  if (scheduleCount > 1 || sensorCount > 1 || (scheduleCount && sensorCount)) {
-    const buttonText =
-      scheduleCount && sensorCount
-        ? `View ${scheduleCount + sensorCount} schedules/sensors`
-        : scheduleCount
-        ? `View ${scheduleCount} schedules`
-        : `View ${sensorCount} sensors`;
-
-    const dialogTitle =
-      scheduleCount && sensorCount
-        ? 'Schedules and sensors'
-        : scheduleCount
-        ? 'Schedules'
-        : 'Sensors';
-
-    const icon = scheduleCount > 1 ? 'schedule' : 'sensors';
-
-    return (
-      <>
-        <Tag icon={icon}>
-          <ButtonLink onClick={() => setOpen(true)} color={Colors.Link}>
-            {buttonText}
-          </ButtonLink>
-        </Tag>
-        <Dialog
-          title={dialogTitle}
-          canOutsideClickClose
-          canEscapeKeyClose
-          isOpen={open}
-          style={{width: '50vw', minWidth: '600px', maxWidth: '800px'}}
-          onClose={() => setOpen(false)}
-        >
-          <Box padding={{bottom: 12}}>
-            {schedules.length ? (
-              <>
-                {sensors.length ? (
-                  <Box padding={{vertical: 16, horizontal: 24}}>
-                    <Subheading>Schedules ({schedules.length})</Subheading>
-                  </Box>
-                ) : null}
-                <Table>
-                  <thead>
-                    <tr>
-                      {showSwitch ? <th style={{width: '80px'}} /> : null}
-                      <th>Schedule name</th>
-                      <th>Schedule</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {schedules.map((schedule) => (
-                      <tr key={schedule.name}>
-                        {showSwitch ? (
-                          <td>
-                            <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
-                          </td>
-                        ) : null}
-                        <td>
-                          <Link
-                            to={workspacePathFromAddress(
-                              repoAddress,
-                              `/schedules/${schedule.name}`,
-                            )}
-                          >
-                            {schedule.name}
-                          </Link>
-                        </td>
-                        <td>{humanCronString(schedule.cronSchedule)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </>
-            ) : null}
-            {sensors.length ? (
-              <>
-                {schedules.length ? (
-                  <Box padding={{vertical: 16, horizontal: 24}}>
-                    <Subheading>Sensors ({sensors.length})</Subheading>
-                  </Box>
-                ) : null}
-                <Table>
-                  <thead>
-                    <tr>
-                      {showSwitch ? <th style={{width: '80px'}} /> : null}
-                      <th>Sensor name</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sensors.map((sensor) => (
-                      <tr key={sensor.name}>
-                        {showSwitch ? (
-                          <td>
-                            <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
-                          </td>
-                        ) : null}
-                        <td>
-                          <Link
-                            to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}
-                          >
-                            {sensor.name}
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </>
-            ) : null}
-          </Box>
-          <DialogFooter>
-            <Button intent="primary" onClick={() => setOpen(false)}>
-              OK
-            </Button>
-          </DialogFooter>
-        </Dialog>
-      </>
-    );
-  }
-
-  if (scheduleCount) {
-    return (
-      <MatchingSchedule schedule={schedules[0]} repoAddress={repoAddress} showSwitch={showSwitch} />
-    );
-  }
-
-  if (sensorCount) {
-    return <MatchingSensor sensor={sensors[0]} repoAddress={repoAddress} showSwitch={showSwitch} />;
-  }
-
-  return null;
-};
-
-const MatchingSchedule: React.FC<{
-  schedule: ScheduleSwitchFragment;
-  repoAddress: RepoAddress;
-  showSwitch: boolean;
-}> = ({schedule, repoAddress, showSwitch}) => {
-  const running = schedule.scheduleState.status === 'RUNNING';
-  const tag = (
-    <Tag intent={running ? 'primary' : 'none'} icon="schedule">
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-        Schedule:
-        <Link to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}>
-          {humanCronString(schedule.cronSchedule)}
-        </Link>
-        {showSwitch ? (
-          <ScheduleSwitch size="small" repoAddress={repoAddress} schedule={schedule} />
-        ) : null}
-      </Box>
-    </Tag>
-  );
-
-  return schedule.cronSchedule ? (
-    <Tooltip
-      placement="bottom"
-      content={
-        <Box flex={{direction: 'column', gap: 4}}>
-          <div>
-            Name: <strong>{schedule.name}</strong>
-          </div>
-          <div>
-            Cron:{' '}
-            <span style={{fontFamily: FontFamily.monospace, marginLeft: '4px'}}>
-              ({schedule.cronSchedule})
-            </span>
-          </div>
-        </Box>
-      }
-    >
-      {tag}
-    </Tooltip>
-  ) : (
-    tag
-  );
-};
-
-const MatchingSensor: React.FC<{
-  sensor: SensorSwitchFragment;
-  repoAddress: RepoAddress;
-  showSwitch: boolean;
-}> = ({sensor, repoAddress, showSwitch}) => {
-  const running = sensor.sensorState.status === 'RUNNING';
-  return (
-    <Tag intent={running ? 'primary' : 'none'} icon="sensors">
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-        Sensor:
-        <Link to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}>
-          {sensor.name}
-        </Link>
-        {showSwitch ? (
-          <SensorSwitch size="small" repoAddress={repoAddress} sensor={sensor} />
-        ) : null}
-      </Box>
-    </Tag>
-  );
-};
-
-const TIME_FORMAT = {showSeconds: true, showTimezone: false};
-
-export const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
-  const stats = React.useMemo(() => {
-    return {start: run.startTime, end: run.endTime, status: run.status};
-  }, [run]);
-
-  const intent = () => {
-    switch (run.status) {
-      case RunStatus.SUCCESS:
-        return 'success';
-      case RunStatus.CANCELED:
-      case RunStatus.CANCELING:
-      case RunStatus.FAILURE:
-        return 'danger';
-      default:
-        return 'none';
-    }
-  };
-
-  return (
-    <Tag intent={intent()}>
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-        <RunStatusIndicator status={run.status} size={10} />
-        Latest run:
-        {stats ? (
-          <Tooltip
-            placement="bottom"
-            content={
-              <StyledTable>
-                <tbody>
-                  <tr>
-                    <td style={{color: Colors.Gray300}}>
-                      <Box padding={{right: 16}}>Started</Box>
-                    </td>
-                    <td>
-                      {stats.start ? (
-                        <TimestampDisplay timestamp={stats.start} timeFormat={TIME_FORMAT} />
-                      ) : (
-                        timingStringForStatus(stats.status)
-                      )}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{color: Colors.Gray300}}>Ended</td>
-                    <td>
-                      {stats.end ? (
-                        <TimestampDisplay timestamp={stats.end} timeFormat={TIME_FORMAT} />
-                      ) : (
-                        timingStringForStatus(stats.status)
-                      )}
-                    </td>
-                  </tr>
-                </tbody>
-              </StyledTable>
-            }
-          >
-            <Link to={`/instance/runs/${run.id}`}>
-              <RunTime run={run} />
-            </Link>
-          </Tooltip>
-        ) : null}
-      </Box>
-    </Tag>
   );
 };
 
@@ -451,7 +152,7 @@ const RelatedAssetsTag: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
   );
 };
 
-export const RUN_METADATA_FRAGMENT = gql`
+const RUN_METADATA_FRAGMENT = gql`
   fragment RunMetadataFragment on PipelineRun {
     id
     status
@@ -466,7 +167,7 @@ export const RUN_METADATA_FRAGMENT = gql`
   ${RUN_TIME_FRAGMENT}
 `;
 
-export const JOB_METADATA_FRAGMENT = gql`
+const JOB_METADATA_FRAGMENT = gql`
   fragment JobMetadataFragment on Pipeline {
     id
     isJob

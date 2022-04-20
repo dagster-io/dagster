@@ -1,5 +1,5 @@
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 from dagster import check
 from dagster.core.definitions.events import (
@@ -383,6 +383,15 @@ class OutputContext:
                 identifier.append(self.mapping_key)
 
         return identifier
+
+    def get_asset_output_identifier(self) -> Sequence[str]:
+        if self.asset_key is not None:
+            if self.has_asset_partitions:
+                return self.asset_key.path + [self.asset_partition_key]
+            else:
+                return self.asset_key.path
+        else:
+            check.failed("Can't get asset output identifier for an output with no asset key")
 
     def log_event(
         self, event: Union[AssetObservation, AssetMaterialization, Materialization]

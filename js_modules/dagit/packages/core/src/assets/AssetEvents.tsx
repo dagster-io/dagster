@@ -2,17 +2,17 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, ButtonGroup, Colors, NonIdealState, Spinner, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {LiveDataForNode} from '../asset-graph/Utils';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RepositorySelector} from '../types/globalTypes';
-import {CurrentRunsBanner} from '../workspace/asset-graph/CurrentRunsBanner';
-import {FailedRunsSinceMaterializationBanner} from '../workspace/asset-graph/FailedRunsSinceMaterializationBanner';
-import {LiveDataForNode} from '../workspace/asset-graph/Utils';
 
 import {AssetEventsTable} from './AssetEventsTable';
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
 import {AssetViewParams} from './AssetView';
+import {CurrentRunsBanner} from './CurrentRunsBanner';
+import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {AssetEventGroup, groupByPartition} from './groupByPartition';
 import {AssetKey} from './types';
@@ -57,12 +57,12 @@ function useRecentAssetEvents(
       variables: loadUsingPartitionKeys
         ? {
             assetKey: {path: assetKey.path},
-            before: before,
+            before,
             partitionInLast: 120,
           }
         : {
             assetKey: {path: assetKey.path},
-            before: before,
+            before,
             limit: 100,
           },
     },

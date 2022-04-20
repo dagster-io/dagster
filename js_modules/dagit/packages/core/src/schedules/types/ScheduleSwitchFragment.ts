@@ -12,6 +12,7 @@ import { InstigationStatus } from "./../../types/globalTypes";
 export interface ScheduleSwitchFragment_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   status: InstigationStatus;
 }
 

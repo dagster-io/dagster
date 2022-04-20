@@ -2,8 +2,8 @@ import {Box, ExternalAnchorButton, Colors, NonIdealState, Spinner} from '@dagste
 import * as React from 'react';
 import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 
+import {isAssetGroup} from '../asset-graph/Utils';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
 const InstanceRedirect = () => {
@@ -51,14 +51,18 @@ const FinalRedirectOrLoadingRoot = () => {
 
   const reposWithAJob = allRepos.filter((r) => r.repository.pipelines.length > 0);
 
-  // If we have exactly one job, route to it's overview / graph tab or
-  // to the asset graph if it's an __ASSET_GROUP job.
+  // If every loaded repo only contains asset jobs, route to the asset graph
+  if (
+    reposWithAJob.every(({repository}) => repository.pipelines.every((p) => isAssetGroup(p.name)))
+  ) {
+    return <Redirect to="/instance/asset-graph" />;
+  }
+
+  // If we have exactly one repo with one job, route to the job overview
   if (reposWithAJob.length === 1 && reposWithAJob[0].repository.pipelines.length === 1) {
     const repo = reposWithAJob[0];
     const job = repo.repository.pipelines[0];
-    return job.name === __ASSET_GROUP ? (
-      <Redirect to="/instance/asset-graph" />
-    ) : (
+    return (
       <Redirect
         to={workspacePipelinePath({
           repoName: repo.repository.name,
@@ -70,8 +74,8 @@ const FinalRedirectOrLoadingRoot = () => {
     );
   }
 
-  // If we have more than one job, route to the instance overview
-  if (reposWithAJob.length > 1) {
+  // If we have more than one repo with a job, route to the instance overview
+  if (reposWithAJob.length > 0) {
     return <Redirect to="/instance" />;
   }
 

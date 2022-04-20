@@ -7,6 +7,7 @@ from snapshottest import Snapshot
 snapshots = Snapshot()
 
 snapshots["test_instance_yaml 1"] = [
+    "code_servers",
     "compute_logs",
     "event_log_storage",
     "local_artifact_storage",

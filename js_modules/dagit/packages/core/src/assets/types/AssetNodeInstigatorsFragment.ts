@@ -12,6 +12,7 @@ import { InstigationStatus } from "./../../types/globalTypes";
 export interface AssetNodeInstigatorsFragment_jobs_schedules_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   status: InstigationStatus;
 }
 
@@ -26,6 +27,7 @@ export interface AssetNodeInstigatorsFragment_jobs_schedules {
 export interface AssetNodeInstigatorsFragment_jobs_sensors_sensorState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   status: InstigationStatus;
 }
 

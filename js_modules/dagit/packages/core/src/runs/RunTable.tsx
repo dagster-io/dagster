@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
+import {isAssetGroup} from '../asset-graph/Utils';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -13,7 +14,6 @@ import {
   isThisThingAJob,
   useRepositoryOptions,
 } from '../workspace/WorkspaceContext';
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
@@ -223,7 +223,7 @@ const RunRow: React.FC<{
       </td>
       <td>
         <Box flex={{direction: 'column', gap: 5}}>
-          {run.pipelineName !== __ASSET_GROUP ? (
+          {!isAssetGroup(run.pipelineName) ? (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <PipelineReference
                 isJob={isJob}

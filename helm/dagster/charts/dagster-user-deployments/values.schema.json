@@ -84,6 +84,19 @@
                 "pullPolicy"
             ]
         },
+        "UserDeploymentIncludeConfigInLaunchedRuns": {
+            "title": "UserDeploymentIncludeConfigInLaunchedRuns",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "enabled"
+            ]
+        },
         "ConfigMapEnvSource": {
             "title": "ConfigMapEnvSource",
             "type": "object",
@@ -193,6 +206,9 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "includeConfigInLaunchedRuns": {
+                    "$ref": "#/definitions/UserDeploymentIncludeConfigInLaunchedRuns"
                 },
                 "port": {
                     "title": "Port",

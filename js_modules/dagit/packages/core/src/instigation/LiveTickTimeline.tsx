@@ -123,7 +123,7 @@ export const LiveTickTimeline: React.FC<{
       tooltip: {
         displayColors: false,
         callbacks: {
-          label: function (tooltipItem: TooltipItem<any>) {
+          label(tooltipItem: TooltipItem<any>) {
             if (!tooltipItem.datasetIndex) {
               // this is the current time
               return 'Current time';

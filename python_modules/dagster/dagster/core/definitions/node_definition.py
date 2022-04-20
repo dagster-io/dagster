@@ -107,19 +107,19 @@ class NodeDefinition(NamedConfigurableDefinition):
     def output_dict(self) -> Mapping[str, "OutputDefinition"]:
         return self._output_dict
 
-    def has_input(self, name):
+    def has_input(self, name) -> bool:
         check.str_param(name, "name")
         return name in self._input_dict
 
-    def input_def_named(self, name):
+    def input_def_named(self, name) -> "InputDefinition":
         check.str_param(name, "name")
         return self._input_dict[name]
 
-    def has_output(self, name):
+    def has_output(self, name) -> bool:
         check.str_param(name, "name")
         return name in self._output_dict
 
-    def output_def_named(self, name):
+    def output_def_named(self, name) -> "OutputDefinition":
         check.str_param(name, "name")
         return self._output_dict[name]
 

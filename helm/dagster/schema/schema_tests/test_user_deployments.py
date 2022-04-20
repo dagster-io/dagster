@@ -10,6 +10,7 @@ from schema.charts.dagster.subschema.global_ import Global
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import (
     UserDeployment,
+    UserDeploymentIncludeConfigInLaunchedRuns,
     UserDeployments,
 )
 from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
@@ -491,6 +492,12 @@ def test_user_deployment_default_image_tag_is_chart_version(
     assert image_tag == chart_version
 
 
+def _assert_no_container_context(user_deployment):
+    # No container context set by default
+    env_names = [env.name for env in user_deployment.spec.template.spec.containers[0].env]
+    assert "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT" not in env_names
+
+
 def test_user_deployment_image(template: HelmTemplate):
     deployment = create_simple_user_deployment("foo")
     helm_values = DagsterHelmValues.construct(
@@ -511,9 +518,35 @@ def test_user_deployment_image(template: HelmTemplate):
     assert image_name == deployment.image.repository
     assert image_tag == deployment.image.tag
 
+    _assert_no_container_context(user_deployments[0])
 
-def test_user_deployment_volumes(template: HelmTemplate):
 
+def test_user_deployment_include_config(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo", include_config_in_launched_runs=True)
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+
+    container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
+    assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+    assert json.loads(container_context.value) == {
+        "k8s": {
+            "image_pull_policy": "Always",
+            "env_config_maps": ["release-name-dagster-user-deployments-foo-user-env"],
+        }
+    }
+
+
+@pytest.mark.parametrize("include_config_in_launched_runs", [False, True])
+def test_user_deployment_volumes(template: HelmTemplate, include_config_in_launched_runs: bool):
     name = "foo"
 
     volumes = [
@@ -538,6 +571,9 @@ def test_user_deployment_volumes(template: HelmTemplate):
         volumeMounts=[
             kubernetes.VolumeMount.construct(None, **volume_mount) for volume_mount in volume_mounts
         ],
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(
+            enabled=include_config_in_launched_runs
+        ),
     )
 
     helm_values = DagsterHelmValues.construct(
@@ -574,6 +610,121 @@ def test_user_deployment_volumes(template: HelmTemplate):
 
     assert image_name == deployment.image.repository
     assert image_tag == deployment.image.tag
+
+    if include_config_in_launched_runs:
+        container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
+        assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        assert json.loads(container_context.value) == {
+            "k8s": {
+                "env_config_maps": [
+                    "release-name-dagster-user-deployments-foo-user-env",
+                ],
+                "image_pull_policy": "Always",
+                "volume_mounts": volume_mounts,
+                "volumes": volumes,
+            }
+        }
+    else:
+        _assert_no_container_context(user_deployments[0])
+
+
+@pytest.mark.parametrize("include_config_in_launched_runs", [False, True])
+def test_user_deployment_secrets_and_configmaps(
+    template: HelmTemplate, include_config_in_launched_runs: bool
+):
+    name = "foo"
+
+    secrets = [{"name": "my-secret"}, {"name": "my-other-secret"}]
+
+    configmaps = [{"name": "my-configmap"}, {"name": "my-other-configmap"}]
+
+    deployment = UserDeployment(
+        name=name,
+        image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", name],
+        port=3030,
+        envConfigMaps=[
+            kubernetes.ConfigMapEnvSource.construct(None, **configmap) for configmap in configmaps
+        ],
+        envSecrets=[kubernetes.SecretEnvSource.construct(None, **secret) for secret in secrets],
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(
+            enabled=include_config_in_launched_runs
+        ),
+    )
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+
+    if include_config_in_launched_runs:
+        container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
+        assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        assert json.loads(container_context.value) == {
+            "k8s": {
+                "image_pull_policy": "Always",
+                "env_secrets": ["my-secret", "my-other-secret"],
+                "env_config_maps": [
+                    "release-name-dagster-user-deployments-foo-user-env",
+                    "my-configmap",
+                    "my-other-configmap",
+                ],
+            }
+        }
+    else:
+        _assert_no_container_context(user_deployments[0])
+
+
+@pytest.mark.parametrize("include_config_in_launched_runs", [False, True])
+def test_user_deployment_labels(template: HelmTemplate, include_config_in_launched_runs: bool):
+    name = "foo"
+
+    labels = {"my-label-key": "my-label-val", "my-other-label-key": "my-other-label-val"}
+
+    deployment = UserDeployment(
+        name=name,
+        image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", name],
+        port=3030,
+        labels=labels,
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(
+            enabled=include_config_in_launched_runs
+        ),
+    )
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+
+    if include_config_in_launched_runs:
+        container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
+        assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        assert json.loads(container_context.value) == {
+            "k8s": {
+                "image_pull_policy": "Always",
+                "env_config_maps": [
+                    "release-name-dagster-user-deployments-foo-user-env",
+                ],
+                "labels": labels,
+            }
+        }
+    else:
+        _assert_no_container_context(user_deployments[0])
 
 
 def test_subchart_image_pull_secrets(subchart_template: HelmTemplate):

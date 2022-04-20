@@ -3,18 +3,19 @@ import {Colors, Icon, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {displayNameForAssetKey, withMiddleTruncation} from '../app/Util';
+import {withMiddleTruncation} from '../app/Util';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
 
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';
-import {IFullOpLayout, ILayout} from './getFullOpLayout';
-import {Edge} from './highlighting';
+import {OpLayout} from './asyncGraphLayout';
+import {Edge, IBounds} from './common';
 import {OpNodeDefinitionFragment} from './types/OpNodeDefinitionFragment';
 import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
 
 interface IOpNodeProps {
-  layout: IFullOpLayout;
+  layout: OpLayout;
   invocation?: OpNodeInvocationFragment;
   definition: OpNodeDefinitionFragment;
   highlightedEdges: Edge[];
@@ -120,7 +121,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
         onClick={this.handleClick}
         onDoubleClick={this.handleDoubleClick}
       >
-        <div className="highlight-box" style={{...position(layout.boundingBox)}} />
+        <div className="highlight-box" style={{...position(layout.bounds)}} />
         {composite && <div className="composite-marker" style={{...position(layout.op)}} />}
 
         {invocation?.isDynamicMapped && (
@@ -403,7 +404,7 @@ const NodeContainer = styled.div<{
   }
 `;
 
-export const position = ({x, y, width, height}: ILayout) => ({
+export const position = ({x, y, width, height}: IBounds) => ({
   left: x,
   top: y,
   width,

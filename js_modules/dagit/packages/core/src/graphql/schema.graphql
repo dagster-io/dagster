@@ -356,6 +356,7 @@ type Run implements PipelineRun {
   assets: [Asset!]!
   events(after: Cursor): [DagsterRunEvent!]!
   resolvedOpSelection: [String!]
+  assetMaterializations: [MaterializationEvent!]!
   startTime: Float
   endTime: Float
   updateTime: Float
@@ -616,6 +617,7 @@ union DagsterRunEvent =
   | AlertStartEvent
   | AlertSuccessEvent
   | AlertFailureEvent
+  | AssetMaterializationPlannedEvent
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   runId: String!
@@ -993,6 +995,19 @@ type AlertFailureEvent implements MessageEvent & RunEvent {
   pipelineName: String!
 }
 
+type AssetMaterializationPlannedEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+  assetKey: AssetKey
+  runOrError: RunOrError!
+}
+
 scalar Cursor
 
 type RunNotFoundError implements PipelineRunNotFoundError & Error {
@@ -1150,9 +1165,12 @@ type Schedule {
 
 type InstigationState {
   id: ID!
+  selectorId: String!
   name: String!
   instigationType: InstigationType!
   status: InstigationStatus!
+  repositoryName: String!
+  repositoryLocationName: String!
   repositoryOrigin: RepositoryOrigin!
   typeSpecificData: InstigationTypeSpecificData
   runs(limit: Int): [Run!]!
@@ -1784,10 +1802,13 @@ type DagitMutation {
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
   launchRunReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
   startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
-  stopRunningSchedule(scheduleOriginId: String!): ScheduleMutationResult!
+  stopRunningSchedule(
+    scheduleOriginId: String!
+    scheduleSelectorId: String!
+  ): ScheduleMutationResult!
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
   setSensorCursor(cursor: String, sensorSelector: SensorSelector!): SensorOrError!
-  stopSensor(jobOriginId: String!): StopSensorMutationResultOrError!
+  stopSensor(jobOriginId: String!, jobSelectorId: String!): StopSensorMutationResultOrError!
   terminatePipelineExecution(
     runId: String!
     terminatePolicy: TerminateRunPolicy

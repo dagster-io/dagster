@@ -1,3 +1,6 @@
+import os
+import sys
+
 import pendulum
 import pytest
 from dagster_graphql.test.utils import (
@@ -9,13 +12,19 @@ from dagster_graphql.test.utils import (
 )
 
 from dagster.core.definitions.run_request import InstigatorType
+from dagster.core.host_representation import (
+    ExternalRepositoryOrigin,
+    InProcessRepositoryLocationOrigin,
+)
 from dagster.core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
+    SensorInstigatorData,
     TickData,
     TickStatus,
 )
 from dagster.core.test_utils import create_test_daemon_workspace
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration
 from dagster.utils import Counter, traced_counter
@@ -119,12 +128,30 @@ query SensorStateQuery($sensorSelector: SensorSelector!) {
       sensorState {
         id
         status
+        selectorId
       }
     }
   }
 }
 """
 
+GET_UNLOADABLE_QUERY = """
+query getUnloadableSensors {
+  unloadableInstigationStatesOrError(instigationType: SENSOR) {
+    ... on InstigationStates {
+      results {
+        id
+        name
+        status
+      }
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+"""
 
 GET_SENSOR_TICK_RANGE_QUERY = """
 query SensorQuery($sensorSelector: SensorSelector!, $dayRange: Int, $dayOffset: Int) {
@@ -160,6 +187,7 @@ mutation($sensorSelector: SensorSelector!) {
       id
       jobOriginId
       sensorState {
+        selectorId
         status
       }
     }
@@ -168,8 +196,8 @@ mutation($sensorSelector: SensorSelector!) {
 """
 
 STOP_SENSORS_QUERY = """
-mutation($jobOriginId: String!) {
-  stopSensor(jobOriginId: $jobOriginId) {
+mutation($jobOriginId: String!, $jobSelectorId: String!) {
+  stopSensor(jobOriginId: $jobOriginId, jobSelectorId: $jobSelectorId) {
     ... on PythonError {
       message
       className
@@ -333,10 +361,11 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         )
 
         job_origin_id = start_result.data["startSensor"]["jobOriginId"]
+        job_selector_id = start_result.data["startSensor"]["sensorState"]["selectorId"]
         result = execute_dagster_graphql(
             graphql_context,
             STOP_SENSORS_QUERY,
-            variables={"jobOriginId": job_origin_id},
+            variables={"jobOriginId": job_origin_id, "jobSelectorId": job_selector_id},
         )
         assert result.data
         assert (
@@ -392,6 +421,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
 
         assert result.data["sensorOrError"]["sensorState"]["status"] == "RUNNING"
         sensor_origin_id = result.data["sensorOrError"]["sensorState"]["id"]
+        sensor_selector_id = result.data["sensorOrError"]["sensorState"]["selectorId"]
 
         start_result = execute_dagster_graphql(
             graphql_context,
@@ -407,7 +437,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         stop_result = execute_dagster_graphql(
             graphql_context,
             STOP_SENSORS_QUERY,
-            variables={"jobOriginId": sensor_origin_id},
+            variables={"jobOriginId": sensor_origin_id, "jobSelectorId": sensor_selector_id},
         )
 
         assert stop_result.data["stopSensor"]["instigationState"]["status"] == "STOPPED"
@@ -471,7 +501,8 @@ def test_sensor_next_ticks(graphql_context):
 
 def _create_tick(graphql_context):
     with create_test_daemon_workspace(
-        graphql_context.process_context.workspace_load_target
+        graphql_context.process_context.workspace_load_target,
+        graphql_context.instance,
     ) as workspace:
         list(
             execute_sensor_iteration(
@@ -669,3 +700,61 @@ def test_sensor_ticks_filtered(graphql_context):
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
     assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["status"] == "SKIPPED"
+
+
+def _get_unloadable_sensor_origin(name):
+    working_directory = os.path.dirname(__file__)
+    loadable_target_origin = LoadableTargetOrigin(
+        executable_path=sys.executable,
+        python_file=__file__,
+        working_directory=working_directory,
+    )
+    return ExternalRepositoryOrigin(
+        InProcessRepositoryLocationOrigin(loadable_target_origin), "fake_repository"
+    ).get_instigator_origin(name)
+
+
+def test_unloadable_sensor(graphql_context):
+    instance = graphql_context.instance
+
+    running_origin = _get_unloadable_sensor_origin("unloadable_running")
+    running_instigator_state = InstigatorState(
+        running_origin,
+        InstigatorType.SENSOR,
+        InstigatorStatus.RUNNING,
+        SensorInstigatorData(min_interval=30, cursor=None),
+    )
+
+    stopped_origin = _get_unloadable_sensor_origin("unloadable_stopped")
+
+    instance.add_instigator_state(running_instigator_state)
+
+    instance.add_instigator_state(
+        InstigatorState(
+            stopped_origin,
+            InstigatorType.SENSOR,
+            InstigatorStatus.STOPPED,
+            SensorInstigatorData(min_interval=30, cursor=None),
+        )
+    )
+
+    result = execute_dagster_graphql(graphql_context, GET_UNLOADABLE_QUERY)
+    assert len(result.data["unloadableInstigationStatesOrError"]["results"]) == 1
+    assert (
+        result.data["unloadableInstigationStatesOrError"]["results"][0]["name"]
+        == "unloadable_running"
+    )
+
+    # Verify that we can stop the unloadable sensor
+    stop_result = execute_dagster_graphql(
+        graphql_context,
+        STOP_SENSORS_QUERY,
+        variables={
+            "jobOriginId": running_instigator_state.instigator_origin_id,
+            "jobSelectorId": running_instigator_state.selector_id,
+        },
+    )
+    assert (
+        stop_result.data["stopSensor"]["instigationState"]["status"]
+        == InstigatorStatus.STOPPED.value
+    )

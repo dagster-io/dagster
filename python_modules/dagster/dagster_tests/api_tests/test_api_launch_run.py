@@ -20,7 +20,7 @@ def _check_event_log_contains(event_log, expected_type_and_message):
 
 def test_launch_run_with_unloadable_pipeline_grpc():
     with instance_for_test() as instance:
-        with get_bar_repo_repository_location() as repository_location:
+        with get_bar_repo_repository_location(instance) as repository_location:
             pipeline_handle = PipelineHandle(
                 "foo", repository_location.get_repository("bar_repo").handle
             )
@@ -85,7 +85,7 @@ def test_launch_run_with_unloadable_pipeline_grpc():
 
 def test_launch_run_grpc():
     with instance_for_test() as instance:
-        with get_bar_repo_repository_location() as repository_location:
+        with get_bar_repo_repository_location(instance) as repository_location:
             pipeline_handle = PipelineHandle(
                 "foo", repository_location.get_repository("bar_repo").handle
             )
@@ -145,7 +145,7 @@ def test_launch_run_grpc():
 
 def test_launch_unloadable_run_grpc():
     with instance_for_test() as instance:
-        with get_bar_repo_repository_location() as repository_location:
+        with get_bar_repo_repository_location(instance) as repository_location:
             pipeline_handle = PipelineHandle(
                 "foo", repository_location.get_repository("bar_repo").handle
             )

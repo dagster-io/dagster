@@ -81,4 +81,4 @@ def fs_asset_io_manager(init_context):
 
 class AssetPickledObjectFilesystemIOManager(PickledObjectFilesystemIOManager):
     def _get_path(self, context):
-        return os.path.join(self.base_dir, *context.asset_key.path)
+        return os.path.join(self.base_dir, *context.get_asset_output_identifier())

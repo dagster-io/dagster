@@ -7,6 +7,7 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DependencyDefinition,
     IOManager,
+    ResourceDefinition,
     io_manager,
 )
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
@@ -206,9 +207,11 @@ def test_source_asset():
 
         def load_input(self, context):
             assert context.resource_config["a"] == 7
+            assert context.resources.subresource == 9
+            assert context.upstream_output.resources.subresource == 9
             return 5
 
-    @io_manager(config_schema={"a": int})
+    @io_manager(config_schema={"a": int}, required_resource_keys={"subresource"})
     def my_io_manager(_):
         return MyIOManager()
 
@@ -216,7 +219,10 @@ def test_source_asset():
         "a",
         [asset1],
         source_assets=[SourceAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
-        resource_defs={"special_io_manager": my_io_manager.configured({"a": 7})},
+        resource_defs={
+            "special_io_manager": my_io_manager.configured({"a": 7}),
+            "subresource": ResourceDefinition.hardcoded_resource(9),
+        },
     )
     assert job.graph.node_defs == [asset1.op]
     assert job.execute_in_process().success

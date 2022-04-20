@@ -8,6 +8,7 @@ from typing import (
     Any,
     Dict,
     Generator,
+    List,
     Mapping,
     NamedTuple,
     NoReturn,
@@ -18,8 +19,8 @@ from typing import (
 )
 
 from dagster import check
-from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
+from dagster.core.origin import DEFAULT_DAGSTER_ENTRY_POINT
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import (
     DefaultNamedTupleSerializer,
@@ -37,6 +38,7 @@ if TYPE_CHECKING:
         InProcessRepositoryLocation,
         RepositoryLocation,
     )
+    from dagster.core.instance import DagsterInstance
     from dagster.grpc.client import DagsterGrpcClient
 
 # This is a hard-coded name for the special "in-process" location.
@@ -143,16 +145,41 @@ class RegisteredRepositoryLocationOrigin(
 
 @whitelist_for_serdes
 class InProcessRepositoryLocationOrigin(
-    NamedTuple("_InProcessRepositoryLocationOrigin", [("recon_repo", ReconstructableRepository)]),
+    NamedTuple(
+        "_InProcessRepositoryLocationOrigin",
+        [
+            ("loadable_target_origin", LoadableTargetOrigin),
+            ("container_image", Optional[str]),
+            ("entry_point", List[str]),
+            ("container_context", Optional[Dict[str, Any]]),
+        ],
+    ),
     RepositoryLocationOrigin,
 ):
-    """Identifies a repository location constructed in the host process. Should only be
-    used in tests.
+    """Identifies a repository location constructed in the same process. Primarily
+    used in tests, since Dagster system processes like Dagit and the daemon do not
+    load user code in the same process.
     """
 
-    def __new__(cls, recon_repo: ReconstructableRepository):
+    def __new__(
+        cls,
+        loadable_target_origin: LoadableTargetOrigin,
+        container_image: Optional[str] = None,
+        entry_point: Optional[List[str]] = None,
+        container_context=None,
+    ):
         return super(InProcessRepositoryLocationOrigin, cls).__new__(
-            cls, check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
+            cls,
+            check.inst_param(
+                loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
+            ),
+            container_image=check.opt_str_param(container_image, "container_image"),
+            entry_point=(
+                check.opt_list_param(entry_point, "entry_point")
+                if entry_point
+                else DEFAULT_DAGSTER_ENTRY_POINT
+            ),
+            container_context=check.opt_dict_param(container_context, "container_context"),
         )
 
     @property
@@ -164,9 +191,7 @@ class InProcessRepositoryLocationOrigin(
         return False
 
     def get_display_metadata(self) -> Dict[str, Any]:
-        return {
-            "in_process_code_pointer": self.recon_repo.pointer.describe(),
-        }
+        return {}
 
     def create_location(self) -> "InProcessRepositoryLocation":
         from dagster.core.host_representation.repository_location import InProcessRepositoryLocation
@@ -221,11 +246,10 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         )
 
     @contextmanager
-    def create_single_location(self) -> Generator["RepositoryLocation", None, None]:
-        from dagster.core.workspace.context import (
-            DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
-            DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
-        )
+    def create_single_location(
+        self, instance: "DagsterInstance"
+    ) -> Generator["RepositoryLocation", None, None]:
+        from dagster.core.workspace.context import DAGIT_GRPC_SERVER_HEARTBEAT_TTL
 
         from .grpc_server_registry import ProcessGrpcServerRegistry
         from .repository_location import GrpcServerRepositoryLocation
@@ -233,7 +257,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         with ProcessGrpcServerRegistry(
             reload_interval=0,
             heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
-            startup_timeout=DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
+            startup_timeout=instance.code_server_process_startup_timeout,
         ) as grpc_server_registry:
             endpoint = grpc_server_registry.get_grpc_endpoint(self)
             with GrpcServerRepositoryLocation(

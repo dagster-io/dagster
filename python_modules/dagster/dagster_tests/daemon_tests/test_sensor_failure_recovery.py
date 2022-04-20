@@ -32,7 +32,8 @@ def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, deb
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
             with pendulum.test(execution_datetime), create_test_daemon_workspace(
-                workspace_load_target=workspace_load_target()
+                workspace_load_target=workspace_load_target(),
+                instance=instance,
             ) as workspace:
                 list(
                     execute_sensor_iteration(

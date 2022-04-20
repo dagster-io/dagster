@@ -5,8 +5,9 @@ import qs from 'qs';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
-import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
+import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
 import {
   LogRowStructuredContentTable,
@@ -144,6 +145,8 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
           timestamp={node.timestamp}
         />
       );
+    case 'AssetMaterializationPlannedEvent':
+      return <DefaultContent eventType={eventType} message={node.message} />;
     case 'ObjectStoreOperationEvent':
       return (
         <DefaultContent message={node.message} eventType={eventType}>

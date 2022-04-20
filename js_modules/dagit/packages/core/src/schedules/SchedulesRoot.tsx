@@ -22,7 +22,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
 
   const queryResult = useQuery<SchedulesRootQuery>(SCHEDULES_ROOT_QUERY, {
     variables: {
-      repositorySelector: repositorySelector,
+      repositorySelector,
       instigationType: InstigationType.SCHEDULE,
     },
     fetchPolicy: 'cache-and-network',

@@ -12,18 +12,17 @@ import {
   Mono,
 } from '@dagster-io/ui';
 import moment from 'moment';
-import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
+import {isAssetGroup} from '../asset-graph/Utils';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
-import {titleForRun} from '../runs/RunUtils';
+import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
@@ -231,7 +230,7 @@ const EventGroupRow: React.FC<{
         </Group>
       </td>
       <td>
-        {run.pipelineName !== __ASSET_GROUP && (
+        {!isAssetGroup(run.pipelineName) && (
           <Box margin={{bottom: 4}}>
             <Box padding={{left: 8}}>
               <PipelineReference
@@ -244,14 +243,7 @@ const EventGroupRow: React.FC<{
             </Box>
             <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
               <Icon name="linear_scale" color={Colors.Gray400} />
-              <Link
-                to={`/instance/runs/${run.runId}?${qs.stringify({
-                  selection: latest.stepKey,
-                  logs: `step:${latest.stepKey}`,
-                })}`}
-              >
-                {latest.stepKey}
-              </Link>
+              <Link to={linkToRunEvent(run, latest)}>{latest.stepKey}</Link>
             </Group>
           </Box>
         )}

@@ -1,6 +1,7 @@
 import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
+import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {PipelineSelector} from '../types/globalTypes';
@@ -189,10 +190,24 @@ const validateHiddenKeys = (parsed: unknown) => (Array.isArray(parsed) ? parsed 
 const useVisibleRepos = (
   allRepos: DagsterRepoOption[],
 ): [DagsterRepoOption[], WorkspaceState['toggleVisible']] => {
-  const [hiddenKeys, setHiddenKeys] = useStateWithStorage<string[]>(
+  const {basePath} = React.useContext(AppContext);
+
+  const [oldHiddenKeys, setOldHiddenKeys] = useStateWithStorage<string[]>(
     HIDDEN_REPO_KEYS,
     validateHiddenKeys,
   );
+  const [hiddenKeys, setHiddenKeys] = useStateWithStorage<string[]>(
+    basePath + ':' + HIDDEN_REPO_KEYS,
+    validateHiddenKeys,
+  );
+
+  // TODO: Remove this logic eventually...
+  const migratedOldHiddenKeys = React.useRef(false);
+  if (oldHiddenKeys && !migratedOldHiddenKeys.current) {
+    setHiddenKeys(oldHiddenKeys);
+    setOldHiddenKeys(undefined);
+    migratedOldHiddenKeys.current = true;
+  }
 
   const toggleVisible = React.useCallback(
     (repoAddresses: RepoAddress[]) => {

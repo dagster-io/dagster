@@ -12,7 +12,10 @@ from dagster import AssetKey
 from dagster.utils import safe_tempfile_path
 
 # from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
-from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
+from .graphql_context_test_suite import (
+    AllRepositoryGraphQLContextTestMatrix,
+    ExecutingGraphQLContextTestMatrix,
+)
 
 GET_ASSET_KEY_QUERY = """
     query AssetKeyQuery {
@@ -250,6 +253,37 @@ GET_OP_ASSETS = """
                             assetKey {
                                path
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+"""
+
+CROSS_REPO_ASSET_GRAPH = """
+    query AssetNodeQuery {
+        assetNodes {
+            id
+            dependencyKeys {
+                path
+            }
+            dependedByKeys {
+                path
+            }
+        }
+    }
+"""
+
+
+GET_RUN_MATERIALIZATIONS = """
+    query RunAssetsQuery {
+        runsOrError {
+            ... on Runs {
+                results {
+                    assetMaterializations {
+                        assetKey {
+                            path
                         }
                     }
                 }
@@ -769,6 +803,16 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result["asset_2"]["count"] == 6
         assert result["asset_2"]["sinceLatestMaterialization"] == False
 
+    def test_get_run_materialization(self, graphql_context, snapshot):
+        _create_run(graphql_context, "single_asset_pipeline")
+        result = execute_dagster_graphql(graphql_context, GET_RUN_MATERIALIZATIONS)
+        assert result.data
+        assert result.data["runsOrError"]
+        assert result.data["runsOrError"]["results"]
+        assert len(result.data["runsOrError"]["results"]) == 1
+        assert len(result.data["runsOrError"]["results"][0]["assetMaterializations"]) == 1
+        snapshot.assert_match(result.data)
+
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
     def test_asset_in_progress(self, graphql_context):
@@ -832,3 +876,25 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert len(never_runs_asset_status["inProgressRuns"]) == 0
             assert len(never_runs_asset_status["unstartedRuns"]) == 1
             assert never_runs_asset_status["unstartedRuns"][0]["runId"] == run_id
+
+
+class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
+    def test_cross_repo_assets(self, graphql_context):
+        repository_location = graphql_context.get_repository_location("test")
+        repository = repository_location.get_repository("upstream_assets_repository")
+
+        selector = {
+            "repositoryLocationName": repository_location.name,
+            "repositoryName": repository.name,
+        }
+        result = execute_dagster_graphql(
+            graphql_context, CROSS_REPO_ASSET_GRAPH, variables={"repositorySelector": selector}
+        )
+        asset_nodes = result.data["assetNodes"]
+        upstream_asset = [node for node in asset_nodes if node["id"] == '["upstream_asset"]'][0]
+        dependent_asset_keys = [{"path": ["downstream_asset1"]}, {"path": ["downstream_asset2"]}]
+
+        result_dependent_keys = sorted(
+            upstream_asset["dependedByKeys"], key=lambda node: node.get("path")[0]
+        )
+        assert result_dependent_keys == dependent_asset_keys

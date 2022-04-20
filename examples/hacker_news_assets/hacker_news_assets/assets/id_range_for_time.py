@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from hacker_news_assets.partitions import hourly_partitions
 
-from dagster import MetadataEntry, Output, asset, check
+from dagster import Output, asset, check
 
 
 def binary_search_nearest_left(get_value, start, end, min_target):
@@ -71,17 +71,17 @@ def _id_range_for_time(start: int, end: int, hn_client):
     start_timestamp = str(datetime.fromtimestamp(_get_item_timestamp(start_id), tz=timezone.utc))
     end_timestamp = str(datetime.fromtimestamp(_get_item_timestamp(end_id), tz=timezone.utc))
 
-    metadata_entries = [
-        MetadataEntry.int(value=max_item_id, label="max_item_id"),
-        MetadataEntry.int(value=start_id, label="start_id"),
-        MetadataEntry.int(value=end_id, label="end_id"),
-        MetadataEntry.int(value=end_id - start_id, label="items"),
-        MetadataEntry.text(text=start_timestamp, label="start_timestamp"),
-        MetadataEntry.text(text=end_timestamp, label="end_timestamp"),
-    ]
+    metadata = {
+        "max_item_id": max_item_id,
+        "start_id": start_id,
+        "end_id": end_id,
+        "items": end_id - start_id,
+        "start_timestamp": start_timestamp,
+        "end_timestamp": end_timestamp,
+    }
 
     id_range = (start_id, end_id)
-    return id_range, metadata_entries
+    return id_range, metadata
 
 
 @asset(
@@ -94,7 +94,7 @@ def id_range_for_time(context):
     For the configured time partition, searches for the range of ids that were created in that time.
     """
     start, end = context.output_asset_partitions_time_window()
-    id_range, metadata_entries = _id_range_for_time(
+    id_range, metadata = _id_range_for_time(
         start.timestamp(), end.timestamp(), context.resources.hn_client
     )
-    yield Output(id_range, metadata_entries=metadata_entries)
+    yield Output(id_range, metadata=metadata)

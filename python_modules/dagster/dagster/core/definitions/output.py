@@ -401,7 +401,7 @@ class Out(
         # make sure new parameters are updated in combine_with_inferred below
     ):
         if asset_partitions_def:
-            experimental_arg_warning("assets_definition", "Out.__new__")
+            experimental_arg_warning("asset_partitions_definition", "Out.__new__")
         return super(Out, cls).__new__(
             cls,
             dagster_type=NoValueSentinel

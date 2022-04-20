@@ -1,8 +1,7 @@
 import * as React from 'react';
 
-import {Edge} from './OpLinks';
-import {IPoint} from './getFullOpLayout';
-import {isHighlighted} from './highlighting';
+import {Edge} from './OpEdges';
+import {IPoint, isHighlighted} from './common';
 
 interface MappingLineProps {
   source: IPoint;

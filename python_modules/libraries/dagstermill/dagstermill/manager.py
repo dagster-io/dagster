@@ -358,7 +358,10 @@ class Manager:
         # load input from source
         step_context = self.context._step_context  # pylint: disable=protected-access
         step_input = step_context.step.step_input_named(input_name)
-        for event_or_input_value in ensure_gen(step_input.source.load_input_object(step_context)):
+        input_def = step_context.solid_def.input_def_named(input_name)
+        for event_or_input_value in ensure_gen(
+            step_input.source.load_input_object(step_context, input_def)
+        ):
             if isinstance(event_or_input_value, DagsterEvent):
                 continue
             else:

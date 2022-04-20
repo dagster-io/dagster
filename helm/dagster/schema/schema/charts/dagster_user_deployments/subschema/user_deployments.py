@@ -5,10 +5,15 @@ from pydantic import BaseModel  # pylint: disable=no-name-in-module
 from ...utils import kubernetes
 
 
+class UserDeploymentIncludeConfigInLaunchedRuns(BaseModel):
+    enabled: bool
+
+
 class UserDeployment(BaseModel):
     name: str
     image: kubernetes.Image
     dagsterApiGrpcArgs: List[str]
+    includeConfigInLaunchedRuns: Optional[UserDeploymentIncludeConfigInLaunchedRuns]
     port: int
     env: Optional[Dict[str, str]]
     envConfigMaps: Optional[List[kubernetes.ConfigMapEnvSource]]

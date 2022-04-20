@@ -604,3 +604,12 @@ telemetry:
   enabled: false
 
 # end_marker_telemetry
+
+# start_marker_code_servers
+
+# Configures how long Dagster waits for repositories
+# to load before timing out.
+code_servers:
+  local_startup_timeout: 120
+
+# end_marker_code_servers

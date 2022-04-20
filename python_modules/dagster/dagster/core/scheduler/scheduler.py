@@ -104,7 +104,7 @@ class Scheduler(abc.ABC):
             instance.update_instigator_state(started_schedule)
         return started_schedule
 
-    def stop_schedule(self, instance, schedule_origin_id, external_schedule):
+    def stop_schedule(self, instance, schedule_origin_id, schedule_selector_id, external_schedule):
         """
         Updates the status of the given schedule to `InstigatorStatus.STOPPED` in schedule storage,
 
@@ -117,9 +117,7 @@ class Scheduler(abc.ABC):
         check.str_param(schedule_origin_id, "schedule_origin_id")
         check.opt_inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
-        schedule_state = instance.get_instigator_state(
-            schedule_origin_id, external_schedule.selector_id
-        )
+        schedule_state = instance.get_instigator_state(schedule_origin_id, schedule_selector_id)
         if (
             external_schedule
             and not external_schedule.get_current_instigator_state(schedule_state).is_running
@@ -131,6 +129,7 @@ class Scheduler(abc.ABC):
             )
 
         if not schedule_state:
+            assert external_schedule
             stopped_schedule = InstigatorState(
                 external_schedule.get_external_origin(),
                 InstigatorType.SCHEDULE,

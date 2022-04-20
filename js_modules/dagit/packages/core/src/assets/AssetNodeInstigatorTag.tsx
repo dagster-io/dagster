@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 import {flatMap} from 'lodash';
 import React from 'react';
 
-import {ScheduleOrSensorTag} from '../nav/JobMetadata';
+import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {RepoAddress} from '../workspace/types';

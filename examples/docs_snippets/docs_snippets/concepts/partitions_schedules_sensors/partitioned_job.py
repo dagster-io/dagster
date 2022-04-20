@@ -1,4 +1,4 @@
-"""isort:skip_file"""
+# isort: skip_file
 from dagster import job
 
 from .date_config_job import process_data_for_date

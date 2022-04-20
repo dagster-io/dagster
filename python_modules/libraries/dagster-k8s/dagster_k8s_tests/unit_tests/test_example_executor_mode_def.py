@@ -1,4 +1,4 @@
-"""isort:skip_file"""
+# isort: skip_file
 # fmt: off
 # start_marker
 from dagster import job

@@ -6,7 +6,6 @@ import {DAGSTER_TYPE_FRAGMENT} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterTypeFragment';
 import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 
 import {AssetNodeOpMetadataFragment} from './types/AssetNodeOpMetadataFragment';
 

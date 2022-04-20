@@ -21,7 +21,7 @@ from dagster import (
     seven,
 )
 from dagster.core.definitions.events import AssetMaterialization, Failure, RetryRequested
-from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
+from dagster.core.definitions.metadata import MetadataValue
 from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.execution.context.compute import SolidExecutionContext
@@ -256,12 +256,9 @@ def _dm_compute(
                     yield AssetMaterialization(
                         asset_key=(asset_key_prefix + [f"{name}_output_notebook"]),
                         description="Location of output notebook in file manager",
-                        metadata_entries=[
-                            MetadataEntry(
-                                "path",
-                                value=MetadataValue.path(executed_notebook_materialization_path),
-                            )
-                        ],
+                        metadata={
+                            "path": MetadataValue.path(executed_notebook_materialization_path),
+                        },
                     )
 
                 except Exception:

@@ -692,7 +692,8 @@ def test_no_started_schedules(instance, workspace, external_repo):
 def test_schedule_without_timezone(instance):
     with mock_system_timezone("US/Eastern"):
         with create_test_daemon_workspace(
-            workspace_load_target=workspace_load_target()
+            workspace_load_target=workspace_load_target(),
+            instance=instance,
         ) as workspace:
             external_repo = next(
                 iter(workspace.get_workspace_snapshot().values())
@@ -1303,7 +1304,9 @@ def test_bad_load_schedule(instance, workspace, external_repo, caplog):
 
 
 def test_error_load_repository_location(instance):
-    with create_test_daemon_workspace(_get_unloadable_workspace_load_target()) as workspace:
+    with create_test_daemon_workspace(
+        _get_unloadable_workspace_load_target(), instance
+    ) as workspace:
         fake_origin = _get_unloadable_schedule_origin()
         initial_datetime = create_pendulum_time(
             year=2019,
@@ -1801,7 +1804,8 @@ def test_grpc_server_down(instance):
 
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     with create_test_daemon_workspace(
-        GrpcServerTarget(host="localhost", port=port, socket=None, location_name="test_location")
+        GrpcServerTarget(host="localhost", port=port, socket=None, location_name="test_location"),
+        instance,
     ) as workspace:
         with pendulum.test(initial_datetime):
             with _grpc_server_external_repo(port) as external_repo:
@@ -1851,7 +1855,8 @@ def test_status_in_code_schedule(instance):
         "US/Central",
     )
     with create_test_daemon_workspace(
-        workspace_load_target(attribute="the_status_in_code_repo")
+        workspace_load_target(attribute="the_status_in_code_repo"),
+        instance,
     ) as workspace:
         external_repo = next(
             iter(workspace.get_workspace_snapshot().values())
@@ -1991,7 +1996,7 @@ def test_status_in_code_schedule(instance):
 
     # Now try with an empty workspace - ticks are still there, but the job state is deleted
     # once it's no longer present in the workspace
-    with create_test_daemon_workspace(EmptyWorkspaceTarget()) as empty_workspace:
+    with create_test_daemon_workspace(EmptyWorkspaceTarget(), instance) as empty_workspace:
         with pendulum.test(freeze_datetime):
             list(
                 launch_scheduled_runs(
@@ -2013,7 +2018,8 @@ def test_change_default_status(instance):
         "US/Central",
     )
     with create_test_daemon_workspace(
-        workspace_load_target(attribute="the_status_in_code_repo")
+        workspace_load_target(attribute="the_status_in_code_repo"),
+        instance,
     ) as workspace:
         external_repo = next(
             iter(workspace.get_workspace_snapshot().values())

@@ -531,6 +531,10 @@ class DagsterEvent(
         return self.event_type == DagsterEventType.ASSET_OBSERVATION
 
     @property
+    def is_asset_materialization_planned(self) -> bool:
+        return self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+
+    @property
     def asset_key(self) -> Optional[AssetKey]:
         if self.event_type == DagsterEventType.ASSET_MATERIALIZATION:
             return self.step_materialization_data.materialization.asset_key
@@ -703,8 +707,7 @@ class DagsterEvent(
     def step_input_event(
         step_context: StepExecutionContext, step_input_data: "StepInputData"
     ) -> "DagsterEvent":
-        step_input = step_context.step.step_input_named(step_input_data.input_name)
-        input_def = step_input.source.get_input_def(step_context.pipeline_def)
+        input_def = step_context.solid_def.input_def_named(step_input_data.input_name)
 
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_INPUT,

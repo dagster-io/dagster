@@ -349,7 +349,9 @@ def the_status_in_code_repo():
 @contextmanager
 def instance_with_sensors(overrides=None, attribute="the_repo"):
     with instance_for_test(overrides) as instance:
-        with create_test_daemon_workspace(workspace_load_target(attribute)) as workspace:
+        with create_test_daemon_workspace(
+            workspace_load_target(attribute), instance=instance
+        ) as workspace:
             yield (
                 instance,
                 workspace,
@@ -1196,7 +1198,7 @@ def test_sensor_start_stop():
             assert len(ticks) == 1
 
             # stop / start
-            instance.stop_sensor(external_origin_id, external_sensor)
+            instance.stop_sensor(external_origin_id, external_sensor.selector_id, external_sensor)
             instance.start_sensor(external_sensor)
 
             evaluate_sensors(instance, workspace)
@@ -2161,7 +2163,8 @@ def test_status_in_code_sensor():
     )
     with instance_for_test() as instance:
         with create_test_daemon_workspace(
-            workspace_load_target(attribute="the_status_in_code_repo")
+            workspace_load_target(attribute="the_status_in_code_repo"),
+            instance=instance,
         ) as workspace:
             external_repo = next(
                 iter(workspace.get_workspace_snapshot().values())

@@ -1,15 +1,5 @@
 import {useMutation} from '@apollo/client';
-import {
-  Alert,
-  Box,
-  ButtonLink,
-  Checkbox,
-  Colors,
-  Group,
-  Table,
-  Subheading,
-  Tooltip,
-} from '@dagster-io/ui';
+import {Alert, Box, Checkbox, Colors, Group, Table, Subheading, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
@@ -22,7 +12,7 @@ import {StopSchedule} from '../schedules/types/StopSchedule';
 import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from '../sensors/SensorMutations';
 import {StopSensor} from '../sensors/types/StopSensor';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
-import {RepositoryOriginInformation} from '../workspace/RepositoryInformation';
+import {InstigatorSelectorInformation} from '../workspace/RepositoryInformation';
 
 import {TickTag} from './InstigationTick';
 import {InstigatedRunStatus} from './InstigationUtils';
@@ -133,12 +123,11 @@ const UnloadableScheduleInfo = () => (
 );
 
 const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) => {
-  const {id, name, status, repositoryOrigin, ticks} = sensorState;
+  const {id, selectorId, name, status, ticks} = sensorState;
 
   const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor>(STOP_SENSOR_MUTATION, {
     onCompleted: displaySensorMutationErrors,
   });
-  const [showRepositoryOrigin, setShowRepositoryOrigin] = React.useState(false);
   const confirm = useConfirmation();
 
   const onChangeSwitch = async () => {
@@ -150,7 +139,7 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
           'If you turn it off, you will not be able to turn it back on from ' +
           'the currently loaded workspace.',
       });
-      stopSensor({variables: {jobOriginId: id}});
+      stopSensor({variables: {jobOriginId: id, jobSelectorId: selectorId}});
     }
   };
 
@@ -169,15 +158,8 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
       <td>
         <Group direction="row" spacing={8} alignItems="center">
           {name}
-          <ButtonLink
-            onClick={() => {
-              setShowRepositoryOrigin(!showRepositoryOrigin);
-            }}
-          >
-            show info
-          </ButtonLink>
         </Group>
-        {showRepositoryOrigin && <RepositoryOriginInformation origin={repositoryOrigin} />}
+        <InstigatorSelectorInformation instigatorState={sensorState} />
       </td>
       <td>
         {latestTick ? (
@@ -204,9 +186,8 @@ const ScheduleStateRow: React.FC<{
       onCompleted: displayScheduleMutationErrors,
     },
   );
-  const [showRepositoryOrigin, setShowRepositoryOrigin] = React.useState(false);
   const confirm = useConfirmation();
-  const {id, name, ticks, status, repositoryOrigin, typeSpecificData} = scheduleState;
+  const {id, selectorId, name, ticks, status, typeSpecificData} = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;
   const cronSchedule =
     typeSpecificData && typeSpecificData.__typename === 'ScheduleData'
@@ -221,7 +202,7 @@ const ScheduleStateRow: React.FC<{
           'If you turn it off, you will not be able to turn it back on from ' +
           'the currently loaded workspace.',
       });
-      stopSchedule({variables: {scheduleOriginId: id}});
+      stopSchedule({variables: {scheduleOriginId: id, scheduleSelectorId: selectorId}});
     }
   };
 
@@ -238,15 +219,8 @@ const ScheduleStateRow: React.FC<{
       <td>
         <Group direction="row" spacing={8} alignItems="center">
           <div>{name}</div>
-          <ButtonLink
-            onClick={() => {
-              setShowRepositoryOrigin(!showRepositoryOrigin);
-            }}
-          >
-            show info
-          </ButtonLink>
         </Group>
-        {showRepositoryOrigin && <RepositoryOriginInformation origin={repositoryOrigin} />}
+        <InstigatorSelectorInformation instigatorState={scheduleState} />
       </td>
       <td style={{maxWidth: 150}}>
         <div

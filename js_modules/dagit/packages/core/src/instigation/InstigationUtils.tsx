@@ -7,7 +7,6 @@ import styled from 'styled-components/macro';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
-import {REPOSITORY_ORIGIN_FRAGMENT} from '../workspace/RepositoryInformation';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
 import {InstigationStateFragment} from './types/InstigationStateFragment';
@@ -42,13 +41,12 @@ export const RUN_STATUS_FRAGMENT = gql`
 export const INSTIGATION_STATE_FRAGMENT = gql`
   fragment InstigationStateFragment on InstigationState {
     id
+    selectorId
     name
     instigationType
     status
-    repositoryOrigin {
-      id
-      ...RepositoryOriginFragment
-    }
+    repositoryName
+    repositoryLocationName
     typeSpecificData {
       ... on SensorData {
         lastRunKey
@@ -70,7 +68,6 @@ export const INSTIGATION_STATE_FRAGMENT = gql`
     }
     runningCount
   }
-  ${REPOSITORY_ORIGIN_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
   ${RUN_STATUS_FRAGMENT}

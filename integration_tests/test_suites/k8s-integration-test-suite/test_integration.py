@@ -187,3 +187,28 @@ def test_k8s_run_launcher_terminate(
     assert pipeline_run.status == PipelineRunStatus.CANCELED
 
     assert not can_terminate_run_over_graphql(dagit_url_for_k8s_run_launcher, run_id)
+
+
+@pytest.mark.integration
+def test_k8s_run_launcher_secret_from_deployment(
+    helm_namespace_for_k8s_run_launcher,
+    dagit_url_for_k8s_run_launcher,
+):
+    # This run_config requires that WORD_FACTOR be set on both the user code deployment
+    # and the run launcher. It will only work if secrets are propagated from the deployment
+    # to the run launcher, since TEST_DEPLOYMENT_SECRET_NAME is only set on the user code
+    # deployment but not on the run launcher config.
+    run_config = load_yaml_from_path(
+        os.path.join(get_test_project_environments_path(), "env_config_from_secrets.yaml")
+    )
+    pipeline_name = "demo_pipeline"
+
+    run_id = launch_run_over_graphql(
+        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
+    )
+
+    result = wait_for_job_and_get_raw_logs(
+        job_name="dagster-run-%s" % run_id, namespace=helm_namespace_for_k8s_run_launcher
+    )
+
+    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)

@@ -31,7 +31,6 @@
   },
   "dependencies": {
     "deepmerge": "^4.2.2",
-    "highlight.js": "11.5.0",
     "lodash.isequal": "^4.5.0",
     "react-markdown": "6.0.3",
     "react-virtualized": "^9.22.3",
@@ -44,7 +43,7 @@
     "@babel/preset-env": "^7.16.7",
     "@babel/preset-react": "^7.16.7",
     "@babel/preset-typescript": "^7.16.7",
-    "@dagster-io/eslint-config": "1.0.0",
+    "@dagster-io/eslint-config": "1.0.2",
     "@mdx-js/react": "^1.6.22",
     "@rollup/plugin-babel": "^5.3.1",
     "@rollup/plugin-commonjs": "^21.0.3",

@@ -8,7 +8,6 @@ import {
   DialogFooter,
   Dialog,
   Group,
-  HighlightedCodeBlock,
   Icon,
   MenuItem,
   Menu,
@@ -16,18 +15,20 @@ import {
   Popover,
   Spinner,
   Table,
-  FontFamily,
+  Subheading,
 } from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {copyValue} from '../app/DomUtils';
+import {SharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {useCopyToClipboard} from '../app/browser';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';
 import {InstigationStatus} from '../types/globalTypes';
+import {DagitReadOnlyCodeMirror} from '../ui/DagitCodeMirror';
 import {MenuLink} from '../ui/MenuLink';
 import {
   findRepositoryAmongOptions,
@@ -288,7 +289,6 @@ const NextTickDialog: React.FC<{
   schedule: ScheduleFragment;
   tickTimestamp: number;
 }> = ({repoAddress, evaluationResult, schedule, tickTimestamp, setOpen, isOpen}) => {
-  const configRef = React.useRef<HTMLDivElement>(null);
   const [
     selectedRunRequest,
     setSelectedRunRequest,
@@ -297,6 +297,8 @@ const NextTickDialog: React.FC<{
       ? evaluationResult.runRequests[0]
       : null,
   );
+
+  const copy = useCopyToClipboard();
 
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, schedule.pipelineName);
@@ -321,18 +323,26 @@ const NextTickDialog: React.FC<{
     body = null;
   } else if (selectedRunRequest) {
     body = (
-      <DialogBody>
-        <Group direction="column" spacing={12}>
+      <Box flex={{direction: 'column', gap: 20}}>
+        <Box flex={{direction: 'column', gap: 12}} padding={{top: 16, horizontal: 24}}>
+          <Subheading>Tags</Subheading>
           {selectedRunRequest.tags.length ? (
             <RunTags tags={selectedRunRequest.tags} mode={isJob ? null : schedule.mode} />
           ) : null}
-          <ConfigBody>
-            <div ref={configRef}>
-              <HighlightedCodeBlock value={selectedRunRequest.runConfigYaml} language="yaml" />
-            </div>
-          </ConfigBody>
-        </Group>
-      </DialogBody>
+        </Box>
+        <div>
+          <Box
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            padding={{left: 24, bottom: 16}}
+          >
+            <Subheading>Config</Subheading>
+          </Box>
+          <DagitReadOnlyCodeMirror
+            value={selectedRunRequest.runConfigYaml}
+            options={{lineNumbers: true, mode: 'yaml'}}
+          />
+        </div>
+      </Box>
     );
   } else if (evaluationResult.error) {
     body = (
@@ -426,15 +436,20 @@ const NextTickDialog: React.FC<{
       isOpen={isOpen}
     >
       {body}
-      <DialogFooter>
+      <DialogFooter topBorder>
         {selectedRunRequest ? (
           <Button
             autoFocus={false}
-            onClick={(e: React.MouseEvent<any, MouseEvent>) => {
-              copyValue(e, configRef && configRef.current ? configRef.current.innerText : '' || '');
+            onClick={() => {
+              copy(selectedRunRequest.runConfigYaml);
+              SharedToaster.show({
+                intent: 'success',
+                icon: 'copy_to_clipboard_done',
+                message: 'Copied!',
+              });
             }}
           >
-            Copy
+            Copy config
           </Button>
         ) : null}
         <Button intent="primary" autoFocus={true} onClick={() => close()}>
@@ -470,14 +485,6 @@ const SCHEDULE_TICK_CONFIG_QUERY = gql`
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-const ConfigBody = styled.div`
-  white-space: pre-line;
-  font-family: ${FontFamily.monospace};
-  font-size: 14px;
-  overflow: scroll;
-  background: ${Colors.White};
 `;
 
 const RunRequestBody = styled.div`

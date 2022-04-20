@@ -74,14 +74,6 @@ export const formatElapsedTime = (msec: number) => {
   return `${hours}:${twoDigit(min)}:${twoDigit(sec)}`;
 };
 
-export function tokenForAssetKey(key: {path: string[]}) {
-  return key.path.join('>');
-}
-
-export function displayNameForAssetKey(key: {path: string[]}) {
-  return key.path.join(' > ');
-}
-
 export function breakOnUnderscores(str: string) {
   return str.replace(/_/g, '_\u200b');
 }

@@ -30,7 +30,7 @@ export const buildLayout = (params: BuildLayoutParams) => {
     !g.inputs.some((i) => i.dependsOn.some((s) => nodes.find((o) => o.name === s.solid.name)));
 
   const boxes: GanttChartBox[] = nodes.filter(hasNoDependencies).map((node) => ({
-    node: node,
+    node,
     key: node.name,
     state: undefined,
     children: [],
