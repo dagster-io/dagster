@@ -22,7 +22,14 @@ class TestDagsterChecker(pylint.testutils.CheckerTestCase):
         )
 
         with self.assertAddsMessages(
-            pylint.testutils.MessageTest(msg_id="finally-yield", node=yield_node)
+            pylint.testutils.MessageTest(
+                msg_id="finally-yield",
+                node=yield_node,
+                line=8,
+                col_offset=8,
+                end_line=8,
+                end_col_offset=13,
+            )
         ):
             self.checker.visit_yield(yield_node)
 
@@ -60,7 +67,14 @@ class TestDagsterChecker(pylint.testutils.CheckerTestCase):
         )
 
         with self.assertAddsMessages(
-            pylint.testutils.MessageTest(msg_id="finally-yield", node=yield_node)
+            pylint.testutils.MessageTest(
+                msg_id="finally-yield",
+                node=yield_node,
+                line=10,
+                col_offset=12,
+                end_line=10,
+                end_col_offset=19,
+            )
         ):
             self.checker.visit_yield(yield_node)
 
