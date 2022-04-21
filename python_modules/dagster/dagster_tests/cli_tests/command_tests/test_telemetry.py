@@ -230,6 +230,8 @@ def test_set_instance_id_from_empty_file():
         with environ({"DAGSTER_HOME": temp_dir}):
             # Write an empty file to the path
             open(
-                os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml"), "w"
+                os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml"),
+                "w",
+                encoding="utf8",
             ).close()
             assert get_or_set_instance_id()
