@@ -4,13 +4,13 @@ import {IconWrapper} from './Icon';
 import {SpinnerWrapper} from './Spinner';
 import {FontFamily} from './styles';
 
-export type ButtonJoinState = 'left' | 'right' | 'both';
+export type ButtonJoinedSide = 'left' | 'right' | 'both';
 
 interface StyledButtonProps {
   $fillColor: string;
   $strokeColor: string;
   $textColor: string;
-  $joined?: ButtonJoinState;
+  $joinedSide?: ButtonJoinedSide;
 }
 
 export const StyledButton = styled.button<StyledButtonProps>`
@@ -19,16 +19,26 @@ export const StyledButton = styled.button<StyledButtonProps>`
   border: none;
   border-radius: 8px;
 
-  ${({$joined}) =>
-    $joined
+  ${({$joinedSide}) =>
+    $joinedSide
       ? `
-  ${$joined !== 'right' ? 'border-top-left-radius: 0;' : ''}
-  ${$joined !== 'right' ? 'border-bottom-left-radius: 0;' : ''}
-  ${$joined !== 'left' ? 'border-top-right-radius: 0;' : ''}
-  ${$joined !== 'left' ? 'border-bottom-right-radius: 0;' : ''}
-  border-left: ${$joined !== 'right' ? `1px solid rgba(255,255,255,0.2)` : 'transparent'};
-  margin-left: 0;
-  ${$joined === 'right' ? 'padding-right: 8px;' : null}
+  ${
+    $joinedSide !== 'right'
+      ? `
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  `
+      : ''
+  }
+  ${
+    $joinedSide !== 'left'
+      ? `
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  `
+      : ''
+  }
+  ${$joinedSide === 'right' ? 'padding-right: 8px;' : 'margin-left: 1px;'}
   `
       : ''};
 

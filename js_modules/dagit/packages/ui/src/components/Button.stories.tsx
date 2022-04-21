@@ -132,40 +132,40 @@ export const Joined = () => {
   return (
     <Group direction="column" spacing={8}>
       <Box flex={{justifyContent: 'center'}}>
-        <Button joined="right">Main Action</Button>
-        <Button joined="left" icon={<Icon name="expand_more" />}></Button>
+        <Button joinedSide="right">Main Action</Button>
+        <Button joinedSide="left" icon={<Icon name="expand_more" />}></Button>
       </Box>
       <Box>
-        <Button joined="right">Left</Button>
-        <Button joined="both">Center</Button>
-        <Button joined="left">Right</Button>
+        <Button joinedSide="right">Left</Button>
+        <Button joinedSide="both">Center</Button>
+        <Button joinedSide="left">Right</Button>
       </Box>
       <Box>
-        <Button icon={<Icon name="star" />} joined="right">
+        <Button icon={<Icon name="star" />} joinedSide="right">
           Left
         </Button>
-        <Button icon={<Icon name="star" />} joined="both">
+        <Button icon={<Icon name="star" />} joinedSide="both">
           Center
         </Button>
-        <Button icon={<Icon name="star" />} joined="left">
+        <Button icon={<Icon name="star" />} joinedSide="left">
           Right
         </Button>
       </Box>
       <Box>
-        <Button rightIcon={<Icon name="wysiwyg" />} joined="right">
+        <Button rightIcon={<Icon name="wysiwyg" />} joinedSide="right">
           Left
         </Button>
-        <Button rightIcon={<Icon name="wysiwyg" />} joined="both">
+        <Button rightIcon={<Icon name="wysiwyg" />} joinedSide="both">
           Center
         </Button>
-        <Button rightIcon={<Icon name="wysiwyg" />} joined="left">
+        <Button rightIcon={<Icon name="wysiwyg" />} joinedSide="left">
           Right
         </Button>
       </Box>
       <Box>
-        <Button icon={<Icon name="cached" />} joined="right"></Button>
-        <Button icon={<Icon name="wysiwyg" />} joined="both"></Button>
-        <Button icon={<Icon name="close" />} joined="left"></Button>
+        <Button icon={<Icon name="cached" />} joinedSide="right"></Button>
+        <Button icon={<Icon name="wysiwyg" />} joinedSide="both"></Button>
+        <Button icon={<Icon name="close" />} joinedSide="left"></Button>
       </Box>
     </Group>
   );
