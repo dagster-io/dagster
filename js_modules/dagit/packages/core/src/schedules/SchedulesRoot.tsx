@@ -3,6 +3,7 @@ import {Box, Colors, NonIdealState, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {UnloadableSchedules} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
@@ -28,10 +29,12 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
         instigationType: InstigationType.SCHEDULE,
       },
       fetchPolicy: 'cache-and-network',
-      pollInterval: 50 * 1000,
       partialRefetch: true,
+      notifyOnNetworkStatusChange: true,
     },
   );
+
+  useQueryRefreshAtInterval(queryResult, 50 * 1000);
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>

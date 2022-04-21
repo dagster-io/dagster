@@ -15,6 +15,7 @@ import * as React from 'react';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
+  useMergedRefresh,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
@@ -88,8 +89,10 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     notifyOnNetworkStatusChange: true,
   });
 
-  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
-  useQueryRefreshAtInterval(liveQueryResult, FIFTEEN_SECONDS);
+  const refreshState = useMergedRefresh(
+    useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS),
+    useQueryRefreshAtInterval(liveQueryResult, FIFTEEN_SECONDS),
+  );
 
   // Refresh immediately when a run is launched from this page
   useDidLaunchEvent(queryResult.refetch);
