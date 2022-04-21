@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {flatMap} from 'lodash';
+import flatMap from 'lodash/flatMap';
 import React from 'react';
 
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';

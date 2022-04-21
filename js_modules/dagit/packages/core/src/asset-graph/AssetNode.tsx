@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 import {Colors, Icon, Spinner, Tooltip, FontFamily, Box, CaptionMono} from '@dagster-io/ui';
-import {isEqual} from 'lodash';
+import isEqual from 'lodash/isEqual';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';

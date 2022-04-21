@@ -1,5 +1,8 @@
 import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
-import _, {flatMap, uniq, uniqBy, without} from 'lodash';
+import flatMap from 'lodash/flatMap';
+import uniq from 'lodash/uniq';
+import uniqBy from 'lodash/uniqBy';
+import without from 'lodash/without';
 import React from 'react';
 import styled from 'styled-components/macro';
 

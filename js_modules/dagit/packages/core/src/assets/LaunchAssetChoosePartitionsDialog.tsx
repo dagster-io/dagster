@@ -10,7 +10,8 @@ import {
   DialogFooter,
   Alert,
 } from '@dagster-io/ui';
-import {pick, reject} from 'lodash';
+import pick from 'lodash/pick';
+import reject from 'lodash/reject';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 import * as yaml from 'yaml';

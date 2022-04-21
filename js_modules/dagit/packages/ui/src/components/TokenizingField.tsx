@@ -1,6 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
 import {TagInput} from '@blueprintjs/core';
-import isEqual from 'lodash.isequal';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -93,6 +92,9 @@ export const tokensAsStringArray = (value: TokenizingFieldValue[]) =>
 
 export const stringFromValue = (value: TokenizingFieldValue[]) =>
   tokensAsStringArray(value).join(',');
+
+const isEqual = (a: TokenizingFieldValue, b?: TokenizingFieldValue) =>
+  b && a.token === b.token && a.value === b.value;
 
 /** Provides a text field with typeahead autocompletion for key value pairs,
 where the key is one of a known set of "suggestion provider tokens". Provide

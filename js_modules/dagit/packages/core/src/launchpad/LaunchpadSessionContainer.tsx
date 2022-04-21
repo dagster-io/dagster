@@ -9,7 +9,7 @@ import {
   SplitPanelContainer,
 } from '@dagster-io/ui';
 import merge from 'deepmerge';
-import {uniqBy} from 'lodash';
+import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 import * as yaml from 'yaml';
