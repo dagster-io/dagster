@@ -1,5 +1,33 @@
 # Changelog
 
+# 0.14.10
+### New
+
+* [dagster-k8s] Added an `includeConfigInLaunchedRuns` flag to the Helm chart that can be used to automatically include configmaps, secrets, and volumes in any runs launched from code in a user code deployment. See https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm#configure-your-user-deployment for more information.
+* [dagit] Improved display of configuration yaml throughout Dagit, including better syntax highlighting and the addition of line numbers.
+* The GraphQL input argument type `BackfillParams`  (used for launching backfills), now has an `allPartitions` boolean flag, which can be used instead of specifying all the individual partition names.
+* Removed `gevent` and `gevent-websocket` dependencies from `dagster-graphql`
+* Memoization is now supported while using step selection
+* Cleaned up various warnings across the project
+* The default IO Managers now support asset partitions 
+
+### Bugfixes
+
+* Fixed `sqlite3.OperationalError` error when viewing schedules/sensors pages in Dagit.  This was affecting dagit instances using the default SQLite schedule storage with a SQLite version `< 3.25.0`.
+
+* Fixed an issues where schedules and sensors would sometimes fail to run when the daemon and dagit were running in different Python environments.
+* Fixed an exception when the telemetry file is empty
+* fixed a bug with `@graph` composition which would cause the wrong input definition to be used for type checks
+* [dagit] For users running Dagit with `--path-prefix`, large DAGs failed to render due to a WebWorker error, and the user would see an endless spinner instead. This has been fixed.
+* [dagit] Fixed a rendering bug in partition set selector dropdown on Launchpad.
+* [dagit] Fixed the ‘View Assets’ link in Job headers
+* Fixed an issue where root input managers with resource dependencies would not work with software defined assets
+
+### Community Contributions
+
+* `dagster-census` is a new library that includes a `census_resource` for interacting the Census REST API, `census_trigger_sync_op` for triggering a sync and registering an asset once it has finished, and a `CensusOutput` type. Thanks @dehume!
+* Docs fix. Thanks @ascrookes!
+
 # 0.14.9
 
 ### New
