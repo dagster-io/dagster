@@ -405,7 +405,7 @@ class In(
             metadata=check.opt_dict_param(metadata, "metadata", key_type=str),
             asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),
             asset_partitions=check.opt_inst_param(
-                asset_partitions, "asset_partitions", (Set[str], FunctionType)
+                asset_partitions, "asset_partitions", (set, FunctionType)
             ),
         )
 
