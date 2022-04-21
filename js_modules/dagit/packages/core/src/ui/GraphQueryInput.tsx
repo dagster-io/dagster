@@ -162,7 +162,7 @@ export const GraphQueryInput = React.memo(
       setPendingValue(props.value);
     }, [props.value]);
 
-    const lastClause = /(\*?\+*)([\w\d\[\]_-]+)(\+*\*?)$/.exec(pendingValue);
+    const lastClause = /(\*?\+*)([\w\d\[\]>_-]+)(\+*\*?)$/.exec(pendingValue);
 
     const [, prefix, lastElementName, suffix] = lastClause || [];
     const suggestions = React.useMemo(
