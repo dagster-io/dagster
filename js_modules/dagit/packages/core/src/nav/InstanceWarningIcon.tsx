@@ -2,6 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Colors, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 
@@ -10,10 +11,14 @@ import {InstanceWarningQuery} from './types/InstanceWarningQuery';
 
 export const InstanceWarningIcon = React.memo(() => {
   const {options} = useRepositoryOptions();
-  const {data: healthData} = useQuery<InstanceWarningQuery>(INSTANCE_WARNING_QUERY, {
+  const queryResult = useQuery<InstanceWarningQuery>(INSTANCE_WARNING_QUERY, {
     fetchPolicy: 'cache-and-network',
-    pollInterval: 15 * 1000,
+    notifyOnNetworkStatusChange: true,
   });
+
+  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+
+  const {data: healthData} = queryResult;
 
   const {anySchedules, anySensors} = React.useMemo(() => {
     let anySchedules = false;
