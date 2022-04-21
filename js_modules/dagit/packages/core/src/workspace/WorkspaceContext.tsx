@@ -203,7 +203,7 @@ const useVisibleRepos = (
 
   // TODO: Remove this logic eventually...
   const migratedOldHiddenKeys = React.useRef(false);
-  if (oldHiddenKeys && !migratedOldHiddenKeys.current) {
+  if (oldHiddenKeys.length && !migratedOldHiddenKeys.current) {
     setHiddenKeys(oldHiddenKeys);
     setOldHiddenKeys(undefined);
     migratedOldHiddenKeys.current = true;
