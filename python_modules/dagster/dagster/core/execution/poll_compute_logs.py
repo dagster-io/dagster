@@ -28,7 +28,7 @@ def tail_polling(filepath, stream=sys.stdout, parent_pid=None):
     The pid of the parent process (if provided) is checked to see if the tail process should be
     terminated, in case the parent is hard-killed / segfaults
     """
-    with open(filepath, "r") as file:
+    with open(filepath, "r", encoding="utf8") as file:
         for block in iter(lambda: file.read(1024), None):
             if block:
                 print(block, end="", file=stream)  # pylint: disable=print-call
@@ -50,7 +50,7 @@ def execute_polling(args):
 
     # Signal to the calling process that we have started and are
     # ready to receive the signal to terminate once execution has finished
-    with open(ipc_output_file, "w"):
+    with open(ipc_output_file, "w", encoding="utf8"):
         pass
 
     tail_polling(filepath, sys.stdout, parent_pid)

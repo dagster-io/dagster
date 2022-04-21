@@ -1,5 +1,5 @@
 import datetime
-import logging
+import logging  # pylint: disable=unused-import; used by mock in string form
 import re
 import time
 from collections import Counter
@@ -23,7 +23,6 @@ from dagster import (
     RetryRequested,
     asset,
     build_assets_job,
-    job,
     op,
     pipeline,
     resource,
@@ -41,12 +40,7 @@ from dagster.core.events import (
     StepExpectationResultData,
     StepMaterializationData,
 )
-from dagster.core.events.log import (
-    EventLogEntry,
-    StructuredLoggerMessage,
-    construct_event_logger,
-    construct_event_record,
-)
+from dagster.core.events.log import EventLogEntry, construct_event_logger
 from dagster.core.execution.api import execute_run
 from dagster.core.execution.plan.handle import StepHandle
 from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
@@ -886,7 +880,7 @@ class TestEventLogStorage:
             pytest.skip("This test is for SQL-backed Event Log behavior")
         _logs = []
 
-        def mock_log(msg):
+        def mock_log(msg, *_args, **_kwargs):
             _logs.append(msg)
 
         asset_key = AssetKey("asset_one")
@@ -1941,7 +1935,7 @@ class TestEventLogStorage:
             return 1
 
         @asset
-        def second_asset(my_asset):
+        def second_asset(my_asset):  # pylint: disable=unused-argument
             return 2
 
         with instance_for_test() as instance:
@@ -1949,7 +1943,7 @@ class TestEventLogStorage:
                 storage.register_instance(instance)
 
             my_asset_key = AssetKey("my_asset")
-            second_asset_key = AssetKey("second_asset")
+            second_asset_key = AssetKey("second_asset")  # pylint: disable=unused-variable
             # storage.get_asset_records([my_asset_key, second_asset_key])
 
             assert len(storage.get_asset_records()) == 0

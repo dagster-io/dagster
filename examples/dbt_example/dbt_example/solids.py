@@ -15,7 +15,7 @@ def download_file(context) -> str:
     url = context.solid_config["url"]
     target_path = context.solid_config["target_path"]
 
-    with open(target_path, "w") as fd:
+    with open(target_path, "w", encoding="utf8") as fd:
         fd.write(requests.get(url).text)
 
     return target_path

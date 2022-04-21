@@ -1,5 +1,5 @@
 import subprocess
-from distutils import spawn  # pylint: disable=no-name-in-module
+from distutils import spawn
 from itertools import groupby
 
 import click

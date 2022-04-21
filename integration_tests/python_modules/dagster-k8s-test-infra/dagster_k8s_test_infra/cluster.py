@@ -118,6 +118,7 @@ def local_port_forward_postgres(namespace):
 
     wait_for_pod(postgres_pod_name, namespace=namespace)
 
+    p = None
     try:
         p = subprocess.Popen(
             [
@@ -161,8 +162,9 @@ def local_port_forward_postgres(namespace):
         yield forward_port
 
     finally:
-        print("Terminating port-forwarding")
-        p.terminate()
+        if p is not None:
+            print("Terminating port-forwarding")
+            p.terminate()
 
 
 @pytest.fixture(scope="session")

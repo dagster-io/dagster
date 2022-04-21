@@ -35,7 +35,7 @@ def check_for_release():
         return False
 
     version = {}
-    with open("python_modules/dagster/dagster/version.py") as fp:
+    with open("python_modules/dagster/dagster/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     if git_tag == version["__version__"]:

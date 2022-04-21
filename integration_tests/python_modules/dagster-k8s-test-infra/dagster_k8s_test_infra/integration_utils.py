@@ -52,7 +52,7 @@ def within_docker():
     return (
         os.path.exists("/.dockerenv")
         or os.path.isfile(cgroup_path)
-        and any("docker" in line for line in open(cgroup_path))
+        and any("docker" in line for line in open(cgroup_path, encoding="utf8"))
     )
 
 

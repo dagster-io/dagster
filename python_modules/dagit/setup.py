@@ -5,13 +5,13 @@ from setuptools import find_packages, setup
 
 def long_description():
     here = os.path.abspath(os.path.dirname(__file__))
-    with open(os.path.join(here, "README.rst"), "r") as fh:
+    with open(os.path.join(here, "README.rst"), "r", encoding="utf8") as fh:
         return fh.read()
 
 
 def get_version():
     version = {}
-    with open("dagit/version.py") as fp:
+    with open("dagit/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     return version["__version__"]

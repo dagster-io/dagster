@@ -620,7 +620,9 @@ def define_demo_k8s_executor_pipeline():
 
 @solid
 def check_volume_mount(context):
-    with open("/opt/dagster/test_mount_path/volume_mounted_file.yaml", "r") as mounted_file:
+    with open(
+        "/opt/dagster/test_mount_path/volume_mounted_file.yaml", "r", encoding="utf8"
+    ) as mounted_file:
         contents = mounted_file.read()
         context.log.info(f"Contents of mounted file: {contents}")
         assert contents == "BAR_CONTENTS"

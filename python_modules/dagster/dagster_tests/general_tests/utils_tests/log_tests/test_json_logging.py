@@ -32,7 +32,7 @@ def test_basic_logging():
 
 
 def parse_json_lines(tf_name):
-    with open(tf_name) as f:
+    with open(tf_name, encoding="utf8") as f:
         for line in f:
             yield json.loads(line)
 

@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Extra  # pylint: disable=no-name-in-module
 
 from .utils import BaseModel as BaseModelWithNullableRequiredFields
-from .utils import SupportedKubernetes, create_definition_ref
+from .utils import create_definition_ref
 
 
 class Annotations(BaseModel):

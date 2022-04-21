@@ -23,7 +23,7 @@ def run_pipeline(path_to_dir):
 
 def create_file(path_to_dir):
     time.sleep(1)
-    with open(f"{path_to_dir}/data.csv", "w") as fd:
+    with open(f"{path_to_dir}/data.csv", "w", encoding="utf8") as fd:
         fd.write("ok")
 
 

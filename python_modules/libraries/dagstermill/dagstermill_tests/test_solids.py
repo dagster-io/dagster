@@ -164,11 +164,11 @@ def test_reexecute_result_notebook():
             result_path = get_path(materialization_event)
 
         if result_path.endswith(".ipynb"):
-            with open(result_path) as fd:
+            with open(result_path, encoding="utf8") as fd:
                 nb = nbformat.read(fd, as_version=4)
             ep = ExecutePreprocessor()
             ep.preprocess(nb)
-            with open(result_path) as fd:
+            with open(result_path, encoding="utf8") as fd:
                 expected = _strip_execution_metadata(nb)
                 actual = _strip_execution_metadata(nbformat.read(fd, as_version=4))
                 assert actual == expected

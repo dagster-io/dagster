@@ -40,7 +40,7 @@ def test_execute_display_command():
 
             # write run config to temp file
             # file is temp because io manager directory is temporary
-            with open(os.path.join(temp_dir, "pipeline_config.yaml"), "w") as f:
+            with open(os.path.join(temp_dir, "pipeline_config.yaml"), "w", encoding="utf8") as f:
                 f.write(yaml.dump(run_config))
 
             kwargs = {

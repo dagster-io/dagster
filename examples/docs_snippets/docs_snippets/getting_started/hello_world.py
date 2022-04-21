@@ -1,4 +1,5 @@
 # isort: skip_file
+# pylint: disable=print-call
 
 # start_pipeline_marker
 

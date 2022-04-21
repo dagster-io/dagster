@@ -416,6 +416,7 @@ def test_execute_on_celery_k8s_with_termination(  # pylint: disable=redefined-ou
 
 @pytest.fixture(scope="function")
 def set_dagster_k8s_pipeline_run_namespace_env(helm_namespace):
+    old_value = None
     try:
         old_value = os.getenv("DAGSTER_K8S_PIPELINE_RUN_NAMESPACE")
         os.environ["DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"] = helm_namespace

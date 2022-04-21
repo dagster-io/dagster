@@ -18,4 +18,4 @@ commands =
 [testenv:pylint]
 basepython = python
 commands =
-  /bin/bash -c 'cd .. && pylint -j 0 --rcfile=../.pylintrc {{EXAMPLE_NAME}}/'
+  /bin/bash -c 'cd .. && pylint -j 0 --rcfile=../pyproject.toml {{EXAMPLE_NAME}}/'

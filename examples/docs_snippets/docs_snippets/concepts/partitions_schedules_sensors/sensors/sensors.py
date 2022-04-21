@@ -1,4 +1,5 @@
 # isort: skip_file
+# pylint: disable=unnecessary-ellipsis
 
 from dagster import repository, DefaultSensorStatus, SkipReason
 

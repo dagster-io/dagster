@@ -123,7 +123,7 @@ def define_step_retry_pipeline():
         if os.path.exists(file):
             return "okay perfect"
         else:
-            open(file, "a").close()
+            open(file, "a", encoding="utf8").close()
             raise RetryRequested()
 
     @pipeline(mode_defs=[default_mode_def_for_test])
@@ -232,7 +232,7 @@ def define_retry_wait_fixed_pipeline():
         if os.path.exists(file):
             return "okay perfect"
         else:
-            open(file, "a").close()
+            open(file, "a", encoding="utf8").close()
             raise RetryRequested(seconds_to_wait=DELAY)
 
     @pipeline(mode_defs=[default_mode_def_for_test])

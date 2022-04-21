@@ -178,9 +178,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 else:
                     logging.info(
                         "SqliteEventLogStorage._initdb: Encountered apparent concurrent init, "
-                        "retrying ({retry_limit} retries left). Exception: {str_exc}".format(
-                            retry_limit=retry_limit, str_exc=err_msg
-                        )
+                        "retrying (%s retries left). Exception: %s",
+                        retry_limit,
+                        err_msg,
                     )
                     time.sleep(0.2)
                     retry_limit -= 1
@@ -329,9 +329,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     event_record = deserialize_json_to_dagster_namedtuple(json_str)
                     if not isinstance(event_record, EventLogEntry):
                         logging.warning(
-                            "Could not resolve event record as EventLogEntry for id `{}`.".format(
-                                row_id
-                            )
+                            "Could not resolve event record as EventLogEntry for id `%s`.", row_id
                         )
                         continue
                     else:
@@ -341,7 +339,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     if limit and len(event_records) >= limit:
                         break
                 except seven.JSONDecodeError:
-                    logging.warning("Could not parse event record id `{}`.".format(row_id))
+                    logging.warning("Could not parse event record id `%s`.", row_id)
 
             if limit and len(event_records) >= limit:
                 break

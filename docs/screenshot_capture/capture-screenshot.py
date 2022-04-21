@@ -16,11 +16,11 @@ from time import sleep
 from typing import Any, Mapping, Sequence
 
 import yaml
-from selenium import webdriver
+from selenium import webdriver   # pylint: disable=import-error
 
 
 def load_screenshot_specs(path) -> Sequence[Mapping]:
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf8") as f:
         return yaml.safe_load(f)
 
 

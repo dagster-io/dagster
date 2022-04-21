@@ -1040,10 +1040,10 @@ def test_kwarg_inputs():
         the_op(bad_val="bar")
 
     @op(ins={"the_in": In(), "kwarg_in": In(), "kwarg_in_two": In()})
-    def the_op(the_in, **kwargs):
+    def the_op_2(the_in, **kwargs):
         return the_in + kwargs["kwarg_in"] + kwargs["kwarg_in_two"]
 
-    assert the_op("foo", kwarg_in="bar", kwarg_in_two="baz") == "foobarbaz"
+    assert the_op_2("foo", kwarg_in="bar", kwarg_in_two="baz") == "foobarbaz"
 
 
 def test_default_kwarg_inputs():

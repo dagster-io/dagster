@@ -44,7 +44,7 @@ def check_compute_logs(manager, result, execution_date_fmt):
     for step_key in compute_steps:
         compute_io_path = manager.get_local_path(result.run_id, step_key, ComputeIOType.STDOUT)
         assert os.path.exists(compute_io_path)
-        stdout_file = open(compute_io_path, "r")
+        stdout_file = open(compute_io_path, "r", encoding="utf8")
         file_contents = normalize_file_content(stdout_file.read())
         stdout_file.close()
 
@@ -123,7 +123,7 @@ def test_pipeline_auto_tag():
             result.run_id, "airflow_templated", ComputeIOType.STDOUT
         )
         assert os.path.exists(compute_io_path)
-        stdout_file = open(compute_io_path, "r")
+        stdout_file = open(compute_io_path, "r", encoding="utf8")
         file_contents = normalize_file_content(stdout_file.read())
 
         stdout_file.close()
