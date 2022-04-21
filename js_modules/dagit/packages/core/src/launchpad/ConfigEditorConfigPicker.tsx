@@ -272,7 +272,7 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
       <div>
         <ShortcutHandler
           shortcutLabel="⌥E"
-          shortcutFilter={(e) => e.keyCode === 69 && e.altKey}
+          shortcutFilter={(e) => e.code === 'KeyE' && e.altKey}
           onShortcut={() => button.current?.click()}
         >
           <Select<ConfigGenerator>
