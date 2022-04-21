@@ -244,25 +244,34 @@ def should_succeed(context):
 
 
 @solid
-def solid_one(_):
+def asset_solid_one(_):
     yield AssetMaterialization(asset_key=AssetKey("asset_1"))
     yield Output(1)
 
 
 @solid
-def solid_two(_):
+def asset_solid_two(_):
     yield AssetMaterialization(asset_key=AssetKey("asset_2"))
     yield AssetMaterialization(asset_key=AssetKey(["path", "to", "asset_3"]))
     yield Output(1)
 
 
-def one_solid():
-    solid_one()
+def one_asset_solid():
+    asset_solid_one()
 
 
-def two_solids():
-    solid_one()
-    solid_two()
+def two_asset_solids():
+    asset_solid_one()
+    asset_solid_two()
+
+
+@solid
+def return_one_solid(_):
+    return 1
+
+
+def return_one_solid_func():
+    return_one_solid()
 
 
 def cursor_datetime_args():
@@ -556,14 +565,7 @@ class TestEventLogStorage:
         if not isinstance(storage, SqlEventLogStorage):
             pytest.skip("This test is for SQL-backed Event Log behavior")
 
-        @solid
-        def return_one(_):
-            return 1
-
-        def _solids():
-            return_one()
-
-        events, _result = _synthesize_events(_solids, run_id=DEFAULT_RUN_ID)
+        events, _result = _synthesize_events(return_one_solid_func, run_id=DEFAULT_RUN_ID)
 
         for event in events:
             storage.store_event(event)
@@ -578,14 +580,8 @@ class TestEventLogStorage:
         assert Counter(_event_types(out_events)) == Counter(_event_types(events))
 
     def test_basic_get_logs_for_run(self, storage):
-        @solid
-        def return_one(_):
-            return 1
 
-        def _solids():
-            return_one()
-
-        events, result = _synthesize_events(_solids)
+        events, result = _synthesize_events(return_one_solid_func)
 
         for event in events:
             storage.store_event(event)
@@ -595,14 +591,8 @@ class TestEventLogStorage:
         assert _event_types(out_events) == _event_types(events)
 
     def test_get_logs_for_run_cursor_limit(self, storage):
-        @solid
-        def return_one(_):
-            return 1
 
-        def _solids():
-            return_one()
-
-        events, result = _synthesize_events(_solids)
+        events, result = _synthesize_events(return_one_solid_func)
 
         for event in events:
             storage.store_event(event)
@@ -624,14 +614,8 @@ class TestEventLogStorage:
         assert _event_types(out_events) == _event_types(events)
 
     def test_wipe_sql_backed_event_log(self, storage):
-        @solid
-        def return_one(_):
-            return 1
 
-        def _solids():
-            return_one()
-
-        events, result = _synthesize_events(_solids)
+        events, result = _synthesize_events(return_one_solid_func)
 
         for event in events:
             storage.store_event(event)
@@ -646,14 +630,8 @@ class TestEventLogStorage:
             assert storage.get_logs_for_run(result.run_id) == []
 
     def test_delete_sql_backed_event_log(self, storage):
-        @solid
-        def return_one(_):
-            return 1
 
-        def _solids():
-            return_one()
-
-        events, result = _synthesize_events(_solids)
+        events, result = _synthesize_events(return_one_solid_func)
 
         for event in events:
             storage.store_event(event)
@@ -667,14 +645,8 @@ class TestEventLogStorage:
         assert storage.get_logs_for_run(result.run_id) == []
 
     def test_get_logs_for_run_of_type(self, storage):
-        @solid
-        def return_one(_):
-            return 1
 
-        def _solids():
-            return_one()
-
-        events, result = _synthesize_events(_solids)
+        events, result = _synthesize_events(return_one_solid_func)
 
         for event in events:
             storage.store_event(event)
@@ -695,14 +667,8 @@ class TestEventLogStorage:
         ) == [DagsterEventType.STEP_SUCCESS, DagsterEventType.PIPELINE_SUCCESS]
 
     def test_basic_get_logs_for_run_cursor(self, storage):
-        @solid
-        def return_one(_):
-            return 1
 
-        def _solids():
-            return_one()
-
-        events, result = _synthesize_events(_solids)
+        events, result = _synthesize_events(return_one_solid_func)
 
         for event in events:
             storage.store_event(event)
@@ -712,18 +678,12 @@ class TestEventLogStorage:
         )
 
     def test_basic_get_logs_for_run_multiple_runs(self, storage):
-        @solid
-        def return_one(_):
-            return 1
 
-        def _solids():
-            return_one()
-
-        events_one, result_one = _synthesize_events(_solids)
+        events_one, result_one = _synthesize_events(return_one_solid_func)
         for event in events_one:
             storage.store_event(event)
 
-        events_two, result_two = _synthesize_events(_solids)
+        events_two, result_two = _synthesize_events(return_one_solid_func)
         for event in events_two:
             storage.store_event(event)
 
@@ -748,18 +708,12 @@ class TestEventLogStorage:
         assert stats_two.steps_succeeded == 1
 
     def test_basic_get_logs_for_run_multiple_runs_cursors(self, storage):
-        @solid
-        def return_one(_):
-            return 1
 
-        def _solids():
-            return_one()
-
-        events_one, result_one = _synthesize_events(_solids)
+        events_one, result_one = _synthesize_events(return_one_solid_func)
         for event in events_one:
             storage.store_event(event)
 
-        events_two, result_two = _synthesize_events(_solids)
+        events_two, result_two = _synthesize_events(return_one_solid_func)
         for event in events_two:
             storage.store_event(event)
 
@@ -780,20 +734,13 @@ class TestEventLogStorage:
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
 
-        @solid
-        def return_one(_):
-            return 1
-
-        def _solids():
-            return_one()
-
         event_list = []
 
         run_id = make_new_run_id()
 
         storage.watch(run_id, -1, lambda x: event_list.append(x))
 
-        events, _ = _synthesize_events(_solids, run_id=run_id)
+        events, _ = _synthesize_events(return_one_solid_func, run_id=run_id)
         for event in events:
             storage.store_event(event)
 
@@ -808,13 +755,6 @@ class TestEventLogStorage:
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
 
-        @solid
-        def return_one(_):
-            return 1
-
-        def _solids():
-            return_one()
-
         run_id_one = make_new_run_id()
         run_id_two = make_new_run_id()
 
@@ -822,11 +762,11 @@ class TestEventLogStorage:
         event_list = []
         storage.watch(run_id_two, -1, lambda x: event_list.append(x))
 
-        events_one, _result_one = _synthesize_events(_solids, run_id=run_id_one)
+        events_one, _result_one = _synthesize_events(return_one_solid_func, run_id=run_id_one)
         for event in events_one:
             storage.store_event(event)
 
-        events_two, _result_two = _synthesize_events(_solids, run_id=run_id_two)
+        events_two, _result_two = _synthesize_events(return_one_solid_func, run_id=run_id_two)
         for event in events_two:
             storage.store_event(event)
 
@@ -841,13 +781,6 @@ class TestEventLogStorage:
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
 
-        @solid
-        def return_one(_):
-            return 1
-
-        def _solids():
-            return_one()
-
         event_list_one = []
         event_list_two = []
 
@@ -857,11 +790,11 @@ class TestEventLogStorage:
         storage.watch(run_id_one, -1, lambda x: event_list_one.append(x))
         storage.watch(run_id_two, -1, lambda x: event_list_two.append(x))
 
-        events_one, _result_one = _synthesize_events(_solids, run_id=run_id_one)
+        events_one, _result_one = _synthesize_events(return_one_solid_func, run_id=run_id_one)
         for event in events_one:
             storage.store_event(event)
 
-        events_two, _result_two = _synthesize_events(_solids, run_id=run_id_two)
+        events_two, _result_two = _synthesize_events(return_one_solid_func, run_id=run_id_two)
         for event in events_two:
             storage.store_event(event)
 
@@ -1388,13 +1321,6 @@ class TestEventLogStorage:
 
         # test that an exception in one watch doesn't fail out others
 
-        @solid
-        def return_one(_):
-            return 1
-
-        def _solids():
-            return_one()
-
         err_run_id = make_new_run_id()
         safe_run_id = make_new_run_id()
 
@@ -1404,8 +1330,8 @@ class TestEventLogStorage:
         def _throw(_):
             raise CBException("problem in watch callback")
 
-        err_events, _ = _synthesize_events(_solids, run_id=err_run_id)
-        safe_events, _ = _synthesize_events(_solids, run_id=safe_run_id)
+        err_events, _ = _synthesize_events(return_one_solid_func, run_id=err_run_id)
+        safe_events, _ = _synthesize_events(return_one_solid_func, run_id=safe_run_id)
 
         event_list = []
 
@@ -1435,21 +1361,14 @@ class TestEventLogStorage:
 
         # test for dead lock bug
 
-        @solid
-        def return_one(_):
-            return 1
-
-        def _solids():
-            return_one()
-
         err_run_id = make_new_run_id()
         safe_run_id = make_new_run_id()
 
         def _unsub(_):
             storage.end_watch(err_run_id, _unsub)
 
-        err_events, _ = _synthesize_events(_solids, run_id=err_run_id)
-        safe_events, _ = _synthesize_events(_solids, run_id=safe_run_id)
+        err_events, _ = _synthesize_events(return_one_solid_func, run_id=err_run_id)
+        safe_events, _ = _synthesize_events(return_one_solid_func, run_id=safe_run_id)
 
         event_list = []
 
@@ -1576,8 +1495,8 @@ class TestEventLogStorage:
             if not storage._instance:  # pylint: disable=protected-access
                 storage.register_instance(instance)
 
-            events_one, _ = _synthesize_events(lambda: one_solid(), instance=instance)
-            events_two, _ = _synthesize_events(lambda: two_solids(), instance=instance)
+            events_one, _ = _synthesize_events(lambda: one_asset_solid(), instance=instance)
+            events_two, _ = _synthesize_events(lambda: two_asset_solids(), instance=instance)
 
             for event in events_one + events_two:
                 storage.store_event(event)
@@ -1593,8 +1512,8 @@ class TestEventLogStorage:
             if not storage._instance:  # pylint: disable=protected-access
                 storage.register_instance(instance)
 
-            events_one, _ = _synthesize_events(lambda: one_solid(), instance=instance)
-            events_two, _ = _synthesize_events(lambda: two_solids(), instance=instance)
+            events_one, _ = _synthesize_events(lambda: one_asset_solid(), instance=instance)
+            events_two, _ = _synthesize_events(lambda: two_asset_solids(), instance=instance)
 
             for event in events_one + events_two:
                 storage.store_event(event)
@@ -1607,8 +1526,8 @@ class TestEventLogStorage:
             if not storage._instance:  # pylint: disable=protected-access
                 storage.register_instance(instance)
 
-            events_one, _ = _synthesize_events(lambda: one_solid(), instance=instance)
-            events_two, _ = _synthesize_events(lambda: two_solids(), instance=instance)
+            events_one, _ = _synthesize_events(lambda: one_asset_solid(), instance=instance)
+            events_two, _ = _synthesize_events(lambda: two_asset_solids(), instance=instance)
 
             for event in events_one + events_two:
                 storage.store_event(event)
@@ -1629,11 +1548,15 @@ class TestEventLogStorage:
             if not storage._instance:  # pylint: disable=protected-access
                 storage.register_instance(instance)
 
-            events_one, _ = _synthesize_events(lambda: one_solid(), instance=instance)
-            two_solids_first, _ = _synthesize_events(lambda: two_solids(), instance=instance)
-            two_solids_second, _ = _synthesize_events(lambda: two_solids(), instance=instance)
+            events_one, _ = _synthesize_events(lambda: one_asset_solid(), instance=instance)
+            two_asset_solids_first, _ = _synthesize_events(
+                lambda: two_asset_solids(), instance=instance
+            )
+            two_asset_solids_second, _ = _synthesize_events(
+                lambda: two_asset_solids(), instance=instance
+            )
 
-            for event in events_one + two_solids_first + two_solids_second:
+            for event in events_one + two_asset_solids_first + two_asset_solids_second:
                 storage.store_event(event)
 
             # descending
@@ -1699,10 +1622,10 @@ class TestEventLogStorage:
             one_run_id = "one"
             two_run_id = "two"
             one_events, _ = _synthesize_events(
-                lambda: one_solid(), run_id=one_run_id, instance=instance
+                lambda: one_asset_solid(), run_id=one_run_id, instance=instance
             )
             two_events, _ = _synthesize_events(
-                lambda: two_solids(), run_id=two_run_id, instance=instance
+                lambda: two_asset_solids(), run_id=two_run_id, instance=instance
             )
             for event in one_events + two_events:
                 storage.store_event(event)
@@ -1738,10 +1661,10 @@ class TestEventLogStorage:
             one_run_id = "one_run_id"
             two_run_id = "two_run_id"
             events_one, _ = _synthesize_events(
-                lambda: one_solid(), run_id=one_run_id, instance=instance
+                lambda: one_asset_solid(), run_id=one_run_id, instance=instance
             )
             events_two, _ = _synthesize_events(
-                lambda: two_solids(), run_id=two_run_id, instance=instance
+                lambda: two_asset_solids(), run_id=two_run_id, instance=instance
             )
             for event in events_one + events_two:
                 storage.store_event(event)
@@ -1770,7 +1693,7 @@ class TestEventLogStorage:
 
                 one_run_id = "one_run_id_2"
                 events_one, _ = _synthesize_events(
-                    lambda: one_solid(), run_id=one_run_id, instance=instance
+                    lambda: one_asset_solid(), run_id=one_run_id, instance=instance
                 )
                 for event in events_one:
                     storage.store_event(event)
@@ -1788,7 +1711,7 @@ class TestEventLogStorage:
             if not storage._instance:  # pylint: disable=protected-access
                 storage.register_instance(instance)
 
-            events_one, _ = _synthesize_events(lambda: one_solid(), instance=instance)
+            events_one, _ = _synthesize_events(lambda: one_asset_solid(), instance=instance)
 
             for event in events_one:
                 storage.store_event(event)
@@ -1800,10 +1723,10 @@ class TestEventLogStorage:
             two_first_run_id = "first"
             two_second_run_id = "second"
             events_two, _ = _synthesize_events(
-                lambda: two_solids(), run_id=two_first_run_id, instance=instance
+                lambda: two_asset_solids(), run_id=two_first_run_id, instance=instance
             )
             events_two_two, _ = _synthesize_events(
-                lambda: two_solids(), run_id=two_second_run_id, instance=instance
+                lambda: two_asset_solids(), run_id=two_second_run_id, instance=instance
             )
             for event in events_two + events_two_two:
                 storage.store_event(event)
