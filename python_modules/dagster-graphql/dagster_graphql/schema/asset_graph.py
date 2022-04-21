@@ -84,7 +84,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         beforeTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
-    computeKind: graphene.String
+    computeKind = graphene.String()
     dependedBy = non_null_list(GrapheneAssetDependency)
     dependedByKeys = non_null_list(GrapheneAssetKey)
     dependencies = non_null_list(GrapheneAssetDependency)

@@ -31,6 +31,7 @@ export interface AssetNodeFragment {
   opName: string | null;
   description: string | null;
   partitionDefinition: string | null;
+  computeKind: string | null;
   assetKey: AssetNodeFragment_assetKey;
   repository: AssetNodeFragment_repository;
 }

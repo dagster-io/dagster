@@ -217,6 +217,7 @@ type AssetNode {
     beforeTimestampMillis: String
     limit: Int
   ): [MaterializationEvent!]!
+  computeKind: String
   dependedBy: [AssetDependency!]!
   dependedByKeys: [AssetKey!]!
   dependencies: [AssetDependency!]!
