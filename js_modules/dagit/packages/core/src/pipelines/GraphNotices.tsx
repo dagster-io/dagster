@@ -1,5 +1,5 @@
 import {Box, Colors, Icon, NonIdealState, Spinner} from '@dagster-io/ui';
-import {capitalize} from 'lodash';
+import capitalize from 'lodash/capitalize';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 

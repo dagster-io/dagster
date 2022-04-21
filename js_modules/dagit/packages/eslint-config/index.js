@@ -65,6 +65,10 @@ module.exports = {
             message: 'Please import from `@apollo/client`.',
           },
           {
+            name: 'lodash',
+            message: 'Please import specific lodash modules, e.g. `lodash/throttle`.',
+          },
+          {
             name: 'styled-components',
             message: 'Please import from `styled-components/macro`.',
           },
