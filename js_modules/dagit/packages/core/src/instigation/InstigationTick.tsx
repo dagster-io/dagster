@@ -74,7 +74,7 @@ export const TickTag: React.FC<{
       return tag;
 
     case InstigationTickStatus.SKIPPED:
-      if (tick.runKeys) {
+      if (tick.runKeys && tick.runKeys.length) {
         const message = `${tick.runKeys.length} runs requested, but skipped because the runs already exist for the requested keys.`;
         return (
           <Tooltip position="right" content={message}>
