@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {ApolloError, gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -187,7 +187,41 @@ export const RunsRoot = () => {
         </Box>
       ) : null}
       <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
-        <Loading queryResult={queryResult} allowStaleData={true}>
+        <Loading
+          queryResult={queryResult}
+          allowStaleData
+          renderError={(error: ApolloError) => {
+            // In this case, a 400 is most likely due to invalid run filters, which are a GraphQL
+            // validation error but surfaced as a 400.
+            const badRequest = !!(
+              error?.networkError &&
+              'statusCode' in error.networkError &&
+              error.networkError.statusCode === 400
+            );
+            return (
+              <Box
+                flex={{direction: 'column', gap: 32}}
+                padding={{vertical: 8, left: 24, right: 12}}
+              >
+                <RunsFilterInput
+                  tokens={mutableTokens}
+                  onChange={setFilterTokensWithStatus}
+                  loading={queryResult.loading}
+                  enabledFilters={enabledFilters}
+                />
+                <NonIdealState
+                  icon="warning"
+                  title={badRequest ? 'Invalid run filters' : 'Unexpected error'}
+                  description={
+                    badRequest
+                      ? 'The specified run filters are not valid. Please check the filters and try again.'
+                      : 'An unexpected error occurred. Check the console for details.'
+                  }
+                />
+              </Box>
+            );
+          }}
+        >
           {({pipelineRunsOrError}) => {
             if (pipelineRunsOrError.__typename !== 'Runs') {
               return (
@@ -210,6 +244,7 @@ export const RunsRoot = () => {
                 <RunTable
                   runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
                   onSetFilter={setFilterTokensWithStatus}
+                  filter={filter}
                   actionBarComponents={
                     showScheduled ? null : (
                       <Box flex={{direction: 'column', gap: 8}}>
