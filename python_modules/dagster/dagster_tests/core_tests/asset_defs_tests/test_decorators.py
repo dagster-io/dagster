@@ -389,9 +389,9 @@ def test_assets_no_ins_outs():
         yield Output(1, "a")
         yield Output(2, "b")
 
-    input_def_by_asset_key = multi_asset_op.input_defs_by_asset_key
-    assert input_def_by_asset_key[AssetKey("x_asset")].name == "x"
-    assert input_def_by_asset_key[AssetKey("y")].name == "y"
+    assert multi_asset_op.input_defs_by_asset_key[AssetKey("x_asset")].name == "x"
+    assert multi_asset_op.input_defs_by_asset_key[AssetKey("y")].name == "y"
+    assert multi_asset_op.output_defs_by_asset_key[AssetKey("multi_asset_op")].name == "result"
 
 
 def test_partial_asset_keys_provided():
@@ -466,9 +466,8 @@ def test_graph_asset_decorator_inputs():
     def my_graph(x, y):
         my_op(x, y)
 
-    input_defs_by_asset_key = _invert_dict(my_graph.asset_keys_by_input_def)
-    assert input_defs_by_asset_key[AssetKey("x_asset")].name == "x"
-    assert input_defs_by_asset_key[AssetKey("y")].name == "y"
+    assert my_graph.input_defs_by_asset_key[AssetKey("x_asset")].name == "x"
+    assert my_graph.input_defs_by_asset_key[AssetKey("y")].name == "y"
 
 
 def test_graph_asset_decorator_outputs():
@@ -485,9 +484,8 @@ def test_graph_asset_decorator_outputs():
     def my_graph(x, y):
         return {"x": x_op(x), "y": y_op(y)}
 
-    output_defs_by_asset_key = _invert_dict(my_graph.asset_keys_by_output_def)
-    assert output_defs_by_asset_key[AssetKey("y_asset")].name == "y"
-    assert output_defs_by_asset_key[AssetKey("x")].name == "x"
+    assert my_graph.output_defs_by_asset_key[AssetKey("y_asset")].name == "y"
+    assert my_graph.output_defs_by_asset_key[AssetKey("x")].name == "x"
 
 
 def test_graph_asset_decorator_no_args():
@@ -500,8 +498,6 @@ def test_graph_asset_decorator_no_args():
     def my_graph(x, y):
         return my_op(x, y)
 
-    input_defs_by_asset_key = _invert_dict(my_graph.asset_keys_by_input_def)
-    output_defs_by_asset_key = _invert_dict(my_graph.asset_keys_by_output_def)
-    assert input_defs_by_asset_key[AssetKey("x")].name == "x"
-    assert input_defs_by_asset_key[AssetKey("y")].name == "y"
-    assert output_defs_by_asset_key[AssetKey("result")].name == "result"
+    assert my_graph.input_defs_by_asset_key[AssetKey("x")].name == "x"
+    assert my_graph.input_defs_by_asset_key[AssetKey("y")].name == "y"
+    assert my_graph.output_defs_by_asset_key[AssetKey("my_graph")].name == "result"
