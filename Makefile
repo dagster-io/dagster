@@ -4,11 +4,6 @@
 #   exit status. Prefix the command with "-" to instruct make to continue to the next command
 #   regardless of the preceding command's exit status.
 
-# `is_darwin` is boolean that tells us whether we're on macOS
-uname := $(shell uname -s)
-is_darwin := $(filter Darwin,$(uname))
-
-
 # NOTE: See pyproject.toml [tool.black] for majority of black config. Only include/exclude options
 # and format targets should be specified here. Note there are separate pyproject.toml for the root
 # and examples/docs_snippets.
@@ -51,13 +46,8 @@ check_isort:
 	isort --check \
     `git ls-files 'examples/docs_snippets/*.py'`
 
-# NOTE: Pylint parallelism is controlled by the `-j` option ("jobs"). Setting `-j 0` will make
-# pylint use many jobs. As of 2022-02-22, certain custom plugins, including our Dagster pylint
-# plugin `dagster.utils.linter`,  cannot be used with multiple jobs on macOS (i.e. Darwin). See:
-#   https://pylint.pycqa.org/en/latest/user_guide/run.html#parallel-execution
-#   https://github.com/PyCQA/pylint/issues/4874
 pylint:
-	pylint -j $(if $(is_darwin),1,0) \
+	pylint \
     `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' \
       'helm/*.py' 'python_modules/*.py' 'scripts/*.py' \
       ':!:examples/airflow_ingest' \
