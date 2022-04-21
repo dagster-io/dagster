@@ -591,7 +591,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
                 <>
                   <ShortcutHandler
                     shortcutLabel="⌥T"
-                    shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
+                    shortcutFilter={(e) => e.code === 'KeyT' && e.altKey}
                     onShortcut={openTagEditor}
                   >
                     <Button onClick={openTagEditor} icon={<Icon name="add_circle" />}>

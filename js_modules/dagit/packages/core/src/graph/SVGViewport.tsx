@@ -401,7 +401,12 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
       return;
     }
 
-    const dir = ({37: 'left', 38: 'up', 39: 'right', 40: 'down'} as const)[e.keyCode];
+    const dir = ({
+      ArrowLeft: 'left',
+      ArrowUp: 'up',
+      ArrowRight: 'right',
+      ArrowDown: 'down',
+    } as const)[e.code];
     if (!dir) {
       return;
     }
