@@ -1,13 +1,42 @@
 # Changelog
 
+# 0.14.10
+
+### New
+
+- [dagster-k8s] Added an `includeConfigInLaunchedRuns` flag to the Helm chart that can be used to automatically include configmaps, secrets, and volumes in any runs launched from code in a user code deployment. See https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm#configure-your-user-deployment for more information.
+- [dagit] Improved display of configuration yaml throughout Dagit, including better syntax highlighting and the addition of line numbers.
+- The GraphQL input argument type `BackfillParams` (used for launching backfills), now has an `allPartitions` boolean flag, which can be used instead of specifying all the individual partition names.
+- Removed `gevent` and `gevent-websocket` dependencies from `dagster-graphql`
+- Memoization is now supported while using step selection
+- Cleaned up various warnings across the project
+- The default IO Managers now support asset partitions
+
+### Bugfixes
+
+- Fixed `sqlite3.OperationalError` error when viewing schedules/sensors pages in Dagit. This was affecting dagit instances using the default SQLite schedule storage with a SQLite version `< 3.25.0`.
+- Fixed a bug with type-checking of the `asset_partitions` arg passed to `In`
+- Fixed an issues where schedules and sensors would sometimes fail to run when the daemon and dagit were running in different Python environments.
+- Fixed an exception when the telemetry file is empty
+- fixed a bug with `@graph` composition which would cause the wrong input definition to be used for type checks
+- [dagit] For users running Dagit with `--path-prefix`, large DAGs failed to render due to a WebWorker error, and the user would see an endless spinner instead. This has been fixed.
+- [dagit] Fixed a rendering bug in partition set selector dropdown on Launchpad.
+- [dagit] Fixed the ‘View Assets’ link in Job headers
+- Fixed an issue where root input managers with resource dependencies would not work with software defined assets
+
+### Community Contributions
+
+- `dagster-census` is a new library that includes a `census_resource` for interacting the Census REST API, `census_trigger_sync_op` for triggering a sync and registering an asset once it has finished, and a `CensusOutput` type. Thanks @dehume!
+- Docs fix. Thanks @ascrookes!
+
 # 0.14.9
 
 ### New
 
 - Added a parameter in `dagster.yaml` that can be used to increase the time that Dagster waits when spinning up a gRPC server before timing out. For more information, see https://docs.dagster.io/deployment/dagster-instance#code-servers.
-- Added a new graphQL field `assetMaterializations` that can be queried off of a `DagsterRun` field.  You can use this field to fetch the set of asset materialization events generated in a given run within a GraphQL query.
+- Added a new graphQL field `assetMaterializations` that can be queried off of a `DagsterRun` field. You can use this field to fetch the set of asset materialization events generated in a given run within a GraphQL query.
 - Docstrings on functions decorated with the `@resource` decorator will now be used as resource descriptions, if no description is explicitly provided.
-- You can now point  `dagit -m` or `dagit -f` at a module or file that has asset definitions but no jobs or asset groups, and all the asset definitions will be loaded into Dagit.
+- You can now point `dagit -m` or `dagit -f` at a module or file that has asset definitions but no jobs or asset groups, and all the asset definitions will be loaded into Dagit.
 - `AssetGroup` now has a `materialize` method which executes an in-process run to materialize all the assets in the group.
 - `AssetGroup`s can now contain assets with different `partition_defs`.
 - Asset materializations produced by the default asset IO manager, `fs_asset_io_manager`, now include the path of the file where the values were saved.
@@ -67,8 +96,8 @@
 
 ### New
 
-* [helm] Added configuration to explicitly enable or disable telemetry.
-* Added a new IO manager for materializing assets to Azure ADLS. You can specify this IO manager for your AssetGroups by using the following config:
+- [helm] Added configuration to explicitly enable or disable telemetry.
+- Added a new IO manager for materializing assets to Azure ADLS. You can specify this IO manager for your AssetGroups by using the following config:
 
 ```
 `from dagster import AssetGroup
@@ -79,28 +108,28 @@ asset_group = AssetGroup(
 )`
 ```
 
-* Added ability to set a custom start time for partitions when using `@hourly_partitioned_config` ,  `@daily_partitioned_config`, `@weekly_partitioned_config`, and `@monthly_partitioned_config`
-* Run configs generated from partitions can be retrieved using the `PartitionedConfig.get_run_config_for_partition_key` function. This will allow the use of the `validate_run_config` function in unit tests.
-* [dagit] If a run is re-executed from failure, and the run fails again, the default action will be to re-execute from the point of failure, rather than to re-execute the entire job.
-* `PartitionedConfig` now takes an argument `tags_for_partition_fn` which allows for custom run tags for a given partition.
+- Added ability to set a custom start time for partitions when using `@hourly_partitioned_config` , `@daily_partitioned_config`, `@weekly_partitioned_config`, and `@monthly_partitioned_config`
+- Run configs generated from partitions can be retrieved using the `PartitionedConfig.get_run_config_for_partition_key` function. This will allow the use of the `validate_run_config` function in unit tests.
+- [dagit] If a run is re-executed from failure, and the run fails again, the default action will be to re-execute from the point of failure, rather than to re-execute the entire job.
+- `PartitionedConfig` now takes an argument `tags_for_partition_fn` which allows for custom run tags for a given partition.
 
 ### Bugfixes
 
-* Fixed a bug in the message for reporting Kubernetes run worker failures
-* [dagit] Fixed issue where re-executing a run that materialized a single asset could end up re-executing all steps in the job.
-* [dagit] Fixed issue where the health of an asset’s partitions would not always be up to date in certain views.
-* [dagit] Fixed issue where the “Materialize All” button would be greyed out if a job had SourceAssets defined.
+- Fixed a bug in the message for reporting Kubernetes run worker failures
+- [dagit] Fixed issue where re-executing a run that materialized a single asset could end up re-executing all steps in the job.
+- [dagit] Fixed issue where the health of an asset’s partitions would not always be up to date in certain views.
+- [dagit] Fixed issue where the “Materialize All” button would be greyed out if a job had SourceAssets defined.
 
 ### Documentation
 
-* Updated resource docs to reference “ops” instead of “solids” (thanks @joe-hdai!)
-* Fixed formatting issues in the ECS docs
+- Updated resource docs to reference “ops” instead of “solids” (thanks @joe-hdai!)
+- Fixed formatting issues in the ECS docs
 
 # 0.14.6
 
 ### New
 
-* Added IO manager for materializing assets to GCS. You can specify the GCS asset IO manager by using the following config for `resource_defs` in `AssetGroup`:
+- Added IO manager for materializing assets to GCS. You can specify the GCS asset IO manager by using the following config for `resource_defs` in `AssetGroup`:
 
 ```
 `from dagster import AssetGroup, gcs_pickle_asset_io_manager, gcs_resource
@@ -110,26 +139,27 @@ asset_group = AssetGroup(
 )`
 ```
 
-* Improved the performance of storage queries run by the sensor daemon to enforce the idempotency of run keys.  This should reduce the database CPU when evaluating sensors with a large volume of run requests with run keys that repeat across evaluations.
-* [dagit] Added information on sensor ticks to show when a sensor has requested runs that did not result in the creation of a new run due to the enforcement of idempotency using run keys.
-* [k8s] Run and step workers are now labeled with the Dagster run id that they are currently handling.
-* If a step launched with a StepLauncher encounters an exception, that exception / stack trace will now appear in the event log.
+- Improved the performance of storage queries run by the sensor daemon to enforce the idempotency of run keys. This should reduce the database CPU when evaluating sensors with a large volume of run requests with run keys that repeat across evaluations.
+- [dagit] Added information on sensor ticks to show when a sensor has requested runs that did not result in the creation of a new run due to the enforcement of idempotency using run keys.
+- [k8s] Run and step workers are now labeled with the Dagster run id that they are currently handling.
+- If a step launched with a StepLauncher encounters an exception, that exception / stack trace will now appear in the event log.
 
 ### Bugfixes
 
-* Fixed a race condition where canceled backfills would resume under certain conditions.
-* Fixed an issue where exceptions that were raised during sensor and schedule execution didn’t always show a stack trace in Dagit.
-* During execution, dependencies will now resolve correctly for certain dynamic graph structures that were previously resolving incorrectly.
-* When using the forkserver start_method on the multiprocess executor, preload_modules have been adjusted to prevent libraries that change namedtuple serialization from causing unexpected exceptions.
-* Fixed a naming collision between dagster decorators and submodules that sometimes interfered with static type checkers (e.g. pyright).
-* [dagit] postgres database connection management has improved when watching actively executing runs
-* [dagster-databricks] The databricks_pyspark_step_launcher now supports steps with RetryPolicies defined, as well as `RetryRequested` exceptions.
+- Fixed a race condition where canceled backfills would resume under certain conditions.
+- Fixed an issue where exceptions that were raised during sensor and schedule execution didn’t always show a stack trace in Dagit.
+- During execution, dependencies will now resolve correctly for certain dynamic graph structures that were previously resolving incorrectly.
+- When using the forkserver start_method on the multiprocess executor, preload_modules have been adjusted to prevent libraries that change namedtuple serialization from causing unexpected exceptions.
+- Fixed a naming collision between dagster decorators and submodules that sometimes interfered with static type checkers (e.g. pyright).
+- [dagit] postgres database connection management has improved when watching actively executing runs
+- [dagster-databricks] The databricks_pyspark_step_launcher now supports steps with RetryPolicies defined, as well as `RetryRequested` exceptions.
 
 ### Community Contributions
 
-* Docs spelling fixes - thanks @antquinonez!
+- Docs spelling fixes - thanks @antquinonez!
 
 # 0.14.5
+
 ### Bugfixes
 
 - [dagit] Fixed issue where sensors could not be turned on/off in dagit.
@@ -137,6 +167,7 @@ asset_group = AssetGroup(
 - Internal code no longer triggers deprecation warnings for all runs.
 
 # 0.14.4
+
 ### New
 
 - Dagster now supports non-standard vixie-style cron strings, like `@hourly`, `@daily`, `@weekly`, and `@monthly` in addition to the standard 5-field cron strings (e.g. `* * * * *`).
@@ -188,88 +219,87 @@ asset_group = AssetGroup(
 - [dagster-airbyte] Fixed issues that could cause failures when generating asset materializations from an Airbyte API response.
 - [dagster-aws] 0.14.3 removed the ability for the `EcsRunLauncher` to use sidecars without you providing your own custom task definition. Now, you can continue to inherit sidecars from the launching task’s task definition by setting `include_sidecars: True` in your run launcher config.
 
-
 ### Breaking Changes
 
-* `dagster-snowflake` has dropped support for python 3.6. The library it is currently built on, `snowflake-connector-python,` dropped 3.6 support in their recent `2.7.5` release.
+- `dagster-snowflake` has dropped support for python 3.6. The library it is currently built on, `snowflake-connector-python,` dropped 3.6 support in their recent `2.7.5` release.
 
 ### Community Contributions
 
-* `MetadataValue.path()` and `PathMetadataValue` now accept [`os.PathLike`](https://docs.python.org/3/library/os.html#os.PathLike) objects in addition to strings. Thanks[@abkfenris](https://github.com/abkfenris)!
-* [dagster-k8s] Fixed configuration of `env_vars` on the `k8s_job_executor`. Thanks [@kervel](https://github.com/kervel)!
-* Typo fix on the Create a New Project page. Thanks [@frcode](https://github.com/frcode)!
+- `MetadataValue.path()` and `PathMetadataValue` now accept [`os.PathLike`](https://docs.python.org/3/library/os.html#os.PathLike) objects in addition to strings. Thanks[@abkfenris](https://github.com/abkfenris)!
+- [dagster-k8s] Fixed configuration of `env_vars` on the `k8s_job_executor`. Thanks [@kervel](https://github.com/kervel)!
+- Typo fix on the Create a New Project page. Thanks [@frcode](https://github.com/frcode)!
 
 ### Documentation
 
-* Concepts sections added for Op Retries and Dynamic Graphs
-* The Hacker News Assets demo now uses `AssetGroup` instead of `build_assets_job`, and it can now be run entirely from a local machine with no additional infrastructure (storing data inside DuckDB).
-* The Software-Defined Assets guide in the docs now uses `AssetGroup` instead of `build_assets_job`.
+- Concepts sections added for Op Retries and Dynamic Graphs
+- The Hacker News Assets demo now uses `AssetGroup` instead of `build_assets_job`, and it can now be run entirely from a local machine with no additional infrastructure (storing data inside DuckDB).
+- The Software-Defined Assets guide in the docs now uses `AssetGroup` instead of `build_assets_job`.
 
 # 0.14.3
 
 ### New
 
-* When using an executor that runs each op in its own process, exceptions in the Dagster system code that result in the op process failing will now be surfaced in the event log.
-* Introduced new SecretsManager resources to the dagster-aws package to enable loading secrets into Jobs more easily. For more information, see[the documentation](https://docs.dagster.io/_apidocs/libraries/dagster-aws#secretsmanager).
-* Daemon heartbeats are now processed in a batch request to the database.
-* Job definitions now contain a method called `run_request_for_partition`, which returns a `RunRequest` that can be returned in a sensor or schedule evaluation function to launch a run for a particular partition for that job.  See [our documentation](https://docs.dagster.io/concepts/partitions-schedules-sensors/partitions#creating-schedules-from-partitioned-jobs) for more information.
-* Renamed the filter class from `PipelineRunsFilter` => `RunsFilter`.
-* Assets can now be directly invoked for unit testing.
-* [dagster-dbt] `load_assets_from_dbt_project` will now attach schema information to the generated assets if it is available in the dbt project (`schema.yml`).
-* [examples] Added an [example](https://github.com/dagster-io/dagster/tree/master/examples/modern_data_stack_assets) that demonstrates using Software Defined Assets with Airbyte, dbt, and custom Python.
-* The default io manager used in the `AssetGroup` api is now the `fs_asset_io_manager`.
-* It's now possible to build a job where partitioned assets depend on partitioned assets that are maintained outside the job, and for those upstream partitions to show up on the context in the op and IOManager load_input function.
-* `SourceAsset`s can now be partitioned, by setting the `partitions_def` argument.
+- When using an executor that runs each op in its own process, exceptions in the Dagster system code that result in the op process failing will now be surfaced in the event log.
+- Introduced new SecretsManager resources to the dagster-aws package to enable loading secrets into Jobs more easily. For more information, see[the documentation](https://docs.dagster.io/_apidocs/libraries/dagster-aws#secretsmanager).
+- Daemon heartbeats are now processed in a batch request to the database.
+- Job definitions now contain a method called `run_request_for_partition`, which returns a `RunRequest` that can be returned in a sensor or schedule evaluation function to launch a run for a particular partition for that job. See [our documentation](https://docs.dagster.io/concepts/partitions-schedules-sensors/partitions#creating-schedules-from-partitioned-jobs) for more information.
+- Renamed the filter class from `PipelineRunsFilter` => `RunsFilter`.
+- Assets can now be directly invoked for unit testing.
+- [dagster-dbt] `load_assets_from_dbt_project` will now attach schema information to the generated assets if it is available in the dbt project (`schema.yml`).
+- [examples] Added an [example](https://github.com/dagster-io/dagster/tree/master/examples/modern_data_stack_assets) that demonstrates using Software Defined Assets with Airbyte, dbt, and custom Python.
+- The default io manager used in the `AssetGroup` api is now the `fs_asset_io_manager`.
+- It's now possible to build a job where partitioned assets depend on partitioned assets that are maintained outside the job, and for those upstream partitions to show up on the context in the op and IOManager load_input function.
+- `SourceAsset`s can now be partitioned, by setting the `partitions_def` argument.
 
 ### Bugfixes
 
-* Fixed an issue where run status sensors would sometimes fire multiple times for the same run if the sensor function raised an error.
-* [ECS] Previously, setting cpu/memory tags on a job would override the ECS task’s cpu/memory, but not individual containers. If you were using a custom task definition that explicitly sets a container’s cpu/memory, the container would not resize even if you resized the task. Now, setting cpu/memory tags on a job overrides both the ECS task’s cpu/memory and the container's cpu/memory.
-* [ECS] Previously, if the EcsRunLauncher launched a run from a task with multiple containers - for example if both dagit and daemon were running in the same task - then the run would be launched with too many containers. Now, the EcsRunLauncher only launches tasks with a single container.
-* Fixed an issue where the run status of job invoked through `execute_in_process` was not updated properly.
-* Fixed some storage queries that were incompatible with versions of `SQLAlchemy<1.4.0`.
-* [dagster-dbt] Fixed issue where `load_assets_from_dbt_project` would fail if models were organized into subdirectories.
-* [dagster-dbt] Fixed issue where `load_assets_from_dbt_project` would fail if seeds or snapshots were present in the project.
+- Fixed an issue where run status sensors would sometimes fire multiple times for the same run if the sensor function raised an error.
+- [ECS] Previously, setting cpu/memory tags on a job would override the ECS task’s cpu/memory, but not individual containers. If you were using a custom task definition that explicitly sets a container’s cpu/memory, the container would not resize even if you resized the task. Now, setting cpu/memory tags on a job overrides both the ECS task’s cpu/memory and the container's cpu/memory.
+- [ECS] Previously, if the EcsRunLauncher launched a run from a task with multiple containers - for example if both dagit and daemon were running in the same task - then the run would be launched with too many containers. Now, the EcsRunLauncher only launches tasks with a single container.
+- Fixed an issue where the run status of job invoked through `execute_in_process` was not updated properly.
+- Fixed some storage queries that were incompatible with versions of `SQLAlchemy<1.4.0`.
+- [dagster-dbt] Fixed issue where `load_assets_from_dbt_project` would fail if models were organized into subdirectories.
+- [dagster-dbt] Fixed issue where `load_assets_from_dbt_project` would fail if seeds or snapshots were present in the project.
 
 ### Community Contributions
 
-* [dagster-fivetran] A new fivetran_resync_op (along with a corresponding resync_and_poll method on the fivetran_resource) allows you to kick off Fivetran resyncs using Dagster (thanks [@dwallace0723](https://github.com/dwallace0723)!)
-* [dagster-shell] Fixed an issue where large log output could cause operations to hang (thanks [@kbd](https://github.com/kbd)!)
+- [dagster-fivetran] A new fivetran_resync_op (along with a corresponding resync_and_poll method on the fivetran_resource) allows you to kick off Fivetran resyncs using Dagster (thanks [@dwallace0723](https://github.com/dwallace0723)!)
+- [dagster-shell] Fixed an issue where large log output could cause operations to hang (thanks [@kbd](https://github.com/kbd)!)
 
-* [documentation] Fixed export message with dagster home path (thanks [@proteusiq](https://github.com/Proteusiq))!
-* [documentation] Remove duplicate entries under integrations (thanks [@kahnwong](https://github.com/kahnwong))!
+- [documentation] Fixed export message with dagster home path (thanks [@proteusiq](https://github.com/Proteusiq))!
+- [documentation] Remove duplicate entries under integrations (thanks [@kahnwong](https://github.com/kahnwong))!
 
 ### UI
 
-* Added a small toggle to the right of each graph on the asset details page, allowing them to be toggled on and off.
-* Full asset paths are now displayed on the asset details page.
+- Added a small toggle to the right of each graph on the asset details page, allowing them to be toggled on and off.
+- Full asset paths are now displayed on the asset details page.
 
 ### Documentation
 
-* Added API doc entries for `validate_run_config`.
-* Fixed the example code for the `reexecute_pipeline` API.
-* `TableRecord`, `TableSchema` and its constituents are now documented in the API docs.
-* Docs now correctly use new metadata names `MetadataEntry` and `MetadataValue` instead of old ones.
+- Added API doc entries for `validate_run_config`.
+- Fixed the example code for the `reexecute_pipeline` API.
+- `TableRecord`, `TableSchema` and its constituents are now documented in the API docs.
+- Docs now correctly use new metadata names `MetadataEntry` and `MetadataValue` instead of old ones.
 
 # 0.14.2
 
 ### New
 
-* Run status sensors can now be invoked in unit tests. Added `build_run_status_sensor_context` to help build context objects for run status sensors
+- Run status sensors can now be invoked in unit tests. Added `build_run_status_sensor_context` to help build context objects for run status sensors
 
 ### Bugfixes
 
-* An issue preventing the use of `default_value` on inputs has been resolved. Previously, a defensive error that did not take `default_value` in to account was thrown.
-* [dagster-aws] Fixed issue where re-emitting log records from the pyspark_step_launcher would occasionally cause a failure.
-* [dagit] The asset catalog now displays entries for materialized assets when only a subset of repositories were selected.  Previously, it only showed the software-defined assets unless all repositories were selected in Dagit.
+- An issue preventing the use of `default_value` on inputs has been resolved. Previously, a defensive error that did not take `default_value` in to account was thrown.
+- [dagster-aws] Fixed issue where re-emitting log records from the pyspark_step_launcher would occasionally cause a failure.
+- [dagit] The asset catalog now displays entries for materialized assets when only a subset of repositories were selected. Previously, it only showed the software-defined assets unless all repositories were selected in Dagit.
 
 ### Community Contributions
 
-* Fixed an invariant check in the databricks step launcher that was causing failures when setting the `local_dagster_job_package_path` config option (Thanks Iswariya Manivannan!)
+- Fixed an invariant check in the databricks step launcher that was causing failures when setting the `local_dagster_job_package_path` config option (Thanks Iswariya Manivannan!)
 
 ### Documentation
 
-* Fixed the example code in the `reconstructable` API docs.
+- Fixed the example code in the `reconstructable` API docs.
 
 # 0.14.1
 
