@@ -27,6 +27,7 @@ export const StyledButton = styled.button<StyledButtonProps>`
       ? `
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
+    margin-left: 1px;
   `
       : ''
   }
@@ -38,7 +39,6 @@ export const StyledButton = styled.button<StyledButtonProps>`
   `
       : ''
   }
-  ${$joinedSide === 'right' ? 'padding-right: 8px;' : 'margin-left: 1px;'}
   `
       : ''};
 
