@@ -76,6 +76,7 @@ class JobDefinition(PipelineDefinition):
         _op_selection_data: Optional[OpSelectionData] = None,
     ):
 
+        # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
         mode_def = ModeDefinition(
             resource_defs=resource_defs,
             logger_defs=logger_defs,
