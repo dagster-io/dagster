@@ -37,7 +37,7 @@ from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.utils import str_format_set
 
 from .config import ConfigMapping
-from .assets_info import AssetsJobInfo
+from .asset_layer import AssetLayer
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
@@ -72,8 +72,8 @@ class JobDefinition(PipelineDefinition):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
-        assets_info: Optional[AssetsJobInfo] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
+        asset_layer: Optional[AssetLayer] = None,
     ):
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
@@ -89,9 +89,6 @@ class JobDefinition(PipelineDefinition):
         self._op_selection_data = check.opt_inst_param(
             _op_selection_data, "_op_selection_data", OpSelectionData
         )
-        self._assets_info = check.opt_inst_param(
-            assets_info, "assets_nfo", AssetsJobInfo, default=AssetsJobInfo.from_graph(graph_def)
-        )
 
         super(JobDefinition, self).__init__(
             name=name,
@@ -103,6 +100,7 @@ class JobDefinition(PipelineDefinition):
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,
             version_strategy=version_strategy,
+            asset_layer=asset_layer,
         )
 
     @property
@@ -135,10 +133,6 @@ class JobDefinition(PipelineDefinition):
     @property
     def loggers(self) -> Mapping[str, LoggerDefinition]:
         return self.get_mode_definition().loggers
-
-    @property
-    def assets_info(self) -> AssetsJobInfo:
-        return self._assets_info
 
     def execute_in_process(
         self,
@@ -199,7 +193,7 @@ class JobDefinition(PipelineDefinition):
             tags=self.tags,
             op_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,
-            assets_info=self.assets_info,
+            asset_layer=self.asset_layer,
         ).get_job_def_for_op_selection(op_selection)
 
         tags = None
@@ -264,8 +258,6 @@ class JobDefinition(PipelineDefinition):
             op_retry_policy=self._solid_retry_policy,
             graph_def=sub_graph,
             version_strategy=self.version_strategy,
-            # TODO: subset this structure
-            assets_info=self.assets_info,
             _op_selection_data=OpSelectionData(
                 op_selection=op_selection,
                 resolved_op_selection=set(
@@ -273,6 +265,9 @@ class JobDefinition(PipelineDefinition):
                 ),  # equivalent to solids_to_execute. currently only gets top level nodes.
                 parent_job_def=self,  # used by pipeline snapshot lineage
             ),
+            # TODO: subset this structure.
+            # https://github.com/dagster-io/dagster/issues/7541
+            asset_layer=self.asset_layer,
         )
 
     def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
@@ -325,7 +320,7 @@ class JobDefinition(PipelineDefinition):
             hook_defs=hook_defs | self.hook_defs,
             description=self._description,
             op_retry_policy=self._solid_retry_policy,
-            assets_info=self.assets_info,
+            asset_layer=self.asset_layer,
             _op_selection_data=self._op_selection_data,
         )
 

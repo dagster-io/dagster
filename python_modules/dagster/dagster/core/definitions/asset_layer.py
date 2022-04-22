@@ -16,50 +16,44 @@ from dagster.core.definitions.events import AssetKey
 from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
 from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition
-from .partition import PartitionsDefinition
 
 if TYPE_CHECKING:
     from dagster.core.execution.context.output import OutputContext
+    from .partition import PartitionsDefinition
 
 
 class AssetOutputInfo(
     NamedTuple(
         "_AssetOutputInfo",
         [
-            ("asset_key", AssetKey),
-            ("asset_partitions_fn", Callable[["OutputContext"], Optional[AbstractSet[str]]]),
-            ("asset_partitions_def", Optional[PartitionsDefinition]),
+            ("key", AssetKey),
+            ("partitions_fn", Callable[["OutputContext"], Optional[AbstractSet[str]]]),
+            ("partitions_def", Optional["PartitionsDefinition"]),
         ],
     )
 ):
     """Defines all of the asset-related information for a given output.
 
     Args:
-        asset_key (AssetKey): The AssetKey
-        asset_partitions_fn (OutputContext -> Optional[Set[str]], optional): A function which takes the
+        key (AssetKey): The AssetKey
+        partitions_fn (OutputContext -> Optional[Set[str]], optional): A function which takes the
             current OutputContext and generates a set of partition names that will be materialized
             for this asset.
-        asset_partitions_def (PartitionsDefinition, optional): Defines the set of valid partitions
+        partitions_def (PartitionsDefinition, optional): Defines the set of valid partitions
             for this asset.
     """
 
     def __new__(
         cls,
-        asset_key: AssetKey,
-        asset_partitions_fn: Optional[
-            Callable[["OutputContext"], Optional[AbstractSet[str]]]
-        ] = None,
-        asset_partitions_def: Optional["PartitionsDefinition"] = None,
+        key: AssetKey,
+        partitions_fn: Optional[Callable[["OutputContext"], Optional[AbstractSet[str]]]] = None,
+        partitions_def: Optional["PartitionsDefinition"] = None,
     ):
         return super().__new__(
             cls,
-            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
-            asset_partitions_fn=check.opt_callable_param(
-                asset_partitions_fn, "asset_partitions_fn", lambda _: None
-            ),
-            asset_partitions_def=check.opt_inst_param(
-                asset_partitions_def, "asset_partitions_def", PartitionsDefinition
-            ),
+            key=check.inst_param(key, "key", AssetKey),
+            partitions_fn=check.opt_callable_param(partitions_fn, "partitions_fn", lambda _: None),
+            partitions_def=partitions_def,
         )
 
 
@@ -96,9 +90,9 @@ def _assets_job_info_for_node(
             if output_key:
                 output_handle = NodeOutputHandle(node_handle, output_def.name)
                 asset_info_by_output[output_handle] = AssetOutputInfo(
-                    asset_key=output_key,
-                    asset_partitions_fn=output_def.get_asset_partitions,
-                    asset_partitions_def=output_def.asset_partitions_def,
+                    key=output_key,
+                    partitions_fn=output_def.get_asset_partitions,
+                    partitions_def=output_def.asset_partitions_def,
                 )
                 # assume output depends on all inputs
                 asset_deps[output_key] = input_asset_keys
@@ -115,9 +109,9 @@ def _assets_job_info_for_node(
     return asset_key_by_input, asset_info_by_output, asset_deps
 
 
-class AssetsJobInfo:
+class AssetLayer:
     """
-    Stores all of the asset-related information for a Dagster JobDefinition. Maps each
+    Stores all of the asset-related information for a Dagster job / pipeline. Maps each
     input / output in the underlying graph to the asset it represents (if any), and records the
     dependencies between each asset.
 
@@ -155,11 +149,11 @@ class AssetsJobInfo:
         )
 
     @staticmethod
-    def from_graph(graph_def: GraphDefinition) -> "AssetsJobInfo":
+    def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
         """Scrape asset info off of InputDefinition/OutputDefinition instances"""
         check.inst_param(graph_def, "graph_def", GraphDefinition)
         asset_by_input, asset_by_output, asset_deps = _assets_job_info_for_node(graph_def, None)
-        return AssetsJobInfo(
+        return AssetLayer(
             asset_key_by_node_input_handle=asset_by_input,
             asset_info_by_node_output_handle=asset_by_output,
             asset_deps=asset_deps,
