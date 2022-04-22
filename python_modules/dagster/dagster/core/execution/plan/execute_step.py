@@ -9,11 +9,9 @@ from dagster.core.definitions import (
     AssetMaterialization,
     AssetObservation,
     ExpectationResult,
-    JobDefinition,
     Materialization,
     Output,
     OutputDefinition,
-    SolidDefinition,
     TypeCheck,
 )
 from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction

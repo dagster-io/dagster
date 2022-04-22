@@ -36,8 +36,8 @@ from dagster.core.selector.subset_selector import (
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.utils import str_format_set
 
-from .config import ConfigMapping
 from .asset_layer import AssetLayer
+from .config import ConfigMapping
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
