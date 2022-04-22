@@ -20,7 +20,6 @@ from .node_definition import NodeDefinition
 if TYPE_CHECKING:
     from dagster.core.asset_defs import AssetsDefinition
     from dagster.core.execution.context.output import OutputContext
-
     from .partition import PartitionsDefinition
 
 
