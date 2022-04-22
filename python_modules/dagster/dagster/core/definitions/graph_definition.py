@@ -460,6 +460,7 @@ class GraphDefinition(NodeDefinition):
         version_strategy: Optional[VersionStrategy] = None,
         op_selection: Optional[List[str]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
+        asset_layer: Optional["AssetLayer"] = None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -508,6 +509,8 @@ class GraphDefinition(NodeDefinition):
             partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition
                 keys that can parameterize the job. If this argument is supplied, the config
                 argument can't also be supplied.
+            asset_layer (Optional[AssetLayer]): Top level information about the assets this job
+                will produce. Generally should not be set manually.
 
         Returns:
             JobDefinition
@@ -578,6 +581,7 @@ class GraphDefinition(NodeDefinition):
             hook_defs=hooks,
             version_strategy=version_strategy,
             op_retry_policy=op_retry_policy,
+            asset_layer=asset_layer,
         ).get_job_def_for_op_selection(op_selection)
 
     def coerce_to_job(self):
