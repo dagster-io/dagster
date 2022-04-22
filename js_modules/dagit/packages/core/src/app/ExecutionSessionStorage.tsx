@@ -178,7 +178,7 @@ export function useExecutionSessionStorage(
   const oldDataMigrated = React.useRef(false);
   if (oldData && !oldDataMigrated.current) {
     onSave(oldData);
-    window.localStorage.removeItem(oldNamespace);
+    window.localStorage.removeItem(getKey(oldNamespace));
     oldDataMigrated.current = true;
   }
 
