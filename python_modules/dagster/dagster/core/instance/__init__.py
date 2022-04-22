@@ -83,13 +83,14 @@ if TYPE_CHECKING:
     from dagster.core.execution.stats import RunStepKeyStatsSnapshot
     from dagster.core.host_representation import (
         ExternalPipeline,
+        ExternalSensor,
         HistoricalPipeline,
         RepositoryLocation,
     )
     from dagster.core.launcher import RunLauncher
     from dagster.core.run_coordinator import RunCoordinator
     from dagster.core.scheduler import Scheduler
-    from dagster.core.scheduler.instigation import InstigatorTick, TickStatus
+    from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick, TickStatus
     from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
     from dagster.core.storage.compute_log_manager import ComputeLogManager
     from dagster.core.storage.event_log import EventLogStorage
@@ -1806,7 +1807,7 @@ records = instance.get_event_records(
 
     # Schedule / Sensor Storage
 
-    def start_sensor(self, external_sensor):
+    def start_sensor(self, external_sensor: "ExternalSensor"):
         from dagster.core.definitions.run_request import InstigatorType
         from dagster.core.scheduler.instigation import (
             InstigatorState,
@@ -1814,18 +1815,15 @@ records = instance.get_event_records(
             SensorInstigatorData,
         )
 
-        state = self.get_instigator_state(
+        stored_state = self.get_instigator_state(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
 
-        if external_sensor.get_current_instigator_state(state).is_running:
-            raise Exception(
-                "You have attempted to start sensor {name}, but it is already running".format(
-                    name=external_sensor.name
-                )
-            )
+        computed_state = external_sensor.get_current_instigator_state(stored_state)
+        if computed_state.is_running:
+            return computed_state
 
-        if not state:
+        if not stored_state:
             return self.add_instigator_state(
                 InstigatorState(
                     external_sensor.get_external_origin(),
@@ -1835,9 +1833,14 @@ records = instance.get_event_records(
                 )
             )
         else:
-            return self.update_instigator_state(state.with_status(InstigatorStatus.RUNNING))
+            return self.update_instigator_state(stored_state.with_status(InstigatorStatus.RUNNING))
 
-    def stop_sensor(self, instigator_origin_id, selector_id, external_sensor):
+    def stop_sensor(
+        self,
+        instigator_origin_id: str,
+        selector_id: str,
+        external_sensor: Optional["ExternalSensor"],
+    ):
         from dagster.core.definitions.run_request import InstigatorType
         from dagster.core.scheduler.instigation import (
             InstigatorState,
@@ -1845,9 +1848,16 @@ records = instance.get_event_records(
             SensorInstigatorData,
         )
 
-        state = self.get_instigator_state(instigator_origin_id, selector_id)
+        stored_state = self.get_instigator_state(instigator_origin_id, selector_id)
+        if external_sensor:
+            computed_state = external_sensor.get_current_instigator_state(stored_state)
+        else:
+            computed_state = stored_state
 
-        if not state:
+        if not computed_state.is_running:
+            return computed_state
+
+        if not stored_state:
             assert external_sensor
             return self.add_instigator_state(
                 InstigatorState(
@@ -1858,7 +1868,7 @@ records = instance.get_event_records(
                 )
             )
         else:
-            return self.update_instigator_state(state.with_status(InstigatorStatus.STOPPED))
+            return self.update_instigator_state(stored_state.with_status(InstigatorStatus.STOPPED))
 
     @traced
     def all_instigator_state(
@@ -1869,13 +1879,19 @@ records = instance.get_event_records(
         )
 
     @traced
-    def get_instigator_state(self, origin_id, selector_id):
+    def get_instigator_state(self, origin_id: str, selector_id: str) -> Optional["InstigatorState"]:
+        if not self._schedule_storage:
+            check.failed("Schedule storage not available")
         return self._schedule_storage.get_instigator_state(origin_id, selector_id)
 
-    def add_instigator_state(self, state):
+    def add_instigator_state(self, state: "InstigatorState") -> "InstigatorState":
+        if not self._schedule_storage:
+            check.failed("Schedule storage not available")
         return self._schedule_storage.add_instigator_state(state)
 
-    def update_instigator_state(self, state):
+    def update_instigator_state(self, state: "InstigatorState") -> "InstigatorState":
+        if not self._schedule_storage:
+            check.failed("Schedule storage not available")
         return self._schedule_storage.update_instigator_state(state)
 
     def delete_instigator_state(self, origin_id, selector_id):
