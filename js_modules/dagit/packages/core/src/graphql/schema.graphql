@@ -1090,6 +1090,12 @@ type Resource {
   name: String!
   description: String
   configField: ConfigTypeField
+  source: ResourceSource
+}
+
+enum ResourceSource {
+  FROM_OVERRIDE
+  FROM_DEFAULT
 }
 
 type Logger {

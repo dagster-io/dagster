@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { GraphSelector } from "./../../types/globalTypes";
+import { GraphSelector, ResourceSource } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: GraphExplorerRootQuery
@@ -473,6 +473,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources {
   name: string;
   description: string | null;
   configField: GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField | null;
+  source: ResourceSource | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {

@@ -14,6 +14,7 @@ from typing import (
     cast,
     overload,
 )
+from enum import Enum
 
 from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description

@@ -23,7 +23,7 @@ from dagster.config.validate import validate_config
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.definitions.policy import RetryPolicy
-from dagster.core.definitions.resource_definition import ResourceDefinition
+from dagster.core.definitions.resource_definition import ResourceDefinition, ResourceSource
 from dagster.core.definitions.utils import check_valid_name
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import io_manager
@@ -461,6 +461,7 @@ class GraphDefinition(NodeDefinition):
         op_selection: Optional[List[str]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         partial: Optional[bool] = False,
+        _resource_sources: Optional[Dict[str, ResourceSource]] = None,
     ) -> Union["JobDefinition", "PartialJobDefinition"]:
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -566,6 +567,7 @@ class GraphDefinition(NodeDefinition):
             )
 
         if partial:
+            check.invariant(not _resource_sources)
             return PartialJobDefinition(
                 name=job_name,
                 description=description or self.description,
@@ -580,6 +582,10 @@ class GraphDefinition(NodeDefinition):
                 hook_defs=hooks,
                 version_strategy=version_strategy,
                 op_retry_policy=op_retry_policy,
+                resource_sources={
+                    name: ResourceSource("FROM_OVERRIDE")
+                    for name in resource_defs_with_defaults.keys()
+                },
             ).get_job_def_for_op_selection(op_selection)
         else:
             return JobDefinition(
@@ -596,6 +602,7 @@ class GraphDefinition(NodeDefinition):
                 hook_defs=hooks,
                 version_strategy=version_strategy,
                 op_retry_policy=op_retry_policy,
+                _resource_sources=_resource_sources,
             ).get_job_def_for_op_selection(op_selection)
 
     def coerce_to_job(self):

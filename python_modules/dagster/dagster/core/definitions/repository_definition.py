@@ -26,7 +26,7 @@ from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .job_definition import JobDefinition, PartialJobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
-from .resource_definition import ResourceDefinition
+from .resource_definition import ResourceDefinition, ResourceSource
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
 from .utils import check_valid_name
@@ -745,8 +745,14 @@ class CachingRepositoryData(RepositoryData):
             else:
                 pipelines[name] = pipeline_or_job
 
+        default_resources_dict = default_resources_dict or {}
         for name, graph_def in graph_defs.items():
-            coerced_with_defaults = graph_def.to_job(resource_defs=default_resources_dict)
+            coerced_with_defaults = graph_def.to_job(
+                resource_defs=default_resources_dict,
+                _resource_sources={
+                    name: ResourceSource("FROM_DEFAULT") for name in default_resources_dict.keys()
+                },
+            )
             if name in jobs:
                 check.failed(
                     f"Error when coercing graph '{name}' to job: A job already exists with name '{name}'."
@@ -759,7 +765,10 @@ class CachingRepositoryData(RepositoryData):
 
         for name, partial_job_def in partial_job_defs.items():
             job_def_defaults_applied = partial_job_def.coerce_to_job_def(
-                resource_defs=default_resources_dict or {}
+                resource_defs=default_resources_dict,
+                resource_sources={
+                    name: ResourceSource("FROM_DEFAULT") for name in default_resources_dict.keys()
+                },
             )
             jobs[name] = job_def_defaults_applied
 

@@ -24,6 +24,7 @@ export const SidebarModeSection: React.FC<{
           <div>
             <ContextResourceHeader>{resource.name}</ContextResourceHeader>
             <Description description={resource.description || NO_DESCRIPTION} />
+            <Description description={resource.source || NO_DESCRIPTION} />
             {resource.configField && (
               <ConfigTypeSchema
                 type={resource.configField.configType}
@@ -68,6 +69,7 @@ export const SIDEBAR_MODE_INFO_FRAGMENT = gql`
           }
         }
       }
+      source
     }
     loggers {
       name

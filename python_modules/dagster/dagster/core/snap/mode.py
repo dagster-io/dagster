@@ -99,7 +99,7 @@ class ResourceDefSnap(
         name: str,
         description: Optional[str],
         config_field_snap: Optional[ConfigFieldSnap],
-        source: Optional[str] = None,
+        source: Optional[ResourceSource] = None,
     ):
         return super(ResourceDefSnap, cls).__new__(
             cls,

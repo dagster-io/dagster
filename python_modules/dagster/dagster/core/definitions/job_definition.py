@@ -482,8 +482,13 @@ class PartialJobDefinition(NamedTuple):
     op_retry_policy: Optional[RetryPolicy] = None
     version_strategy: Optional[VersionStrategy] = None
     op_selection_data: Optional[OpSelectionData] = None
+    resource_sources: Optional[Dict[str, ResourceSource]] = None
 
-    def coerce_to_job_def(self, resource_defs: Dict[str, ResourceDefinition]) -> JobDefinition:
+    def coerce_to_job_def(
+        self,
+        resource_defs: Dict[str, ResourceDefinition],
+        resource_sources: Optional[Dict[str, ResourceSource]],
+    ) -> JobDefinition:
         override_resource_defs = self.resource_defs
         loggers = self.loggers
         executor_def = self.executor_defs[0] if self.executor_defs else None
@@ -492,16 +497,14 @@ class PartialJobDefinition(NamedTuple):
             resource_defs, override_resource_defs if override_resource_defs else {}
         )
 
-        mode_def = ModeDefinition(
-            resource_defs=resource_defs,
-            logger_defs=self.loggers,
-            executor_defs=self.executor_defs,
-            _config_mapping=self.config_mapping,
-            _partitioned_config=self.partitioned_config,
-        )
+        resource_sources = merge_dicts(resource_sources or {}, self.resource_sources or {})
 
         return JobDefinition(
-            mode_def=mode_def,
+            resource_defs=resource_defs,
+            logger_defs=self.loggers,
+            executor_def=executor_def,
+            config_mapping=self.config_mapping,
+            partitioned_config=self.partitioned_config,
             graph_def=self.graph_def,
             name=self.name,
             description=self.description,
@@ -511,6 +514,7 @@ class PartialJobDefinition(NamedTuple):
             op_retry_policy=self.op_retry_policy,
             version_strategy=self.version_strategy,
             _op_selection_data=self.op_selection_data,
+            _resource_sources=resource_sources,
         )
 
     def get_job_def_for_op_selection(

@@ -127,6 +127,11 @@ export enum RepositoryLocationLoadStatus {
   LOADING = "LOADING",
 }
 
+export enum ResourceSource {
+  FROM_DEFAULT = "FROM_DEFAULT",
+  FROM_OVERRIDE = "FROM_OVERRIDE",
+}
+
 export enum RunStatus {
   CANCELED = "CANCELED",
   CANCELING = "CANCELING",
