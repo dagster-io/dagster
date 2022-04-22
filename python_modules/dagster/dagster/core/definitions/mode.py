@@ -7,7 +7,7 @@ from dagster.utils.merger import merge_dicts
 
 from .config import ConfigMapping
 from .logger_definition import LoggerDefinition
-from .resource_definition import ResourceDefinition
+from .resource_definition import ResourceDefinition, ResourceSource
 from .utils import check_valid_name
 
 DEFAULT_MODE_NAME = "default"
@@ -27,6 +27,7 @@ class ModeDefinition(
             ("description", Optional[str]),
             ("config_mapping", Optional[ConfigMapping]),
             ("partitioned_config", Optional["PartitionedConfig"]),
+            ("resource_sources", Optional[Dict[str, ResourceSource]]),
         ],
     )
 ):
@@ -49,6 +50,7 @@ class ModeDefinition(
         description (Optional[str]): A human-readable description of the mode.
         _config_mapping (Optional[ConfigMapping]): Only for internal use.
         _partitions (Optional[PartitionedConfig]): Only for internal use.
+        _resource_sources (Optional[Dict[str, ResourceSource]]): Only for internal use.
     """
 
     def __new__(
@@ -60,6 +62,7 @@ class ModeDefinition(
         description: Optional[str] = None,
         _config_mapping: Optional[ConfigMapping] = None,
         _partitioned_config: Optional["PartitionedConfig"] = None,
+        _resource_sources: Optional[Dict[str, ResourceSource]] = None,
     ):
 
         from .partition import PartitionedConfig
@@ -100,6 +103,9 @@ class ModeDefinition(
             config_mapping=check.opt_inst_param(_config_mapping, "_config_mapping", ConfigMapping),
             partitioned_config=check.opt_inst_param(
                 _partitioned_config, "_partitioned_config", PartitionedConfig
+            ),
+            resource_sources=check.opt_dict_param(
+                _resource_sources, "_resource_sources", key_type=str, value_type=ResourceSource
             ),
         )
 

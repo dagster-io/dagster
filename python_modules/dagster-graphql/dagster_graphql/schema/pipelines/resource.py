@@ -10,11 +10,12 @@ class GrapheneResource(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     configField = graphene.Field(GrapheneConfigTypeField)
+    source = graphene.NonNull(GrapheneResourceSource)
 
     class Meta:
         name = "Resource"
 
-    def __init__(self, config_schema_snapshot, resource_def_snap):
+    def __init__(self, config_schema_snapshot, resource_def_snap, resource_source):
         super().__init__()
         self._config_schema_snapshot = check.inst_param(
             config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
@@ -24,6 +25,7 @@ class GrapheneResource(graphene.ObjectType):
         )
         self.name = resource_def_snap.name
         self.description = resource_def_snap.description
+        self.source = resource_def_snap.source
 
     def resolve_configField(self, _graphene_info):
         if (
@@ -39,3 +41,8 @@ class GrapheneResource(graphene.ObjectType):
             )
 
         return None
+
+
+class GrapheneResourceSource(graphene.Enum):
+    FROM_OVERRIDE = "FROM_OVERRIDE"
+    FROM_DEFAULT = "FROM_DEFAULT"

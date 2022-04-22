@@ -1,9 +1,15 @@
 # Contains mode, resources, loggers
-from typing import List, NamedTuple, Optional
+from typing import List, NamedTuple, Optional, cast
+from enum import Enum
 
 from dagster import check
 from dagster.config.snap import ConfigFieldSnap, snap_from_field
-from dagster.core.definitions import LoggerDefinition, ModeDefinition, ResourceDefinition
+from dagster.core.definitions import (
+    LoggerDefinition,
+    ModeDefinition,
+    ResourceDefinition,
+    ResourceSource,
+)
 from dagster.serdes import whitelist_for_serdes
 
 
@@ -15,7 +21,10 @@ def build_mode_def_snap(mode_def, root_config_key):
         name=mode_def.name,
         description=mode_def.description,
         resource_def_snaps=sorted(
-            [build_resource_def_snap(name, rd) for name, rd in mode_def.resource_defs.items()],
+            [
+                build_resource_def_snap(name, rd, mode_def.resource_sources[name])
+                for name, rd in mode_def.resource_defs.items()
+            ],
             key=lambda item: item.name,
         ),
         logger_def_snaps=sorted(
@@ -61,7 +70,7 @@ class ModeDefSnap(
         )
 
 
-def build_resource_def_snap(name, resource_def):
+def build_resource_def_snap(name, resource_def, source):
     check.str_param(name, "name")
     check.inst_param(resource_def, "resource_def", ResourceDefinition)
     return ResourceDefSnap(
@@ -81,11 +90,16 @@ class ResourceDefSnap(
             ("name", str),
             ("description", Optional[str]),
             ("config_field_snap", Optional[ConfigFieldSnap]),
+            ("source", ResourceSource),
         ],
     )
 ):
     def __new__(
-        cls, name: str, description: Optional[str], config_field_snap: Optional[ConfigFieldSnap]
+        cls,
+        name: str,
+        description: Optional[str],
+        config_field_snap: Optional[ConfigFieldSnap],
+        source: Optional[str] = None,
     ):
         return super(ResourceDefSnap, cls).__new__(
             cls,
@@ -93,6 +107,12 @@ class ResourceDefSnap(
             description=check.opt_str_param(description, "description"),
             config_field_snap=check.opt_inst_param(
                 config_field_snap, "config_field_snap", ConfigFieldSnap
+            ),
+            source=cast(
+                ResourceSource,
+                check.opt_inst_param(
+                    source, "source", ResourceSource, default=ResourceSource.FROM_OVERRIDE
+                ),
             ),
         )
 

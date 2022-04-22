@@ -47,7 +47,7 @@ from .mode import ModeDefinition
 from .partition import PartitionSetDefinition, PartitionedConfig
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
-from .resource_definition import ResourceDefinition
+from .resource_definition import ResourceDefinition, ResourceSource
 from .run_request import RunRequest
 from .version_strategy import VersionStrategy
 
@@ -75,6 +75,7 @@ class JobDefinition(PipelineDefinition):
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
+        _resource_sources: Optional[Dict[str, ResourceSource]] = None,
     ):
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
@@ -84,6 +85,7 @@ class JobDefinition(PipelineDefinition):
             executor_defs=[executor_def] if executor_def else None,
             _config_mapping=config_mapping,
             _partitioned_config=partitioned_config,
+            _resource_sources=_resource_sources,
         )
 
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None

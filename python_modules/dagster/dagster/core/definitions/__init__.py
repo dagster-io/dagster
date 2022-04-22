@@ -110,7 +110,7 @@ from .reconstruct import (
     reconstructable,
 )
 from .repository_definition import RepositoryData, RepositoryDefinition
-from .resource_definition import ResourceDefinition, make_values_resource, resource
+from .resource_definition import ResourceDefinition, make_values_resource, resource, ResourceSource
 from .run_config_schema import RunConfigSchema, create_run_config_schema
 from .run_request import InstigatorType, RunRequest, SkipReason
 from .run_status_sensor_definition import (
