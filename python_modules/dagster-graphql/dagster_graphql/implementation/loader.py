@@ -1,7 +1,7 @@
 from collections import defaultdict
 from enum import Enum
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
 from dagster import DagsterInstance, check
 from dagster.core.definitions.events import AssetKey
