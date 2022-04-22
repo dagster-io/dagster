@@ -594,10 +594,12 @@ class PartitionSetDefinition(Generic[T]):
                 yield SkipReason("Partition selector returned an empty list of partitions.")
                 return
 
+            partition_names = self.get_partition_names(context.scheduled_execution_time)
+
             missing_partition_names = [
                 partition.name
                 for partition in selected_partitions
-                if partition.name not in self.get_partition_names(context.scheduled_execution_time)
+                if partition.name not in partition_names
             ]
 
             if missing_partition_names:

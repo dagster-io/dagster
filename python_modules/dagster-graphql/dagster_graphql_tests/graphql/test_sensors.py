@@ -429,10 +429,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             variables={"sensorSelector": sensor_selector},
         )
 
-        assert (
-            "You have attempted to start sensor running_in_code_sensor, but it is already running"
-            in start_result.data["startSensor"]["message"]
-        )
+        assert start_result.data["startSensor"]["sensorState"]["status"] == "RUNNING"
 
         stop_result = execute_dagster_graphql(
             graphql_context,

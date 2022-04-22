@@ -1,5 +1,16 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, List, Optional, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    FrozenSet,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Union,
+)
 
 from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
@@ -235,7 +246,7 @@ class PipelineDefinition:
                 mode_def,
                 self._current_level_node_defs,
                 self._graph_def._dagster_type_dict,
-                self._graph_def._node_dict,
+                self._graph_def.node_dict,
                 self._hook_defs,
                 self._graph_def._dependency_structure,
             )
@@ -694,11 +705,18 @@ def _get_pipeline_subset_def(
         ) from exc
 
 
+def _iterate_all_nodes(root_node_dict: Dict[str, Node]) -> Iterator[Node]:
+    for node in root_node_dict.values():
+        yield node
+        if node.is_graph:
+            yield from _iterate_all_nodes(node.definition.ensure_graph_def().node_dict)
+
+
 def _checked_resource_reqs_for_mode(
     mode_def: ModeDefinition,
     node_defs: List[NodeDefinition],
     dagster_type_dict: Dict[str, DagsterType],
-    solid_dict: Dict[str, Node],
+    root_node_dict: Dict[str, Node],
     pipeline_hook_defs: AbstractSet[HookDefinition],
     dependency_structure: DependencyStructure,
 ) -> Set[str]:
@@ -751,11 +769,11 @@ def _checked_resource_reqs_for_mode(
 
     # Validate unsatisfied inputs can be materialized from config
     resource_reqs.update(
-        _checked_input_resource_reqs_for_mode(dependency_structure, solid_dict, mode_def)
+        _checked_input_resource_reqs_for_mode(dependency_structure, root_node_dict, mode_def)
     )
 
-    for solid in solid_dict.values():
-        for hook_def in solid.hook_defs:
+    for node in _iterate_all_nodes(root_node_dict):
+        for hook_def in node.hook_defs:
             for required_resource in hook_def.required_resource_keys:
                 resource_reqs.add(required_resource)
                 if required_resource not in mode_resources:
