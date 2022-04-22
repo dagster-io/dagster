@@ -1,6 +1,15 @@
 # Changelog
 
+# 0.14.11
+
+### Bugfixes
+
+* Fixed an issue where schedules created from partition sets that launched runs for multiple partitions in a single schedule tick would sometimes time out while generating runs in the scheduler.
+* Fixed an issue where the Launchpad in Dagit sometimes incorrectly launched in an empty state.
+* Fixed an issue where nested graphs would sometimes incorrectly determine the set of required resources for a hook.
+
 # 0.14.10
+
 ### New
 
 * [dagster-k8s] Added an `includeConfigInLaunchedRuns` flag to the Helm chart that can be used to automatically include configmaps, secrets, and volumes in any runs launched from code in a user code deployment. See https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm#configure-your-user-deployment for more information.
@@ -9,7 +18,7 @@
 * Removed `gevent` and `gevent-websocket` dependencies from `dagster-graphql`
 * Memoization is now supported while using step selection
 * Cleaned up various warnings across the project
-* The default IO Managers now support asset partitions 
+* The default IO Managers now support asset partitions
 
 ### Bugfixes
 
