@@ -99,7 +99,9 @@ def is_release_branch(branch_name: str):
 
 
 def get_python_versions_for_branch(pr_versions=None):
-    pr_versions = pr_versions if pr_versions != None else [SupportedPython.V3_9]
+    pr_versions = (
+        pr_versions if pr_versions != None else [SupportedPython.V3_6, SupportedPython.V3_9]
+    )
 
     # Run one representative version on PRs, the full set of python versions on master after
     # landing and on release branches before shipping
