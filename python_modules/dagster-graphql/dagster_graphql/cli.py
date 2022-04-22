@@ -147,7 +147,7 @@ PREDEFINED_QUERIES = {
 @click.option(
     "--predefined",
     "-p",
-    type=click.Choice(PREDEFINED_QUERIES.keys()),
+    type=click.Choice(list(PREDEFINED_QUERIES.keys())),
     help="GraphQL document to execute, from a predefined set provided by dagster-graphql.",
 )
 @click.option(

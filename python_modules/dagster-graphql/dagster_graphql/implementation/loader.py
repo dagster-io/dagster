@@ -397,7 +397,7 @@ class CrossRepoAssetDependedByLoader:
 
     def get_sink_asset(self, asset_key: AssetKey) -> ExternalAssetNode:
         sink_assets, _ = self._build_cross_repo_deps()
-        return sink_assets.get(asset_key)
+        return sink_assets[asset_key]
 
     def get_cross_repo_dependent_assets(
         self, repository_location_name: str, repository_name: str, asset_key: AssetKey
