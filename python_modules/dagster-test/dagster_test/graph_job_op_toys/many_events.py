@@ -71,8 +71,8 @@ def input_name_for_raw_file(raw_file):
 
 
 @op(
-    ins={"start": In(Nothing)},  # type: ignore
-    out=Out(dagster_type=Nothing),  # type: ignore
+    ins={"start": In(Nothing)},
+    out=Out(dagster_type=Nothing),
     description="Load a bunch of raw tables from corresponding files",
 )
 def many_table_materializations(_context):
@@ -94,8 +94,8 @@ def many_table_materializations(_context):
 
 
 @op(
-    ins={"start": In(Nothing)},  # type: ignore
-    out=Out(Nothing),  # type: ignore
+    ins={"start": In(Nothing)},
+    out=Out(Nothing),
     description="This simulates a op that would wrap something like dbt, "
     "where it emits a bunch of tables and then say an expectation on each table, "
     "all in one op",
@@ -127,8 +127,8 @@ def many_materializations_and_passing_expectations(_context):
 
 
 @op(
-    ins={"start": In(Nothing)},  # type: ignore
-    out=Out(dagster_type=Nothing),  # type: ignore
+    ins={"start": In(Nothing)},
+    out=Out(dagster_type=Nothing),
     description="A op that just does a couple inline expectations, one of which fails",
 )
 def check_users_and_groups_one_fails_one_succeeds(_context):
@@ -162,8 +162,8 @@ def check_users_and_groups_one_fails_one_succeeds(_context):
 
 
 @op(
-    ins={"start": In(Nothing)},  # type: ignore
-    out=Out(dagster_type=Nothing),  # type: ignore
+    ins={"start": In(Nothing)},
+    out=Out(dagster_type=Nothing),
     description="An op that just does a couple inline expectations",
 )
 def check_admins_both_succeed(_context):
