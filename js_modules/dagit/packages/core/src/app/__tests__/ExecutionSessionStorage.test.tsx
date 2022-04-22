@@ -85,5 +85,19 @@ describe('ExecutionSessionStorage', () => {
 
     // old key is deleted
     expect(window.localStorage.getItem(oldFormat)).toEqual(null);
+
+    // Render it again, expect the data to still be there
+
+    render(
+      <TestProvider>
+        <TestComponent />
+      </TestProvider>,
+    );
+
+    // Its at the new key
+    expect(JSON.parse(window.localStorage.getItem(newFormat) as any)).toEqual(testData);
+
+    // old key is deleted
+    expect(window.localStorage.getItem(oldFormat)).toEqual(null);
   });
 });
