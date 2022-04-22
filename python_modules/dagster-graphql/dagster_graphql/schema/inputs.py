@@ -209,6 +209,22 @@ class GrapheneExecutionParams(graphene.InputObjectType):
         name = "ExecutionParams"
 
 
+class GrapheneReexecutionPolicy(graphene.Enum):
+    FROM_FAILURE = "FROM_FAILURE"
+    ALL_OPS = "ALL_OPS"
+
+    class Meta:
+        name = "ReexecutionPolicy"
+
+
+class GrapheneReexecutionParams(graphene.InputObjectType):
+    parentRunId = graphene.NonNull(graphene.String)
+    policy = graphene.NonNull(GrapheneReexecutionPolicy)
+
+    class Meta:
+        name = "ReexecutionParams"
+
+
 class GrapheneMarshalledInput(graphene.InputObjectType):
     input_name = graphene.NonNull(graphene.String)
     key = graphene.NonNull(graphene.String)

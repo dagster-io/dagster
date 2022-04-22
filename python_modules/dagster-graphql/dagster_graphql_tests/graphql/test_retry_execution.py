@@ -16,6 +16,7 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import poll_for_finished_run
 from dagster.core.utils import make_new_run_id
+from dagster.seven.temp_dir import get_system_temp_directory
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .setup import csv_hello_world_solids_config, get_retry_multi_execution_params, retry_config
@@ -499,6 +500,93 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         ]["messages"]
         assert step_did_succeed(logs, "hard_fail_or_0")
         assert step_did_succeed(logs, "increment")
+
+    def test_retry_hard_failure_with_reexecution_params(self, graphql_context):
+        """
+        Test with providng reexecutionParams rather than executionParams
+        """
+        selector = infer_pipeline_selector(graphql_context, "chained_failure_pipeline")
+
+        # trigger failure in the conditionally_fail solid
+        output_file = os.path.join(
+            get_system_temp_directory(), "chained_failure_pipeline_conditionally_fail"
+        )
+        try:
+            with open(output_file, "w"):
+                result = execute_dagster_graphql_and_finish_runs(
+                    graphql_context,
+                    LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                    variables={
+                        "executionParams": {
+                            "mode": "default",
+                            "selector": selector,
+                        }
+                    },
+                )
+        finally:
+            os.remove(output_file)
+
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.FAILURE
+
+        retry = execute_dagster_graphql_and_finish_runs(
+            graphql_context,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+            variables={"reexecutionParams": {"parentRunId": run_id, "policy": "FROM_FAILURE"}},
+        )
+
+        run_id = retry.data["launchPipelineReexecution"]["run"]["runId"]
+        assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
+        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
+            "pipelineRunLogs"
+        ]["messages"]
+        assert step_did_not_run(logs, "always_succeed")
+        assert step_did_succeed(logs, "conditionally_fail")
+        assert step_did_succeed(logs, "after_failure")
+
+    def test_retry_hard_failure_with_reexecution_params_run_config_changed(self, graphql_context):
+        """
+        Test that reexecution fails if the run config changes
+        """
+        selector = infer_pipeline_selector(graphql_context, "chained_failure_pipeline")
+
+        # trigger failure in the conditionally_fail solid
+        output_file = os.path.join(
+            get_system_temp_directory(), "chained_failure_pipeline_conditionally_fail"
+        )
+        try:
+            with open(output_file, "w"):
+                result = execute_dagster_graphql_and_finish_runs(
+                    graphql_context,
+                    LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                    variables={
+                        "executionParams": {
+                            "mode": "default",
+                            "selector": selector,
+                        }
+                    },
+                )
+        finally:
+            os.remove(output_file)
+
+        parent_run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        parent_run = graphql_context.instance.get_run_by_id(parent_run_id)
+        assert parent_run.status == PipelineRunStatus.FAILURE
+
+        # override run config to make it fail
+        graphql_context.instance.delete_run(parent_run_id)
+        graphql_context.instance.add_run(parent_run._replace(run_config={"bad": "config"}))
+
+        retry = execute_dagster_graphql_and_finish_runs(
+            graphql_context,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+            variables={
+                "reexecutionParams": {"parentRunId": parent_run_id, "policy": "FROM_FAILURE"}
+            },
+        )
+        assert "DagsterInvalidConfigError" in str(
+            retry.data["launchPipelineReexecution"]["message"]
+        )
 
 
 def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
