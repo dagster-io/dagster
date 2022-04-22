@@ -176,9 +176,9 @@ export function useExecutionSessionStorage(
 
   // TODO: Remove this migration logic in a few patches when we know the old namespace is likely no longer being used
   const oldDataMigrated = React.useRef(false);
-  if (oldData && !oldDataMigrated.current) {
+  if (!oldDataMigrated.current) {
     onSave(oldData);
-    window.localStorage.removeItem(getKey(oldNamespace));
+    window.localStorage.removeItem(oldNamespace);
     oldDataMigrated.current = true;
   }
 
