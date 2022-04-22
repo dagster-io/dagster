@@ -59,7 +59,7 @@ describe('ExecutionSessionStorage', () => {
     window.localStorage = originalLocalStorage;
   });
 
-  it('Migates old localStorage data from old format', () => {
+  it('Migrates old localStorage data from old format', () => {
     const testData = {sessions: {test: 'test'}, current: 'test'};
     const oldFormat = oldKeyFormat(REPO_ADDRESS, PIPELINE);
     const newFormat = newKeyFormat(BASE_PATH, REPO_ADDRESS, PIPELINE);
