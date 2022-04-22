@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Sequence, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union
 
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
