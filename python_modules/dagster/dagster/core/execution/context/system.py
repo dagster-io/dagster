@@ -730,10 +730,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         - The output asset has no partitioning.
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
         """
-        asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
+        partitions_def = self.pipeline_def.asset_layer.asset_info_for_output(
             self.solid_handle, output_name
-        )
-        partitions_def = asset_info.partitions_def if asset_info else None
+        ).partitions_def
 
         if not partitions_def:
             raise ValueError(

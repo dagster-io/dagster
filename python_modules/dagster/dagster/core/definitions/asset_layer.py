@@ -58,7 +58,7 @@ class AssetOutputInfo(
         )
 
 
-def _assets_job_info_for_node(
+def _asset_mappings_for_node(
     node_def: NodeDefinition, node_handle: Optional[NodeHandle]
 ) -> Tuple[
     Mapping[NodeInputHandle, AssetKey],
@@ -86,7 +86,7 @@ def _assets_job_info_for_node(
             input_key = input_def.hardcoded_asset_key
             if input_key:
                 input_asset_keys.add(input_key)
-                input_handle = NodeInputHandle(node_handle, input_def.name)
+                input_handle = NodeInputHandle(node_handle=node_handle, input_name=input_def.name)
                 asset_key_by_input[input_handle] = input_key
 
         for output_def in node_def.output_defs:
@@ -103,7 +103,7 @@ def _assets_job_info_for_node(
     else:
         # keep recursing through structure
         for sub_node_name, sub_node in node_def.node_dict.items():
-            n_asset_key_by_input, n_asset_info_by_output, n_asset_deps = _assets_job_info_for_node(
+            n_asset_key_by_input, n_asset_info_by_output, n_asset_deps = _asset_mappings_for_node(
                 node_def=sub_node.definition,
                 node_handle=NodeHandle(sub_node_name, parent=node_handle),
             )
@@ -131,15 +131,15 @@ class AssetLayer:
 
     def __init__(
         self,
-        asset_key_by_node_input_handle: Optional[Mapping[NodeInputHandle, AssetKey]] = None,
+        asset_keys_by_node_input_handle: Optional[Mapping[NodeInputHandle, AssetKey]] = None,
         asset_info_by_node_output_handle: Optional[
             Mapping[NodeOutputHandle, AssetOutputInfo]
         ] = None,
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
     ):
-        self._asset_key_by_node_input_handle = check.opt_dict_param(
-            asset_key_by_node_input_handle,
-            "asset_key_by_node_input_handle",
+        self._asset_keys_by_node_input_handle = check.opt_dict_param(
+            asset_keys_by_node_input_handle,
+            "asset_keys_by_node_input_handle",
             key_type=NodeInputHandle,
             value_type=AssetKey,
         )
@@ -157,10 +157,52 @@ class AssetLayer:
     def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
         """Scrape asset info off of InputDefinition/OutputDefinition instances"""
         check.inst_param(graph_def, "graph_def", GraphDefinition)
-        asset_by_input, asset_by_output, asset_deps = _assets_job_info_for_node(graph_def, None)
+        asset_by_input, asset_by_output, asset_deps = _asset_mappings_for_node(graph_def, None)
         return AssetLayer(
-            asset_key_by_node_input_handle=asset_by_input,
+            asset_keys_by_node_input_handle=asset_by_input,
             asset_info_by_node_output_handle=asset_by_output,
+            asset_deps=asset_deps,
+        )
+
+    @staticmethod
+    def from_graph_and_assets_node_mapping(
+        graph_def: GraphDefinition,
+        assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
+    ) -> "AssetLayer":
+        """
+        Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
+        corresponding AssetsDefinition objects.
+
+        Args:
+            graph_def (GraphDefinition): The graph for the JobDefinition that we're generating
+                this AssetLayer for.
+            assets_defs_by_node_handle (Mapping[NodeHandle, AssetsDefinition]): A mapping from
+                a NodeHandle pointing to the node in the graph where the AssetsDefinition ended up.
+        """
+        check.inst_param(graph_def, "graph_def", GraphDefinition)
+        check.dict_param(
+            assets_defs_by_node_handle, "assets_defs_by_node_handle", key_type=NodeHandle
+        )
+
+        asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
+        asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
+        asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
+        for node_handle, assets_def in assets_defs_by_node_handle.items():
+            asset_deps.update(assets_def.asset_deps)
+            for input_name, asset_key in assets_def.asset_keys_by_input_name.items():
+                node_input_handle = NodeInputHandle(node_handle, input_name)
+                asset_key_by_input[node_input_handle] = asset_key
+            for output_name, asset_key in assets_def.asset_keys_by_output_name.items():
+                node_output_handle = NodeOutputHandle(node_handle, output_name)
+                partition_fn = lambda context: {context.partition_key}
+                asset_info_by_output[node_output_handle] = AssetOutputInfo(
+                    asset_key,
+                    partitions_fn=partition_fn if assets_def.partitions_def else None,
+                    partitions_def=assets_def.partitions_def,
+                )
+        return AssetLayer(
+            asset_keys_by_node_input_handle=asset_key_by_input,
+            asset_info_by_node_output_handle=asset_info_by_output,
             asset_deps=asset_deps,
         )
 
@@ -176,7 +218,7 @@ class AssetLayer:
         return self._asset_deps[asset_key]
 
     def asset_key_for_input(self, node_handle: NodeHandle, input_name: str) -> Optional[AssetKey]:
-        return self._asset_key_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))
+        return self._asset_keys_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))
 
     def asset_info_for_output(
         self, node_handle: NodeHandle, output_name: str

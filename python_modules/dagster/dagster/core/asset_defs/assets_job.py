@@ -242,10 +242,6 @@ def build_deps(
             node_outputs_by_asset[asset_key] = (assets_def.node_def, output_name)
 
     deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
-
-    # if the same graph/op is used in multiple assets_definitions, their invocations much have
-    # different names. we keep track of definitions that share a name and add a suffix to their
-    # invocations to solve this issue
     collisions: Dict[str, int] = {}
     for assets_def in assets_defs:
         node_name = assets_def.node_def.name
