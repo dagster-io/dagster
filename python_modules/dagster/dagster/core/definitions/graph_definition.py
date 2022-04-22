@@ -22,7 +22,6 @@ from dagster.config.config_type import ConfigType
 from dagster.config.validate import validate_config
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
-from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.utils import check_valid_name

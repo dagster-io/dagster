@@ -36,15 +36,13 @@ from dagster.core.selector.subset_selector import (
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.utils import str_format_set
 
-from .executor_definition import ExecutorDefinition
-from .resource_definition import ResourceDefinition
 from .config import ConfigMapping
-from .partition import PartitionedConfig
-from .logger_definition import LoggerDefinition
+from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
+from .logger_definition import LoggerDefinition
 from .mode import ModeDefinition
-from .partition import PartitionSetDefinition
+from .partition import PartitionSetDefinition, PartitionedConfig
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
