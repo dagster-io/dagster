@@ -175,6 +175,12 @@ def _core_resource_initialization_event_generator(
                 resource_instances,
                 resource_init_times,
             )
+
+        delta_res_keys = resource_keys_to_init - set(resource_instances.keys())
+        check.invariant(
+            not delta_res_keys,
+            f"resources instances do not align with resource to init, difference: {delta_res_keys}",
+        )
         yield ScopedResourcesBuilder(resource_instances, contains_generator)
     except DagsterUserCodeExecutionError as dagster_user_error:
         # Can only end up in this state if we attempt to initialize a resource, so
