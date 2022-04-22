@@ -1,11 +1,16 @@
 # Changelog
 
+# 0.14.12
+
+### Bugfixes
+
+* Fixed an issue where the Launchpad in Dagit sometimes incorrectly launched in an empty state.
+
 # 0.14.11
 
 ### Bugfixes
 
 * Fixed an issue where schedules created from partition sets that launched runs for multiple partitions in a single schedule tick would sometimes time out while generating runs in the scheduler.
-* Fixed an issue where the Launchpad in Dagit sometimes incorrectly launched in an empty state.
 * Fixed an issue where nested graphs would sometimes incorrectly determine the set of required resources for a hook.
 
 # 0.14.10
