@@ -269,8 +269,12 @@ class InputContext:
         if self.upstream_output is None:
             check.failed("InputContext needs upstream_output to get asset_partitions_time_window")
 
+<<<<<<< HEAD
         asset_info = self.upstream_output.asset_info
         partitions_def = asset_info.partitions_def if asset_info else None
+=======
+        partitions_def = self.upstream_output.asset_info.partitions_def
+>>>>>>> [3/n] Interop Stack: Remove asset key from inputs/outputs
 
         if not partitions_def:
             raise ValueError(
