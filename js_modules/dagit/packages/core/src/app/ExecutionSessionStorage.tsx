@@ -115,9 +115,7 @@ type StorageHook = [IStorageData, (data: IStorageData) => void];
 let _data: IStorageData | null = null;
 let _dataNamespace = '';
 
-function getKey(namespace: string) {
-  return `dagit.v2.${namespace}`;
-}
+export const getKey = (namespace: string) => `dagit.v2.${namespace}`;
 
 function getStorageDataForNamespace(namespace: string, initial: Partial<IExecutionSession> = {}) {
   if (_data && _dataNamespace === namespace) {
@@ -149,6 +147,15 @@ function writeStorageDataForNamespace(namespace: string, data: IStorageData) {
   window.localStorage.setItem(getKey(namespace), JSON.stringify(data));
 }
 
+export const makeNamespace = (
+  basePath: string,
+  repoAddress: RepoAddress,
+  pipelineOrJobName: string,
+) => `${basePath}-${repoAddress.location}-${repoAddress.name}-${pipelineOrJobName}`;
+
+export const makeOldNamespace = (repoAddress: RepoAddress, pipelineOrJobName: string) =>
+  `${repoAddress.name}.${pipelineOrJobName}`;
+
 /* React hook that provides local storage to the caller. A previous version of this
 loaded data into React state, but changing namespaces caused the data to be out-of-sync
 for one render (until a useEffect could update the data in state). Now we keep the
@@ -163,24 +170,27 @@ export function useExecutionSessionStorage(
 ): StorageHook {
   const {basePath} = React.useContext(AppContext);
 
-  const oldNamespace = `${repoAddress.name}.${pipelineOrJobName}`;
-  const oldData = getStorageDataForNamespace(oldNamespace);
+  const namespace = makeNamespace(basePath, repoAddress, pipelineOrJobName);
+  const [_, setVersion] = React.useState<number>(0);
 
-  const namespace = `${basePath}-${repoAddress.location}-${repoAddress.name}-${pipelineOrJobName}`;
-  const [version, setVersion] = React.useState<number>(0);
+  const onSave = React.useCallback(
+    (newData: IStorageData) => {
+      writeStorageDataForNamespace(namespace, newData);
+      setVersion((current) => current + 1); // trigger a React render
+    },
+    [namespace],
+  );
 
-  const onSave = (newData: IStorageData) => {
-    writeStorageDataForNamespace(namespace, newData);
-    setVersion(version + 1); // trigger a React render
-  };
-
-  // TODO: Remove this migration logic in a few patches when we know the old namespace is likely no longer being used
-  const oldDataMigrated = React.useRef(false);
-  if (!oldDataMigrated.current && window.localStorage.getItem(getKey(oldNamespace))) {
-    onSave(oldData);
-    window.localStorage.removeItem(getKey(oldNamespace));
-    oldDataMigrated.current = true;
-  }
+  // Legacy namespace. Use this to migrate from old storage namespace to new one.
+  const oldNamespace = makeOldNamespace(repoAddress, pipelineOrJobName);
+  React.useEffect(() => {
+    const oldKey = getKey(oldNamespace);
+    if (!!getJSONForKey(oldKey)) {
+      const oldData = getStorageDataForNamespace(oldNamespace);
+      onSave(oldData);
+      window.localStorage.removeItem(oldKey);
+    }
+  }, [oldNamespace, onSave]);
 
   return [getStorageDataForNamespace(namespace, initial), onSave];
 }
