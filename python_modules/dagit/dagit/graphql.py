@@ -226,8 +226,9 @@ class GraphQLServer(ABC):
         if isinstance(async_result, ExecutionResult):
             if not async_result.errors:
                 check.failed(f"Only expect non-async result on error, got {async_result}")
-            error_payload = format_graphql_error(async_result.errors[0])  # type: ignore
-            return None, error_payload
+            handled_errors = self.handle_graphql_errors(async_result.errors)
+            # return only one entry for subscription response
+            return None, handled_errors[0]
 
         # in the future we should get back async gen directly, back compat for now
         disposable, async_gen = _disposable_and_async_gen_from_obs(async_result, get_event_loop())
