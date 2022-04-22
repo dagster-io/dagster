@@ -169,18 +169,24 @@ export function useExecutionSessionStorage(
   const namespace = `${basePath}-${repoAddress.location}-${repoAddress.name}-${pipelineOrJobName}`;
   const [version, setVersion] = React.useState<number>(0);
 
-  const onSave = (newData: IStorageData) => {
-    writeStorageDataForNamespace(namespace, newData);
-    setVersion(version + 1); // trigger a React render
-  };
+  const onSave = React.useCallback(
+    (newData: IStorageData) => {
+      writeStorageDataForNamespace(namespace, newData);
+      setVersion(version + 1); // trigger a React render
+    },
+    [setVersion, namespace, version],
+  );
 
   // TODO: Remove this migration logic in a few patches when we know the old namespace is likely no longer being used
   const oldDataMigrated = React.useRef(false);
-  if (oldData && !oldDataMigrated.current) {
-    onSave(oldData);
-    window.localStorage.removeItem(getKey(oldNamespace));
-    oldDataMigrated.current = true;
-  }
+
+  React.useEffect(() => {
+    if (oldData && !oldDataMigrated.current) {
+      onSave(oldData);
+      window.localStorage.removeItem(getKey(oldNamespace));
+      oldDataMigrated.current = true;
+    }
+  }, [oldData, oldNamespace, onSave]);
 
   return [getStorageDataForNamespace(namespace, initial), onSave];
 }

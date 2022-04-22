@@ -5,30 +5,6 @@ import {TestProvider} from '../../testing/TestProvider';
 import {AppContext} from '../AppContext';
 import {useExecutionSessionStorage} from '../ExecutionSessionStorage';
 
-function mockedLocalStorage() {
-  let store = {};
-  return {
-    setItem(key: string, item: any) {
-      store[key] = item;
-    },
-    getItem(key: string) {
-      return store[key];
-    },
-    removeItem(key: string) {
-      delete store[key];
-    },
-    clear() {
-      store = {};
-    },
-    get length() {
-      return Object.keys(store).length;
-    },
-    key(n: number) {
-      return Object.keys(store)[n];
-    },
-  };
-}
-
 let BASE_PATH = '';
 const REPO_ADDRESS = {
   name: 'test-name',
@@ -50,27 +26,30 @@ const newKeyFormat = (
 };
 
 describe('ExecutionSessionStorage', () => {
-  const originalLocalStorage = window.localStorage;
   beforeEach(() => {
-    window.localStorage = mockedLocalStorage();
-    jest.resetModules();
-  });
-  afterEach(() => {
-    window.localStorage = originalLocalStorage;
+    window.localStorage.clear();
   });
 
   it('Migrates old localStorage data from old format', () => {
     const testData = {sessions: {test: 'test'}, current: 'test'};
-    const oldFormat = oldKeyFormat(REPO_ADDRESS, PIPELINE);
-    const newFormat = newKeyFormat(BASE_PATH, REPO_ADDRESS, PIPELINE);
 
-    window.localStorage.setItem(oldFormat, JSON.stringify(testData));
+    let oldFormat;
+    let newFormat;
 
     function TestComponent() {
       const context = React.useContext(AppContext);
       BASE_PATH = context.basePath;
-      const [data] = useExecutionSessionStorage(REPO_ADDRESS, PIPELINE);
-      expect(data).toEqual(testData);
+
+      const didInitializeOldData = React.useRef(false);
+
+      if (!didInitializeOldData.current) {
+        oldFormat = oldKeyFormat(REPO_ADDRESS, PIPELINE);
+        newFormat = newKeyFormat(BASE_PATH, REPO_ADDRESS, PIPELINE);
+        window.localStorage.setItem(oldFormat, JSON.stringify(testData));
+        didInitializeOldData.current = true;
+      }
+
+      useExecutionSessionStorage(REPO_ADDRESS, PIPELINE);
       return <div />;
     }
 
