@@ -11,12 +11,15 @@ from dagster import (
     GraphOut,
     IOManager,
     Out,
+    Output,
     ResourceDefinition,
     graph,
     io_manager,
+    multi_asset,
     op,
 )
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
+from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.snap import DependencyStructureIndex
 from dagster.core.snap.dep_snapshot import (
     OutputHandleSnap,
@@ -632,3 +635,305 @@ def test_fail_with_get_output_asset_key():
         r"\"AssetKey\(\['foo'\]\)\"",
     ):
         job.execute_in_process()
+
+
+def test_all_assets_job():
+    @asset
+    def a1():
+        return 1
+
+    @asset
+    def a2(a1):
+        return 2
+
+    job = build_assets_job("graph_asset_job", [a1, a2])
+    node_handle_deps_by_asset = job.assets_info.dependency_node_handles_by_asset_key
+
+    thing_handle = NodeHandle(name="thing", parent=None)
+    assert node_handle_deps_by_asset[AssetKey("a1")] == {
+        NodeHandle("a1", parent=None),
+    }
+    assert node_handle_deps_by_asset[AssetKey("a2")] == {NodeHandle("a2", parent=None)}
+
+
+def test_basic_graph():
+    @op
+    def get_string():
+        return "foo"
+
+    @op(out={"ns1": Out(), "ns2": Out()})
+    def combine_strings_and_split(s1, s2):
+        return (s1 + s2, s2 + s1)
+
+    @graph(out={"o1": GraphOut()})
+    def thing():
+        da = get_string()
+        db = get_string()
+        o1, o2 = combine_strings_and_split(da, db)
+        return o1
+
+    @asset
+    def out_asset1_plus_one(out_asset1):
+        return out_asset1 + "one"
+
+    @asset
+    def out_asset2_plus_one(out_asset2):
+        return out_asset2 + "one"
+
+    complex_asset = AssetsDefinition(
+        input_names_by_asset_key={},
+        output_names_by_asset_key={AssetKey("out_asset1"): "o1"},
+        node_def=thing,
+    )
+
+    job = build_assets_job("graph_asset_job", [complex_asset])
+    node_handle_deps_by_asset = job.assets_info.dependency_node_handles_by_asset_key
+
+    thing_handle = NodeHandle(name="thing", parent=None)
+    assert node_handle_deps_by_asset[AssetKey("out_asset1")] == {
+        NodeHandle("get_string", parent=thing_handle),
+        NodeHandle("get_string_2", parent=thing_handle),
+        NodeHandle("combine_strings_and_split", parent=thing_handle),
+    }
+
+
+def test_hanging_op_graph():
+    @op
+    def get_string():
+        return "foo"
+
+    @op
+    def combine_strings(s1, s2):
+        return s1 + s2
+
+    @op
+    def hanging_op():
+        return "bar"
+
+    @graph(out={"o1": GraphOut(), "o2": GraphOut()})
+    def thing():
+        da = get_string()
+        db = get_string()
+        o1 = combine_strings(da, db)
+        o2 = hanging_op()
+        return {"o1": o1, "o2": o2}
+
+    complex_asset = AssetsDefinition(
+        input_names_by_asset_key={},
+        output_names_by_asset_key={AssetKey("out_asset1"): "o1", AssetKey("out_asset2"): "o2"},
+        node_def=thing,
+    )
+    job = build_assets_job("graph_asset_job", [complex_asset])
+    node_handle_deps_by_asset = job.assets_info.dependency_node_handles_by_asset_key
+
+    thing_handle = NodeHandle(name="thing", parent=None)
+    assert node_handle_deps_by_asset[AssetKey("out_asset1")] == {
+        NodeHandle("get_string", parent=thing_handle),
+        NodeHandle("get_string_2", parent=thing_handle),
+        NodeHandle("combine_strings", parent=thing_handle),
+    }
+    assert node_handle_deps_by_asset[AssetKey("out_asset2")] == {
+        NodeHandle("hanging_op", parent=thing_handle),
+    }
+
+
+def test_nested_graph():
+    @op
+    def get_inside_string():
+        return "bar"
+
+    @graph(out={"o2": GraphOut()})
+    def inside_thing():
+        return get_inside_string()
+
+    @op
+    def get_string():
+        return "foo"
+
+    @op(out={"ns1": Out(), "ns2": Out()})
+    def combine_strings_and_split(s1, s2):
+        return (s1 + s2, s2 + s1)
+
+    @graph(out={"o1": GraphOut()})
+    def thing():
+        da = inside_thing()
+        db = get_string()
+        o1, o2 = combine_strings_and_split(da, db)
+        return o1
+
+    thing_asset = AssetsDefinition(
+        input_names_by_asset_key={},
+        output_names_by_asset_key={AssetKey("thing"): "o1"},
+        node_def=thing,
+    )
+
+    job = build_assets_job("graph_asset_job", [thing_asset])
+    node_handle_deps_by_asset = job.assets_info.dependency_node_handles_by_asset_key
+
+    thing_handle = NodeHandle(name="thing", parent=None)
+    assert node_handle_deps_by_asset[AssetKey("thing")] == {
+        NodeHandle("get_inside_string", parent=NodeHandle("inside_thing", parent=thing_handle)),
+        NodeHandle("get_string", parent=thing_handle),
+        NodeHandle("combine_strings_and_split", parent=thing_handle),
+    }
+
+
+def test_asset_in_nested_graph():
+    @op
+    def get_inside_string():
+        return "bar"
+
+    @op
+    def get_string():
+        return "foo"
+
+    @graph(out={"n1": GraphOut(), "n2": GraphOut()})
+    def inside_thing():
+        n1 = get_inside_string()
+        n2 = get_string()
+        return n1, n2
+
+    @op
+    def get_transformed_string(string):
+        return string + "qux"
+
+    @graph(out={"o1": GraphOut(), "o3": GraphOut()})
+    def thing():
+        o1, o2 = inside_thing()
+        o3 = get_transformed_string(o2)
+        return (o1, o3)
+
+    thing_asset = AssetsDefinition(
+        input_names_by_asset_key={},
+        output_names_by_asset_key={AssetKey("thing"): "o1", AssetKey("thing_2"): "o3"},
+        node_def=thing,
+    )
+
+    job = build_assets_job("graph_asset_job", [thing_asset])
+    node_handle_deps_by_asset = job.assets_info.dependency_node_handles_by_asset_key
+
+    thing_handle = NodeHandle(name="thing", parent=None)
+    assert node_handle_deps_by_asset[AssetKey("thing")] == {
+        NodeHandle("get_inside_string", parent=NodeHandle("inside_thing", parent=thing_handle)),
+    }
+    assert node_handle_deps_by_asset[AssetKey("thing_2")] == {
+        NodeHandle("get_string", parent=NodeHandle("inside_thing", parent=thing_handle)),
+        NodeHandle("get_transformed_string", parent=thing_handle),
+    }
+
+
+def test_twice_nested_graph():
+    @op
+    def get_inside_string():
+        return "bar"
+
+    @op
+    def get_string():
+        return "foo"
+
+    @graph(out={"n1": GraphOut(), "n2": GraphOut()})
+    def innermost_thing():
+        n1 = get_inside_string()
+        n2 = get_string()
+        return {"n1": n1, "n2": n2}
+
+    @op
+    def transformer(string):
+        return string + "qux"
+
+    @graph(out={"n1": GraphOut(), "n2": GraphOut()})
+    def middle_thing():
+        n1, unused_output = innermost_thing()
+        n2 = get_string()
+        return {"n1": n1, "n2": n2}
+
+    @graph(out={"n1": GraphOut(), "n2": GraphOut()})
+    def outer_thing(foo_asset):
+        n1, output = middle_thing()
+        n2 = transformer(output)
+        n3 = transformer(foo_asset)  # unused output
+        return {"n1": n1, "n2": n2}
+
+    @asset
+    def foo_asset():
+        return "foo"
+
+    thing_asset = AssetsDefinition(
+        input_names_by_asset_key={},
+        output_names_by_asset_key={AssetKey("thing"): "n1", AssetKey("thing_2"): "n2"},
+        node_def=outer_thing,
+    )
+
+    job = build_assets_job("graph_asset_job", [foo_asset, thing_asset])
+    node_handle_deps_by_asset = job.assets_info.dependency_node_handles_by_asset_key
+
+    outer_thing_handle = NodeHandle("outer_thing", parent=None)
+    middle_thing_handle = NodeHandle("middle_thing", parent=outer_thing_handle)
+    assert node_handle_deps_by_asset[AssetKey("thing")] == {
+        NodeHandle(
+            "get_inside_string",
+            parent=NodeHandle(
+                "innermost_thing",
+                parent=middle_thing_handle,
+            ),
+        )
+    }
+    assert node_handle_deps_by_asset[AssetKey("thing_2")] == {
+        NodeHandle("get_string", parent=middle_thing_handle),
+        NodeHandle("transformer", parent=outer_thing_handle),
+    }
+    assert node_handle_deps_by_asset[AssetKey("foo_asset")] == {
+        NodeHandle("foo_asset", parent=None)
+    }
+
+
+def test_internal_asset_deps_assets():
+    @op
+    def upstream_op():
+        return "foo"
+
+    @op(out={"o1": Out(), "o2": Out()})
+    def two_outputs(upstream_op):
+        o1 = upstream_op
+        o2 = o1 + "bar"
+        return o1, o2
+
+    @graph(out={"o1": GraphOut(), "o2": GraphOut()})
+    def thing():
+        o1, o2 = two_outputs(upstream_op())
+        return (o1, o2)
+
+    thing_asset = AssetsDefinition(
+        input_names_by_asset_key={},
+        output_names_by_asset_key={AssetKey("thing"): "o1", AssetKey("thing_2"): "o2"},
+        node_def=thing,
+        asset_deps={AssetKey("thing"): set(), AssetKey("thing_2"): {AssetKey("thing")}},
+    )
+
+    @multi_asset(
+        outs={
+            "my_out_name": Out(metadata={"foo": "bar"}),
+            "my_other_out_name": Out(metadata={"bar": "foo"}),
+        },
+        internal_asset_deps={"my_out_name": {AssetKey("my_other_out_name")}},
+    )
+    def multi_asset_with_internal_deps(thing):  # pylint: disable=unused-argument
+        yield Output(1, "my_out_name")
+        yield Output(2, "my_other_out_name")
+
+    job = build_assets_job("graph_asset_job", [thing_asset, multi_asset_with_internal_deps])
+    node_handle_deps_by_asset = job.assets_info.dependency_node_handles_by_asset_key
+    assert node_handle_deps_by_asset[AssetKey("thing")] == {
+        NodeHandle("two_outputs", parent=NodeHandle("thing", parent=None)),
+        NodeHandle(name="upstream_op", parent=NodeHandle(name="thing", parent=None)),
+    }
+    assert node_handle_deps_by_asset[AssetKey("thing_2")] == {
+        NodeHandle("two_outputs", parent=NodeHandle("thing", parent=None))
+    }
+
+    assert node_handle_deps_by_asset[AssetKey("my_out_name")] == {
+        NodeHandle(name="multi_asset_with_internal_deps", parent=None)
+    }
+    assert node_handle_deps_by_asset[AssetKey("my_other_out_name")] == {
+        NodeHandle(name="multi_asset_with_internal_deps", parent=None)
+    }
