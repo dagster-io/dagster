@@ -26,7 +26,7 @@ def get_alembic_config(dunder_file, config_path="alembic/alembic.ini", script_lo
         script_location = ALEMBIC_SCRIPTS_LOCATION
 
     alembic_config = Config(file_relative_path(dunder_file, config_path))
-    alembic_config.set_main_option("script_location", ALEMBIC_SCRIPTS_LOCATION)
+    alembic_config.set_main_option("script_location", script_location)
     return alembic_config
 
 
