@@ -172,7 +172,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             return GraphenePythonError(self._backfill_job.error)
         return None
 
-
 class GraphenePartitionBackfillOrError(graphene.Union):
     class Meta:
         types = (GraphenePartitionBackfill, GraphenePythonError)
