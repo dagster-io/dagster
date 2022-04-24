@@ -1258,7 +1258,9 @@ type PartitionSet {
   partitionsOrError(cursor: String, limit: Int, reverse: Boolean): PartitionsOrError!
   partition(partitionName: String!): Partition
   partitionStatusesOrError: PartitionStatusesOrError!
+  partitionRuns: [PartitionRun!]!
   repositoryOrigin: RepositoryOrigin!
+  backfills(cursor: String, limit: Int): [PartitionBackfill!]!
 }
 
 union PartitionsOrError = Partitions | PythonError
@@ -1316,6 +1318,33 @@ type PartitionStatus {
   id: String!
   partitionName: String!
   runStatus: RunStatus
+}
+
+type PartitionRun {
+  id: String!
+  partitionName: String!
+  run: Run
+}
+
+type PartitionBackfill {
+  backfillId: String!
+  status: BulkActionStatus!
+  partitionNames: [String!]!
+  numRequested: Int!
+  fromFailure: Boolean!
+  reexecutionSteps: [String!]!
+  partitionSetName: String!
+  timestamp: Float!
+  partitionSet: PartitionSet
+  runs(limit: Int): [Run!]!
+  error: PythonError
+}
+
+enum BulkActionStatus {
+  REQUESTED
+  COMPLETED
+  FAILED
+  CANCELED
 }
 
 type FutureInstigationTicks {
@@ -1756,27 +1785,6 @@ input AssetKeyInput {
 union AssetNodeOrError = AssetNode | AssetNotFoundError
 
 union PartitionBackfillOrError = PartitionBackfill | PythonError
-
-type PartitionBackfill {
-  backfillId: String!
-  status: BulkActionStatus!
-  numRequested: Int!
-  numTotal: Int!
-  fromFailure: Boolean!
-  reexecutionSteps: [String!]!
-  partitionSetName: String!
-  timestamp: Float!
-  partitionSet: PartitionSet
-  runs(limit: Int): [Run!]!
-  error: PythonError
-}
-
-enum BulkActionStatus {
-  REQUESTED
-  COMPLETED
-  FAILED
-  CANCELED
-}
 
 union PartitionBackfillsOrError = PartitionBackfills | PythonError
 

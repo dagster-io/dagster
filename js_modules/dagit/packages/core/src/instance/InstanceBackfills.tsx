@@ -446,14 +446,15 @@ const getProgressCounts = (backfill: Backfill) => {
     {numQueued: 0, numInProgress: 0, numSucceeded: 0, numFailed: 0},
   );
 
+  const numTotal = backfill.partitionNames.length;
   return {
     numQueued,
     numInProgress,
     numSucceeded,
     numFailed,
-    numUnscheduled: backfill.numTotal - backfill.numRequested,
+    numUnscheduled: numTotal - backfill.numRequested,
     numSkipped: backfill.numRequested - latestPartitionRuns.length,
-    numTotal: backfill.numTotal,
+    numTotal,
   };
 };
 
@@ -596,7 +597,7 @@ const BACKFILLS_QUERY = gql`
           backfillId
           status
           numRequested
-          numTotal
+          partitionNames
           runs {
             id
             canTerminate
