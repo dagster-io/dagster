@@ -1,3 +1,4 @@
+import {gql} from '@apollo/client';
 import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
 import React from 'react';
 
@@ -8,9 +9,8 @@ import {buildLayout} from '../gantt/GanttChartLayout';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {StepEventStatus} from '../types/globalTypes';
 
+import {PartitionMatrixStepRunFragment} from './types/PartitionMatrixStepRunFragment';
 import {PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles} from './types/PartitionRunMatrixPipelineQuery';
-import {PartitionRunMatrixRunFragment} from './types/PartitionRunMatrixRunFragment';
-import {PartitionRuns} from './useChunkedPartitionsQuery';
 
 type SolidHandle = PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles;
 type StatusSquareColor =
@@ -34,6 +34,12 @@ export const StatusSquareFinalColor: {[key: string]: StatusSquareColor} = {
   'SUCCESS-SKIPPED': 'SKIPPED',
 };
 
+export interface PartitionRuns {
+  name: string;
+  runsLoaded: boolean;
+  runs: PartitionMatrixStepRunFragment[];
+}
+
 export interface DisplayOptions {
   showFailuresAndGapsOnly: boolean;
   showPrevious: boolean;
@@ -49,11 +55,11 @@ export interface MatrixStep {
   unix: number;
 }
 
-function getStartTime(a: PartitionRunMatrixRunFragment) {
-  return ('startTime' in a.stats && a.stats.startTime) || 0;
+function getStartTime(a: PartitionMatrixStepRunFragment) {
+  return a.startTime || 0;
 }
 
-function byStartTimeAsc(a: PartitionRunMatrixRunFragment, b: PartitionRunMatrixRunFragment) {
+function byStartTimeAsc(a: PartitionMatrixStepRunFragment, b: PartitionMatrixStepRunFragment) {
   return getStartTime(a) - getStartTime(b);
 }
 
@@ -67,17 +73,26 @@ export function isStepKeyForNode(nodeName: string, stepKey: string) {
 
 function buildMatrixData(
   layout: GanttChartLayout,
+  partitionNames: string[],
   partitions: PartitionRuns[],
-  options: DisplayOptions,
+  options?: DisplayOptions,
 ) {
-  // Note this is sorting partition runs in place, I don't think it matters and
-  // seems better than cloning all the arrays.
-  partitions.forEach((p) => p.runs.sort(byStartTimeAsc));
+  const partitionsByName = {};
+  partitions.forEach((p) => {
+    // Note this is sorting partition runs in place, I don't think it matters and
+    // seems better than cloning all the arrays.
+    p.runs.sort(byStartTimeAsc);
+    partitionsByName[p.name] = p;
+  });
 
-  const partitionColumns = partitions.map((p) => ({
-    ...p,
-    steps: layout.boxes.map(({node}) => {
-      const datapoints = p.runs
+  const partitionColumns = partitionNames.map((name, idx) => {
+    const partition: PartitionRuns = partitionsByName[name] || {
+      name,
+      runsLoaded: false,
+      runs: [],
+    };
+    const steps = layout.boxes.map(({node}) => {
+      const datapoints = partition.runs
         .map((r, idx) => ({
           runIdx: idx,
           status: r.stepStats.find((stats) => isStepKeyForNode(node.name, stats.stepKey))?.status,
@@ -108,11 +123,16 @@ function buildMatrixData(
 
       return {
         name: node.name,
-        unix: getStartTime(p.runs[datapoints[0].runIdx]),
+        unix: getStartTime(partition.runs[datapoints[0].runIdx]),
         color,
       };
-    }),
-  }));
+    });
+    return {
+      ...partition,
+      steps,
+      idx,
+    };
+  });
 
   const partitionsWithARun = partitionColumns.filter((p) => p.runs.length > 0).length;
 
@@ -131,7 +151,7 @@ function buildMatrixData(
     };
   });
 
-  if (options.showFailuresAndGapsOnly) {
+  if (options?.showFailuresAndGapsOnly) {
     for (let ii = stepRows.length - 1; ii >= 0; ii--) {
       if (stepRows[ii].finalFailurePercent === 0) {
         stepRows.splice(ii, 1);
@@ -153,9 +173,10 @@ function buildMatrixData(
 
 interface MatrixDataInputs {
   solidHandles: SolidHandle[] | false;
+  partitionNames: string[];
   partitions: PartitionRuns[];
   stepQuery: string;
-  options: DisplayOptions;
+  options?: DisplayOptions;
 }
 
 /**
@@ -189,7 +210,27 @@ export const useMatrixData = (inputs: MatrixDataInputs) => {
   const layout = buildLayout({nodes: solidsFiltered.all, mode: GanttChartMode.FLAT});
 
   // Build the matrix of step + partition squares - presorted to match the gantt layout
-  const result = buildMatrixData(layout, inputs.partitions, inputs.options);
+  const result = buildMatrixData(layout, inputs.partitionNames, inputs.partitions, inputs.options);
   cachedMatrixData.current = {result, inputs};
   return result;
 };
+
+export const PARTITION_MATRIX_STEP_RUN_FRAGMENT = gql`
+  fragment PartitionMatrixStepRunFragment on Run {
+    id
+    runId
+    status
+    startTime
+    endTime
+    stepStats {
+      stepKey
+      startTime
+      endTime
+      status
+    }
+    tags {
+      key
+      value
+    }
+  }
+`;

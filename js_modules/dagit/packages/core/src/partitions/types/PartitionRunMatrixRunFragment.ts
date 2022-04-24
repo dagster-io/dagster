@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { StepEventStatus } from "./../../types/globalTypes";
+import { StepEventStatus, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: PartitionRunMatrixRunFragment
@@ -42,6 +42,8 @@ export interface PartitionRunMatrixRunFragment_stepStats {
   status: StepEventStatus | null;
   materializations: PartitionRunMatrixRunFragment_stepStats_materializations[];
   expectationResults: PartitionRunMatrixRunFragment_stepStats_expectationResults[];
+  startTime: number | null;
+  endTime: number | null;
 }
 
 export interface PartitionRunMatrixRunFragment {
@@ -51,4 +53,7 @@ export interface PartitionRunMatrixRunFragment {
   tags: PartitionRunMatrixRunFragment_tags[];
   stats: PartitionRunMatrixRunFragment_stats;
   stepStats: PartitionRunMatrixRunFragment_stepStats[];
+  status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
 }
