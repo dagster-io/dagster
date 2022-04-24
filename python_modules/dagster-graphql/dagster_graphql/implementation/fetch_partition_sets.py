@@ -203,3 +203,33 @@ def get_partition_set_partition_statuses(graphene_info, repository_handle, parti
             for partition_name in result.partition_names
         ]
     )
+
+def get_partition_set_partition_runs(graphene_info, partition_set):
+    from ..schema.partition_sets import GraphenePartitionRun
+    from ..schema.pipelines.pipeline import GrapheneRun
+
+    result = graphene_info.context.get_external_partition_names(
+        partition_set.repository_handle, partition_set.name
+    )
+    run_records = graphene_info.context.instance.get_run_records(
+        RunsFilter(tags={PARTITION_SET_TAG: partition_set.name})
+    )
+
+    by_partition = {}
+    for record in run_records:
+        partition_name = record.pipeline_run.tags.get(PARTITION_NAME_TAG)
+        if not partition_name or partition_name in by_partition:
+            # all_partition_set_runs is in descending order by creation time, we should ignore
+            # runs for the same partition if we've already considered the partition
+            continue
+        by_partition[partition_name] = record
+
+    return [
+        GraphenePartitionRun(
+            id=f"{partition_set.name}:{partition_name}",
+            partitionName=partition_name,
+            run=GrapheneRun(by_partition[partition_name]) if partition_name in by_partition else None,
+        )
+        # for partition_name, run_record in by_partition.items()
+        for partition_name in result.partition_names
+    ]
