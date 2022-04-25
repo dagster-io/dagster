@@ -27,6 +27,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 import {RunStatus} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
+import {StickyTableContainer} from '../ui/StickyTableContainer';
 
 import {AllScheduledTicks} from './AllScheduledTicks';
 import {doneStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
@@ -241,32 +242,34 @@ export const RunsRoot = () => {
 
             return (
               <>
-                <RunTable
-                  runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
-                  onSetFilter={setFilterTokensWithStatus}
-                  filter={filter}
-                  actionBarComponents={
-                    showScheduled ? null : (
-                      <Box flex={{direction: 'column', gap: 8}}>
-                        {selectedTab !== 'all' ? (
-                          <Box flex={{direction: 'row', gap: 8}}>
-                            {filterTokens
-                              .filter((token) => token.token === 'status')
-                              .map(({token, value}) => (
-                                <Tag key={token}>{`${token}:${value}`}</Tag>
-                              ))}
-                          </Box>
-                        ) : null}
-                        <RunsFilterInput
-                          tokens={mutableTokens}
-                          onChange={setFilterTokensWithStatus}
-                          loading={queryResult.loading}
-                          enabledFilters={enabledFilters}
-                        />
-                      </Box>
-                    )
-                  }
-                />
+                <StickyTableContainer $top={0}>
+                  <RunTable
+                    runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
+                    onSetFilter={setFilterTokensWithStatus}
+                    filter={filter}
+                    actionBarComponents={
+                      showScheduled ? null : (
+                        <Box flex={{direction: 'column', gap: 8}}>
+                          {selectedTab !== 'all' ? (
+                            <Box flex={{direction: 'row', gap: 8}}>
+                              {filterTokens
+                                .filter((token) => token.token === 'status')
+                                .map(({token, value}) => (
+                                  <Tag key={token}>{`${token}:${value}`}</Tag>
+                                ))}
+                            </Box>
+                          ) : null}
+                          <RunsFilterInput
+                            tokens={mutableTokens}
+                            onChange={setFilterTokensWithStatus}
+                            loading={queryResult.loading}
+                            enabledFilters={enabledFilters}
+                          />
+                        </Box>
+                      )
+                    }
+                  />
+                </StickyTableContainer>
                 {pipelineRunsOrError.results.length > 0 ? (
                   <div style={{marginTop: '16px'}}>
                     <CursorHistoryControls {...paginationProps} />
