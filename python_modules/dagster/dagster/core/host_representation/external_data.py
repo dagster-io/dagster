@@ -764,7 +764,7 @@ def external_asset_graph_from_defs(
     pipelines: Sequence[PipelineDefinition], source_assets_by_key: Mapping[AssetKey, SourceAsset]
 ) -> Sequence[ExternalAssetNode]:
     node_defs_by_asset_key: Dict[
-        AssetKey, List[Tuple[NodeOutputHandle, JobDefinition]]
+        AssetKey, List[Tuple[NodeOutputHandle, PipelineDefinition]]
     ] = defaultdict(list)
     asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
 
@@ -776,7 +776,7 @@ def external_asset_graph_from_defs(
         asset_info_by_node_output = pipeline_def.asset_layer.asset_info_by_node_output_handle
         for node_output_handle, asset_info in asset_info_by_node_output.items():
             output_key = asset_info.key
-            upstream_asset_keys = pipeline_def.asset_layer.upstream_assets(output_key)
+            upstream_asset_keys = pipeline_def.asset_layer.upstream_assets_for_asset(output_key)
             all_upstream_asset_keys.update(upstream_asset_keys)
             node_defs_by_asset_key[output_key].append((node_output_handle, pipeline_def))
             asset_info_by_asset_key[output_key] = asset_info

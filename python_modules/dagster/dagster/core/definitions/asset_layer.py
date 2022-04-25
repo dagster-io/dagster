@@ -79,13 +79,16 @@ def _assets_job_info_for_node(
         # must be in an op (or solid)
         if node_handle is None:
             check.failed("Must have node_handle for non-graph NodeDefinition")
+
         input_asset_keys: Set[AssetKey] = set()
+
         for input_def in node_def.input_defs:
             input_key = input_def.hardcoded_asset_key
             if input_key:
                 input_asset_keys.add(input_key)
                 input_handle = NodeInputHandle(node_handle, input_def.name)
                 asset_key_by_input[input_handle] = input_key
+
         for output_def in node_def.output_defs:
             output_key = output_def.hardcoded_asset_key
             if output_key:
@@ -107,6 +110,7 @@ def _assets_job_info_for_node(
             asset_key_by_input.update(n_asset_key_by_input)
             asset_info_by_output.update(n_asset_info_by_output)
             asset_deps.update(n_asset_deps)
+
     return asset_key_by_input, asset_info_by_output, asset_deps
 
 
@@ -164,7 +168,7 @@ class AssetLayer:
     def asset_info_by_node_output_handle(self) -> Mapping[NodeOutputHandle, AssetOutputInfo]:
         return self._asset_info_by_node_output_handle
 
-    def upstream_assets(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+    def upstream_assets_for_asset(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         check.invariant(
             asset_key in self._asset_deps,
             "AssetKey '{asset_key}' is not produced by this JobDefinition.",
