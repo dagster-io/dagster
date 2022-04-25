@@ -11,6 +11,7 @@ from typing import (
     List,
     NamedTuple,
     Optional,
+    TypeVar,
     Union,
     cast,
 )
@@ -43,9 +44,9 @@ from .run_request import RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
+T = TypeVar("T")
 
-# def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
-#     return len(params) == 1
+
 @whitelist_for_serdes
 class DefaultScheduleStatus(Enum):
     RUNNING = "RUNNING"
@@ -114,8 +115,13 @@ RunRequestIterator = Iterator[Union[RunRequest, SkipReason]]
 
 ScheduleEvaluationFunctionReturn = Union[RunRequest, SkipReason, RunConfig, RunRequestIterator]
 RawScheduleEvaluationFunction = Union[
-    Callable[["ScheduleEvaluationContext"], ScheduleEvaluationFunctionReturn],
+    Callable[[ScheduleEvaluationContext], ScheduleEvaluationFunctionReturn],
     Callable[[], ScheduleEvaluationFunctionReturn],
+]
+
+RunConfigEvaluationFunction = Union[
+    Callable[[ScheduleEvaluationContext], RunConfig],
+    Callable[[], RunConfig],
 ]
 
 
@@ -124,13 +130,13 @@ class DecoratedScheduleFunction(NamedTuple):
     optimal return value for direct invocation of the evaluation function"""
 
     decorated_fn: RawScheduleEvaluationFunction
-    wrapped_fn: Callable[["ScheduleEvaluationContext"], RunRequestIterator]
+    wrapped_fn: Callable[[ScheduleEvaluationContext], RunRequestIterator]
     has_context_arg: bool
 
 
 def is_context_provided(
-    fn: RawScheduleEvaluationFunction,
-) -> TypeGuard[Callable[[ScheduleExecutionContext], ScheduleEvaluationFunctionReturn]]:
+    fn: Union[Callable[[ScheduleEvaluationContext], T], Callable[[], T]]
+) -> TypeGuard[Callable[[ScheduleEvaluationContext], T]]:
     return len(get_function_params(fn)) == 1
 
 
@@ -224,7 +230,7 @@ class ScheduleDefinition:
         cron_schedule: Optional[str] = None,
         pipeline_name: Optional[str] = None,
         run_config: Optional[Any] = None,
-        run_config_fn: Optional[Callable[..., Any]] = None,
+        run_config_fn: Optional[RunConfigEvaluationFunction] = None,
         tags: Optional[Dict[str, str]] = None,
         tags_fn: Optional[Callable[..., Optional[Dict[str, str]]]] = None,
         solid_selection: Optional[List[Any]] = None,
@@ -233,7 +239,7 @@ class ScheduleDefinition:
         environment_vars: Optional[Dict[str, str]] = None,
         execution_timezone: Optional[str] = None,
         execution_fn: Optional[
-            Union[Callable[[ScheduleEvaluationContext], Any], "DecoratedScheduleFunction"]
+            Union[Callable[[ScheduleEvaluationContext], Any], DecoratedScheduleFunction]
         ] = None,
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, PipelineDefinition]] = None,
@@ -295,10 +301,12 @@ class ScheduleDefinition:
                     "Attempted to provide both run_config_fn and run_config as arguments"
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
+
+            def default_run_config_fn(context: ScheduleEvaluationContext) -> RunConfig:
+                return check.opt_dict_param(run_config, "run_config")
+
             self._run_config_fn = check.opt_callable_param(
-                run_config_fn,
-                "run_config_fn",
-                default=lambda _context: check.opt_dict_param(run_config, "run_config"),
+                run_config_fn, "run_config_fn", default=default_run_config_fn
             )
 
             if tags_fn and tags:
@@ -335,7 +343,7 @@ class ScheduleDefinition:
                 ):
                     evaluated_run_config = copy.deepcopy(
                         self._run_config_fn(context)
-                        if is_context_provided(get_function_params(self._run_config_fn))
+                        if is_context_provided(self._run_config_fn)
                         else self._run_config_fn()
                     )
 
