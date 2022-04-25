@@ -1,8 +1,9 @@
-from typing import AbstractSet, Any, Optional
+from typing import Any, Optional, Set
 
 from dagster import (
     InputDefinition,
     ResourceDefinition,
+    SkipReason,
     SolidDefinition,
     graph,
     repository,
@@ -14,7 +15,7 @@ from dagster import (
 
 def make_solid(
     name: str,
-    required_resource_keys: Optional[AbstractSet[str]] = None,
+    required_resource_keys: Optional[Set[str]] = None,
     config_schema: Optional[Any] = None,
     num_inputs: int = 0,
 ) -> SolidDefinition:
@@ -52,8 +53,8 @@ def event_reports():
 
 
 @sensor(job=event_reports.to_job(resource_defs={"mode": ResourceDefinition.none_resource()}))
-def event_reports_sensor(_context):
-    pass
+def event_reports_sensor():
+    return SkipReason("dummy sensor")
 
 
 event_reports_dev = event_reports.to_job(resource_defs={"mode": ResourceDefinition.none_resource()})
