@@ -23,7 +23,7 @@ class GrapheneResource(graphene.ObjectType):
     class Meta:
         name = "Resource"
 
-    def __init__(self, config_schema_snapshot, resource_def_snap, resource_source):
+    def __init__(self, config_schema_snapshot, resource_def_snap):
         super().__init__()
         self._config_schema_snapshot = check.inst_param(
             config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot

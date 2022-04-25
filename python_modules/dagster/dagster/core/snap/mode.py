@@ -1,6 +1,6 @@
 # Contains mode, resources, loggers
-from typing import List, NamedTuple, Optional, cast
 from enum import Enum
+from typing import List, NamedTuple, Optional, cast
 
 from dagster import check
 from dagster.config.snap import ConfigFieldSnap, snap_from_field
@@ -22,7 +22,7 @@ def build_mode_def_snap(mode_def, root_config_key):
         description=mode_def.description,
         resource_def_snaps=sorted(
             [
-                build_resource_def_snap(name, rd, mode_def.resource_sources[name])
+                build_resource_def_snap(name, rd, mode_def.resource_sources.get(name))
                 for name, rd in mode_def.resource_defs.items()
             ],
             key=lambda item: item.name,
@@ -79,6 +79,7 @@ def build_resource_def_snap(name, resource_def, source):
         config_field_snap=snap_from_field("config", resource_def.config_field)
         if resource_def.has_config_field
         else None,
+        source=source or ResourceSource.FROM_OVERRIDE,
     )
 
 

@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, IconWrapper} from '@dagster-io/ui';
+import {Colors, Icon, IconWrapper, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -24,7 +24,7 @@ export const SidebarModeSection: React.FC<{
           <div>
             <ContextResourceHeader>{resource.name}</ContextResourceHeader>
             <Description description={resource.description || NO_DESCRIPTION} />
-            <Description description={resource.source || NO_DESCRIPTION} />
+            <ResourceSourceTag>{resource.source || NO_DESCRIPTION}</ResourceSourceTag>
             {resource.configField && (
               <ConfigTypeSchema
                 type={resource.configField.configType}
@@ -120,4 +120,18 @@ const ContextLoggerContainer = styled.div`
   & ${IconWrapper} {
     margin-right: 8px;
   }
+`;
+
+const ResourceSourceTag = styled.div`
+  background: ${Colors.Gray10};
+  color: ${Colors.Gray600};
+  font-family: ${FontFamily.default};
+  font-size: 14px;
+  border-radius: 7px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  padding: 5px;
+  user-select: none;
+  margin: -3px 0;
+  font-size: 11px;
 `;

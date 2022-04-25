@@ -1,4 +1,5 @@
 from collections import namedtuple
+from enum import Enum
 from functools import update_wrapper
 from typing import (
     TYPE_CHECKING,
@@ -14,7 +15,6 @@ from typing import (
     cast,
     overload,
 )
-from enum import Enum
 
 from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
@@ -25,6 +25,7 @@ from dagster.core.errors import (
     DagsterInvalidInvocationError,
     DagsterUnknownResourceError,
 )
+from dagster.serdes import whitelist_for_serdes
 from dagster.seven import funcsigs
 from dagster.utils.backcompat import experimental_arg_warning
 
@@ -446,6 +447,7 @@ def make_values_resource(**kwargs: Any) -> ResourceDefinition:
     )
 
 
+@whitelist_for_serdes
 class ResourceSource(Enum):
     FROM_OVERRIDE = "FROM_OVERRIDE"
     FROM_DEFAULT = "FROM_DEFAULT"
