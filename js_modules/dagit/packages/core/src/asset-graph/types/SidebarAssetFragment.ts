@@ -352,6 +352,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -425,6 +426,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -499,6 +501,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -547,6 +550,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -581,6 +585,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -655,6 +660,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -730,6 +736,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -806,6 +813,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -879,6 +887,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -953,6 +962,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1001,6 +1011,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -1035,6 +1046,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1109,6 +1121,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1184,6 +1197,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1411,6 +1425,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1484,6 +1499,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1558,6 +1574,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1606,6 +1623,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -1640,6 +1658,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1714,6 +1733,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1789,6 +1809,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1865,6 +1886,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1938,6 +1960,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2012,6 +2035,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2060,6 +2084,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -2094,6 +2119,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2168,6 +2194,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2243,6 +2270,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {

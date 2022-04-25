@@ -1043,6 +1043,7 @@ type ConfigTypeField {
   configType: ConfigType!
   configTypeKey: String!
   isRequired: Boolean!
+  defaultValueAsJson: String
 }
 
 type ResourceRequirement {

@@ -33,6 +33,7 @@ export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = gql`
           description
           isRequired
           configTypeKey
+          defaultValueAsJson
         }
       }
       ... on ScalarUnionConfigType {

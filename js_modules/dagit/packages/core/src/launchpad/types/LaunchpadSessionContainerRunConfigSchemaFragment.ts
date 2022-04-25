@@ -64,6 +64,7 @@ export interface LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchem
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes_CompositeConfigType {

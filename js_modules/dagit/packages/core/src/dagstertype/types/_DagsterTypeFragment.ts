@@ -190,6 +190,7 @@ export interface _DagsterTypeFragment_inputSchemaType_ArrayConfigType_recursiveC
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface _DagsterTypeFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -263,6 +264,7 @@ export interface _DagsterTypeFragment_inputSchemaType_EnumConfigType_recursiveCo
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface _DagsterTypeFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -337,6 +339,7 @@ export interface _DagsterTypeFragment_inputSchemaType_RegularConfigType_recursiv
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface _DagsterTypeFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -385,6 +388,7 @@ export interface _DagsterTypeFragment_inputSchemaType_CompositeConfigType_fields
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface _DagsterTypeFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -419,6 +423,7 @@ export interface _DagsterTypeFragment_inputSchemaType_CompositeConfigType_recurs
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface _DagsterTypeFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -493,6 +498,7 @@ export interface _DagsterTypeFragment_inputSchemaType_ScalarUnionConfigType_recu
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface _DagsterTypeFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -568,6 +574,7 @@ export interface _DagsterTypeFragment_inputSchemaType_MapConfigType_recursiveCon
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface _DagsterTypeFragment_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -644,6 +651,7 @@ export interface _DagsterTypeFragment_outputSchemaType_ArrayConfigType_recursive
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface _DagsterTypeFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -717,6 +725,7 @@ export interface _DagsterTypeFragment_outputSchemaType_EnumConfigType_recursiveC
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface _DagsterTypeFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -791,6 +800,7 @@ export interface _DagsterTypeFragment_outputSchemaType_RegularConfigType_recursi
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface _DagsterTypeFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -839,6 +849,7 @@ export interface _DagsterTypeFragment_outputSchemaType_CompositeConfigType_field
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface _DagsterTypeFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -873,6 +884,7 @@ export interface _DagsterTypeFragment_outputSchemaType_CompositeConfigType_recur
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface _DagsterTypeFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -947,6 +959,7 @@ export interface _DagsterTypeFragment_outputSchemaType_ScalarUnionConfigType_rec
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface _DagsterTypeFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1022,6 +1035,7 @@ export interface _DagsterTypeFragment_outputSchemaType_MapConfigType_recursiveCo
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface _DagsterTypeFragment_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
