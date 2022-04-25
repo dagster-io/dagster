@@ -1,9 +1,12 @@
 # pylint: disable=protected-access
 # pylint: disable=unused-variable
+import copy
+
 import dagster_aws
 import pytest
 from botocore.exceptions import ClientError
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
+from dagster_aws.ecs.tasks import TaskMetadata
 
 from dagster.check import CheckError
 from dagster.core.events import MetadataEntry
@@ -88,7 +91,7 @@ def test_default_launcher(
 
 
 def test_task_definition_registration(
-    ecs, instance, workspace, run, other_workspace, other_run, secrets_manager
+    ecs, instance, workspace, run, other_workspace, other_run, secrets_manager, monkeypatch
 ):
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     initial_tasks = ecs.list_tasks()["taskArns"]
@@ -126,6 +129,79 @@ def test_task_definition_registration(
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     instance.launch_run(other_run.run_id, other_workspace)
     assert task_definitions == ecs.list_task_definitions()["taskDefinitionArns"]
+
+    # Register a new task definition if _reuse_task_definition returns False
+    # for any other reason
+    monkeypatch.setattr(instance.run_launcher, "_reuse_task_definition", lambda *_: False)
+
+    instance.launch_run(other_run.run_id, other_workspace)
+    assert len(ecs.list_task_definitions()["taskDefinitionArns"]) == len(task_definitions) + 1
+
+
+def test_reuse_task_definition(instance, run, workspace):
+    image = "image"
+    secrets = []
+    original_task_definition = {
+        "containerDefinitions": [
+            {
+                "image": image,
+                "name": instance.run_launcher.container_name,
+                "secrets": secrets,
+            },
+        ],
+    }
+    metadata = TaskMetadata(
+        cluster="cluster",
+        subnets=[],
+        security_groups=[],
+        task_definition=original_task_definition,
+        container_definition={},
+        assign_public_ip=True,
+    )
+
+    # The same task definition passes
+    task_definition = copy.deepcopy(original_task_definition)
+    assert instance.run_launcher._reuse_task_definition(task_definition, metadata, image, secrets)
+
+    # Changed image fails
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][0]["image"] = "new-image"
+    assert not instance.run_launcher._reuse_task_definition(
+        task_definition, metadata, image, secrets
+    )
+
+    # Changed container name fails
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][0]["name"] = "new-container"
+    assert not instance.run_launcher._reuse_task_definition(
+        task_definition, metadata, image, secrets
+    )
+
+    # Changed secrets fails
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][0]["secrets"].append("new-secrets")
+    assert not instance.run_launcher._reuse_task_definition(
+        task_definition, metadata, image, secrets
+    )
+
+    # Changed execution role fails
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["executionRoleArn"] = "new-role"
+    assert not instance.run_launcher._reuse_task_definition(
+        task_definition, metadata, image, secrets
+    )
+
+    # Changed task role fails
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["taskRoleArn"] = "new-role"
+    assert not instance.run_launcher._reuse_task_definition(
+        task_definition, metadata, image, secrets
+    )
+
+    # Any other diff passes
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["somethingElse"] = "boom"
+    assert instance.run_launcher._reuse_task_definition(task_definition, metadata, image, secrets)
 
 
 def test_launching_custom_task_definition(
