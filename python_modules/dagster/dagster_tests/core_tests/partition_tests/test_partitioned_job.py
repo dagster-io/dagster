@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from dagster import (
@@ -104,3 +106,27 @@ def test_dynamic_partitioned_config():
         DagsterUnknownPartitionError, match="Could not find a partition with key `doesnotexist`"
     ):
         result = my_job.execute_in_process(partition_key="doesnotexist")
+
+
+def test_dict_partitioned_config_tags():
+    def partition_fn(_current_time=None):
+        return ["blah"]
+
+    @dynamic_partitioned_config(
+        partition_fn, tags_for_partition_fn=lambda partition_key: {"foo": {"bar": partition_key}}
+    )
+    def my_dynamic_partitioned_config(_partition_key):
+        return RUN_CONFIG
+
+    assert my_dynamic_partitioned_config("") == RUN_CONFIG
+
+    @job(config=my_dynamic_partitioned_config)
+    def my_job():
+        my_op()
+
+    partition_keys = my_dynamic_partitioned_config.get_partition_keys()
+    assert partition_keys == ["blah"]
+
+    result = my_job.execute_in_process(partition_key="blah")
+    assert result.success
+    assert result.dagster_run.tags["foo"] == json.dumps({"bar": "blah"})
