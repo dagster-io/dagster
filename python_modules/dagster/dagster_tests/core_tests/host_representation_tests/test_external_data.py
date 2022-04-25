@@ -1,6 +1,15 @@
 import pytest
 
-from dagster import AssetKey, DagsterInvariantViolationError, Out
+from dagster import (
+    AssetKey,
+    AssetsDefinition,
+    DagsterInvariantViolationError,
+    GraphOut,
+    Out,
+    graph,
+    op,
+)
+from dagster.check import CheckError
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
 from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster.core.host_representation.external_data import (
@@ -489,6 +498,126 @@ def test_source_asset_conflicts_with_asset():
         external_asset_graph_from_defs(
             [job1], source_assets_by_key={AssetKey("bar"): bar_source_asset}
         )
+
+
+def test_nasty_nested_graph_asset():
+    @op
+    def add_one(i):
+        return i + 1
+
+    @graph
+    def add_three(i):
+        return add_one(add_one(add_one(i)))
+
+    @graph
+    def add_five(i):
+        return add_one(add_three(add_one(i)))
+
+    @op
+    def get_sum(a, b):
+        return a + b
+
+    @graph
+    def sum_plus_one(a, b):
+        return add_one(get_sum(a, b))
+
+    @asset
+    def zero():
+        return 0
+
+    @graph(out={"eight": GraphOut(), "five": GraphOut()})
+    def create_eight_and_five(zero):
+        return add_five(add_three(zero)), add_five(zero)
+
+    @graph(out={"thirteen": GraphOut(), "six": GraphOut()})
+    def create_thirteen_and_six(eight, five, zero):
+        return add_five(eight), sum_plus_one(five, zero)
+
+    @graph
+    def create_twenty(thirteen, six):
+        return sum_plus_one(thirteen, six)
+
+    eight_and_five = AssetsDefinition(
+        asset_keys_by_input_name={"zero": AssetKey("zero")},
+        asset_keys_by_output_name={"eight": AssetKey("eight"), "five": AssetKey("five")},
+        node_def=create_eight_and_five,
+    )
+
+    thirteen_and_six = AssetsDefinition(
+        asset_keys_by_input_name={
+            "eight": AssetKey("eight"),
+            "five": AssetKey("five"),
+            "zero": AssetKey("zero"),
+        },
+        asset_keys_by_output_name={"thirteen": AssetKey("thirteen"), "six": AssetKey("six")},
+        node_def=create_thirteen_and_six,
+    )
+
+    twenty = AssetsDefinition(
+        asset_keys_by_input_name={"thirteen": AssetKey("thirteen"), "six": AssetKey("six")},
+        asset_keys_by_output_name={"result": AssetKey("twenty")},
+        node_def=create_twenty,
+    )
+
+    assets_job = build_assets_job("assets_job", [zero, eight_and_five, thirteen_and_six, twenty])
+
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    # sort so that test is deterministic
+    sorted_nodes = sorted(
+        [
+            node._replace(
+                dependencies=sorted(node.dependencies, key=lambda d: d.upstream_asset_key),
+                depended_by=sorted(node.depended_by, key=lambda d: d.downstream_asset_key),
+            )
+            for node in external_asset_nodes
+        ],
+        key=lambda n: n.asset_key,
+    )
+
+    assert sorted_nodes[-3:] == [
+        ExternalAssetNode(
+            asset_key=AssetKey(["thirteen"]),
+            dependencies=[
+                ExternalAssetDependency(AssetKey(["eight"])),
+                ExternalAssetDependency(AssetKey(["five"])),
+                ExternalAssetDependency(AssetKey(["zero"])),
+            ],
+            depended_by=[ExternalAssetDependedBy(AssetKey(["twenty"]))],
+            op_name="create_thirteen_and_six.add_five.add_one_2",
+            op_description=None,
+            job_names=["assets_job"],
+            output_name="result",
+            metadata_entries=[],
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey(["twenty"]),
+            dependencies=[
+                ExternalAssetDependency(AssetKey(["six"])),
+                ExternalAssetDependency(AssetKey(["thirteen"])),
+            ],
+            depended_by=[],
+            op_name="create_twenty.sum_plus_one.add_one",
+            op_description=None,
+            job_names=["assets_job"],
+            output_name="result",
+            metadata_entries=[],
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey(["zero"]),
+            dependencies=[],
+            depended_by=[
+                ExternalAssetDependedBy(AssetKey(["eight"])),
+                ExternalAssetDependedBy(AssetKey(["five"])),
+                ExternalAssetDependedBy(AssetKey(["six"])),
+                ExternalAssetDependedBy(AssetKey(["thirteen"])),
+            ],
+            op_name="zero",
+            op_description=None,
+            job_names=["assets_job"],
+            output_name="result",
+            metadata_entries=[],
+        ),
+    ]
 
 
 def test_back_compat_external_sensor():

@@ -103,7 +103,7 @@ def build_assets_job(
 
     graph = GraphDefinition(
         name=name,
-        node_defs=[asset.op for asset in assets],
+        node_defs=[asset.node_def for asset in assets],
         dependencies=deps,
         description=description,
         input_mappings=None,

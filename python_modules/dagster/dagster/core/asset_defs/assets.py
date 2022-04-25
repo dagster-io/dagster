@@ -1,4 +1,4 @@
-from typing import AbstractSet, Mapping, Optional
+from typing import AbstractSet, Mapping, Optional, cast
 
 from dagster import check
 from dagster.core.definitions import NodeDefinition, OpDefinition
@@ -11,16 +11,26 @@ from .partition_mapping import PartitionMapping
 class AssetsDefinition:
     def __init__(
         self,
-        asset_keys_by_input_name: Mapping[AssetKey, str],
-        asset_keys_by_output_name: Mapping[AssetKey, str],
-        op: OpDefinition,
+        asset_keys_by_input_name: Mapping[str, AssetKey],
+        asset_keys_by_output_name: Mapping[str, AssetKey],
+        node_def: NodeDefinition,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]] = None,
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
     ):
-        self._op = op
-        self._asset_keys_by_input_name = asset_keys_by_input_name
-        self._asset_keys_by_output_name = asset_keys_by_output_name
+        self._node_def = node_def
+        self._asset_keys_by_input_name = check.dict_param(
+            asset_keys_by_input_name,
+            "asset_keys_by_input_name",
+            key_type=str,
+            value_type=AssetKey,
+        )
+        self._asset_keys_by_output_name = check.dict_param(
+            asset_keys_by_output_name,
+            "asset_keys_by_output_name",
+            key_type=str,
+            value_type=AssetKey,
+        )
 
         self._partitions_def = partitions_def
         self._partition_mappings = partition_mappings or {}
@@ -31,15 +41,19 @@ class AssetsDefinition:
         }
 
     def __call__(self, *args, **kwargs):
-        return self._op(*args, **kwargs)
+        return self._node_def(*args, **kwargs)
 
     @property
     def op(self) -> OpDefinition:
-        return self._op
+        check.invariant(
+            isinstance(self._node_def, OpDefinition),
+            "The NodeDefinition for this AssetsDefinition is not of type OpDefinition.",
+        )
+        return cast(OpDefinition, self._node_def)
 
     @property
     def node_def(self) -> NodeDefinition:
-        return self._op
+        return self._node_def
 
     @property
     def asset_deps(self) -> Mapping[AssetKey, AbstractSet[AssetKey]]:
