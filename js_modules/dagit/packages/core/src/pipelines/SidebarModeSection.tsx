@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, IconWrapper, FontFamily, Tooltip} from '@dagster-io/ui';
+import {Colors, Icon, IconWrapper, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -21,21 +21,17 @@ export const SidebarModeSection: React.FC<{
       {mode.resources.map((resource) => (
         <ContextResourceContainer key={resource.name}>
           <Icon name="resource" color={Colors.Gray700} />
-          <Tooltip
-            content={<ResourceSourceTag>{resource.source || NO_DESCRIPTION}</ResourceSourceTag>}
-            placement="top"
-          >
-            <div>
-              <ContextResourceHeader>{resource.name}</ContextResourceHeader>
-              <Description description={resource.description || NO_DESCRIPTION} />
-              {resource.configField && (
-                <ConfigTypeSchema
-                  type={resource.configField.configType}
-                  typesInScope={resource.configField.configType.recursiveConfigTypes}
-                />
-              )}
-            </div>
-          </Tooltip>
+          <div>
+            <ContextResourceHeader>{resource.name}</ContextResourceHeader>
+            <ResourceSourceTag>{resource.source || NO_DESCRIPTION}</ResourceSourceTag>
+            <Description description={resource.description || NO_DESCRIPTION} />
+            {resource.configField && (
+              <ConfigTypeSchema
+                type={resource.configField.configType}
+                typesInScope={resource.configField.configType.recursiveConfigTypes}
+              />
+            )}
+          </div>
         </ContextResourceContainer>
       ))}
       {mode.loggers.map((logger) => (
