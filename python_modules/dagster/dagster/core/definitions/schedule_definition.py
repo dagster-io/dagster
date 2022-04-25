@@ -488,7 +488,5 @@ class ScheduleDefinition:
         return self._default_status
 
 
-        TypeGuard
-
 def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
     return len(params) == 1
