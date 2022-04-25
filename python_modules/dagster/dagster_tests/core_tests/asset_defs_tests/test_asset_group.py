@@ -570,3 +570,76 @@ def test_multiple_partitions_defs():
         frozenset(["hourly_asset", "unpartitioned_asset"]),
         frozenset(["daily_asset_different_start_date", "unpartitioned_asset"]),
     }
+
+
+def test_assets_prefixed_single_asset():
+    @asset
+    def asset1():
+        ...
+
+    result = AssetGroup([asset1]).prefixed("my_prefix").assets
+    assert result[0].asset_key == AssetKey(["my_prefix", "asset1"])
+
+
+def test_assets_prefixed_internal_dep():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2(asset1):
+        del asset1
+
+    result = AssetGroup([asset1, asset2]).prefixed("my_prefix").assets
+    assert result[0].asset_key == AssetKey(["my_prefix", "asset1"])
+    assert result[1].asset_key == AssetKey(["my_prefix", "asset2"])
+    assert set(result[1].dependency_asset_keys) == {AssetKey(["my_prefix", "asset1"])}
+
+
+def test_assets_prefixed_disambiguate():
+    asset1 = SourceAsset(AssetKey(["core", "apple"]))
+
+    @asset(name="apple")
+    def asset2():
+        ...
+
+    @asset(ins={"apple": AssetIn(namespace="core")})
+    def orange(apple):
+        del apple
+
+    @asset
+    def banana(apple):
+        del apple
+
+    result = (
+        AssetGroup([asset2, orange, banana], source_assets=[asset1]).prefixed("my_prefix").assets
+    )
+    assert len(result) == 3
+    assert result[0].asset_key == AssetKey(["my_prefix", "apple"])
+    assert result[1].asset_key == AssetKey(["my_prefix", "orange"])
+    assert set(result[1].dependency_asset_keys) == {AssetKey(["core", "apple"])}
+    assert result[2].asset_key == AssetKey(["my_prefix", "banana"])
+    assert set(result[2].dependency_asset_keys) == {AssetKey(["my_prefix", "apple"])}
+
+
+def test_assets_prefixed_source_asset():
+    asset1 = SourceAsset(key=AssetKey(["upstream_prefix", "asset1"]))
+
+    @asset(ins={"asset1": AssetIn(namespace="upstream_prefix")})
+    def asset2(asset1):
+        del asset1
+
+    result = AssetGroup([asset2], source_assets=[asset1]).prefixed("my_prefix").assets
+    assert len(result) == 1
+    assert result[0].asset_key == AssetKey(["my_prefix", "asset2"])
+    assert set(result[0].dependency_asset_keys) == {AssetKey(["upstream_prefix", "asset1"])}
+
+
+def test_assets_prefixed_no_matches():
+    @asset
+    def orange(apple):
+        del apple
+
+    result = AssetGroup([orange]).prefixed("my_prefix").assets
+    assert result[0].asset_key == AssetKey(["my_prefix", "orange"])
+    assert set(result[0].dependency_asset_keys) == {AssetKey("apple")}

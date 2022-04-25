@@ -110,6 +110,9 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
         return self.to_string() == other.to_string()
 
     def to_string(self, legacy: Optional[bool] = False) -> Optional[str]:
+        """
+        E.g. '["first_component", "second_component"]'
+        """
         if not self.path:
             return None
         if legacy:
