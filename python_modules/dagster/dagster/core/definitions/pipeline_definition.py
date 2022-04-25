@@ -32,6 +32,7 @@ from dagster.core.utils import str_format_set
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.backcompat import experimental_class_warning
 
+from .asset_layer import AssetLayer
 from .dependency import (
     DependencyDefinition,
     DependencyStructure,
@@ -106,6 +107,8 @@ class PipelineDefinition:
         solid_retry_policy (Optional[RetryPolicy]): The default retry policy for all solids in
             this pipeline. Only used if retry policy is not defined on the solid definition or
             solid invocation.
+        asset_layer (Optional[AssetLayer]): Structured object containing all definition-time asset
+            information for this pipeline.
 
 
         _parent_pipeline_def (INTERNAL ONLY): Used for tracking pipelines created using solid subsets.
@@ -167,6 +170,7 @@ class PipelineDefinition:
         graph_def=None,
         _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
         version_strategy: Optional[VersionStrategy] = None,
+        asset_layer: Optional[AssetLayer] = None,
     ):
         # If a graph is specificed directly use it
         if check.opt_inst_param(graph_def, "graph_def", GraphDefinition):
@@ -267,6 +271,10 @@ class PipelineDefinition:
 
         if self.version_strategy is not None:
             experimental_class_warning("VersionStrategy")
+
+        self._asset_layer = check.opt_inst_param(
+            asset_layer, "asset_layer", AssetLayer, default=AssetLayer.from_graph(self.graph)
+        )
 
     @property
     def name(self):
@@ -494,6 +502,10 @@ class PipelineDefinition:
     @property
     def hook_defs(self) -> AbstractSet[HookDefinition]:
         return self._hook_defs
+
+    @property
+    def asset_layer(self) -> AssetLayer:
+        return self._asset_layer
 
     def get_all_hooks_for_handle(self, handle: NodeHandle) -> FrozenSet[HookDefinition]:
         """Gather all the hooks for the given solid from all places possibly attached with a hook.

@@ -416,6 +416,22 @@ class NodeHandle(
         return NodeHandle(**{k: dict_repr[k] for k in ["name", "parent"]})
 
 
+class NodeInputHandle(
+    NamedTuple("_NodeInputHandle", [("node_handle", NodeHandle), ("input_name", str)])
+):
+    """
+    A structured object to uniquely identify inputs in the potentially recursive graph structure.
+    """
+
+
+class NodeOutputHandle(
+    NamedTuple("_NodeOutputHandle", [("node_handle", NodeHandle), ("output_name", str)])
+):
+    """
+    A structured object to uniquely identify outputs in the potentially recursive graph structure.
+    """
+
+
 # previous name for NodeHandle was SolidHandle
 register_serdes_tuple_fallbacks({"SolidHandle": NodeHandle})
 

@@ -5,6 +5,7 @@ import pytest
 from dagster import (
     AssetKey,
     DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
     DependencyDefinition,
     IOManager,
     ResourceDefinition,
@@ -17,6 +18,10 @@ from dagster.core.snap.dep_snapshot import (
     build_dep_structure_snapshot_from_icontains_solids,
 )
 from dagster.utils import safe_tempfile_path
+
+
+def _asset_keys_for_node(result, node_name):
+    return {mat.asset_key for mat in result.asset_materializations_for_node(node_name)}
 
 
 def test_single_asset_pipeline():
@@ -94,7 +99,8 @@ def test_join():
             "asset2": DependencyDefinition("asset2", "result"),
         },
     }
-    assert job.execute_in_process().success
+    result = job.execute_in_process()
+    assert _asset_keys_for_node(result, "asset3") == {AssetKey("asset3")}
 
 
 def test_asset_key_output():
@@ -110,6 +116,7 @@ def test_asset_key_output():
     result = job.execute_in_process()
     assert result.success
     assert result.output_for_node("asset2") == 1
+    assert _asset_keys_for_node(result, "asset2") == {AssetKey("asset2")}
 
 
 def test_asset_key_matches_input_name():
@@ -131,6 +138,7 @@ def test_asset_key_matches_input_name():
     result = job.execute_in_process()
     assert result.success
     assert result.output_for_node("last_asset") == "foo"
+    assert _asset_keys_for_node(result, "last_asset") == {AssetKey("last_asset")}
 
 
 def test_asset_key_and_inferred():
@@ -150,6 +158,7 @@ def test_asset_key_and_inferred():
     result = job.execute_in_process()
     assert result.success
     assert result.output_for_node("asset_baz") == 7
+    assert _asset_keys_for_node(result, "asset_baz") == {AssetKey("asset_baz")}
 
 
 def test_asset_key_for_asset_with_namespace_list():
@@ -177,6 +186,9 @@ def test_asset_key_for_asset_with_namespace_list():
     result = job.execute_in_process()
     assert result.success
     assert result.output_for_node("success_asset") == "foo"
+    assert _asset_keys_for_node(result, "hell__o__asset_foo") == {
+        AssetKey(["hell", "o", "asset_foo"])
+    }
 
 
 def test_asset_key_for_asset_with_namespace_str():
@@ -193,6 +205,7 @@ def test_asset_key_for_asset_with_namespace_str():
     result = job.execute_in_process()
     assert result.success
     assert result.output_for_node("success_asset") == "foo"
+    assert _asset_keys_for_node(result, "hello__asset_foo") == {AssetKey(["hello", "asset_foo"])}
 
 
 def test_source_asset():
@@ -225,7 +238,9 @@ def test_source_asset():
         },
     )
     assert job.graph.node_defs == [asset1.op]
-    assert job.execute_in_process().success
+    result = job.execute_in_process()
+    assert result.success
+    assert _asset_keys_for_node(result, "asset1") == {AssetKey("asset1")}
 
 
 def test_source_op_asset():
@@ -256,7 +271,9 @@ def test_source_op_asset():
         resource_defs={"special_io_manager": my_io_manager},
     )
     assert job.graph.node_defs == [asset1.op]
-    assert job.execute_in_process().success
+    result = job.execute_in_process()
+    assert result.success
+    assert _asset_keys_for_node(result, "asset1") == {AssetKey("asset1")}
 
 
 def test_non_argument_deps():
@@ -273,7 +290,10 @@ def test_non_argument_deps():
             assert os.path.exists(path)
 
         job = build_assets_job("a", [foo, bar])
-        assert job.execute_in_process().success
+        result = job.execute_in_process()
+        assert result.success
+        assert _asset_keys_for_node(result, "foo") == {AssetKey("foo")}
+        assert _asset_keys_for_node(result, "bar") == {AssetKey("bar")}
 
 
 def test_multiple_non_argument_deps():
@@ -313,3 +333,38 @@ def test_multiple_non_argument_deps():
     result = job.execute_in_process()
     assert result.success
     assert result.output_for_node("qux") == 1
+    assert _asset_keys_for_node(result, "namespace__bar") == {AssetKey(["namespace", "bar"])}
+    assert _asset_keys_for_node(result, "qux") == {AssetKey("qux")}
+
+
+def test_fail_with_get_output_asset_key():
+    @io_manager
+    def my_io_manager(context):
+        class Mine(IOManager):
+            def get_output_asset_key(self, context):
+                return AssetKey("hey")
+
+            def handle_output(self, context, obj):
+                pass
+
+            def load_input(self, context):
+                return None
+
+        return Mine()
+
+    @asset
+    def foo():
+        return 1
+
+    @asset
+    def bar(foo):
+        return foo + 1
+
+    job = build_assets_job("x", [foo, bar], resource_defs={"io_manager": my_io_manager})
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='The IOManager of output "result" on node "foo" associates it with asset key '
+        "\"AssetKey\(\['hey'\]\)\", but this output has already been defined to produce asset "
+        "\"AssetKey\(\['foo'\]\)\"",
+    ):
+        job.execute_in_process()
