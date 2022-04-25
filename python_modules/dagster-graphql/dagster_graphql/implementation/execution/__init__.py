@@ -20,7 +20,11 @@ from .backfill import (
     create_and_launch_partition_backfill,
     resume_partition_backfill,
 )
-from .launch_execution import launch_pipeline_execution, launch_pipeline_reexecution
+from .launch_execution import (
+    launch_pipeline_execution,
+    launch_pipeline_reexecution,
+    launch_reexecution_from_parent_run,
+)
 
 
 def _force_mark_as_canceled(instance, run_id):

@@ -1,5 +1,6 @@
 import graphene
 
+from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.workspace.permissions import Permissions
 
@@ -9,6 +10,7 @@ from ...implementation.execution import (
     delete_pipeline_run,
     launch_pipeline_execution,
     launch_pipeline_reexecution,
+    launch_reexecution_from_parent_run,
     resume_partition_backfill,
     terminate_pipeline_execution,
     wipe_assets,
@@ -40,7 +42,12 @@ from ..errors import (
     GrapheneUnauthorizedError,
 )
 from ..external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
-from ..inputs import GrapheneAssetKeyInput, GrapheneExecutionParams, GrapheneLaunchBackfillParams
+from ..inputs import (
+    GrapheneAssetKeyInput,
+    GrapheneExecutionParams,
+    GrapheneLaunchBackfillParams,
+    GrapheneReexecutionParams,
+)
 from ..pipelines.pipeline import GrapheneRun
 from ..runs import (
     GrapheneLaunchRunReexecutionResult,
@@ -293,7 +300,8 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
     Output = graphene.NonNull(GrapheneLaunchRunReexecutionResult)
 
     class Arguments:
-        executionParams = graphene.NonNull(GrapheneExecutionParams)
+        executionParams = graphene.Argument(GrapheneExecutionParams)
+        reexecutionParams = graphene.Argument(GrapheneReexecutionParams)
 
     class Meta:
         description = "Re-launch a run via the run launcher configured on the instance"
@@ -302,10 +310,24 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
     @capture_error
     @check_permission(Permissions.LAUNCH_PIPELINE_REEXECUTION)
     def mutate(self, graphene_info, **kwargs):
-        return create_execution_params_and_launch_pipeline_reexec(
-            graphene_info,
-            execution_params_dict=kwargs["executionParams"],
+        execution_params = kwargs.get("executionParams")
+        reexecution_params = kwargs.get("reexecutionParams")
+        check.invariant(
+            bool(execution_params) != bool(reexecution_params),
+            "Must only provide one of either executionParams or reexecutionParams",
         )
+
+        if execution_params:
+            return create_execution_params_and_launch_pipeline_reexec(
+                graphene_info,
+                execution_params_dict=kwargs["executionParams"],
+            )
+        else:
+            return launch_reexecution_from_parent_run(
+                graphene_info,
+                reexecution_params["parentRunId"],
+                reexecution_params["policy"],
+            )
 
 
 class GrapheneTerminateRunPolicy(graphene.Enum):

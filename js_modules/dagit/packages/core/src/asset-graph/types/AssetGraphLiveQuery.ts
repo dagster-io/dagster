@@ -84,6 +84,7 @@ export interface AssetGraphLiveQuery_assetNodes {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  opNames: string[];
   repository: AssetGraphLiveQuery_assetNodes_repository;
   assetKey: AssetGraphLiveQuery_assetNodes_assetKey;
   assetMaterializations: AssetGraphLiveQuery_assetNodes_assetMaterializations[];

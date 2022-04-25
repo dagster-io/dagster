@@ -81,7 +81,6 @@ def _assets_job_info_for_node(
             check.failed("Must have node_handle for non-graph NodeDefinition")
 
         input_asset_keys: Set[AssetKey] = set()
-
         for input_def in node_def.input_defs:
             input_key = input_def.hardcoded_asset_key
             if input_key:
