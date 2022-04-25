@@ -231,6 +231,7 @@ type AssetNode {
   metadataEntries: [MetadataEntry!]!
   op: SolidDefinition
   opName: String
+  opNames: [String!]!
   partitionKeys: [String!]!
   partitionDefinition: String
   repository: Repository!

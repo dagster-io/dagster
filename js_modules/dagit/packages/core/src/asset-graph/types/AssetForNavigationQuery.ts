@@ -17,6 +17,7 @@ export interface AssetForNavigationQuery_assetOrError_Asset_definition {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  opNames: string[];
   jobNames: string[];
 }
 

@@ -21,6 +21,7 @@ export interface AssetIdScanQuery_repositoriesOrError_RepositoryConnection_nodes
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  opNames: string[];
 }
 
 export interface AssetIdScanQuery_repositoriesOrError_RepositoryConnection_nodes {

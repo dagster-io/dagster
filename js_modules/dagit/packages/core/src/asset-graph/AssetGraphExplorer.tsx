@@ -170,11 +170,11 @@ const AssetGraphExplorerWithData: React.FC<
       e.stopPropagation();
 
       const token = tokenForAssetKey(assetKey);
-      let clicked: {opName: string | null; jobName: string | null} = {opName: null, jobName: null};
+      let clicked: {opNames: string[]; jobName: string | null} = {opNames: [], jobName: null};
 
       if (node?.definition) {
         // The asset's defintion was provided in our job.assetNodes query. Show it in the current graph.
-        clicked = {opName: node.definition.opName, jobName: explorerPath.pipelineName};
+        clicked = {opNames: node.definition.opNames, jobName: explorerPath.pipelineName};
       } else {
         // The asset's definition was not provided in our query for job.assetNodes. This means
         // it's in another job or is a source asset not defined in the repository at all.
@@ -185,7 +185,7 @@ const AssetGraphExplorerWithData: React.FC<
       let nextOpsNameSelection = token;
 
       // If no opName, this is a source asset.
-      if (clicked.jobName !== explorerPath.pipelineName || !clicked.opName) {
+      if (clicked.jobName !== explorerPath.pipelineName || !clicked.opNames.length) {
         nextOpsQuery = '';
       } else if (e.shiftKey || e.metaKey) {
         const existing = explorerPath.opNames[0].split(',');
@@ -296,7 +296,7 @@ const AssetGraphExplorerWithData: React.FC<
                         }}
                         style={{overflow: 'visible'}}
                       >
-                        {!graphNode || !graphNode.definition.opName ? (
+                        {!graphNode || !graphNode.definition.opNames.length ? (
                           <ForeignNode assetKey={{path}} />
                         ) : (
                           <AssetNode
@@ -323,8 +323,8 @@ const AssetGraphExplorerWithData: React.FC<
                     {
                       ...explorerPath,
                       opNames:
-                        selectedGraphNodes.length && selectedGraphNodes[0].definition.opName
-                          ? [selectedGraphNodes[0].definition.opName]
+                        selectedGraphNodes.length && selectedGraphNodes[0].definition.opNames.length
+                          ? selectedGraphNodes[0].definition.opNames
                           : [],
                     },
                     'replace',
