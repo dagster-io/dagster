@@ -335,7 +335,46 @@ const AssetGraphExplorerWithData: React.FC<
             >
               {({scale: _scale}, viewportRect) => (
                 <SVGContainer width={layout.width} height={layout.height}>
-                  <AssetEdges edges={layout.edges} />
+                  <AssetEdges edges={layout.edges} extradark={_scale < 0.4} />
+
+                  {Object.values(layout.bundles).map(({id, bounds}) => {
+                    return (
+                      <foreignObject
+                        x={bounds.x}
+                        y={bounds.y}
+                        width={bounds.width - 70}
+                        height={bounds.height - 30}
+                        key={id}
+                      >
+                        <h3 style={{opacity: _scale > 1 ? (_scale - 1) / 0.2 : 0}}>
+                          {JSON.parse(id)[0]}
+                        </h3>
+                        <div
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            background:
+                              _scale > 0.8 ? `rgba(220,220,250,0.4)` : 'rgba(220,220,250,1)',
+                            display: 'flex',
+                            borderRadius: 10,
+                          }}
+                        >
+                          <h3
+                            style={{
+                              alignSelf: 'center',
+                              width: '100%',
+                              textAlign: 'center',
+                              fontSize: 50,
+                              lineHeight: 0,
+                              opacity: 1 - _scale,
+                            }}
+                          >
+                            {JSON.parse(id)[0]}
+                          </h3>
+                        </div>
+                      </foreignObject>
+                    );
+                  })}
 
                   {Object.values(layout.nodes).map(({id, bounds}, index) => {
                     const graphNode = assetGraphData.nodes[id];
@@ -360,7 +399,7 @@ const AssetGraphExplorerWithData: React.FC<
                           viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
                           e.stopPropagation();
                         }}
-                        style={{overflow: 'visible'}}
+                        style={{overflow: 'visible', opacity: (_scale - 0.3) * 4}}
                       >
                         {!graphNode || !graphNode.definition.opNames.length ? (
                           <ForeignNode assetKey={{path}} />

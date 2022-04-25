@@ -22,6 +22,9 @@ export type AssetGraphLayout = {
   height: number;
   edges: AssetLayoutEdge[];
   nodes: {[id: string]: AssetLayout};
+
+  bundleEdges: AssetLayoutEdge[];
+  bundles: {[id: string]: AssetLayout};
 };
 
 const opts: {margin: number; mini: boolean} = {
@@ -29,8 +32,19 @@ const opts: {margin: number; mini: boolean} = {
   mini: false,
 };
 
+const BUNDLE_SEED: {[key: string]: string[]} = {
+  '["stats"]': ['["story_daily_stats"]', '["comment_daily_stats"]', '["activity_daily_stats"]'],
+  '["download"]': ['["id_range_for_time"]', '["items"]', '["comments"]', '["stories"]'],
+  '["recommender"]': [
+    '["comment_stories"]',
+    '["user_story_matrix"]',
+    '["recommender_model"]',
+    '["comment_top_stories"]',
+    '["user_top_recommended_stories"]',
+  ],
+};
 export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
-  const g = new dagre.graphlib.Graph();
+  const g = new dagre.graphlib.Graph({compound: true});
 
   g.setGraph({
     rankdir: 'TB',
@@ -52,6 +66,14 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
     });
 
   const foreignNodes = {};
+
+  for (const [parent, children] of Object.entries(BUNDLE_SEED)) {
+    g.setNode(parent, {});
+    for (const child of children) {
+      g.setParent(child, parent);
+    }
+  }
+
   Object.keys(graphData.downstream).forEach((upstreamId) => {
     const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
     downstreamIds.forEach((downstreamId) => {
@@ -61,7 +83,16 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
       ) {
         return;
       }
+
       g.setEdge({v: upstreamId, w: downstreamId}, {weight: 1});
+      // const upstreamParentId = g.parent(upstreamId);
+      // const downstreamParentId = g.parent(downstreamId);
+      // if (upstreamParentId || downstreamParentId) {
+      //   g.setEdge(
+      //     {v: upstreamParentId || upstreamId, w: downstreamParentId || downstreamId},
+      //     {weight: 1},
+      //   );
+      // }
 
       if (!shouldRender(graphData.nodes[downstreamId])) {
         foreignNodes[downstreamId] = true;
@@ -88,35 +119,53 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
 
   let maxWidth = 0;
   let maxHeight = 0;
+
   const nodes: {[id: string]: AssetLayout} = {};
+  const bundles: {[id: string]: AssetLayout} = {};
+
   Object.keys(dagreNodesById).forEach((id) => {
     const dagreNode = dagreNodesById[id];
-    nodes[id] = {
-      id,
-      bounds: {
-        x: dagreNode.x - dagreNode.width / 2,
-        y: dagreNode.y - dagreNode.height / 2,
-        width: dagreNode.width,
-        height: dagreNode.height,
-      },
+    const bounds = {
+      x: dagreNode.x - dagreNode.width / 2,
+      y: dagreNode.y - dagreNode.height / 2,
+      width: dagreNode.width,
+      height: dagreNode.height,
     };
+    if (BUNDLE_SEED[id]) {
+      bundles[id] = {id, bounds};
+    } else {
+      nodes[id] = {id, bounds};
+    }
     maxWidth = Math.max(maxWidth, dagreNode.x + dagreNode.width / 2);
     maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height / 2);
   });
 
   const edges: AssetLayoutEdge[] = [];
+  const bundleEdges: AssetLayoutEdge[] = [];
+
   g.edges().forEach((e) => {
     const points = g.edge(e).points;
-    edges.push({
-      from: points[0],
-      to: points[points.length - 1],
-      dashed: false,
-    });
+    if (bundles[e.v] || bundles[e.w]) {
+      bundleEdges.push({
+        from: points[0],
+        to: points[points.length - 1],
+        dashed: false,
+      });
+    } else {
+      edges.push({
+        from: points[0],
+        to: points[points.length - 1],
+        dashed: false,
+      });
+    }
   });
 
+  console.log(bundles);
   return {
     nodes,
     edges,
+    bundles,
+    bundleEdges,
     width: maxWidth + opts.margin,
     height: maxHeight + opts.margin,
   };
