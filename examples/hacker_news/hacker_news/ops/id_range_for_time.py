@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
-from typing import Tuple
 
-from dagster import Out, Output, check, op
+from dagster import Out, Output, Tuple, check, op
 
 
 def binary_search_nearest_left(get_value, start, end, min_target):
@@ -91,7 +90,7 @@ def _id_range_for_time(start, end, hn_client):
 @op(
     required_resource_keys={"hn_client", "partition_bounds"},
     out=Out(
-        Tuple[int, int],  # type: ignore
+        Tuple[int, int],
         description="The lower (inclusive) and upper (exclusive) ids that bound the range for the partition",
     ),
 )
