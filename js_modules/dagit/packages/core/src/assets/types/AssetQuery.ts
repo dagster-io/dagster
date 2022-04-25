@@ -2423,6 +2423,7 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  opNames: string[];
   jobNames: string[];
   description: string | null;
   partitionDefinition: string | null;
@@ -2465,6 +2466,7 @@ export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  opNames: string[];
   jobNames: string[];
   description: string | null;
   partitionDefinition: string | null;
@@ -2487,6 +2489,7 @@ export interface AssetQuery_assetOrError_Asset_definition {
   jobs: AssetQuery_assetOrError_Asset_definition_jobs[];
   description: string | null;
   opName: string | null;
+  opNames: string[];
   jobNames: string[];
   computeKind: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_assetKey;

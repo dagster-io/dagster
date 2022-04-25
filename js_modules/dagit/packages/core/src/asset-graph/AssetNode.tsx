@@ -174,6 +174,7 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
   fragment AssetNodeLiveFragment on AssetNode {
     id
     opName
+    opNames
     repository {
       id
     }
@@ -191,6 +192,7 @@ export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeFragment on AssetNode {
     id
     opName
+    opNames
     description
     partitionDefinition
     computeKind

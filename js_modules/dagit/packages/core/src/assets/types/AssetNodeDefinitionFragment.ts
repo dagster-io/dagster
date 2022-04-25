@@ -2369,6 +2369,7 @@ export interface AssetNodeDefinitionFragment_dependencies_asset {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  opNames: string[];
   jobNames: string[];
   description: string | null;
   partitionDefinition: string | null;
@@ -2411,6 +2412,7 @@ export interface AssetNodeDefinitionFragment_dependedBy_asset {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  opNames: string[];
   jobNames: string[];
   description: string | null;
   partitionDefinition: string | null;
@@ -2430,6 +2432,7 @@ export interface AssetNodeDefinitionFragment {
   id: string;
   description: string | null;
   opName: string | null;
+  opNames: string[];
   jobNames: string[];
   repository: AssetNodeDefinitionFragment_repository;
   partitionDefinition: string | null;

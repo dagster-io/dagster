@@ -101,6 +101,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     op = graphene.Field(GrapheneSolidDefinition)
     opName = graphene.String()
+    opNames = non_null_list(graphene.String)
     partitionKeys = non_null_list(graphene.String)
     partitionDefinition = graphene.String()
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
@@ -367,6 +368,13 @@ class GrapheneAssetNode(graphene.ObjectType):
             return build_solid_definition(pipeline, self._external_asset_node.op_name)
         else:
             return None
+
+    def resolve_opNames(self, _graphene_info) -> List[str]:
+        # todo OwenKephart: Return the correct list of op names.
+        if self._external_asset_node.op_name:
+            return [self._external_asset_node.op_name]
+        else:
+            return []
 
     def resolve_partitionDefinition(self, _graphene_info) -> Optional[str]:
         partitions_def_data = self._external_asset_node.partitions_def_data
