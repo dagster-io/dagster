@@ -55,6 +55,7 @@ def asset(
     dagster_type: Optional[DagsterType] = ...,
     partitions_def: Optional[PartitionsDefinition] = ...,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = ...,
+    op_tags: Optional[Dict[str, Any]] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -73,6 +74,7 @@ def asset(
     dagster_type: Optional[DagsterType] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
+    op_tags: Optional[Dict[str, Any]] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -111,6 +113,10 @@ def asset(
             If no entry is provided for a particular asset dependency, the partition mapping defaults
             to the default partition mapping for the partitions definition, which is typically maps
             partition keys to the same partition keys in upstream assets.
+        op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
+            Frameworks may expect and require certain metadata to be attached to a op. Values that
+            are not strings will be json encoded and must meet the criteria that
+            `json.loads(json.dumps(value)) == value`.
 
     Examples:
 
@@ -137,6 +143,7 @@ def asset(
             dagster_type=dagster_type,
             partitions_def=partitions_def,
             partition_mappings=partition_mappings,
+            op_tags=op_tags,
         )(fn)
 
     return inner
@@ -157,6 +164,7 @@ class _Asset:
         dagster_type: Optional[DagsterType] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
+        op_tags: Optional[Dict[str, Any]] = None,
     ):
         self.name = name
         # if user inputs a single string, coerce to list
@@ -171,6 +179,7 @@ class _Asset:
         self.dagster_type = dagster_type
         self.partitions_def = partitions_def
         self.partition_mappings = partition_mappings
+        self.op_tags = op_tags
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -202,7 +211,10 @@ class _Asset:
                 ins=asset_ins,
                 out=out,
                 required_resource_keys=self.required_resource_keys,
-                tags={"kind": self.compute_kind} if self.compute_kind else None,
+                tags={
+                    **({"kind": self.compute_kind} if self.compute_kind else {}),
+                    **(self.op_tags or {}),
+                },
                 config_schema={
                     "assets": {
                         "input_partitions": Field(dict, is_required=False),
