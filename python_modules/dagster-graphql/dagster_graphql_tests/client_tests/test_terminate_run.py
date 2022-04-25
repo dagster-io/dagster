@@ -24,7 +24,7 @@ def test_terminate_run_not_failure(mock_client: MockClient):
 
     with pytest.raises(DagsterGraphQLClientError) as e:
         mock_client.python_client.terminate_run(RUN_ID)
-        assert e.value.message == expected_result
+        assert e.value == expected_result
 
 
 @python_client_test_suite
@@ -35,7 +35,7 @@ def test_terminate_run_not_found(mock_client: MockClient):
     with pytest.raises(DagsterGraphQLClientError) as e:
         mock_client.mock_gql_client.execute.return_value = response
         mock_client.python_client.terminate_run(RUN_ID)
-        assert e.value.message == expected_result
+        assert e.value == expected_result
 
 
 @python_client_test_suite
@@ -46,4 +46,4 @@ def test_terminate_run_python_error(mock_client: MockClient):
     with pytest.raises(DagsterGraphQLClientError) as e:
         mock_client.mock_gql_client.execute.return_value = response
         mock_client.python_client.terminate_run(RUN_ID)
-        assert e.value.message == expected_result
+        assert e.value  == expected_result
