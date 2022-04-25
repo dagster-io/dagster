@@ -98,12 +98,20 @@ def is_release_branch(branch_name: str):
     return branch_name.startswith("release-")
 
 
+# To customize the tested Python versions for a branch, set environment variable
+# $DEFAULT_PYTHON_VERSIONS to a comma-separated list of python version specifiers of the form VX_Y
+# (i.e. attributes of `SupportedPython`).
+_versions = os.environ.get("DEFAULT_PYTHON_VERSIONS", "V3_9")
+DEFAULT_PYTHON_VERSIONS = [getattr(SupportedPython, ver) for ver in _versions.split(",")]
+
+
 def get_python_versions_for_branch(pr_versions=None):
-    pr_versions = pr_versions if pr_versions != None else [SupportedPython.V3_9]
+    pr_versions = pr_versions if pr_versions != None else DEFAULT_PYTHON_VERSIONS
 
     # Run one representative version on PRs, the full set of python versions on master after
     # landing and on release branches before shipping
     branch_name = os.getenv("BUILDKITE_BRANCH")
+    assert branch_name is not None, "$BUILDKITE_BRANCH env var must be set"
     if branch_name == "master" or is_release_branch(branch_name):
         return SupportedPythons
     else:
