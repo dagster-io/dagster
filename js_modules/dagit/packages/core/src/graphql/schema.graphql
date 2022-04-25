@@ -1485,6 +1485,7 @@ type Graph implements SolidContainer {
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
+  tags: [PipelineTag!]!
 }
 
 type GraphNotFoundError implements Error {

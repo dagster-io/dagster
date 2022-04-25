@@ -3,6 +3,7 @@ import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {RunTag} from '../runs/RunTag';
 import {PipelineSelector} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -41,6 +42,7 @@ export const SidebarPipelineOrJobOverview: React.FC<{
         }
 
         const modes = pipelineSnapshotOrError.modes;
+        const tags = pipelineSnapshotOrError.tags;
 
         return (
           <>
@@ -55,6 +57,13 @@ export const SidebarPipelineOrJobOverview: React.FC<{
               <Box padding={{vertical: 16, horizontal: 24}}>
                 {modes.map((mode) => (
                   <SidebarModeSection mode={mode} key={mode.name} />
+                ))}
+              </Box>
+            </SidebarSection>
+            <SidebarSection title="Tags">
+              <Box padding={{vertical: 16, horizontal: 24}}>
+                {tags.map((tag, idx) => (
+                  <RunTag tag={tag} key={idx} />
                 ))}
               </Box>
             </SidebarSection>
@@ -75,6 +84,10 @@ const JOB_OVERVIEW_SIDEBAR_QUERY = gql`
         modes {
           id
           ...SidebarModeInfoFragment
+        }
+        tags {
+          key
+          value
         }
       }
       ... on PipelineNotFoundError {
