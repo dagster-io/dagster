@@ -37,6 +37,7 @@ const testValue: AppContextValue = {
 const websocketValue: WebSocketContextType = {
   availability: 'available',
   status: WebSocket.OPEN,
+  disabled: false,
 };
 
 interface Props {
