@@ -2426,6 +2426,7 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset {
   jobNames: string[];
   description: string | null;
   partitionDefinition: string | null;
+  computeKind: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetKey;
   repository: AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository;
   assetMaterializations: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations[];
@@ -2467,6 +2468,7 @@ export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset {
   jobNames: string[];
   description: string | null;
   partitionDefinition: string | null;
+  computeKind: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetKey;
   repository: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository;
   assetMaterializations: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations[];
@@ -2486,6 +2488,7 @@ export interface AssetQuery_assetOrError_Asset_definition {
   description: string | null;
   opName: string | null;
   jobNames: string[];
+  computeKind: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_assetKey;
   assetMaterializations: AssetQuery_assetOrError_Asset_definition_assetMaterializations[];
   metadataEntries: AssetQuery_assetOrError_Asset_definition_metadataEntries[];

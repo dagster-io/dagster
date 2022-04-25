@@ -12,12 +12,18 @@ from dagster import (
 daily_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
 
 
-@asset(metadata={"owner": "alice@example.com"}, partitions_def=daily_partitions_def)
+@asset(
+    metadata={"owner": "alice@example.com"},
+    compute_kind="ipynb",
+    partitions_def=daily_partitions_def,
+)
 def upstream_daily_partitioned_asset():
     pass
 
 
-@asset(metadata={"owner": "alice@example.com"}, partitions_def=daily_partitions_def)
+@asset(
+    metadata={"owner": "alice@example.com"}, compute_kind="sql", partitions_def=daily_partitions_def
+)
 def downstream_daily_partitioned_asset(upstream_daily_partitioned_asset):
     assert upstream_daily_partitioned_asset is None
 

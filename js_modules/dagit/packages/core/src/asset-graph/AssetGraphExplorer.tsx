@@ -34,7 +34,6 @@ import {
 } from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../pipelines/SidebarPipelineOrJobOverview';
-import {GraphExplorerSolidHandleFragment} from '../pipelines/types/GraphExplorerSolidHandleFragment';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 import {PipelineSelector} from '../types/globalTypes';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
@@ -66,11 +65,6 @@ interface Props {
 
   pipelineSelector?: PipelineSelector;
   filterNodes?: (assetNode: AssetGraphQuery_assetNodes) => boolean;
-
-  // Optionally pass op handles to display op metadata on the assets linked to each op.
-  // (eg: the "ipynb" tag annotation). Right now, we already have this data loaded for
-  // individual jobs, and the global asset graph quietly doesn't display these.
-  handles?: GraphExplorerSolidHandleFragment[];
 
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
@@ -144,7 +138,6 @@ const AssetGraphExplorerWithData: React.FC<
   } & Props
 > = (props) => {
   const {
-    handles = [],
     options,
     setOptions,
     explorerPath,
@@ -309,10 +302,6 @@ const AssetGraphExplorerWithData: React.FC<
                           <AssetNode
                             definition={graphNode.definition}
                             liveData={liveDataByNode[graphNode.id]}
-                            metadata={
-                              handles.find((h) => h.handleID === graphNode.definition.opName)?.solid
-                                .definition.metadata || []
-                            }
                             selected={selectedGraphNodes.includes(graphNode)}
                           />
                         )}
