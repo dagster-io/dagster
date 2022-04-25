@@ -11,8 +11,8 @@ from .partition_mapping import PartitionMapping
 class AssetsDefinition:
     def __init__(
         self,
-        asset_keys_by_input_name: Mapping[AssetKey, str],
-        asset_keys_by_output_name: Mapping[AssetKey, str],
+        asset_keys_by_input_name: Mapping[str, AssetKey],
+        asset_keys_by_output_name: Mapping[str, AssetKey],
         op: OpDefinition,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]] = None,

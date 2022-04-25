@@ -55,6 +55,7 @@ if TYPE_CHECKING:
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster.core.instance import DagsterInstance
 
+    from .asset_layer import AssetLayer
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
     from .partition import PartitionedConfig, PartitionsDefinition

@@ -13,6 +13,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
     from dagster.core.definitions.resource_definition import Resources
+    from dagster.core.definitions.solid_definition import SolidDefinition
     from dagster.core.events import DagsterEvent
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.log_manager import DagsterLogManager
@@ -268,7 +269,8 @@ class InputContext:
         if self.upstream_output is None:
             check.failed("InputContext needs upstream_output to get asset_partitions_time_window")
 
-        partitions_def = self.upstream_output.asset_info.partitions_def
+        asset_info = self.upstream_output.asset_info
+        partitions_def = asset_info.partitions_def if asset_info else None
 
         if not partitions_def:
             raise ValueError(
