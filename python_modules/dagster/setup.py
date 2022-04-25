@@ -82,7 +82,7 @@ if __name__ == "__main__":
             "tabulate",
             "tqdm",
             "typing_compat",
-            "typing_extensions>4,<5",
+            "typing_extensions>=3.10",
             "sqlalchemy>=1.0",
             "toposort>=1.0",
             "watchdog>=0.8.3",
