@@ -18,14 +18,15 @@ from ..job_definition import JobDefinition
 from ..sensor_definition import (
     AssetMaterializationFunction,
     AssetSensorDefinition,
+    RawSensorEvaluationFunction,
     RunRequest,
     SensorDefinition,
-    SensorEvaluationFunction,
     SkipReason,
 )
 
 if TYPE_CHECKING:
     from ...events.log import EventLogEntry
+
 
 def sensor(
     pipeline_name: Optional[str] = None,
@@ -37,7 +38,7 @@ def sensor(
     job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-) -> Callable[[SensorEvaluationFunction], SensorDefinition]:
+) -> Callable[[RawSensorEvaluationFunction], SensorDefinition]:
     """
     Creates a sensor where the decorated function is used as the sensor's evaluation function.  The
     decorated function may:
@@ -72,7 +73,7 @@ def sensor(
     """
     check.opt_str_param(name, "name")
 
-    def inner(fn: SensorEvaluationFunction) -> SensorDefinition:
+    def inner(fn: RawSensorEvaluationFunction) -> SensorDefinition:
         check.callable_param(fn, "fn")
 
         sensor_def = SensorDefinition(
@@ -143,9 +144,7 @@ def asset_sensor(
 
     check.opt_str_param(name, "name")
 
-    def inner(
-        fn: AssetMaterializationFunction
-    ) -> AssetSensorDefinition:
+    def inner(fn: AssetMaterializationFunction) -> AssetSensorDefinition:
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 

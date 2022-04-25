@@ -2,9 +2,21 @@ import copy
 from contextlib import ExitStack
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    NamedTuple,
+    Optional,
+    Union,
+    cast,
+)
 
 import pendulum
+from typing_extensions import TypeGuard
 
 from dagster import check
 from dagster.seven import funcsigs
@@ -31,10 +43,9 @@ from .run_request import RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
-if TYPE_CHECKING:
-    from .decorators.schedule_decorator import DecoratedScheduleFunction
 
-
+# def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
+#     return len(params) == 1
 @whitelist_for_serdes
 class DefaultScheduleStatus(Enum):
     RUNNING = "RUNNING"
@@ -97,6 +108,30 @@ class ScheduleEvaluationContext:
 
 # Preserve ScheduleExecutionContext for backcompat so type annotations don't break.
 ScheduleExecutionContext = ScheduleEvaluationContext
+
+RunConfig = Dict[str, Any]
+RunRequestIterator = Iterator[Union[RunRequest, SkipReason]]
+
+ScheduleEvaluationFunctionReturn = Union[RunRequest, SkipReason, RunConfig, RunRequestIterator]
+RawScheduleEvaluationFunction = Union[
+    Callable[["ScheduleEvaluationContext"], ScheduleEvaluationFunctionReturn],
+    Callable[[], ScheduleEvaluationFunctionReturn],
+]
+
+
+class DecoratedScheduleFunction(NamedTuple):
+    """Wrapper around the decorated schedule function.  Keeps track of both to better support the
+    optimal return value for direct invocation of the evaluation function"""
+
+    decorated_fn: RawScheduleEvaluationFunction
+    wrapped_fn: Callable[["ScheduleEvaluationContext"], RunRequestIterator]
+    has_context_arg: bool
+
+
+def is_context_provided(
+    fn: RawScheduleEvaluationFunction,
+) -> TypeGuard[Callable[[ScheduleExecutionContext], ScheduleEvaluationFunctionReturn]]:
+    return len(get_function_params(fn)) == 1
 
 
 def build_schedule_context(
@@ -433,22 +468,29 @@ class ScheduleDefinition:
         from .decorators.schedule_decorator import DecoratedScheduleFunction
 
         check.inst_param(context, "context", ScheduleEvaluationContext)
+        execution_fn: Callable[[ScheduleEvaluationContext], "ScheduleEvaluationFunctionReturn"]
         if isinstance(self._execution_fn, DecoratedScheduleFunction):
             execution_fn = self._execution_fn.wrapped_fn
         else:
-            execution_fn = cast(Callable[[ScheduleEvaluationContext], Any], self._execution_fn)
+            execution_fn = cast(
+                Callable[[ScheduleExecutionContext], "ScheduleEvaluationFunctionReturn"],
+                self._execution_fn,
+            )
+
         result = list(ensure_gen(execution_fn(context)))
 
         skip_message: Optional[str] = None
 
+        run_requests: List[RunRequest] = []
         if not result or result == [None]:
             run_requests = []
             skip_message = "Schedule function returned an empty result"
         elif len(result) == 1:
-            item = result[0]
-            check.inst(item, (SkipReason, RunRequest))
-            run_requests = [item] if isinstance(item, RunRequest) else []
-            skip_message = item.skip_message if isinstance(item, SkipReason) else None
+            item = check.inst(result[0], (SkipReason, RunRequest))
+            if isinstance(item, RunRequest):
+                run_requests, skip_message = [item], None
+            elif isinstance(item, SkipReason):
+                run_requests, skip_message = [], item.skip_message
         else:
             # NOTE: mypy is not correctly reading this cast-- not sure why
             # (pyright reads it fine). Hence the type-ignores below.
@@ -486,7 +528,3 @@ class ScheduleDefinition:
     @property
     def default_status(self) -> DefaultScheduleStatus:
         return self._default_status
-
-
-def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
-    return len(params) == 1

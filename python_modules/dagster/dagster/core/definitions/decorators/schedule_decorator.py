@@ -2,18 +2,7 @@ import copy
 import datetime
 import warnings
 from functools import update_wrapper
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    NamedTuple,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, cast
 
 from dagster import check
 from dagster.core.definitions.partition import (
@@ -36,37 +25,26 @@ from dagster.utils.partitions import (
     create_offset_partition_selector,
 )
 
-from ...decorator_utils import get_function_params
 from ...storage.tags import check_tags
 from ..graph_definition import GraphDefinition
 from ..mode import DEFAULT_MODE_NAME
 from ..pipeline_definition import PipelineDefinition
 from ..run_request import RunRequest, SkipReason
-from ..schedule_definition import DefaultScheduleStatus, ScheduleDefinition, is_context_provided
+from ..schedule_definition import (
+    DecoratedScheduleFunction,
+    DefaultScheduleStatus,
+    RawScheduleEvaluationFunction,
+    RunRequestIterator,
+    ScheduleDefinition,
+    ScheduleEvaluationContext,
+    is_context_provided,
+)
 
 if TYPE_CHECKING:
-    from dagster import Partition, ScheduleEvaluationContext
+    from dagster import Partition
 
 # Error messages are long
 # pylint: disable=C0301
-
-RunConfig = Dict[str, Any]
-RunRequestIterator = Iterator[Union[RunRequest, SkipReason]]
-
-ScheduleEvaluationFunctionReturn = Union[RunRequest, SkipReason, RunConfig, RunRequestIterator]
-ScheduleEvaluationFunction = Union[
-    Callable[["ScheduleEvaluationContext"], ScheduleEvaluationFunctionReturn],
-    Callable[[], ScheduleEvaluationFunctionReturn],
-]
-
-
-class DecoratedScheduleFunction(NamedTuple):
-    """Wrapper around the decorated schedule function.  Keeps track of both to better support the
-    optimal return value for direct invocation of the evaluation function"""
-
-    decorated_fn: ScheduleEvaluationFunction
-    wrapped_fn: Callable[["ScheduleEvaluationContext"], RunRequestIterator]
-    has_context_arg: bool
 
 
 def schedule(
@@ -83,7 +61,7 @@ def schedule(
     description: Optional[str] = None,
     job: Optional[Union[PipelineDefinition, GraphDefinition]] = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
-) -> Callable[[ScheduleEvaluationFunction], ScheduleDefinition]:
+) -> Callable[[RawScheduleEvaluationFunction], ScheduleDefinition]:
     """
     Creates a schedule following the provided cron schedule and requests runs for the provided job.
 
@@ -131,7 +109,7 @@ def schedule(
             status can be overridden from Dagit or via the GraphQL API.
     """
 
-    def inner(fn: ScheduleEvaluationFunction) -> ScheduleDefinition:
+    def inner(fn: RawScheduleEvaluationFunction) -> ScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
@@ -161,7 +139,11 @@ def schedule(
                 ScheduleExecutionError,
                 lambda: f"Error occurred during the evaluation of schedule {schedule_name}",
             ):
-                result = fn(context) if has_context_arg else fn()
+                if is_context_provided(fn):
+                    result = fn(context)
+                else:
+                    result = fn()  # type: ignore
+
                 if isinstance(result, dict):
                     # this is the run-config based decorated function, wrap the evaluated run config
                     # and tags in a RunRequest
@@ -174,9 +156,9 @@ def schedule(
                     )
                 else:
                     # this is a run-request based decorated function
-                    yield from ensure_gen(result)
+                    yield from cast(RunRequestIterator, ensure_gen(result))
 
-        has_context_arg = is_context_provided(get_function_params(fn))
+        has_context_arg = is_context_provided(fn)
         evaluation_fn = DecoratedScheduleFunction(
             decorated_fn=fn,
             wrapped_fn=_wrapped_fn,
