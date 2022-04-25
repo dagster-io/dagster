@@ -1,7 +1,7 @@
 import logging
 import sys
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, cast
 
 import requests
 from dagster_airbyte.types import AirbyteOutput
@@ -53,8 +53,8 @@ class AirbyteResource:
         )
 
     def make_request(
-        self, endpoint: str, data: Optional[Dict[str, Any]]
-    ) -> Optional[Dict[str, Any]]:
+        self, endpoint: str, data: Optional[Dict[str, object]]
+    ) -> Optional[Dict[str, object]]:
         """
         Creates and sends a request to the desired Airbyte REST API endpoint.
 
@@ -91,18 +91,19 @@ class AirbyteResource:
 
         raise Failure("Exceeded max number of retries.")
 
-    def cancel_job(self, job_id: str):
+    def cancel_job(self, job_id: int):
         self.make_request(endpoint="/jobs/cancel", data={"id": job_id})
 
     def get_job_status(self, job_id: int) -> dict:
         return check.is_dict(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
 
-    def start_sync(self, connection_id: str) -> dict:
+    def start_sync(self, connection_id: str) -> Dict[str, object]:
         return check.not_none(
             self.make_request(endpoint="/connections/sync", data={"connectionId": connection_id})
         )
 
-    def get_connection_details(self, connection_id: str) -> dict:
+
+    def get_connection_details(self, connection_id: str) -> Dict[str, object]:
         return check.not_none(
             self.make_request(endpoint="/connections/get", data={"connectionId": connection_id})
         )
@@ -112,7 +113,7 @@ class AirbyteResource:
         connection_id: str,
         poll_interval: float = DEFAULT_POLL_INTERVAL_SECONDS,
         poll_timeout: Optional[float] = None,
-    ):
+    ) -> AirbyteOutput:
         """
         Initializes a sync operation for the given connector, and polls until it completes.
 
@@ -129,7 +130,9 @@ class AirbyteResource:
         """
         connection_details = self.get_connection_details(connection_id)
         job_details = self.start_sync(connection_id)
-        job_id = job_details.get("job", {}).get("id")
+        job_info = cast(Dict[str, object], job_details.get("job", {}))
+        job_id = cast(int, job_info.get("id"))
+
         self._log.info(f"Job {job_id} initialized for connection_id={connection_id}.")
         start = time.monotonic()
         logged_attempts = 0
@@ -143,11 +146,12 @@ class AirbyteResource:
                     )
                 time.sleep(poll_interval)
                 job_details = self.get_job_status(job_id)
-                cur_attempt = len(job_details.get("attempts", []))
+                attempts = cast(List, job_details.get("attempts", []))
+                cur_attempt = len(attempts)
                 # spit out the available Airbyte log info
                 if cur_attempt:
                     log_lines = (
-                        job_details["attempts"][logged_attempts].get("logs", {}).get("logLines", [])
+                        attempts[logged_attempts].get("logs", {}).get("logLines", [])
                     )
 
                     for line in log_lines[logged_lines:]:
@@ -160,7 +164,8 @@ class AirbyteResource:
                         logged_lines = 0
                         logged_attempts += 1
 
-                state = job_details.get("job", {}).get("status")
+                job_info = cast(Dict[str, object], job_details.get("job", {}))
+                state = job_info.get("status")
 
                 if state in (AirbyteState.RUNNING, AirbyteState.PENDING, AirbyteState.INCOMPLETE):
                     continue
