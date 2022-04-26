@@ -929,7 +929,7 @@ def not_none_param(
 
 def not_none(value: Optional[T], additional_message: Optional[str] = None) -> T:
     if value is None:
-        raise ValueError(f"Expected non-None value: {additional_message}")
+        raise CheckError(f"Expected non-None value: {additional_message}")
     return value
 
 
