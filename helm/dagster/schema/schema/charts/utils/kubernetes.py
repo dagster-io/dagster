@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Extra  # pylint: disable=no-name-in-module
 
@@ -35,7 +35,7 @@ class PullPolicy(str, Enum):
 
 class Image(BaseModelWithNullableRequiredFields):
     repository: str
-    tag: Optional[str]
+    tag: Optional[Union[str, int]]
     pullPolicy: PullPolicy
 
     @property
