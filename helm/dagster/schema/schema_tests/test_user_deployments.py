@@ -493,9 +493,7 @@ def test_user_deployment_default_image_tag_is_chart_version(
 
 
 @pytest.mark.parametrize("tag", [5176135, "abc1234"])
-def test_user_deployment_tag_can_be_numeric(
-    template: HelmTemplate, tag: Union[str, int]
-):
+def test_user_deployment_tag_can_be_numeric(template: HelmTemplate, tag: Union[str, int]):
     deployment = create_simple_user_deployment("foo")
     deployment.image.tag = tag
 
@@ -821,20 +819,20 @@ def test_subchart_default_postgres_password(subchart_template: HelmTemplate):
 
 
 @pytest.mark.parametrize("tag", [5176135, "abc1234"])
-def test_subchart_tag_can_be_numeric(
-    subchart_template: HelmTemplate, tag: Union[str, int]
-):
+def test_subchart_tag_can_be_numeric(subchart_template: HelmTemplate, tag: Union[str, int]):
     deployment_values = DagsterUserDeploymentsHelmValues.construct(
-        deployments=[UserDeployment.construct(
-            name="foo",
-            image=kubernetes.Image.construct(
-                repository="foo",
-                tag=tag,
-                pullPolicy="Always",
-            ),
-            dagsterApiGrpcArgs=[],
-            port=0,
-        )]
+        deployments=[
+            UserDeployment.construct(
+                name="foo",
+                image=kubernetes.Image.construct(
+                    repository="foo",
+                    tag=tag,
+                    pullPolicy="Always",
+                ),
+                dagsterApiGrpcArgs=[],
+                port=0,
+            )
+        ]
     )
 
     deployment_templates = subchart_template.render(deployment_values)
