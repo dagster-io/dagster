@@ -17,20 +17,20 @@ from dagster import Field, Noneable, Permissive, resource
 CONFIG_SCHEMA = {
     "experiment_name": Field(str, is_required=True, description="MlFlow experiment name."),
     "mlflow_tracking_uri": Field(
-        Noneable(str),  # type: ignore
+        Noneable(str),
         default_value=None,
         is_required=False,
         description="MlFlow tracking server uri.",
     ),
     "parent_run_id": Field(
-        Noneable(str),  # type: ignore
+        Noneable(str),
         default_value=None,
         is_required=False,
         description="Mlflow run ID of parent run if this is a nested run.",
     ),
     "env": Field(Permissive(), description="Environment variables for mlflow setup."),
     "env_to_tag": Field(
-        Noneable(list),  # type: ignore
+        Noneable(list),
         default_value=None,
         is_required=False,
         description="List of environment variables to log as tags in mlflow.",

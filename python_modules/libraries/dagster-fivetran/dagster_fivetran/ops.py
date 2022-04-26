@@ -7,7 +7,7 @@ from dagster import Array, AssetKey, Bool, Field, In, Noneable, Nothing, Out, Ou
 
 @op(
     required_resource_keys={"fivetran"},
-    ins={"start_after": In(Nothing)},  # type: ignore
+    ins={"start_after": In(Nothing)},
     out=Out(
         FivetranOutput,
         description="Parsed json dictionary representing the details of the Fivetran connector after "
@@ -102,7 +102,7 @@ def fivetran_sync_op(context):
 
 @op(
     required_resource_keys={"fivetran"},
-    ins={"start_after": In(Nothing)},  # type: ignore
+    ins={"start_after": In(Nothing)},
     out=Out(
         FivetranOutput,
         description="Parsed json dictionary representing the details of the Fivetran connector after "

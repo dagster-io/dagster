@@ -7,7 +7,7 @@ from dagster import Array, Bool, Field, In, Noneable, Nothing, Out, Output, op
 
 @op(
     required_resource_keys={"airbyte"},
-    ins={"start_after": In(Nothing)},  # type: ignore
+    ins={"start_after": In(Nothing)},
     out=Out(
         AirbyteOutput,
         description="Parsed json dictionary representing the details of the Airbyte connector after "

@@ -34,7 +34,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
         name = "AssetDependency"
 
     asset = graphene.NonNull("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
-    inputName = graphene.String()
+    inputName = graphene.NonNull(graphene.String)
 
     def __init__(
         self,
