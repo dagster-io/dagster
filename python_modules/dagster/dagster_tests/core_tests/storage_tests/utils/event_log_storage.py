@@ -3,9 +3,8 @@ import logging  # pylint: disable=unused-import; used by mock in string form
 import re
 import time
 from collections import Counter
-from contextlib import ExitStack, contextmanager, nullcontext
-from typing import Generator, List, Optional
-from venv import create
+from contextlib import ExitStack, contextmanager
+from typing import List, Optional
 
 import mock
 import pendulum
@@ -52,7 +51,6 @@ from dagster.core.execution.stats import StepEventStatus
 from dagster.core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
 from dagster.core.storage.event_log.base import (
     EventLogRecord,
-    EventLogStorage,
     EventRecordsFilter,
     RunShardedEventsCursor,
 )
