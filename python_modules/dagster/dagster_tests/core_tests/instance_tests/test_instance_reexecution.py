@@ -3,6 +3,7 @@ import os
 import pytest
 
 from dagster import DagsterInstance, execute_pipeline, job, op, reconstructable, repository
+from dagster.core.execution.plan.resume_retry import ReexecutionPolicy
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import (
@@ -95,7 +96,9 @@ def failed_run_fixture(instance):
 def test_create_reexecuted_run_from_failure(
     instance: DagsterInstance, workspace, repo_location, external_pipeline, failed_run
 ):
-    run = instance.create_reexecuted_run_from_failure(failed_run, repo_location, external_pipeline)
+    run = instance.create_reexecuted_run(
+        failed_run, repo_location, external_pipeline, ReexecutionPolicy.FROM_FAILURE
+    )
 
     assert run.tags[RESUME_RETRY_TAG] == "true"
     assert set(run.step_keys_to_execute) == {"conditional_fail", "after_failure"}  # type: ignore
@@ -112,25 +115,50 @@ def test_create_reexecuted_run_from_failure(
 def test_create_reexecuted_run_from_failure_tags(
     instance: DagsterInstance, workspace, repo_location, external_pipeline, failed_run
 ):
-    run = instance.create_reexecuted_run_from_failure(failed_run, repo_location, external_pipeline)
+    run = instance.create_reexecuted_run(
+        failed_run, repo_location, external_pipeline, ReexecutionPolicy.FROM_FAILURE
+    )
 
     assert run.tags["foo"] == "bar"
     assert "fizz" not in run.tags
 
-    run = instance.create_reexecuted_run_from_failure(
-        failed_run, repo_location, external_pipeline, use_parent_run_tags=True
+    run = instance.create_reexecuted_run(
+        failed_run,
+        repo_location,
+        external_pipeline,
+        ReexecutionPolicy.FROM_FAILURE,
+        use_parent_run_tags=True,
     )
 
     assert run.tags["foo"] == "not bar!"
     assert run.tags["fizz"] == "buzz"
 
-    run = instance.create_reexecuted_run_from_failure(
+    run = instance.create_reexecuted_run(
         failed_run,
         repo_location,
         external_pipeline,
+        ReexecutionPolicy.FROM_FAILURE,
         use_parent_run_tags=True,
         extra_tags={"fizz": "not buzz!!"},
     )
 
     assert run.tags["foo"] == "not bar!"
     assert run.tags["fizz"] == "not buzz!!"
+
+
+def test_create_reexecuted_run_all_steps(
+    instance: DagsterInstance, workspace, repo_location, external_pipeline, failed_run
+):
+    run = instance.create_reexecuted_run(
+        failed_run, repo_location, external_pipeline, ReexecutionPolicy.ALL_STEPS
+    )
+
+    assert RESUME_RETRY_TAG not in run.tags
+
+    instance.launch_run(run.run_id, workspace)
+    run = poll_for_finished_run(instance, run.run_id)
+
+    assert run.status == PipelineRunStatus.SUCCESS
+    assert step_succeeded(instance, run, "before_failure")
+    assert step_succeeded(instance, run, "conditional_fail")
+    assert step_succeeded(instance, run, "after_failure")

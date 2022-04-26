@@ -6,12 +6,14 @@ from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
     PIPELINE_REEXECUTION_INFO_QUERY,
 )
+from dagster_graphql.schema.inputs import GrapheneReexecutionPolicy
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     execute_dagster_graphql_and_finish_runs,
     infer_pipeline_selector,
 )
 
+from dagster.core.execution.plan.resume_retry import ReexecutionPolicy
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import poll_for_finished_run
@@ -501,7 +503,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         assert step_did_succeed(logs, "hard_fail_or_0")
         assert step_did_succeed(logs, "increment")
 
-    def test_retry_hard_failure_with_reexecution_params(self, graphql_context):
+    def test_retry_failure_all_steps_with_reexecution_params(self, graphql_context):
         """
         Test with providng reexecutionParams rather than executionParams
         """
@@ -532,7 +534,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         retry = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             LAUNCH_PIPELINE_REEXECUTION_MUTATION,
-            variables={"reexecutionParams": {"parentRunId": run_id, "policy": "FROM_FAILURE"}},
+            variables={"reexecutionParams": {"parentRunId": run_id, "policy": "ALL_STEPS"}},
         )
 
         run_id = retry.data["launchPipelineReexecution"]["run"]["runId"]
@@ -540,7 +542,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
         ]["messages"]
-        assert step_did_not_run(logs, "always_succeed")
+        assert step_did_succeed(logs, "always_succeed")
         assert step_did_succeed(logs, "conditionally_fail")
         assert step_did_succeed(logs, "after_failure")
 
@@ -587,6 +589,55 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         assert "DagsterInvalidConfigError" in str(
             retry.data["launchPipelineReexecution"]["message"]
         )
+
+    def test_retry_failure_with_reexecution_params(self, graphql_context):
+        """
+        Test with providng reexecutionParams rather than executionParams
+        """
+        selector = infer_pipeline_selector(graphql_context, "chained_failure_pipeline")
+
+        # trigger failure in the conditionally_fail solid
+        output_file = os.path.join(
+            get_system_temp_directory(), "chained_failure_pipeline_conditionally_fail"
+        )
+        try:
+            with open(output_file, "w", encoding="utf8"):
+                result = execute_dagster_graphql_and_finish_runs(
+                    graphql_context,
+                    LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                    variables={
+                        "executionParams": {
+                            "mode": "default",
+                            "selector": selector,
+                        }
+                    },
+                )
+        finally:
+            os.remove(output_file)
+
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.FAILURE
+
+        retry = execute_dagster_graphql_and_finish_runs(
+            graphql_context,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+            variables={"reexecutionParams": {"parentRunId": run_id, "policy": "FROM_FAILURE"}},
+        )
+
+        run_id = retry.data["launchPipelineReexecution"]["run"]["runId"]
+        assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
+        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
+            "pipelineRunLogs"
+        ]["messages"]
+        assert step_did_not_run(logs, "always_succeed")
+        assert step_did_succeed(logs, "conditionally_fail")
+        assert step_did_succeed(logs, "after_failure")
+
+
+def test_graphene_reexecution_policy():
+    """Check that graphene enum has corresponding values in the ReexecutionPolicy enum"""
+    for policy in GrapheneReexecutionPolicy.__enum__:
+        assert ReexecutionPolicy[policy.value]
 
 
 def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
