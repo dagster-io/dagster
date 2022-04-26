@@ -13,13 +13,16 @@ from pyspark.sql import Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 from dagster import (
+    IOManager,
     InputDefinition,
     ModeDefinition,
     OutputDefinition,
     execute_pipeline,
-    pipeline,
+    graph,
+    io_manager,
+    job,
+    op,
     reconstructable,
-    solid,
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.errors import DagsterSubprocessError
@@ -38,73 +41,102 @@ BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG = {
 }
 
 
-@solid(
-    output_defs=[OutputDefinition(DataFrame)],
-    required_resource_keys={"pyspark_step_launcher", "pyspark"},
-)
-def make_df_solid(context):
+@io_manager(required_resource_keys={"pyspark"})
+def s3_io_manager(context):
+    class S3ParquetIOManager(IOManager):
+        def _get_path(self, context):
+            return f"s3a://{S3_BUCKET}/{context.run_id}_{context.step_key}_{context.name}"
+
+        def handle_output(self, context, obj):
+            if isinstance(obj, int):
+                obj = context.resources.pyspark.spark_session.createDataFrame([[obj]], ["val"])
+            obj.write.parquet(self._get_path(context), mode="overwrite")
+
+        def load_input(self, context):
+            df = context.resources.pyspark.spark_session.read.parquet(
+                self._get_path(context.upstream_output)
+            )
+            if context.upstream_output.dagster_type != DataFrame:
+                return df.head()[0]
+            return df
+
+    return S3ParquetIOManager()
+
+
+@op(required_resource_keys={"pyspark_step_launcher", "pyspark"})
+def make_df_solid(context) -> DataFrame:
     schema = StructType([StructField("name", StringType()), StructField("age", IntegerType())])
     rows = [Row(name="John", age=19), Row(name="Jennifer", age=29), Row(name="Henry", age=50)]
+    context.log.info("hello there!")
     return context.resources.pyspark.spark_session.createDataFrame(rows, schema)
 
 
-@solid(
+@op(
     name="blah",
     description="this is a test",
     config_schema={"foo": str, "bar": int},
-    input_defs=[InputDefinition("people", DataFrame)],
-    output_defs=[OutputDefinition(DataFrame)],
     required_resource_keys={"pyspark_step_launcher"},
 )
-def filter_df_solid(_, people):
+def filter_df_solid(context, people: DataFrame) -> DataFrame:
+    context.log.info("im here!")
     return people.filter(people["age"] < 30)
 
 
-MODE_DEFS = [
-    ModeDefinition(
-        "prod",
-        resource_defs={
-            "pyspark_step_launcher": emr_pyspark_step_launcher,
-            "pyspark": pyspark_resource,
-            "s3": s3_resource,
-        },
-    ),
-    ModeDefinition(
-        "local",
-        resource_defs={"pyspark_step_launcher": no_step_launcher, "pyspark": pyspark_resource},
-    ),
-]
+RESOURCES_PROD = {
+    "pyspark_step_launcher": emr_pyspark_step_launcher,
+    "pyspark": pyspark_resource,
+    "s3": s3_resource,
+    "io_manager": s3_io_manager,
+}
+
+RESOURCES_LOCAL = {"pyspark_step_launcher": no_step_launcher, "pyspark": pyspark_resource}
 
 
-@pipeline(mode_defs=MODE_DEFS)
+@graph
 def pyspark_pipe():
     filter_df_solid(make_df_solid())
 
 
-def define_pyspark_pipe():
-    return pyspark_pipe
+def define_pyspark_pipe_local():
+    return pyspark_pipe.to_job(name="ppl", resource_defs=RESOURCES_LOCAL)
 
 
-@solid(
-    required_resource_keys={"pyspark_step_launcher", "pyspark"},
-)
+def define_pyspark_pipe_prod():
+    return pyspark_pipe.to_job(
+        name="ppp",
+        resource_defs=RESOURCES_PROD,
+        config={
+            "ops": {"blah": {"config": {"foo": "a string", "bar": 123}}},
+            "resources": {
+                "pyspark_step_launcher": {"config": BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG},
+            },
+        },
+    )
+
+
+@op(required_resource_keys={"pyspark_step_launcher", "pyspark"})
 def do_nothing_solid(_):
     pass
 
 
-@pipeline(mode_defs=MODE_DEFS)
+@graph
 def do_nothing_pipe():
     do_nothing_solid()
 
 
-def define_do_nothing_pipe():
-    return do_nothing_pipe
+def define_do_nothing_pipe_local():
+    return do_nothing_pipe.to_job(resource_defs=LOCAL_RESOURCES)
+
+
+def define_do_nothing_pipe_prod():
+    return do_nothing_pipe.to_job(
+        resource_defs=PROD_RESOURCES,
+    )
 
 
 def test_local():
     result = execute_pipeline(
-        pipeline=pyspark_pipe,
-        mode="local",
+        pipeline=reconstructable(define_pyspark_pipe_local),
         run_config={"solids": {"blah": {"config": {"foo": "a string", "bar": 123}}}},
     )
     assert result.success
@@ -115,7 +147,7 @@ def test_local():
 @mock.patch("dagster_aws.emr.emr.EmrJobRunner.is_emr_step_complete")
 def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events, mock_s3_bucket):
     mock_read_events.return_value = execute_pipeline(
-        reconstructable(define_do_nothing_pipe), mode="local"
+        reconstructable(define_do_nothing_pipe_local)
     ).events_by_step_key["do_nothing_solid"]
 
     run_job_flow_args = dict(
@@ -140,7 +172,7 @@ def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events, mock_s3_bucket
     cluster_id = job_runner.run_job_flow(context.log, run_job_flow_args)
 
     result = execute_pipeline(
-        pipeline=reconstructable(define_do_nothing_pipe),
+        pipeline=reconstructable(define_do_nothing_pipe_prod),
         mode="prod",
         run_config={
             "resources": {
@@ -163,9 +195,13 @@ def sync_code():
         "rsync",
         "-av",
         "-progress",
+        "--inplace",
         "--exclude='js_modules/'",
         "--exclude='.git/'",
         "--exclude='docs/'",
+        "--exclude='examples/'",
+        "--exclude='*.pyc'",
+        "--exclude='*/.tox/*'",
         "-e",
         '"ssh -i {aws_emr_pem_file}"'.format(aws_emr_pem_file=os.environ["AWS_EMR_PEM_FILE"]),
         os.environ["DAGSTER_DIR"],
@@ -182,7 +218,7 @@ def sync_code():
     # Install dagster packages on remote node
     remote_install_dagster_packages_command = ["sudo", "python3", "-m", "pip", "install"] + [
         token
-        for package_subpath in ["dagster", "libraries/dagster-pyspark"]
+        for package_subpath in ["dagster", "libraries/dagster-pyspark", "libraries/dagster-aws"]
         for token in ["-e", "/home/hadoop/dagster/python_modules/" + package_subpath]
     ]
 
@@ -212,15 +248,11 @@ def sync_code():
 def test_do_it_live_emr():
     sync_code()
 
+    del os.environ["AWS_ACCESS_KEY_ID"]
+    del os.environ["AWS_SECRET_ACCESS_KEY"]
     result = execute_pipeline(
-        reconstructable(define_pyspark_pipe),
+        reconstructable(define_pyspark_pipe_prod),
         mode="prod",
-        run_config={
-            "solids": {"blah": {"config": {"foo": "a string", "bar": 123}}},
-            "resources": {
-                "pyspark_step_launcher": {"config": BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG},
-            },
-        },
     )
     assert result.success
 
@@ -232,7 +264,7 @@ def test_do_it_live_emr():
 def test_fetch_logs_on_fail(
     _mock_log_step_event, mock_log_logs, mock_wait_for_completion, _mock_boto3_resource
 ):
-    mock_log = mock.MagicMock()
+    mock_context = mock.MagicMock()
     mock_wait_for_completion.side_effect = EmrError()
 
     step_launcher = EmrPySparkStepLauncher(
@@ -248,7 +280,15 @@ def test_fetch_logs_on_fail(
     )
 
     with pytest.raises(EmrError):
-        for _ in step_launcher.wait_for_completion_and_log(mock_log, None, None, None, None):
+        for _ in step_launcher.wait_for_completion_and_log(mock_context, None, None, None, None):
             pass
 
     assert mock_log_logs.call_count == 1
+
+
+from dagster import repository
+
+
+@repository
+def foo():
+    return [define_pyspark_pipe_prod()]
