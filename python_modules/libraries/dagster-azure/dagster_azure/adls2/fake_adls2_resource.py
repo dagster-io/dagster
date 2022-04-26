@@ -35,6 +35,7 @@ class FakeLeaseClient:
         self.client = client
         self.id = None
 
+        # client needs a ref to self to check if a given lease is valid
         self.client.lease = self
 
     def acquire(self, lease_duration=-1):  # pylint: disable=unused-argument
@@ -45,6 +46,12 @@ class FakeLeaseClient:
 
     def release(self):
         self.id = None
+
+    def is_valid(self, lease):
+        if self.id is None:
+            # no lease is held so any operation is valid
+            return True
+        return lease == self.id
 
 
 class FakeADLS2ServiceClient:
@@ -104,10 +111,12 @@ class FakeADLS2FilesystemClient:
         return {"account_name": self.account_name, "file_system_name": self.file_system_name}
 
     def get_file_client(self, file_path):
+        # pass fileclient a ref to self and its name so the file can delete itself
         self._file_system.setdefault(file_path, FakeADLS2FileClient(self, file_path))
         return self._file_system[file_path]
 
     def create_file(self, file):
+        # pass fileclient a ref to self and its name so the file can delete itself
         self._file_system.setdefault(file, FakeADLS2FileClient(fs_client=self, name=file))
         return self._file_system[file]
 
@@ -132,9 +141,8 @@ class FakeADLS2FileClient:
         return {"lease": self.lease.id}
 
     def upload_data(self, contents, overwrite=False, lease=None):
-        if self.lease.id is not None:
-            if lease != self.lease.id:
-                raise Exception("Invalid lease!")
+        if not self.lease.is_valid(lease):
+            raise Exception("Invalid lease!")
         if self.contents is not None or overwrite is True:
             if isinstance(contents, str):
                 self.contents = contents.encode("utf8")
@@ -153,9 +161,8 @@ class FakeADLS2FileClient:
         return FakeADLS2FileDownloader(contents=self.contents)
 
     def delete_file(self, lease=None):
-        if lease is not None:
-            if lease != self.lease.id:
-                raise Exception("Invalid lease!")
+        if not self.lease.is_valid(lease):
+            raise Exception("Invalid lease!")
         self.fs_client.delete_file(self.name)
 
 
