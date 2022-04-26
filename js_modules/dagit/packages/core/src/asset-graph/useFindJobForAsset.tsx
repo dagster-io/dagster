@@ -3,12 +3,13 @@ import React from 'react';
 
 import {AssetKeyInput} from '../types/globalTypes';
 
+import {isAssetGroup} from './Utils';
 import {
   AssetForNavigationQuery,
   AssetForNavigationQueryVariables,
 } from './types/AssetForNavigationQuery';
 
-export function useFindAssetInWorkspace() {
+export function useFindJobForAsset() {
   const apollo = useApolloClient();
 
   return React.useCallback(
@@ -19,7 +20,10 @@ export function useFindAssetInWorkspace() {
       });
       if (data?.assetOrError.__typename === 'Asset' && data?.assetOrError.definition) {
         const def = data.assetOrError.definition;
-        return {opNames: def.opNames, jobName: def.jobNames[0] || null};
+        return {
+          opNames: def.opNames,
+          jobName: def.jobNames.find((jobName) => !isAssetGroup(jobName)) || null,
+        };
       }
       return {opNames: [], jobName: null};
     },
