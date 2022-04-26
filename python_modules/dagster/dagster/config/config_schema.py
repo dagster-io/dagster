@@ -1,4 +1,5 @@
 from typing import Dict, List, Type, Union
+
 from typing_extensions import TypeAlias
 
 from dagster.config.config_type import ConfigType
@@ -19,6 +20,7 @@ ConfigSchemaType: TypeAlias = Union[
     Dict[str, object],
     List,
 ]
+
 
 class ConfigSchema:
     """This is a placeholder type. Any time that it appears in documentation, it means that any of

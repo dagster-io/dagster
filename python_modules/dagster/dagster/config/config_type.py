@@ -368,7 +368,10 @@ class ScalarUnion(ConfigType):
     """
 
     def __init__(
-        self, scalar_type: typing.Any, non_scalar_schema: ConfigSchemaType, _key: Optional[str] = None
+        self,
+        scalar_type: typing.Any,
+        non_scalar_schema: ConfigSchemaType,
+        _key: Optional[str] = None,
     ):
         from .field import resolve_to_config_type
 
