@@ -2,10 +2,9 @@ from typing import TYPE_CHECKING, Dict, List, Type, Union
 
 from typing_extensions import TypeAlias
 
-
 if TYPE_CHECKING:
-    from dagster.config.field import Field
     from dagster.config.config_type import ConfigType
+    from dagster.config.field import Field
 
 # Eventually, the below `ConfigSchemaType` should be renamed to `ConfigSchema` and the class
 # definition should be dropped. The reason we don't do this now is that sphinx autodoc doesn't
