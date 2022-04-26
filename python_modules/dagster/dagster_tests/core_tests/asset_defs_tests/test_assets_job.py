@@ -1,4 +1,5 @@
 import os
+from dagster.config.source import StringSource
 
 import pytest
 
@@ -11,6 +12,7 @@ from dagster import (
     DependencyDefinition,
     GraphIn,
     GraphOut,
+    Field,
     IOManager,
     Out,
     Output,
@@ -69,6 +71,21 @@ def test_two_asset_pipeline():
         "asset2": {"asset1": DependencyDefinition("asset1", "result")},
     }
     assert job.execute_in_process().success
+
+def test_single_asset_pipeline_with_config():
+    @asset(config_schema={"foo": Field(StringSource)})
+    def asset1(context):
+        return context.op_config["foo"]
+
+    job = build_assets_job("a", [asset1])
+    assert job.graph.node_defs == [asset1.op]
+    assert job.execute_in_process(
+        run_config={
+            "ops": {
+                "asset1": { "config": { "foo": "bar" } }
+            }
+        }
+    ).success
 
 
 def test_fork():
