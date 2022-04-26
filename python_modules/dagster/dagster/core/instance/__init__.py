@@ -1970,21 +1970,6 @@ records = instance.get_event_records(
         if DagsterInstance._EXIT_STACK:
             DagsterInstance._EXIT_STACK.close()
 
-    def get_addresses_for_step_output_versions(self, step_output_versions):
-        """
-        For each given step output, finds whether an output exists with the given
-        version, and returns its address if it does.
-
-        Args:
-            step_output_versions (Dict[(str, StepOutputHandle), str]):
-                (pipeline name, step output handle) -> version.
-
-        Returns:
-            Dict[(str, StepOutputHandle), str]: (pipeline name, step output handle) -> address.
-                For each step output, an address if there is one and None otherwise.
-        """
-        return self._event_storage.get_addresses_for_step_output_versions(step_output_versions)
-
     # dagster daemon
     def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat"):
         """Called on a regular interval by the daemon"""
