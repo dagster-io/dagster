@@ -1383,50 +1383,6 @@ class DagsterInstance:
         return self._event_storage.get_asset_records(asset_keys)
 
     @traced
-    def events_for_asset_key(
-        self,
-        asset_key,
-        partitions=None,
-        before_cursor=None,
-        after_cursor=None,
-        cursor=None,
-        before_timestamp=None,
-        limit=None,
-        ascending=False,
-    ):
-        check.inst_param(asset_key, "asset_key", AssetKey)
-
-        warnings.warn(
-            """
-The method `events_for_asset_key` on DagsterInstance has been deprecated as of `0.12.0` in favor of
-the method `get_event_records`. The method `get_event_records` takes in an `EventRecordsFilter`
-argument that allows for filtering by asset key and asset key partitions. The return value is a
-list of `EventLogRecord` objects, each of which contains a storage_id and an event log entry.
-
-Example:
-records = instance.get_event_records(
-    EventRecordsFilter(
-        asset_key=asset_key,
-        asset_partitions=partitions,
-        after_cursor=after_cursor,
-    ),
-)
-"""
-        )
-
-        return self._event_storage.get_asset_events(
-            asset_key,
-            partitions,
-            before_cursor,
-            after_cursor,
-            limit,
-            before_timestamp=before_timestamp,
-            ascending=ascending,
-            include_cursor=True,
-            cursor=cursor,
-        )
-
-    @traced
     def run_ids_for_asset_key(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
         return self._event_storage.get_asset_run_ids(asset_key)
