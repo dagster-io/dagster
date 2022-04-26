@@ -1,13 +1,19 @@
 import io
 import random
-from collections import defaultdict
-from contextlib import contextmanager
+from typing import Dict
 from unittest import mock
 
 from dagster_azure.blob import FakeBlobServiceClient
 
+from dagster import resource
+
 from .resources import ADLS2Resource
 from .utils import ResourceNotFoundError
+
+
+@resource({"account_name": str})
+def fake_adls2_resource(context):
+    return FakeADLS2Resource(account_name=context.resource_config["account_name"])
 
 
 class FakeADLS2Resource(ADLS2Resource):
@@ -21,6 +27,24 @@ class FakeADLS2Resource(ADLS2Resource):
     ):  # pylint: disable=unused-argument,super-init-not-called
         self._adls2_client = FakeADLS2ServiceClient(account_name)
         self._blob_client = FakeBlobServiceClient(account_name)
+        self._lease_client_constructor = FakeLeaseClient
+
+
+class FakeLeaseClient:
+    def __init__(self, client):
+        self.client = client
+        self.id = None
+
+        self.client.lease = self
+
+    def acquire(self, lease_duration=-1):  # pylint: disable=unused-argument
+        if self.id is None:
+            self.id = random.randint(0, 2**9)
+        else:
+            raise Exception("Lease already held")
+
+    def release(self):
+        self.id = None
 
 
 class FakeADLS2ServiceClient:
@@ -61,7 +85,7 @@ class FakeADLS2FilesystemClient:
     """Stateful mock of an ADLS2 filesystem client for testing."""
 
     def __init__(self, account_name, file_system_name):
-        self._file_system = defaultdict(FakeADLS2FileClient)
+        self._file_system: Dict[str, FakeADLS2FileClient] = {}
         self._account_name = account_name
         self._file_system_name = file_system_name
 
@@ -79,13 +103,12 @@ class FakeADLS2FilesystemClient:
     def get_file_system_properties(self):
         return {"account_name": self.account_name, "file_system_name": self.file_system_name}
 
-    def has_file(self, path):
-        return bool(self._file_system.get(path))
-
     def get_file_client(self, file_path):
+        self._file_system.setdefault(file_path, FakeADLS2FileClient(self, file_path))
         return self._file_system[file_path]
 
     def create_file(self, file):
+        self._file_system.setdefault(file, FakeADLS2FileClient(fs_client=self, name=file))
         return self._file_system[file]
 
     def delete_file(self, file):
@@ -97,18 +120,20 @@ class FakeADLS2FilesystemClient:
 class FakeADLS2FileClient:
     """Stateful mock of an ADLS2 file client for testing."""
 
-    def __init__(self):
+    def __init__(self, name, fs_client):
+        self.name = name
         self.contents = None
         self.lease = None
+        self.fs_client = fs_client
 
     def get_file_properties(self):
         if self.contents is None:
             raise ResourceNotFoundError("File does not exist!")
-        return {"lease": self.lease}
+        return {"lease": self.lease.id}
 
     def upload_data(self, contents, overwrite=False, lease=None):
-        if self.lease is not None:
-            if lease != self.lease:
+        if self.lease.id is not None:
+            if lease != self.lease.id:
                 raise Exception("Invalid lease!")
         if self.contents is not None or overwrite is True:
             if isinstance(contents, str):
@@ -122,21 +147,16 @@ class FakeADLS2FileClient:
             else:
                 self.contents = contents
 
-    @contextmanager
-    def acquire_lease(self, lease_duration=-1):  # pylint: disable=unused-argument
-        if self.lease is None:
-            self.lease = random.randint(0, 2**9)
-            try:
-                yield self.lease
-            finally:
-                self.lease = None
-        else:
-            raise Exception("Lease already held")
-
     def download_file(self):
         if self.contents is None:
             raise ResourceNotFoundError("File does not exist!")
         return FakeADLS2FileDownloader(contents=self.contents)
+
+    def delete_file(self, lease=None):
+        if lease is not None:
+            if lease != self.lease.id:
+                raise Exception("Invalid lease!")
+        self.fs_client.delete_file(self.name)
 
 
 class FakeADLS2FileDownloader:
