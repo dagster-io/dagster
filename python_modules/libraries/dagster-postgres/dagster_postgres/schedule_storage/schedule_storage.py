@@ -104,7 +104,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         return PostgresScheduleStorage(postgres_url, should_autocreate_tables)
 
     def connect(self, run_id=None):  # pylint: disable=arguments-differ, unused-argument
-        return create_pg_connection(self._engine, __file__, "schedule")
+        return create_pg_connection(self._engine, pg_alembic_config(__file__), "schedule")
 
     def upgrade(self):
         alembic_config = pg_alembic_config(__file__)

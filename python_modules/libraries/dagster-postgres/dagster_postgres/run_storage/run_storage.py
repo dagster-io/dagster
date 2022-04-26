@@ -116,7 +116,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     def connect(self):
         return create_pg_connection(
             self._engine,
-            __file__,
+            pg_alembic_config(__file__),
             "run",
         )
 
