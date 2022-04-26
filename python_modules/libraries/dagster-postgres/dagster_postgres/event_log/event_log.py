@@ -19,7 +19,7 @@ from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_a
 from dagster.serdes import (
     ConfigurableClass,
     ConfigurableClassData,
-    deserialize_json_to_dagster_namedtuple,
+    deserialize_as,
 )
 
 from ..pynotify import await_pg_notifications
@@ -296,8 +296,8 @@ def watcher_thread(
                         SqlEventLogStorageTable.c.id == index
                     ),
                 )
-                dagster_event: EventLogEntry = deserialize_json_to_dagster_namedtuple(
-                    cursor_res.scalar()
+                dagster_event = deserialize_as(
+                    cursor_res.scalar(), EventLogEntry
                 )
 
             for callback_with_cursor in handlers:

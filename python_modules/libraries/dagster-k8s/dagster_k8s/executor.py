@@ -75,22 +75,22 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
     exc_cfg = init_context.executor_config
 
     k8s_container_context = K8sContainerContext(
-        image_pull_policy=exc_cfg.get("image_pull_policy"),
-        image_pull_secrets=exc_cfg.get("image_pull_secrets"),
-        service_account_name=exc_cfg.get("service_account_name"),
-        env_config_maps=exc_cfg.get("env_config_maps"),
-        env_secrets=exc_cfg.get("env_secrets"),
-        env_vars=exc_cfg.get("env_vars"),
-        volume_mounts=exc_cfg.get("volume_mounts"),
-        volumes=exc_cfg.get("volumes"),
-        labels=exc_cfg.get("labels"),
-        namespace=exc_cfg.get("job_namespace"),
-        resources=exc_cfg.get("resources"),
+        image_pull_policy=exc_cfg.get("image_pull_policy"),  # type: ignore
+        image_pull_secrets=exc_cfg.get("image_pull_secrets"),  # type: ignore
+        service_account_name=exc_cfg.get("service_account_name"),  # type: ignore
+        env_config_maps=exc_cfg.get("env_config_maps"),  # type: ignore
+        env_secrets=exc_cfg.get("env_secrets"),  # type: ignore
+        env_vars=exc_cfg.get("env_vars"),  # type: ignore
+        volume_mounts=exc_cfg.get("volume_mounts"),  # type: ignore
+        volumes=exc_cfg.get("volumes"),  # type: ignore
+        labels=exc_cfg.get("labels"),  # type: ignore
+        namespace=exc_cfg.get("job_namespace"),  # type: ignore
+        resources=exc_cfg.get("resources"),  # type: ignore
     )
 
     return StepDelegatingExecutor(
         K8sStepHandler(
-            image=exc_cfg.get("job_image"),
+            image=exc_cfg.get("job_image"),  # type: ignore
             container_context=k8s_container_context,
             load_incluster_config=run_launcher.load_incluster_config,
             kubeconfig_file=run_launcher.kubeconfig_file,
@@ -134,7 +134,7 @@ class K8sStepHandler(StepHandler):
 
     def _get_container_context(self, step_handler_context: StepHandlerContext):
         run_target = K8sContainerContext.create_for_run(
-            step_handler_context.pipeline_run, step_handler_context.instance.run_launcher
+            step_handler_context.pipeline_run, cast(K8sRunLauncher, step_handler_context.instance.run_launcher)
         )
         return run_target.merge(self._executor_container_context)
 
