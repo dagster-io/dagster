@@ -20,7 +20,7 @@ def log_run_events(instance, run_id):
 @pytest.mark.integration
 def test_k8s_run_monitoring(
     dagster_instance_for_k8s_run_launcher,
-    helm_namespace_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
     dagit_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
@@ -29,7 +29,7 @@ def test_k8s_run_monitoring(
             "execution": {
                 "k8s": {
                     "config": {
-                        "job_namespace": helm_namespace_for_k8s_run_launcher,
+                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
                         "image_pull_policy": image_pull_policy(),
                     }
                 }
@@ -40,7 +40,7 @@ def test_k8s_run_monitoring(
         dagit_url_for_k8s_run_launcher,
         run_config,
         dagster_instance_for_k8s_run_launcher,
-        helm_namespace_for_k8s_run_launcher,
+        user_code_namespace_for_k8s_run_launcher,
     )
 
 
@@ -51,6 +51,8 @@ def _launch_run_and_wait_for_resume(
     namespace,
     pipeline_name="slow_pipeline",
 ):
+
+    run_id = None
 
     try:
         run_id = launch_run_over_graphql(
@@ -75,4 +77,5 @@ def _launch_run_and_wait_for_resume(
         poll_for_finished_run(instance, run_id, timeout=120)
         assert instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
     finally:
-        log_run_events(instance, run_id)
+        if run_id:
+            log_run_events(instance, run_id)

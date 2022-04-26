@@ -564,6 +564,8 @@ def test_user_deployment_include_config(template: HelmTemplate):
         "k8s": {
             "image_pull_policy": "Always",
             "env_config_maps": ["release-name-dagster-user-deployments-foo-user-env"],
+            "namespace": "default",
+            "service_account_name": "release-name-dagster-user-deployments-user-deployments",
         }
     }
 
@@ -645,6 +647,8 @@ def test_user_deployment_volumes(template: HelmTemplate, include_config_in_launc
                 "image_pull_policy": "Always",
                 "volume_mounts": volume_mounts,
                 "volumes": volumes,
+                "namespace": "default",
+                "service_account_name": "release-name-dagster-user-deployments-user-deployments",
             }
         }
     else:
@@ -699,6 +703,8 @@ def test_user_deployment_secrets_and_configmaps(
                     "my-configmap",
                     "my-other-configmap",
                 ],
+                "namespace": "default",
+                "service_account_name": "release-name-dagster-user-deployments-user-deployments",
             }
         }
     else:
@@ -744,6 +750,8 @@ def test_user_deployment_labels(template: HelmTemplate, include_config_in_launch
                     "release-name-dagster-user-deployments-foo-user-env",
                 ],
                 "labels": labels,
+                "namespace": "default",
+                "service_account_name": "release-name-dagster-user-deployments-user-deployments",
             }
         }
     else:
