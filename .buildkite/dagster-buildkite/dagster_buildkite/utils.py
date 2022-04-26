@@ -108,11 +108,12 @@ DEFAULT_PYTHON_VERSIONS = [getattr(SupportedPython, ver) for ver in _versions.sp
 def get_python_versions_for_branch(pr_versions=None):
     pr_versions = pr_versions if pr_versions != None else DEFAULT_PYTHON_VERSIONS
 
-    # Run one representative version on PRs, the full set of python versions on master after
-    # landing and on release branches before shipping
+    # By default only one representative Python version is tested on PRs, and all versions are tested on
+    # master or release branches. To test the full suite of Python versions on a PR, include
+    # "fullbuild" anywhere in the branch name.
     branch_name = os.getenv("BUILDKITE_BRANCH")
     assert branch_name is not None, "$BUILDKITE_BRANCH env var must be set"
-    if branch_name == "master" or is_release_branch(branch_name):
+    if branch_name == "master" or is_release_branch(branch_name) or "fullbuild" in branch_name:
         return SupportedPythons
     else:
         return pr_versions
