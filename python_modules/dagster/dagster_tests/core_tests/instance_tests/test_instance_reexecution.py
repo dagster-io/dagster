@@ -37,7 +37,7 @@ def after_failure(_, input_value):
     return input_value
 
 
-@job
+@job(tags={"foo": "bar"})
 def conditional_fail_job():
     after_failure(conditional_fail(before_failure()))
 
@@ -47,14 +47,14 @@ def repo():
     return [conditional_fail_job]
 
 
-@pytest.fixture
-def instance():
+@pytest.fixture(name="instance", scope="module")
+def instance_fixture():
     with instance_for_test() as instance:
         yield instance
 
 
-@pytest.fixture
-def workspace(instance):
+@pytest.fixture(name="workspace", scope="module")
+def workspace_fixture(instance):
     with WorkspaceProcessContext(
         instance,
         PythonFileTarget(
@@ -67,22 +67,35 @@ def workspace(instance):
         yield workspace_process_context.create_request_context()
 
 
-def test_create_reexecuted_run_from_failure(instance: DagsterInstance, workspace):
+@pytest.fixture(name="repo_location", scope="module")
+def repo_location_fixture(workspace):
+    return workspace.get_repository_location("repo_loc")
+
+
+@pytest.fixture(name="external_pipeline", scope="module")
+def external_pipeline_fixture(repo_location):
+    return repo_location.get_repository("repo").get_full_external_pipeline("conditional_fail_job")
+
+
+@pytest.fixture(name="failed_run", scope="module")
+def failed_run_fixture(instance):
     # trigger failure in the conditionally_fail op
     with environ({CONDITIONAL_FAIL_ENV: "1"}):
-        result = execute_pipeline(reconstructable(conditional_fail_job), instance=instance)
+        result = execute_pipeline(
+            reconstructable(conditional_fail_job),
+            instance=instance,
+            tags={"fizz": "buzz", "foo": "not bar!"},
+        )
 
     assert not result.success
 
-    parent_run = instance.get_run_by_id(result.run_id)
-    repository_location = workspace.get_repository_location("repo_loc")
-    external_pipeline = repository_location.get_repository("repo").get_full_external_pipeline(
-        "conditional_fail_job"
-    )
+    return instance.get_run_by_id(result.run_id)
 
-    run = instance.create_reexecuted_run_from_failure(
-        parent_run, repository_location, external_pipeline
-    )
+
+def test_create_reexecuted_run_from_failure(
+    instance: DagsterInstance, workspace, repo_location, external_pipeline, failed_run
+):
+    run = instance.create_reexecuted_run_from_failure(failed_run, repo_location, external_pipeline)
 
     assert run.tags[RESUME_RETRY_TAG] == "true"
     assert set(run.step_keys_to_execute) == {"conditional_fail", "after_failure"}  # type: ignore
@@ -94,3 +107,30 @@ def test_create_reexecuted_run_from_failure(instance: DagsterInstance, workspace
     assert step_did_not_run(instance, run, "before_failure")
     assert step_succeeded(instance, run, "conditional_fail")
     assert step_succeeded(instance, run, "after_failure")
+
+
+def test_create_reexecuted_run_from_failure_tags(
+    instance: DagsterInstance, workspace, repo_location, external_pipeline, failed_run
+):
+    run = instance.create_reexecuted_run_from_failure(failed_run, repo_location, external_pipeline)
+
+    assert run.tags["foo"] == "bar"
+    assert "fizz" not in run.tags
+
+    run = instance.create_reexecuted_run_from_failure(
+        failed_run, repo_location, external_pipeline, use_parent_run_tags=True
+    )
+
+    assert run.tags["foo"] == "not bar!"
+    assert run.tags["fizz"] == "buzz"
+
+    run = instance.create_reexecuted_run_from_failure(
+        failed_run,
+        repo_location,
+        external_pipeline,
+        use_parent_run_tags=True,
+        extra_tags={"fizz": "not buzz!!"},
+    )
+
+    assert run.tags["foo"] == "not bar!"
+    assert run.tags["fizz"] == "not buzz!!"
