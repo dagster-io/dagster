@@ -94,7 +94,7 @@ def schedule(
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
         should_execute (Optional[Callable[[ScheduleEvaluationContext], bool]]): A function that runs at
-            schedule execution tie to determine whether a schedule should execute or skip. Takes a
+            schedule execution time to determine whether a schedule should execute or skip. Takes a
             :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing

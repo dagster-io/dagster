@@ -245,7 +245,6 @@ class ScheduleDefinition:
         job: Optional[Union[GraphDefinition, PipelineDefinition]] = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     ):
-        from .decorators.schedule_decorator import DecoratedScheduleFunction
 
         self._cron_schedule = check.str_param(cron_schedule, "cron_schedule")
 
@@ -302,11 +301,11 @@ class ScheduleDefinition:
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
 
-            def default_run_config_fn(context: ScheduleEvaluationContext) -> RunConfig:
+            def _default_run_config_fn(context: ScheduleEvaluationContext) -> RunConfig:
                 return check.opt_dict_param(run_config, "run_config")
 
             self._run_config_fn = check.opt_callable_param(
-                run_config_fn, "run_config_fn", default=default_run_config_fn
+                run_config_fn, "run_config_fn", default=_default_run_config_fn
             )
 
             if tags_fn and tags:
@@ -341,10 +340,11 @@ class ScheduleDefinition:
                     ScheduleExecutionError,
                     lambda: f"Error occurred during the execution of run_config_fn for schedule {name}",
                 ):
+                    run_config_fn = check.not_none(self._run_config_fn)
                     evaluated_run_config = copy.deepcopy(
-                        self._run_config_fn(context)
-                        if is_context_provided(self._run_config_fn)
-                        else self._run_config_fn()
+                        run_config_fn(context)
+                        if is_context_provided(run_config_fn)
+                        else run_config_fn()   # type: ignore
                     )
 
                 with user_code_error_boundary(
@@ -412,13 +412,13 @@ class ScheduleDefinition:
 
             context = context if context else build_schedule_context()
 
-            result = self._execution_fn.decorated_fn(context)
+            result = self._execution_fn.decorated_fn(context)  # type: ignore
         else:
             if len(args) + len(kwargs) > 0:
                 raise DagsterInvalidInvocationError(
                     "Decorated schedule function takes no arguments, but arguments were provided."
                 )
-            result = self._execution_fn.decorated_fn()
+            result = self._execution_fn.decorated_fn()  # type: ignore
 
         if isinstance(result, dict):
             return copy.deepcopy(result)
@@ -473,8 +473,6 @@ class ScheduleDefinition:
 
         """
 
-        from .decorators.schedule_decorator import DecoratedScheduleFunction
-
         check.inst_param(context, "context", ScheduleEvaluationContext)
         execution_fn: Callable[[ScheduleEvaluationContext], "ScheduleEvaluationFunctionReturn"]
         if isinstance(self._execution_fn, DecoratedScheduleFunction):
@@ -496,9 +494,11 @@ class ScheduleDefinition:
         elif len(result) == 1:
             item = check.inst(result[0], (SkipReason, RunRequest))
             if isinstance(item, RunRequest):
-                run_requests, skip_message = [item], None
+                run_requests = [item]
+                skip_message = None
             elif isinstance(item, SkipReason):
-                run_requests, skip_message = [], item.skip_message
+                run_requests = []
+                skip_message = item.skip_message
         else:
             # NOTE: mypy is not correctly reading this cast-- not sure why
             # (pyright reads it fine). Hence the type-ignores below.
