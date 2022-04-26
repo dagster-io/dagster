@@ -68,6 +68,7 @@ class JobDefinition(PipelineDefinition):
         description: Optional[str] = None,
         preset_defs: Optional[List[PresetDefinition]] = None,
         tags: Optional[Dict[str, Any]] = None,
+        default_run_tags: Optional[Dict[str, Any]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
@@ -88,12 +89,15 @@ class JobDefinition(PipelineDefinition):
             _op_selection_data, "_op_selection_data", OpSelectionData
         )
 
+        if default_run_tags is not None:
+            # TODO - deprecation warning for tags?
+            default_run_tags.update(tags)
         super(JobDefinition, self).__init__(
             name=name,
             description=description,
             mode_defs=[mode_def],
             preset_defs=preset_defs,
-            tags=tags,
+            tags=default_run_tags,
             hook_defs=hook_defs,
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,

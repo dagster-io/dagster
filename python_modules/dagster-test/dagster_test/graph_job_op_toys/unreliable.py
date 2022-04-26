@@ -1,11 +1,11 @@
 from random import random
 
-from dagster import Field, graph, op
+from dagster import Field, graph, job, op
 
 DEFAULT_EXCEPTION_RATE = 0.3
 
 
-@op
+@op(tags={"foo": "bar"})
 def unreliable_start():
     return 1
 
@@ -18,7 +18,7 @@ def unreliable_op(context, num):
     return num
 
 
-@graph
+@graph(tags={"yoo": "hoo"})
 def unreliable():
     one = unreliable_op.alias("one")
     two = unreliable_op.alias("two")
@@ -31,5 +31,10 @@ def unreliable():
 
 
 unreliable_job = unreliable.to_job(
-    description="Demo graph of chained ops that fail with a configurable probability."
+    description="Demo graph of chained ops that fail with a configurable probability.",
+    name="unreliable_to_job",
 )
+
+# @job
+# def unreliable_job():
+#     unreliable()

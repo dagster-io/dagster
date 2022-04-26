@@ -24,6 +24,7 @@ class _Job:
         name: Optional[str] = None,
         description: Optional[str] = None,
         tags: Optional[Dict[str, Any]] = None,
+        default_run_tags: Optional[Dict[str, Any]] = None,
         resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
         config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
@@ -35,7 +36,10 @@ class _Job:
     ):
         self.name = name
         self.description = description
-        self.tags = tags
+        if default_run_tags is not None:
+            # TODO - deprecation warning for tags?
+            default_run_tags.update(tags)
+        self.tags = default_run_tags
         self.resource_defs = resource_defs
         self.config = config
         self.logger_defs = logger_defs
@@ -110,6 +114,7 @@ def job(
     resource_defs: Optional[Dict[str, ResourceDefinition]] = ...,
     config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = ...,
     tags: Optional[Dict[str, Any]] = ...,
+    default_run_tags: Optional[Dict[str, Any]] = ...,
     logger_defs: Optional[Dict[str, LoggerDefinition]] = ...,
     executor_def: Optional["ExecutorDefinition"] = ...,
     hooks: Optional[AbstractSet[HookDefinition]] = ...,
@@ -125,6 +130,7 @@ def job(
     resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
     config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
     tags: Optional[Dict[str, Any]] = None,
+    default_run_tags: Optional[Dict[str, Any]] = None,
     logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
@@ -163,7 +169,13 @@ def job(
             values to the base config. The values provided will be viewable and editable in the
             Dagit playground, so be careful with secrets.
         tags (Optional[Dict[str, Any]]):
-            Arbitrary metadata for any execution of the Job.
+            !! Will be deprecated in favor of default_run_tags !!
+            Arbitrary information that will be attached to the execution of the Job.
+            Values that are not strings will be json encoded and must meet the criteria that
+            `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
+            values provided at invocation time.
+        default_run_tags (Optional[Dict[str, Any]]):
+            Arbitrary information that will be attached to the execution of the Job.
             Values that are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
             values provided at invocation time.
@@ -175,7 +187,7 @@ def job(
             Only used if retry policy is not defined on the op definition or op invocation.
         version_strategy (Optional[VersionStrategy]):
             Defines how each op (and optionally, resource) in the job can be versioned. If
-            provided, memoizaton will be enabled for this job.
+            provided, memoization will be enabled for this job.
         partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition keys
             that can parameterize the job. If this argument is supplied, the config argument
             can't also be supplied.
@@ -185,12 +197,16 @@ def job(
         check.invariant(description is None)
         return _Job()(name)
 
+    if default_run_tags is not None:
+        # TODO - deprecation warning for tags?
+        default_run_tags.update(tags)
+
     return _Job(
         name=name,
         description=description,
         resource_defs=resource_defs,
         config=config,
-        tags=tags,
+        tags=default_run_tags,
         logger_defs=logger_defs,
         executor_def=executor_def,
         hooks=hooks,
