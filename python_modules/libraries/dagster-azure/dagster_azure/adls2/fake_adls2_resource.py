@@ -110,6 +110,9 @@ class FakeADLS2FilesystemClient:
     def get_file_system_properties(self):
         return {"account_name": self.account_name, "file_system_name": self.file_system_name}
 
+    def has_file(self, path):
+        return bool(self._file_system.get(path))
+
     def get_file_client(self, file_path):
         # pass fileclient a ref to self and its name so the file can delete itself
         self._file_system.setdefault(file_path, FakeADLS2FileClient(self, file_path))
