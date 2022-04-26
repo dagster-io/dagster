@@ -48,6 +48,10 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
         text: 'Assets',
         href: workspacePathFromAddress(repoAddress, '/assets'),
       },
+      {
+        text: 'Default Resources',
+        href: workspacePathFromAddress(repoAddress, '/resources'),
+      },
     ];
 
     return tabList.filter(Boolean) as {text: string; href: string}[];
@@ -71,6 +75,8 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
         return 'Pipelines';
       case 'assets':
         return 'Assets';
+      case 'resources':
+        return 'Resources';
       default:
         return 'Jobs';
     }
@@ -115,6 +121,9 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
           </Route>
           <Route path="/workspace/:repoPath/graphs" exact>
             <RepositoryGraphsList repoAddress={repoAddress} />
+          </Route>
+          <Route path="/workspace/:repoPath/resources" exact>
+            <RepositoryResourcesList repoAddress={repoAddress} />
           </Route>
           <Route
             path="/workspace/:repoPath/(.*)?"
