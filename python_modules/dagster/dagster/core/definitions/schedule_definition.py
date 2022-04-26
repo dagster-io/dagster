@@ -2,25 +2,12 @@ import copy
 from contextlib import ExitStack
 from datetime import datetime
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    NamedTuple,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional, TypeVar, Union, cast
 
 import pendulum
 from typing_extensions import TypeGuard
 
 from dagster import check
-from dagster.seven import funcsigs
 
 from ...serdes import whitelist_for_serdes
 from ...utils import ensure_gen, merge_dicts
@@ -301,6 +288,7 @@ class ScheduleDefinition:
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
 
+            # pylint: disable=unused-argument
             def _default_run_config_fn(context: ScheduleEvaluationContext) -> RunConfig:
                 return check.opt_dict_param(run_config, "run_config")
 
@@ -317,7 +305,9 @@ class ScheduleDefinition:
                 check_tags(tags, "tags")
                 tags_fn = lambda _context: tags
             else:
-                tags_fn = check.opt_callable_param(tags_fn, "tags_fn", default=lambda _context: {})
+                tags_fn = check.opt_callable_param(
+                    tags_fn, "tags_fn", default=lambda _context: cast(Dict[str, str], {})
+                )
 
             should_execute = check.opt_callable_param(
                 should_execute, "should_execute", default=lambda _context: True
@@ -344,7 +334,7 @@ class ScheduleDefinition:
                     evaluated_run_config = copy.deepcopy(
                         run_config_fn(context)
                         if is_context_provided(run_config_fn)
-                        else run_config_fn()   # type: ignore
+                        else run_config_fn()  # type: ignore
                     )
 
                 with user_code_error_boundary(

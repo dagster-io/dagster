@@ -52,10 +52,10 @@ def schedule(
     pipeline_name: Optional[str] = None,
     name: Optional[str] = None,
     tags: Optional[Dict[str, str]] = None,
-    tags_fn: Optional[Callable[["ScheduleEvaluationContext"], Optional[Dict[str, str]]]] = None,
+    tags_fn: Optional[Callable[[ScheduleEvaluationContext], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
+    should_execute: Optional[Callable[[ScheduleEvaluationContext], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     execution_timezone: Optional[str] = None,
     description: Optional[str] = None,
@@ -123,7 +123,7 @@ def schedule(
         elif tags:
             check_tags(tags, "tags")
 
-        def _wrapped_fn(context: "ScheduleEvaluationContext") -> RunRequestIterator:
+        def _wrapped_fn(context: ScheduleEvaluationContext) -> RunRequestIterator:
             if should_execute:
                 with user_code_error_boundary(
                     ScheduleExecutionError,
@@ -511,7 +511,7 @@ def daily_schedule(
     tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
+    should_execute: Optional[Callable[[ScheduleEvaluationContext], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
@@ -654,7 +654,7 @@ def hourly_schedule(
     tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
+    should_execute: Optional[Callable[[ScheduleEvaluationContext], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
