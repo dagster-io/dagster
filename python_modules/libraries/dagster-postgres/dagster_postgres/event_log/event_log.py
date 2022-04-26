@@ -16,11 +16,7 @@ from dagster.core.storage.event_log import (
 from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.core.storage.event_log.polling_event_watcher import CallbackAfterCursor
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
-from dagster.serdes import (
-    ConfigurableClass,
-    ConfigurableClassData,
-    deserialize_as,
-)
+from dagster.serdes import ConfigurableClass, ConfigurableClassData, deserialize_as
 
 from ..pynotify import await_pg_notifications
 from ..utils import (
@@ -296,9 +292,7 @@ def watcher_thread(
                         SqlEventLogStorageTable.c.id == index
                     ),
                 )
-                dagster_event = deserialize_as(
-                    cursor_res.scalar(), EventLogEntry
-                )
+                dagster_event = deserialize_as(cursor_res.scalar(), EventLogEntry)
 
             for callback_with_cursor in handlers:
                 if callback_with_cursor.start_cursor < index:

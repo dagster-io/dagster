@@ -134,7 +134,8 @@ class K8sStepHandler(StepHandler):
 
     def _get_container_context(self, step_handler_context: StepHandlerContext):
         run_target = K8sContainerContext.create_for_run(
-            step_handler_context.pipeline_run, cast(K8sRunLauncher, step_handler_context.instance.run_launcher)
+            step_handler_context.pipeline_run,
+            cast(K8sRunLauncher, step_handler_context.instance.run_launcher),
         )
         return run_target.merge(self._executor_container_context)
 
