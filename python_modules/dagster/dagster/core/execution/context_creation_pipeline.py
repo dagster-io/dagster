@@ -430,8 +430,8 @@ def scoped_pipeline_context(
     run_config: Dict[str, Any],
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
-    scoped_resources_builder_cm: Optional[
-        Callable[..., EventGenerationManager[ScopedResourcesBuilder]]
+    scoped_resources_builder_cm: Callable[
+        ..., EventGenerationManager[ScopedResourcesBuilder]
     ] = resource_initialization_manager,
     raise_on_error: Optional[bool] = False,
 ) -> Generator[PlanExecutionContext, None, None]:

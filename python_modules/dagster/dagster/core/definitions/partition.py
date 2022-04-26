@@ -432,7 +432,7 @@ class PartitionSetDefinition(Generic[T]):
                 if not current_time:
                     current_time = pendulum.now("UTC")
 
-                check.callable_param(partition_fn, "partition_fn")
+                check.callable_param(partition_fn, "partition_fn")  # type: ignore
 
                 if partition_fn_param_count == 1:
                     obj_list = cast(

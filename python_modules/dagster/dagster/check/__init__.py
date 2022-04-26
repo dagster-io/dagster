@@ -93,25 +93,35 @@ def bool_elem(ddict: Dict, key: str) -> bool:
 # ##### CALLABLE
 # ########################
 
+T_Callable = TypeVar("T_Callable", bound=Callable)
+U_Callable = TypeVar("U_Callable", bound=Callable)
 
-def callable_param(obj: object, param_name: str) -> Callable:
+
+def callable_param(obj: T_Callable, param_name: str) -> T_Callable:
     if not callable(obj):
         raise _param_not_callable_exception(obj, param_name)
     return obj
 
 
 @overload
-def opt_callable_param(obj: object, param_name: str, default: Callable) -> Callable:
+def opt_callable_param(obj: None, param_name: str, default: None = ...) -> None:
     ...
 
 
 @overload
-def opt_callable_param(obj: object, param_name: str) -> Optional[Callable]:
+def opt_callable_param(obj: None, param_name: str, default: T_Callable) -> T_Callable:
+    ...
+
+
+@overload
+def opt_callable_param(
+    obj: T_Callable, param_name: str, default: Optional[U_Callable] = ...
+) -> T_Callable:
     ...
 
 
 def opt_callable_param(
-    obj: object, param_name: str, default: Optional[Callable] = None
+    obj: Optional[Callable], param_name: str, default: Optional[Callable] = None
 ) -> Optional[Callable]:
     if obj is not None and not callable(obj):
         raise _param_not_callable_exception(obj, param_name)
