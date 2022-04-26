@@ -32,7 +32,7 @@ If release name contains chart name it will be used as a full name.
   {{- $ := index . 0 }}
 
   {{- with index . 1 }}
-    {{- $tag := .tag | default $.Chart.Version }}
+    {{- $tag := .tag | toString | default $.Chart.Version }}
     {{- printf "%s:%s" .repository $tag }}
   {{- end }}
 {{- end }}
