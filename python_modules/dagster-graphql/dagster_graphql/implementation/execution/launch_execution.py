@@ -87,7 +87,12 @@ def launch_reexecution_from_parent_run(graphene_info, parent_run_id: str, policy
     repo_location = graphene_info.context.get_repository_location(selector.location_name)
     external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
 
-    run = instance.create_reexecuted_run_from_failure(parent_run, repo_location, external_pipeline)
+    run = instance.create_reexecuted_run_from_failure(
+        parent_run,
+        repo_location,
+        external_pipeline,
+        use_parent_run_tags=True,  # inherit whatever tags were set on the parent run at launch time
+    )
     graphene_info.context.instance.submit_run(
         run.run_id,
         workspace=graphene_info.context,
