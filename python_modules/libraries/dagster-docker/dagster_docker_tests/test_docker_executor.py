@@ -65,12 +65,11 @@ def test_docker_executor():
 
 
 def test_docker_executor_check_step_health():
-    # missing network causes step to fail
-
     executor_config = {
         "execution": {
             "docker": {
                 "config": {
+                    "networks": ["container:test-postgres-db-docker"],
                     "env_vars": [
                         "AWS_ACCESS_KEY_ID",
                         "AWS_SECRET_ACCESS_KEY",
@@ -97,6 +96,9 @@ def test_docker_executor_check_step_health():
         ),
         executor_config,
     )
+
+    # force a segfault to terminate the container unexpectedly, step health check should then fail the step
+    run_config["solids"]["multiply_the_word"]["config"]["should_segfault"] = True
 
     with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
         with docker_postgres_instance() as instance:

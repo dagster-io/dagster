@@ -101,8 +101,16 @@ def docker_mode_defs():
     ]
 
 
-@solid(input_defs=[InputDefinition("word", String)], config_schema={"factor": IntSource})
+@solid(
+    input_defs=[InputDefinition("word", String)],
+    config_schema={
+        "factor": IntSource,
+        "should_segfault": Field(bool, is_required=False, default_value=False),
+    },
+)
 def multiply_the_word(context, word):
+    if context.solid_config.get("should_segfault"):
+        segfault()
     return word * context.solid_config["factor"]
 
 
