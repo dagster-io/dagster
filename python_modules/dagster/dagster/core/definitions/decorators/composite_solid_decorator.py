@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import Any, Callable, Dict, List, Optional, Union, overload
+from typing import Any, Callable, List, Optional, Union, overload
 
 from dagster import check
 from dagster.config.config_schema import ConfigSchemaType
