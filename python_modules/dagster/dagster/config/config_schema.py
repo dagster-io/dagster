@@ -18,7 +18,7 @@ ConfigSchemaType: TypeAlias = Union[
     ConfigType,
     Field,
     Dict[str, object],
-    List,
+    List[object],
 ]
 
 
