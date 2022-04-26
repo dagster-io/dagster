@@ -49,7 +49,7 @@ def secretsmanager_resource(context):
                 )
 
             @job(resource_defs={'secretsmanager': secretsmanager_resource})
-            def example_job(context):
+            def example_job():
                 example_secretsmanager_op()
 
             example_job.execute_in_process(
@@ -139,7 +139,7 @@ def secretsmanager_secrets_resource(context):
                 return os.getenv("my-other-secret-name")
 
             @job(resource_defs={'secrets': secretsmanager_secrets_resource})
-            def example_job(context):
+            def example_job():
                 example_secretsmanager_secrets_op()
                 example_secretsmanager_secrets_op_2()
 
