@@ -1,9 +1,11 @@
-from typing import Dict, List, Type, Union
+from typing import TYPE_CHECKING, Dict, List, Type, Union
 
 from typing_extensions import TypeAlias
 
-from dagster.config.config_type import ConfigType
-from dagster.config.field import Field
+
+if TYPE_CHECKING:
+    from dagster.config.field import Field
+    from dagster.config.config_type import ConfigType
 
 # Eventually, the below `ConfigSchemaType` should be renamed to `ConfigSchema` and the class
 # definition should be dropped. The reason we don't do this now is that sphinx autodoc doesn't
@@ -15,8 +17,8 @@ from dagster.config.field import Field
 ConfigSchemaType: TypeAlias = Union[
     Type[Union[bool, float, int, str]],
     Type[Union[dict, list]],
-    ConfigType,
-    Field,
+    "ConfigType",
+    "Field",
     Dict[str, object],
     List[object],
 ]
