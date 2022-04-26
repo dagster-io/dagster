@@ -25,7 +25,6 @@ from dagster import (
     asset,
     build_assets_job,
     check,
-    job,
     op,
     pipeline,
     resource,
@@ -223,11 +222,9 @@ def _synthesize_events(solids_fn, run_id=None, check_success=True, instance=None
             **(run_config if run_config else {}),
         }
 
-        print(instance.get_runs())
         pipeline_run = instance.create_run_for_pipeline(
             a_pipe, run_id=run_id, run_config=run_config
         )
-        print(instance.get_runs())
         result = execute_run(InMemoryPipeline(a_pipe), pipeline_run, instance)
 
         if check_success:
@@ -328,7 +325,7 @@ class TestEventLogStorage:
                 s.dispose()
 
     @pytest.fixture(name="instance")
-    def instance(self, request) -> Optional[DagsterInstance]:
+    def instance(self, request) -> Optional[DagsterInstance]:  # pylint: disable=unused-argument
         return None
 
     @pytest.fixture(scope="function", name="test_run_id")
@@ -892,7 +889,7 @@ class TestEventLogStorage:
             if not storage._instance:  # pylint: disable=protected-access
                 storage.register_instance(created_instance)
 
-            events_one, result = _synthesize_events(
+            events_one, _ = _synthesize_events(
                 _solids, instance=created_instance, run_id=test_run_id
             )
 
@@ -1841,7 +1838,7 @@ class TestEventLogStorage:
             run_ids = [make_new_run_id() for _ in partitions]
             with create_and_delete_test_runs(instance, run_ids):
                 for partition, run_id in zip([f"partition_{x}" for x in partitions], run_ids):
-                    run_events, result = _synthesize_events(
+                    run_events, _ = _synthesize_events(
                         lambda: solid_partitioned(),
                         instance=created_instance,
                         run_config=get_partitioned_config(partition),

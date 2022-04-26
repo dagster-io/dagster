@@ -15,7 +15,6 @@ from dagster.core.test_utils import (
 )
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import PythonFileTarget
-from dagster.seven import get_system_temp_directory
 
 CONDITIONAL_FAIL_ENV = "DAGSTER_CONDIIONAL_FAIL"
 
@@ -94,7 +93,11 @@ def failed_run_fixture(instance):
 
 
 def test_create_reexecuted_run_from_failure(
-    instance: DagsterInstance, workspace, repo_location, external_pipeline, failed_run
+    instance: DagsterInstance,
+    workspace,
+    repo_location,
+    external_pipeline,
+    failed_run,
 ):
     run = instance.create_reexecuted_run(
         failed_run, repo_location, external_pipeline, ReexecutionPolicy.FROM_FAILURE
@@ -113,7 +116,10 @@ def test_create_reexecuted_run_from_failure(
 
 
 def test_create_reexecuted_run_from_failure_tags(
-    instance: DagsterInstance, workspace, repo_location, external_pipeline, failed_run
+    instance: DagsterInstance,
+    repo_location,
+    external_pipeline,
+    failed_run,
 ):
     run = instance.create_reexecuted_run(
         failed_run, repo_location, external_pipeline, ReexecutionPolicy.FROM_FAILURE
