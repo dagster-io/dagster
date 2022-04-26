@@ -52,12 +52,12 @@ def asset(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     metadata: Optional[Mapping[str, Any]] = ...,
     description: Optional[str] = ...,
+    config_schema: Optional[Dict[str, Any]] = None,
     required_resource_keys: Optional[Set[str]] = ...,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
     io_manager_def: Optional[IOManagerDefinition] = ...,
     io_manager_key: Optional[str] = ...,
     compute_kind: Optional[str] = ...,
-    config_schema: Optional[IDefinitionConfigSchema] = None,
     dagster_type: Optional[DagsterType] = ...,
     partitions_def: Optional[PartitionsDefinition] = ...,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = ...,
@@ -75,12 +75,12 @@ def asset(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
     description: Optional[str] = None,
+    config_schema: Optional[Dict[str, Any]] = None,
     required_resource_keys: Optional[Set[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     io_manager_def: Optional[IOManagerDefinition] = None,
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
-    config_schema: Optional[IDefinitionConfigSchema] = None,
     dagster_type: Optional[DagsterType] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
@@ -107,6 +107,9 @@ def asset(
             and namespaces.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are
             upstream dependencies, but do not pass an input to the asset.
+        config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
+            op. If set, Dagster will check that config provided for the op matches this schema and fail
+            if it does not. If not set, Dagster will accept any config provided for the op.
         metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
         io_manager_key (Optional[str]): The resource key of the IOManager used
@@ -179,7 +182,7 @@ class _Asset:
         non_argument_deps: Optional[Set[AssetKey]] = None,
         metadata: Optional[Mapping[str, Any]] = None,
         description: Optional[str] = None,
-        config_schema: Optional[Union[Dict[str, Any], IDefinitionConfigSchema]] = None,
+        config_schema: Optional[Dict[str, Any]] = None,
         required_resource_keys: Optional[Set[str]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         io_manager: Optional[Union[str, IOManagerDefinition]] = None,
@@ -257,7 +260,8 @@ class _Asset:
                     "assets": {
                         "input_partitions": Field(dict, is_required=False),
                         "output_partitions": Field(dict, is_required=False),
-                    }, **self.config_schema
+                    },
+                    **self.config_schema,
                 },
             )(fn)
 
@@ -287,6 +291,7 @@ def multi_asset(
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     description: Optional[str] = None,
+    config_schema: Optional[Dict[str, Any]] = None,
     required_resource_keys: Optional[Set[str]] = None,
     compute_kind: Optional[str] = None,
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
@@ -307,6 +312,10 @@ def multi_asset(
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
             and namespaces.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are upstream dependencies,
+        config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
+            op. If set, Dagster will check that config provided for the op matches this schema and fail
+            if it does not. If not set, Dagster will accept any config provided for the op.
+        non_argument_deps (Optional[Set[AssetKey]]): Set of asset keys that are upstream dependencies,
             but do not pass an input to the multi_asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
         io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
@@ -376,6 +385,7 @@ def multi_asset(
                 description=description,
                 ins=dict(asset_ins.values()),
                 out=outs,
+                config_schema=config_schema,
                 required_resource_keys=required_resource_keys,
                 tags={
                     **({"kind": compute_kind} if compute_kind else {}),
