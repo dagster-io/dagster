@@ -1,6 +1,7 @@
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
+from dagster.core.execution.plan.resume_retry import ReexecutionPolicy
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import RunsFilter
@@ -62,16 +63,12 @@ def launch_reexecution_from_parent_run(graphene_info, parent_run_id: str, policy
     """
     Launch a re-execution by referencing the parent run id
     """
-    from ...schema.inputs import GrapheneReexecutionPolicy
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.runs import GrapheneLaunchRunSuccess
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(parent_run_id, "parent_run_id")
-
-    check.invariant(
-        policy == GrapheneReexecutionPolicy.FROM_FAILURE, "Only FROM_FAILURE is currently supported"
-    )
+    check.str_param(policy, "policy")
 
     instance: DagsterInstance = graphene_info.context.instance
     parent_run = instance.get_run_by_id(parent_run_id)
@@ -87,10 +84,11 @@ def launch_reexecution_from_parent_run(graphene_info, parent_run_id: str, policy
     repo_location = graphene_info.context.get_repository_location(selector.location_name)
     external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
 
-    run = instance.create_reexecuted_run_from_failure(
+    run = instance.create_reexecuted_run(
         parent_run,
         repo_location,
         external_pipeline,
+        ReexecutionPolicy[policy],
         use_parent_run_tags=True,  # inherit whatever tags were set on the parent run at launch time
     )
     graphene_info.context.instance.submit_run(
