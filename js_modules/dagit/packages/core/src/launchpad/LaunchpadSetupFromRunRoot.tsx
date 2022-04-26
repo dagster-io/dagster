@@ -62,7 +62,7 @@ const LaunchpadSetupFromRunAllowedRoot: React.FC<Props> = (props) => {
 
   useJobTitle(explorerPath, isJob);
 
-  const [storageData, onSave] = useExecutionSessionStorage(repoAddress.name, pipelineName);
+  const [storageData, onSave] = useExecutionSessionStorage(repoAddress, pipelineName);
 
   const {data, loading} = useQuery<ConfigForRunQuery, ConfigForRunQueryVariables>(
     CONFIG_FOR_RUN_QUERY,
