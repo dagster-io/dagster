@@ -138,7 +138,7 @@ def test_task_definition_registration(
     assert len(ecs.list_task_definitions()["taskDefinitionArns"]) == len(task_definitions) + 1
 
 
-def test_reuse_task_definition(instance, run, workspace):
+def test_reuse_task_definition(instance):
     image = "image"
     secrets = []
     original_task_definition = {
