@@ -257,7 +257,7 @@ class OutputContext:
         asset_info = self.asset_info
         if asset_info is None:
             return None
-        return self.asset_info.key
+        return asset_info.key
 
     @property
     def step_context(self) -> "StepExecutionContext":

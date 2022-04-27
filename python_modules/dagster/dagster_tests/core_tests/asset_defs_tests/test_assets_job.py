@@ -345,27 +345,6 @@ def test_multiple_non_argument_deps():
     assert _asset_keys_for_node(result, "qux") == {AssetKey("qux")}
 
 
-def test_asset_materialization_planned_when_failed():
-    from dagster.core.test_utils import instance_for_test
-
-    @asset
-    def never_materializes_asset():
-        raise Exception("foo")
-
-    with instance_for_test() as instance:
-
-        asset_key = AssetKey("never_materializes_asset")
-        never_materializes_job = build_assets_job(
-            "never_materializes_job", [never_materializes_asset]
-        )
-
-        records = instance.storage.get_asset_records([AssetKey("never_materializes_asset")])
-
-        assert len(records) == 1
-        asset_record = records[0]
-        assert result.run_id == asset_record.asset_entry.last_run_id
-
-
 def test_basic_graph_asset():
     @op
     def return_one():

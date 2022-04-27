@@ -280,10 +280,12 @@ def multi_asset(
         op_name = name or fn.__name__
         asset_ins = build_asset_ins(fn, None, ins or {}, non_argument_deps)
 
-        # validate that the internal_asset_deps make sense
+        # validate that the asset_deps make sense
         valid_asset_deps = set(asset_ins.keys())
-        valid_asset_deps.update(out.asset_key or AssetKey([name]) for name, out in outs.items())
-        for out_name, asset_keys in internal_asset_deps.items():
+        valid_asset_deps.update(
+            cast(AssetKey, out.asset_key or AssetKey([name])) for name, out in outs.items()
+        )
+        for out_name, asset_keys in asset_deps.items():
             check.invariant(
                 out_name in outs,
                 f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for multi-asset "
@@ -297,7 +299,6 @@ def multi_asset(
                 "must be associated with an input to the asset or produced by this asset. Valid "
                 f"keys: {valid_asset_deps}",
             )
-
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
             op = _Op(
@@ -310,7 +311,7 @@ def multi_asset(
             )(fn)
 
         asset_keys_by_output_name = {
-            name: out.asset_key or AssetKey([name]) for name, out in outs.items()
+            name: cast(AssetKey, out.asset_key or AssetKey([name])) for name, out in outs.items()
         }
         return AssetsDefinition(
             asset_keys_by_input_name={
@@ -330,6 +331,9 @@ def build_asset_ins(
     asset_ins: Mapping[str, AssetIn],
     non_argument_deps: Optional[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
+    """
+    Creates a mapping from AssetKey to (name of input, In object)
+    """
 
     non_argument_deps = check.opt_set_param(non_argument_deps, "non_argument_deps", AssetKey)
 
@@ -373,6 +377,7 @@ def build_asset_ins(
 
     for asset_key in non_argument_deps:
         stringified_asset_key = "_".join(asset_key.path)
-        ins_by_asset_key[asset_key] = (stringified_asset_key, In(Nothing))
+        # mypy doesn't realize that Nothing is a valid type here
+        ins_by_asset_key[asset_key] = (stringified_asset_key, In(cast(type, Nothing)))
 
     return ins_by_asset_key
