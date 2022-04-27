@@ -144,8 +144,9 @@ class FakeADLS2FileClient:
         return {"lease": self.lease.id}
 
     def upload_data(self, contents, overwrite=False, lease=None):
-        if not self.lease.is_valid(lease):
-            raise Exception("Invalid lease!")
+        if self.lease is not None:
+            if not self.lease.is_valid(lease):
+                raise Exception("Invalid lease!")
         if self.contents is not None or overwrite is True:
             if isinstance(contents, str):
                 self.contents = contents.encode("utf8")
@@ -164,8 +165,9 @@ class FakeADLS2FileClient:
         return FakeADLS2FileDownloader(contents=self.contents)
 
     def delete_file(self, lease=None):
-        if not self.lease.is_valid(lease):
-            raise Exception("Invalid lease!")
+        if self.lease is not None:
+            if not self.lease.is_valid(lease):
+                raise Exception("Invalid lease!")
         self.fs_client.delete_file(self.name)
 
 
