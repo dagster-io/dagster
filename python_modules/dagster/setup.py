@@ -79,6 +79,7 @@ if __name__ == "__main__":
             "pytz",
             "requests",
             "rx>=1.6,<2",  # https://github.com/dagster-io/dagster/issues/4089
+            "setuptools",
             "tabulate",
             "tqdm",
             "typing_compat",

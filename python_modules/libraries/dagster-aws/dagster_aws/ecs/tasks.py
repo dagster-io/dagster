@@ -90,10 +90,6 @@ def default_ecs_task_definition(
 
     # Register the task overridden task definition as a revision to the
     # "dagster-run" family.
-    # TODO: Only register the task definition if a matching one doesn't
-    # already exist. Otherwise, we risk exhausting the revisions limit
-    # (1,000,000 per family) with unnecessary revisions:
-    # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-quotas.html
     ecs.register_task_definition(**task_definition)
 
     return task_definition

@@ -2,13 +2,10 @@ import {gql, useApolloClient, useMutation} from '@apollo/client';
 import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
-import {useInvalidateConfigsForRepo} from '../app/ExecutionSessionStorage';
+import {RepositoryToInvalidate, useInvalidateConfigsForRepo} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT, UNAUTHORIZED_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 
-import {
-  ReloadWorkspaceMutation,
-  ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories as Repository,
-} from './types/ReloadWorkspaceMutation';
+import {ReloadWorkspaceMutation} from './types/ReloadWorkspaceMutation';
 
 export const useReloadWorkspace = () => {
   const apollo = useApolloClient();
@@ -47,10 +44,16 @@ export const useReloadWorkspace = () => {
 
     const reposToInvalidate = locationEntries.reduce((accum, locationEntry) => {
       if (locationEntry.locationOrLoadError?.__typename === 'RepositoryLocation') {
-        return [...accum, ...locationEntry.locationOrLoadError.repositories];
+        return [
+          ...accum,
+          ...locationEntry.locationOrLoadError.repositories.map((repo) => ({
+            ...repo,
+            locationName: locationEntry.name,
+          })),
+        ];
       }
       return accum;
-    }, [] as Repository[]);
+    }, [] as RepositoryToInvalidate[]);
 
     invalidateConfigs(reposToInvalidate);
     apollo.resetStore();

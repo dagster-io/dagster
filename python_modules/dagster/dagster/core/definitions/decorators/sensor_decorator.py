@@ -1,6 +1,6 @@
 import inspect
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Callable, Generator, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Callable, List, Optional, Sequence, Union
 
 from dagster import check
 from dagster.core.definitions.sensor_definition import (
@@ -16,10 +16,11 @@ from ..events import AssetKey
 from ..graph_definition import GraphDefinition
 from ..job_definition import JobDefinition
 from ..sensor_definition import (
+    AssetMaterializationFunction,
     AssetSensorDefinition,
+    RawSensorEvaluationFunction,
     RunRequest,
     SensorDefinition,
-    SensorEvaluationContext,
     SkipReason,
 )
 
@@ -37,15 +38,7 @@ def sensor(
     job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-) -> Callable[
-    [
-        Callable[
-            [SensorEvaluationContext],
-            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
-        ]
-    ],
-    SensorDefinition,
-]:
+) -> Callable[[RawSensorEvaluationFunction], SensorDefinition]:
     """
     Creates a sensor where the decorated function is used as the sensor's evaluation function.  The
     decorated function may:
@@ -80,12 +73,7 @@ def sensor(
     """
     check.opt_str_param(name, "name")
 
-    def inner(
-        fn: Callable[
-            ["SensorEvaluationContext"],
-            Union[Generator[Union[SkipReason, RunRequest], None, None], SkipReason, RunRequest],
-        ]
-    ) -> SensorDefinition:
+    def inner(fn: RawSensorEvaluationFunction) -> SensorDefinition:
         check.callable_param(fn, "fn")
 
         sensor_def = SensorDefinition(
@@ -119,18 +107,7 @@ def asset_sensor(
     job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-) -> Callable[
-    [
-        Callable[
-            [
-                "SensorEvaluationContext",
-                "EventLogEntry",
-            ],
-            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
-        ]
-    ],
-    AssetSensorDefinition,
-]:
+) -> Callable[[AssetMaterializationFunction,], AssetSensorDefinition,]:
     """
     Creates an asset sensor where the decorated function is used as the asset sensor's evaluation
     function.  The decorated function may:
@@ -167,15 +144,7 @@ def asset_sensor(
 
     check.opt_str_param(name, "name")
 
-    def inner(
-        fn: Callable[
-            [
-                "SensorEvaluationContext",
-                "EventLogEntry",
-            ],
-            Union[Generator[Union[SkipReason, RunRequest], None, None], SkipReason, RunRequest],
-        ]
-    ) -> AssetSensorDefinition:
+    def inner(fn: AssetMaterializationFunction) -> AssetSensorDefinition:
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 

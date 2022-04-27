@@ -307,15 +307,9 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             task_definition = self.ecs.describe_task_definition(taskDefinition=family)[
                 "taskDefinition"
             ]
-
-        container_definitions = task_definition.get("containerDefinitions", [{}])
-        for container_definition in container_definitions:
-            if (
-                container_definition.get("image") == image
-                and container_definition.get("name") == self.container_name
-                and container_definition.get("secrets") == secrets_definition.get("secrets", [])
-            ):
-                return task_definition
+        secrets = secrets_definition.get("secrets", [])
+        if self._reuse_task_definition(task_definition, metadata, image, secrets):
+            return task_definition
 
         return default_ecs_task_definition(
             self.ecs,
@@ -326,6 +320,27 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             secrets=secrets_definition,
             include_sidecars=self.include_sidecars,
         )
+
+    def _reuse_task_definition(self, task_definition, metadata, image, secrets):
+        container_definitions_match = False
+        task_definitions_match = False
+
+        container_definitions = task_definition.get("containerDefinitions", [{}])
+        # Only check for diffs to the primary container. This ignores changes to sidecars.
+        for container_definition in container_definitions:
+            if (
+                container_definition.get("image") == image
+                and container_definition.get("name") == self.container_name
+                and container_definition.get("secrets") == secrets
+            ):
+                container_definitions_match = True
+
+        if task_definition.get("executionRoleArn") == metadata.task_definition.get(
+            "executionRoleArn"
+        ) and task_definition.get("taskRoleArn") == metadata.task_definition.get("taskRoleArn"):
+            task_definitions_match = True
+
+        return container_definitions_match & task_definitions_match
 
     def _task_metadata(self):
         return default_ecs_task_metadata(self.ec2, self.ecs)

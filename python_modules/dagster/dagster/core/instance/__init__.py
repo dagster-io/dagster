@@ -80,6 +80,7 @@ if TYPE_CHECKING:
     from dagster.core.debug import DebugRunPayload
     from dagster.core.events import DagsterEvent, DagsterEventType
     from dagster.core.events.log import EventLogEntry
+    from dagster.core.execution.plan.resume_retry import ReexecutionPolicy
     from dagster.core.execution.stats import RunStepKeyStatsSnapshot
     from dagster.core.host_representation import (
         ExternalPipeline,
@@ -1014,29 +1015,31 @@ class DagsterInstance:
 
         return pipeline_run
 
-    def create_reexecuted_run_from_failure(
+    def create_reexecuted_run(
         self,
         parent_run: PipelineRun,
         repo_location: "RepositoryLocation",
         external_pipeline: "ExternalPipeline",
+        policy: "ReexecutionPolicy",
         extra_tags: Optional[Dict[str, Any]] = None,
         run_config: Optional[Dict[str, Any]] = None,
         mode: Optional[str] = None,
         use_parent_run_tags: bool = False,
     ) -> PipelineRun:
-        from dagster.core.execution.plan.resume_retry import get_retry_steps_from_parent_run
+        from dagster.core.execution.plan.resume_retry import (
+            ReexecutionPolicy,
+            get_retry_steps_from_parent_run,
+        )
         from dagster.core.host_representation import ExternalPipeline, RepositoryLocation
 
         check.inst_param(parent_run, "parent_run", PipelineRun)
         check.inst_param(repo_location, "repo_location", RepositoryLocation)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+        check.inst_param(policy, "policy", ReexecutionPolicy)
         check.opt_dict_param(extra_tags, "extra_tags", key_type=str)
         check.opt_dict_param(run_config, "run_config", key_type=str)
         check.opt_str_param(mode, "mode")
-        check.invariant(
-            parent_run.status == PipelineRunStatus.FAILURE,
-            "Cannot reexecute from failure a run that is not failed",
-        )
+
         check.bool_param(use_parent_run_tags, "use_parent_run_tags")
 
         root_run_id = parent_run.root_run_id or parent_run.run_id
@@ -1050,15 +1053,27 @@ class DagsterInstance:
             {
                 PARENT_RUN_ID_TAG: parent_run_id,
                 ROOT_RUN_ID_TAG: root_run_id,
-                RESUME_RETRY_TAG: "true",
             },
         )
+
         mode = cast(str, mode if mode is not None else parent_run.mode)
         run_config = run_config if run_config is not None else parent_run.run_config
 
-        step_keys_to_execute, known_state = get_retry_steps_from_parent_run(
-            self, parent_run=parent_run
-        )
+        if policy == ReexecutionPolicy.FROM_FAILURE:
+            check.invariant(
+                parent_run.status == PipelineRunStatus.FAILURE,
+                "Cannot reexecute from failure a run that is not failed",
+            )
+
+            step_keys_to_execute, known_state = get_retry_steps_from_parent_run(
+                self, parent_run=parent_run
+            )
+            tags[RESUME_RETRY_TAG] = "true"
+        elif policy == ReexecutionPolicy.ALL_STEPS:
+            step_keys_to_execute = None
+            known_state = None
+        else:
+            raise DagsterInvariantViolationError(f"Unknown reexecution policy: {policy}")
 
         external_execution_plan = repo_location.get_external_execution_plan(
             external_pipeline,
