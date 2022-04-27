@@ -12,18 +12,7 @@ from moto import mock_emr
 from pyspark.sql import Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-from dagster import (
-    IOManager,
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    execute_pipeline,
-    graph,
-    io_manager,
-    job,
-    op,
-    reconstructable,
-)
+from dagster import IOManager, execute_pipeline, graph, io_manager, op, reconstructable
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.errors import DagsterSubprocessError
 from dagster.utils.merger import deep_merge_dicts
@@ -42,12 +31,13 @@ BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG = {
 
 
 @io_manager(required_resource_keys={"pyspark"})
-def s3_io_manager(context):
+def s3_io_manager(_):
     class S3ParquetIOManager(IOManager):
         def _get_path(self, context):
             return f"s3a://{S3_BUCKET}/{context.run_id}_{context.step_key}_{context.name}"
 
         def handle_output(self, context, obj):
+            # handle ints as well as dataframes (lol)
             if isinstance(obj, int):
                 obj = context.resources.pyspark.spark_session.createDataFrame([[obj]], ["val"])
             obj.write.parquet(self._get_path(context), mode="overwrite")
@@ -125,12 +115,12 @@ def do_nothing_pipe():
 
 
 def define_do_nothing_pipe_local():
-    return do_nothing_pipe.to_job(resource_defs=LOCAL_RESOURCES)
+    return do_nothing_pipe.to_job(resource_defs=RESOURCES_LOCAL)
 
 
 def define_do_nothing_pipe_prod():
     return do_nothing_pipe.to_job(
-        resource_defs=PROD_RESOURCES,
+        resource_defs=RESOURCES_PROD,
     )
 
 
@@ -284,11 +274,3 @@ def test_fetch_logs_on_fail(
             pass
 
     assert mock_log_logs.call_count == 1
-
-
-from dagster import repository
-
-
-@repository
-def foo():
-    return [define_pyspark_pipe_prod()]
