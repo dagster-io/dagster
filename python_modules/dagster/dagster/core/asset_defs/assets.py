@@ -1,7 +1,7 @@
-from typing import AbstractSet, Mapping, Optional, cast, Set
+from typing import AbstractSet, Dict, Mapping, Optional, Set, cast
 
 from dagster import check
-from dagster.core.definitions import NodeDefinition, OpDefinition, GraphDefinition
+from dagster.core.definitions import GraphDefinition, NodeDefinition, OpDefinition
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -72,6 +72,16 @@ class AssetsDefinition:
         internal_asset_deps = check.opt_dict_param(
             internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
         )
+
+        transformed_internal_asset_deps = {}
+        if internal_asset_deps:
+            for output_name, asset_keys in internal_asset_deps.items():
+                check.invariant(
+                    output_name in asset_keys_by_output_name,
+                    f"output_name {output_name} specified in internal_asset_deps does not exist in the decorated function",
+                )
+                transformed_internal_asset_deps[asset_keys_by_output_name[output_name]] = asset_keys
+
         return AssetsDefinition(
             asset_keys_by_input_name=_infer_asset_keys_by_input_names(
                 graph_def,
@@ -81,7 +91,7 @@ class AssetsDefinition:
                 graph_def, asset_keys_by_output_name or {}
             ),
             node_def=graph_def,
-            # TODO: apply to internal asset deps
+            asset_deps=transformed_internal_asset_deps or None,
         )
 
     @property
@@ -151,7 +161,9 @@ def _infer_asset_keys_by_input_names(
 def _infer_asset_keys_by_output_names(
     graph_def: GraphDefinition, asset_keys_by_output_name: Mapping[str, AssetKey]
 ) -> Mapping[str, AssetKey]:
-    inferred_asset_keys_by_output_names: Dict[AssetKey, str] = asset_keys_by_output_name.copy()
+    inferred_asset_keys_by_output_names: Dict[str, AssetKey] = {
+        output_name: asset_key for output_name, asset_key in asset_keys_by_output_name.items()
+    }
     output_names = [output.definition.name for output in graph_def.output_mappings]
 
     if (

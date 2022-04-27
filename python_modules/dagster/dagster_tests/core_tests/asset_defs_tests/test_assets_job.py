@@ -3,12 +3,12 @@ import os
 import pytest
 
 from dagster import (
-    GraphIn,
     AssetKey,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DependencyDefinition,
+    GraphIn,
     GraphOut,
     IOManager,
     Out,
@@ -638,15 +638,20 @@ def test_fail_with_get_output_asset_key():
         job.execute_in_process()
 
 
-<<<<<<< HEAD
-# def test_internal_asset_deps():
-#     with pytest.raises(Exception):
+def test_internal_asset_deps():
+    with pytest.raises(Exception, match="output_name non_exist_output_name"):
 
-#         @assets_definition(internal_asset_deps={"non_exist_output_name": AssetKey("b")})
-#         @op(out={"a": Out(), "b": Out()})
-#         def multi_asset_op(context):
-#             yield Output(1, "a")
-#             yield Output(2, "b")
+        @op
+        def my_op(x, y):
+            return x
+
+        @graph(ins={"x": GraphIn()})
+        def my_graph(x, y):
+            my_op(x, y)
+
+        assets_def = AssetsDefinition.from_graph(
+            graph_def=my_graph, internal_asset_deps={"non_exist_output_name": {AssetKey("b")}}
+        )
 
 
 def test_asset_def_from_graph_inputs():
@@ -705,7 +710,8 @@ def test_graph_asset_decorator_no_args():
     assert assets_def.asset_keys_by_input_name["x"] == AssetKey("x")
     assert assets_def.asset_keys_by_input_name["y"] == AssetKey("y")
     assert assets_def.asset_keys_by_output_name["result"] == AssetKey("my_graph")
-=======
+
+
 def test_all_assets_job():
     @asset
     def a1():
@@ -1008,4 +1014,3 @@ def test_internal_asset_deps_assets():
     assert node_handle_deps_by_asset[AssetKey("my_other_out_name")] == {
         NodeHandle(name="multi_asset_with_internal_deps", parent=None)
     }
->>>>>>> 3bcb7574e01badfecc086dc2d413d0c1241da42a
