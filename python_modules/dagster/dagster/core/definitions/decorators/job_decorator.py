@@ -26,6 +26,7 @@ class _Job:
         description: Optional[str] = None,
         tags: Optional[Dict[str, Any]] = None,
         default_run_tags: Optional[Dict[str, Any]] = None,
+        job_tags: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, RawMetadataValue]] = None,
         resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
         config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
@@ -40,6 +41,7 @@ class _Job:
         self.description = description
         self.default_run_tags = default_run_tags
         self.tags = tags
+        self.job_tags = job_tags
         self.metadata = metadata
         self.resource_defs = resource_defs
         self.config = config
@@ -95,6 +97,7 @@ class _Job:
             config=self.config,
             tags=self.tags,
             default_run_tags=self.default_run_tags,
+            job_tags=self.job_tags,
             metadata=self.metadata,
             logger_defs=self.logger_defs,
             executor_def=self.executor_def,
@@ -120,6 +123,7 @@ def job(
     config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = ...,
     tags: Optional[Dict[str, Any]] = ...,
     default_run_tags: Optional[Dict[str, Any]] = ...,
+    job_tags: Optional[Dict[str, Any]] = ...,
     metadata: Optional[Dict[str, RawMetadataValue]] = ...,
     logger_defs: Optional[Dict[str, LoggerDefinition]] = ...,
     executor_def: Optional["ExecutorDefinition"] = ...,
@@ -137,6 +141,7 @@ def job(
     config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
     tags: Optional[Dict[str, Any]] = None,
     default_run_tags: Optional[Dict[str, Any]] = None,
+    job_tags: Optional[Dict[str, Any]] = None,
     metadata: Optional[Dict[str, RawMetadataValue]] = None,
     logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
@@ -211,6 +216,7 @@ def job(
         config=config,
         tags=tags,
         default_run_tags=default_run_tags,
+        job_tags=job_tags,
         metadata=metadata,
         logger_defs=logger_defs,
         executor_def=executor_def,
