@@ -44,6 +44,40 @@ case_sensitive=true
 line_length=100
 
 # ########################
+# ##### MYPY
+# ########################
+
+# [Docs root]
+#   https://mypy.readthedocs.io/en/stable/index.html
+# [Config option reference]
+#   https://mypy.readthedocs.io/en/stable/config_file.html#the-mypy-configuration-file
+
+[tool.mypy]
+
+# Allow variables to be redefined with arbitrary types even if they already are typed.
+allow_redefinition = true
+
+# Ignore cases where mypy cannot resolve *the types* for a given import. Note that this is different
+# than not being able to resolve the import at runtime. A module can be installed, but mypy will
+# consider it unresolveable if it does not either (a) have a `py.typed` marker file; (b) have
+# a corresponding stub package (i.e. named `types-XXX`) available to mypy. Because Dagster uses
+# has several dependencies that do not satisfy either criterion, mypy will by default emit errors
+# when it encounters imports of those dependencies. Since there's no way to fix these, we silence
+# them.
+ignore_missing_imports = true
+
+# If a type stub package is missing from the environment but available on typeshed, automatically
+# install it. Note that without `--non-interactive` this will prompt the user.
+install_types = true
+
+# Allow PEP-420-style namespace packages. Without this enabled, different parts of a namespace
+# package will trigger "Duplicate module" errors.
+namespace_packages = true
+
+# Print codes (e.g. "[arg-type]") for each error in output.
+show_error_codes = true
+
+# ########################
 # ##### PYLINT
 # ########################
 
