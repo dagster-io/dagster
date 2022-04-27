@@ -5,7 +5,7 @@ import * as React from 'react';
 
 import {RunFilterToken} from '../runs/RunsFilterInput';
 import {StorybookProvider} from '../testing/StorybookProvider';
-import {StepEventStatus} from '../types/globalTypes';
+import {RunStatus, StepEventStatus} from '../types/globalTypes';
 
 import {PartitionRunMatrix} from './PartitionRunMatrix';
 import {
@@ -85,6 +85,9 @@ function buildRun(
     __typename: 'Run',
     id,
     runId: id,
+    status: RunStatus.SUCCESS,
+    startTime,
+    endTime: startTime + 1,
     stats: {
       id,
       startTime,
