@@ -1,9 +1,11 @@
 import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import flatMap from 'lodash/flatMap';
+import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import uniqBy from 'lodash/uniqBy';
 import without from 'lodash/without';
 import React from 'react';
+import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
@@ -32,9 +34,8 @@ import {
   LargeDAGNotice,
   LoadingNotice,
 } from '../pipelines/GraphNotices';
-import {ExplorerPath} from '../pipelines/PipelinePathUtils';
+import {ExplorerPath, instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../pipelines/SidebarPipelineOrJobOverview';
-import {GraphExplorerSolidHandleFragment} from '../pipelines/types/GraphExplorerSolidHandleFragment';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 import {PipelineSelector} from '../types/globalTypes';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
@@ -53,9 +54,10 @@ import {
   isSourceAsset,
   tokenForAssetKey,
 } from './Utils';
+import {AssetGraphLayout} from './layout';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
 import {useAssetGraphData} from './useAssetGraphData';
-import {useFindAssetInWorkspace} from './useFindAssetInWorkspace';
+import {useFindJobForAsset} from './useFindJobForAsset';
 import {useLiveDataForAssetKeys} from './useLiveDataForAssetKeys';
 
 type AssetNode = AssetGraphQuery_assetNodes;
@@ -66,11 +68,6 @@ interface Props {
 
   pipelineSelector?: PipelineSelector;
   filterNodes?: (assetNode: AssetGraphQuery_assetNodes) => boolean;
-
-  // Optionally pass op handles to display op metadata on the assets linked to each op.
-  // (eg: the "ipynb" tag annotation). Right now, we already have this data loaded for
-  // individual jobs, and the global asset graph quietly doesn't display these.
-  handles?: GraphExplorerSolidHandleFragment[];
 
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
@@ -115,7 +112,6 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
             />
           );
         }
-
         return (
           <AssetGraphExplorerWithData
             key={props.explorerPath.pipelineName}
@@ -144,7 +140,6 @@ const AssetGraphExplorerWithData: React.FC<
   } & Props
 > = (props) => {
   const {
-    handles = [],
     options,
     setOptions,
     explorerPath,
@@ -157,7 +152,8 @@ const AssetGraphExplorerWithData: React.FC<
     pipelineSelector,
   } = props;
 
-  const findAssetInWorkspace = useFindAssetInWorkspace();
+  const findJobForAsset = useFindJobForAsset();
+  const history = useHistory();
 
   const selectedAssetValues = explorerPath.opNames[explorerPath.opNames.length - 1].split(',');
   const selectedGraphNodes = Object.values(assetGraphData.nodes).filter((node) =>
@@ -168,6 +164,8 @@ const AssetGraphExplorerWithData: React.FC<
     ? selectedGraphNodes
     : Object.values(assetGraphData.nodes).filter((a) => !isSourceAsset(a.definition));
 
+  const isGlobalGraph = !pipelineSelector;
+
   const onSelectNode = React.useCallback(
     async (
       e: React.MouseEvent<any> | React.KeyboardEvent<any>,
@@ -177,24 +175,54 @@ const AssetGraphExplorerWithData: React.FC<
       e.stopPropagation();
 
       const token = tokenForAssetKey(assetKey);
-      let clicked: {opName: string | null; jobName: string | null} = {opName: null, jobName: null};
+      const nodeIsInDisplayedGraph = node?.definition;
 
-      if (node?.definition) {
+      let clicked: {opNames: string[]; jobName: string | null} = {opNames: [], jobName: null};
+
+      if (nodeIsInDisplayedGraph) {
         // The asset's defintion was provided in our job.assetNodes query. Show it in the current graph.
-        clicked = {opName: node.definition.opName, jobName: explorerPath.pipelineName};
+        clicked = {opNames: node.definition.opNames, jobName: explorerPath.pipelineName};
       } else {
-        // The asset's definition was not provided in our query for job.assetNodes. This means
-        // it's in another job or is a source asset not defined in the repository at all.
-        clicked = await findAssetInWorkspace(assetKey);
+        // The asset's definition was not provided in our query for job.assetNodes. It's either
+        // in another job or asset group, or is a source asset not defined in any repository.
+        clicked = await findJobForAsset(assetKey);
       }
 
-      let nextOpsQuery = explorerPath.opsQuery;
+      if (!clicked.opNames.length) {
+        // This op has no definition in any loaded repository (source asset).
+        // The best we can do is show the asset page. This will still be mostly empty,
+        // but there can be a description.
+        history.push(`/instance/assets/${assetKey.path.join('/')}?view=definition`);
+        return;
+      }
+
+      if (!clicked.jobName && !isGlobalGraph) {
+        // This asset has a definition (opName) but isn't in any non asset-group jobs.
+        // We can switch to the instance-wide asset graph and see it in context there.
+        history.push(
+          instanceAssetsExplorerPathToURL({
+            opsQuery: `++"${token}"++`,
+            opNames: [token],
+          }),
+        );
+        return;
+      }
+
+      // This asset is in different job (and we're in the job explorer),
+      // go to the other job.
+      if (!isGlobalGraph && clicked.jobName !== explorerPath.pipelineName) {
+        onChangeExplorerPath(
+          {...explorerPath, opNames: [token], opsQuery: '', pipelineName: clicked.jobName!},
+          'replace',
+        );
+        return;
+      }
+
+      // This asset is in a job and we can stay in the job graph explorer!
+      // If it's in our current job, allow shift / meta multi-selection.
       let nextOpsNameSelection = token;
 
-      // If no opName, this is a source asset.
-      if (clicked.jobName !== explorerPath.pipelineName || !clicked.opName) {
-        nextOpsQuery = '';
-      } else if (e.shiftKey || e.metaKey) {
+      if (e.shiftKey || e.metaKey) {
         const existing = explorerPath.opNames[0].split(',');
         const added =
           e.shiftKey && lastSelectedNode && node
@@ -211,21 +239,47 @@ const AssetGraphExplorerWithData: React.FC<
         {
           ...explorerPath,
           opNames: [nextOpsNameSelection],
-          opsQuery: nextOpsQuery,
-          pipelineName: clicked.jobName || explorerPath.pipelineName,
+          opsQuery: nodeIsInDisplayedGraph
+            ? explorerPath.opsQuery
+            : `${explorerPath.opsQuery},++"${token}"++`,
+          pipelineName: explorerPath.pipelineName,
         },
         'replace',
       );
     },
-    [explorerPath, onChangeExplorerPath, findAssetInWorkspace, lastSelectedNode, assetGraphData],
+    [
+      isGlobalGraph,
+      explorerPath,
+      onChangeExplorerPath,
+      findJobForAsset,
+      history,
+      lastSelectedNode,
+      assetGraphData,
+    ],
   );
 
   const {layout, loading, async} = useAssetLayout(assetGraphData);
 
   const viewportEl = React.useRef<SVGViewport>();
+
+  const [lastRenderedLayout, setLastRenderedLayout] = React.useState<AssetGraphLayout | null>(null);
+  const renderingNewLayout = lastRenderedLayout !== layout;
+
   React.useEffect(() => {
-    viewportEl.current?.autocenter();
-  }, [layout, viewportEl]);
+    if (!renderingNewLayout || !layout || !viewportEl.current) {
+      return;
+    }
+    // The first render where we have our layout and viewport, autocenter or
+    // focus on the selected node. (If selection was specified in the URL).
+    // Don't animate this change.
+    if (lastSelectedNode) {
+      viewportEl.current.zoomToSVGBox(layout.nodes[lastSelectedNode.id].bounds, false);
+      viewportEl.current.focus();
+    } else {
+      viewportEl.current.autocenter(false);
+    }
+    setLastRenderedLayout(layout);
+  }, [renderingNewLayout, lastSelectedNode, layout, viewportEl]);
 
   const onClickBackground = () =>
     onChangeExplorerPath(
@@ -234,11 +288,17 @@ const AssetGraphExplorerWithData: React.FC<
     );
 
   const onArrowKeyDown = (e: React.KeyboardEvent<any>, dir: string) => {
-    const nextId = layout && closestNodeInDirection(layout, lastSelectedNode.id, dir);
+    if (!layout) {
+      return;
+    }
+    const hasDefinition = (node: {id: string}) => !!assetGraphData.nodes[node.id]?.definition;
+    const layoutWithoutExternalLinks = {...layout, nodes: pickBy(layout.nodes, hasDefinition)};
+
+    const nextId = closestNodeInDirection(layoutWithoutExternalLinks, lastSelectedNode.id, dir);
     const node = nextId && assetGraphData.nodes[nextId];
     if (node && viewportEl.current) {
       onSelectNode(e, node.assetKey, node);
-      viewportEl.current.smoothZoomToSVGBox(layout.nodes[nextId].bounds);
+      viewportEl.current.zoomToSVGBox(layout.nodes[nextId].bounds, true);
     }
   };
 
@@ -280,8 +340,7 @@ const AssetGraphExplorerWithData: React.FC<
                   {Object.values(layout.nodes).map(({id, bounds}, index) => {
                     const graphNode = assetGraphData.nodes[id];
                     const path = JSON.parse(id);
-
-                    if (isNodeOffscreen(bounds, viewportRect)) {
+                    if (!renderingNewLayout && isNodeOffscreen(bounds, viewportRect)) {
                       return id === lastSelectedNode?.id ? (
                         <RecenterGraph
                           key={index}
@@ -298,21 +357,17 @@ const AssetGraphExplorerWithData: React.FC<
                         key={id}
                         onClick={(e) => onSelectNode(e, {path}, graphNode)}
                         onDoubleClick={(e) => {
-                          viewportEl.current?.smoothZoomToSVGBox(bounds, 1.2);
+                          viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
                           e.stopPropagation();
                         }}
                         style={{overflow: 'visible'}}
                       >
-                        {!graphNode || !graphNode.definition.opName ? (
+                        {!graphNode || !graphNode.definition.opNames.length ? (
                           <ForeignNode assetKey={{path}} />
                         ) : (
                           <AssetNode
                             definition={graphNode.definition}
                             liveData={liveDataByNode[graphNode.id]}
-                            metadata={
-                              handles.find((h) => h.handleID === graphNode.definition.opName)?.solid
-                                .definition.metadata || []
-                            }
                             selected={selectedGraphNodes.includes(graphNode)}
                           />
                         )}
@@ -334,8 +389,8 @@ const AssetGraphExplorerWithData: React.FC<
                     {
                       ...explorerPath,
                       opNames:
-                        selectedGraphNodes.length && selectedGraphNodes[0].definition.opName
-                          ? [selectedGraphNodes[0].definition.opName]
+                        selectedGraphNodes.length && selectedGraphNodes[0].definition.opNames.length
+                          ? selectedGraphNodes[0].definition.opNames
                           : [],
                     },
                     'replace',
@@ -490,7 +545,7 @@ const RecenterGraph: React.FC<{
   y: number;
 }> = ({viewportRef, x, y}) => {
   React.useEffect(() => {
-    viewportRef.current?.smoothZoomToSVGCoords(x, y, viewportRef.current.state.scale);
+    viewportRef.current?.zoomToSVGCoords(x, y, true);
   }, [viewportRef, x, y]);
 
   return <span />;

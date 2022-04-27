@@ -3,25 +3,29 @@ import React from 'react';
 
 import {AssetKeyInput} from '../types/globalTypes';
 
+import {isAssetGroup} from './Utils';
 import {
   AssetForNavigationQuery,
   AssetForNavigationQueryVariables,
 } from './types/AssetForNavigationQuery';
 
-export function useFindAssetInWorkspace() {
+export function useFindJobForAsset() {
   const apollo = useApolloClient();
 
   return React.useCallback(
-    async (key: AssetKeyInput): Promise<{opName: string | null; jobName: string | null}> => {
+    async (key: AssetKeyInput): Promise<{opNames: string[]; jobName: string | null}> => {
       const {data} = await apollo.query<AssetForNavigationQuery, AssetForNavigationQueryVariables>({
         query: ASSET_FOR_NAVIGATION_QUERY,
         variables: {key},
       });
       if (data?.assetOrError.__typename === 'Asset' && data?.assetOrError.definition) {
         const def = data.assetOrError.definition;
-        return {opName: def.opName, jobName: def.jobNames[0] || null};
+        return {
+          opNames: def.opNames,
+          jobName: def.jobNames.find((jobName) => !isAssetGroup(jobName)) || null,
+        };
       }
-      return {opName: null, jobName: null};
+      return {opNames: [], jobName: null};
     },
     [apollo],
   );
@@ -36,6 +40,7 @@ const ASSET_FOR_NAVIGATION_QUERY = gql`
         definition {
           id
           opName
+          opNames
           jobNames
         }
       }

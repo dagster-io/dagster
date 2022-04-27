@@ -156,14 +156,14 @@ export class OpGraph extends React.Component<OpGraphProps> {
   centerOp = (arg: OpNameOrPath) => {
     const opLayout = this.argToOpLayout(arg);
     if (opLayout && this.viewportEl.current) {
-      this.viewportEl.current.smoothZoomToSVGBox(opLayout.bounds);
+      this.viewportEl.current.zoomToSVGBox(opLayout.bounds, true);
     }
   };
 
   focusOnOp = (arg: OpNameOrPath) => {
     const opLayout = this.argToOpLayout(arg);
     if (opLayout && this.viewportEl.current) {
-      this.viewportEl.current?.smoothZoomToSVGBox(opLayout.bounds, DETAIL_ZOOM);
+      this.viewportEl.current?.zoomToSVGBox(opLayout.bounds, true, DETAIL_ZOOM);
     }
   };
 

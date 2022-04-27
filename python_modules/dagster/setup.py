@@ -79,9 +79,11 @@ if __name__ == "__main__":
             "pytz",
             "requests",
             "rx>=1.6,<2",  # https://github.com/dagster-io/dagster/issues/4089
+            "setuptools",
             "tabulate",
             "tqdm",
             "typing_compat",
+            "typing_extensions>=3.10",
             "sqlalchemy>=1.0",
             "toposort>=1.0",
             "watchdog>=0.8.3",
@@ -109,8 +111,7 @@ if __name__ == "__main__":
                 "pytest==6.1.1",
                 "responses==0.10.*",
                 "snapshottest==0.6.0",
-                "tox==3.14.2",
-                "tox-pip-version==0.0.7",
+                "tox==3.25.0",
                 "tqdm==4.48.0",  # pylint crash 48.1+
                 "yamllint",
                 "flake8>=3.7.8",

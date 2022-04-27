@@ -39,6 +39,7 @@ def check_materialization(materialization, asset_key, parent_assets=None, metada
     assert event_data.asset_lineage == (parent_assets or [])
 
 
+@pytest.mark.skip(reason="no longer supporting dynamic asset key")
 def test_output_definition_single_partition_materialization():
 
     entry1 = MetadataEntry("nrows", value=123)

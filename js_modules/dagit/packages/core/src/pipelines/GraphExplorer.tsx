@@ -322,6 +322,7 @@ export const GRAPH_EXPLORER_ASSET_NODE_FRAGMENT = gql`
   fragment GraphExplorerAssetNodeFragment on AssetNode {
     id
     opName
+    opNames
     assetKey {
       path
     }

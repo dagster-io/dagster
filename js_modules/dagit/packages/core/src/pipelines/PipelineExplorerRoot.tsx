@@ -92,7 +92,6 @@ export const PipelineExplorerContainer: React.FC<{
               options={options}
               setOptions={setOptions}
               pipelineSelector={pipelineSelector}
-              handles={displayedHandles}
               explorerPath={explorerPath}
               onChangeExplorerPath={onChangeExplorerPath}
             />

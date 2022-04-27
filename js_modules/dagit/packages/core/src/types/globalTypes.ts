@@ -117,6 +117,11 @@ export enum ObjectStoreOperationType {
   SET_OBJECT = "SET_OBJECT",
 }
 
+export enum ReexecutionPolicy {
+  ALL_STEPS = "ALL_STEPS",
+  FROM_FAILURE = "FROM_FAILURE",
+}
+
 export enum RepositoryLocationLoadStatus {
   LOADED = "LOADED",
   LOADING = "LOADING",
@@ -217,6 +222,11 @@ export interface PipelineSelector {
   repositoryName: string;
   repositoryLocationName: string;
   solidSelection?: string[] | null;
+}
+
+export interface ReexecutionParams {
+  parentRunId: string;
+  policy: ReexecutionPolicy;
 }
 
 export interface RepositorySelector {

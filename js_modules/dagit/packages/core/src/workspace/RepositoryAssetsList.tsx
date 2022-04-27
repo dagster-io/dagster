@@ -27,6 +27,7 @@ const REPOSITORY_ASSETS_LIST_QUERY = gql`
             path
           }
           opName
+          opNames
           description
           repository {
             id

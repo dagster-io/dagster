@@ -111,6 +111,16 @@ const SettingsRoot = () => {
                 />
               ),
             },
+            {
+              key: 'Disable WebSockets',
+              value: (
+                <Checkbox
+                  format="switch"
+                  checked={flags.includes(FeatureFlag.flagDisableWebsockets)}
+                  onChange={() => toggleFlag(FeatureFlag.flagDisableWebsockets)}
+                />
+              ),
+            },
           ]}
         />
       </Box>

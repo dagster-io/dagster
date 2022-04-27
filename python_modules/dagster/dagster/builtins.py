@@ -4,7 +4,7 @@ Any = typing.Any
 Bool = bool
 Float = float
 Int = int
-Nothing = type(None)
+Nothing: typing.Type[None] = type(None)
 String = str
 
 

@@ -15,6 +15,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {Loading} from '../ui/Loading';
+import {StickyTableContainer} from '../ui/StickyTableContainer';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 
@@ -116,26 +117,28 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
 
           return (
             <>
-              <AssetTable
-                assets={displayed}
-                actionBarComponents={
-                  <>
-                    <AssetViewModeSwitch view={view} setView={setView} />
-                    <RepoFilterButton />
-                    <TextInput
-                      value={search || ''}
-                      style={{width: '30vw', minWidth: 150, maxWidth: 400}}
-                      placeholder="Search all asset_keys..."
-                      onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
-                    />
-                    <QueryRefreshCountdown refreshState={refreshState} />
-                  </>
-                }
-                prefixPath={prefixPath || []}
-                displayPathForAsset={displayPathForAsset}
-                maxDisplayCount={PAGE_SIZE}
-                requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY}]}
-              />
+              <StickyTableContainer $top={0}>
+                <AssetTable
+                  assets={displayed}
+                  actionBarComponents={
+                    <>
+                      <AssetViewModeSwitch view={view} setView={setView} />
+                      <RepoFilterButton />
+                      <TextInput
+                        value={search || ''}
+                        style={{width: '30vw', minWidth: 150, maxWidth: 400}}
+                        placeholder="Search all asset_keys..."
+                        onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
+                      />
+                      <QueryRefreshCountdown refreshState={refreshState} />
+                    </>
+                  }
+                  prefixPath={prefixPath || []}
+                  displayPathForAsset={displayPathForAsset}
+                  maxDisplayCount={PAGE_SIZE}
+                  requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY}]}
+                />
+              </StickyTableContainer>
               <Box margin={{vertical: 20}}>
                 <CursorPaginationControls {...paginationProps} />
               </Box>

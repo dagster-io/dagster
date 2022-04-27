@@ -1,89 +1,153 @@
-import {render} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
-import {TestProvider} from '../../testing/TestProvider';
-import {AppContext} from '../AppContext';
-import {useExecutionSessionStorage} from '../ExecutionSessionStorage';
-
-function mockedLocalStorage() {
-  let store = {};
-  return {
-    setItem(key: string, item: any) {
-      store[key] = item;
-    },
-    getItem(key: string) {
-      return store[key];
-    },
-    removeItem(key: string) {
-      delete store[key];
-    },
-    clear() {
-      store = {};
-    },
-    get length() {
-      return Object.keys(store).length;
-    },
-    key(n: number) {
-      return Object.keys(store)[n];
-    },
-  };
-}
-
-let BASE_PATH = '';
-const REPO_ADDRESS = {
-  name: 'test-name',
-  location: 'test-location',
-};
-
-const PIPELINE = 'test-pipeline';
-
-const oldKeyFormat = (repoAddress: typeof REPO_ADDRESS, pipelineOrJobName: string) => {
-  return `dagit.v2.${repoAddress.name}.${pipelineOrJobName}`;
-};
-
-const newKeyFormat = (
-  basePath: string,
-  repoAddress: typeof REPO_ADDRESS,
-  pipelineOrJobName: string,
-) => {
-  return `dagit.v2.${basePath}-${repoAddress.location}-${repoAddress.name}-${pipelineOrJobName}`;
-};
+import {
+  IExecutionSession,
+  makeKey,
+  makeOldKey,
+  useExecutionSessionStorage,
+} from '../ExecutionSessionStorage';
 
 describe('ExecutionSessionStorage', () => {
-  const originalLocalStorage = window.localStorage;
-  beforeEach(() => {
-    window.localStorage = mockedLocalStorage();
-    jest.resetModules();
-  });
-  afterEach(() => {
-    window.localStorage = originalLocalStorage;
-  });
+  const BASE_PATH = '';
+  const REPO_ADDRESS = {
+    name: 'test-name',
+    location: 'test-location',
+  };
+  const JOB_NAME = 'test-job';
 
-  it('Migrates old localStorage data from old format', () => {
-    const testData = {sessions: {test: 'test'}, current: 'test'};
-    const oldFormat = oldKeyFormat(REPO_ADDRESS, PIPELINE);
-    const newFormat = newKeyFormat(BASE_PATH, REPO_ADDRESS, PIPELINE);
+  const oldKey = makeOldKey(REPO_ADDRESS, JOB_NAME);
+  const newKey = makeKey(BASE_PATH, REPO_ADDRESS, JOB_NAME);
 
-    window.localStorage.setItem(oldFormat, JSON.stringify(testData));
-
-    function TestComponent() {
-      const context = React.useContext(AppContext);
-      BASE_PATH = context.basePath;
-      const [data] = useExecutionSessionStorage(REPO_ADDRESS, PIPELINE);
-      expect(data).toEqual(testData);
-      return <div />;
-    }
-
-    render(
-      <TestProvider>
-        <TestComponent />
-      </TestProvider>,
+  const TestComponent = (props: {initial?: Partial<IExecutionSession>}) => {
+    const [data] = useExecutionSessionStorage(REPO_ADDRESS, JOB_NAME, props.initial);
+    return (
+      <>
+        <div>Current: {data.current}</div>
+        <div>{`YAML: "${data.sessions[data.current].runConfigYaml}"`}</div>
+      </>
     );
+  };
 
-    // Its at the new key
-    expect(JSON.parse(window.localStorage.getItem(newFormat) as any)).toEqual(testData);
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
 
-    // old key is deleted
-    expect(window.localStorage.getItem(oldFormat)).toEqual(null);
+  describe('Migration', () => {
+    it('Migrates old localStorage data from old format', async () => {
+      const testData = {sessions: {test: 'test'}, current: 'test'};
+      window.localStorage.setItem(oldKey, JSON.stringify(testData));
+
+      const {rerender} = render(<TestComponent />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/current: test/i)).toBeVisible();
+      });
+
+      // Data is at the new key, and the old key is deleted.
+      expect(JSON.parse(window.localStorage.getItem(newKey) as any)).toEqual(testData);
+      expect(window.localStorage.getItem(oldKey)).toEqual(null);
+
+      // Render it again, expect the data to still be there.
+      rerender(<TestComponent />);
+
+      // Data is at the new key, and the old key remains deleted.
+      expect(JSON.parse(window.localStorage.getItem(newKey) as any)).toEqual(testData);
+      expect(window.localStorage.getItem(oldKey)).toEqual(null);
+    });
+  });
+
+  describe('Initialization', () => {
+    it('initializes with `initial`, if provided', async () => {
+      const testData = {runConfigYaml: 'hello yaml'};
+      render(<TestComponent initial={testData} />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/current: s[0-9]+/i)).toBeVisible();
+        expect(screen.queryByText(/yaml: "hello yaml"/i)).toBeVisible();
+      });
+    });
+
+    it('initializes without `initial`, if none provided', async () => {
+      render(<TestComponent />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/current: s[0-9]+/i)).toBeVisible();
+        expect(screen.queryByText(/yaml: ""/i)).toBeVisible();
+      });
+    });
+  });
+
+  describe('Preserve session object', () => {
+    let storedObject: any = null;
+    const TestComponent = (props: {initial?: Partial<IExecutionSession>}) => {
+      const [data] = useExecutionSessionStorage(REPO_ADDRESS, JOB_NAME, props.initial);
+      storedObject = data;
+      return (
+        <>
+          <div>Current: {data.current}</div>
+          <div>{`YAML: "${data.sessions[data.current].runConfigYaml}"`}</div>
+        </>
+      );
+    };
+
+    beforeEach(() => {
+      storedObject = null;
+    });
+
+    it('no initial: tracks the same stored object across multiple renders', async () => {
+      const {rerender} = render(<TestComponent />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/current: s[0-9]+/i)).toBeVisible();
+      });
+
+      const storedObjectA = storedObject;
+      rerender(<TestComponent />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/current: s[0-9]+/i)).toBeVisible();
+      });
+
+      const storedObjectB = storedObject;
+      expect(storedObjectA).toBe(storedObjectB);
+
+      rerender(<TestComponent />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/current: s[0-9]+/i)).toBeVisible();
+      });
+
+      const storedObjectC = storedObject;
+      expect(storedObjectC).toBe(storedObjectA);
+    });
+
+    it('with initial: tracks the same stored object across multiple renders', async () => {
+      const testData = {runConfigYaml: 'hello yaml'};
+      const {rerender} = render(<TestComponent initial={testData} />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/current: s[0-9]+/i)).toBeVisible();
+      });
+
+      const storedObjectA = storedObject;
+      rerender(<TestComponent initial={testData} />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/current: s[0-9]+/i)).toBeVisible();
+      });
+
+      const storedObjectB = storedObject;
+      expect(storedObjectA).toBe(storedObjectB);
+
+      rerender(<TestComponent initial={testData} />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/current: s[0-9]+/i)).toBeVisible();
+      });
+
+      const storedObjectC = storedObject;
+      expect(storedObjectC).toBe(storedObjectA);
+    });
   });
 });

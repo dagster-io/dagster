@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Dict, List, NamedTuple, Optional
 
 from dagster import check
+from dagster.core.execution.plan.resume_retry import ReexecutionPolicy
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation import (
     ExternalPartitionSet,
@@ -225,13 +226,15 @@ def create_backfill_run(
         last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
         if not last_run or last_run.status != PipelineRunStatus.FAILURE:
             return None
-        return instance.create_reexecuted_run_from_failure(
+        return instance.create_reexecuted_run(
             last_run,
             repo_location,
             external_pipeline,
-            tags=tags,
+            ReexecutionPolicy.FROM_FAILURE,
+            extra_tags=tags,
             run_config=partition_data.run_config,
             mode=external_partition_set.mode,
+            use_parent_run_tags=False,  # don't inherit tags from the previous run
         )
 
     elif backfill_job.reexecution_steps:

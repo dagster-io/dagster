@@ -32,7 +32,7 @@ from .schedule_definition import (
     ScheduleDefinition,
     ScheduleEvaluationContext,
 )
-from .utils import check_valid_name
+from .utils import check_valid_name, validate_tags
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
@@ -432,7 +432,7 @@ class PartitionSetDefinition(Generic[T]):
                 if not current_time:
                     current_time = pendulum.now("UTC")
 
-                check.callable_param(partition_fn, "partition_fn")
+                check.callable_param(partition_fn, "partition_fn")  # type: ignore
 
                 if partition_fn_param_count == 1:
                     obj_list = cast(
@@ -495,7 +495,9 @@ class PartitionSetDefinition(Generic[T]):
         return copy.deepcopy(self._user_defined_run_config_fn_for_partition(partition))
 
     def tags_for_partition(self, partition: Partition[T]) -> Dict[str, str]:
-        user_tags = copy.deepcopy(self._user_defined_tags_fn_for_partition(partition))
+        user_tags = copy.deepcopy(
+            validate_tags(self._user_defined_tags_fn_for_partition(partition))
+        )
         check_tags(user_tags, "user_tags")
 
         tags = merge_dicts(user_tags, PipelineRun.tags_for_partition_set(self, partition))

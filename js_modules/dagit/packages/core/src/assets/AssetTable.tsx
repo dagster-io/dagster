@@ -280,6 +280,7 @@ export const ASSET_TABLE_FRAGMENT = gql`
     definition {
       id
       opName
+      opNames
       description
       repository {
         id

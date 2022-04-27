@@ -2,6 +2,7 @@ from typing import Any, Union, overload
 
 from dagster import check
 from dagster.builtins import BuiltinEnum
+from dagster.config.config_schema import ConfigSchemaType
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster.serdes import serialize_value
 from dagster.utils import is_enum_value
@@ -35,7 +36,7 @@ VALID_CONFIG_DESC = """
 
 
 @overload
-def resolve_to_config_type(dagster_type: ConfigType) -> ConfigType:
+def resolve_to_config_type(dagster_type: Union[ConfigType, ConfigSchemaType]) -> ConfigType:
     pass
 
 
@@ -44,7 +45,7 @@ def resolve_to_config_type(dagster_type: object) -> Union[ConfigType, bool]:
     pass
 
 
-def resolve_to_config_type(dagster_type) -> Union[ConfigType, bool]:
+def resolve_to_config_type(dagster_type: object) -> Union[ConfigType, bool]:
     from .field_utils import convert_fields_to_dict_type
 
     # Short circuit if it's already a Config Type

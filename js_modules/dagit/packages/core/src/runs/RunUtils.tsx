@@ -255,8 +255,14 @@ export const TERMINATE_MUTATION = gql`
 `;
 
 export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
-  mutation LaunchPipelineReexecution($executionParams: ExecutionParams!) {
-    launchPipelineReexecution(executionParams: $executionParams) {
+  mutation LaunchPipelineReexecution(
+    $executionParams: ExecutionParams
+    $reexecutionParams: ReexecutionParams
+  ) {
+    launchPipelineReexecution(
+      executionParams: $executionParams
+      reexecutionParams: $reexecutionParams
+    ) {
       __typename
       ... on LaunchRunSuccess {
         run {

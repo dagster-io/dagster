@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import re
 
 import pandas as pd

@@ -337,3 +337,14 @@ def test_partitions_def():
         pass
 
     assert my_asset.partitions_def == partitions_def
+
+
+def test_op_tags():
+    tags = {"apple": "banana", "orange": {"rind": "fsd", "segment": "fjdskl"}}
+    tags_stringified = {"apple": "banana", "orange": '{"rind": "fsd", "segment": "fjdskl"}'}
+
+    @asset(op_tags=tags)
+    def my_asset():
+        ...
+
+    assert my_asset.op.tags == tags_stringified

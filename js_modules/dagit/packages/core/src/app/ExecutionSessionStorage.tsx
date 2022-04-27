@@ -1,6 +1,7 @@
 import * as React from 'react';
 
-import {getJSONForKey} from '../hooks/useStateWithStorage';
+import {getJSONForKey, useStateWithStorage} from '../hooks/useStateWithStorage';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
 import {AppContext} from './AppContext';
@@ -108,26 +109,10 @@ export function applyCreateSession(
   };
 }
 
-// StorageProvider component that vends `IStorageData` via a render prop
-
 type StorageHook = [IStorageData, (data: IStorageData) => void];
 
-let _data: IStorageData | null = null;
-let _dataNamespace = '';
-
-function getKey(namespace: string) {
-  return `dagit.v2.${namespace}`;
-}
-
-function getStorageDataForNamespace(namespace: string, initial: Partial<IExecutionSession> = {}) {
-  if (_data && _dataNamespace === namespace) {
-    return _data;
-  }
-
-  let data: IStorageData = Object.assign(
-    {sessions: {}, current: ''},
-    getJSONForKey(getKey(namespace)),
-  );
+const buildValidator = (initial: Partial<IExecutionSession> = {}) => (json: any): IStorageData => {
+  let data: IStorageData = Object.assign({sessions: {}, current: ''}, json);
 
   if (Object.keys(data.sessions).length === 0) {
     data = applyCreateSession(data, initial);
@@ -137,25 +122,16 @@ function getStorageDataForNamespace(namespace: string, initial: Partial<IExecuti
     data.current = Object.keys(data.sessions)[0];
   }
 
-  _data = data;
-  _dataNamespace = namespace;
-
   return data;
-}
+};
 
-function writeStorageDataForNamespace(namespace: string, data: IStorageData) {
-  _data = data;
-  _dataNamespace = namespace;
-  window.localStorage.setItem(getKey(namespace), JSON.stringify(data));
-}
+export const makeKey = (basePath: string, repoAddress: RepoAddress, pipelineOrJobName: string) =>
+  `dagit.v2.${basePath}-${repoAddress.location}-${repoAddress.name}-${pipelineOrJobName}`;
 
-/* React hook that provides local storage to the caller. A previous version of this
-loaded data into React state, but changing namespaces caused the data to be out-of-sync
-for one render (until a useEffect could update the data in state). Now we keep the
-current localStorage namespace in memory (in _data above) and React keeps a simple
-version flag it can use to trigger a re-render after changes are saved, so changing
-namespaces changes the returned data immediately.
-*/
+export const makeOldKey = (repoAddress: RepoAddress, pipelineOrJobName: string) =>
+  `dagit.v2.${repoAddress.name}.${pipelineOrJobName}`;
+
+// todo DPE: Clean up the migration logic.
 export function useExecutionSessionStorage(
   repoAddress: RepoAddress,
   pipelineOrJobName: string,
@@ -163,61 +139,79 @@ export function useExecutionSessionStorage(
 ): StorageHook {
   const {basePath} = React.useContext(AppContext);
 
-  const oldNamespace = `${repoAddress.name}.${pipelineOrJobName}`;
-  const oldData = getStorageDataForNamespace(oldNamespace);
+  const key = makeKey(basePath, repoAddress, pipelineOrJobName);
+  const oldKey = makeOldKey(repoAddress, pipelineOrJobName);
 
-  const namespace = `${basePath}-${repoAddress.location}-${repoAddress.name}-${pipelineOrJobName}`;
-  const [version, setVersion] = React.useState<number>(0);
+  // Bind the validator function to the provided `initial` value. Convert to a JSON string
+  // because we can't trust that the `initial` object is memoized.
+  const initialAsJSON = JSON.stringify(initial);
+  const validator = React.useMemo(
+    () => buildValidator(JSON.parse(initialAsJSON) as Partial<IExecutionSession>),
+    [initialAsJSON],
+  );
+  const [newState, setNewState] = useStateWithStorage(key, validator);
 
-  const onSave = (newData: IStorageData) => {
-    writeStorageDataForNamespace(namespace, newData);
-    setVersion(version + 1); // trigger a React render
-  };
+  // Read stored value for the old key. If a value is present, we will use it
+  // for the new key, then remove the old key entirely.
+  const oldValidator = React.useCallback((json: any) => json, []);
+  const [oldState, setOldState] = useStateWithStorage(oldKey, oldValidator);
 
-  // TODO: Remove this migration logic in a few patches when we know the old namespace is likely no longer being used
-  const oldDataMigrated = React.useRef(false);
-  if (oldData && !oldDataMigrated.current) {
-    onSave(oldData);
-    window.localStorage.removeItem(getKey(oldNamespace));
-    oldDataMigrated.current = true;
-  }
+  React.useEffect(() => {
+    if (oldState) {
+      setNewState(oldState);
 
-  return [getStorageDataForNamespace(namespace, initial), onSave];
+      // Delete data at old key.
+      setOldState(undefined);
+    }
+  }, [oldState, setNewState, setOldState]);
+
+  return [newState, setNewState];
 }
 
-type Repository = {
+const writeStorageDataForKey = (key: string, data: IStorageData) => {
+  window.localStorage.setItem(key, JSON.stringify(data));
+};
+
+export type RepositoryToInvalidate = {
+  locationName: string;
   name: string;
   pipelines: {name: string}[];
 };
 
 export const useInvalidateConfigsForRepo = () => {
   const [_, setVersion] = React.useState<number>(0);
+  const {basePath} = React.useContext(AppContext);
 
-  const onSave = React.useCallback((repositories: Repository[]) => {
-    repositories.forEach((repo) => {
-      const {name, pipelines} = repo;
-      const pipelineNames = pipelines.map((pipeline) => pipeline.name);
+  const onSave = React.useCallback(
+    (repositories: RepositoryToInvalidate[]) => {
+      repositories.forEach((repo) => {
+        const {locationName, name, pipelines} = repo;
+        const pipelineNames = pipelines.map((pipeline) => pipeline.name);
+        const repoAddress = buildRepoAddress(name, locationName);
 
-      pipelineNames.forEach((pipelineName) => {
-        const namespace = `${name}.${pipelineName}`;
-        const data: IStorageData | undefined = getJSONForKey(getKey(namespace));
-        if (data) {
-          const withBase = Object.keys(data.sessions).filter(
-            (sessionKey) => data.sessions[sessionKey].base !== null,
-          );
-          if (withBase.length) {
-            const withUpdates = withBase.reduce(
-              (accum, sessionKey) => applyChangesToSession(accum, sessionKey, {needsRefresh: true}),
-              data,
+        pipelineNames.forEach((pipelineName) => {
+          const key = makeKey(basePath, repoAddress, pipelineName);
+          const data: IStorageData | undefined = getJSONForKey(key);
+          if (data) {
+            const withBase = Object.keys(data.sessions).filter(
+              (sessionKey) => data.sessions[sessionKey].base !== null,
             );
-            writeStorageDataForNamespace(namespace, withUpdates);
+            if (withBase.length) {
+              const withUpdates = withBase.reduce(
+                (accum, sessionKey) =>
+                  applyChangesToSession(accum, sessionKey, {needsRefresh: true}),
+                data,
+              );
+              writeStorageDataForKey(key, withUpdates);
+            }
           }
-        }
+        });
       });
-    });
 
-    setVersion((current) => current + 1);
-  }, []);
+      setVersion((current) => current + 1);
+    },
+    [basePath],
+  );
 
   return onSave;
 };
