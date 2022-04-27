@@ -4,7 +4,6 @@ from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_config,
     get_partition_set_partition_runs,
     get_partition_set_partition_statuses,
-    get_partition_set_partition_runs,
     get_partition_tags,
     get_partitions,
 )
@@ -28,7 +27,6 @@ from .pipelines.status import GrapheneRunStatus
 from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
 from .util import non_null_list
-from .backfill import GraphenePartitionBackfill
 
 
 class GraphenePartitionTags(graphene.ObjectType):
@@ -58,6 +56,7 @@ class GraphenePartitionStatus(graphene.ObjectType):
 
     class Meta:
         name = "PartitionStatus"
+
 
 class GraphenePartitionRun(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)

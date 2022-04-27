@@ -204,6 +204,7 @@ def get_partition_set_partition_statuses(graphene_info, repository_handle, parti
         ]
     )
 
+
 def get_partition_set_partition_runs(graphene_info, partition_set):
     from ..schema.partition_sets import GraphenePartitionRun
     from ..schema.pipelines.pipeline import GrapheneRun
