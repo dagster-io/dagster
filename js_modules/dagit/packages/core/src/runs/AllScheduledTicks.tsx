@@ -17,6 +17,7 @@ export const AllScheduledTicks = () => {
   const queryResult = useQuery<SchedulerInfoQuery>(SCHEDULER_INFO_QUERY, {
     fetchPolicy: 'cache-and-network',
     partialRefetch: true,
+    notifyOnNetworkStatusChange: true,
   });
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);

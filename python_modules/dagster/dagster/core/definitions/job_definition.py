@@ -36,12 +36,15 @@ from dagster.core.selector.subset_selector import (
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.utils import str_format_set
 
+from .asset_layer import AssetLayer
+from .config import ConfigMapping
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
+from .logger_definition import LoggerDefinition
 from .metadata import RawMetadataValue, normalize_metadata
 from .mode import ModeDefinition
-from .partition import PartitionSetDefinition
+from .partition import PartitionSetDefinition, PartitionedConfig
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
@@ -57,8 +60,12 @@ if TYPE_CHECKING:
 class JobDefinition(PipelineDefinition):
     def __init__(
         self,
-        mode_def: ModeDefinition,
         graph_def: GraphDefinition,
+        resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
+        executor_def: Optional[ExecutorDefinition] = None,
+        logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
+        config_mapping: Optional[ConfigMapping] = None,
+        partitioned_config: Optional[PartitionedConfig] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         preset_defs: Optional[List[PresetDefinition]] = None,
@@ -68,7 +75,17 @@ class JobDefinition(PipelineDefinition):
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
+        asset_layer: Optional[AssetLayer] = None,
     ):
+
+        # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
+        mode_def = ModeDefinition(
+            resource_defs=resource_defs,
+            logger_defs=logger_defs,
+            executor_defs=[executor_def] if executor_def else None,
+            _config_mapping=config_mapping,
+            _partitioned_config=partitioned_config,
+        )
 
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
         self._op_selection_data = check.opt_inst_param(
@@ -91,6 +108,7 @@ class JobDefinition(PipelineDefinition):
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,
             version_strategy=version_strategy,
+            asset_layer=asset_layer,
         )
 
     @property
@@ -106,11 +124,23 @@ class JobDefinition(PipelineDefinition):
 
     @property
     def executor_def(self) -> ExecutorDefinition:
-        return self.mode_definitions[0].executor_defs[0]
+        return self.get_mode_definition().executor_defs[0]
 
     @property
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
-        return self.mode_definitions[0].resource_defs
+        return self.get_mode_definition().resource_defs
+
+    @property
+    def partitioned_config(self) -> Optional[PartitionedConfig]:
+        return self.get_mode_definition().partitioned_config
+
+    @property
+    def config_mapping(self) -> Optional[ConfigMapping]:
+        return self.get_mode_definition().config_mapping
+
+    @property
+    def loggers(self) -> Mapping[str, LoggerDefinition]:
+        return self.get_mode_definition().loggers
 
     @property
     def metadata(self) -> Optional[Dict[str, RawMetadataValue]]:
@@ -161,36 +191,26 @@ class JobDefinition(PipelineDefinition):
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
         partition_key = check.opt_str_param(partition_key, "partition_key")
 
-        check.invariant(
-            len(self._mode_definitions) == 1,
-            "execute_in_process only supported on job / single mode pipeline",
-        )
-
-        base_mode = self.get_mode_definition()
-        # create an ephemeral in process mode by replacing the executor_def and
-        # switching the default fs io_manager to in mem, if another was not set
-        in_proc_mode = ModeDefinition(
-            name="in_process",
-            executor_defs=[execute_in_process_executor],
-            resource_defs=_swap_default_io_man(base_mode.resource_defs, self),
-            logger_defs=base_mode.loggers,
-            _config_mapping=base_mode.config_mapping,
-            _partitioned_config=base_mode.partitioned_config,
-        )
-
+        resource_defs = dict(self.resource_defs)
+        logger_defs = dict(self.loggers)
         ephemeral_job = JobDefinition(
             name=self._name,
             graph_def=self._graph_def,
-            mode_def=in_proc_mode,
+            resource_defs=_swap_default_io_man(resource_defs, self),
+            executor_def=execute_in_process_executor,
+            logger_defs=logger_defs,
             hook_defs=self.hook_defs,
+            config_mapping=self.config_mapping,
+            partitioned_config=self.partitioned_config,
             tags=self.tags,
             op_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,
+            asset_layer=self.asset_layer,
         ).get_job_def_for_op_selection(op_selection)
 
         tags = None
         if partition_key:
-            if not base_mode.partitioned_config:
+            if not self.partitioned_config:
                 check.failed(
                     f"Provided partition key `{partition_key}` for job `{self._name}` without a partitioned config"
                 )
@@ -239,7 +259,11 @@ class JobDefinition(PipelineDefinition):
         return JobDefinition(
             name=self.name,
             description=self.description,
-            mode_def=self.get_mode_definition(),
+            resource_defs=dict(self.resource_defs),
+            logger_defs=dict(self.loggers),
+            executor_def=self.executor_def,
+            config_mapping=self.config_mapping,
+            partitioned_config=self.partitioned_config,
             preset_defs=self.preset_defs,
             tags=self.tags,
             hook_defs=self.hook_defs,
@@ -253,11 +277,12 @@ class JobDefinition(PipelineDefinition):
                 ),  # equivalent to solids_to_execute. currently only gets top level nodes.
                 parent_job_def=self,  # used by pipeline snapshot lineage
             ),
+            # TODO: subset this structure.
+            # https://github.com/dagster-io/dagster/issues/7541
+            asset_layer=self.asset_layer,
         )
 
     def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
-        if not self.is_single_mode:
-            return None
 
         mode = self.get_mode_definition()
         if not mode.partitioned_config:
@@ -297,12 +322,17 @@ class JobDefinition(PipelineDefinition):
         job_def = JobDefinition(
             name=self.name,
             graph_def=self._graph_def,
-            mode_def=self.mode_definitions[0],
+            resource_defs=dict(self.resource_defs),
+            logger_defs=dict(self.loggers),
+            executor_def=self.executor_def,
+            partitioned_config=self.partitioned_config,
+            config_mapping=self.config_mapping,
             preset_defs=self.preset_defs,
             tags=self.tags,
             hook_defs=hook_defs | self.hook_defs,
             description=self._description,
             op_retry_policy=self._solid_retry_policy,
+            asset_layer=self.asset_layer,
             _op_selection_data=self._op_selection_data,
         )
 

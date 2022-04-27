@@ -60,6 +60,7 @@ const ASSET_ID_SCAN_QUERY = gql`
           assetNodes {
             id
             opName
+            opNames
           }
         }
       }

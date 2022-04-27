@@ -26,6 +26,7 @@ import {
 } from '../runs/RunsFilterInput';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Loading} from '../ui/Loading';
+import {StickyTableContainer} from '../ui/StickyTableContainer';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
@@ -118,18 +119,20 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                   </Box>
                   <QueryRefreshCountdown refreshState={refreshState} />
                 </Box>
-                <RunTable
-                  runs={displayed}
-                  onSetFilter={setFilterTokens}
-                  actionBarComponents={
-                    <RunsFilterInput
-                      enabledFilters={ENABLED_FILTERS}
-                      tokens={filterTokens}
-                      onChange={setFilterTokens}
-                      loading={queryResult.loading}
-                    />
-                  }
-                />
+                <StickyTableContainer $top={0}>
+                  <RunTable
+                    runs={displayed}
+                    onSetFilter={setFilterTokens}
+                    actionBarComponents={
+                      <RunsFilterInput
+                        enabledFilters={ENABLED_FILTERS}
+                        tokens={filterTokens}
+                        onChange={setFilterTokens}
+                        loading={queryResult.loading}
+                      />
+                    }
+                  />
+                </StickyTableContainer>
                 {hasNextCursor || hasPrevCursor ? (
                   <div style={{marginTop: '20px'}}>
                     <CursorHistoryControls {...paginationProps} />

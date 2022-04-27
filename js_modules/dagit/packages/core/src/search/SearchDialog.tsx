@@ -12,6 +12,8 @@ import {SearchResults} from './SearchResults';
 import {SearchResult} from './types';
 import {useRepoSearch} from './useRepoSearch';
 
+const MAX_DISPLAYED_RESULTS = 50;
+
 type State = {
   shown: boolean;
   queryString: string;
@@ -62,7 +64,8 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {shown, queryString, results, highlight, loaded} = state;
 
-  const numResults = results.length;
+  const renderedResults = results.slice(0, MAX_DISPLAYED_RESULTS);
+  const numRenderedResults = renderedResults.length;
 
   const openSearch = React.useCallback(() => dispatch({type: 'show-dialog'}), []);
   const onChange = React.useCallback((e) => {
@@ -86,7 +89,7 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
     [history],
   );
 
-  const highlightedResult = results[highlight] || null;
+  const highlightedResult = renderedResults[highlight] || null;
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     const {key} = e;
@@ -95,11 +98,11 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
       return;
     }
 
-    if (!numResults) {
+    if (!numRenderedResults) {
       return;
     }
 
-    const lastResult = numResults - 1;
+    const lastResult = numRenderedResults - 1;
 
     switch (key) {
       case 'ArrowUp':
@@ -179,7 +182,7 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
           <SearchResults
             highlight={highlight}
             queryString={queryString}
-            results={results}
+            results={renderedResults}
             onClickResult={onClickResult}
           />
         </Container>

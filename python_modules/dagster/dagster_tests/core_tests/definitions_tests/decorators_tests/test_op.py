@@ -768,16 +768,17 @@ def test_implicit_op_output_with_asset_key():
 
 
 def test_args_kwargs_op():
+    # pylint: disable=function-redefined
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=r"@op 'the_op' decorated function has positional vararg parameter "
-        r"'\*args'. @op decorated functions should only have keyword arguments "
+        r"'\*_args'. @op decorated functions should only have keyword arguments "
         r"that match input names and, if system information is required, a "
         r"first positional parameter named 'context'.",
     ):
 
         @op(ins={"the_in": In()})
-        def the_op(*args):
+        def the_op(*_args):
             pass
 
     @op(ins={"the_in": In()})

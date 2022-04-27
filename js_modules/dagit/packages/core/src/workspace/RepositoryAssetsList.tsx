@@ -10,7 +10,10 @@ import {RepositoryLink} from '../nav/RepositoryLink';
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
-import {RepositoryAssetsListQuery} from './types/RepositoryAssetsListQuery';
+import {
+  RepositoryAssetsListQuery,
+  RepositoryAssetsListQueryVariables,
+} from './types/RepositoryAssetsListQuery';
 
 const REPOSITORY_ASSETS_LIST_QUERY = gql`
   query RepositoryAssetsListQuery($repositorySelector: RepositorySelector!) {
@@ -24,6 +27,7 @@ const REPOSITORY_ASSETS_LIST_QUERY = gql`
             path
           }
           opName
+          opNames
           description
           repository {
             id
@@ -50,7 +54,10 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const {data, error, loading} = useQuery<RepositoryAssetsListQuery>(REPOSITORY_ASSETS_LIST_QUERY, {
+  const {data, error, loading} = useQuery<
+    RepositoryAssetsListQuery,
+    RepositoryAssetsListQueryVariables
+  >(REPOSITORY_ASSETS_LIST_QUERY, {
     fetchPolicy: 'cache-and-network',
     variables: {repositorySelector},
   });

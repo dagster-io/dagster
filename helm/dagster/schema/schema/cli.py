@@ -60,7 +60,7 @@ def apply():
     }
 
     for helm_values, path in helm_values_path_tuples:
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf8") as f:
             f.write(helm_values.schema_json(indent=4))
             f.write("\n")
 

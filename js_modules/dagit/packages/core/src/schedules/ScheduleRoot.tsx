@@ -1,9 +1,10 @@
-import {gql, NetworkStatus, useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Tabs, Tab, Page, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable} from '../instigation/TickHistory';
@@ -16,17 +17,19 @@ import {RepoAddress} from '../workspace/types';
 import {ScheduleDetails} from './ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
-import {PreviousRunsForScheduleQuery} from './types/PreviousRunsForScheduleQuery';
+import {
+  PreviousRunsForScheduleQuery,
+  PreviousRunsForScheduleQueryVariables,
+} from './types/PreviousRunsForScheduleQuery';
 import {
   ScheduleRootQuery,
+  ScheduleRootQueryVariables,
   ScheduleRootQuery_scheduleOrError_Schedule as Schedule,
 } from './types/ScheduleRootQuery';
 
 interface Props {
   repoAddress: RepoAddress;
 }
-
-const INTERVAL = 15 * 1000;
 
 export const ScheduleRoot: React.FC<Props> = (props) => {
   const {repoAddress} = props;
@@ -41,25 +44,17 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
 
   const [selectedTab, setSelectedTab] = React.useState<string>('ticks');
 
-  const queryResult = useQuery<ScheduleRootQuery>(SCHEDULE_ROOT_QUERY, {
+  const queryResult = useQuery<ScheduleRootQuery, ScheduleRootQueryVariables>(SCHEDULE_ROOT_QUERY, {
     variables: {
       scheduleSelector,
     },
     fetchPolicy: 'cache-and-network',
-    pollInterval: INTERVAL,
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });
 
-  const {networkStatus, refetch, stopPolling, startPolling} = queryResult;
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
-  const onRefresh = async () => {
-    stopPolling();
-    await refetch();
-    startPolling(INTERVAL);
-  };
-
-  const countdownStatus = networkStatus === NetworkStatus.ready ? 'counting' : 'idle';
   const tabs = (
     <Tabs selectedTabId={selectedTab} onChange={setSelectedTab}>
       <Tab id="ticks" title="Tick history" />
@@ -81,9 +76,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
             <ScheduleDetails
               repoAddress={repoAddress}
               schedule={scheduleOrError}
-              countdownDuration={INTERVAL}
-              countdownStatus={countdownStatus}
-              onRefresh={() => onRefresh()}
+              refreshState={refreshState}
             />
             {showDaemonWarning ? (
               <Box padding={{vertical: 16, horizontal: 24}}>
@@ -112,18 +105,24 @@ export const SchedulePreviousRuns: React.FC<{
   tabs?: React.ReactElement;
   highlightedIds?: string[];
 }> = ({schedule, highlightedIds, tabs}) => {
-  const {data} = useQuery<PreviousRunsForScheduleQuery>(PREVIOUS_RUNS_FOR_SCHEDULE_QUERY, {
-    fetchPolicy: 'cache-and-network',
-    variables: {
-      limit: 20,
-      filter: {
-        pipelineName: schedule.pipelineName,
-        tags: [{key: DagsterTag.ScheduleName, value: schedule.name}],
+  const queryResult = useQuery<PreviousRunsForScheduleQuery, PreviousRunsForScheduleQueryVariables>(
+    PREVIOUS_RUNS_FOR_SCHEDULE_QUERY,
+    {
+      fetchPolicy: 'cache-and-network',
+      variables: {
+        limit: 20,
+        filter: {
+          pipelineName: schedule.pipelineName,
+          tags: [{key: DagsterTag.ScheduleName, value: schedule.name}],
+        },
       },
+      partialRefetch: true,
+      notifyOnNetworkStatusChange: true,
     },
-    partialRefetch: true,
-    pollInterval: 15 * 1000,
-  });
+  );
+
+  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const {data} = queryResult;
 
   if (!data) {
     return null;

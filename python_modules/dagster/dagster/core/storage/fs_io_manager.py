@@ -140,7 +140,7 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
                     "https://docs.dagster.io/concepts/io-management/io-managers \n"
                     "For more information on executors, vist "
                     "https://docs.dagster.io/deployment/executors#overview"
-                )
+                ) from e
 
         context.add_output_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
 

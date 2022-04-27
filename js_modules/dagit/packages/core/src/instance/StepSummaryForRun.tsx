@@ -7,7 +7,10 @@ import {Link} from 'react-router-dom';
 import {failedStatuses, inProgressStatuses} from '../runs/RunStatuses';
 import {StepEventStatus} from '../types/globalTypes';
 
-import {StepSummaryForRunQuery} from './types/StepSummaryForRunQuery';
+import {
+  StepSummaryForRunQuery,
+  StepSummaryForRunQueryVariables,
+} from './types/StepSummaryForRunQuery';
 
 interface Props {
   runId: string;
@@ -15,7 +18,10 @@ interface Props {
 
 export const StepSummaryForRun = (props: Props) => {
   const {runId} = props;
-  const {data} = useQuery<StepSummaryForRunQuery>(STEP_SUMMARY_FOR_RUN_QUERY, {variables: {runId}});
+  const {data} = useQuery<StepSummaryForRunQuery, StepSummaryForRunQueryVariables>(
+    STEP_SUMMARY_FOR_RUN_QUERY,
+    {variables: {runId}},
+  );
 
   const run = data?.pipelineRunOrError;
   const status = run?.__typename === 'Run' ? run.status : null;

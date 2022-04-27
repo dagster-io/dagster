@@ -65,7 +65,7 @@ def test_interrupt_ipc_subprocess():
             wait_for_file(started_sentinel)
             interrupt_ipc_subprocess(sleepy_process)
             wait_for_file(interrupt_sentinel)
-            with open(interrupt_sentinel, "r") as fd:
+            with open(interrupt_sentinel, "r", encoding="utf8") as fd:
                 assert fd.read().startswith("received_keyboard_interrupt")
 
 
@@ -83,7 +83,7 @@ def test_interrupt_ipc_subprocess_by_pid():
             wait_for_file(started_sentinel)
             interrupt_ipc_subprocess_pid(sleepy_process.pid)
             wait_for_file(interrupt_sentinel)
-            with open(interrupt_sentinel, "r") as fd:
+            with open(interrupt_sentinel, "r", encoding="utf8") as fd:
                 assert fd.read().startswith("received_keyboard_interrupt")
 
 
@@ -109,10 +109,10 @@ def test_interrupt_ipc_subprocess_grandchild():
         wait_for_file(child_started_sentinel)
         interrupt_ipc_subprocess(child_process)
         wait_for_file(child_interrupt_sentinel)
-        with open(child_interrupt_sentinel, "r") as fd:
+        with open(child_interrupt_sentinel, "r", encoding="utf8") as fd:
             assert fd.read().startswith("received_keyboard_interrupt")
         wait_for_file(parent_interrupt_sentinel)
-        with open(parent_interrupt_sentinel, "r") as fd:
+        with open(parent_interrupt_sentinel, "r", encoding="utf8") as fd:
             assert fd.read().startswith("parent_received_keyboard_interrupt")
 
 
@@ -138,10 +138,10 @@ def test_interrupt_compute_log_tail_child(
         wait_for_file(stdout_pids_file)
         wait_for_file(stderr_pids_file)
 
-        with open(opened_sentinel, "r") as opened_sentinel_fd:
+        with open(opened_sentinel, "r", encoding="utf8") as opened_sentinel_fd:
             assert opened_sentinel_fd.read().startswith("opened_compute_log_subprocess")
 
-        with open(stdout_pids_file, "r") as stdout_pids_fd:
+        with open(stdout_pids_file, "r", encoding="utf8") as stdout_pids_fd:
             stdout_pids_str = stdout_pids_fd.read()
             assert stdout_pids_str.startswith("stdout pids:")
             stdout_pids = list(
@@ -151,7 +151,7 @@ def test_interrupt_compute_log_tail_child(
                 )
             )
 
-        with open(stderr_pids_file, "r") as stderr_pids_fd:
+        with open(stderr_pids_file, "r", encoding="utf8") as stderr_pids_fd:
             stderr_pids_str = stderr_pids_fd.read()
             assert stderr_pids_str.startswith("stderr pids:")
             stderr_pids = list(
@@ -173,7 +173,7 @@ def test_interrupt_compute_log_tail_child(
 
         wait_for_file(interrupt_sentinel)
 
-        with open(interrupt_sentinel, "r") as fd:
+        with open(interrupt_sentinel, "r", encoding="utf8") as fd:
             assert fd.read().startswith("compute_log_subprocess_interrupt")
 
 
@@ -194,7 +194,7 @@ def test_segfault_compute_log_tail(
             child_process.wait()
 
             wait_for_file(stdout_pids_file)
-            with open(stdout_pids_file, "r") as stdout_pids_fd:
+            with open(stdout_pids_file, "r", encoding="utf8") as stdout_pids_fd:
                 stdout_pids_str = stdout_pids_fd.read()
                 assert stdout_pids_str.startswith("stdout pids:")
                 stdout_pids = list(
@@ -205,7 +205,7 @@ def test_segfault_compute_log_tail(
                 )
 
             wait_for_file(stderr_pids_file)
-            with open(stderr_pids_file, "r") as stderr_pids_fd:
+            with open(stderr_pids_file, "r", encoding="utf8") as stderr_pids_fd:
                 stderr_pids_str = stderr_pids_fd.read()
                 assert stderr_pids_str.startswith("stderr pids:")
                 stderr_pids = list(
@@ -254,7 +254,7 @@ def test_interrupt_compute_log_tail_grandchild(
         wait_for_file(child_started_sentinel)
 
         wait_for_file(stdout_pids_file)
-        with open(stdout_pids_file, "r") as stdout_pids_fd:
+        with open(stdout_pids_file, "r", encoding="utf8") as stdout_pids_fd:
             stdout_pids_str = stdout_pids_fd.read()
             assert stdout_pids_str.startswith("stdout pids:")
             stdout_pids = list(
@@ -265,7 +265,7 @@ def test_interrupt_compute_log_tail_grandchild(
             )
 
         wait_for_file(stderr_pids_file)
-        with open(stderr_pids_file, "r") as stderr_pids_fd:
+        with open(stderr_pids_file, "r", encoding="utf8") as stderr_pids_fd:
             stderr_pids_str = stderr_pids_fd.read()
             assert stderr_pids_str.startswith("stderr pids:")
             stderr_pids = list(
@@ -278,11 +278,11 @@ def test_interrupt_compute_log_tail_grandchild(
         interrupt_ipc_subprocess(parent_process)
 
         wait_for_file(child_interrupt_sentinel)
-        with open(child_interrupt_sentinel, "r") as fd:
+        with open(child_interrupt_sentinel, "r", encoding="utf8") as fd:
             assert fd.read().startswith("compute_log_subprocess_interrupt")
 
         wait_for_file(parent_interrupt_sentinel)
-        with open(parent_interrupt_sentinel, "r") as fd:
+        with open(parent_interrupt_sentinel, "r", encoding="utf8") as fd:
             assert fd.read().startswith("parent_received_keyboard_interrupt")
 
         for stdout_pid in stdout_pids:

@@ -37,8 +37,10 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
     run_id = "d5f89349-7477-4fab-913e-0925cef0a959"
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -92,8 +94,10 @@ def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -130,8 +134,10 @@ def test_0_9_22_postgres_pre_run_partition(hostname, conn_string):
         file_relative_path(__file__, "snapshot_0_9_22_pre_run_partition/postgres/pg_dump.txt"),
     )
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -167,8 +173,10 @@ def test_0_10_0_schedule_wipe(hostname, conn_string):
         file_relative_path(__file__, "snapshot_0_10_0_wipe_schedules/postgres/pg_dump.txt"),
     )
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -186,8 +194,10 @@ def test_0_10_6_add_bulk_actions_table(hostname, conn_string):
         file_relative_path(__file__, "snapshot_0_10_6_add_bulk_actions_table/postgres/pg_dump.txt"),
     )
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -210,8 +220,10 @@ def test_0_11_0_add_asset_details(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -234,8 +246,10 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -293,8 +307,10 @@ def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
         asset_solid()
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -372,8 +388,10 @@ def test_0_13_12_add_start_time_end_time(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -413,8 +431,10 @@ def test_schedule_secondary_index_table_backcompat(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -439,8 +459,10 @@ def test_instigators_table_backcompat(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -468,8 +490,10 @@ def test_jobs_selector_id_migration(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 

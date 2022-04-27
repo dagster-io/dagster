@@ -217,6 +217,7 @@ type AssetNode {
     beforeTimestampMillis: String
     limit: Int
   ): [MaterializationEvent!]!
+  computeKind: String
   dependedBy: [AssetDependency!]!
   dependedByKeys: [AssetKey!]!
   dependencies: [AssetDependency!]!
@@ -230,6 +231,7 @@ type AssetNode {
   metadataEntries: [MetadataEntry!]!
   op: SolidDefinition
   opName: String
+  opNames: [String!]!
   partitionKeys: [String!]!
   partitionDefinition: String
   repository: Repository!
@@ -1790,8 +1792,14 @@ type GraphenePermission {
 type DagitMutation {
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchRunResult!
   launchRun(executionParams: ExecutionParams!): LaunchRunResult!
-  launchPipelineReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
-  launchRunReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
+  launchPipelineReexecution(
+    executionParams: ExecutionParams
+    reexecutionParams: ReexecutionParams
+  ): LaunchRunReexecutionResult!
+  launchRunReexecution(
+    executionParams: ExecutionParams
+    reexecutionParams: ReexecutionParams
+  ): LaunchRunReexecutionResult!
   startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   stopRunningSchedule(
     scheduleOriginId: String!
@@ -1907,6 +1915,16 @@ union LaunchRunReexecutionResult =
   | PresetNotFoundError
   | ConflictingExecutionParamsError
   | NoModeProvidedError
+
+input ReexecutionParams {
+  parentRunId: String!
+  policy: ReexecutionPolicy!
+}
+
+enum ReexecutionPolicy {
+  FROM_FAILURE
+  ALL_OPS
+}
 
 union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult
 

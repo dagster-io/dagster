@@ -379,9 +379,9 @@ def _traverse_airflow_dag(
 
 @contextmanager
 def replace_airflow_logger_handlers():
+    prev_airflow_handlers = logging.getLogger("airflow.task").handlers
     try:
         # Redirect airflow handlers to stdout / compute logs
-        prev_airflow_handlers = logging.getLogger("airflow.task").handlers
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(logging.Formatter(LOG_FORMAT))
         root = logging.getLogger("airflow.task")

@@ -2369,9 +2369,11 @@ export interface AssetNodeDefinitionFragment_dependencies_asset {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  opNames: string[];
   jobNames: string[];
   description: string | null;
   partitionDefinition: string | null;
+  computeKind: string | null;
   assetKey: AssetNodeDefinitionFragment_dependencies_asset_assetKey;
   repository: AssetNodeDefinitionFragment_dependencies_asset_repository;
   assetMaterializations: AssetNodeDefinitionFragment_dependencies_asset_assetMaterializations[];
@@ -2410,9 +2412,11 @@ export interface AssetNodeDefinitionFragment_dependedBy_asset {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  opNames: string[];
   jobNames: string[];
   description: string | null;
   partitionDefinition: string | null;
+  computeKind: string | null;
   assetKey: AssetNodeDefinitionFragment_dependedBy_asset_assetKey;
   repository: AssetNodeDefinitionFragment_dependedBy_asset_repository;
   assetMaterializations: AssetNodeDefinitionFragment_dependedBy_asset_assetMaterializations[];
@@ -2428,9 +2432,11 @@ export interface AssetNodeDefinitionFragment {
   id: string;
   description: string | null;
   opName: string | null;
+  opNames: string[];
   jobNames: string[];
   repository: AssetNodeDefinitionFragment_repository;
   partitionDefinition: string | null;
+  computeKind: string | null;
   assetKey: AssetNodeDefinitionFragment_assetKey;
   assetMaterializations: AssetNodeDefinitionFragment_assetMaterializations[];
   metadataEntries: AssetNodeDefinitionFragment_metadataEntries[];

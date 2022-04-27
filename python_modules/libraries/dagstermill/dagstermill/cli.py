@@ -121,7 +121,7 @@ def execute_create_notebook(notebook: str, force_overwrite: bool, kernel: str):
             abort=True,
         )
 
-    with open(notebook_path, "w") as f:
+    with open(notebook_path, "w", encoding="utf8") as f:
         f.write(get_notebook_scaffolding(get_kernelspec(kernel)))
         click.echo("Created new dagstermill notebook at {path}".format(path=notebook_path))
 

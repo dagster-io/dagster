@@ -201,6 +201,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     id
     description
     opName
+    opNames
     jobNames
     repository {
       id
@@ -219,6 +220,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
       asset {
         id
         opName
+        opNames
         jobNames
         ...AssetNodeFragment
         ...AssetNodeLiveFragment
@@ -228,6 +230,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
       asset {
         id
         opName
+        opNames
         jobNames
         ...AssetNodeFragment
         ...AssetNodeLiveFragment

@@ -7,10 +7,10 @@ import tempfile
 from sqlalchemy import create_engine
 
 from dagster.core.instance import DagsterInstance
-from dagster.utils import datetime_as_float, file_relative_path
+from dagster.utils import file_relative_path
 
 
-def _reconstruct_from_file(hostname, conn_string, path, username="root", password="test"):
+def _reconstruct_from_file(hostname, conn_string, path, _username="root", _password="test"):
     engine = create_engine(conn_string)
     engine.execute("drop schema test;")
     engine.execute("create schema test;")
@@ -27,8 +27,10 @@ def test_0_13_17_mysql_convert_float_cols(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -58,8 +60,10 @@ def test_instigators_table_backcompat(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -85,8 +89,10 @@ def test_jobs_selector_id_migration(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 

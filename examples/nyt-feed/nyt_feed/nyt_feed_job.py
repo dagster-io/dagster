@@ -83,7 +83,7 @@ def parse_xml(raw_articles):
 
 @op(config_schema=str)
 def write_to_csv(context, articles):
-    with open(context.op_config, "w") as csvfile:
+    with open(context.op_config, "w", encoding="utf8") as csvfile:
         csv_headers = ["Title", "Link", "Category", "Description"]
         writer = csv.DictWriter(csvfile, fieldnames=csv_headers)
         writer.writeheader()

@@ -15,6 +15,7 @@ def test_python_error():
     def func():
         raise Exception("bar")
 
+    python_error = None
     try:
         func()
     except:  # pylint: disable=W0702

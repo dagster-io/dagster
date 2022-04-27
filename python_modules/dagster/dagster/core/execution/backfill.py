@@ -229,9 +229,10 @@ def create_backfill_run(
             last_run,
             repo_location,
             external_pipeline,
-            tags=tags,
+            extra_tags=tags,
             run_config=partition_data.run_config,
             mode=external_partition_set.mode,
+            use_parent_run_tags=False,  # don't inherit tags from the previous run
         )
 
     elif backfill_job.reexecution_steps:

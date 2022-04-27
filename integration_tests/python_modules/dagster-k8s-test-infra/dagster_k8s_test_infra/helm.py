@@ -943,6 +943,7 @@ def _port_forward_dagit(namespace):
 
     forward_port = find_free_port()
 
+    p = None
     try:
         p = subprocess.Popen(
             [
@@ -998,4 +999,5 @@ def _port_forward_dagit(namespace):
 
     finally:
         print("Terminating port-forwarding")
-        p.terminate()
+        if p is not None:
+            p.terminate()

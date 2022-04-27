@@ -16,7 +16,10 @@ import {
   SchedulePartitionStatusFragment,
   SchedulePartitionStatusFragment_partitionSet_partitionStatusesOrError_PartitionStatuses_results as Partition,
 } from './types/SchedulePartitionStatusFragment';
-import {SchedulePartitionStatusQuery} from './types/SchedulePartitionStatusQuery';
+import {
+  SchedulePartitionStatusQuery,
+  SchedulePartitionStatusQueryVariables,
+} from './types/SchedulePartitionStatusQuery';
 
 const RUN_STATUSES = ['Succeeded', 'Failed', 'Missing', 'Pending'];
 
@@ -65,18 +68,18 @@ export const SchedulePartitionStatus: React.FC<{
 
   const partitionURL = workspacePathFromAddress(repoAddress, partitionPath);
 
-  const [retrievePartitionStatus, {data, loading}] = useLazyQuery<SchedulePartitionStatusQuery>(
-    SCHEDULE_PARTITION_STATUS_QUERY,
-    {
-      variables: {
-        scheduleSelector: {
-          scheduleName,
-          repositoryName: repoAddress.name,
-          repositoryLocationName: repoAddress.location,
-        },
+  const [retrievePartitionStatus, {data, loading}] = useLazyQuery<
+    SchedulePartitionStatusQuery,
+    SchedulePartitionStatusQueryVariables
+  >(SCHEDULE_PARTITION_STATUS_QUERY, {
+    variables: {
+      scheduleSelector: {
+        scheduleName,
+        repositoryName: repoAddress.name,
+        repositoryLocationName: repoAddress.location,
       },
     },
-  );
+  });
 
   const onClick = React.useCallback(() => retrievePartitionStatus(), [retrievePartitionStatus]);
 

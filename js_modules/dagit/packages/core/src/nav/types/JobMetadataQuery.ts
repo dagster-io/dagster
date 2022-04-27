@@ -102,5 +102,5 @@ export interface JobMetadataQuery {
 
 export interface JobMetadataQueryVariables {
   params: PipelineSelector;
-  runsFilter?: RunsFilter | null;
+  runsFilter: RunsFilter;
 }

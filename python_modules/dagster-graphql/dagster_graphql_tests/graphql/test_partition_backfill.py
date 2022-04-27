@@ -245,7 +245,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
             get_system_temp_directory(), "chained_failure_pipeline_conditionally_fail"
         )
         try:
-            with open(output_file, "w"):
+            with open(output_file, "w", encoding="utf8"):
                 result = execute_dagster_graphql_and_finish_runs(
                     graphql_context,
                     LAUNCH_PARTITION_BACKFILL_MUTATION,

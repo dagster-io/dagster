@@ -1,10 +1,11 @@
+# pylint: disable=expression-not-assigned
 # one_off_type_start
 
 from dagster import DagsterType, check_dagster_type
 
 set_containing_1 = DagsterType(
     name="set_containing_1",
-    description=f"A set containing the value 1. May contain any other values.",
+    description="A set containing the value 1. May contain any other values.",
     type_check_fn=lambda _context, obj: isinstance(obj, set) and 1 in obj,
 )
 

@@ -8,7 +8,7 @@ import {TabLink} from '../ui/TabLink';
 import {useActivePipelineForName} from '../workspace/WorkspaceContext';
 import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
-import {SnapshotQuery} from './types/SnapshotQuery';
+import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotQuery';
 
 const SNAPSHOT_PARENT_QUERY = gql`
   query SnapshotQuery($snapshotId: String!) {
@@ -28,7 +28,7 @@ interface SnapshotNavProps {
 
 export const SnapshotNav = (props: SnapshotNavProps) => {
   const {activeTab = '', explorerPath} = props;
-  const {pipelineName, snapshotId} = explorerPath;
+  const {pipelineName, snapshotId = ''} = explorerPath;
   const explorerPathString = explorerPathToString({
     ...explorerPath,
     opNames: [],
@@ -38,7 +38,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   const isJob = !!currentPipelineState?.isJob;
   const currentSnapshotID = currentPipelineState?.pipelineSnapshotId;
 
-  const {data, loading} = useQuery<SnapshotQuery>(SNAPSHOT_PARENT_QUERY, {
+  const {data, loading} = useQuery<SnapshotQuery, SnapshotQueryVariables>(SNAPSHOT_PARENT_QUERY, {
     variables: {snapshotId},
   });
 

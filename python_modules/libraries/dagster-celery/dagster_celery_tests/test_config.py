@@ -38,7 +38,7 @@ def test_config_value_from_yaml():
             tmp.seek(0)
             python_path = get_config_dir(config_yaml=tmp.name)
 
-        with open(os.path.join(python_path, CONFIG_PYTHON_FILE), "r") as fd:
+        with open(os.path.join(python_path, CONFIG_PYTHON_FILE), "r", encoding="utf8") as fd:
             assert str(fd.read()) == CONFIG_PY
 
 
@@ -49,7 +49,7 @@ def test_config_value_from_empty_yaml():
             tmp.seek(0)
             python_path = get_config_dir(config_yaml=tmp.name)
 
-        with open(os.path.join(python_path, CONFIG_PYTHON_FILE), "r") as fd:
+        with open(os.path.join(python_path, CONFIG_PYTHON_FILE), "r", encoding="utf8") as fd:
             assert str(fd.read()) == "result_backend = 'rpc://'\n"
 
 
@@ -61,5 +61,5 @@ def test_config_value_from_env_yaml():
                 tmp.seek(0)
                 python_path = get_config_dir(config_yaml=tmp.name)
 
-            with open(os.path.join(python_path, CONFIG_PYTHON_FILE), "r") as fd:
+            with open(os.path.join(python_path, CONFIG_PYTHON_FILE), "r", encoding="utf8") as fd:
                 assert str(fd.read()) == CONFIG_PY

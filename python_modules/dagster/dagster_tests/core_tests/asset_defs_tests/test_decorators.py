@@ -15,7 +15,6 @@ from dagster import (
 )
 from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
-from dagster.utils.backcompat import ExperimentalWarning
 
 
 @pytest.fixture(autouse=True)
@@ -291,7 +290,8 @@ def test_invoking_simple_assets():
     assert out == [1, 2, 3, 4, 5, 6]
 
     @asset
-    def arg_kwarg_asset(arg1, kwarg1=[0]):
+    def arg_kwarg_asset(arg1, kwarg1=None):
+        kwarg1 = kwarg1 or [0]
         return arg1 + kwarg1
 
     out = arg_kwarg_asset([1, 2, 3], kwarg1=[3, 2, 1])
@@ -337,3 +337,14 @@ def test_partitions_def():
         pass
 
     assert my_asset.partitions_def == partitions_def
+
+
+def test_op_tags():
+    tags = {"apple": "banana", "orange": {"rind": "fsd", "segment": "fjdskl"}}
+    tags_stringified = {"apple": "banana", "orange": '{"rind": "fsd", "segment": "fjdskl"}'}
+
+    @asset(op_tags=tags)
+    def my_asset():
+        ...
+
+    assert my_asset.op.tags == tags_stringified

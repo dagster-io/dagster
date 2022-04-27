@@ -9,7 +9,7 @@ import {
   SplitPanelContainer,
 } from '@dagster-io/ui';
 import merge from 'deepmerge';
-import {uniqBy} from 'lodash';
+import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 import * as yaml from 'yaml';
@@ -60,7 +60,10 @@ import {
 } from './types/ConfigPartitionSelectionQuery';
 import {LaunchpadSessionContainerPartitionSetsFragment} from './types/LaunchpadSessionContainerPartitionSetsFragment';
 import {LaunchpadSessionContainerPipelineFragment} from './types/LaunchpadSessionContainerPipelineFragment';
-import {PipelineExecutionConfigSchemaQuery} from './types/PipelineExecutionConfigSchemaQuery';
+import {
+  PipelineExecutionConfigSchemaQuery,
+  PipelineExecutionConfigSchemaQueryVariables,
+} from './types/PipelineExecutionConfigSchemaQuery';
 import {PreviewConfigQuery, PreviewConfigQueryVariables} from './types/PreviewConfigQuery';
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
@@ -170,7 +173,11 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     return {};
   }, [isJob, partitionSets.results, presets]);
 
-  const [data, onSave] = useExecutionSessionStorage(repoAddress, pipeline.name, initialDataForMode);
+  const [data, onSave] = useExecutionSessionStorage(
+    repoAddress.name || '',
+    pipeline.name,
+    initialDataForMode,
+  );
 
   const currentSession = data.sessions[data.current];
   const tagsFromSession = React.useMemo(() => currentSession.tags || [], [currentSession]);
@@ -181,14 +188,14 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     solidSelection: currentSession?.solidSelection || undefined,
   };
 
-  const configResult = useQuery<PipelineExecutionConfigSchemaQuery>(
-    PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY,
-    {
-      variables: {selector: pipelineSelector, mode: currentSession?.mode},
-      fetchPolicy: 'cache-and-network',
-      partialRefetch: true,
-    },
-  );
+  const configResult = useQuery<
+    PipelineExecutionConfigSchemaQuery,
+    PipelineExecutionConfigSchemaQueryVariables
+  >(PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY, {
+    variables: {selector: pipelineSelector, mode: currentSession?.mode},
+    fetchPolicy: 'cache-and-network',
+    partialRefetch: true,
+  });
 
   const configSchemaOrError = configResult?.data?.runConfigSchemaOrError;
 
@@ -588,7 +595,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
                 <>
                   <ShortcutHandler
                     shortcutLabel="⌥T"
-                    shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
+                    shortcutFilter={(e) => e.code === 'KeyT' && e.altKey}
                     onShortcut={openTagEditor}
                   >
                     <Button onClick={openTagEditor} icon={<Icon name="add_circle" />}>

@@ -352,7 +352,7 @@ def ensure_file(path):
 
 def touch_file(path):
     ensure_dir(os.path.dirname(path))
-    with open(path, "a"):
+    with open(path, "a", encoding="utf8"):
         os.utime(path, None)
 
 

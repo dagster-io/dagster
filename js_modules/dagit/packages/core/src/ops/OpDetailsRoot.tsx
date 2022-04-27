@@ -12,7 +12,7 @@ import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {OpCard, OP_CARD_SOLID_DEFINITION_FRAGMENT} from './OpCard';
-import {UsedSolidDetailsQuery} from './types/UsedSolidDetailsQuery';
+import {UsedSolidDetailsQuery, UsedSolidDetailsQueryVariables} from './types/UsedSolidDetailsQuery';
 
 interface UsedSolidDetailsProps {
   name: string;
@@ -24,12 +24,15 @@ export const UsedSolidDetails: React.FC<UsedSolidDetailsProps> = (props) => {
   const {name, onClickInvocation, repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const queryResult = useQuery<UsedSolidDetailsQuery>(USED_SOLID_DETAILS_QUERY, {
-    variables: {
-      name,
-      repositorySelector,
+  const queryResult = useQuery<UsedSolidDetailsQuery, UsedSolidDetailsQueryVariables>(
+    USED_SOLID_DETAILS_QUERY,
+    {
+      variables: {
+        name,
+        repositorySelector,
+      },
     },
-  });
+  );
 
   return (
     <Loading queryResult={queryResult}>

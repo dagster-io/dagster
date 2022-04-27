@@ -1,5 +1,8 @@
 import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
-import _, {flatMap, uniq, uniqBy, without} from 'lodash';
+import flatMap from 'lodash/flatMap';
+import uniq from 'lodash/uniq';
+import uniqBy from 'lodash/uniqBy';
+import without from 'lodash/without';
 import React from 'react';
 import styled from 'styled-components/macro';
 
@@ -31,7 +34,6 @@ import {
 } from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../pipelines/SidebarPipelineOrJobOverview';
-import {GraphExplorerSolidHandleFragment} from '../pipelines/types/GraphExplorerSolidHandleFragment';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 import {PipelineSelector} from '../types/globalTypes';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
@@ -63,11 +65,6 @@ interface Props {
 
   pipelineSelector?: PipelineSelector;
   filterNodes?: (assetNode: AssetGraphQuery_assetNodes) => boolean;
-
-  // Optionally pass op handles to display op metadata on the assets linked to each op.
-  // (eg: the "ipynb" tag annotation). Right now, we already have this data loaded for
-  // individual jobs, and the global asset graph quietly doesn't display these.
-  handles?: GraphExplorerSolidHandleFragment[];
 
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
@@ -141,7 +138,6 @@ const AssetGraphExplorerWithData: React.FC<
   } & Props
 > = (props) => {
   const {
-    handles = [],
     options,
     setOptions,
     explorerPath,
@@ -174,11 +170,11 @@ const AssetGraphExplorerWithData: React.FC<
       e.stopPropagation();
 
       const token = tokenForAssetKey(assetKey);
-      let clicked: {opName: string | null; jobName: string | null} = {opName: null, jobName: null};
+      let clicked: {opNames: string[]; jobName: string | null} = {opNames: [], jobName: null};
 
       if (node?.definition) {
         // The asset's defintion was provided in our job.assetNodes query. Show it in the current graph.
-        clicked = {opName: node.definition.opName, jobName: explorerPath.pipelineName};
+        clicked = {opNames: node.definition.opNames, jobName: explorerPath.pipelineName};
       } else {
         // The asset's definition was not provided in our query for job.assetNodes. This means
         // it's in another job or is a source asset not defined in the repository at all.
@@ -189,7 +185,7 @@ const AssetGraphExplorerWithData: React.FC<
       let nextOpsNameSelection = token;
 
       // If no opName, this is a source asset.
-      if (clicked.jobName !== explorerPath.pipelineName || !clicked.opName) {
+      if (clicked.jobName !== explorerPath.pipelineName || !clicked.opNames.length) {
         nextOpsQuery = '';
       } else if (e.shiftKey || e.metaKey) {
         const existing = explorerPath.opNames[0].split(',');
@@ -300,16 +296,12 @@ const AssetGraphExplorerWithData: React.FC<
                         }}
                         style={{overflow: 'visible'}}
                       >
-                        {!graphNode || !graphNode.definition.opName ? (
+                        {!graphNode || !graphNode.definition.opNames.length ? (
                           <ForeignNode assetKey={{path}} />
                         ) : (
                           <AssetNode
                             definition={graphNode.definition}
                             liveData={liveDataByNode[graphNode.id]}
-                            metadata={
-                              handles.find((h) => h.handleID === graphNode.definition.opName)?.solid
-                                .definition.metadata || []
-                            }
                             selected={selectedGraphNodes.includes(graphNode)}
                           />
                         )}
@@ -331,8 +323,8 @@ const AssetGraphExplorerWithData: React.FC<
                     {
                       ...explorerPath,
                       opNames:
-                        selectedGraphNodes.length && selectedGraphNodes[0].definition.opName
-                          ? [selectedGraphNodes[0].definition.opName]
+                        selectedGraphNodes.length && selectedGraphNodes[0].definition.opNames.length
+                          ? selectedGraphNodes[0].definition.opNames
                           : [],
                     },
                     'replace',

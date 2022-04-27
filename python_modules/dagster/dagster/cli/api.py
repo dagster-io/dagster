@@ -586,12 +586,12 @@ def grpc_command(
             else f"Dagster code server{code_desc}in process {os.getpid()}"
         )
 
-        logger.info("Started {server_desc}".format(server_desc=server_desc))
+        logger.info("Started %s", server_desc)
 
         try:
             server.serve()
         finally:
-            logger.info("Shutting down {server_desc}".format(server_desc=server_desc))
+            logger.info("Shutting down %s", server_desc)
 
 
 @api_cli.command(name="grpc-health-check", help="Check the status of a dagster GRPC server")
@@ -633,4 +633,7 @@ def grpc_health_check_command(port=None, socket=None, host="localhost", use_ssl=
     client = DagsterGrpcClient(port=port, socket=socket, host=host, use_ssl=use_ssl)
     status = client.health_check_query()
     if status != "SERVING":
+        click.echo(f"Unable to connect to gRPC server: {status}")
         sys.exit(1)
+    else:
+        click.echo("gRPC connection successful")

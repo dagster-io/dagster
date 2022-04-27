@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ExecutionParams } from "./../../types/globalTypes";
+import { ExecutionParams, ReexecutionParams } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: LaunchPipelineReexecution
@@ -62,5 +62,6 @@ export interface LaunchPipelineReexecution {
 }
 
 export interface LaunchPipelineReexecutionVariables {
-  executionParams: ExecutionParams;
+  executionParams?: ExecutionParams | null;
+  reexecutionParams?: ReexecutionParams | null;
 }

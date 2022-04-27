@@ -34,6 +34,7 @@ def test_composite_config():
             "../../../docs_snippets/concepts/solids_pipelines/composite_config.yaml",
         ),
         "r",
+        encoding="utf8",
     ) as fd:
         run_config = yaml.safe_load(fd.read())
 
@@ -59,6 +60,7 @@ def test_config_mapping():
             "../../../docs_snippets/concepts/solids_pipelines/composite_config_mapping.yaml",
         ),
         "r",
+        encoding="utf8",
     ) as fd:
         run_config = yaml.safe_load(fd.read())
 

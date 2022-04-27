@@ -82,7 +82,7 @@ def execute_query_from_cli(workspace_process_context, query, variables=None, out
     # stdout
     if output:
         check.str_param(output, "output")
-        with open(output, "w") as f:
+        with open(output, "w", encoding="utf8") as f:
             f.write(str_res + "\n")
     else:
         print(str_res)  # pylint: disable=print-call

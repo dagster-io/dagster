@@ -7,14 +7,12 @@ for that.
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union, cast
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union
 
 from dagster import StaticPartitionsDefinition, check
 from dagster.core.asset_defs import SourceAsset
-from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 from dagster.core.definitions import (
     JobDefinition,
-    OutputDefinition,
     PartitionSetDefinition,
     PartitionsDefinition,
     PipelineDefinition,
@@ -22,10 +20,11 @@ from dagster.core.definitions import (
     RepositoryDefinition,
     ScheduleDefinition,
 )
+from dagster.core.definitions.asset_layer import AssetOutputInfo
+from dagster.core.definitions.dependency import NodeOutputHandle
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.metadata import MetadataEntry
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
-from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.partition import PartitionScheduleDefinition, ScheduleType
 from dagster.core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster.core.definitions.sensor_definition import (
@@ -628,12 +627,6 @@ class ExternalAssetDependency(
         input_name: Optional[str] = None,
         output_name: Optional[str] = None,
     ):
-        check.invariant(
-            (input_name is None) ^ (output_name is None),
-            "When constructing ExternalAssetDependency, exactly one of `input_name` and "
-            f"`output_name` should be supplied. AssetKey `{upstream_asset_key}` is associated with "
-            f"input `{input_name}` and output `{output_name}`.",
-        )
         return super(ExternalAssetDependency, cls).__new__(
             cls,
             upstream_asset_key=upstream_asset_key,
@@ -665,12 +658,6 @@ class ExternalAssetDependedBy(
         input_name: Optional[str] = None,
         output_name: Optional[str] = None,
     ):
-        check.invariant(
-            (input_name is None) ^ (output_name is None),
-            "When constructing ExternalAssetDependedBy, exactly one of `input_name` and "
-            f"`output_name` should be supplied. AssetKey `{downstream_asset_key}` is associated with "
-            f"input `{input_name}` and output `{output_name}`.",
-        )
         return super(ExternalAssetDependedBy, cls).__new__(
             cls,
             downstream_asset_key=downstream_asset_key,
@@ -777,57 +764,30 @@ def external_asset_graph_from_defs(
     pipelines: Sequence[PipelineDefinition], source_assets_by_key: Mapping[AssetKey, SourceAsset]
 ) -> Sequence[ExternalAssetNode]:
     node_defs_by_asset_key: Dict[
-        AssetKey, List[Tuple[OutputDefinition, NodeDefinition, PipelineDefinition]]
+        AssetKey, List[Tuple[NodeOutputHandle, PipelineDefinition]]
     ] = defaultdict(list)
+    asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
 
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
     dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
     all_upstream_asset_keys: Set[AssetKey] = set()
 
-    for pipeline in pipelines:
-        for node_def in pipeline.all_node_defs:
-            input_name_by_asset_key = {
-                id.hardcoded_asset_key: id.name
-                for id in node_def.input_defs
-                if id.hardcoded_asset_key is not None
-            }
-
-            output_name_by_asset_key = {
-                od.hardcoded_asset_key: od.name
-                for od in node_def.output_defs
-                if od.hardcoded_asset_key is not None
-            }
-
-            node_upstream_asset_keys = set(
-                filter(None, (id.hardcoded_asset_key for id in node_def.input_defs))
-            )
-            all_upstream_asset_keys.update(node_upstream_asset_keys)
-
-            for output_def in node_def.output_defs:
-                output_asset_key = output_def.hardcoded_asset_key
-                if not output_asset_key:
-                    continue
-
-                node_defs_by_asset_key[output_asset_key].append((output_def, node_def, pipeline))
-
-                # if no deps specified, assume depends on all inputs and no outputs
-                asset_deps = cast(
-                    Set[AssetKey], (output_def.metadata or {}).get(ASSET_DEPENDENCY_METADATA_KEY)
+    for pipeline_def in pipelines:
+        asset_info_by_node_output = pipeline_def.asset_layer.asset_info_by_node_output_handle
+        for node_output_handle, asset_info in asset_info_by_node_output.items():
+            output_key = asset_info.key
+            upstream_asset_keys = pipeline_def.asset_layer.upstream_assets_for_asset(output_key)
+            all_upstream_asset_keys.update(upstream_asset_keys)
+            node_defs_by_asset_key[output_key].append((node_output_handle, pipeline_def))
+            asset_info_by_asset_key[output_key] = asset_info
+            for upstream_key in upstream_asset_keys:
+                deps[output_key][upstream_key] = ExternalAssetDependency(
+                    upstream_asset_key=upstream_key
                 )
-                if asset_deps is None:
-                    asset_deps = node_upstream_asset_keys
+                dep_by[upstream_key][output_key] = ExternalAssetDependedBy(
+                    downstream_asset_key=output_key
+                )
 
-                for upstream_asset_key in asset_deps:
-                    deps[output_asset_key][upstream_asset_key] = ExternalAssetDependency(
-                        upstream_asset_key=upstream_asset_key,
-                        input_name=input_name_by_asset_key.get(upstream_asset_key),
-                        output_name=output_name_by_asset_key.get(upstream_asset_key),
-                    )
-                    dep_by[upstream_asset_key][output_asset_key] = ExternalAssetDependedBy(
-                        downstream_asset_key=output_asset_key,
-                        input_name=input_name_by_asset_key.get(upstream_asset_key),
-                        output_name=output_name_by_asset_key.get(upstream_asset_key),
-                    )
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
         node_defs_by_asset_key.keys()
     ).difference(source_assets_by_key.keys())
@@ -865,31 +825,35 @@ def external_asset_graph_from_defs(
         )
 
     for asset_key, node_tuple_list in node_defs_by_asset_key.items():
-        output_def, node_def, _ = node_tuple_list[0]
-        job_names = [job_def.name for _, _, job_def in node_tuple_list]
+        node_output_handle, job_def = node_tuple_list[0]
+
+        node_def = job_def.graph.get_solid(node_output_handle.node_handle).definition
+        output_def = node_def.output_def_named(node_output_handle.output_name)
+
+        asset_info = asset_info_by_asset_key[asset_key]
+
+        job_names = [job_def.name for _, job_def in node_tuple_list]
 
         # temporary workaround to retrieve asset partition definition from job
         partitions_def_data: Optional[
             Union[
-                ExternalTimeWindowPartitionsDefinitionData, ExternalStaticPartitionsDefinitionData
+                ExternalTimeWindowPartitionsDefinitionData,
+                ExternalStaticPartitionsDefinitionData,
             ]
         ] = None
 
-        if output_def.asset_partitions_def:
-            partitions_def = output_def.asset_partitions_def
-            if partitions_def:
-                if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-                    partitions_def_data = external_time_window_partitions_definition_from_def(
-                        partitions_def
-                    )
-                elif isinstance(partitions_def, StaticPartitionsDefinition):
-                    partitions_def_data = external_static_partitions_definition_from_def(
-                        partitions_def
-                    )
-                else:
-                    raise DagsterInvalidDefinitionError(
-                        "Only static partition and time window partitions are currently supported."
-                    )
+        partitions_def = asset_info.partitions_def
+        if partitions_def:
+            if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+                partitions_def_data = external_time_window_partitions_definition_from_def(
+                    partitions_def
+                )
+            elif isinstance(partitions_def, StaticPartitionsDefinition):
+                partitions_def_data = external_static_partitions_definition_from_def(partitions_def)
+            else:
+                raise DagsterInvalidDefinitionError(
+                    "Only static partition and time window partitions are currently supported."
+                )
 
         asset_nodes.append(
             ExternalAssetNode(
@@ -897,7 +861,7 @@ def external_asset_graph_from_defs(
                 dependencies=list(deps[asset_key].values()),
                 depended_by=list(dep_by[asset_key].values()),
                 compute_kind=node_def.tags.get("kind"),
-                op_name=node_def.name,
+                op_name=str(node_output_handle.node_handle),
                 op_description=node_def.description,
                 job_names=job_names,
                 partitions_def_data=partitions_def_data,

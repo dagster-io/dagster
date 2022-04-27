@@ -1,6 +1,6 @@
 import {gql, useApolloClient} from '@apollo/client';
 import {Tooltip, Spinner, Box, Colors} from '@dagster-io/ui';
-import {fromPairs} from 'lodash';
+import fromPairs from 'lodash/fromPairs';
 import React from 'react';
 
 import {displayNameForAssetKey} from '../asset-graph/Utils';

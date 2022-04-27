@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 import {Colors, Icon, Spinner, Tooltip, FontFamily, Box, CaptionMono} from '@dagster-io/ui';
-import {isEqual} from 'lodash';
+import isEqual from 'lodash/isEqual';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -26,11 +26,9 @@ const MISSING_LIVE_DATA = {
 export const AssetNode: React.FC<{
   definition: AssetNodeFragment;
   liveData?: LiveDataForNode;
-  metadata: {key: string; value: string}[];
   selected: boolean;
   inAssetCatalog?: boolean;
-}> = React.memo(({definition, metadata, selected, liveData, inAssetCatalog}) => {
-  const kind = metadata.find((m) => m.key === 'kind')?.value;
+}> = React.memo(({definition, selected, liveData, inAssetCatalog}) => {
   const stepKey = definition.opName || '';
 
   const displayName = withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {
@@ -138,13 +136,13 @@ export const AssetNode: React.FC<{
             )}
           </StatsRow>
         </Stats>
-        {kind && (
+        {definition.computeKind && (
           <OpTags
             minified={false}
             style={{right: -2, paddingTop: 5}}
             tags={[
               {
-                label: kind,
+                label: definition.computeKind,
                 onClick: () => {
                   window.requestAnimationFrame(() =>
                     document.dispatchEvent(new Event('show-kind-info')),
@@ -176,6 +174,7 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
   fragment AssetNodeLiveFragment on AssetNode {
     id
     opName
+    opNames
     repository {
       id
     }
@@ -193,8 +192,10 @@ export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeFragment on AssetNode {
     id
     opName
+    opNames
     description
     partitionDefinition
+    computeKind
     assetKey {
       path
     }

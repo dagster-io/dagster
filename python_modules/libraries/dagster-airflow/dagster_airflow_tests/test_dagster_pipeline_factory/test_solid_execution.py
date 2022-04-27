@@ -172,7 +172,7 @@ def test_template_task_dag():
         for step_key in compute_steps:
             compute_io_path = manager.get_local_path(result.run_id, step_key, ComputeIOType.STDOUT)
             assert os.path.exists(compute_io_path)
-            stdout_file = open(compute_io_path, "r")
+            stdout_file = open(compute_io_path, "r", encoding="utf8")
             file_contents = normalize_file_content(stdout_file.read())
             stdout_file.close()
 

@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 
 def get_version() -> str:
     version: Dict[str, str] = {}
-    with open("dagster_pandera/version.py") as fp:
+    with open("dagster_pandera/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)  # pylint: disable=exec-used
 
     return version["__version__"]

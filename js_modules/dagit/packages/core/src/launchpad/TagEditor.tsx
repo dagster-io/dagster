@@ -170,7 +170,7 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
         <Button onClick={onRequestClose}>Cancel</Button>
         <ShortcutHandler
           shortcutLabel="⌥Enter"
-          shortcutFilter={(e) => e.keyCode === 13 && e.altKey}
+          shortcutFilter={(e) => e.code === 'Enter' && e.altKey}
           onShortcut={onSave}
         >
           <Button intent="primary" onClick={onSave} disabled={disabled}>
@@ -227,7 +227,7 @@ interface ITagEditorLinkProps {
 const TagEditorLink = ({onRequestOpen, children}: ITagEditorLinkProps) => (
   <ShortcutHandler
     shortcutLabel="⌥T"
-    shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
+    shortcutFilter={(e) => e.code === 'KeyT' && e.altKey}
     onShortcut={onRequestOpen}
   >
     <Link onClick={onRequestOpen}>{children}</Link>

@@ -1,4 +1,5 @@
 import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
+import sortBy from 'lodash/sortBy';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
@@ -153,16 +154,21 @@ const useWorkspaceState = (): WorkspaceState => {
       return {allRepos, error: workspaceOrError};
     }
 
-    allRepos = workspaceOrError.locationEntries.reduce((accum, locationEntry) => {
-      if (locationEntry.locationOrLoadError?.__typename !== 'RepositoryLocation') {
-        return accum;
-      }
-      const repositoryLocation = locationEntry.locationOrLoadError;
-      const reposForLocation = repositoryLocation.repositories.map((repository) => {
-        return {repository, repositoryLocation};
-      });
-      return [...accum, ...reposForLocation];
-    }, [] as DagsterRepoOption[]);
+    allRepos = sortBy(
+      workspaceOrError.locationEntries.reduce((accum, locationEntry) => {
+        if (locationEntry.locationOrLoadError?.__typename !== 'RepositoryLocation') {
+          return accum;
+        }
+        const repositoryLocation = locationEntry.locationOrLoadError;
+        const reposForLocation = repositoryLocation.repositories.map((repository) => {
+          return {repository, repositoryLocation};
+        });
+        return [...accum, ...reposForLocation];
+      }, [] as DagsterRepoOption[]),
+
+      // Sort by repo location, then by repo
+      (r) => `${r.repositoryLocation.name}:${r.repository.name}`,
+    );
 
     return {error: null, allRepos};
   }, [workspaceOrError]);
@@ -203,7 +209,7 @@ const useVisibleRepos = (
 
   // TODO: Remove this logic eventually...
   const migratedOldHiddenKeys = React.useRef(false);
-  if (oldHiddenKeys && !migratedOldHiddenKeys.current) {
+  if (oldHiddenKeys.length && !migratedOldHiddenKeys.current) {
     setHiddenKeys(oldHiddenKeys);
     setOldHiddenKeys(undefined);
     migratedOldHiddenKeys.current = true;

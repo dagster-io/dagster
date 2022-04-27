@@ -9,7 +9,10 @@ import {isAssetGroup} from '../asset-graph/Utils';
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
-import {RepositoryGraphsListQuery} from './types/RepositoryGraphsListQuery';
+import {
+  RepositoryGraphsListQuery,
+  RepositoryGraphsListQueryVariables,
+} from './types/RepositoryGraphsListQuery';
 import {workspacePath} from './workspacePath';
 
 const REPOSITORY_GRAPHS_LIST_QUERY = gql`
@@ -66,7 +69,10 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const {data, error, loading} = useQuery<RepositoryGraphsListQuery>(REPOSITORY_GRAPHS_LIST_QUERY, {
+  const {data, error, loading} = useQuery<
+    RepositoryGraphsListQuery,
+    RepositoryGraphsListQueryVariables
+  >(REPOSITORY_GRAPHS_LIST_QUERY, {
     fetchPolicy: 'cache-and-network',
     variables: {repositorySelector},
   });

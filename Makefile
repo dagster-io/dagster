@@ -4,9 +4,6 @@
 #   exit status. Prefix the command with "-" to instruct make to continue to the next command
 #   regardless of the preceding command's exit status.
 
-pylint:
-	pylint -j 0 `git ls-files '*.py'` --rcfile=.pylintrc
-
 # NOTE: See pyproject.toml [tool.black] for majority of black config. Only include/exclude options
 # and format targets should be specified here. Note there are separate pyproject.toml for the root
 # and examples/docs_snippets.
@@ -48,6 +45,15 @@ check_isort:
       ':!:snapshots'`
 	isort --check \
     `git ls-files 'examples/docs_snippets/*.py'`
+
+pylint:
+	pylint \
+    `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' \
+      'helm/*.py' 'python_modules/*.py' 'scripts/*.py' \
+      ':!:examples/airflow_ingest' \
+      ':!:python_modules/libraries/dagster-airflow' \
+      ':!:vendor' \
+      ':!:snapshots'`
 
 yamllint:
 	yamllint -c .yamllint.yaml --strict \

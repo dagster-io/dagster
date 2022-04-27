@@ -11,6 +11,7 @@ from dagster import (
     check,
     execute_pipeline,
     graph,
+    job,
     op,
     pipeline,
     reconstructable,
@@ -22,6 +23,7 @@ from dagster.core.definitions.decorators.hook_decorator import event_list_hook
 from dagster.core.definitions.events import HookExecutionResult
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.test_utils import instance_for_test
 
 
 class SomeUserException(Exception):
@@ -467,6 +469,39 @@ def test_hook_graph_job_op():
 
     assert called.get("hook_one") == 2
     assert called.get("hook_two") == 1
+
+
+@success_hook(required_resource_keys={"resource_a"})
+def res_hook(context):
+    assert context.resources.resource_a == 1
+
+
+@op
+def emit():
+    return 1
+
+
+@graph
+def nested():
+    emit.with_hooks({res_hook})()
+
+
+@graph
+def nested_two():
+    nested()
+
+
+@job(resource_defs={"resource_a": resource_a})
+def res_hook_job():
+    nested_two()
+
+
+def test_multiproc_hook_resource_deps():
+    assert nested.execute_in_process(resources={"resource_a": resource_a}).success
+    assert res_hook_job.execute_in_process().success
+
+    with instance_for_test() as instance:
+        assert execute_pipeline(reconstructable(res_hook_job), instance=instance).success
 
 
 def test_hook_context_op_solid_provided():

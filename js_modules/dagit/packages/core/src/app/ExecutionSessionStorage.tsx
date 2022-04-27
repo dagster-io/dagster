@@ -1,9 +1,6 @@
 import * as React from 'react';
 
 import {getJSONForKey} from '../hooks/useStateWithStorage';
-import {RepoAddress} from '../workspace/types';
-
-import {AppContext} from './AppContext';
 
 // Internal LocalStorage data format and mutation helpers
 
@@ -157,30 +154,17 @@ version flag it can use to trigger a re-render after changes are saved, so chang
 namespaces changes the returned data immediately.
 */
 export function useExecutionSessionStorage(
-  repoAddress: RepoAddress,
-  pipelineOrJobName: string,
+  repositoryName: string,
+  pipelineName: string,
   initial: Partial<IExecutionSession> = {},
 ): StorageHook {
-  const {basePath} = React.useContext(AppContext);
-
-  const oldNamespace = `${repoAddress.name}.${pipelineOrJobName}`;
-  const oldData = getStorageDataForNamespace(oldNamespace);
-
-  const namespace = `${basePath}-${repoAddress.location}-${repoAddress.name}-${pipelineOrJobName}`;
+  const namespace = `${repositoryName}.${pipelineName}`;
   const [version, setVersion] = React.useState<number>(0);
 
   const onSave = (newData: IStorageData) => {
     writeStorageDataForNamespace(namespace, newData);
     setVersion(version + 1); // trigger a React render
   };
-
-  // TODO: Remove this migration logic in a few patches when we know the old namespace is likely no longer being used
-  const oldDataMigrated = React.useRef(false);
-  if (!oldDataMigrated.current) {
-    onSave(oldData);
-    window.localStorage.removeItem(oldNamespace);
-    oldDataMigrated.current = true;
-  }
 
   return [getStorageDataForNamespace(namespace, initial), onSave];
 }

@@ -8,7 +8,10 @@ import {PipelineTable, PIPELINE_TABLE_FRAGMENT} from '../pipelines/PipelineTable
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
-import {RepositoryPipelinesListQuery} from './types/RepositoryPipelinesListQuery';
+import {
+  RepositoryPipelinesListQuery,
+  RepositoryPipelinesListQueryVariables,
+} from './types/RepositoryPipelinesListQuery';
 
 const REPOSITORY_PIPELINES_LIST_QUERY = gql`
   query RepositoryPipelinesListQuery($repositorySelector: RepositorySelector!) {
@@ -38,13 +41,13 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
   const {display, repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const {data, error, loading} = useQuery<RepositoryPipelinesListQuery>(
-    REPOSITORY_PIPELINES_LIST_QUERY,
-    {
-      fetchPolicy: 'cache-and-network',
-      variables: {repositorySelector},
-    },
-  );
+  const {data, error, loading} = useQuery<
+    RepositoryPipelinesListQuery,
+    RepositoryPipelinesListQueryVariables
+  >(REPOSITORY_PIPELINES_LIST_QUERY, {
+    fetchPolicy: 'cache-and-network',
+    variables: {repositorySelector},
+  });
 
   const repo = data?.repositoryOrError;
   const pipelinesForTable = React.useMemo(() => {

@@ -599,8 +599,8 @@ def test_start_schedule_with_default_status(graphql_context):
     )
 
     assert (
-        "You have attempted to start schedule running_in_code_schedule, but it is already running"
-        in start_result.data["startSchedule"]["message"]
+        start_result.data["startSchedule"]["scheduleState"]["status"]
+        == InstigatorStatus.RUNNING.value
     )
 
     # Stop a single schedule

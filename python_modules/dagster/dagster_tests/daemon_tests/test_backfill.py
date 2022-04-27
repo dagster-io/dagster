@@ -3,7 +3,6 @@ import random
 import string
 import sys
 import time
-from collections import defaultdict
 from contextlib import contextmanager
 
 import pendulum
@@ -29,7 +28,13 @@ from dagster.core.host_representation import (
 )
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster.core.test_utils import create_test_daemon_workspace, instance_for_test
+from dagster.core.test_utils import (
+    create_test_daemon_workspace,
+    instance_for_test,
+    step_did_not_run,
+    step_failed,
+    step_succeeded,
+)
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.daemon import get_default_daemon_logger
@@ -43,16 +48,6 @@ default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 
 def _failure_flag_file():
     return os.path.join(get_system_temp_directory(), "conditionally_fail")
-
-
-def _step_events(instance, run):
-    events_by_step = defaultdict(set)
-    logs = instance.all_logs(run.run_id)
-    for record in logs:
-        if not record.is_dagster_event or not record.step_key:
-            continue
-        events_by_step[record.step_key] = record.dagster_event.event_type_value
-    return events_by_step
 
 
 @solid
@@ -235,21 +230,6 @@ def instance_for_context(external_repo_context, overrides=None):
         ) as workspace:
             with external_repo_context(instance) as external_repo:
                 yield (instance, workspace, external_repo)
-
-
-def step_did_not_run(instance, run, step_name):
-    step_events = _step_events(instance, run)[step_name]
-    return len(step_events) == 0
-
-
-def step_succeeded(instance, run, step_name):
-    step_events = _step_events(instance, run)[step_name]
-    return "STEP_SUCCESS" in step_events
-
-
-def step_failed(instance, run, step_name):
-    step_events = _step_events(instance, run)[step_name]
-    return "STEP_FAILURE" in step_events
 
 
 def wait_for_all_runs_to_start(instance, timeout=10):

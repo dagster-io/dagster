@@ -64,7 +64,7 @@ def sort_by_calories(context, cereals):
     )
     os.makedirs(os.path.dirname(sorted_cereals_csv_path), exist_ok=True)
 
-    with open(sorted_cereals_csv_path, "w") as fd:
+    with open(sorted_cereals_csv_path, "w", encoding="utf8") as fd:
         writer = csv.DictWriter(fd, fieldnames)
         writer.writeheader()
         writer.writerows(sorted_cereals)

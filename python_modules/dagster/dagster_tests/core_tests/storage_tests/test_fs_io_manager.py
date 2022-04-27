@@ -75,7 +75,8 @@ def test_fs_io_manager_base_dir():
         assert result.result_for_solid("solid_a").output_value() == [1, 2, 3]
 
         with open(
-            os.path.join(instance.storage_directory(), result.run_id, "solid_a", "result"), "rb"
+            os.path.join(instance.storage_directory(), result.run_id, "solid_a", "result"),
+            "rb",
         ) as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
 

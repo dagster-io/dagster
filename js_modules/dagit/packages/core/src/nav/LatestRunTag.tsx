@@ -17,7 +17,7 @@ const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 export const LatestRunTag: React.FC<{pipelineName: string}> = ({pipelineName}) => {
   const lastRunQuery = useQuery<LatestRunTagQuery, LatestRunTagQueryVariables>(
     LATEST_RUN_TAG_QUERY,
-    {variables: {runsFilter: {pipelineName}}},
+    {variables: {runsFilter: {pipelineName}}, notifyOnNetworkStatusChange: true},
   );
 
   useQueryRefreshAtInterval(lastRunQuery, FIFTEEN_SECONDS);

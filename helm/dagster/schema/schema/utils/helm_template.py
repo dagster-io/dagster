@@ -92,10 +92,10 @@ class HelmTemplate:
                 shutil.copy2(chart_path, chart_copy_path)
                 chart_copy_paths.append(chart_copy_path)
 
-                with open(chart_path) as chart_file:
+                with open(chart_path, encoding="utf8") as chart_file:
                     old_chart_yaml = yaml.safe_load(chart_file)
 
-                with open(chart_path, "w") as chart_file:
+                with open(chart_path, "w", encoding="utf8") as chart_file:
                     new_chart_yaml = old_chart_yaml.copy()
                     new_chart_yaml["version"] = chart_version
                     yaml.dump(new_chart_yaml, chart_file)

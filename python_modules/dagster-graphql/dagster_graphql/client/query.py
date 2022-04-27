@@ -316,8 +316,8 @@ mutation($executionParams: ExecutionParams!) {
 LAUNCH_PIPELINE_REEXECUTION_MUTATION = (
     ERROR_FRAGMENT
     + """
-mutation($executionParams: ExecutionParams!) {
-  launchPipelineReexecution(executionParams: $executionParams) {
+mutation($executionParams: ExecutionParams, $reexecutionParams: ReexecutionParams) {
+  launchPipelineReexecution(executionParams: $executionParams, reexecutionParams: $reexecutionParams) {
     __typename
 
     ... on PythonError {

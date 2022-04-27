@@ -13,8 +13,8 @@ import {
   STOP_SCHEDULE_MUTATION,
 } from './ScheduleMutations';
 import {ScheduleSwitchFragment} from './types/ScheduleSwitchFragment';
-import {StartSchedule} from './types/StartSchedule';
-import {StopSchedule} from './types/StopSchedule';
+import {StartSchedule, StartScheduleVariables} from './types/StartSchedule';
+import {StopSchedule, StopScheduleVariables} from './types/StopSchedule';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -29,18 +29,18 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
 
   const {canStartSchedule, canStopRunningSchedule} = usePermissions();
 
-  const [startSchedule, {loading: toggleOnInFlight}] = useMutation<StartSchedule>(
-    START_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors,
-    },
-  );
-  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<StopSchedule>(
-    STOP_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors,
-    },
-  );
+  const [startSchedule, {loading: toggleOnInFlight}] = useMutation<
+    StartSchedule,
+    StartScheduleVariables
+  >(START_SCHEDULE_MUTATION, {
+    onCompleted: displayScheduleMutationErrors,
+  });
+  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<
+    StopSchedule,
+    StopScheduleVariables
+  >(STOP_SCHEDULE_MUTATION, {
+    onCompleted: displayScheduleMutationErrors,
+  });
 
   const scheduleSelector = {
     ...repoAddressToSelector(repoAddress),
