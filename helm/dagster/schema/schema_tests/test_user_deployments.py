@@ -758,6 +758,54 @@ def test_user_deployment_labels(template: HelmTemplate, include_config_in_launch
         _assert_no_container_context(user_deployments[0])
 
 
+@pytest.mark.parametrize("include_config_in_launched_runs", [False, True])
+def test_user_deployment_resources(template: HelmTemplate, include_config_in_launched_runs: bool):
+    name = "foo"
+
+    resources = {
+        "requests": {"memory": "64Mi", "cpu": "250m"},
+        "limits": {"memory": "128Mi", "cpu": "500m"},
+    }
+
+    deployment = UserDeployment.construct(
+        name=name,
+        image={"repository": f"repo/{name}", "tag": "tag1", "pullPolicy": "Always"},
+        dagsterApiGrpcArgs=["-m", name],
+        port=3030,
+        resources=resources,
+        includeConfigInLaunchedRuns={"enabled": include_config_in_launched_runs},
+    )
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+
+    if include_config_in_launched_runs:
+        container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
+        assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        assert json.loads(container_context.value) == {
+            "k8s": {
+                "image_pull_policy": "Always",
+                "env_config_maps": [
+                    "release-name-dagster-user-deployments-foo-user-env",
+                ],
+                "resources": resources,
+                "namespace": "default",
+                "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+            }
+        }
+    else:
+        _assert_no_container_context(user_deployments[0])
+
+
 def test_subchart_image_pull_secrets(subchart_template: HelmTemplate):
     image_pull_secrets = [{"name": "super-duper-secret"}]
     deployment_values = DagsterUserDeploymentsHelmValues.construct(

@@ -211,7 +211,7 @@ class DagsterK8sJobConfig(
         "_K8sJobTaskConfig",
         "job_image dagster_home image_pull_policy image_pull_secrets service_account_name "
         "instance_config_map postgres_password_secret env_config_maps env_secrets env_vars "
-        "volume_mounts volumes labels",
+        "volume_mounts volumes labels resources",
     )
 ):
     """Configuration parameters for launching Dagster Jobs on Kubernetes.
@@ -255,6 +255,8 @@ class DagsterK8sJobConfig(
             https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
         labels (Optional[Dict[str, str]]): Additional labels that should be included in the Job's Pod. See:
             https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+        resources (Optional[Dict[str, Any]]) Compute resource requirements for the container. See:
+            https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
     """
 
     def __new__(
@@ -272,6 +274,7 @@ class DagsterK8sJobConfig(
         volume_mounts=None,
         volumes=None,
         labels=None,
+        resources=None,
     ):
         return super(DagsterK8sJobConfig, cls).__new__(
             cls,
@@ -300,6 +303,7 @@ class DagsterK8sJobConfig(
                 for volume in check.opt_list_param(volumes, "volumes")
             ],
             labels=check.opt_dict_param(labels, "labels", key_type=str, value_type=str),
+            resources=check.opt_dict_param(resources, "resources", key_type=str),
         )
 
     @classmethod
@@ -456,6 +460,17 @@ class DagsterK8sJobConfig(
                 description="Labels to apply to all created pods. See: "
                 "https://kubernetes.io/docs/concepts/overview/working-with-objects/labels",
             ),
+            "resources": Field(
+                Noneable(
+                    {
+                        "limits": Field(dict, is_required=False),
+                        "requests": Field(dict, is_required=False),
+                    }
+                ),
+                is_required=False,
+                description="Compute resource requirements for the container. See: "
+                "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+            ),
         }
 
     @classmethod
@@ -607,6 +622,8 @@ def construct_dagster_k8s_job(
 
     user_defined_k8s_volume_mounts = container_config.pop("volume_mounts", [])
 
+    user_defined_resources = container_config.pop("resources", {})
+
     volume_mounts = (
         [
             {
@@ -621,6 +638,8 @@ def construct_dagster_k8s_job(
         + user_defined_k8s_volume_mounts
     )
 
+    resources = user_defined_resources if user_defined_resources else job_config.resources
+
     container_config = merge_dicts(
         container_config,
         {
@@ -631,6 +650,7 @@ def construct_dagster_k8s_job(
             "env": env + job_config.env + additional_k8s_env_vars,
             "env_from": job_config.env_from_sources + additional_k8s_env_from,
             "volume_mounts": volume_mounts,
+            "resources": resources,
         },
     )
 
