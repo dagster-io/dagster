@@ -220,11 +220,11 @@ def _asset_key_to_dep_node_handles(
     that are upstream dependencies of the asset.
     """
     # A mapping of all node handles to all upstream node handles
-    # that are not assets. Each key is a node handle with tuple value (node_output_name, output_node)
+    # that are not assets. Each key is a node handle with node output handle value
     non_asset_inputs_by_node_handle: Dict[NodeHandle, Sequence[NodeOutputHandle]] = {}
 
     # A mapping of every graph node handle to a dictionary with each out
-    # name as a key and a tuple containing (op output name, op node handle) as the value
+    # name as a key and node output handle value
     outputs_by_graph_handle: Dict[NodeHandle, Dict[str, NodeOutputHandle]] = {}
     _build_graph_dependencies(
         graph_def=graph_def,

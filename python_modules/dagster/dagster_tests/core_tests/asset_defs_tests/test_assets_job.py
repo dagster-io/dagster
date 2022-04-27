@@ -643,13 +643,12 @@ def test_all_assets_job():
         return 1
 
     @asset
-    def a2(a1):
+    def a2(a1):  # pylint: disable=unused-argument
         return 2
 
     job = build_assets_job("graph_asset_job", [a1, a2])
     node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
-    thing_handle = NodeHandle(name="thing", parent=None)
     assert node_handle_deps_by_asset[AssetKey("a1")] == {
         NodeHandle("a1", parent=None),
     }
@@ -669,7 +668,7 @@ def test_basic_graph():
     def thing():
         da = get_string()
         db = get_string()
-        o1, o2 = combine_strings_and_split(da, db)
+        o1, o2 = combine_strings_and_split(da, db)  # pylint: disable=unused-variable
         return o1
 
     @asset
@@ -758,7 +757,7 @@ def test_nested_graph():
     def thing():
         da = inside_thing()
         db = get_string()
-        o1, o2 = combine_strings_and_split(da, db)
+        o1, o2 = combine_strings_and_split(da, db)  # pylint: disable=unused-variable
         return o1
 
     thing_asset = AssetsDefinition(
@@ -851,7 +850,7 @@ def test_twice_nested_graph():
     def outer_thing(foo_asset):
         n1, output = middle_thing()
         n2 = transformer(output)
-        n3 = transformer(foo_asset)  # unused output
+        unused_output = transformer(foo_asset)  # pylint: disable=unused-variable
         return {"n1": n1, "n2": n2}
 
     @asset
