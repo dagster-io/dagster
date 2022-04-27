@@ -332,6 +332,9 @@ def build_asset_ins(
     asset_ins: Mapping[str, AssetIn],
     non_argument_deps: Optional[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
+    """
+    Creates a mapping from AssetKey to (name of input, In object)
+    """
 
     non_argument_deps = check.opt_set_param(non_argument_deps, "non_argument_deps", AssetKey)
 

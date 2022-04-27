@@ -256,6 +256,7 @@ class _PlanBuilder:
             List[Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]]
         ] = None,
     ):
+        asset_layer = self.pipeline.get_definition().asset_layer
         for solid in solids:
             handle = NodeHandle(solid.name, parent_handle)
 
@@ -316,7 +317,9 @@ class _PlanBuilder:
             ### 2a. COMPUTE FUNCTION
             # Create and add execution plan step for the solid compute function
             if isinstance(solid.definition, SolidDefinition):
-                step_outputs = create_step_outputs(solid, handle, self.resolved_run_config)
+                step_outputs = create_step_outputs(
+                    solid, handle, self.resolved_run_config, asset_layer
+                )
 
                 if has_pending_input and has_unresolved_input:
                     check.failed("Can not have pending and unresolved step inputs")
