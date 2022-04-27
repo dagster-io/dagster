@@ -272,7 +272,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
 
         loadable_target_origin = self._origin.loadable_target_origin
         self._loaded_repositories = LoadedRepositories(
-            loadable_target_origin, self._origin.entry_point
+            loadable_target_origin,
+            self._origin.entry_point,
+            self._origin.container_image,
         )
 
         self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name
