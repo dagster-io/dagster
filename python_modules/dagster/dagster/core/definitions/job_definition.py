@@ -74,19 +74,19 @@ class JobDefinition(PipelineDefinition):
         self._op_selection_data = check.opt_inst_param(
             _op_selection_data, "_op_selection_data", OpSelectionData
         )
-        self._metadata = normalize_metadata(metadata, [])
+        self._metadata = normalize_metadata(metadata, []) if metadata is not None else metadata
 
-        all_tags = tags
-        for m in self._metadata:
-            if m.entry_data.searchable:
-                all_tags[m.label] = m.entry_data.value_string()
+        # all_tags = tags
+        # for m in self._metadata:
+        #     if m.entry_data.searchable:
+        #         all_tags[m.label] = m.entry_data.value_string()
 
         super(JobDefinition, self).__init__(
             name=name,
             description=description,
             mode_defs=[mode_def],
             preset_defs=preset_defs,
-            tags=all_tags,
+            tags=tags,
             hook_defs=hook_defs,
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,
@@ -111,6 +111,10 @@ class JobDefinition(PipelineDefinition):
     @property
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
         return self.mode_definitions[0].resource_defs
+
+    @property
+    def metadata(self) -> Optional[Dict[str, RawMetadataValue]]:
+        return self._metadata
 
     def execute_in_process(
         self,
