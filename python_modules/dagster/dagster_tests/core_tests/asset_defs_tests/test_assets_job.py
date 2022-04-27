@@ -647,7 +647,7 @@ def test_all_assets_job():
         return 2
 
     job = build_assets_job("graph_asset_job", [a1, a2])
-    node_handle_deps_by_asset = job.assets_info.dependency_node_handles_by_asset_key
+    node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
     thing_handle = NodeHandle(name="thing", parent=None)
     assert node_handle_deps_by_asset[AssetKey("a1")] == {
@@ -681,13 +681,13 @@ def test_basic_graph():
         return out_asset2 + "one"
 
     complex_asset = AssetsDefinition(
-        input_names_by_asset_key={},
-        output_names_by_asset_key={AssetKey("out_asset1"): "o1"},
+        asset_keys_by_input_name={},
+        asset_keys_by_output_name={"o1": AssetKey("out_asset1")},
         node_def=thing,
     )
 
     job = build_assets_job("graph_asset_job", [complex_asset])
-    node_handle_deps_by_asset = job.assets_info.dependency_node_handles_by_asset_key
+    node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
     thing_handle = NodeHandle(name="thing", parent=None)
     assert node_handle_deps_by_asset[AssetKey("out_asset1")] == {
@@ -719,12 +719,12 @@ def test_hanging_op_graph():
         return {"o1": o1, "o2": o2}
 
     complex_asset = AssetsDefinition(
-        input_names_by_asset_key={},
-        output_names_by_asset_key={AssetKey("out_asset1"): "o1", AssetKey("out_asset2"): "o2"},
+        asset_keys_by_input_name={},
+        asset_keys_by_output_name={"o1": AssetKey("out_asset1"), "o2": AssetKey("out_asset2")},
         node_def=thing,
     )
     job = build_assets_job("graph_asset_job", [complex_asset])
-    node_handle_deps_by_asset = job.assets_info.dependency_node_handles_by_asset_key
+    node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
     thing_handle = NodeHandle(name="thing", parent=None)
     assert node_handle_deps_by_asset[AssetKey("out_asset1")] == {
@@ -762,13 +762,13 @@ def test_nested_graph():
         return o1
 
     thing_asset = AssetsDefinition(
-        input_names_by_asset_key={},
-        output_names_by_asset_key={AssetKey("thing"): "o1"},
+        asset_keys_by_input_name={},
+        asset_keys_by_output_name={"o1": AssetKey("thing")},
         node_def=thing,
     )
 
     job = build_assets_job("graph_asset_job", [thing_asset])
-    node_handle_deps_by_asset = job.assets_info.dependency_node_handles_by_asset_key
+    node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
     thing_handle = NodeHandle(name="thing", parent=None)
     assert node_handle_deps_by_asset[AssetKey("thing")] == {
@@ -804,13 +804,13 @@ def test_asset_in_nested_graph():
         return (o1, o3)
 
     thing_asset = AssetsDefinition(
-        input_names_by_asset_key={},
-        output_names_by_asset_key={AssetKey("thing"): "o1", AssetKey("thing_2"): "o3"},
+        asset_keys_by_input_name={},
+        asset_keys_by_output_name={"o1": AssetKey("thing"), "o3": AssetKey("thing_2")},
         node_def=thing,
     )
 
     job = build_assets_job("graph_asset_job", [thing_asset])
-    node_handle_deps_by_asset = job.assets_info.dependency_node_handles_by_asset_key
+    node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
     thing_handle = NodeHandle(name="thing", parent=None)
     assert node_handle_deps_by_asset[AssetKey("thing")] == {
@@ -859,13 +859,13 @@ def test_twice_nested_graph():
         return "foo"
 
     thing_asset = AssetsDefinition(
-        input_names_by_asset_key={},
-        output_names_by_asset_key={AssetKey("thing"): "n1", AssetKey("thing_2"): "n2"},
+        asset_keys_by_input_name={},
+        asset_keys_by_output_name={"n1": AssetKey("thing"), "n2": AssetKey("thing_2")},
         node_def=outer_thing,
     )
 
     job = build_assets_job("graph_asset_job", [foo_asset, thing_asset])
-    node_handle_deps_by_asset = job.assets_info.dependency_node_handles_by_asset_key
+    node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
     outer_thing_handle = NodeHandle("outer_thing", parent=None)
     middle_thing_handle = NodeHandle("middle_thing", parent=outer_thing_handle)
@@ -904,8 +904,8 @@ def test_internal_asset_deps_assets():
         return (o1, o2)
 
     thing_asset = AssetsDefinition(
-        input_names_by_asset_key={},
-        output_names_by_asset_key={AssetKey("thing"): "o1", AssetKey("thing_2"): "o2"},
+        asset_keys_by_input_name={},
+        asset_keys_by_output_name={"o1": AssetKey("thing"), "o2": AssetKey("thing_2")},
         node_def=thing,
         asset_deps={AssetKey("thing"): set(), AssetKey("thing_2"): {AssetKey("thing")}},
     )
@@ -915,14 +915,17 @@ def test_internal_asset_deps_assets():
             "my_out_name": Out(metadata={"foo": "bar"}),
             "my_other_out_name": Out(metadata={"bar": "foo"}),
         },
-        internal_asset_deps={"my_out_name": {AssetKey("my_other_out_name")}},
+        internal_asset_deps={
+            "my_out_name": {AssetKey("my_other_out_name")},
+            "my_other_out_name": {AssetKey("thing")},
+        },
     )
     def multi_asset_with_internal_deps(thing):  # pylint: disable=unused-argument
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
 
     job = build_assets_job("graph_asset_job", [thing_asset, multi_asset_with_internal_deps])
-    node_handle_deps_by_asset = job.assets_info.dependency_node_handles_by_asset_key
+    node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
     assert node_handle_deps_by_asset[AssetKey("thing")] == {
         NodeHandle("two_outputs", parent=NodeHandle("thing", parent=None)),
         NodeHandle(name="upstream_op", parent=NodeHandle(name="thing", parent=None)),

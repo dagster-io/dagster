@@ -36,9 +36,10 @@ class AssetsDefinition:
         self._partition_mappings = partition_mappings or {}
 
         # if not specified assume all output assets depend on all input assets
-        all_asset_keys = output_names_by_asset_key.keys()
+        all_asset_keys = set(asset_keys_by_output_name.values())
         self._asset_deps = asset_deps or {
-            out_asset_key: set(input_names_by_asset_key.keys()) for out_asset_key in all_asset_keys
+            out_asset_key: set(asset_keys_by_input_name.values())
+            for out_asset_key in all_asset_keys
         }
         check.invariant(
             set(self._asset_deps.keys()) == all_asset_keys,
