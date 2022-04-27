@@ -3,9 +3,11 @@ from typing import (
     AbstractSet,
     Callable,
     Dict,
+    List,
     Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Set,
     Tuple,
 )
@@ -57,6 +59,29 @@ class AssetOutputInfo(
             partitions_fn=check.opt_callable_param(partitions_fn, "partitions_fn", lambda _: None),
             partitions_def=partitions_def,
         )
+
+
+def _resolve_input_to_destinations(
+    name: str, node_def: NodeDefinition, handle: NodeHandle
+) -> Sequence[NodeInputHandle]:
+    """
+    Recursively follow input mappings to find all op inputs for a graph input.
+    """
+    if not isinstance(node_def, GraphDefinition):
+        # must be in the op definition
+        return [NodeInputHandle(node_handle=handle, input_name=name)]
+    all_destinations: List[NodeInputHandle] = []
+    for mapping in node_def.input_mappings:
+        if mapping.definition.name != name:
+            continue
+        # recurse into graph structure
+        all_destinations += _resolve_input_to_destinations(
+            # update name to be the mapped input name
+            name=mapping.maps_to.input_name,
+            node_def=node_def.solid_named(mapping.maps_to.solid_name).definition,
+            handle=NodeHandle(mapping.maps_to.solid_name, parent=handle),
+        )
+    return all_destinations
 
 
 def _asset_mappings_for_node(
@@ -190,11 +215,21 @@ class AssetLayer:
         asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         for node_handle, assets_def in assets_defs_by_node_handle.items():
             asset_deps.update(assets_def.asset_deps)
+
             for input_name, asset_key in assets_def.asset_keys_by_input_name.items():
-                node_input_handle = NodeInputHandle(node_handle, input_name)
-                asset_key_by_input[node_input_handle] = asset_key
+                # resolve graph input to list of op inputs that consume it
+                node_input_handles = _resolve_input_to_destinations(
+                    input_name, assets_def.node_def, node_handle
+                )
+                for node_input_handle in node_input_handles:
+                    asset_key_by_input[node_input_handle] = asset_key
+
             for output_name, asset_key in assets_def.asset_keys_by_output_name.items():
-                node_output_handle = NodeOutputHandle(node_handle, output_name)
+                # resolve graph output to the op output it comes from
+                inner_output_def, inner_node_handle = assets_def.node_def.resolve_output_to_origin(
+                    output_name, handle=node_handle
+                )
+                node_output_handle = NodeOutputHandle(inner_node_handle, inner_output_def.name)
                 partition_fn = lambda context: {context.partition_key}
                 asset_info_by_output[node_output_handle] = AssetOutputInfo(
                     asset_key,

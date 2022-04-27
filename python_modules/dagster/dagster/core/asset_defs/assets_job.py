@@ -103,7 +103,7 @@ def build_assets_job(
 
     graph = GraphDefinition(
         name=name,
-        node_defs=[asset.op for asset in assets],
+        node_defs=[asset.node_def for asset in assets],
         dependencies=deps,
         description=description,
         input_mappings=None,
@@ -242,7 +242,6 @@ def build_deps(
             node_outputs_by_asset[asset_key] = (assets_def.node_def, output_name)
 
     deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
-
     # if the same graph/op is used in multiple assets_definitions, their invocations much have
     # different names. we keep track of definitions that share a name and add a suffix to their
     # invocations to solve this issue

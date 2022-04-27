@@ -219,7 +219,7 @@ class _Asset:
         return AssetsDefinition(
             asset_keys_by_input_name=asset_keys_by_input_name,
             asset_keys_by_output_name={"result": out_asset_key},
-            op=op,
+            node_def=op,
             partitions_def=self.partitions_def,
             partition_mappings={
                 asset_keys_by_input_name[input_name]: partition_mapping
@@ -299,7 +299,6 @@ def multi_asset(
                 "must be associated with an input to the asset or produced by this asset. Valid "
                 f"keys: {valid_asset_deps}",
             )
-
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
             op = _Op(
@@ -319,7 +318,7 @@ def multi_asset(
                 input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
             },
             asset_keys_by_output_name=asset_keys_by_output_name,
-            op=op,
+            node_def=op,
             asset_deps={asset_keys_by_output_name[name]: asset_deps[name] for name in asset_deps},
         )
 
