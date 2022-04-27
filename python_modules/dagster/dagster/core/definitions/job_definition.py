@@ -38,8 +38,6 @@ from dagster.core.utils import str_format_set
 
 from .asset_layer import AssetLayer
 from .config import ConfigMapping
-from .asset_layer import AssetLayer
-from .config import ConfigMapping
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
