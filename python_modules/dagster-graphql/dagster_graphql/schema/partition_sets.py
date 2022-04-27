@@ -67,15 +67,6 @@ class GraphenePartitionRun(graphene.ObjectType):
         name = "PartitionRun"
 
 
-class GraphenePartitionRun(graphene.ObjectType):
-    id = graphene.NonNull(graphene.String)
-    partitionName = graphene.NonNull(graphene.String)
-    run = graphene.Field(GrapheneRun)
-
-    class Meta:
-        name = "PartitionRun"
-
-
 class GraphenePartitionStatuses(graphene.ObjectType):
     results = non_null_list(GraphenePartitionStatus)
 
