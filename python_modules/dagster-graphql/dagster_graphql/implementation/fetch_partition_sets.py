@@ -204,6 +204,7 @@ def get_partition_set_partition_statuses(graphene_info, repository_handle, parti
         ]
     )
 
+
 def get_partition_set_partition_runs(graphene_info, partition_set):
     from ..schema.partition_sets import GraphenePartitionRun
     from ..schema.pipelines.pipeline import GrapheneRun
@@ -228,7 +229,9 @@ def get_partition_set_partition_runs(graphene_info, partition_set):
         GraphenePartitionRun(
             id=f"{partition_set.name}:{partition_name}",
             partitionName=partition_name,
-            run=GrapheneRun(by_partition[partition_name]) if partition_name in by_partition else None,
+            run=GrapheneRun(by_partition[partition_name])
+            if partition_name in by_partition
+            else None,
         )
         # for partition_name, run_record in by_partition.items()
         for partition_name in result.partition_names
