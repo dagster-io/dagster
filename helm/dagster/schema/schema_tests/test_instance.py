@@ -310,8 +310,10 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
 
 
 @pytest.mark.parametrize("enabled", [True, False])
-def test_queued_run_coordinator_config(template: HelmTemplate, enabled: bool):
-    max_concurrent_runs = 50
+@pytest.mark.parametrize("max_concurrent_runs", [0, 50])
+def test_queued_run_coordinator_config(
+    template: HelmTemplate, enabled: bool, max_concurrent_runs: int
+):
     tag_concurrency_limits = [TagConcurrencyLimit(key="key", value="value", limit=10)]
     dequeue_interval_seconds = 50
     helm_values = DagsterHelmValues.construct(
