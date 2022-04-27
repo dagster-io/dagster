@@ -81,7 +81,7 @@ class CouldNotBindGrpcServerToAddress(Exception):
 
 
 class LoadedRepositories:
-    def __init__(self, loadable_target_origin, entry_point):
+    def __init__(self, loadable_target_origin, entry_point, container_image=None):
         self._loadable_target_origin = loadable_target_origin
 
         self._code_pointers_by_repo_name = {}
@@ -102,7 +102,7 @@ class LoadedRepositories:
             pointer = _get_code_pointer(loadable_target_origin, loadable_target)
             recon_repo = ReconstructableRepository(
                 pointer,
-                _get_current_image(),
+                container_image,
                 sys.executable,
                 entry_point=entry_point,
             )
@@ -165,6 +165,7 @@ class DagsterApiServer(DagsterApiServicer):
         lazy_load_user_code=False,
         fixed_server_id=None,
         entry_point=None,
+        container_image=None,
         container_context=None,
     ):
         super(DagsterApiServer, self).__init__()
@@ -206,11 +207,14 @@ class DagsterApiServer(DagsterApiServicer):
             else DEFAULT_DAGSTER_ENTRY_POINT
         )
 
+        self._container_image = check.opt_str_param(container_image, "container_image")
         self._container_context = check.opt_dict_param(container_context, "container_context")
 
         try:
             self._loaded_repositories = LoadedRepositories(
-                loadable_target_origin, self._entry_point
+                loadable_target_origin,
+                self._entry_point,
+                self._container_image,
             )
         except Exception:
             if not lazy_load_user_code:
@@ -357,7 +361,7 @@ class DagsterApiServer(DagsterApiServicer):
             else None,
             repository_code_pointer_dict=self._loaded_repositories.code_pointers_by_repo_name,
             entry_point=self._entry_point,
-            container_image=_get_current_image(),
+            container_image=self._container_image,
             container_context=self._container_context,
         )
 
@@ -731,14 +735,10 @@ class DagsterApiServer(DagsterApiServicer):
         return api_pb2.GetCurrentImageReply(
             serialized_current_image=serialize_dagster_namedtuple(
                 GetCurrentImageResult(
-                    current_image=_get_current_image(), serializable_error_info=None
+                    current_image=self._container_image, serializable_error_info=None
                 )
             )
         )
-
-
-def _get_current_image():
-    return os.getenv("DAGSTER_CURRENT_IMAGE")
 
 
 @whitelist_for_serdes
@@ -782,6 +782,7 @@ class DagsterGrpcServer:
         ipc_output_file=None,
         fixed_server_id=None,
         entry_point=None,
+        container_image=None,
         container_context=None,
     ):
         check.opt_str_param(host, "host")
@@ -832,6 +833,7 @@ class DagsterGrpcServer:
                 lazy_load_user_code=lazy_load_user_code,
                 fixed_server_id=fixed_server_id,
                 entry_point=entry_point,
+                container_image=container_image,
                 container_context=container_context,
             )
         except Exception:

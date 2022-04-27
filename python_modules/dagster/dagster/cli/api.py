@@ -393,6 +393,7 @@ def _execute_step_command_body(
     type=click.INT,
     required=False,
     help="Port over which to serve. You must pass one and only one of --port/-p or --socket/-s.",
+    envvar="DAGSTER_GRPC_PORT",
 )
 @click.option(
     "--socket",
@@ -400,6 +401,7 @@ def _execute_step_command_body(
     type=click.Path(),
     required=False,
     help="Serve over a UDS socket. You must pass one and only one of --port/-p or --socket/-s.",
+    envvar="DAGSTER_GRPC_SOCKET",
 )
 @click.option(
     "--host",
@@ -408,6 +410,7 @@ def _execute_step_command_body(
     required=False,
     default="localhost",
     help="Hostname at which to serve. Default is localhost.",
+    envvar="DAGSTER_GRPC_HOST",
 )
 @click.option(
     "--max_workers",
@@ -440,6 +443,7 @@ def _execute_step_command_body(
     help="Wait until the first LoadRepositories call to actually load the repositories, instead of "
     "waiting to load them when the server is launched. Useful for surfacing errors when the server "
     "is managed directly from Dagit",
+    envvar="DAGSTER_LAZY_LOAD_USER_CODE",
 )
 @python_origin_target_argument
 @click.option(
@@ -452,6 +456,7 @@ def _execute_step_command_body(
     "default `dagster` entry point. This is useful when there are multiple Python environments "
     "running in the same machine, so a single `dagster` entry point is not enough to uniquely "
     "determine the environment.",
+    envvar="DAGSTER_USE_PYTHON_ENVIRONMENT_ENTRY_POINT",
 )
 @click.option(
     "--empty-working-directory",
@@ -460,6 +465,7 @@ def _execute_step_command_body(
     default=False,
     help="Indicates that the working directory should be empty and should not set to the current "
     "directory as a default",
+    envvar="DAGSTER_EMPTY_WORKING_DIRECTORY",
 )
 @click.option(
     "--ipc-output-file",
@@ -490,11 +496,19 @@ def _execute_step_command_body(
     help="Level at which to log output from the gRPC server process",
 )
 @click.option(
+    "--container-image",
+    type=click.STRING,
+    required=False,
+    help="Container image to use to run code from this server.",
+    envvar="DAGSTER_CONTAINER_IMAGE",
+)
+@click.option(
     "--container-context",
     type=click.STRING,
     required=False,
     help="Serialized JSON with configuration for any containers created to run the "
     "code from this server.",
+    envvar="DAGSTER_CONTAINER_CONTEXT",
 )
 def grpc_command(
     port=None,
@@ -509,6 +523,7 @@ def grpc_command(
     override_system_timezone=None,
     log_level="INFO",
     use_python_environment_entry_point=False,
+    container_image=None,
     container_context=None,
     **kwargs,
 ):
@@ -521,6 +536,8 @@ def grpc_command(
 
     configure_loggers(log_level=coerce_valid_log_level(log_level))
     logger = logging.getLogger("dagster.code_server")
+
+    container_image = container_image or os.getenv("DAGSTER_CURRENT_IMAGE")
 
     loadable_target_origin = None
     if any(
@@ -568,6 +585,7 @@ def grpc_command(
                 if use_python_environment_entry_point
                 else DEFAULT_DAGSTER_ENTRY_POINT
             ),
+            container_image=container_image,
             container_context=json.loads(container_context) if container_context != None else None,
         )
 
