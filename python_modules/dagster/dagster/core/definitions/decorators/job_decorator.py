@@ -9,6 +9,7 @@ from ..graph_definition import GraphDefinition
 from ..hook_definition import HookDefinition
 from ..job_definition import JobDefinition
 from ..logger_definition import LoggerDefinition
+from ..metadata import RawMetadataValue
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
 from ..version_strategy import VersionStrategy
@@ -25,6 +26,7 @@ class _Job:
         description: Optional[str] = None,
         tags: Optional[Dict[str, Any]] = None,
         default_run_tags: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
         config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
@@ -36,10 +38,9 @@ class _Job:
     ):
         self.name = name
         self.description = description
-        if default_run_tags is not None:
-            # TODO - deprecation warning for tags?
-            default_run_tags.update(tags)
-        self.tags = default_run_tags
+        self.default_run_tags = default_run_tags
+        self.tags = tags
+        self.metadata = metadata
         self.resource_defs = resource_defs
         self.config = config
         self.logger_defs = logger_defs
@@ -74,6 +75,7 @@ class _Job:
             config_mapping=None,
         )
 
+        # TODO: maybe need to pass default_run_tags here?
         graph_def = GraphDefinition(
             name=self.name,
             dependencies=dependencies,
@@ -84,6 +86,7 @@ class _Job:
             config=config_mapping,
             positional_inputs=positional_inputs,
             tags=self.tags,
+            metadata=self.metadata,
         )
 
         job_def = graph_def.to_job(
@@ -91,6 +94,8 @@ class _Job:
             resource_defs=self.resource_defs,
             config=self.config,
             tags=self.tags,
+            default_run_tags=self.default_run_tags,
+            metadata=self.metadata,
             logger_defs=self.logger_defs,
             executor_def=self.executor_def,
             hooks=self.hooks,
@@ -115,6 +120,7 @@ def job(
     config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = ...,
     tags: Optional[Dict[str, Any]] = ...,
     default_run_tags: Optional[Dict[str, Any]] = ...,
+    metadata: Optional[Dict[str, RawMetadataValue]] = ...,
     logger_defs: Optional[Dict[str, LoggerDefinition]] = ...,
     executor_def: Optional["ExecutorDefinition"] = ...,
     hooks: Optional[AbstractSet[HookDefinition]] = ...,
@@ -131,6 +137,7 @@ def job(
     config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
     tags: Optional[Dict[str, Any]] = None,
     default_run_tags: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Dict[str, RawMetadataValue]] = None,
     logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
@@ -197,16 +204,14 @@ def job(
         check.invariant(description is None)
         return _Job()(name)
 
-    if default_run_tags is not None:
-        # TODO - deprecation warning for tags?
-        default_run_tags.update(tags)
-
     return _Job(
         name=name,
         description=description,
         resource_defs=resource_defs,
         config=config,
-        tags=default_run_tags,
+        tags=tags,
+        default_run_tags=default_run_tags,
+        metadata=metadata,
         logger_defs=logger_defs,
         executor_def=executor_def,
         hooks=hooks,

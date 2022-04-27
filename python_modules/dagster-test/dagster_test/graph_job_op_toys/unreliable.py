@@ -1,6 +1,6 @@
 from random import random
 
-from dagster import Field, graph, job, op
+from dagster import Field, graph, op
 
 DEFAULT_EXCEPTION_RATE = 0.3
 

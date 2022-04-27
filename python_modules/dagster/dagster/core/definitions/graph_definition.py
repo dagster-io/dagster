@@ -45,6 +45,7 @@ from .dependency import (
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .logger_definition import LoggerDefinition
+from .metadata import RawMetadataValue, normalize_metadata
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
@@ -184,6 +185,7 @@ class GraphDefinition(NodeDefinition):
         output_mappings: Optional[List[OutputMapping]] = None,
         config: Optional[ConfigMapping] = None,
         tags: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         **kwargs,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)
@@ -211,6 +213,10 @@ class GraphDefinition(NodeDefinition):
         )
 
         self._config_mapping = check.opt_inst_param(config, "config", ConfigMapping)
+
+        self._metadata = None
+        if metadata is not None:
+            self._metadata = normalize_metadata(metadata, [])
 
         super(GraphDefinition, self).__init__(
             name=name,
@@ -453,6 +459,8 @@ class GraphDefinition(NodeDefinition):
         resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
         config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
         tags: Optional[Dict[str, Any]] = None,
+        default_run_tags: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
@@ -575,6 +583,8 @@ class GraphDefinition(NodeDefinition):
             partitioned_config=partitioned_config,
             preset_defs=presets,
             tags=tags,
+            default_run_tags=default_run_tags,
+            metadata=metadata,
             hook_defs=hooks,
             version_strategy=version_strategy,
             op_retry_policy=op_retry_policy,

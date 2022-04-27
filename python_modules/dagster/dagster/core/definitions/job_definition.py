@@ -42,6 +42,7 @@ from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
+from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue, normalize_metadata
 from .mode import ModeDefinition
 from .partition import PartitionSetDefinition, PartitionedConfig
 from .pipeline_definition import PipelineDefinition
@@ -70,6 +71,7 @@ class JobDefinition(PipelineDefinition):
         preset_defs: Optional[List[PresetDefinition]] = None,
         tags: Optional[Dict[str, Any]] = None,
         default_run_tags: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
@@ -90,16 +92,22 @@ class JobDefinition(PipelineDefinition):
         self._op_selection_data = check.opt_inst_param(
             _op_selection_data, "_op_selection_data", OpSelectionData
         )
+        self._metadata = None
+        if metadata is not None:
+            self._metadata = normalize_metadata(metadata, [])
 
+        all_tags: Dict[str, Any] = {}
         if default_run_tags is not None:
-            # TODO - deprecation warning for tags?
-            default_run_tags.update(tags)
+            all_tags.update(default_run_tags)
+        if tags is not None:
+            all_tags.update(tags)
+
         super(JobDefinition, self).__init__(
             name=name,
             description=description,
             mode_defs=[mode_def],
             preset_defs=preset_defs,
-            tags=default_run_tags,
+            tags=all_tags,
             hook_defs=hook_defs,
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,
@@ -137,6 +145,10 @@ class JobDefinition(PipelineDefinition):
     @property
     def loggers(self) -> Mapping[str, LoggerDefinition]:
         return self.get_mode_definition().loggers
+
+    @property
+    def metadata(self) -> Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]]:
+        return self._metadata
 
     def execute_in_process(
         self,

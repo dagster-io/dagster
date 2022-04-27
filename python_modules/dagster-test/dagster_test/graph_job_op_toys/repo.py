@@ -31,6 +31,7 @@ from dagster_test.graph_job_op_toys.log_spew import log_spew
 from dagster_test.graph_job_op_toys.long_asset_keys import long_asset_keys_group
 from dagster_test.graph_job_op_toys.longitudinal import longitudinal_job
 from dagster_test.graph_job_op_toys.many_events import many_events, many_events_subset_job
+from dagster_test.graph_job_op_toys.metadata_tags import wow_job
 from dagster_test.graph_job_op_toys.notebooks import hello_world_notebook_pipeline
 from dagster_test.graph_job_op_toys.partitioned_assets import partitioned_asset_group
 from dagster_test.graph_job_op_toys.retries import retry_job
@@ -85,6 +86,7 @@ def toys_repository():
             model_job,
             hello_world_notebook_pipeline,
             software_defined_assets,
+            wow_job,
         ]
         + get_toys_schedules()
         + get_toys_sensors()
