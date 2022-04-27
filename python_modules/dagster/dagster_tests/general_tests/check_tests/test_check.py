@@ -697,10 +697,10 @@ def test_inst():
         check.inst(1, (Foo, Bar))
 
     with pytest.raises(CheckError, match=re.escape("not one of ['Bar', 'Foo']")):
-        check.inst(1, (Foo, Bar), desc="a desc")
+        check.inst(1, (Foo, Bar), additional_message="a desc")
 
     with pytest.raises(CheckError, match=re.escape("Desc: a desc")):
-        check.inst(1, (Foo, Bar), desc="a desc")
+        check.inst(1, (Foo, Bar), additional_message="a desc")
 
 
 def test_inst_param():
