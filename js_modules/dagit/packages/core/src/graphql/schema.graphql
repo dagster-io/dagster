@@ -1923,7 +1923,7 @@ input ReexecutionParams {
 
 enum ReexecutionPolicy {
   FROM_FAILURE
-  ALL_OPS
+  ALL_STEPS
 }
 
 union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult

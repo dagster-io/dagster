@@ -118,7 +118,7 @@ export enum ObjectStoreOperationType {
 }
 
 export enum ReexecutionPolicy {
-  ALL_OPS = "ALL_OPS",
+  ALL_STEPS = "ALL_STEPS",
   FROM_FAILURE = "FROM_FAILURE",
 }
 

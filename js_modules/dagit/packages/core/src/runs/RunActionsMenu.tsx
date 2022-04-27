@@ -19,6 +19,7 @@ import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
+import {ReexecutionPolicy} from '../types/globalTypes';
 import {DagitReadOnlyCodeMirror} from '../ui/DagitCodeMirror';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
@@ -247,7 +248,7 @@ export const RunBulkActionsMenu: React.FC<{
     canLaunchPipelineReexecution,
   } = usePermissions();
   const [visibleDialog, setVisibleDialog] = React.useState<
-    'none' | 'terminate' | 'delete' | 'reexecute'
+    'none' | 'terminate' | 'delete' | 'reexecute-from-failure' | 'reexecute'
   >('none');
 
   if (!canTerminatePipelineExecution && !canDeletePipelineRun) {
@@ -265,7 +266,13 @@ export const RunBulkActionsMenu: React.FC<{
   const deletionMap = selected.reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {});
 
   const failedRuns = selected.filter((r) => failedStatuses.has(r?.status));
-  const reexecutionMap = failedRuns.reduce((accum, run) => ({...accum, [run.id]: run}), {});
+  const failedMap = failedRuns.reduce((accum, run) => ({...accum, [run.id]: run.id}), {});
+
+  const reexecutableRuns = selected.filter((r) => doneStatuses.has(r?.status));
+  const reexecutableMap = reexecutableRuns.reduce(
+    (accum, run) => ({...accum, [run.id]: run.id}),
+    {},
+  );
 
   const closeDialogs = () => {
     setVisibleDialog('none');
@@ -305,16 +312,28 @@ export const RunBulkActionsMenu: React.FC<{
               />
             ) : null}
             {canLaunchPipelineReexecution ? (
-              <MenuItem
-                icon="refresh"
-                text={`Re-execute ${failedRuns.length} ${
-                  failedRuns.length === 1 ? 'run' : 'runs'
-                } from failure`}
-                disabled={failedRuns.length === 0}
-                onClick={() => {
-                  setVisibleDialog('reexecute');
-                }}
-              />
+              <>
+                <MenuItem
+                  icon="refresh"
+                  text={`Re-execute ${reexecutableRuns.length} ${
+                    reexecutableRuns.length === 1 ? 'run' : 'runs'
+                  }`}
+                  disabled={reexecutableRuns.length === 0}
+                  onClick={() => {
+                    setVisibleDialog('reexecute');
+                  }}
+                />
+                <MenuItem
+                  icon="refresh"
+                  text={`Re-execute ${failedRuns.length} ${
+                    failedRuns.length === 1 ? 'run' : 'runs'
+                  } from failure`}
+                  disabled={failedRuns.length === 0}
+                  onClick={() => {
+                    setVisibleDialog('reexecute-from-failure');
+                  }}
+                />
+              </>
             ) : null}
           </Menu>
         }
@@ -338,10 +357,18 @@ export const RunBulkActionsMenu: React.FC<{
         selectedRuns={deletionMap}
       />
       <ReexecutionDialog
+        isOpen={visibleDialog === 'reexecute-from-failure'}
+        onClose={closeDialogs}
+        onComplete={onComplete}
+        selectedRuns={failedMap}
+        reexecutionPolicy={ReexecutionPolicy.FROM_FAILURE}
+      />
+      <ReexecutionDialog
         isOpen={visibleDialog === 'reexecute'}
         onClose={closeDialogs}
         onComplete={onComplete}
-        selectedRuns={reexecutionMap}
+        selectedRuns={reexecutableMap}
+        reexecutionPolicy={ReexecutionPolicy.ALL_STEPS}
       />
     </>
   );

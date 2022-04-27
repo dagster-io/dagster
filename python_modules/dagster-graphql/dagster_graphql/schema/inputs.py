@@ -211,7 +211,7 @@ class GrapheneExecutionParams(graphene.InputObjectType):
 
 class GrapheneReexecutionPolicy(graphene.Enum):
     FROM_FAILURE = "FROM_FAILURE"
-    ALL_OPS = "ALL_OPS"
+    ALL_STEPS = "ALL_STEPS"
 
     class Meta:
         name = "ReexecutionPolicy"

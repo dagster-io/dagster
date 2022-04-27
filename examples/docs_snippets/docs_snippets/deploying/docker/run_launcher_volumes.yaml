@@ -8,4 +8,4 @@ run_launcher:
       - DAGSTER_POSTGRES_DB
     container_kwargs:
       volumes:
-          - repo.py:/opt/dagster/app/
+          - /absolute/path/to/local/repo.py:/opt/dagster/app/

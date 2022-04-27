@@ -16,13 +16,13 @@ import {
   LaunchPipelineReexecution_launchPipelineReexecution_PythonError,
   LaunchPipelineReexecution_launchPipelineReexecution_RunConfigValidationInvalid,
 } from './types/LaunchPipelineReexecution';
-import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 export interface Props {
   isOpen: boolean;
   onClose: () => void;
   onComplete: (reexecutionState: ReexecutionState) => void;
-  selectedRuns: {[id: string]: RunTableRunFragment};
+  selectedRuns: {[id: string]: string};
+  reexecutionPolicy: ReexecutionPolicy;
 }
 
 type Error =
@@ -70,7 +70,7 @@ type ReexecutionDialogState = {
   reexecution: ReexecutionState;
 };
 
-type SelectedRuns = {[id: string]: RunTableRunFragment};
+type SelectedRuns = {[id: string]: string};
 
 const initializeState = (selectedRuns: SelectedRuns): ReexecutionDialogState => {
   return {
@@ -122,7 +122,7 @@ const reexecutionDialogReducer = (
 };
 
 export const ReexecutionDialog = (props: Props) => {
-  const {isOpen, onClose, onComplete, selectedRuns} = props;
+  const {isOpen, onClose, onComplete, reexecutionPolicy, selectedRuns} = props;
 
   // Freeze the selected IDs, since the list may change as runs continue processing and
   // re-executing. We want to preserve the list we're given.
@@ -165,9 +165,7 @@ export const ReexecutionDialog = (props: Props) => {
         variables: {
           reexecutionParams: {
             parentRunId: runId,
-            // Temporary! Add a prop to support this and `ALL_OPS`, based on the
-            // user's choice.
-            policy: ReexecutionPolicy.FROM_FAILURE,
+            policy: reexecutionPolicy,
           },
         },
       });
@@ -195,13 +193,26 @@ export const ReexecutionDialog = (props: Props) => {
           );
         }
 
+        const message = () => {
+          if (reexecutionPolicy === ReexecutionPolicy.ALL_STEPS) {
+            return (
+              <span>
+                {`${count} ${count === 1 ? 'run' : 'runs'} will be re-executed `}
+                <strong>with all steps</strong>. Do you wish to continue?
+              </span>
+            );
+          }
+          return (
+            <span>
+              {`${count} ${count === 1 ? 'run' : 'runs'} will be re-executed `}
+              <strong>from failure</strong>. Do you wish to continue?
+            </span>
+          );
+        };
+
         return (
           <Group direction="column" spacing={16}>
-            <div>
-              {`${count} ${
-                count === 1 ? 'run' : 'runs'
-              } will be re-executed from failure. Do you wish to continue?`}
-            </div>
+            <div>{message()}</div>
           </Group>
         );
       case 'reexecuting':
@@ -312,7 +323,11 @@ export const ReexecutionDialog = (props: Props) => {
   return (
     <Dialog
       isOpen={isOpen}
-      title="Re-execute runs"
+      title={
+        reexecutionPolicy === ReexecutionPolicy.ALL_STEPS
+          ? 'Re-execute runs'
+          : 'Re-execute runs from failure'
+      }
       canEscapeKeyClose={canQuicklyClose}
       canOutsideClickClose={canQuicklyClose}
       onClose={onClose}

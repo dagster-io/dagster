@@ -307,11 +307,12 @@ def safe_tempfile_path_unmanaged() -> str:
 
 @contextlib.contextmanager
 def safe_tempfile_path() -> Iterator[str]:
+    path = None
     try:
         path = safe_tempfile_path_unmanaged()
         yield path
     finally:
-        if os.path.exists(path):
+        if path is not None and os.path.exists(path):
             os.unlink(path)
 
 
@@ -325,8 +326,11 @@ def ensure_gen(thing_or_gen: T) -> Generator[T, Any, Any]:
     pass
 
 
-def ensure_gen(thing_or_gen):
+def ensure_gen(
+    thing_or_gen: Union[T, Iterator[T], Generator[T, Any, Any]]
+) -> Generator[T, Any, Any]:
     if not inspect.isgenerator(thing_or_gen):
+        thing_or_gen = cast(T, thing_or_gen)
 
         def _gen_thing():
             yield thing_or_gen

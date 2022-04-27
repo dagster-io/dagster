@@ -1,3 +1,4 @@
+import enum
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
@@ -28,6 +29,11 @@ def _in_tracking_dict(handle, tracking):
             return False
     else:
         return handle.to_key() in tracking
+
+
+class ReexecutionPolicy(enum.Enum):
+    ALL_STEPS = "ALL_STEPS"
+    FROM_FAILURE = "FROM_FAILURE"
 
 
 def get_retry_steps_from_parent_run(

@@ -134,7 +134,7 @@ export const useRepositoryLocationReload = (location: string) => {
             ? match.locationOrLoadError.repositories
             : [];
 
-        invalidateConfigs(repositories);
+        invalidateConfigs(repositories.map((repo) => ({...repo, locationName: match.id})));
 
         // Clear and refetch all the queries bound to the UI.
         apollo.resetStore();

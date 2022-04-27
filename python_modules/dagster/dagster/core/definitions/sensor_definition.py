@@ -6,6 +6,7 @@ from typing import (
     Any,
     Callable,
     Generator,
+    Iterator,
     List,
     NamedTuple,
     Optional,
@@ -13,6 +14,8 @@ from typing import (
     Union,
     cast,
 )
+
+from typing_extensions import TypeGuard
 
 from dagster import check
 from dagster.core.errors import (
@@ -23,8 +26,6 @@ from dagster.core.errors import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.serdes import whitelist_for_serdes
-from dagster.seven import funcsigs
-from dagster.utils import ensure_gen
 
 from ..decorator_utils import get_function_params
 from .events import AssetKey
@@ -47,10 +48,6 @@ class DefaultSensorStatus(Enum):
 
 
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30
-
-
-def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
-    return len(params) == 1
 
 
 class SensorEvaluationContext:
@@ -143,6 +140,23 @@ class SensorEvaluationContext:
 # Preserve SensorExecutionContext for backcompat so type annotations don't break.
 SensorExecutionContext = SensorEvaluationContext
 
+RawSensorEvaluationFunctionReturn = Union[
+    Iterator[Union[SkipReason, RunRequest]], SkipReason, RunRequest
+]
+RawSensorEvaluationFunction = Union[
+    Callable[[], RawSensorEvaluationFunctionReturn],
+    Callable[[SensorEvaluationContext], RawSensorEvaluationFunctionReturn],
+]
+SensorEvaluationFunction = Callable[
+    [SensorEvaluationContext], Iterator[Union[SkipReason, RunRequest]]
+]
+
+
+def is_context_provided(
+    fn: "RawSensorEvaluationFunction",
+) -> TypeGuard[Callable[[SensorEvaluationContext], "RawSensorEvaluationFunctionReturn"]]:
+    return len(get_function_params(fn)) == 1
+
 
 class SensorDefinition:
     """Define a sensor that initiates a set of runs based on some external state
@@ -175,12 +189,7 @@ class SensorDefinition:
     def __init__(
         self,
         name: Optional[str] = None,
-        evaluation_fn: Optional[
-            Callable[
-                ["SensorEvaluationContext"],
-                Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
-            ]
-        ] = None,
+        evaluation_fn: Optional[RawSensorEvaluationFunction] = None,
         pipeline_name: Optional[str] = None,
         solid_selection: Optional[List[Any]] = None,
         mode: Optional[str] = None,
@@ -239,10 +248,12 @@ class SensorDefinition:
         else:
             self._name = evaluation_fn.__name__
 
-        self._raw_fn = check.callable_param(evaluation_fn, "evaluation_fn")
-        self._evaluation_fn: Callable[
-            [SensorEvaluationContext], Generator[Union[RunRequest, SkipReason], None, None]
-        ] = wrap_sensor_evaluation(self._name, evaluation_fn)
+        self._raw_fn: RawSensorEvaluationFunction = check.callable_param(
+            evaluation_fn, "evaluation_fn"
+        )
+        self._evaluation_fn: SensorEvaluationFunction = wrap_sensor_evaluation(
+            self._name, evaluation_fn
+        )
         self._min_interval = check.opt_int_param(
             minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
         )
@@ -253,9 +264,8 @@ class SensorDefinition:
         )
 
     def __call__(self, *args, **kwargs):
-        context_provided = is_context_provided(get_function_params(self._raw_fn))
 
-        if context_provided:
+        if is_context_provided(self._raw_fn):
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
                     "Sensor evaluation function expected context argument, but no context argument "
@@ -291,7 +301,7 @@ class SensorDefinition:
                     "invocation."
                 )
 
-            return self._raw_fn()
+            return self._raw_fn()  # type: ignore [TypeGuard limitation]
 
     @property
     def name(self) -> str:
@@ -330,8 +340,8 @@ class SensorDefinition:
 
         """
 
-        check.inst_param(context, "context", SensorEvaluationContext)
-        result = list(ensure_gen(self._evaluation_fn(context)))
+        context = check.inst_param(context, "context", SensorEvaluationContext)
+        result = list(self._evaluation_fn(context))
 
         skip_message: Optional[str] = None
 
@@ -482,13 +492,13 @@ class SensorExecutionData(
 
 def wrap_sensor_evaluation(
     sensor_name: str,
-    fn: Callable[
-        ["SensorEvaluationContext"],
-        Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
-    ],
-) -> Callable[["SensorEvaluationContext"], Generator[Union[SkipReason, RunRequest], None, None]]:
-    def _wrapped_fn(context):
-        result = fn(context) if is_context_provided(get_function_params(fn)) else fn()
+    fn: RawSensorEvaluationFunction,
+) -> SensorEvaluationFunction:
+    def _wrapped_fn(context: SensorEvaluationContext):
+        if is_context_provided(fn):
+            result = fn(context)
+        else:
+            result = fn()  # type: ignore
 
         if inspect.isgenerator(result):
             for item in result:
@@ -544,6 +554,15 @@ def build_sensor_context(
         repository_name=repository_name,
         instance=instance,
     )
+
+
+AssetMaterializationFunctionReturn = Union[
+    Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason
+]
+AssetMaterializationFunction = Callable[
+    ["SensorExecutionContext", "EventLogEntry"],
+    AssetMaterializationFunctionReturn,
+]
 
 
 class AssetSensorDefinition(SensorDefinition):

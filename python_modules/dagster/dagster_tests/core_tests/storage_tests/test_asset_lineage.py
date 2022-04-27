@@ -124,6 +124,7 @@ def test_multiple_definition_fails():
         execute_pipeline(my_pipeline)
 
 
+@pytest.mark.skip(reason="no longer supporting lineage feature")
 def test_input_definition_multiple_partition_lineage():
 
     entry1 = MetadataEntry("nrows", value=123)
@@ -269,6 +270,7 @@ def test_mixed_asset_definition_lineage():
     )
 
 
+@pytest.mark.skip(reason="no longer supporting dynamic output asset keys")
 def test_dynamic_output_definition_single_partition_materialization():
 
     entry1 = MetadataEntry("nrows", value=123)

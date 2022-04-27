@@ -5,6 +5,7 @@ import signal
 import sys
 import tempfile
 import time
+from collections import defaultdict
 from contextlib import ExitStack, contextmanager
 
 import pendulum
@@ -494,6 +495,31 @@ def get_logger_output_from_capfd(capfd, logger_name):
             if logger_name in line
         ]
     )
+
+
+def _step_events(instance, run):
+    events_by_step = defaultdict(set)
+    logs = instance.all_logs(run.run_id)
+    for record in logs:
+        if not record.is_dagster_event or not record.step_key:
+            continue
+        events_by_step[record.step_key] = record.dagster_event.event_type_value
+    return events_by_step
+
+
+def step_did_not_run(instance, run, step_name):
+    step_events = _step_events(instance, run)[step_name]
+    return len(step_events) == 0
+
+
+def step_succeeded(instance, run, step_name):
+    step_events = _step_events(instance, run)[step_name]
+    return "STEP_SUCCESS" in step_events
+
+
+def step_failed(instance, run, step_name):
+    step_events = _step_events(instance, run)[step_name]
+    return "STEP_FAILURE" in step_events
 
 
 def test_counter():

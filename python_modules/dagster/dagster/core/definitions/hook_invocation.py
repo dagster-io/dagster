@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, List, NamedTuple, Optional, cast
 
+import dagster.check as check
+
 from ..errors import DagsterInvariantViolationError
 from ..execution.context.hook import BoundHookContext, UnboundHookContext
 
@@ -40,8 +42,10 @@ def hook_invocation_result(
         op_exception=hook_context._op_exception,
     )
 
+    decorated_fn = check.not_none(hook_def.decorated_fn)
+
     return (
-        hook_def.decorated_fn(bound_context, event_list)
+        decorated_fn(bound_context, event_list)
         if event_list is not None
-        else hook_def.decorated_fn(bound_context)
+        else decorated_fn(bound_context)
     )

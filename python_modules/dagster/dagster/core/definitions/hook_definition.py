@@ -1,13 +1,10 @@
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, NamedTuple, Optional
+from typing import AbstractSet, Any, Callable, NamedTuple, Optional
 
 from dagster import check
 
 from ..decorator_utils import get_function_params
 from ..errors import DagsterInvalidInvocationError
 from .utils import check_valid_name
-
-if TYPE_CHECKING:
-    from ..events import DagsterEvent
 
 
 class HookDefinition(
@@ -17,7 +14,7 @@ class HookDefinition(
             ("name", str),
             ("hook_fn", Callable),
             ("required_resource_keys", AbstractSet[str]),
-            ("decorated_fn", Callable),
+            ("decorated_fn", Optional[Callable]),
         ],
     )
 ):
@@ -45,7 +42,7 @@ class HookDefinition(
             required_resource_keys=frozenset(
                 check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
             ),
-            decorated_fn=check.callable_param(decorated_fn, "decorated_fn"),
+            decorated_fn=check.opt_callable_param(decorated_fn, "decorated_fn"),
         )
 
     def __call__(self, *args, **kwargs):

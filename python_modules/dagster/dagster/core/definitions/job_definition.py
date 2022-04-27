@@ -36,6 +36,7 @@ from dagster.core.selector.subset_selector import (
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.utils import str_format_set
 
+from .asset_layer import AssetLayer
 from .config import ConfigMapping
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
@@ -73,6 +74,7 @@ class JobDefinition(PipelineDefinition):
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
+        asset_layer: Optional[AssetLayer] = None,
     ):
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
@@ -102,6 +104,7 @@ class JobDefinition(PipelineDefinition):
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,
             version_strategy=version_strategy,
+            asset_layer=asset_layer,
         )
 
     @property
@@ -194,6 +197,7 @@ class JobDefinition(PipelineDefinition):
             tags=self.tags,
             op_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,
+            asset_layer=self.asset_layer,
         ).get_job_def_for_op_selection(op_selection)
 
         tags = None
@@ -265,6 +269,9 @@ class JobDefinition(PipelineDefinition):
                 ),  # equivalent to solids_to_execute. currently only gets top level nodes.
                 parent_job_def=self,  # used by pipeline snapshot lineage
             ),
+            # TODO: subset this structure.
+            # https://github.com/dagster-io/dagster/issues/7541
+            asset_layer=self.asset_layer,
         )
 
     def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
@@ -317,6 +324,7 @@ class JobDefinition(PipelineDefinition):
             hook_defs=hook_defs | self.hook_defs,
             description=self._description,
             op_retry_policy=self._solid_retry_policy,
+            asset_layer=self.asset_layer,
             _op_selection_data=self._op_selection_data,
         )
 
