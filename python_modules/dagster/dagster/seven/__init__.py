@@ -37,13 +37,14 @@ def import_module_from_path(module_name: str, path_to_file: str) -> ModuleType:
                 module_name=module_name, path_to_file=path_to_file
             )
         )
-    if sys.modules.get(spec.name) and sys.modules[spec.name].__file__ == os.path.abspath(
+    if sys.modules.get(spec.name) and spec.origin and sys.modules[spec.name].__file__ == os.path.abspath(
         spec.origin
     ):
         module = sys.modules[spec.name]
     else:
         module = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = module
+        assert spec.loader
         spec.loader.exec_module(module)
 
     return module
