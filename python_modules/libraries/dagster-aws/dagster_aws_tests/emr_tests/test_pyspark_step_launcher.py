@@ -2,7 +2,39 @@ from unittest import mock
 
 from dagster_aws.emr.pyspark_step_launcher import EmrPySparkStepLauncher
 
-EVENTS = [object(), object(), object()]
+from dagster import DagsterEvent, EventLogEntry
+from dagster.core.execution.plan.objects import StepSuccessData
+
+EVENTS = [
+    EventLogEntry(
+        run_id="1",
+        error_info=None,
+        level=20,
+        user_message="foo",
+        timestamp=1.0,
+        dagster_event=DagsterEvent(event_type_value="STEP_START", pipeline_name="foo"),
+    ),
+    EventLogEntry(
+        run_id="1",
+        error_info=None,
+        level=20,
+        user_message="bar",
+        timestamp=2.0,
+        dagster_event=None,
+    ),
+    EventLogEntry(
+        run_id="1",
+        error_info=None,
+        level=20,
+        user_message="baz",
+        timestamp=3.0,
+        dagster_event=DagsterEvent(
+            event_type_value="STEP_SUCCESS",
+            pipeline_name="foo",
+            event_specific_data=StepSuccessData(duration_ms=2.0),
+        ),
+    ),
+]
 
 
 @mock.patch(
@@ -27,4 +59,4 @@ def test_wait_for_completion(_mock_is_emr_step_complete, _mock_read_events):
     yielded_events = list(
         launcher.wait_for_completion(mock.MagicMock(), None, None, None, None, check_interval=0)
     )
-    assert yielded_events == EVENTS
+    assert yielded_events == [event.dagster_event for event in EVENTS if event.is_dagster_event]
