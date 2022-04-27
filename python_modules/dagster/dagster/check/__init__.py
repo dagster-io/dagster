@@ -1502,7 +1502,7 @@ def _param_class_mismatch_exception(
 
 
 def _type_mismatch_error(
-    obj: object, ttype: TypeOrTupleOfTypes, desc: Optional[str] = None
+    obj: object, ttype: TypeOrTupleOfTypes, additional_message: Optional[str] = None
 ) -> CheckError:
     type_message = (
         f"not one of {sorted([t.__name__ for t in ttype])}"
@@ -1510,9 +1510,9 @@ def _type_mismatch_error(
         else f"not a {ttype.__name__}"
     )
     repr_obj = repr(obj)
-    desc_str = f" Desc: {desc}" if desc else ""
+    additional_message = " " + additional_message if additional_message else ""
     return CheckError(
-        f"Object {repr_obj} is {type_message}. Got {repr_obj} with type {type(obj)}.{desc_str}"
+        f"Object {repr_obj} is {type_message}. Got {repr_obj} with type {type(obj)}.{additional_message}"
     )
 
 
