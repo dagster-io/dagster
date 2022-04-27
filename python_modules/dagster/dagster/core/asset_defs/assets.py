@@ -1,7 +1,7 @@
-from typing import AbstractSet, Mapping, Optional, cast
+from typing import AbstractSet, Mapping, Optional, cast, Set
 
 from dagster import check
-from dagster.core.definitions import NodeDefinition, OpDefinition
+from dagster.core.definitions import NodeDefinition, OpDefinition, GraphDefinition
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -47,11 +47,23 @@ class AssetsDefinition:
     @staticmethod
     def from_graph(
         graph_def: GraphDefinition,
-        asset_keys_by_input_name: Mapping[str, AssetKey],
-        asset_keys_by_output_name: Mapping[str, AssetKey],
-        internal_asset_deps: Optional[Mapping[str, SetAssetKey]] = None,
+        asset_keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
+        asset_keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
+        internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
     ):
-        AssetsDefinition(
+        asset_keys_by_input_name = check.opt_dict_param(
+            asset_keys_by_input_name, "asset_keys_by_input_name", key_type=str, value_type=AssetKey
+        )
+        asset_keys_by_output_name = check.opt_dict_param(
+            asset_keys_by_output_name,
+            "asset_keys_by_output_name",
+            key_type=str,
+            value_type=AssetKey,
+        )
+        internal_asset_deps = check.opt_dict_param(
+            internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
+        )
+        return AssetsDefinition(
             asset_keys_by_input_name=_infer_asset_keys_by_input_names(
                 graph_def,
                 asset_keys_by_input_name or {},
@@ -59,7 +71,8 @@ class AssetsDefinition:
             asset_keys_by_output_name=_infer_asset_keys_by_output_names(
                 graph_def, asset_keys_by_output_name or {}
             ),
-            op=graph_def,  # TODO: change this arg name to node_def once dependent PR merged
+            node_def=graph_def,
+            # TODO: apply to internal asset deps
         )
 
     @property
@@ -139,7 +152,7 @@ def _infer_asset_keys_by_output_names(
     ):
         # If there is only one output and the name is the default "result", generate asset key
         # from the name of the node
-        inferred_asset_keys_by_output_names[output_names[0]] = AssetKey([node_def.name])
+        inferred_asset_keys_by_output_names[output_names[0]] = AssetKey([graph_def.name])
 
     for output_name in asset_keys_by_output_name.keys():
         if output_name not in output_names:

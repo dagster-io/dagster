@@ -3,6 +3,7 @@ import os
 import pytest
 
 from dagster import (
+    GraphIn,
     AssetKey,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
@@ -632,3 +633,71 @@ def test_fail_with_get_output_asset_key():
         r"\"AssetKey\(\['foo'\]\)\"",
     ):
         job.execute_in_process()
+
+
+# def test_internal_asset_deps():
+#     with pytest.raises(Exception):
+
+#         @assets_definition(internal_asset_deps={"non_exist_output_name": AssetKey("b")})
+#         @op(out={"a": Out(), "b": Out()})
+#         def multi_asset_op(context):
+#             yield Output(1, "a")
+#             yield Output(2, "b")
+
+
+def test_asset_def_from_graph_inputs():
+    @op
+    def my_op(x, y):
+        return x
+
+    @graph(ins={"x": GraphIn()})
+    def my_graph(x, y):
+        my_op(x, y)
+
+    assets_def = AssetsDefinition.from_graph(
+        graph_def=my_graph,
+        asset_keys_by_input_name={"x": AssetKey("x_asset")},
+    )
+
+    assert assets_def.asset_keys_by_input_name["x"] == AssetKey("x_asset")
+    assert assets_def.asset_keys_by_input_name["y"] == AssetKey("y")
+
+
+def test_asset_def_from_graph_outputs():
+    @op
+    def x_op(x):
+        return x
+
+    @op
+    def y_op(y):
+        return y
+
+    @graph(out={"x": GraphOut(), "y": GraphOut()})
+    def my_graph(x, y):
+        return {"x": x_op(x), "y": y_op(y)}
+
+    assets_def = AssetsDefinition.from_graph(
+        graph_def=my_graph,
+        asset_keys_by_output_name={"y": AssetKey("y_asset")},
+    )
+
+    assert assets_def.asset_keys_by_output_name["y"] == AssetKey("y_asset")
+    assert assets_def.asset_keys_by_output_name["x"] == AssetKey("x")
+
+
+def test_graph_asset_decorator_no_args():
+    @op
+    def my_op(x, y):
+        return x
+
+    @graph
+    def my_graph(x, y):
+        return my_op(x, y)
+
+    assets_def = AssetsDefinition.from_graph(
+        graph_def=my_graph,
+    )
+
+    assert assets_def.asset_keys_by_input_name["x"] == AssetKey("x")
+    assert assets_def.asset_keys_by_input_name["y"] == AssetKey("y")
+    assert assets_def.asset_keys_by_output_name["result"] == AssetKey("my_graph")
