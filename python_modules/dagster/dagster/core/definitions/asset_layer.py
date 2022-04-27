@@ -85,26 +85,6 @@ def _resolve_input_to_destinations(
     return all_destinations
 
 
-def _map_node_handle_to_non_asset_node_handle_deps(mapping, node, non_asset_deps, parent_handle):
-    # within a graph, build mapping of node handle to all upstream node handles
-    curr_node_handle = NodeHandle(node.name, parent=parent_handle)
-    if curr_node_handle in mapping:
-        return mapping[curr_node_handle]
-
-    all_node_handle_deps = {NodeHandle(node.name, parent=parent_handle)}
-    for output_handle in non_asset_deps[node]:
-        curr_node = NodeHandle(output_handle.solid.name, parent=parent_handle)
-        all_node_handle_deps.add(curr_node)
-        all_node_handle_deps |= _map_node_handle_to_non_asset_node_handle_deps(
-            mapping,
-            output_handle.solid,
-            non_asset_deps,
-            parent_handle,
-        )
-    mapping[curr_node_handle] = all_node_handle_deps
-    return all_node_handle_deps
-
-
 def _build_graph_dependencies(
     graph_def: GraphDefinition,
     parent_handle: Union[NodeHandle, None],
