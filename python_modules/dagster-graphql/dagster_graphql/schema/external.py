@@ -13,6 +13,7 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
 )
+from dagster.core.snap.mode import build_resource_def_snap
 from dagster.core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 
 from .asset_graph import GrapheneAssetNode
@@ -24,6 +25,7 @@ from .pipelines.pipeline import (
     GrapheneLatestRun,
     GraphenePipeline,
 )
+from .pipelines.resource import GrapheneResource
 from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
 from .schedules import GrapheneSchedule
 from .sensors import GrapheneSensor
@@ -170,6 +172,7 @@ class GrapheneRepository(graphene.ObjectType):
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     inProgressRunsByStep = non_null_list(GrapheneInProgressRunsByStep)
     latestRunByStep = non_null_list(GrapheneLatestRun)
+    defaultResources = non_null_list(GrapheneResource)
 
     class Meta:
         name = "Repository"
@@ -280,6 +283,15 @@ class GrapheneRepository(graphene.ObjectType):
             graphene_info,
             asset_node,
         )
+
+    def resolve_defaultResources(self, _graphene_info):
+        return [
+            GrapheneResource(
+                config_schema_snapshot=external_resource.config_schema_snap,
+                resource_def_snap=external_resource.resource_def_snap,
+            )
+            for _, external_resource in self._repository.get_external_default_resource_data().items()
+        ]
 
 
 class GrapheneRepositoryConnection(graphene.ObjectType):

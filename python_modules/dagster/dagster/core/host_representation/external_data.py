@@ -10,6 +10,10 @@ from datetime import datetime
 from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union, cast
 
 from dagster import StaticPartitionsDefinition, check
+from dagster.config import Shape
+from dagster.config.config_type import ConfigType
+from dagster.config.field import resolve_to_config_type
+from dagster.config.traversal_context import config_schema_snapshot_from_config_type
 from dagster.core.asset_defs import SourceAsset
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 from dagster.core.definitions import (
@@ -20,6 +24,7 @@ from dagster.core.definitions import (
     PipelineDefinition,
     PresetDefinition,
     RepositoryDefinition,
+    ResourceDefinition,
     ScheduleDefinition,
 )
 from dagster.core.definitions.events import AssetKey
@@ -27,6 +32,7 @@ from dagster.core.definitions.metadata import MetadataEntry
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.partition import PartitionScheduleDefinition, ScheduleType
+from dagster.core.definitions.resource_definition import ResourceSource
 from dagster.core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster.core.definitions.sensor_definition import (
     AssetSensorDefinition,
@@ -35,7 +41,8 @@ from dagster.core.definitions.sensor_definition import (
 )
 from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.core.snap import PipelineSnapshot
+from dagster.core.snap import ConfigSchemaSnapshot, PipelineSnapshot, ResourceDefSnap
+from dagster.core.snap.mode import build_resource_def_snap
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
@@ -51,6 +58,7 @@ class ExternalRepositoryData(
             ("external_partition_set_datas", Sequence["ExternalPartitionSetData"]),
             ("external_sensor_datas", Sequence["ExternalSensorData"]),
             ("external_asset_graph_data", Sequence["ExternalAssetNode"]),
+            ("external_default_resource_data", Sequence["ExternalDefaultResourceData"]),
         ],
     )
 ):
@@ -62,6 +70,7 @@ class ExternalRepositoryData(
         external_partition_set_datas: Sequence["ExternalPartitionSetData"],
         external_sensor_datas: Optional[Sequence["ExternalSensorData"]] = None,
         external_asset_graph_data: Optional[Sequence["ExternalAssetNode"]] = None,
+        external_default_resource_data: Optional[Sequence["ExternalDefaultResourceData"]] = None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
@@ -86,6 +95,11 @@ class ExternalRepositoryData(
                 external_asset_graph_data,
                 "external_asset_graph_dats",
                 of_type=ExternalAssetNode,
+            ),
+            external_default_resource_data=check.opt_sequence_param(
+                external_default_resource_data,
+                "external_default_resource_data",
+                ExternalDefaultResourceData,
             ),
         )
 
@@ -133,6 +147,9 @@ class ExternalRepositoryData(
                 return external_sensor_data
 
         check.failed("Could not find sensor data named " + name)
+
+    def get_external_default_resources_data(self):
+        return self.external_default_resources_data
 
 
 @whitelist_for_serdes
@@ -230,6 +247,12 @@ class ExternalPresetData(
             mode=check.str_param(mode, "mode"),
             tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
         )
+
+
+@whitelist_for_serdes
+class ExternalDefaultResourceData(NamedTuple):
+    resource_def_snap: ResourceDefSnap
+    config_schema_snap: ConfigSchemaSnapshot
 
 
 class ExternalScheduleDataSerializer(DefaultNamedTupleSerializer):
@@ -770,7 +793,32 @@ def external_repository_data_from_def(
         external_asset_graph_data=external_asset_graph_from_defs(
             pipelines, source_assets_by_key=repository_def.source_assets_by_key
         ),
+        external_default_resource_data=external_default_resource_data_from_defs(
+            repository_def.get_default_resources()
+        ),
     )
+
+
+def external_default_resource_data_from_defs(
+    default_resource_defs: Mapping[str, ResourceDefinition]
+) -> Sequence[ExternalDefaultResourceData]:
+    external_resource_data = []
+    for name, resource_def in default_resource_defs.items():
+        outer_config_shape = Shape({"config": resource_def.get_config_field()})
+        resource_config_type = resolve_to_config_type(outer_config_shape)
+        if not resource_config_type:
+            raise DagsterInvalidDefinitionError("Resource definition has no config type")
+        external_resource_data.append(
+            ExternalDefaultResourceData(
+                resource_def_snap=build_resource_def_snap(
+                    name, resource_def, ResourceSource.FROM_DEFAULT
+                ),
+                config_schema_snap=config_schema_snapshot_from_config_type(
+                    cast(ConfigType, resource_config_type)
+                ),
+            )
+        )
+    return external_resource_data
 
 
 def external_asset_graph_from_defs(

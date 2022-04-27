@@ -84,6 +84,10 @@ class ExternalRepository:
                     _asset_jobs[job_name].append(asset_node)
         # pylint: disable=unsubscriptable-object
         self._asset_jobs: OrderedDict[str, Sequence[ExternalAssetNode]] = OrderedDict(_asset_jobs)
+        self._default_resources = OrderedDict(
+            (external_resource.resource_def_snap.name, external_resource)
+            for external_resource in external_repository_data.external_default_resource_data
+        )
 
     @property
     def name(self):
@@ -122,6 +126,9 @@ class ExternalRepository:
             ExternalSensor(external_sensor_data, self._handle)
             for external_sensor_data in self.external_repository_data.external_sensor_datas
         ]
+
+    def get_external_default_resources(self):
+        return
 
     def has_external_schedule(self, schedule_name):
         return isinstance(self._instigation_map.get(schedule_name), ExternalScheduleData)
@@ -213,6 +220,9 @@ class ExternalRepository:
 
     def get_display_metadata(self):
         return self.handle.display_metadata
+
+    def get_external_default_resource_data(self):
+        return self._default_resources
 
 
 class ExternalPipeline(RepresentedPipeline):
@@ -673,6 +683,10 @@ class ExternalSensor:
             if self._external_sensor_data
             else DefaultSensorStatus.STOPPED
         )
+
+
+class ExternalResource:
+    pass
 
 
 class ExternalPartitionSet:

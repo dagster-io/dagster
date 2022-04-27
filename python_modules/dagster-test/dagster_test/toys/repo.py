@@ -11,11 +11,11 @@ from dagster_test.toys.log_s3 import log_s3_pipeline
 from dagster_test.toys.log_spew import log_spew
 from dagster_test.toys.longitudinal import longitudinal_pipeline
 from dagster_test.toys.many_events import many_events
+from dagster_test.toys.many_resources import many_resources_default_set, many_resources_job
 from dagster_test.toys.notebooks import hello_world_notebook_pipeline
 from dagster_test.toys.retries import retry_pipeline
 from dagster_test.toys.sleepy import sleepy_pipeline
 from dagster_test.toys.unreliable import unreliable_pipeline
-from dagster_test.toys.many_resources import many_resources_job, many_resources_default_set
 
 from dagster import AssetMaterialization, Output, pipeline, repository, solid
 

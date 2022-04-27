@@ -221,6 +221,10 @@ class RepositoryData(ABC):
             List[PipelineDefinition]: All pipelines/jobs in the repository.
         """
 
+    @abstractmethod
+    def get_default_resources(self) -> Mapping[str, ResourceDefinition]:
+        pass
+
     def get_all_jobs(self) -> List[JobDefinition]:
         """Return all jobs in the repository as a list.
 
@@ -426,6 +430,7 @@ class CachingRepositoryData(RepositoryData):
         schedules: Mapping[str, Union[ScheduleDefinition, Resolvable[ScheduleDefinition]]],
         sensors: Mapping[str, Union[SensorDefinition, Resolvable[SensorDefinition]]],
         source_assets: Mapping[AssetKey, SourceAsset],
+        resources: Mapping[str, ResourceDefinition],
     ):
         """Constructs a new CachingRepositoryData object.
 
@@ -450,6 +455,8 @@ class CachingRepositoryData(RepositoryData):
             sensors (Mapping[str, Union[SensorDefinition, Callable[[], SensorDefinition]]]):
                 The sensors belonging to a repository.
             source_assets (Mapping[AssetKey, SourceAsset]): The source assets belonging to a repository.
+            resources (Mapping[str, ResourceDefinition]): The default resources
+                belonging to a repository.
         """
         check.mapping_param(
             pipelines, "pipelines", key_type=str, value_type=(PipelineDefinition, FunctionType)
@@ -470,6 +477,7 @@ class CachingRepositoryData(RepositoryData):
         check.mapping_param(
             source_assets, "source_assets", key_type=AssetKey, value_type=SourceAsset
         )
+        check.mapping_param(resources, "resources", key_type=str, value_type=ResourceDefinition)
 
         self._pipelines = _CacheingDefinitionIndex(
             PipelineDefinition,
@@ -500,6 +508,7 @@ class CachingRepositoryData(RepositoryData):
             if isinstance(schedule, PartitionScheduleDefinition)
         ]
         self._source_assets = source_assets
+        self._resources = resources
 
         def load_partition_sets_from_pipelines() -> List[PartitionSetDefinition]:
             job_partition_sets = []
@@ -779,6 +788,7 @@ class CachingRepositoryData(RepositoryData):
             schedules=schedules,
             sensors=sensors,
             source_assets=source_assets,
+            resources=default_resources_dict,
         )
 
     def get_pipeline_names(self) -> List[str]:
@@ -1001,6 +1011,9 @@ class CachingRepositoryData(RepositoryData):
     def get_source_assets_by_key(self) -> Mapping[AssetKey, SourceAsset]:
         return self._source_assets
 
+    def get_default_resources(self) -> Mapping[str, ResourceDefinition]:
+        return self._resources
+
     def _check_solid_defs(self, pipelines: List[PipelineDefinition]) -> None:
         solid_defs = {}
         solid_to_pipeline = {}
@@ -1179,6 +1192,9 @@ class RepositoryDefinition:
             List[JobDefinition]: All jobs in the repository.
         """
         return self._repository_data.get_all_jobs()
+
+    def get_default_resources(self) -> Mapping[str, ResourceDefinition]:
+        return self._repository_data.get_default_resources()
 
     @property
     def partition_set_defs(self) -> List[PartitionSetDefinition]:

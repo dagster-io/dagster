@@ -11,6 +11,7 @@ import {TabLink} from '../ui/TabLink';
 import {RepositoryAssetsList} from './RepositoryAssetsList';
 import {RepositoryGraphsList} from './RepositoryGraphsList';
 import {RepositoryPipelinesList} from './RepositoryPipelinesList';
+import {RepositoryResourcesList} from './RepositoryResourcesList';
 import {useRepository} from './WorkspaceContext';
 import {repoAddressAsString} from './repoAddressAsString';
 import {RepoAddress} from './types';

@@ -9,7 +9,7 @@ import {Description} from './Description';
 import {SectionHeader, SectionItemContainer} from './SidebarComponents';
 import {SidebarModeInfoFragment} from './types/SidebarModeInfoFragment';
 
-const NO_DESCRIPTION = '';
+export const NO_DESCRIPTION = '';
 
 export const SidebarModeSection: React.FC<{
   mode: SidebarModeInfoFragment;
@@ -88,7 +88,7 @@ export const SIDEBAR_MODE_INFO_FRAGMENT = gql`
   ${CONFIG_TYPE_SCHEMA_FRAGMENT}
 `;
 
-const ContextResourceHeader = styled(SectionHeader)`
+export const ContextResourceHeader = styled(SectionHeader)`
   font-size: 16px;
   margin: 4px 0;
 `;

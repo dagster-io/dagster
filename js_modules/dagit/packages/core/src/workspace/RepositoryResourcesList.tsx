@@ -13,6 +13,10 @@ import {
   RepositoryResourcesListQuery,
   RepositoryResourcesListQueryVariables,
 } from './types/RepositoryResourcesListQuery';
+import {ContextResourceHeader} from '../pipelines/SidebarModeSection';
+import {Description} from '../pipelines/Description';
+import {ConfigTypeSchema} from '../typeexplorer/ConfigTypeSchema';
+import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {workspacePath} from './workspacePath';
 
 const REPOSITORY_RESOURCES_LIST_QUERY = gql`
@@ -21,31 +25,17 @@ const REPOSITORY_RESOURCES_LIST_QUERY = gql`
       __typename
       ... on Repository {
         id
-        usedSolids {
-          definition {
-            __typename
-            ... on CompositeSolidDefinition {
-              id
-              name
-              description
-            }
-          }
-          invocations {
-            pipeline {
-              id
-              name
-            }
-            solidHandle {
-              handleID
-            }
-          }
-        }
-        pipelines {
-          id
-          description
+        defaultResources {
           name
-          isJob
-          graphName
+          description
+          configField {
+            configType {
+              ...ConfigTypeSchemaFragment
+              recursiveConfigTypes {
+                ...ConfigTypeSchemaFragment
+              }
+            }
+          }
         }
       }
       ... on RepositoryNotFoundError {
@@ -53,6 +43,8 @@ const REPOSITORY_RESOURCES_LIST_QUERY = gql`
       }
     }
   }
+
+  ${CONFIG_TYPE_SCHEMA_FRAGMENT}
 `;
 
 interface Props {
@@ -78,45 +70,38 @@ export const RepositoryResourcesList: React.FC<Props> = (props) => {
   });
 
   const repo = data?.repositoryOrError;
-  const graphsForTable = React.useMemo(() => {
+  const resourcesForTable = React.useMemo(() => {
     if (!repo || repo.__typename !== 'Repository') {
       return null;
     }
-    const jobGraphNames = new Set<string>(
-      repo.pipelines.filter((p) => p.isJob && !isAssetGroup(p.name)).map((p) => p.graphName),
-    );
-    const items: Item[] = Array.from(jobGraphNames).map((graphName) => ({
-      name: graphName,
-      path: `/graphs/${graphName}`,
-      description: null,
-      repoAddress,
-    }));
 
-    repo.usedSolids.forEach((s) => {
-      if (s.definition.__typename === 'CompositeSolidDefinition') {
-        items.push({
-          name: s.definition.name,
-          path: `/graphs/${s.invocations[0].pipeline.name}/${s.invocations[0].solidHandle.handleID}/`,
-          description: s.definition.description,
-          repoAddress,
-        });
-      }
+    return repo.defaultResources.map((resource) => {
+      return (
+        <div>
+          <ContextResourceHeader>{resource.name}</ContextResourceHeader>
+          <Description description={resource.description} />
+          {resource.configField && (
+            <ConfigTypeSchema
+              type={resource.configField.configType}
+              typesInScope={resource.configField.configType.recursiveConfigTypes}
+            />
+          )}
+        </div>
+      );
     });
-
-    return items.sort((a, b) => a.name.localeCompare(b.name));
   }, [repo, repoAddress]);
 
   if (loading) {
     return null;
   }
 
-  if (error || !graphsForTable) {
+  if (error || !resourcesForTable) {
     return (
       <Box padding={{vertical: 64}}>
         <NonIdealState
           icon="error"
-          title="Unable to load graphs"
-          description={`Could not load graphs for ${repoAddressAsString(repoAddress)}`}
+          title="Unable to load resources"
+          description={`Could not load resources for ${repoAddressAsString(repoAddress)}`}
         />
       </Box>
     );
@@ -126,16 +111,15 @@ export const RepositoryResourcesList: React.FC<Props> = (props) => {
     <Table>
       <thead>
         <tr>
-          <th>Graph</th>
+          <th>Resources</th>
         </tr>
       </thead>
       <tbody>
-        {graphsForTable.map(({name, description, path, repoAddress}) => (
+        {resourcesForTable.map((content) => (
           <tr key={`${name}-${repoAddressAsString(repoAddress)}`}>
             <td>
               <Group direction="column" spacing={4}>
-                <Link to={workspacePath(repoAddress.name, repoAddress.location, path)}>{name}</Link>
-                <Description>{description}</Description>
+                {content}
               </Group>
             </td>
           </tr>
@@ -144,8 +128,3 @@ export const RepositoryResourcesList: React.FC<Props> = (props) => {
     </Table>
   );
 };
-
-const Description = styled.div`
-  color: ${Colors.Gray400};
-  font-size: 12px;
-`;

@@ -25,7 +25,7 @@ class GrapheneResource(graphene.ObjectType):
 
     def __init__(self, config_schema_snapshot, resource_def_snap):
         super().__init__()
-        self._config_schema_snapshot = check.inst_param(
+        self._config_schema_snapshot = check.opt_inst_param(
             config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
         )
         self._resource_def_snap = check.inst_param(
