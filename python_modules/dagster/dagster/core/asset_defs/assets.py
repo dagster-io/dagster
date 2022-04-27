@@ -36,10 +36,19 @@ class AssetsDefinition:
         self._partitions_def = partitions_def
         self._partition_mappings = partition_mappings or {}
 
-        all_input_asset_keys = set(asset_keys_by_input_name.values())
+        # if not specified assume all output assets depend on all input assets
+        all_asset_keys = set(asset_keys_by_output_name.values())
         self._asset_deps = asset_deps or {
-            output_key: all_input_asset_keys for output_key in asset_keys_by_output_name.values()
+            out_asset_key: set(asset_keys_by_input_name.values())
+            for out_asset_key in all_asset_keys
         }
+        check.invariant(
+            set(self._asset_deps.keys()) == all_asset_keys,
+            "The set of asset keys with dependencies specified in the asset_deps argument must "
+            "equal the set of asset keys produced by this AssetsDefinition. \n"
+            f"asset_deps keys: {set(self._asset_deps.keys())} \n"
+            f"expected keys: {all_asset_keys}",
+        )
 
     def __call__(self, *args, **kwargs):
         return self._node_def(*args, **kwargs)
