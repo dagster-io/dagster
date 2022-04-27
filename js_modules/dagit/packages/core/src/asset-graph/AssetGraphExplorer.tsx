@@ -346,9 +346,32 @@ const AssetGraphExplorerWithData: React.FC<
                     extradark={experiments && _scale < EXPERIMENTAL_MINI_SCALE}
                   />
 
-                  {Object.values(layout.bundles).map(({id, bounds}) => {
-                    if (experiments && _scale < EXPERIMENTAL_MINI_SCALE) {
-                      const path = JSON.parse(id);
+                  {Object.values(layout.bundles)
+                    .sort((a, b) => a.id.length - b.id.length)
+                    .map(({id, bounds}) => {
+                      if (experiments && _scale < EXPERIMENTAL_MINI_SCALE) {
+                        const path = JSON.parse(id);
+                        return (
+                          <foreignObject
+                            x={bounds.x}
+                            y={bounds.y}
+                            width={bounds.width}
+                            height={bounds.height + 10}
+                            key={id}
+                            onDoubleClick={(e) => {
+                              viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
+                              e.stopPropagation();
+                            }}
+                          >
+                            <AssetNodeMinimal
+                              definition={{assetKey: {path}}}
+                              selected={selectedGraphNodes.some((g) =>
+                                hasPathPrefix(g.assetKey.path, path),
+                              )}
+                            />
+                          </foreignObject>
+                        );
+                      }
                       return (
                         <foreignObject
                           x={bounds.x}
@@ -356,51 +379,30 @@ const AssetGraphExplorerWithData: React.FC<
                           width={bounds.width}
                           height={bounds.height + 10}
                           key={id}
-                          onDoubleClick={(e) => {
-                            viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
-                            e.stopPropagation();
-                          }}
                         >
-                          <AssetNodeMinimal
-                            definition={{assetKey: {path}}}
-                            selected={selectedGraphNodes.some((g) =>
-                              hasPathPrefix(g.assetKey.path, path),
-                            )}
+                          <Mono
+                            style={{
+                              opacity:
+                                _scale > EXPERIMENTAL_MINI_SCALE
+                                  ? (_scale - EXPERIMENTAL_MINI_SCALE) / 0.2
+                                  : 0,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {displayNameForAssetKey({path: JSON.parse(id)})}
+                          </Mono>
+                          <div
+                            style={{
+                              inset: 0,
+                              top: 24,
+                              position: 'absolute',
+                              borderRadius: 10,
+                              border: `${3 / _scale}px dashed rgba(200,200,215,0.4)`,
+                            }}
                           />
                         </foreignObject>
                       );
-                    }
-                    return (
-                      <foreignObject
-                        x={bounds.x}
-                        y={bounds.y}
-                        width={bounds.width}
-                        height={bounds.height + 10}
-                        key={id}
-                      >
-                        <Mono
-                          style={{
-                            opacity:
-                              _scale > EXPERIMENTAL_MINI_SCALE
-                                ? (_scale - EXPERIMENTAL_MINI_SCALE) / 0.2
-                                : 0,
-                            fontWeight: 600,
-                          }}
-                        >
-                          {displayNameForAssetKey({path: JSON.parse(id)})}
-                        </Mono>
-                        <div
-                          style={{
-                            inset: 0,
-                            top: 24,
-                            position: 'absolute',
-                            borderRadius: 10,
-                            border: `${3 / _scale}px dashed rgba(200,200,215,0.4)`,
-                          }}
-                        />
-                      </foreignObject>
-                    );
-                  })}
+                    })}
 
                   {Object.values(layout.nodes).map(({id, bounds}, index) => {
                     const graphNode = assetGraphData.nodes[id];

@@ -166,8 +166,15 @@ export const AssetNodeMinimal: React.FC<{
     maxLength: 17,
   });
   return (
-    <AssetNodeContainer $selected={selected} style={{position: 'absolute'}}>
-      <AssetNodeBox style={{border: `4px solid ${Colors.Blue200}`, position: 'absolute', inset: 4}}>
+    <AssetNodeContainer $selected={selected} style={{position: 'absolute', borderRadius: 12}}>
+      <AssetNodeBox
+        style={{
+          border: `4px solid ${Colors.Blue200}`,
+          borderRadius: 10,
+          position: 'absolute',
+          inset: 4,
+        }}
+      >
         <NameMinimal>{displayName}</NameMinimal>
       </AssetNodeBox>
     </AssetNodeContainer>

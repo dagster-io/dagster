@@ -1,4 +1,5 @@
 import * as dagre from 'dagre';
+import uniq from 'lodash/uniq';
 
 import {IBounds, IPoint} from '../graph/common';
 
@@ -36,7 +37,7 @@ function identifyBundles(nodes: GraphNode[]) {
   const pathPrefixes: {[prefixId: string]: string[]} = {};
 
   for (const node of nodes) {
-    for (let ii = 1; ii < node.assetKey.path.length - 1; ii++) {
+    for (let ii = 1; ii < node.assetKey.path.length; ii++) {
       const prefix = node.assetKey.path.slice(0, ii);
       const key = JSON.stringify(prefix);
       pathPrefixes[key] = pathPrefixes[key] || [];
@@ -50,7 +51,34 @@ function identifyBundles(nodes: GraphNode[]) {
     }
   }
 
-  return pathPrefixes;
+  const finalBundlePrefixes: {[prefixId: string]: string[]} = {};
+  const finalBundleIdForNodeId: {[id: string]: string} = {};
+
+  // Sort the prefix keys by length descending and iterate from the deepest folders first.
+  // Dedupe asset keys and replace asset keys we've already seen with the (deeper) folder
+  // they are within. This gets us "multi layer folders" of nodes.
+
+  // Turn this:
+  // {
+  //  "s3": [["s3", "collect"], ["s3", "prod", "a"], ["s3", "prod", "b"]],
+  //  "s3/prod": ["s3", "prod", "a"], ["s3", "prod", "b"]
+  // }
+
+  // Into this:
+  // {
+  //  "s3/prod": ["s3", "prod", "a"], ["s3", "prod", "b"]
+  //  "s3": [["s3", "collect"], ["s3", "prod"]],
+  // }
+
+  for (const prefixId of Object.keys(pathPrefixes).sort((a, b) => b.length - a.length)) {
+    finalBundlePrefixes[prefixId] = uniq(
+      pathPrefixes[prefixId].map((p) =>
+        finalBundleIdForNodeId[p] ? finalBundleIdForNodeId[p] : p,
+      ),
+    );
+    finalBundlePrefixes[prefixId].forEach((id) => (finalBundleIdForNodeId[id] = prefixId));
+  }
+  return finalBundlePrefixes;
 }
 
 export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
@@ -134,6 +162,7 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
       width: dagreNode.width,
       height: dagreNode.height,
     };
+    console.log(id, dagreNode);
     if (bundleMapping[id]) {
       bundles[id] = {id, bounds};
     } else {
