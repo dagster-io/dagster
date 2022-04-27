@@ -9,7 +9,6 @@ from dagster_dbt.types import DbtOutput
 
 from dagster import AssetGroup, AssetKey, MetadataEntry, ResourceDefinition, repository
 from dagster.core.asset_defs import build_assets_job
-from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 from dagster.utils import file_relative_path
 
 
@@ -92,11 +91,11 @@ def assert_assets_match_project(dbt_assets):
     ]:
         out_def = assets_op.output_dict.get(model_name)
         assert out_def.hardcoded_asset_key == AssetKey([model_name])
-        assert out_def.metadata[ASSET_DEPENDENCY_METADATA_KEY] == {AssetKey("sort_by_calories")}
+        assert dbt_assets[0].asset_deps[AssetKey([model_name])] == {AssetKey("sort_by_calories")}
 
     root_out_def = assets_op.output_dict.get("sort_by_calories")
     assert root_out_def.hardcoded_asset_key == AssetKey(["sort_by_calories"])
-    assert not root_out_def.metadata[ASSET_DEPENDENCY_METADATA_KEY]
+    assert not dbt_assets[0].asset_deps[AssetKey(["sort_by_calories"])]
 
 
 def test_basic(

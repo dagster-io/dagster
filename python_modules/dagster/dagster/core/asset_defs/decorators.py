@@ -8,6 +8,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Union,
     cast,
     overload,
@@ -30,8 +31,6 @@ from dagster.utils.backcompat import ExperimentalWarning, experimental_decorator
 from .asset_in import AssetIn
 from .assets import AssetsDefinition
 from .partition_mapping import PartitionMapping
-
-ASSET_DEPENDENCY_METADATA_KEY = ".dagster/asset_deps"
 
 
 @overload
@@ -186,29 +185,20 @@ class _Asset:
 
         asset_ins = build_asset_ins(fn, self.namespace, self.ins or {}, self.non_argument_deps)
 
-        partition_fn: Optional[Callable] = None
-        if self.partitions_def:
-
-            def partition_fn(context):  # pylint: disable=function-redefined
-                return [context.partition_key]
-
         out_asset_key = AssetKey(list(filter(None, [*(self.namespace or []), asset_name])))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
             out = Out(
-                asset_key=out_asset_key,
                 metadata=self.metadata or {},
                 io_manager_key=self.io_manager_key,
                 dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
-                asset_partitions_def=self.partitions_def,
-                asset_partitions=partition_fn,
             )
 
             op = _Op(
                 name="__".join(out_asset_key.path),
                 description=self.description,
-                ins=asset_ins,
+                ins=dict(asset_ins.values()),
                 out=out,
                 required_resource_keys=self.required_resource_keys,
                 tags={
@@ -223,19 +213,16 @@ class _Asset:
                 },
             )(fn)
 
-        # NOTE: we can `cast` below because we know the Ins returned by `build_asset_ins` always
-        # have a plain AssetKey asset key. Dynamic asset keys will be deprecated in 0.15.0, when
-        # they are gone we can remove this cast.
+        asset_keys_by_input_name = {
+            input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
+        }
         return AssetsDefinition(
-            input_names_by_asset_key={
-                cast(AssetKey, in_def.asset_key): input_name
-                for input_name, in_def in asset_ins.items()
-            },
-            output_names_by_asset_key={out_asset_key: "result"},
+            asset_keys_by_input_name=asset_keys_by_input_name,
+            asset_keys_by_output_name={"result": out_asset_key},
             op=op,
             partitions_def=self.partitions_def,
             partition_mappings={
-                cast(AssetKey, asset_ins[input_name].asset_key): partition_mapping
+                asset_keys_by_input_name[input_name]: partition_mapping
                 for input_name, partition_mapping in self.partition_mappings.items()
             }
             if self.partition_mappings
@@ -284,91 +271,59 @@ def multi_asset(
         all(out.asset_key is None or isinstance(out.asset_key, AssetKey) for out in outs.values()),
         "The asset_key argument for Outs supplied to a multi_asset must be a constant or None, not a function. ",
     )
-    internal_asset_deps = check.opt_dict_param(
+    asset_deps = check.opt_dict_param(
         internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
+
         op_name = name or fn.__name__
         asset_ins = build_asset_ins(fn, None, ins or {}, non_argument_deps)
-        asset_outs = build_asset_outs(op_name, outs, asset_ins, internal_asset_deps or {})
+
+        # validate that the asset_deps make sense
+        valid_asset_deps = set(asset_ins.keys())
+        valid_asset_deps.update(
+            cast(AssetKey, out.asset_key or AssetKey([name])) for name, out in outs.items()
+        )
+        for out_name, asset_keys in asset_deps.items():
+            check.invariant(
+                out_name in outs,
+                f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for multi-asset "
+                f"{op_name}. Must be one of the outs for this multi-asset {list(outs.keys())}.",
+            )
+            invalid_asset_deps = asset_keys.difference(valid_asset_deps)
+            check.invariant(
+                not invalid_asset_deps,
+                f"Invalid asset dependencies: {invalid_asset_deps} specified in `internal_asset_deps` "
+                f"argument for multi-asset '{op_name}' on key '{out_name}'. Each specified asset key "
+                "must be associated with an input to the asset or produced by this asset. Valid "
+                f"keys: {valid_asset_deps}",
+            )
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
             op = _Op(
                 name=op_name,
                 description=description,
-                ins=asset_ins,
-                out=asset_outs,
+                ins=dict(asset_ins.values()),
+                out=outs,
                 required_resource_keys=required_resource_keys,
                 tags={"kind": compute_kind} if compute_kind else None,
             )(fn)
 
-        # NOTE: we can `cast` below because we know the Ins returned by `build_asset_ins` always
-        # have a plain AssetKey asset key. Dynamic asset keys will be deprecated in 0.15.0, when
-        # they are gone we can remove this cast.
+        asset_keys_by_output_name = {
+            name: cast(AssetKey, out.asset_key or AssetKey([name])) for name, out in outs.items()
+        }
         return AssetsDefinition(
-            input_names_by_asset_key={
-                cast(AssetKey, in_def.asset_key): input_name
-                for input_name, in_def in asset_ins.items()
+            asset_keys_by_input_name={
+                input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
             },
-            output_names_by_asset_key={
-                cast(AssetKey, out_def.asset_key): output_name for output_name, out_def in asset_outs.items()  # type: ignore
-            },
+            asset_keys_by_output_name=asset_keys_by_output_name,
             op=op,
+            asset_deps={asset_keys_by_output_name[name]: asset_deps[name] for name in asset_deps},
         )
 
     return inner
-
-
-def build_asset_outs(
-    op_name: str,
-    outs: Mapping[str, Out],
-    ins: Mapping[str, In],
-    internal_asset_deps: Mapping[str, Set[AssetKey]],
-) -> Dict[str, Out]:
-
-    # if an AssetKey is not supplied, create one based off of the out's name
-    asset_keys_by_out_name = {
-        out_name: out.asset_key if isinstance(out.asset_key, AssetKey) else AssetKey([out_name])
-        for out_name, out in outs.items()
-    }
-
-    # update asset_key if necessary, add metadata indicating inter asset deps
-    outs = {
-        out_name: out._replace(
-            asset_key=asset_keys_by_out_name[out_name],
-            metadata=dict(
-                **(out.metadata or {}),
-                **(
-                    {ASSET_DEPENDENCY_METADATA_KEY: internal_asset_deps[out_name]}
-                    if out_name in internal_asset_deps
-                    else {}
-                ),
-            ),
-        )
-        for out_name, out in outs.items()
-    }
-
-    # validate that the internal_asset_deps make sense
-    valid_asset_deps = set(in_def.asset_key for in_def in ins.values())
-    valid_asset_deps.update(asset_keys_by_out_name.values())
-    for out_name, asset_keys in internal_asset_deps.items():
-        check.invariant(
-            out_name in outs,
-            f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for multi-asset "
-            f"{op_name}. Must be one of the outs for this multi-asset {list(outs.keys())}.",
-        )
-        invalid_asset_deps = asset_keys.difference(valid_asset_deps)
-        check.invariant(
-            not invalid_asset_deps,
-            f"Invalid asset dependencies: {invalid_asset_deps} specified in `internal_asset_deps` "
-            f"argument for multi-asset '{op_name}' on key '{out_name}'. Each specified asset key "
-            "must be associated with an input to the asset or produced by this asset. Valid "
-            f"keys: {valid_asset_deps}",
-        )
-
-    return outs
 
 
 def build_asset_ins(
@@ -376,7 +331,10 @@ def build_asset_ins(
     asset_namespace: Optional[Sequence[str]],
     asset_ins: Mapping[str, AssetIn],
     non_argument_deps: Optional[AbstractSet[AssetKey]],
-) -> Dict[str, In]:
+) -> Mapping[AssetKey, Tuple[str, In]]:
+    """
+    Creates a mapping from AssetKey to (name of input, In object)
+    """
 
     non_argument_deps = check.opt_set_param(non_argument_deps, "non_argument_deps", AssetKey)
 
@@ -397,7 +355,7 @@ def build_asset_ins(
                 "of the arguments to the decorated function"
             )
 
-    ins: Dict[str, In] = {}
+    ins_by_asset_key: Dict[AssetKey, Tuple[str, In]] = {}
     for input_name in all_input_names:
         asset_key = None
 
@@ -413,16 +371,14 @@ def build_asset_ins(
             list(filter(None, [*(namespace or asset_namespace or []), input_name]))
         )
 
-        ins[input_name] = In(
-            metadata=metadata,
-            root_manager_key="root_manager",
-            asset_key=asset_key,
+        ins_by_asset_key[asset_key] = (
+            input_name,
+            In(metadata=metadata, root_manager_key="root_manager"),
         )
 
     for asset_key in non_argument_deps:
         stringified_asset_key = "_".join(asset_key.path)
-        if stringified_asset_key:
-            # cast due to mypy bug-- doesn't understand Nothing is a type
-            ins[stringified_asset_key] = In(dagster_type=cast(type, Nothing), asset_key=asset_key)
+        # mypy doesn't realize that Nothing is a valid type here
+        ins_by_asset_key[asset_key] = (stringified_asset_key, In(cast(type, Nothing)))
 
-    return ins
+    return ins_by_asset_key

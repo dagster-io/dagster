@@ -14,18 +14,20 @@ from typing import (
 )
 
 from dagster import check
+from dagster.core.definitions.asset_layer import AssetLayer
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.decorators.op_decorator import op
 from dagster.core.definitions.dependency import (
     DependencyDefinition,
     IDependencyDefinition,
+    NodeHandle,
     NodeInvocation,
 )
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.executor_definition import ExecutorDefinition
 from dagster.core.definitions.graph_definition import GraphDefinition
 from dagster.core.definitions.job_definition import JobDefinition
-from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.output import Out, OutputDefinition
 from dagster.core.definitions.partition import PartitionedConfig, PartitionsDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
@@ -95,25 +97,30 @@ def build_assets_job(
     check.opt_str_param(description, "description")
     source_assets_by_key = build_source_assets_by_key(source_assets)
 
-    op_defs = build_op_deps(assets, source_assets_by_key.keys())
+    deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
     root_manager = build_root_manager(source_assets_by_key)
     partitioned_config = build_job_partitions_from_assets(assets, source_assets or [])
 
-    return GraphDefinition(
+    graph = GraphDefinition(
         name=name,
         node_defs=[asset.op for asset in assets],
-        dependencies=op_defs,
+        dependencies=deps,
         description=description,
         input_mappings=None,
         output_mappings=None,
         config=None,
-    ).to_job(
+    )
+
+    return graph.to_job(
         resource_defs=merge_dicts(
             {"io_manager": fs_asset_io_manager}, resource_defs or {}, {"root_manager": root_manager}
         ),
         config=config or partitioned_config,
         tags=tags,
         executor_def=executor_def,
+        asset_layer=AssetLayer.from_graph_and_assets_node_mapping(
+            graph, assets_defs_by_node_handle
+        ),
     )
 
 
@@ -163,21 +170,21 @@ def build_job_partitions_from_assets(
         for assets_def in assets:
             outputs_dict: Dict[str, Dict[str, Any]] = {}
             if assets_def.partitions_def is not None:
-                for asset_key, output_def in assets_def.output_defs_by_asset_key.items():
+                for output_name, asset_key in assets_def.asset_keys_by_output_name.items():
                     asset_partition_key_range = asset_partitions_by_asset_key[asset_key]
-                    outputs_dict[output_def.name] = {
+                    outputs_dict[output_name] = {
                         "start": asset_partition_key_range.start,
                         "end": asset_partition_key_range.end,
                     }
 
             inputs_dict: Dict[str, Dict[str, Any]] = {}
-            for in_asset_key, input_def in assets_def.input_defs_by_asset_key.items():
+            for input_name, in_asset_key in assets_def.asset_keys_by_input_name.items():
                 upstream_partitions_def = partitions_defs_by_asset_key.get(in_asset_key)
                 if assets_def.partitions_def is not None and upstream_partitions_def is not None:
                     upstream_partition_key_range = get_upstream_partitions_for_partition_range(
                         assets_def, upstream_partitions_def, in_asset_key, asset_partition_key_range
                     )
-                    inputs_dict[input_def.name] = {
+                    inputs_dict[input_name] = {
                         "start": upstream_partition_key_range.start,
                         "end": upstream_partition_key_range.end,
                     }
@@ -207,42 +214,65 @@ def build_source_assets_by_key(
         if isinstance(asset_source, SourceAsset):
             source_assets_by_key[asset_source.key] = asset_source
         elif isinstance(asset_source, AssetsDefinition):
-            for asset_key, output_def in asset_source.output_defs_by_asset_key.items():
+            for output_name, asset_key in asset_source.asset_keys_by_output_name.items():
                 if asset_key:
-                    source_assets_by_key[asset_key] = output_def
+                    source_assets_by_key[asset_key] = asset_source.node_def.output_def_named(
+                        output_name
+                    )
 
     return source_assets_by_key
 
 
-def build_op_deps(
-    multi_asset_defs: Sequence[AssetsDefinition], source_paths: AbstractSet[AssetKey]
-) -> Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]:
-    op_outputs_by_asset: Dict[AssetKey, Tuple[OpDefinition, str]] = {}
-    for multi_asset_def in multi_asset_defs:
-        for asset_key, output_def in multi_asset_def.output_defs_by_asset_key.items():
-            if asset_key in op_outputs_by_asset:
+def build_deps(
+    assets_defs: Sequence[AssetsDefinition], source_paths: AbstractSet[AssetKey]
+) -> Tuple[
+    Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]],
+    Mapping[NodeHandle, AssetsDefinition],
+]:
+    node_outputs_by_asset: Dict[AssetKey, Tuple[NodeDefinition, str]] = {}
+    assets_defs_by_node_handle: Dict[NodeHandle, AssetsDefinition] = {}
+
+    for assets_def in assets_defs:
+        for output_name, asset_key in assets_def.asset_keys_by_output_name.items():
+            if asset_key in node_outputs_by_asset:
                 raise DagsterInvalidDefinitionError(
                     f"The same asset key was included for two definitions: '{asset_key.to_string()}'"
                 )
 
-            op_outputs_by_asset[asset_key] = (multi_asset_def.op, output_def.name)
+            node_outputs_by_asset[asset_key] = (assets_def.node_def, output_name)
 
-    op_deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
-    for multi_asset_def in multi_asset_defs:
-        op_name = multi_asset_def.op.name
-        op_deps[op_name] = {}
-        for asset_key, input_def in multi_asset_def.input_defs_by_asset_key.items():
-            if asset_key in op_outputs_by_asset:
-                op_def, output_name = op_outputs_by_asset[asset_key]
-                op_deps[op_name][input_def.name] = DependencyDefinition(op_def.name, output_name)
-            elif asset_key not in source_paths and not input_def.dagster_type.is_nothing:
-                raise DagsterInvalidDefinitionError(
-                    f"Input asset '{asset_key.to_string()}' for asset '{op_name}' is not "
-                    "produced by any of the provided asset ops and is not one of the provided "
-                    "sources"
-                )
+    deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
 
-    return op_deps
+    # if the same graph/op is used in multiple assets_definitions, their invocations much have
+    # different names. we keep track of definitions that share a name and add a suffix to their
+    # invocations to solve this issue
+    collisions: Dict[str, int] = {}
+    for assets_def in assets_defs:
+        node_name = assets_def.node_def.name
+        if collisions.get(node_name):
+            collisions[node_name] += 1
+            alias = f"{node_name}_{collisions[node_name]}"
+            node_key = NodeInvocation(node_name, alias)
+        else:
+            collisions[node_name] = 1
+            alias = node_name
+            node_key = node_name
+        deps[node_key] = {}
+        assets_defs_by_node_handle[NodeHandle(alias, parent=None)] = assets_def
+        for input_name, asset_key in assets_def.asset_keys_by_input_name.items():
+            if asset_key in node_outputs_by_asset:
+                node_def, output_name = node_outputs_by_asset[asset_key]
+                deps[node_key][input_name] = DependencyDefinition(node_def.name, output_name)
+            elif asset_key not in source_paths:
+                input_def = assets_def.node_def.input_def_named(input_name)
+                if not input_def.dagster_type.is_nothing:
+                    raise DagsterInvalidDefinitionError(
+                        f"Input asset '{asset_key.to_string()}' for asset '{asset_key}' is not "
+                        "produced by any of the provided asset ops and is not one of the provided "
+                        "sources"
+                    )
+
+    return deps, assets_defs_by_node_handle
 
 
 def build_root_manager(
