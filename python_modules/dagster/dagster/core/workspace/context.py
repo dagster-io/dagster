@@ -141,6 +141,9 @@ class BaseWorkspaceRequestContext(IWorkspace):
         if location_entry.load_error:
             raise Exception(f"Error loading location {name}: {location_entry.load_error}")
 
+        print("REPO LOCATION TYPE")
+        print(f"{type(location_entry.repository_location)}")
+
         return cast(RepositoryLocation, location_entry.repository_location)
 
     def has_repository_location_error(self, name: str) -> bool:
@@ -190,10 +193,12 @@ class BaseWorkspaceRequestContext(IWorkspace):
         )
 
     def get_full_external_pipeline(self, selector: PipelineSelector) -> ExternalPipeline:
+        repo_location = self.get_repository_location(selector.location_name)
+        repo = repo_location.get_repository(selector.repository_name)
+        pip = repo.get_full_external_pipeline(selector.pipeline_name)
+        # import pdb; pdb.set_trace()
         return (
-            self.get_repository_location(selector.location_name)
-            .get_repository(selector.repository_name)
-            .get_full_external_pipeline(selector.pipeline_name)
+            pip
         )
 
     def get_external_execution_plan(

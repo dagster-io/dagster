@@ -12,9 +12,12 @@ def get_pipeline_snapshot_or_error_from_pipeline_selector(graphene_info, pipelin
     from ..schema.pipelines.snapshot import GraphenePipelineSnapshot
 
     check.inst_param(pipeline_selector, "pipeline_selector", PipelineSelector)
-    return GraphenePipelineSnapshot(
-        get_full_external_pipeline_or_raise(graphene_info, pipeline_selector)
-    )
+    ext_pipeline = get_full_external_pipeline_or_raise(graphene_info, pipeline_selector)
+    print("EXTERNAL PIPELINE")
+    print(ext_pipeline.tags)
+    print(ext_pipeline.job_tags)
+    # import pdb; pdb.set_trace()
+    return GraphenePipelineSnapshot(ext_pipeline)
 
 
 @capture_error

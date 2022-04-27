@@ -589,6 +589,7 @@ class GrapheneIPipelineSnapshot(graphene.Interface):
         handleID=graphene.Argument(graphene.NonNull(graphene.String)),
     )
     tags = non_null_list(GraphenePipelineTag)
+    job_tags = non_null_list(GraphenePipelineTag)
     runs = graphene.Field(
         non_null_list(GrapheneRun),
         cursor=graphene.String(),
@@ -731,6 +732,7 @@ class GrapheneGraph(graphene.ObjectType):
         non_null_list(GrapheneSolidHandle), parentHandleID=graphene.String()
     )
     modes = non_null_list(GrapheneMode)
+    # tags = non_null_list(GraphenePipelineTag)
 
     def __init__(self, external_pipeline, solid_handle_id=None):
         self._external_pipeline = check.inst_param(
@@ -774,6 +776,13 @@ class GrapheneGraph(graphene.ObjectType):
         # returns empty list... graphs don't have modes, this is a vestige of the old
         # pipeline explorer, which expected all solid containers to be pipelines
         return []
+
+    # def resolve_tags(self, _graphene_info):
+    #     return [
+    #         GraphenePipelineTag(key=key, value=value)
+    #         for key, value in self._external_pipeline.tags.items()
+    #         if get_tag_type(key) != TagType.HIDDEN
+    #     ]
 
 
 class GrapheneRunOrError(graphene.Union):

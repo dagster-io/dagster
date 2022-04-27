@@ -735,7 +735,19 @@ def external_repository_data_from_def(
 ) -> ExternalRepositoryData:
     check.inst_param(repository_def, "repository_def", RepositoryDefinition)
 
+
+    # import pdb; pdb.set_trace()
+
+    print("REPOSITORY INFO")
+    print(type(repository_def._repository_data))
+
+
     pipelines = repository_def.get_all_pipelines()
+    print("************PIPELINES*************")
+    print(pipelines)
+    for p in pipelines:
+        print(p.name)
+        print(p.job_tags)
     return ExternalRepositoryData(
         name=repository_def.name,
         external_pipeline_datas=sorted(

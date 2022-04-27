@@ -950,12 +950,19 @@ export interface JobOverviewSidebarQuery_pipelineSnapshotOrError_PipelineSnapsho
   loggers: JobOverviewSidebarQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers[];
 }
 
+export interface JobOverviewSidebarQuery_pipelineSnapshotOrError_PipelineSnapshot_jobTags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface JobOverviewSidebarQuery_pipelineSnapshotOrError_PipelineSnapshot {
   __typename: "PipelineSnapshot";
   id: string;
   name: string;
   description: string | null;
   modes: JobOverviewSidebarQuery_pipelineSnapshotOrError_PipelineSnapshot_modes[];
+  jobTags: JobOverviewSidebarQuery_pipelineSnapshotOrError_PipelineSnapshot_jobTags[];
 }
 
 export interface JobOverviewSidebarQuery_pipelineSnapshotOrError_PipelineNotFoundError {

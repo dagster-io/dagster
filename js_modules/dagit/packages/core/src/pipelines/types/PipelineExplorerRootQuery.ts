@@ -9,6 +9,12 @@ import { PipelineSelector } from "./../../types/globalTypes";
 // GraphQL query operation: PipelineExplorerRootQuery
 // ====================================================
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_jobTags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
@@ -1464,6 +1470,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   __typename: "PipelineSnapshot";
   id: string;
   name: string;
+  jobTags: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_jobTags[];
   description: string | null;
   modes: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes[];
   solidHandle: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle | null;

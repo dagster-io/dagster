@@ -68,6 +68,9 @@ export const PipelineExplorerContainer: React.FC<{
     },
   );
 
+  console.log('pipeline explorer root');
+  console.log(pipelineResult);
+
   return (
     <Loading<PipelineExplorerRootQuery> queryResult={pipelineResult}>
       {({pipelineSnapshotOrError: result}) => {
@@ -132,6 +135,10 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       ... on PipelineSnapshot {
         id
         name
+        jobTags {
+          key
+          value
+        }
         ...GraphExplorerFragment
 
         solidHandle(handleID: $rootHandleID) {

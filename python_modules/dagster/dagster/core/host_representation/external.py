@@ -227,6 +227,8 @@ class ExternalPipeline(RepresentedPipeline):
         check.inst_param(external_pipeline_data, "external_pipeline_data", ExternalPipelineData)
         check.opt_inst_param(pipeline_index, "pipeline_index", PipelineIndex)
 
+        # import pdb; pdb.set_trace()
+
         if pipeline_index is None:
             pipeline_index = PipelineIndex(
                 external_pipeline_data.pipeline_snapshot,
@@ -315,6 +317,10 @@ class ExternalPipeline(RepresentedPipeline):
     @property
     def tags(self):
         return self._pipeline_index.pipeline_snapshot.tags
+
+    @property
+    def job_tags(self):
+        return self._pipeline_index.pipeline_snapshot.job_tags
 
     @property
     def metadata(self):

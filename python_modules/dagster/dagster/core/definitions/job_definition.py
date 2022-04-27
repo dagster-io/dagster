@@ -104,7 +104,7 @@ class JobDefinition(PipelineDefinition):
         if tags is not None:
             all_tags.update(tags)
 
-        self._job_tags = validate_tags(job_tags)
+        # self._job_tags = validate_tags(job_tags)
 
         super(JobDefinition, self).__init__(
             name=name,
@@ -154,9 +154,9 @@ class JobDefinition(PipelineDefinition):
     def metadata(self) -> Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]]:
         return self._metadata
 
-    @property
-    def job_tags(self) -> Optional[Dict[str, Any]]:
-        return self._job_tags
+    # @property
+    # def job_tags(self) -> Optional[Dict[str, Any]]:
+    #     return self._job_tags
 
     def execute_in_process(
         self,
