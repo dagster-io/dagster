@@ -168,9 +168,9 @@ def local_port_forward_postgres(namespace):
 
 
 @pytest.fixture(scope="session")
-def helm_postgres_url_for_k8s_run_launcher(helm_namespace_for_k8s_run_launcher):
+def helm_postgres_url_for_k8s_run_launcher(system_namespace_for_k8s_run_launcher):
     with local_port_forward_postgres(
-        namespace=helm_namespace_for_k8s_run_launcher
+        namespace=system_namespace_for_k8s_run_launcher
     ) as local_forward_port:
         postgres_url = "postgresql://test:test@localhost:{local_forward_port}/test".format(
             local_forward_port=local_forward_port
