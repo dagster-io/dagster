@@ -15,7 +15,7 @@ export const AssetEdges: React.FC<{edges: AssetLayoutEdge[]; extradark: boolean}
           refX="1"
           refY="5"
           markerUnits="strokeWidth"
-          markerWidth={extradark ? '10' : '4'}
+          markerWidth={extradark ? '6' : '4'}
           orient="auto"
         >
           <path d="M 0 0 L 8 5 L 0 10 z" fill={extradark ? Colors.Gray400 : Colors.KeylineGray} />
@@ -50,7 +50,7 @@ const StyledPath = styled('path')<{dashed: boolean}>`
 `;
 
 const ExtraDarkStyledPath = styled('path')<{dashed: boolean}>`
-  stroke-width: 20;
+  stroke-width: 8;
   stroke: ${Colors.Gray400};
   ${({dashed}) => (dashed ? `stroke-dasharray: 8 2;` : '')}
   fill: none;
