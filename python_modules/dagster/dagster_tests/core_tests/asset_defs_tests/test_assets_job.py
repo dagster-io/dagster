@@ -352,7 +352,7 @@ def test_basic_graph_asset():
 
     @op
     def add_one(in1):
-        pass
+        return in1 + 1
 
     @graph
     def create_cool_thing():
@@ -603,9 +603,9 @@ def test_nasty_nested_graph_assets():
 
 def test_fail_with_get_output_asset_key():
     @io_manager
-    def my_io_manager(context):
+    def my_io_manager(_context):
         class Mine(IOManager):
-            def get_output_asset_key(self, context):
+            def get_output_asset_key(self, _context):
                 return AssetKey("hey")
 
             def handle_output(self, context, obj):
@@ -627,8 +627,8 @@ def test_fail_with_get_output_asset_key():
     job = build_assets_job("x", [foo, bar], resource_defs={"io_manager": my_io_manager})
     with pytest.raises(
         DagsterInvariantViolationError,
-        match='The IOManager of output "result" on node "foo" associates it with asset key '
-        "\"AssetKey\(\['hey'\]\)\", but this output has already been defined to produce asset "
-        "\"AssetKey\(\['foo'\]\)\"",
+        match=r'The IOManager of output "result" on node "foo" associates it with asset key '
+        r"\"AssetKey\(\['hey'\]\)\", but this output has already been defined to produce asset "
+        r"\"AssetKey\(\['foo'\]\)\"",
     ):
         job.execute_in_process()
