@@ -30,6 +30,7 @@ from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
+from dagster.core.storage.migration.utils import upgrading_instance
 from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id
 from dagster.serdes.serdes import (
@@ -368,7 +369,8 @@ def test_run_partition_data_migration():
         assert "partition_set" in set(get_sqlite3_columns(db_path, "runs"))
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
-            instance._run_storage.upgrade()
+            with upgrading_instance(instance):
+                instance._run_storage.upgrade()
 
         run_storage = instance._run_storage
         assert isinstance(run_storage, SqlRunStorage)

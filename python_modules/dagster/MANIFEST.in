@@ -2,6 +2,7 @@ include README.rst
 include LICENSE
 include COPYING
 recursive-include dagster *.md
+recursive-include dagster/core/storage/alembic *
 recursive-include dagster/core/storage/event_log/sqlite/alembic *
 recursive-include dagster/core/storage/runs/sqlite/alembic *
 recursive-include dagster/core/storage/schedules/sqlite/alembic *

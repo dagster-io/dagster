@@ -147,16 +147,15 @@ def wait_for_connection(conn_string, retry_limit=5, retry_wait=0.2):
     return True
 
 
-def pg_alembic_config(dunder_file):
+def pg_alembic_config(dunder_file, script_location=None):
     return get_alembic_config(
-        dunder_file, config_path="../alembic/alembic.ini", script_path="../alembic/"
+        dunder_file, config_path="../alembic/alembic.ini", script_location=script_location
     )
 
 
 @contextmanager
-def create_pg_connection(engine, dunder_file, storage_type_desc=None):
+def create_pg_connection(engine, alembic_config, storage_type_desc=None):
     check.inst_param(engine, "engine", sqlalchemy.engine.Engine)
-    check.str_param(dunder_file, "dunder_file")
     check.opt_str_param(storage_type_desc, "storage_type_desc", "")
 
     if storage_type_desc:
@@ -168,7 +167,7 @@ def create_pg_connection(engine, dunder_file, storage_type_desc=None):
     try:
         # Retry connection to gracefully handle transient connection issues
         conn = retry_pg_connection_fn(engine.connect)
-        with handle_schema_errors(conn, pg_alembic_config(dunder_file)):
+        with handle_schema_errors(conn, alembic_config):
             yield conn
     finally:
         if conn:
