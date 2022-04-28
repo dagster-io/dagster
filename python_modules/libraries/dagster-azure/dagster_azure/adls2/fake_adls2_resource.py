@@ -119,7 +119,8 @@ class FakeADLS2FilesystemClient:
         return self._file_system[file_path]
 
     def create_file(self, file):
-        # pass fileclient a ref to self and its name so the file can delete itself
+        # pass fileclient a ref to self and the file's name so the file can delete itself by
+        # accessing the self._file_system dict
         self._file_system.setdefault(file, FakeADLS2FileClient(fs_client=self, name=file))
         return self._file_system[file]
 
@@ -141,7 +142,8 @@ class FakeADLS2FileClient:
     def get_file_properties(self):
         if self.contents is None:
             raise ResourceNotFoundError("File does not exist!")
-        return {"lease": self.lease.id}
+        lease_id = None if self.lease is None else self.lease.id
+        return {"lease": lease_id}
 
     def upload_data(self, contents, overwrite=False, lease=None):
         if self.lease is not None:
