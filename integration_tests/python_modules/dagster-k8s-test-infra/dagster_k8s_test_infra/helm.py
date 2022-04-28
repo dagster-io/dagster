@@ -484,17 +484,6 @@ def helm_namespaces_for_k8s_run_launcher(
             )
             yield (namespace, system_namespace)
         else:
-            # Let the default service account used by the user code deployment launch jobs
-            # (needed for the k8s executor to be able to work since it uses that same service
-            # account when launching jobs)
-            stack.enter_context(
-                create_cluster_admin_role_binding(
-                    namespace,
-                    service_account_name="dagster-dagster-user-deployments-user-deployments",
-                    should_cleanup=should_cleanup,
-                )
-            )
-
             with helm_chart_for_k8s_run_launcher(
                 namespace,
                 namespace,
