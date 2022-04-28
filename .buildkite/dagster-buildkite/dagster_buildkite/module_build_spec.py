@@ -108,6 +108,7 @@ class ModuleBuildSpec(
                 tox_cmd = f"tox -vv {tox_file}-e {TOX_MAP[version]}{tox_env_suffix}"
 
                 cmds = extra_cmds + [
+                    "pip install -U virtualenv",
                     f"cd {self.directory}",
                     tox_cmd,
                 ]
@@ -144,6 +145,7 @@ class ModuleBuildSpec(
         tests.append(
             StepBuilder(f":lint-roller: {package}")
             .run(
+                "pip install -U virtualenv",
                 f"cd {self.directory}",
                 "tox -vv -e pylint",
             )
@@ -156,6 +158,7 @@ class ModuleBuildSpec(
             tests.append(
                 StepBuilder(f":mypy: {package}")
                 .run(
+                    "pip install -U virtualenv",
                     f"cd {self.directory}",
                     "tox -vv -e mypy"
                 )
