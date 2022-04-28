@@ -1,5 +1,52 @@
 # Changelog
 
+# 0.14.13
+
+### New
+
+* [dagster-k8s] You can now specify resource requests and limits to the K8sRunLauncher when using the Dagster helm chart, that will apply to all runs. Before, you could only set resource configuration by tagging individual jobs. For example, you can set this config in your `values.yaml` file:
+
+```
+runLauncher:
+  type: K8sRunLauncher
+  config:
+    k8sRunLauncher:
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+```
+
+* [dagster-k8s] Specifying `includeConfigInLaunchedRuns: true` in a user code deployment will now launch runs using the same namespace and service account as the user code deployment.
+* The `@asset` decorator now accepts an `op_tags` argument, which allows e.g. providing k8s resource requirements on the op that computes the asset.
+*  Added CLI output to `dagster api grpc-health-check` (previously it just returned via exit codes)
+* [dagster-aws] The `emr_pyspark_step_launcher` now supports dynamic orchestration, `RetryPolicy`s defined on ops, and re-execution from failure. For failed steps, the stack trace of the root error will now be available in the event logs, as will logs generated with `context.log.info`.
+* Partition sets and can now return a nested dictionary in the `tags_fn_for_partition`  function, instead of requiring that the dictionary have string keys and values.
+* [dagit] It is now possible to perform bulk re-execution of runs from the Runs page. Failed runs can be re-executed from failure.
+* [dagit] Table headers are now sticky on Runs and Assets lists.
+* [dagit] Keyboard shortcuts may now be disabled from User Settings. This allows users with certain keyboard layouts (e.g. QWERTZ) to inadvertently avoid triggering unwanted shortcuts.
+* [dagit] Dagit no longer continues making some queries in the background, improving performance when many browser tabs are open.
+* [dagit] On the asset graph, you can now filter for multi-component asset keys in the search bar and see the “kind” tags displayed on assets with a specified compute_kind.
+* [dagit] Repositories are now displayed in a stable order each time you launch Dagster.
+
+### Bugfixes
+
+* [dagster-k8s] Fixed an issue where the Dagster helm chart sometimes failed to parse container images with numeric tags. Thanks [@jrouly](https://github.com/jrouly)!
+* [dagster-aws] The `EcsRunLauncher` now registers new task definitions if the task’s execution role or task role changes.
+* Dagster now correctly includes `setuptools` as a runtime dependency.
+* `In` can now accept `asset_partitions` without crashing.
+* [dagit] Fixed a bug in the Launchpad, where default configuration failed to load.
+* [dagit] Global search now truncates the displayed list of results, which should improve rendering performance.
+* [dagit] When entering an invalid search filter on Runs, the user will now see an appropriate error message instead of a spinner and an alert about a GraphQL error.
+
+### Documentation
+
+* Added documentation for partitioned assets
+* [dagster-aws] Fixed example code of a job using `secretsmanager_resource`.
+
 # 0.14.12
 
 ### Bugfixes
