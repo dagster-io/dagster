@@ -642,21 +642,21 @@ def test_internal_asset_deps():
     with pytest.raises(Exception, match="output_name non_exist_output_name"):
 
         @op
-        def my_op(x, y):
+        def my_op(x, y):  # pylint: disable=unused-argument
             return x
 
         @graph(ins={"x": GraphIn()})
         def my_graph(x, y):
             my_op(x, y)
 
-        assets_def = AssetsDefinition.from_graph(
+        AssetsDefinition.from_graph(
             graph_def=my_graph, internal_asset_deps={"non_exist_output_name": {AssetKey("b")}}
         )
 
 
 def test_asset_def_from_graph_inputs():
     @op
-    def my_op(x, y):
+    def my_op(x, y):  # pylint: disable=unused-argument
         return x
 
     @graph(ins={"x": GraphIn(), "y": GraphIn()})
