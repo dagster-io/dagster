@@ -5,7 +5,7 @@ from dagster import check
 from dagster.core.definitions import GraphDefinition, NodeDefinition, OpDefinition
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
-from dagster.utils.backcompat import ExperimentalWarning
+from dagster.utils.backcompat import ExperimentalWarning, experimental
 
 from .partition_mapping import PartitionMapping
 
@@ -56,12 +56,30 @@ class AssetsDefinition:
         return self._node_def(*args, **kwargs)
 
     @staticmethod
+    @experimental
     def from_graph(
         graph_def: GraphDefinition,
         asset_keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         asset_keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
-    ):
+    ) -> "AssetsDefinition":
+        """
+        Constructs an AssetsDefinition from a GraphDefinition.
+
+        Args:
+            graph_def (GraphDefinition): The GraphDefinition that is an asset.
+            asset_keys_by_input_name (Optional[Mapping[str, AssetKey]]): A mapping of the input
+                names of the decorated graph to their corresponding asset keys. If not provided,
+                the input asset keys will be created from the graph input names.
+            asset_keys_by_output_name (Optional[Mapping[str, AssetKey]]): A mapping of the output
+                names of the decorated graph to their corresponding asset keys. If not provided,
+                the output asset keys will be created from the graph output names.
+            internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
+                that all assets produced by the graph depend on all assets that are consumed by that
+                graph. If this default is not correct, you pass in a map of output names to a
+                corrected set of AssetKeys that they depend on. Any AssetKeys in this list must be
+                either used as input to the asset or produced within the graph.
+        """
         asset_keys_by_input_name = check.opt_dict_param(
             asset_keys_by_input_name, "asset_keys_by_input_name", key_type=str, value_type=AssetKey
         )
