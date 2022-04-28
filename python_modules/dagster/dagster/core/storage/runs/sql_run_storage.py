@@ -28,7 +28,7 @@ from dagster.core.snap import (
 from dagster.core.storage.tags import (
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
-    REPOSITORY_TAG,
+    REPOSITORY_LABEL_TAG,
     ROOT_RUN_ID_TAG,
 )
 from dagster.daemon.types import DaemonHeartbeat
@@ -142,8 +142,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def _tags_to_insert(self, pipeline_run: PipelineRun) -> Dict:
         repository_tags = {}
         if pipeline_run.external_pipeline_origin:
+            # tag the run with a label containing the repository name / location name, to allow for
+            # per-repository filtering of runs from dagit.
             repository_tags[
-                REPOSITORY_TAG
+                REPOSITORY_LABEL_TAG
             ] = pipeline_run.external_pipeline_origin.external_repository_origin.get_label()
 
         if not pipeline_run.tags:

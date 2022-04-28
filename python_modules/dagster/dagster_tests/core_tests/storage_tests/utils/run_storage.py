@@ -38,7 +38,7 @@ from dagster.core.storage.tags import (
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
-    REPOSITORY_TAG,
+    REPOSITORY_LABEL_TAG,
     ROOT_RUN_ID_TAG,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -195,9 +195,13 @@ class TestRunStorage:
                 run_id=two, pipeline_name=job_name, external_pipeline_origin=origin_two
             )
         )
-        one_runs = storage.get_runs(RunsFilter(tags={REPOSITORY_TAG: "fake_repo_one@fake:fake"}))
+        one_runs = storage.get_runs(
+            RunsFilter(tags={REPOSITORY_LABEL_TAG: "fake_repo_one@fake:fake"})
+        )
         assert len(one_runs) == 1
-        two_runs = storage.get_runs(RunsFilter(tags={REPOSITORY_TAG: "fake_repo_two@fake:fake"}))
+        two_runs = storage.get_runs(
+            RunsFilter(tags={REPOSITORY_LABEL_TAG: "fake_repo_two@fake:fake"})
+        )
         assert len(two_runs) == 1
 
     def test_fetch_by_snapshot_id(self, storage):
