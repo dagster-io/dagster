@@ -60,7 +60,7 @@ export const SidebarPipelineOrJobOverview: React.FC<{
                 ))}
               </Box>
             </SidebarSection>
-            <SidebarSection title="Tags">
+            <SidebarSection title="Job Tags">
               <Box padding={{vertical: 16, horizontal: 24}}>
                 {jobTags.map((tag, idx) => (
                   <RunTag tag={tag} key={idx} />

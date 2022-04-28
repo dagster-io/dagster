@@ -429,6 +429,7 @@ class GrapheneIPipelineSnapshotMixin:
         handleID=graphene.Argument(graphene.NonNull(graphene.String)),
     )
     tags = non_null_list(GraphenePipelineTag)
+    job_tags = non_null_list(GraphenePipelineTag)
     runs = graphene.Field(
         non_null_list(GrapheneRun),
         cursor=graphene.String(),
@@ -528,6 +529,14 @@ class GrapheneIPipelineSnapshotMixin:
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in represented_pipeline.pipeline_snapshot.tags.items()
+        ]
+
+    def resolve_job_tags(self, _graphene_info):
+        # import pdb; pdb.set_trace()
+        represented_pipeline = self.get_represented_pipeline()
+        return [
+            GraphenePipelineTag(key=key, value=value)
+            for key, value in represented_pipeline.pipeline_snapshot.job_tags.items()
         ]
 
     def resolve_solidSelection(self, _graphene_info):

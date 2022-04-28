@@ -49,7 +49,6 @@ from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
 from .run_request import RunRequest
-from .utils import validate_tags
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -104,14 +103,13 @@ class JobDefinition(PipelineDefinition):
         if tags is not None:
             all_tags.update(tags)
 
-        # self._job_tags = validate_tags(job_tags)
-
         super(JobDefinition, self).__init__(
             name=name,
             description=description,
             mode_defs=[mode_def],
             preset_defs=preset_defs,
             tags=all_tags,
+            job_tags=job_tags,
             hook_defs=hook_defs,
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,
@@ -153,10 +151,6 @@ class JobDefinition(PipelineDefinition):
     @property
     def metadata(self) -> Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]]:
         return self._metadata
-
-    # @property
-    # def job_tags(self) -> Optional[Dict[str, Any]]:
-    #     return self._job_tags
 
     def execute_in_process(
         self,

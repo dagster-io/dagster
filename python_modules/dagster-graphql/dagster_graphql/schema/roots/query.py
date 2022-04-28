@@ -291,10 +291,6 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         snapshot_id_arg = kwargs.get("snapshotId")
         pipeline_selector_arg = kwargs.get("activePipelineSelector")
-        print("*******************************")
-        print(f"activePipelineSelector: {pipeline_selector_arg}")
-        print(f"snapshotId: {snapshot_id_arg}")
-        print("*******************************")
         check.invariant(
             not (snapshot_id_arg and pipeline_selector_arg),
             "Must only pass one of snapshotId or activePipelineSelector",
@@ -306,12 +302,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
         if pipeline_selector_arg:
             pipeline_selector = pipeline_selector_from_graphql(kwargs["activePipelineSelector"])
-            r = get_pipeline_snapshot_or_error_from_pipeline_selector(
+            return get_pipeline_snapshot_or_error_from_pipeline_selector(
                 graphene_info, pipeline_selector
             )
-
-            print(r.tags)
-            return r
         else:
             return get_pipeline_snapshot_or_error_from_snapshot_id(graphene_info, snapshot_id_arg)
 

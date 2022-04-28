@@ -299,7 +299,7 @@ class PipelineDefinition:
 
     @property
     def job_tags(self):
-        return self._job_tags
+        return frozentags(self._job_tags)
 
     @property
     def description(self):
@@ -483,9 +483,11 @@ class PipelineDefinition:
         from dagster.core.host_representation import PipelineIndex
         from dagster.core.snap import PipelineSnapshot
 
-        return PipelineIndex(
+        index = PipelineIndex(
             PipelineSnapshot.from_pipeline_def(self), self.get_parent_pipeline_snapshot()
         )
+
+        return index
 
     def get_config_schema_snapshot(self) -> "ConfigSchemaSnapshot":
         return self.get_pipeline_snapshot().config_schema_snapshot
