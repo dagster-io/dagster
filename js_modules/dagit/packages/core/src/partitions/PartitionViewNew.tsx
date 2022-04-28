@@ -274,7 +274,7 @@ const PartitionViewContent: React.FC<{
           title="Execution Time by Partition"
           yLabel="Execution time (secs)"
           partitionNames={showSteps ? selectedPartitions : partitionNames}
-          pipelineDataByPartition={runDurationData}
+          jobDataByPartition={runDurationData}
         />
       </Box>
       {showSteps ? (
