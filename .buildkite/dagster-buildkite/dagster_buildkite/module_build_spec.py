@@ -5,7 +5,6 @@ from .step_builder import StepBuilder
 from .utils import get_python_versions_for_branch
 
 MYPY_EXCLUDES = [
-    "python_modules/dagit",
     "python_modules/automation",
     "python_modules/libraries/dagster-databricks",
     "python_modules/libraries/dagster-dbt",
