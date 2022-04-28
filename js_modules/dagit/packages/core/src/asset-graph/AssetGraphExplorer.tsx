@@ -373,7 +373,7 @@ const AssetGraphExplorerWithData: React.FC<
                             }}
                           >
                             <AssetNodeMinimal
-                              color="rgba(255, 222, 221, 0.4)"
+                              color="rgba(248, 223, 196, 0.4)"
                               definition={{assetKey: {path}}}
                               fontSize={18 / _scale}
                               selected={selectedGraphNodes.some((g) =>
@@ -408,10 +408,10 @@ const AssetGraphExplorerWithData: React.FC<
                               top: 24,
                               position: 'absolute',
                               borderRadius: 10,
-                              background: `rgba(255, 222, 221, ${
+                              border: `${3 / _scale}px dashed rgba(0,0,0,0.4)`,
+                              background: `rgba(248, 223, 196, ${
                                 0.4 - Math.max(0, _scale - EXPERIMENTAL_MINI_SCALE) * 0.3
                               })`,
-                              border: `${3 / _scale}px dashed rgba(0,0,0,0.4)`,
                             }}
                           />
                         </foreignObject>
