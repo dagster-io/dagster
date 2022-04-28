@@ -42,23 +42,7 @@ export const ApolloTestProvider: React.FC<Props> = (props) => {
       schema,
       mocks: mocksWithMerge,
       resolvers: () => {
-        const merged = mergeResolvers(resolvers);
-        const resolver = new Proxy(merged, {
-          get(target: any, prop: string) {
-            if (target[prop] === undefined && target === merged && prop.endsWith('Result')) {
-              target[prop] = {
-                __resolveType: (obj: any) => {
-                  if (obj.$ref) {
-                    return obj.$ref.typeName;
-                  }
-                  return obj.__typename;
-                },
-              };
-            }
-            return target[prop];
-          },
-        });
-        return resolver;
+        return mergeResolvers(resolvers);
       },
     });
     const cache = createAppCache();
