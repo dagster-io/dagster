@@ -41,6 +41,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -114,6 +115,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -188,6 +190,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -236,6 +239,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -270,6 +274,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -344,6 +349,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -419,6 +425,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -507,6 +514,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -580,6 +588,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -654,6 +663,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -702,6 +712,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -736,6 +747,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -810,6 +822,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -885,6 +898,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
