@@ -29,7 +29,9 @@ def _materialization_for_stream(
     )
 
 
-def generate_materializations(output: AirbyteOutput, asset_key_prefix: List[str]) -> Iterator[AssetMaterialization]:
+def generate_materializations(
+    output: AirbyteOutput, asset_key_prefix: List[str]
+) -> Iterator[AssetMaterialization]:
     prefix = output.connection_details.get("prefix") or ""
     # all the streams that are set to be sync'd by this connection
     all_stream_props = {

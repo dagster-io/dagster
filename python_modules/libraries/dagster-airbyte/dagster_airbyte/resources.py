@@ -1,7 +1,7 @@
 import logging
 import sys
 import time
-from typing import Any, Dict, List, Optional, cast
+from typing import Dict, List, Optional, cast
 
 import requests
 from dagster_airbyte.types import AirbyteOutput
