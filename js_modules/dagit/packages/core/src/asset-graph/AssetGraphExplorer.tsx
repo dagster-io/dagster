@@ -1,6 +1,6 @@
-import {Box, Checkbox, Mono, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
-import {isEqual} from 'lodash';
+import {Box, Checkbox, Colors, Mono, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import flatMap from 'lodash/flatMap';
+import isEqual from 'lodash/isEqual';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import uniqBy from 'lodash/uniqBy';
@@ -160,6 +160,8 @@ const AssetGraphExplorerWithData: React.FC<
   const history = useHistory();
   const findJobForAsset = useFindJobForAsset();
   const {flagExperimentalAssetDAG: experiments} = useFeatureFlags();
+
+  const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
   const selectedAssetValues = explorerPath.opNames[explorerPath.opNames.length - 1].split(',');
   const selectedGraphNodes = Object.values(assetGraphData.nodes).filter((node) =>
@@ -343,7 +345,14 @@ const AssetGraphExplorerWithData: React.FC<
                 <SVGContainer width={layout.width} height={layout.height}>
                   <AssetEdges
                     edges={layout.edges}
-                    extradark={experiments && _scale < EXPERIMENTAL_MINI_SCALE}
+                    color={Colors.KeylineGray}
+                    // extradark={experiments && _scale < EXPERIMENTAL_MINI_SCALE}
+                  />
+                  <AssetEdges
+                    color={Colors.Blue500}
+                    edges={layout.edges.filter(
+                      ({fromId, toId}) => highlighted === fromId || highlighted === toId,
+                    )}
                   />
 
                   {Object.values(layout.bundles)
@@ -364,7 +373,9 @@ const AssetGraphExplorerWithData: React.FC<
                             }}
                           >
                             <AssetNodeMinimal
+                              color="rgba(255, 222, 221, 0.4)"
                               definition={{assetKey: {path}}}
+                              fontSize={18 / _scale}
                               selected={selectedGraphNodes.some((g) =>
                                 hasPathPrefix(g.assetKey.path, path),
                               )}
@@ -397,7 +408,10 @@ const AssetGraphExplorerWithData: React.FC<
                               top: 24,
                               position: 'absolute',
                               borderRadius: 10,
-                              border: `${3 / _scale}px dashed rgba(200,200,215,0.4)`,
+                              background: `rgba(255, 222, 221, ${
+                                0.4 - Math.max(0, _scale - EXPERIMENTAL_MINI_SCALE) * 0.3
+                              })`,
+                              border: `${3 / _scale}px dashed rgba(0,0,0,0.4)`,
                             }}
                           />
                         </foreignObject>
@@ -430,6 +444,8 @@ const AssetGraphExplorerWithData: React.FC<
                         <foreignObject
                           {...bounds}
                           key={id}
+                          onMouseEnter={() => setHighlighted(id)}
+                          onMouseLeave={() => setHighlighted(null)}
                           onClick={(e) => onSelectNode(e, {path}, graphNode)}
                           onDoubleClick={(e) => {
                             viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
@@ -439,6 +455,7 @@ const AssetGraphExplorerWithData: React.FC<
                           <AssetNodeMinimal
                             definition={graphNode.definition}
                             selected={selectedGraphNodes.includes(graphNode)}
+                            fontSize={18 / _scale}
                           />
                         </foreignObject>
                       );
@@ -448,6 +465,8 @@ const AssetGraphExplorerWithData: React.FC<
                       <foreignObject
                         {...bounds}
                         key={id}
+                        onMouseEnter={() => setHighlighted(id)}
+                        onMouseLeave={() => setHighlighted(null)}
                         onClick={(e) => onSelectNode(e, {path}, graphNode)}
                         onDoubleClick={(e) => {
                           viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);

@@ -5,7 +5,7 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {withMiddleTruncation} from '../app/Util';
+import {colorHash, withMiddleTruncation} from '../app/Util';
 import {AssetKey} from '../assets/types';
 import {NodeHighlightColors} from '../graph/OpNode';
 import {OpTags} from '../graph/OpTags';
@@ -161,7 +161,9 @@ export const AssetNode: React.FC<{
 export const AssetNodeMinimal: React.FC<{
   selected: boolean;
   definition: {assetKey: AssetKey};
-}> = ({selected, definition}) => {
+  fontSize: number;
+  color?: string;
+}> = ({selected, definition, fontSize, color}) => {
   const displayName = withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {
     maxLength: 17,
   });
@@ -173,9 +175,10 @@ export const AssetNodeMinimal: React.FC<{
           borderRadius: 10,
           position: 'absolute',
           inset: 4,
+          background: color,
         }}
       >
-        <NameMinimal>{displayName}</NameMinimal>
+        <NameMinimal style={{fontSize}}>{displayName}</NameMinimal>
       </AssetNodeBox>
     </AssetNodeContainer>
   );
@@ -276,10 +279,10 @@ const Name = styled.div`
 `;
 
 const NameMinimal = styled(Name)`
-  font-size: 26px;
   font-weight: 600;
   white-space: nowrap;
   position: absolute;
+  background: none;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);

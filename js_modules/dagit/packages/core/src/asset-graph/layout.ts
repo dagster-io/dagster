@@ -14,8 +14,9 @@ export interface AssetLayout {
 
 export type AssetLayoutEdge = {
   from: IPoint;
+  fromId: string;
   to: IPoint;
-  dashed: boolean;
+  toId: string;
 };
 
 export type AssetGraphLayout = {
@@ -180,14 +181,16 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
     if (bundles[e.v] || bundles[e.w]) {
       bundleEdges.push({
         from: points[0],
+        fromId: e.v,
         to: points[points.length - 1],
-        dashed: false,
+        toId: e.w,
       });
     } else {
       edges.push({
         from: points[0],
+        fromId: e.v,
         to: points[points.length - 1],
-        dashed: false,
+        toId: e.w,
       });
     }
   });
