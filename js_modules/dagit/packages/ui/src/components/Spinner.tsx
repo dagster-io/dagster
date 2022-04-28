@@ -12,7 +12,8 @@ export const Spinner: React.FC<{
   value?: number;
   fillColor?: string;
   stopped?: boolean;
-}> = ({purpose, value, fillColor = Colors.Gray600, stopped}) => {
+  title?: string;
+}> = ({purpose, value, fillColor = Colors.Gray600, stopped, title = 'Loading…'}) => {
   const size = () => {
     switch (purpose) {
       case 'page':
@@ -39,7 +40,7 @@ export const Spinner: React.FC<{
   };
 
   return (
-    <SpinnerWrapper $padding={padding()}>
+    <SpinnerWrapper $padding={padding()} title={title}>
       <SlowSpinner size={size()} value={value} $fillColor={fillColor} $stopped={stopped} />
     </SpinnerWrapper>
   );
