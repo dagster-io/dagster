@@ -90,6 +90,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     dependencies = non_null_list(GrapheneAssetDependency)
     dependencyKeys = non_null_list(GrapheneAssetKey)
     description = graphene.String()
+    graphName = graphene.String()
     id = graphene.NonNull(graphene.ID)
     jobNames = non_null_list(graphene.String)
     jobs = non_null_list(GraphenePipeline)
@@ -293,6 +294,13 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
             for dep in self._external_asset_node.dependencies
         ]
+
+    def resolve_graphName(self, _graphene_info) -> Optional[str]:
+        # todo OwenKephart - return the correct graph name here
+        if self._external_asset_node.op_name:
+            return self._external_asset_node.op_name
+        else:
+            return None
 
     def resolve_jobNames(self, _graphene_info) -> List[str]:
         return self._external_asset_node.job_names
