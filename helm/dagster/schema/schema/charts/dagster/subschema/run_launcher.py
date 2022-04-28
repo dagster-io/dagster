@@ -64,6 +64,7 @@ class K8sRunLauncherConfig(BaseModel):
     volumes: List[kubernetes.Volume]
     labels: Optional[Dict[str, str]]
     failPodOnRunFailure: Optional[bool]
+    resources: Optional[kubernetes.ResourceRequirements]
 
     class Config:
         extra = Extra.forbid

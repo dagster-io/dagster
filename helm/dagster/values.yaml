@@ -470,6 +470,19 @@ runLauncher:
       #   my_label_key: my_label_value
       labels: {}
 
+      # Default compute resource requirements for the container in the Job's Pod. See:
+      # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
+      #
+      # Example:
+      # resources:
+      #   limits:
+      #     cpu: 100m
+      #     memory: 128Mi
+      #   requests:
+      #     cpu: 100m
+      #     memory: 128Mi
+      resources: {}
+
       # Whether the launched Kubernetes Jobs and Pods should fail if the Dagster run fails.
       failPodOnRunFailure: false
 
