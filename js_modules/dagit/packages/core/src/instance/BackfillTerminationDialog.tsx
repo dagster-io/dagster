@@ -26,7 +26,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
   if (!backfill) {
     return null;
   }
-  const numUnscheduled = (backfill.numTotal || 0) - (backfill.numRequested || 0);
+  const numUnscheduled = (backfill.partitionNames.length || 0) - (backfill.numRequested || 0);
   const cancelableRuns = backfill.runs.filter(
     (run) => !doneStatuses.has(run?.status) && run.canTerminate,
   );

@@ -134,10 +134,10 @@ export const PartitionProgress = (props: Props) => {
     numTotalRuns,
   } = counts;
   const numFinished = numSucceeded + numFailed;
-  const unscheduled = results.numTotal - results.numRequested;
+  const numTotal = results.partitionNames.length;
+  const unscheduled = numTotal - results.numRequested;
 
   const skipped = results.numRequested - numPartitionRuns;
-  const numTotal = results.numTotal;
 
   const table = (
     <TooltipTable>
@@ -291,7 +291,7 @@ const PARTITION_PROGRESS_QUERY = gql`
         backfillId
         status
         numRequested
-        numTotal
+        partitionNames
         runs(limit: $limit) {
           id
           canTerminate
