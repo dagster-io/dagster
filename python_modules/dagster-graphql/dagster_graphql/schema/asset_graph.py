@@ -370,9 +370,8 @@ class GrapheneAssetNode(graphene.ObjectType):
             return None
 
     def resolve_opNames(self, _graphene_info) -> List[str]:
-        # todo OwenKephart: Return the correct list of op names.
-        if self._external_asset_node.op_name:
-            return [self._external_asset_node.op_name]
+        if self._external_asset_node.op_names:
+            return list(self._external_asset_node.op_names)
         else:
             return []
 
