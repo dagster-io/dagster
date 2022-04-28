@@ -125,7 +125,7 @@ if __name__ == "__main__":
                 "isort==5.10.1",
             ],
             "mypy": [
-                "mypy==0.940",
+                "mypy==0.950",
                 "types-croniter",  # version will be resolved against croniter
                 "types-mock",  # version will be resolved against mock
                 "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)

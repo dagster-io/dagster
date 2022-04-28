@@ -141,8 +141,7 @@ class ModuleBuildSpec(
 
                 tests.append(step.build())
 
-        # We expect the tox file to define a pylint testenv, and we'll construct a separate
-        # buildkite build step for the pylint testenv.
+        # We expect the tox file to define a pylint testenv. This is run in a dedicated buildkite step.
         tests.append(
             StepBuilder(f":lint-roller: {package}")
             .run(
@@ -154,18 +153,11 @@ class ModuleBuildSpec(
             .build()
         )
 
-        # We expect the tox file to define a mypy testenv, and we'll construct a separate
-        # buildkite build step for the mypy testenv.
+        # We expect the tox file to define a mypy testenv. This is run in a dedicated buildkite step.
         if self.directory not in MYPY_EXCLUDES:
             tests.append(
                 StepBuilder(f":mypy: {package}")
-                .run(
-                    "pip install -e python_modules/dagster[mypy]",
-                    # mypy raises an error for missing stubs. We try to specify them in
-                    # dependencies, but inclusion of `--install-types
-                    # --non-interactive` will cause mypy to automatically download any missing ones.
-                    f"mypy --config-file mypy/config --install-types --non-interactive {self.directory}",
-                )
+                .run("pip install -U virtualenv", f"cd {self.directory}", "tox -vv -e mypy")
                 .on_integration_image(SupportedPython.V3_8)
                 .build()
             )
