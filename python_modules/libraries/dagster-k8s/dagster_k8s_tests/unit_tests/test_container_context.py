@@ -29,6 +29,10 @@ def container_context_config():
             "volumes": [{"name": "foo", "config_map": {"name": "settings-cm"}}],
             "labels": {"foo_label": "bar_value"},
             "namespace": "my_namespace",
+            "resources": {
+                "requests": {"memory": "64Mi", "cpu": "250m"},
+                "limits": {"memory": "128Mi", "cpu": "500m"},
+            },
         }
     }
 
@@ -55,6 +59,9 @@ def other_container_context_config():
             "volumes": [{"name": "bar", "config_map": {"name": "your-settings-cm"}}],
             "labels": {"bar_label": "baz_value"},
             "namespace": "your_namespace",
+            "resources": {
+                "limits": {"memory": "64Mi", "cpu": "250m"},
+            },
         }
     }
 
@@ -81,6 +88,10 @@ def container_context_config_camel_case_volumes():
             "volumes": [{"name": "foo", "configMap": {"name": "settings-cm"}}],
             "labels": {"foo_label": "bar_value"},
             "namespace": "my_namespace",
+            "resources": {
+                "requests": {"memory": "64Mi", "cpu": "250m"},
+                "limits": {"memory": "128Mi", "cpu": "500m"},
+            },
         }
     }
 
@@ -116,6 +127,7 @@ def test_empty_container_context(empty_container_context):
     assert empty_container_context.volumes == []
     assert empty_container_context.labels == {}
     assert empty_container_context.namespace == None
+    assert empty_container_context.resources == {}
 
 
 def test_invalid_config():
@@ -157,6 +169,10 @@ def test_merge(empty_container_context, container_context, other_container_conte
     assert container_context.volumes == [{"name": "foo", "config_map": {"name": "settings-cm"}}]
     assert container_context.labels == {"foo_label": "bar_value"}
     assert container_context.namespace == "my_namespace"
+    assert container_context.resources == {
+        "requests": {"memory": "64Mi", "cpu": "250m"},
+        "limits": {"memory": "128Mi", "cpu": "500m"},
+    }
 
     merged = container_context.merge(other_container_context)
 
@@ -218,6 +234,9 @@ def test_merge(empty_container_context, container_context, other_container_conte
     )
     assert merged.labels == {"foo_label": "bar_value", "bar_label": "baz_value"}
     assert merged.namespace == "your_namespace"
+    assert merged.resources == {
+        "limits": {"memory": "64Mi", "cpu": "250m"},
+    }
 
     assert container_context.merge(empty_container_context) == container_context
     assert empty_container_context.merge(container_context) == container_context

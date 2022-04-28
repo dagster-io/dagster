@@ -191,6 +191,36 @@ def test_k8s_run_launcher_fail_pod_on_run_failure(template: HelmTemplate):
     assert run_launcher_config["config"]["fail_pod_on_run_failure"]
 
 
+def test_k8s_run_launcher_resources(template: HelmTemplate):
+    resources = {
+        "requests": {"memory": "64Mi", "cpu": "250m"},
+        "limits": {"memory": "128Mi", "cpu": "500m"},
+    }
+
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.K8S,
+            config=RunLauncherConfig.construct(
+                k8sRunLauncher=K8sRunLauncherConfig.construct(
+                    imagePullPolicy="Always",
+                    loadInclusterConfig=True,
+                    envConfigMaps=[],
+                    envSecrets=[],
+                    envVars=[],
+                    volumeMounts=[],
+                    volumes=[],
+                    resources=resources,
+                )
+            ),
+        )
+    )
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+
+    assert run_launcher_config["config"]["resources"] == resources
+
+
 def test_celery_k8s_run_launcher_config(template: HelmTemplate):
     image = {"repository": "test_repo", "tag": "test_tag", "pullPolicy": "Always"}
 

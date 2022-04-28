@@ -1739,6 +1739,12 @@
             ],
             "additionalProperties": false
         },
+        "ResourceRequirements": {
+            "title": "ResourceRequirements",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
         "K8sRunLauncherConfig": {
             "title": "K8sRunLauncherConfig",
             "type": "object",
@@ -1837,6 +1843,17 @@
                     "anyOf": [
                         {
                             "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "resources": {
+                    "title": "ResourceRequirements",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/ResourceRequirements"
                         },
                         {
                             "type": "null"
