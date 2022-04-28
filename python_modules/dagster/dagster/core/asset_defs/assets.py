@@ -4,7 +4,6 @@ from dagster import check
 from dagster.core.definitions import GraphDefinition, NodeDefinition, OpDefinition
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
-from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .partition_mapping import PartitionMapping
 
