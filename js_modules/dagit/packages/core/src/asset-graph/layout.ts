@@ -211,7 +211,7 @@ export const getForeignNodeDimensions = (id: string) => {
 };
 
 export const ASSET_NODE_ANNOTATIONS_MAX_WIDTH = 65;
-export const ASSET_NODE_NAME_MAX_LENGTH = 50;
+export const ASSET_NODE_NAME_MAX_LENGTH = 32;
 const DISPLAY_NAME_PX_PER_CHAR = 8.0;
 
 export const getAssetNodeDimensions = (def: {

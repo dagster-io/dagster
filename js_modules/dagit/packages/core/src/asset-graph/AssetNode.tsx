@@ -5,7 +5,7 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {colorHash, withMiddleTruncation} from '../app/Util';
+import {withMiddleTruncation} from '../app/Util';
 import {AssetKey} from '../assets/types';
 import {NodeHighlightColors} from '../graph/OpNode';
 import {OpTags} from '../graph/OpTags';
