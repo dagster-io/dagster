@@ -156,13 +156,8 @@ def solid(
     description: Optional[str] = ...,
     input_defs: Optional[Sequence[InputDefinition]] = ...,
     output_defs: Optional[Sequence[OutputDefinition]] = ...,
-<<<<<<< HEAD
     config_schema: Optional[ConfigSchemaType] = ...,
-    required_resource_keys: Optional[Set[str]] = ...,
-=======
-    config_schema: Optional[Union[Any, Dict[str, Any]]] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
->>>>>>> cd8966d46 (fixes)
     tags: Optional[Dict[str, Any]] = ...,
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
@@ -175,13 +170,8 @@ def solid(
     description: Optional[str] = None,
     input_defs: Optional[Sequence[InputDefinition]] = None,
     output_defs: Optional[Sequence[OutputDefinition]] = None,
-<<<<<<< HEAD
     config_schema: Optional[ConfigSchemaType] = None,
-    required_resource_keys: Optional[Set[str]] = None,
-=======
-    config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
->>>>>>> cd8966d46 (fixes)
     tags: Optional[Dict[str, Any]] = None,
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
