@@ -169,6 +169,28 @@ class AssetsDefinition:
             self._partitions_def.get_default_partition_mapping(),
         )
 
+    def with_replaced_asset_keys(
+        self,
+        output_asset_key_replacements: Mapping[AssetKey, AssetKey],
+        input_asset_key_replacements: Mapping[AssetKey, AssetKey],
+    ) -> "AssetsDefinition":
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+            return self.__class__(
+                asset_keys_by_input_name={
+                    input_name: input_asset_key_replacements.get(key, key)
+                    for input_name, key in self.asset_keys_by_input_name.items()
+                },
+                asset_keys_by_output_name={
+                    output_name: output_asset_key_replacements.get(key, key)
+                    for output_name, key in self.asset_keys_by_output_name.items()
+                },
+                node_def=self.node_def,
+                partitions_def=self.partitions_def,
+                partition_mappings=self._partition_mappings,
+            )
+
 
 def _infer_asset_keys_by_input_names(
     graph_def: GraphDefinition, asset_keys_by_input_name: Mapping[str, AssetKey]
@@ -197,21 +219,20 @@ def _infer_asset_keys_by_input_names(
 def _infer_asset_keys_by_output_names(
     graph_def: GraphDefinition, asset_keys_by_output_name: Mapping[str, AssetKey]
 ) -> Mapping[str, AssetKey]:
-    output_names = set([output_def.name for output_def in graph_def.output_defs])
+    output_names = [output_def.name for output_def in graph_def.output_defs]
     if asset_keys_by_output_name:
         check.invariant(
-            set(asset_keys_by_output_name.keys()) == output_names,
+            set(asset_keys_by_output_name.keys()) == set(output_names),
             "The set of output names keys specified in the asset_keys_by_output_name argument must "
             "equal the set of asset keys outputted by this GraphDefinition. \n"
             f"asset_keys_by_input_name keys: {set(asset_keys_by_output_name.keys())} \n"
-            f"expected keys: {output_names}",
+            f"expected keys: {set(output_names)}",
         )
 
     inferred_asset_keys_by_output_names: Dict[str, AssetKey] = {
         output_name: asset_key for output_name, asset_key in asset_keys_by_output_name.items()
     }
 
-    output_names = list(output_names)
     if (
         len(output_names) == 1
         and output_names[0] not in asset_keys_by_output_name
@@ -225,25 +246,3 @@ def _infer_asset_keys_by_output_names(
         if output_name not in inferred_asset_keys_by_output_names:
             inferred_asset_keys_by_output_names[output_name] = AssetKey([output_name])
     return inferred_asset_keys_by_output_names
-
-    def with_replaced_asset_keys(
-        self,
-        output_asset_key_replacements: Mapping[AssetKey, AssetKey],
-        input_asset_key_replacements: Mapping[AssetKey, AssetKey],
-    ) -> "AssetsDefinition":
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
-            return self.__class__(
-                asset_keys_by_input_name={
-                    input_name: input_asset_key_replacements.get(key, key)
-                    for input_name, key in self.asset_keys_by_input_name.items()
-                },
-                asset_keys_by_output_name={
-                    output_name: output_asset_key_replacements.get(key, key)
-                    for output_name, key in self.asset_keys_by_output_name.items()
-                },
-                node_def=self.node_def,
-                partitions_def=self.partitions_def,
-                partition_mappings=self._partition_mappings,
-            )
