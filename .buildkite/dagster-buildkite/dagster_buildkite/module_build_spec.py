@@ -157,11 +157,7 @@ class ModuleBuildSpec(
         if self.directory not in MYPY_EXCLUDES:
             tests.append(
                 StepBuilder(f":mypy: {package}")
-                .run(
-                    "pip install -U virtualenv",
-                    f"cd {self.directory}",
-                    "tox -vv -e mypy"
-                )
+                .run("pip install -U virtualenv", f"cd {self.directory}", "tox -vv -e mypy")
                 .on_integration_image(SupportedPython.V3_8)
                 .build()
             )

@@ -37,8 +37,10 @@ def import_module_from_path(module_name: str, path_to_file: str) -> ModuleType:
                 module_name=module_name, path_to_file=path_to_file
             )
         )
-    if sys.modules.get(spec.name) and spec.origin and sys.modules[spec.name].__file__ == os.path.abspath(
-        spec.origin
+    if (
+        sys.modules.get(spec.name)
+        and spec.origin
+        and sys.modules[spec.name].__file__ == os.path.abspath(spec.origin)
     ):
         module = sys.modules[spec.name]
     else:
