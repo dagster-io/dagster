@@ -58,7 +58,7 @@ class _Repository:
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: all elements of list "
                     "must be of type JobDefinition, GraphDefinition, PipelineDefinition, "
-                    "PartitionSetDefinition, ScheduleDefinition, SensorDefinition, or dictionary of resources. "
+                    "PartitionSetDefinition, ScheduleDefinition, SensorDefinition, or a dictionary mapping resource keys to ResourceDefinitions. "
                     f"Got {bad_definitions_str}."
                 )
             repository_data = CachingRepositoryData.from_list(repository_definitions)
