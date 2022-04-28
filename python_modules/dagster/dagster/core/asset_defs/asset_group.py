@@ -13,7 +13,6 @@ from typing import (
     Iterable,
     List,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -44,17 +43,7 @@ from .source_asset import SourceAsset
 ASSET_GROUP_BASE_JOB_PREFIX = "__ASSET_GROUP"
 
 
-class AssetGroup(
-    NamedTuple(
-        "_AssetGroup",
-        [
-            ("assets", Sequence[AssetsDefinition]),
-            ("source_assets", Sequence[SourceAsset]),
-            ("resource_defs", Mapping[str, ResourceDefinition]),
-            ("executor_def", Optional[ExecutorDefinition]),
-        ],
-    )
-):
+class AssetGroup:
     """Defines a group of assets, along with environment information in the
     form of resources and an executor.
 
@@ -109,8 +98,8 @@ class AssetGroup(
 
     """
 
-    def __new__(
-        cls,
+    def __init__(
+        self,
         assets: Sequence[AssetsDefinition],
         source_assets: Optional[Sequence[SourceAsset]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -126,9 +115,6 @@ class AssetGroup(
         )
         executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
 
-        source_assets_by_key = build_source_assets_by_key(source_assets)
-        root_manager = build_root_manager(source_assets_by_key)
-
         if "root_manager" in resource_defs:
             raise DagsterInvalidDefinitionError(
                 "Resource dictionary included resource with key 'root_manager', "
@@ -139,22 +125,32 @@ class AssetGroup(
         # In the case of collisions, merge_dicts takes values from the
         # dictionary latest in the list, so we place the user provided resource
         # defs after the defaults.
-        resource_defs = merge_dicts(
-            {"root_manager": root_manager, "io_manager": fs_asset_io_manager},
-            resource_defs,
-        )
+        resource_defs = merge_dicts({"io_manager": fs_asset_io_manager}, resource_defs)
 
         _validate_resource_reqs_for_asset_group(
             asset_list=assets, source_assets=source_assets, resource_defs=resource_defs
         )
 
-        return super(AssetGroup, cls).__new__(
-            cls,
-            assets=assets,
-            source_assets=source_assets,
-            resource_defs=resource_defs,
-            executor_def=executor_def,
-        )
+        self._assets = assets
+        self._source_assets = source_assets
+        self._resource_defs = resource_defs
+        self._executor_def = executor_def
+
+    @property
+    def assets(self):
+        return self._assets
+
+    @property
+    def source_assets(self):
+        return self._source_assets
+
+    @property
+    def resource_defs(self):
+        return self._resource_defs
+
+    @property
+    def executor_def(self):
+        return self._executor_def
 
     @staticmethod
     def is_base_job_name(name) -> bool:
@@ -211,8 +207,14 @@ class AssetGroup(
 
         if not isinstance(selection, str):
             selection = check.opt_list_param(selection, "selection", of_type=str)
-        executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
+        executor_def = check.opt_inst_param(
+            executor_def, "executor_def", ExecutorDefinition, self.executor_def
+        )
         description = check.opt_str_param(description, "description")
+        resource_defs = {
+            **self.resource_defs,
+            **{"root_manager": build_root_manager(build_source_assets_by_key(self.source_assets))},
+        }
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
@@ -220,8 +222,8 @@ class AssetGroup(
                 name=name,
                 assets=self.assets,
                 source_assets=self.source_assets,
-                resource_defs=self.resource_defs,
-                executor_def=self.executor_def,
+                resource_defs=resource_defs,
+                executor_def=executor_def,
             )
 
         if selection:
@@ -254,8 +256,8 @@ class AssetGroup(
                 name=name,
                 assets=included_assets,
                 source_assets=excluded_assets,
-                resource_defs=self.resource_defs,
-                executor_def=self.executor_def,
+                resource_defs=resource_defs,
+                executor_def=executor_def,
                 description=description,
                 tags=tags,
             )
@@ -529,15 +531,7 @@ class AssetGroup(
             if len(assets_by_partitions_def.keys()) == 0 or assets_by_partitions_def.keys() == {
                 None
             }:
-                return [
-                    build_assets_job(
-                        ASSET_GROUP_BASE_JOB_PREFIX,
-                        assets=self.assets,
-                        source_assets=self.source_assets,
-                        resource_defs=self.resource_defs,
-                        executor_def=self.executor_def,
-                    )
-                ]
+                return [self.build_job(ASSET_GROUP_BASE_JOB_PREFIX)]
             else:
                 unpartitioned_assets = assets_by_partitions_def.get(None, [])
                 jobs = []
@@ -552,7 +546,12 @@ class AssetGroup(
                                 f"{ASSET_GROUP_BASE_JOB_PREFIX}_{i}",
                                 assets=assets_with_partitions + unpartitioned_assets,
                                 source_assets=[*self.source_assets, *self.assets],
-                                resource_defs=self.resource_defs,
+                                resource_defs={
+                                    **self.resource_defs,
+                                    "root_manager": build_root_manager(
+                                        build_source_assets_by_key(self.source_assets)
+                                    ),
+                                },
                                 executor_def=self.executor_def,
                             )
                         )
@@ -639,8 +638,37 @@ class AssetGroup(
         return AssetGroup(
             assets=result_assets,
             source_assets=self.source_assets,
-            resource_defs={k: r for k, r in self.resource_defs.items() if k != "root_manager"},
+            resource_defs=self.resource_defs,
             executor_def=self.executor_def,
+        )
+
+    def __add__(self, other: "AssetGroup") -> "AssetGroup":
+        check.inst_param(other, "other", AssetGroup)
+
+        if self.resource_defs != other.resource_defs:
+            raise DagsterInvalidDefinitionError(
+                "Can't add asset groups together with different resource definition dictionarys"
+            )
+
+        if self.executor_def != other.executor_def:
+            raise DagsterInvalidDefinitionError(
+                "Can't add asset groups together with different executor definitions"
+            )
+
+        return AssetGroup(
+            assets=self.assets + other.assets,
+            source_assets=self.source_assets + other.source_assets,
+            resource_defs=self.resource_defs,
+            executor_def=self.executor_def,
+        )
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, AssetGroup)
+            and self.assets == other.assets
+            and self.source_assets == other.source_assets
+            and self.resource_defs == other.resource_defs
+            and self.executor_def == other.executor_def
         )
 
 
@@ -672,7 +700,7 @@ def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]
                 yield submodule
     else:
         raise ValueError(
-            f"Tried find modules in package {package_module}, but its __file__ is None"
+            f"Tried to find modules in package {package_module}, but its __file__ is None"
         )
 
 
