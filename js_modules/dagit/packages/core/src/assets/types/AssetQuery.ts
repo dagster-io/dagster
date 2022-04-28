@@ -2539,10 +2539,10 @@ export interface AssetQuery_assetOrError_Asset_definition {
   repository: AssetQuery_assetOrError_Asset_definition_repository;
   jobs: AssetQuery_assetOrError_Asset_definition_jobs[];
   description: string | null;
+  graphName: string | null;
   opName: string | null;
   opNames: string[];
   jobNames: string[];
-  graphName: string | null;
   computeKind: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_assetKey;
   assetMaterializations: AssetQuery_assetOrError_Asset_definition_assetMaterializations[];

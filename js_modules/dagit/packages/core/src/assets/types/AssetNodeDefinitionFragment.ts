@@ -2482,11 +2482,11 @@ export interface AssetNodeDefinitionFragment {
   __typename: "AssetNode";
   id: string;
   description: string | null;
+  graphName: string | null;
   opName: string | null;
   opNames: string[];
   jobNames: string[];
   repository: AssetNodeDefinitionFragment_repository;
-  graphName: string | null;
   partitionDefinition: string | null;
   computeKind: string | null;
   assetKey: AssetNodeDefinitionFragment_assetKey;
