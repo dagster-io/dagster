@@ -37,7 +37,15 @@ def bar():
 
 @pytest.fixture
 def python_origin_with_container_context():
-    container_context_config = {"k8s": {"env_vars": ["BAZ_TEST"]}}
+    container_context_config = {
+        "k8s": {
+            "env_vars": ["BAZ_TEST"],
+            "resources": {
+                "requests": {"cpu": "256m", "memory": "128Mi"},
+                "limits": {"cpu": "1000m", "memory": "2000Mi"},
+            },
+        }
+    }
 
     python_origin = reconstructable(bar).get_python_origin()
     return python_origin._replace(
@@ -57,11 +65,21 @@ def test_requires_k8s_launcher_fail():
 
 
 def test_executor_init(k8s_run_launcher_instance):
+
+    resources = {
+        "requests": {"memory": "64Mi", "cpu": "250m"},
+        "limits": {"memory": "128Mi", "cpu": "500m"},
+    }
+
     executor = k8s_job_executor.executor_creation_fn(
         InitExecutorContext(
             job=InMemoryPipeline(bar),
             executor_def=k8s_job_executor,
-            executor_config={"env_vars": ["FOO_TEST"], "retries": {}},
+            executor_config={
+                "env_vars": ["FOO_TEST"],
+                "retries": {},
+                "resources": resources,
+            },
             instance=k8s_run_launcher_instance,
         )
     )
@@ -87,6 +105,10 @@ def test_executor_init(k8s_run_launcher_instance):
             "BAR_TEST",
         ]
     )
+
+    assert sorted(
+        executor._step_handler._get_container_context(step_handler_context).resources
+    ) == sorted(resources)
 
 
 def test_executor_init_container_context(
@@ -123,6 +145,12 @@ def test_executor_init_container_context(
             "FOO_TEST",
             "BAZ_TEST",
         ]
+    )
+
+    assert sorted(
+        executor._step_handler._get_container_context(step_handler_context).resources
+    ) == sorted(
+        python_origin_with_container_context.repository_origin.container_context["k8s"]["resources"]
     )
 
 
@@ -190,6 +218,10 @@ def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):
         container_context=K8sContainerContext(
             namespace="foo",
             env_vars=["FOO_TEST"],
+            resources={
+                "requests": {"cpu": "128m", "memory": "64Mi"},
+                "limits": {"cpu": "500m", "memory": "1000Mi"},
+            },
         ),
         load_incluster_config=False,
         kubeconfig_file=kubeconfig_file,

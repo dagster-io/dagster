@@ -120,6 +120,10 @@ config:
   labels: {{- $k8sRunLauncherConfig.labels | toYaml | nindent 4 }}
   {{- end }}
 
+  {{- if $k8sRunLauncherConfig.resources }}
+  resources: {{- $k8sRunLauncherConfig.resources | toYaml | nindent 4 }}
+  {{- end }}
+
   {{- if $k8sRunLauncherConfig.failPodOnRunFailure }}
   fail_pod_on_run_failure: true
   {{- end }}

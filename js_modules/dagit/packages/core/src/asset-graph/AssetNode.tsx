@@ -6,6 +6,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
+import {AssetKey} from '../assets/types';
 import {NodeHighlightColors} from '../graph/OpNode';
 import {OpTags} from '../graph/OpTags';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
@@ -157,6 +158,32 @@ export const AssetNode: React.FC<{
   );
 }, isEqual);
 
+export const AssetNodeMinimal: React.FC<{
+  selected: boolean;
+  definition: {assetKey: AssetKey};
+  fontSize: number;
+  color?: string;
+}> = ({selected, definition, fontSize, color}) => {
+  const displayName = withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {
+    maxLength: 17,
+  });
+  return (
+    <AssetNodeContainer $selected={selected} style={{position: 'absolute', borderRadius: 12}}>
+      <AssetNodeBox
+        style={{
+          border: `4px solid ${Colors.Blue200}`,
+          borderRadius: 10,
+          position: 'absolute',
+          inset: 4,
+          background: color,
+        }}
+      >
+        <NameMinimal style={{fontSize}}>{displayName}</NameMinimal>
+      </AssetNodeBox>
+    </AssetNodeContainer>
+  );
+};
+
 export const AssetRunLink: React.FC<{
   runId: string;
   event?: Parameters<typeof linkToRunEvent>[1];
@@ -249,6 +276,16 @@ const Name = styled.div`
   border-top-right-radius: 5px;
   font-weight: 600;
   gap: 4px;
+`;
+
+const NameMinimal = styled(Name)`
+  font-weight: 600;
+  white-space: nowrap;
+  position: absolute;
+  background: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 `;
 
 const Description = styled.div`

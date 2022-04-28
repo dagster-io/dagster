@@ -29,6 +29,12 @@ def kubeconfig_file(tmp_path):
     return str(config_path)
 
 
+LAUNCHER_RESOURCES = {
+    "requests": {"cpu": "128m", "memory": "64Mi"},
+    "limits": {"cpu": "500m", "memory": "1000Mi"},
+}
+
+
 @pytest.fixture
 def k8s_run_launcher_instance(kubeconfig_file):  # pylint: disable=redefined-outer-name
     with environ({"BAR_TEST": "bar"}):
@@ -46,6 +52,7 @@ def k8s_run_launcher_instance(kubeconfig_file):  # pylint: disable=redefined-out
                         "load_incluster_config": False,
                         "kubeconfig_file": kubeconfig_file,
                         "env_vars": ["BAR_TEST"],
+                        "resources": LAUNCHER_RESOURCES,
                     },
                 },
             }

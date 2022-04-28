@@ -1,5 +1,6 @@
-import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
+import {Box, Checkbox, Colors, Mono, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import flatMap from 'lodash/flatMap';
+import isEqual from 'lodash/isEqual';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import uniqBy from 'lodash/uniqBy';
@@ -8,6 +9,7 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {
   FIFTEEN_SECONDS,
@@ -42,7 +44,7 @@ import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
 import {AssetEdges} from './AssetEdges';
-import {AssetNode} from './AssetNode';
+import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
 import {OmittedAssetsNotice} from './OmittedAssetsNotice';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
@@ -53,6 +55,7 @@ import {
   GraphNode,
   isSourceAsset,
   tokenForAssetKey,
+  displayNameForAssetKey,
 } from './Utils';
 import {AssetGraphLayout} from './layout';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
@@ -72,6 +75,8 @@ interface Props {
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
 }
+
+const EXPERIMENTAL_MINI_SCALE = 0.5;
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {
@@ -152,8 +157,11 @@ const AssetGraphExplorerWithData: React.FC<
     pipelineSelector,
   } = props;
 
-  const findJobForAsset = useFindJobForAsset();
   const history = useHistory();
+  const findJobForAsset = useFindJobForAsset();
+  const {flagExperimentalAssetDAG: experiments} = useFeatureFlags();
+
+  const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
   const selectedAssetValues = explorerPath.opNames[explorerPath.opNames.length - 1].split(',');
   const selectedGraphNodes = Object.values(assetGraphData.nodes).filter((node) =>
@@ -335,7 +343,80 @@ const AssetGraphExplorerWithData: React.FC<
             >
               {({scale: _scale}, viewportRect) => (
                 <SVGContainer width={layout.width} height={layout.height}>
-                  <AssetEdges edges={layout.edges} />
+                  <AssetEdges
+                    edges={layout.edges}
+                    color={Colors.KeylineGray}
+                    // extradark={experiments && _scale < EXPERIMENTAL_MINI_SCALE}
+                  />
+                  <AssetEdges
+                    color={Colors.Blue500}
+                    edges={layout.edges.filter(
+                      ({fromId, toId}) => highlighted === fromId || highlighted === toId,
+                    )}
+                  />
+
+                  {Object.values(layout.bundles)
+                    .sort((a, b) => a.id.length - b.id.length)
+                    .map(({id, bounds}) => {
+                      if (experiments && _scale < EXPERIMENTAL_MINI_SCALE) {
+                        const path = JSON.parse(id);
+                        return (
+                          <foreignObject
+                            x={bounds.x}
+                            y={bounds.y}
+                            width={bounds.width}
+                            height={bounds.height + 10}
+                            key={id}
+                            onDoubleClick={(e) => {
+                              viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
+                              e.stopPropagation();
+                            }}
+                          >
+                            <AssetNodeMinimal
+                              color="rgba(248, 223, 196, 0.4)"
+                              definition={{assetKey: {path}}}
+                              fontSize={18 / _scale}
+                              selected={selectedGraphNodes.some((g) =>
+                                hasPathPrefix(g.assetKey.path, path),
+                              )}
+                            />
+                          </foreignObject>
+                        );
+                      }
+                      return (
+                        <foreignObject
+                          x={bounds.x}
+                          y={bounds.y}
+                          width={bounds.width}
+                          height={bounds.height + 10}
+                          key={id}
+                        >
+                          <Mono
+                            style={{
+                              opacity:
+                                _scale > EXPERIMENTAL_MINI_SCALE
+                                  ? (_scale - EXPERIMENTAL_MINI_SCALE) / 0.2
+                                  : 0,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {displayNameForAssetKey({path: JSON.parse(id)})}
+                          </Mono>
+                          <div
+                            style={{
+                              inset: 0,
+                              top: 24,
+                              position: 'absolute',
+                              borderRadius: 10,
+                              border: `${3 / _scale}px dashed rgba(0,0,0,0.4)`,
+                              background: `rgba(248, 223, 196, ${
+                                0.4 - Math.max(0, _scale - EXPERIMENTAL_MINI_SCALE) * 0.3
+                              })`,
+                            }}
+                          />
+                        </foreignObject>
+                      );
+                    })}
 
                   {Object.values(layout.nodes).map(({id, bounds}, index) => {
                     const graphNode = assetGraphData.nodes[id];
@@ -351,10 +432,41 @@ const AssetGraphExplorerWithData: React.FC<
                       ) : null;
                     }
 
+                    if (experiments && _scale < EXPERIMENTAL_MINI_SCALE) {
+                      const isWithinBundle = Object.keys(layout.bundles).some((bundleId) =>
+                        hasPathPrefix(path, JSON.parse(bundleId)),
+                      );
+                      if (isWithinBundle) {
+                        return null;
+                      }
+
+                      return (
+                        <foreignObject
+                          {...bounds}
+                          key={id}
+                          onMouseEnter={() => setHighlighted(id)}
+                          onMouseLeave={() => setHighlighted(null)}
+                          onClick={(e) => onSelectNode(e, {path}, graphNode)}
+                          onDoubleClick={(e) => {
+                            viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
+                            e.stopPropagation();
+                          }}
+                        >
+                          <AssetNodeMinimal
+                            definition={graphNode.definition}
+                            selected={selectedGraphNodes.includes(graphNode)}
+                            fontSize={18 / _scale}
+                          />
+                        </foreignObject>
+                      );
+                    }
+
                     return (
                       <foreignObject
                         {...bounds}
                         key={id}
+                        onMouseEnter={() => setHighlighted(id)}
+                        onMouseLeave={() => setHighlighted(null)}
                         onClick={(e) => onSelectNode(e, {path}, graphNode)}
                         onDoubleClick={(e) => {
                           viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
@@ -467,6 +579,10 @@ const SVGContainer = styled.svg`
 `;
 
 // Helpers
+
+const hasPathPrefix = (path: string[], prefix: string[]) => {
+  return isEqual(prefix, path.slice(0, prefix.length));
+};
 
 const graphDirectionOf = ({
   graph,
