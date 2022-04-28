@@ -117,6 +117,7 @@ class AssetGroup(
         executor_def: Optional[ExecutorDefinition] = None,
     ):
         check.sequence_param(assets, "assets", of_type=AssetsDefinition)
+
         source_assets = check.opt_sequence_param(
             source_assets, "source_assets", of_type=SourceAsset
         )
@@ -557,6 +558,90 @@ class AssetGroup(
                         )
 
                 return jobs
+
+    def prefixed(self, key_prefix: str):
+        """
+        Returns an AssetGroup that's identical to this AssetGroup, but with prefixes on all the
+        asset keys. The prefix is not added to source assets.
+
+        Input asset keys that reference other assets within the group are "brought along" -
+        i.e. prefixed as well.
+
+        Example with a single asset:
+
+            .. code-block:: python
+
+                @asset
+                def asset1():
+                    ...
+
+                result = AssetGroup([asset1]).prefixed("my_prefix")
+                assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset1"])
+
+        Example with dependencies within the list of assets:
+
+            .. code-block:: python
+
+                @asset
+                def asset1():
+                    ...
+
+                @asset
+                def asset2(asset1):
+                    ...
+
+                result = AssetGroup([asset1, asset2]).prefixed("my_prefix")
+                assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset1"])
+                assert result.assets[1].asset_key == AssetKey(["my_prefix", "asset2"])
+                assert result.assets[1].dependency_asset_keys == {AssetKey(["my_prefix", "asset1"])}
+
+        Examples with input prefixes provided by source assets:
+
+            .. code-block:: python
+
+                asset1 = SourceAsset(AssetKey(["upstream_prefix", "asset1"]))
+
+                @asset
+                def asset2(asset1):
+                    ...
+
+                result = AssetGroup([asset2], source_assets=[asset1]).prefixed("my_prefix")
+                assert len(result.assets) == 1
+                assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset2"])
+                assert result.assets[0].dependency_asset_keys == {AssetKey(["upstream_prefix", "asset1"])}
+                assert result.source_assets[0].key == AssetKey(["upstream_prefix", "asset1"])
+        """
+
+        asset_keys = {
+            asset_key for assets_def in self.assets for asset_key in assets_def.asset_keys
+        }
+
+        result_assets: List[AssetsDefinition] = []
+        for assets_def in self.assets:
+            output_asset_key_replacements = {
+                asset_key: AssetKey([key_prefix] + asset_key.path)
+                for asset_key in assets_def.asset_keys
+            }
+            input_asset_key_replacements = {}
+            for dep_asset_key in assets_def.dependency_asset_keys:
+                if dep_asset_key in asset_keys:
+                    input_asset_key_replacements[dep_asset_key] = AssetKey(
+                        (key_prefix, *dep_asset_key.path)
+                    )
+
+            result_assets.append(
+                assets_def.with_replaced_asset_keys(
+                    output_asset_key_replacements=output_asset_key_replacements,
+                    input_asset_key_replacements=input_asset_key_replacements,
+                )
+            )
+
+        return AssetGroup(
+            assets=result_assets,
+            source_assets=self.source_assets,
+            resource_defs={k: r for k, r in self.resource_defs.items() if k != "root_manager"},
+            executor_def=self.executor_def,
+        )
 
 
 def _find_assets_in_module(
