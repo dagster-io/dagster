@@ -163,7 +163,6 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
       width: dagreNode.width,
       height: dagreNode.height,
     };
-    console.log(id, dagreNode);
     if (bundleMapping[id]) {
       bundles[id] = {id, bounds};
     } else {
