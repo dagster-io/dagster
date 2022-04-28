@@ -121,6 +121,16 @@ const SettingsRoot = () => {
                 />
               ),
             },
+            {
+              key: 'Experimental asset graph display',
+              value: (
+                <Checkbox
+                  format="switch"
+                  checked={flags.includes(FeatureFlag.flagExperimentalAssetDAG)}
+                  onChange={() => toggleFlag(FeatureFlag.flagExperimentalAssetDAG)}
+                />
+              ),
+            },
           ]}
         />
       </Box>
