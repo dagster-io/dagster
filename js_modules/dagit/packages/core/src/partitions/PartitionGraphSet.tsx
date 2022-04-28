@@ -85,7 +85,7 @@ export const PartitionGraphSet: React.FC<{
           title="Execution Time by Partition"
           yLabel="Execution time (secs)"
           partitionNames={partitionNames}
-          pipelineDataByPartition={jobDurationData}
+          jobDataByPartition={jobDurationData}
           stepDataByPartition={stepDurationData}
           hiddenStepKeys={hiddenStepKeys}
         />
@@ -95,7 +95,7 @@ export const PartitionGraphSet: React.FC<{
           title="Materialization Count by Partition"
           yLabel="Number of materializations"
           partitionNames={partitionNames}
-          pipelineDataByPartition={jobMaterializationData}
+          jobDataByPartition={jobMaterializationData}
           stepDataByPartition={stepMaterializationData}
           hiddenStepKeys={hiddenStepKeys}
         />
@@ -104,7 +104,7 @@ export const PartitionGraphSet: React.FC<{
           title="Expectation Successes by Partition"
           yLabel="Number of successes"
           partitionNames={partitionNames}
-          pipelineDataByPartition={jobExpectationSuccessData}
+          jobDataByPartition={jobExpectationSuccessData}
           stepDataByPartition={stepExpectationSuccessData}
           hiddenStepKeys={hiddenStepKeys}
         />
@@ -113,7 +113,7 @@ export const PartitionGraphSet: React.FC<{
           title="Expectation Failures by Partition"
           yLabel="Number of failures"
           partitionNames={partitionNames}
-          pipelineDataByPartition={jobExpectationFailureData}
+          jobDataByPartition={jobExpectationFailureData}
           stepDataByPartition={stepExpectationFailureData}
           hiddenStepKeys={hiddenStepKeys}
         />
@@ -122,7 +122,7 @@ export const PartitionGraphSet: React.FC<{
           title="Expectation Rate by Partition"
           yLabel="Rate of success"
           partitionNames={partitionNames}
-          pipelineDataByPartition={jobExpectationRateData}
+          jobDataByPartition={jobExpectationRateData}
           stepDataByPartition={stepExpectationRateData}
           hiddenStepKeys={hiddenStepKeys}
         />

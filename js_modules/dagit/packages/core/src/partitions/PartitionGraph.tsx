@@ -10,7 +10,7 @@ type Point = {x: string; y: PointValue};
 
 interface PartitionGraphProps {
   partitionNames: string[];
-  pipelineDataByPartition?: {[partitionName: string]: PointValue};
+  jobDataByPartition?: {[partitionName: string]: PointValue};
   stepDataByPartition?: {[partitionName: string]: {[key: string]: PointValue[]}};
   title?: string;
   yLabel?: string;
@@ -20,7 +20,7 @@ interface PartitionGraphProps {
 
 export const PartitionGraph = ({
   partitionNames,
-  pipelineDataByPartition,
+  jobDataByPartition,
   stepDataByPartition,
   title,
   yLabel,
@@ -94,15 +94,15 @@ export const PartitionGraph = ({
   }, [onGraphClick, title, yLabel]);
 
   const buildDatasetData = () => {
-    const pipelineData: Point[] = [];
+    const jobData: Point[] = [];
     const stepData = {};
 
     partitionNames.forEach((partitionName) => {
       const hidden = !!hiddenPartitions[partitionName];
-      if (pipelineDataByPartition) {
-        pipelineData.push({
+      if (jobDataByPartition) {
+        jobData.push({
           x: partitionName,
-          y: !hidden ? pipelineDataByPartition[partitionName] : undefined,
+          y: !hidden ? jobDataByPartition[partitionName] : undefined,
         });
       }
 
@@ -129,20 +129,20 @@ export const PartitionGraph = ({
       stepData[stepKey] = _fillPartitions(partitionNames, stepData[stepKey]);
     });
 
-    return {pipelineData, stepData};
+    return {jobData, stepData};
   };
 
-  const {pipelineData, stepData} = buildDatasetData();
+  const {jobData, stepData} = buildDatasetData();
   const allLabel = isJob ? 'Total job' : 'Total pipeline';
   const graphData = {
     labels: partitionNames,
     datasets: [
-      ...(!pipelineDataByPartition || (hiddenStepKeys && hiddenStepKeys.includes(allLabel))
+      ...(!jobDataByPartition || (hiddenStepKeys && hiddenStepKeys.includes(allLabel))
         ? []
         : [
             {
               label: allLabel,
-              data: pipelineData,
+              data: jobData,
               borderColor: Colors.Gray500,
               backgroundColor: 'rgba(0,0,0,0)',
             },
