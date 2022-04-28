@@ -223,6 +223,7 @@ type AssetNode {
   dependencies: [AssetDependency!]!
   dependencyKeys: [AssetKey!]!
   description: String
+  graphName: String
   id: ID!
   jobNames: [String!]!
   jobs: [Pipeline!]!
