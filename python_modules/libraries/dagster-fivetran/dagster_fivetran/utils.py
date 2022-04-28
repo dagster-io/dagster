@@ -40,7 +40,9 @@ def _table_data_to_materialization(
     )
 
 
-def generate_materializations(fivetran_output: FivetranOutput, asset_key_prefix: List[str]) -> Iterator[AssetMaterialization]:
+def generate_materializations(
+    fivetran_output: FivetranOutput, asset_key_prefix: List[str]
+) -> Iterator[AssetMaterialization]:
     for schema in fivetran_output.schema_config["schemas"].values():
         schema_name = schema["name_in_destination"]
         schema_prefix = fivetran_output.connector_details.get("config", {}).get("schema_prefix")
