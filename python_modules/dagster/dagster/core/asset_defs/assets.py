@@ -140,13 +140,15 @@ def _infer_asset_keys_by_input_names(
     graph_def: GraphDefinition, asset_keys_by_input_name: Mapping[str, AssetKey]
 ) -> Mapping[str, AssetKey]:
     all_input_names = {graph_input.definition.name for graph_input in graph_def.input_mappings}
-    for in_key in asset_keys_by_input_name.keys():
-        if in_key not in all_input_names:
-            raise DagsterInvalidDefinitionError(
-                f"Key '{in_key}' in provided asset_keys_by_input_name dict does not correspond to "
-                "any key provided in the ins dictionary of the decorated op or any argument "
-                "to the decorated function"
-            )
+
+    if asset_keys_by_input_name:
+        check.invariant(
+            set(asset_keys_by_input_name.keys()) == all_input_names,
+            "The set of input names keys specified in the asset_keys_by_input_name argument must "
+            "equal the set of asset keys inputted by this GraphDefinition. \n"
+            f"asset_keys_by_input_name keys: {set(asset_keys_by_input_name.keys())} \n"
+            f"expected keys: {all_input_names}",
+        )
 
     # If asset key is not supplied in asset_keys_by_input_name, create asset key
     # from input name
@@ -161,11 +163,21 @@ def _infer_asset_keys_by_input_names(
 def _infer_asset_keys_by_output_names(
     graph_def: GraphDefinition, asset_keys_by_output_name: Mapping[str, AssetKey]
 ) -> Mapping[str, AssetKey]:
+    output_names = set([output_def.name for output_def in graph_def.output_defs])
+    if asset_keys_by_output_name:
+        check.invariant(
+            set(asset_keys_by_output_name.keys()) == output_names,
+            "The set of output names keys specified in the asset_keys_by_output_name argument must "
+            "equal the set of asset keys outputted by this GraphDefinition. \n"
+            f"asset_keys_by_input_name keys: {set(asset_keys_by_output_name.keys())} \n"
+            f"expected keys: {output_names}",
+        )
+
     inferred_asset_keys_by_output_names: Dict[str, AssetKey] = {
         output_name: asset_key for output_name, asset_key in asset_keys_by_output_name.items()
     }
-    output_names = [output.definition.name for output in graph_def.output_mappings]
 
+    output_names = list(output_names)
     if (
         len(output_names) == 1
         and output_names[0] not in asset_keys_by_output_name
@@ -174,13 +186,6 @@ def _infer_asset_keys_by_output_names(
         # If there is only one output and the name is the default "result", generate asset key
         # from the name of the node
         inferred_asset_keys_by_output_names[output_names[0]] = AssetKey([graph_def.name])
-
-    for output_name in asset_keys_by_output_name.keys():
-        if output_name not in output_names:
-            raise DagsterInvalidDefinitionError(
-                f"Key {output_name} in provided asset_keys_by_output_name does not correspond "
-                "to any key provided in the out dictionary of the decorated op"
-            )
 
     for output_name in output_names:
         if output_name not in inferred_asset_keys_by_output_names:

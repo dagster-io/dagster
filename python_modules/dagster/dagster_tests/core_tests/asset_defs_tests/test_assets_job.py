@@ -659,17 +659,17 @@ def test_asset_def_from_graph_inputs():
     def my_op(x, y):
         return x
 
-    @graph(ins={"x": GraphIn()})
+    @graph(ins={"x": GraphIn(), "y": GraphIn()})
     def my_graph(x, y):
         my_op(x, y)
 
     assets_def = AssetsDefinition.from_graph(
         graph_def=my_graph,
-        asset_keys_by_input_name={"x": AssetKey("x_asset")},
+        asset_keys_by_input_name={"x": AssetKey("x_asset"), "y": AssetKey("y_asset")},
     )
 
     assert assets_def.asset_keys_by_input_name["x"] == AssetKey("x_asset")
-    assert assets_def.asset_keys_by_input_name["y"] == AssetKey("y")
+    assert assets_def.asset_keys_by_input_name["y"] == AssetKey("y_asset")
 
 
 def test_asset_def_from_graph_outputs():
@@ -687,11 +687,11 @@ def test_asset_def_from_graph_outputs():
 
     assets_def = AssetsDefinition.from_graph(
         graph_def=my_graph,
-        asset_keys_by_output_name={"y": AssetKey("y_asset")},
+        asset_keys_by_output_name={"y": AssetKey("y_asset"), "x": AssetKey("x_asset")},
     )
 
     assert assets_def.asset_keys_by_output_name["y"] == AssetKey("y_asset")
-    assert assets_def.asset_keys_by_output_name["x"] == AssetKey("x")
+    assert assets_def.asset_keys_by_output_name["x"] == AssetKey("x_asset")
 
 
 def test_graph_asset_decorator_no_args():
