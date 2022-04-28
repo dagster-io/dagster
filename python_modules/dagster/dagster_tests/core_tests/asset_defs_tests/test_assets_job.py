@@ -696,7 +696,7 @@ def test_asset_def_from_graph_outputs():
 
 def test_graph_asset_decorator_no_args():
     @op
-    def my_op(x, y): # pylint: disable=unused-argument
+    def my_op(x, y):  # pylint: disable=unused-argument
         return x
 
     @graph
