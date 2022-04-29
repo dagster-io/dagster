@@ -442,18 +442,6 @@ def test_default_io_manager():
     )
 
 
-def test_repo_with_multiple_asset_groups():
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="When constructing repository, attempted to pass multiple "
-        "AssetGroups. There can only be one AssetGroup per repository.",
-    ):
-
-        @repository
-        def the_repo():  # pylint: disable=unused-variable
-            return [AssetGroup(assets=[]), AssetGroup(assets=[])]
-
-
 def test_job_with_reserved_name():
     @graph
     def the_graph():
