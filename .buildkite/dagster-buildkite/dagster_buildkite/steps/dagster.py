@@ -263,13 +263,6 @@ def graphql_pg_extra_cmds_fn(_):
 # Some Dagster packages have more involved test configs or support only certain Python version;
 # special-case those here
 DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
-    # Examples: Airline Demo
-    ModuleBuildSpec(
-        "examples/airline_demo",
-        extra_cmds_fn=airline_demo_extra_cmds_fn,
-        buildkite_label="airline-demo",
-        supported_pythons=ExamplePythons,
-    ),
     ModuleBuildSpec(
         "examples/dbt_example",
         extra_cmds_fn=dbt_example_extra_cmds_fn,
