@@ -674,7 +674,7 @@ class AssetGroup:
 
         if self.resource_defs != other.resource_defs:
             raise DagsterInvalidDefinitionError(
-                "Can't add asset groups together with different resource definition dictionarys"
+                "Can't add asset groups together with different resource definition dictionaries"
             )
 
         if self.executor_def != other.executor_def:
@@ -774,3 +774,7 @@ def _validate_resource_reqs_for_asset_group(
                 "AssetGroup is missing required resource keys for resource '"
                 f"{resource_key}'. Missing resource keys: {missing_resource_keys}"
             )
+
+
+def _validate_no_asset_collisions(assets, source_assets):
+    ...
