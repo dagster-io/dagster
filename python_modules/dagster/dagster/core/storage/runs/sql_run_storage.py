@@ -5,7 +5,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import Callable, Dict, Iterable, List, NamedTuple, Optional, Set, Tuple, Union
 
 import pendulum
 import sqlalchemy as db
