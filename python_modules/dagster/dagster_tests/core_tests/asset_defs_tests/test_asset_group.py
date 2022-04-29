@@ -10,6 +10,7 @@ from dagster import (
     HourlyPartitionsDefinition,
     IOManager,
     Out,
+    ResourceDefinition,
     fs_asset_io_manager,
     graph,
     in_process_executor,
@@ -137,7 +138,7 @@ def test_asset_group_missing_resources():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"SourceAsset with key AssetKey\(\['foo'\]\) requires io manager with key 'foo', which was not provided on AssetGroup. Provided keys: \['io_manager', 'root_manager'\]",
+        match=r"SourceAsset with key AssetKey\(\['foo'\]\) requires io manager with key 'foo', which was not provided on AssetGroup. Provided keys: \['io_manager'\]",
     ):
         AssetGroup([], source_assets=[source_asset_io_req])
 
@@ -167,7 +168,7 @@ def test_asset_group_requires_root_manager():
         DagsterInvalidDefinitionError,
         match=r"Output 'result' with AssetKey 'AssetKey\(\['asset_foo'\]\)' "
         r"requires io manager 'blah' but was not provided on asset group. "
-        r"Provided resources: \['io_manager', 'root_manager'\]",
+        r"Provided resources: \['io_manager'\]",
     ):
         AssetGroup([asset_foo])
 
@@ -643,3 +644,72 @@ def test_assets_prefixed_no_matches():
     result = AssetGroup([orange]).prefixed("my_prefix").assets
     assert result[0].asset_key == AssetKey(["my_prefix", "orange"])
     assert set(result[0].dependency_asset_keys) == {AssetKey("apple")}
+
+
+def test_add_asset_groups():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    source1 = SourceAsset(AssetKey(["source1"]))
+    source2 = SourceAsset(AssetKey(["source2"]))
+
+    group1 = AssetGroup(assets=[asset1], source_assets=[source1])
+    group2 = AssetGroup(assets=[asset2], source_assets=[source2])
+
+    assert (group1 + group2) == AssetGroup(
+        assets=[asset1, asset2], source_assets=[source1, source2]
+    )
+
+
+def test_add_asset_groups_different_resources():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    source1 = SourceAsset(AssetKey(["source1"]))
+    source2 = SourceAsset(AssetKey(["source2"]))
+
+    group1 = AssetGroup(
+        assets=[asset1],
+        source_assets=[source1],
+        resource_defs={"apple": ResourceDefinition.none_resource()},
+    )
+    group2 = AssetGroup(
+        assets=[asset2],
+        source_assets=[source2],
+        resource_defs={"banana": ResourceDefinition.none_resource()},
+    )
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        group1 + group2  # pylint: disable=pointless-statement
+
+
+def test_add_asset_groups_different_executors():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    source1 = SourceAsset(AssetKey(["source1"]))
+    source2 = SourceAsset(AssetKey(["source2"]))
+
+    group1 = AssetGroup(assets=[asset1], source_assets=[source1], executor_def=in_process_executor)
+    group2 = AssetGroup(
+        assets=[asset2],
+        source_assets=[source2],
+    )
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        group1 + group2  # pylint: disable=pointless-statement
