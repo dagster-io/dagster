@@ -42,7 +42,7 @@ from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
-from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue, normalize_metadata
+from .metadata import RawMetadataValue
 from .mode import ModeDefinition
 from .partition import PartitionSetDefinition, PartitionedConfig
 from .pipeline_definition import PipelineDefinition
@@ -93,9 +93,6 @@ class JobDefinition(PipelineDefinition):
         self._op_selection_data = check.opt_inst_param(
             _op_selection_data, "_op_selection_data", OpSelectionData
         )
-        self._metadata = []
-        if metadata is not None:
-            self._metadata = normalize_metadata(metadata, [])
 
         all_tags: Dict[str, Any] = {}
         if default_run_tags is not None:
@@ -110,7 +107,7 @@ class JobDefinition(PipelineDefinition):
             preset_defs=preset_defs,
             tags=all_tags,
             job_tags=job_tags,
-            metadata=self._metadata,
+            metadata=metadata,
             hook_defs=hook_defs,
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,

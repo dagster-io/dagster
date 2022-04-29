@@ -85,8 +85,6 @@ const GraphExplorerRoot: React.FC<Props> = (props) => {
       },
     },
   );
-  console.log('graph root graphResult');
-  console.log(graphResult);
 
   return (
     <Loading<GraphExplorerRootQuery> queryResult={graphResult}>

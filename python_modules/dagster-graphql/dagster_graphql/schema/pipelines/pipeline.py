@@ -537,7 +537,6 @@ class GrapheneIPipelineSnapshotMixin:
         ]
 
     def resolve_job_tags(self, _graphene_info):
-        # import pdb; pdb.set_trace()
         represented_pipeline = self.get_represented_pipeline()
         return [
             GraphenePipelineTag(key=key, value=value)
@@ -546,9 +545,7 @@ class GrapheneIPipelineSnapshotMixin:
 
     def resolve_metadata_entries(self, _graphene_info) -> List[GrapheneMetadataEntry]:
         represented_pipeline = self.get_represented_pipeline()
-        return list(
-            iterate_metadata_entries(represented_pipeline.pipeline_snapshot.metadata_entries)
-        )
+        return list(iterate_metadata_entries(represented_pipeline.pipeline_snapshot.metadata))
 
     def resolve_solidSelection(self, _graphene_info):
         return self.get_represented_pipeline().solid_selection
@@ -753,7 +750,6 @@ class GrapheneGraph(graphene.ObjectType):
         non_null_list(GrapheneSolidHandle), parentHandleID=graphene.String()
     )
     modes = non_null_list(GrapheneMode)
-    # tags = non_null_list(GraphenePipelineTag)
 
     def __init__(self, external_pipeline, solid_handle_id=None):
         self._external_pipeline = check.inst_param(
@@ -797,13 +793,6 @@ class GrapheneGraph(graphene.ObjectType):
         # returns empty list... graphs don't have modes, this is a vestige of the old
         # pipeline explorer, which expected all solid containers to be pipelines
         return []
-
-    # def resolve_tags(self, _graphene_info):
-    #     return [
-    #         GraphenePipelineTag(key=key, value=value)
-    #         for key, value in self._external_pipeline.tags.items()
-    #         if get_tag_type(key) != TagType.HIDDEN
-    #     ]
 
 
 class GrapheneRunOrError(graphene.Union):

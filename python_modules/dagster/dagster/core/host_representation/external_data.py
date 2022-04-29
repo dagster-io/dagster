@@ -736,7 +736,6 @@ def external_repository_data_from_def(
     check.inst_param(repository_def, "repository_def", RepositoryDefinition)
 
     pipelines = repository_def.get_all_pipelines()
-
     return ExternalRepositoryData(
         name=repository_def.name,
         external_pipeline_datas=sorted(

@@ -69,9 +69,6 @@ export const PipelineExplorerContainer: React.FC<{
     },
   );
 
-  console.log('pipeline explorer root');
-  console.log(pipelineResult);
-
   return (
     <Loading<PipelineExplorerRootQuery> queryResult={pipelineResult}>
       {({pipelineSnapshotOrError: result}) => {

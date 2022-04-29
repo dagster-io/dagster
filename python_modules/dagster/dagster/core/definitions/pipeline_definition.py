@@ -167,7 +167,7 @@ class PipelineDefinition:
         preset_defs: Optional[List[PresetDefinition]] = None,
         tags: Optional[Dict[str, Any]] = None,
         job_tags: Optional[Dict[str, Any]] = None,
-        metadata: List[Union[MetadataEntry, PartitionMetadataEntry]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         solid_retry_policy: Optional[RetryPolicy] = None,
         graph_def=None,
@@ -204,7 +204,10 @@ class PipelineDefinition:
         self._description = check.opt_str_param(description, "description")
         self._tags = validate_tags(tags)
         self._job_tags = validate_tags(job_tags)
-        self._metadata = metadata
+
+        self._metadata = []
+        if metadata is not None:
+            self._metadata = normalize_metadata(metadata, [])
 
         self._current_level_node_defs = self._graph_def.node_defs
 
@@ -490,11 +493,9 @@ class PipelineDefinition:
         from dagster.core.host_representation import PipelineIndex
         from dagster.core.snap import PipelineSnapshot
 
-        index = PipelineIndex(
+        return PipelineIndex(
             PipelineSnapshot.from_pipeline_def(self), self.get_parent_pipeline_snapshot()
         )
-
-        return index
 
     def get_config_schema_snapshot(self) -> "ConfigSchemaSnapshot":
         return self.get_pipeline_snapshot().config_schema_snapshot

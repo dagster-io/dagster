@@ -3,7 +3,7 @@ import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT, MetadataEntries} from '../metadata/MetadataEntry';
 import {RunTag} from '../runs/RunTag';
 import {PipelineSelector} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
@@ -44,6 +44,7 @@ export const SidebarPipelineOrJobOverview: React.FC<{
 
         const modes = pipelineSnapshotOrError.modes;
         const jobTags = pipelineSnapshotOrError.jobTags;
+        // const metadata = pipelineSnapshotOrError.metadataEntries
 
         return (
           <>
@@ -66,6 +67,11 @@ export const SidebarPipelineOrJobOverview: React.FC<{
                 {jobTags.map((tag, idx) => (
                   <RunTag tag={tag} key={idx} />
                 ))}
+              </Box>
+            </SidebarSection>
+            <SidebarSection title="Metadata">
+              <Box padding={{vertical: 16, horizontal: 24}}>
+                <MetadataEntries entries={pipelineSnapshotOrError.metadataEntries} />
               </Box>
             </SidebarSection>
           </>

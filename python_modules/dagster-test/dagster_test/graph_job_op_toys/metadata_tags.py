@@ -10,9 +10,11 @@ def wow():
     metadata={
         "foo": "bar",
         "baz": MetadataValue.text("aaaa"),
-        "not_shown": MetadataValue.url(url="https://dagster.io"),
+        "a_link": MetadataValue.url(url="https://dagster.io"),
     },
     tags={"bbb": "ccc"},
+    default_run_tags={"aaa": "ddd"},
+    job_tags={"owner": "core_team"},
 )
-def wow_job():
+def with_tags_and_metadata():
     wow()

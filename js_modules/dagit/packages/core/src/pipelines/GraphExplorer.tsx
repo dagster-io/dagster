@@ -174,9 +174,6 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
   const parentOp = parentHandle && parentHandle.solid;
   const {layout, loading, async} = useOpLayout(queryResultOps.all, parentOp);
 
-  console.log('graph explorer pipelineOrGraph');
-  console.log(pipelineOrGraph);
-
   return (
     <SplitPanelContainer
       identifier="explorer"
