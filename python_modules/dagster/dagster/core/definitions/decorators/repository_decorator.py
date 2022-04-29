@@ -14,7 +14,6 @@ from ..repository_definition import (
     RepositoryDefinition,
     is_resource_dict,
 )
-from ..resource_definition import ResourceDefinition
 from ..schedule_definition import ScheduleDefinition
 from ..sensor_definition import SensorDefinition
 
