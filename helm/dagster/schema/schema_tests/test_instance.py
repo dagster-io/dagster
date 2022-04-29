@@ -152,7 +152,7 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
     assert run_launcher_config["config"]["job_namespace"] == job_namespace
     assert run_launcher_config["config"]["load_incluster_config"] == load_incluster_config
     assert run_launcher_config["config"]["image_pull_policy"] == image_pull_policy
-    assert run_launcher_config["config"]["env_config_maps"][1:] == [
+    assert run_launcher_config["config"]["env_config_maps"] == [
         configmap["name"] for configmap in env_config_maps
     ]
     assert run_launcher_config["config"]["env_secrets"] == [
