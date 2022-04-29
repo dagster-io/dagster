@@ -774,7 +774,3 @@ def _validate_resource_reqs_for_asset_group(
                 "AssetGroup is missing required resource keys for resource '"
                 f"{resource_key}'. Missing resource keys: {missing_resource_keys}"
             )
-
-
-def _validate_no_asset_collisions(assets, source_assets):
-    ...
