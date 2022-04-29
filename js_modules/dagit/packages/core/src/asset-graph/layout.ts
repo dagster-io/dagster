@@ -34,15 +34,17 @@ const opts: {margin: number; mini: boolean} = {
   mini: false,
 };
 
-function identifyBundles(nodes: GraphNode[]) {
+function identifyBundles(nodeIds: string[]) {
   const pathPrefixes: {[prefixId: string]: string[]} = {};
 
-  for (const node of nodes) {
-    for (let ii = 1; ii < node.assetKey.path.length; ii++) {
-      const prefix = node.assetKey.path.slice(0, ii);
+  for (const nodeId of nodeIds) {
+    const assetKeyPath = JSON.parse(nodeId);
+
+    for (let ii = 1; ii < assetKeyPath.length; ii++) {
+      const prefix = assetKeyPath.slice(0, ii);
       const key = JSON.stringify(prefix);
       pathPrefixes[key] = pathPrefixes[key] || [];
-      pathPrefixes[key].push(node.id);
+      pathPrefixes[key].push(nodeId);
     }
   }
 
@@ -97,6 +99,7 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
 
   const shouldRender = (node?: GraphNode) => node && node.definition.opName;
 
+  // Add all the nodes to the graph
   Object.values(graphData.nodes)
     .filter(shouldRender)
     .forEach((node) => {
@@ -104,16 +107,10 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
       g.setNode(node.id, {width: opts.mini ? 230 : width, height});
     });
 
-  const bundleMapping = identifyBundles(Object.values(graphData.nodes));
-  for (const [parentId, nodeIds] of Object.entries(bundleMapping)) {
-    g.setNode(parentId, {});
-    for (const nodeId of nodeIds) {
-      g.setParent(nodeId, parentId);
-    }
-  }
-
   const foreignNodes = {};
 
+  // Add the edges to the graph, and accumulate a set of "foreign nodes" (for which
+  // we have an inbound/outbound edge, but we don't have the `node` in the graphData).
   Object.keys(graphData.downstream).forEach((upstreamId) => {
     const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
     downstreamIds.forEach((downstreamId) => {
@@ -134,9 +131,22 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
     });
   });
 
+  // Add all the foreign nodes to the graph
   Object.keys(foreignNodes).forEach((id) => {
     g.setNode(id, getForeignNodeDimensions(id));
   });
+
+  // Create "parent" nodes for nodes with a shared ID (path) prefix (eg: s3>a, s3>b),
+  // and then place the children inside. Note that the bundles are identified in order
+  // and bundleMapping can reference bundles as children - this code can create multiple
+  // layers of parents!
+  const bundleMapping = identifyBundles(g.nodes());
+  for (const [parentId, nodeIds] of Object.entries(bundleMapping)) {
+    g.setNode(parentId, {});
+    for (const nodeId of nodeIds) {
+      g.setParent(nodeId, parentId);
+    }
+  }
 
   dagre.layout(g);
 
@@ -164,9 +174,24 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
       height: dagreNode.height,
     };
     if (bundleMapping[id]) {
-      bundles[id] = {id, bounds};
-    } else {
-      nodes[id] = {id, bounds};
+      return;
+    }
+    nodes[id] = {id, bounds};
+
+    // If this node was inside one or more parent nodes, upsert the parent box
+    // into the bundles result set and expand it to include the child. Note:
+    // dagre does give us "parent" node dimensions, but sometimes they're randomly
+    // much larger than the contents.
+    let bundleId = g.parent(id);
+    while (bundleId) {
+      bundles[bundleId] = bundles[bundleId] || {id: bundleId, bounds};
+      bundles[bundleId].bounds = extendBounds(bundles[bundleId].bounds, {
+        x: bounds.x - opts.margin / 4,
+        y: bounds.y - opts.margin / 4,
+        width: bounds.width + opts.margin / 2,
+        height: bounds.height + opts.margin / 2,
+      });
+      bundleId = g.parent(bundleId);
     }
     maxWidth = Math.max(maxWidth, dagreNode.x + dagreNode.width / 2);
     maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height / 2);
@@ -207,6 +232,14 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
 export const getForeignNodeDimensions = (id: string) => {
   const path = JSON.parse(id);
   return {width: displayNameForAssetKey({path}).length * 8 + 30, height: 30};
+};
+
+export const extendBounds = (a: IBounds, b: IBounds) => {
+  const xmin = Math.min(a.x, b.x);
+  const ymin = Math.min(a.y, b.y);
+  const xmax = Math.max(a.x + a.width, b.x + b.width);
+  const ymax = Math.max(a.y + a.height, b.y + b.height);
+  return {x: xmin, y: ymin, width: xmax - xmin, height: ymax - ymin};
 };
 
 export const ASSET_NODE_ANNOTATIONS_MAX_WIDTH = 65;
