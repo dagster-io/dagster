@@ -706,7 +706,7 @@ class CachingRepositoryData(RepositoryData):
                     default_resources_dict = definition
                 else:
                     check.failed(
-                        f"Provided multiple resource dictionaries to repository, please provide only one."
+                        "Provided multiple resource dictionaries to repository, please provide only one."
                     )
             else:
                 check.failed(f"Unexpected repository entry {definition}")
