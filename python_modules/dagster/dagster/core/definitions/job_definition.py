@@ -1,3 +1,4 @@
+from enum import Enum
 from functools import update_wrapper
 from typing import (
     TYPE_CHECKING,
@@ -40,14 +41,18 @@ from dagster.utils import merge_dicts
 
 from .config import ConfigMapping
 from .executor_definition import ExecutorDefinition
-from .graph_definition import GraphDefinition, SubselectedGraphDefinition
+from .graph_definition import (
+    SYSTEM_DEFAULT_JOB_RESOURCES,
+    GraphDefinition,
+    SubselectedGraphDefinition,
+)
 from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
 from .mode import ModeDefinition
 from .partition import PartitionSetDefinition, PartitionedConfig
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
-from .resource_definition import ResourceDefinition, ResourceSource
+from .resource_definition import ResourceDefinition, ResourceOrigin
 from .run_request import RunRequest
 from .version_strategy import VersionStrategy
 
@@ -75,7 +80,7 @@ class JobDefinition(PipelineDefinition):
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
-        _resource_sources: Optional[Dict[str, ResourceSource]] = None,
+        _origin: Optional[Tuple[object, "JobCreationAction"]] = None,
     ):
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
@@ -85,12 +90,15 @@ class JobDefinition(PipelineDefinition):
             executor_defs=[executor_def] if executor_def else None,
             _config_mapping=config_mapping,
             _partitioned_config=partitioned_config,
-            _resource_sources=_resource_sources,
         )
 
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
         self._op_selection_data = check.opt_inst_param(
             _op_selection_data, "_op_selection_data", OpSelectionData
+        )
+        check.opt_tuple_param(_origin, "_origin")
+        self._origin = cast(
+            Optional[Tuple[Union[JobDefinition, PartialJobDefinition], JobCreationAction]], _origin
         )
 
         super(JobDefinition, self).__init__(
@@ -135,6 +143,12 @@ class JobDefinition(PipelineDefinition):
     @property
     def loggers(self) -> Mapping[str, LoggerDefinition]:
         return self.get_mode_definition().loggers
+
+    @property
+    def origin(
+        self,
+    ) -> Optional[Tuple[Union["JobDefinition", "PartialJobDefinition"], "JobCreationAction"]]:
+        return self._origin
 
     def execute_in_process(
         self,
@@ -231,6 +245,64 @@ class JobDefinition(PipelineDefinition):
     @property
     def op_selection_data(self) -> Optional[OpSelectionData]:
         return self._op_selection_data
+
+    def get_resource_origin(self, resource_key: str) -> Optional[ResourceOrigin]:
+        if resource_key not in self.resource_defs:
+            raise DagsterInvalidDefinitionError(
+                f"Attempted to retrieve information about resource key {resource_key}, which is not present on the job."
+            )
+
+        if (
+            resource_key in SYSTEM_DEFAULT_JOB_RESOURCES
+            and self.resource_defs[resource_key] == SYSTEM_DEFAULT_JOB_RESOURCES[resource_key]
+        ):
+            return ResourceOrigin.FROM_SYSTEM_DEFAULT
+
+        # If this job has no origin, then resource must have been provided from this job's creation
+        if not self._origin:
+            return None
+
+        prev_traversal_point: Union["JobDefinition", "PartialJobDefinition"] = self
+        current_traversal_point: Optional[
+            Union["JobDefinition", "PartialJobDefinition"]
+        ] = self._origin[0]
+
+        while current_traversal_point:
+            # If resource key exists within the current job definition, then continue traversing
+            current_traversal_point_origin = cast(
+                Optional[
+                    Tuple[Union["JobDefinition", "PartialJobDefinition"], "JobCreationAction"]
+                ],
+                current_traversal_point.origin,
+            )
+            if resource_key not in current_traversal_point.resource_defs:
+                break
+            else:
+                prev_traversal_point = cast(
+                    Union["JobDefinition", "PartialJobDefinition"],
+                    current_traversal_point,
+                )
+                current_traversal_point = (
+                    current_traversal_point_origin[0] if current_traversal_point_origin else None
+                )
+
+        # Resource was provided by standard job construction
+        if not current_traversal_point:
+            return None
+
+        # Resource was provided either by a user directly foisting a partial job definition into a job definition, or by the repo doing so with the default resource set.
+        if isinstance(current_traversal_point, PartialJobDefinition):
+            prev_traversal_point_origin = prev_traversal_point.origin
+            return (
+                ResourceOrigin.FROM_REPO_DEFAULT
+                if prev_traversal_point_origin
+                and prev_traversal_point_origin[1] == JobCreationAction.FROM_PARTIAL_REPO_COERCION
+                else None
+            )
+
+        raise DagsterInvalidDefinitionError(
+            f"Lineage indicates that resource key {resource_key} was created between construction of {type(current_traversal_point)} and {type(prev_traversal_point)}, which should not be possible."
+        )
 
     def get_job_def_for_op_selection(
         self,
@@ -468,7 +540,7 @@ def get_subselected_graph_definition(
 
 
 class PartialJobDefinition(NamedTuple):
-    resource_defs: Optional[Dict[str, ResourceDefinition]]
+    resource_defs: Dict[str, ResourceDefinition]
     loggers: Optional[Dict[str, LoggerDefinition]]
     executor_defs: Optional[List[ExecutorDefinition]]
     config_mapping: Optional[ConfigMapping]
@@ -482,12 +554,11 @@ class PartialJobDefinition(NamedTuple):
     op_retry_policy: Optional[RetryPolicy] = None
     version_strategy: Optional[VersionStrategy] = None
     op_selection_data: Optional[OpSelectionData] = None
-    resource_sources: Optional[Dict[str, ResourceSource]] = None
+    origin: Optional[Tuple[object, "JobCreationAction"]] = None
 
     def coerce_to_job_def(
         self,
         resource_defs: Dict[str, ResourceDefinition],
-        resource_sources: Optional[Dict[str, ResourceSource]],
     ) -> JobDefinition:
         override_resource_defs = self.resource_defs
         loggers = self.loggers
@@ -496,8 +567,6 @@ class PartialJobDefinition(NamedTuple):
         resource_defs = merge_dicts(
             resource_defs, override_resource_defs if override_resource_defs else {}
         )
-
-        resource_sources = merge_dicts(resource_sources or {}, self.resource_sources or {})
 
         return JobDefinition(
             resource_defs=resource_defs,
@@ -514,7 +583,7 @@ class PartialJobDefinition(NamedTuple):
             op_retry_policy=self.op_retry_policy,
             version_strategy=self.version_strategy,
             _op_selection_data=self.op_selection_data,
-            _resource_sources=resource_sources,
+            _origin=(self, JobCreationAction.FROM_PARTIAL_REPO_COERCION),
         )
 
     def get_job_def_for_op_selection(
@@ -552,3 +621,9 @@ class PartialJobDefinition(NamedTuple):
                 parent_job_def=self,  # used by pipeline snapshot lineage
             ),
         )
+
+
+class JobCreationAction(Enum):
+    FROM_PARTIAL_REPO_COERCION = "FROM_PARTIAL_REPO_COERCION"
+    FROM_PARTIAL_DIRECT_COERCION = "FROM_PARTIAL_DIRECT_COERCION"
+    FROM_JOB_SUBSETTING = "FROM_JOB_SUBSETTING"

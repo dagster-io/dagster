@@ -448,6 +448,6 @@ def make_values_resource(**kwargs: Any) -> ResourceDefinition:
 
 
 @whitelist_for_serdes
-class ResourceSource(Enum):
-    FROM_OVERRIDE = "FROM_OVERRIDE"
-    FROM_DEFAULT = "FROM_DEFAULT"
+class ResourceOrigin(Enum):
+    FROM_REPO_DEFAULT = "FROM_REPO_DEFAULT"
+    FROM_SYSTEM_DEFAULT = "FROM_SYSTEM_DEFAULT"

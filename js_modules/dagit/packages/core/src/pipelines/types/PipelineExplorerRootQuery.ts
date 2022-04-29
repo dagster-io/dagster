@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineSelector, ResourceSource } from "./../../types/globalTypes";
+import { PipelineSelector, ResourceOrigin } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PipelineExplorerRootQuery
@@ -473,7 +473,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   name: string;
   description: string | null;
   configField: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField | null;
-  source: ResourceSource | null;
+  origin: ResourceOrigin | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {

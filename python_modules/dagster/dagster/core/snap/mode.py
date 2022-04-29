@@ -8,21 +8,22 @@ from dagster.core.definitions import (
     LoggerDefinition,
     ModeDefinition,
     ResourceDefinition,
-    ResourceSource,
+    ResourceOrigin,
 )
 from dagster.serdes import whitelist_for_serdes
 
 
-def build_mode_def_snap(mode_def, root_config_key):
+def build_mode_def_snap(mode_def, root_config_key, resource_origins):
     check.inst_param(mode_def, "mode_def", ModeDefinition)
     check.str_param(root_config_key, "root_config_key")
+    resource_origins = check.opt_mapping_param(resource_origins, "resource_origins")
 
     return ModeDefSnap(
         name=mode_def.name,
         description=mode_def.description,
         resource_def_snaps=sorted(
             [
-                build_resource_def_snap(name, rd, mode_def.resource_sources.get(name))
+                build_resource_def_snap(name, rd, resource_origins.get(name))
                 for name, rd in mode_def.resource_defs.items()
             ],
             key=lambda item: item.name,
@@ -70,7 +71,7 @@ class ModeDefSnap(
         )
 
 
-def build_resource_def_snap(name, resource_def, source):
+def build_resource_def_snap(name, resource_def, origin):
     check.str_param(name, "name")
     check.inst_param(resource_def, "resource_def", ResourceDefinition)
     return ResourceDefSnap(
@@ -79,7 +80,7 @@ def build_resource_def_snap(name, resource_def, source):
         config_field_snap=snap_from_field("config", resource_def.config_field)
         if resource_def.has_config_field
         else None,
-        source=source or ResourceSource.FROM_OVERRIDE,
+        origin=origin,
     )
 
 
@@ -91,7 +92,7 @@ class ResourceDefSnap(
             ("name", str),
             ("description", Optional[str]),
             ("config_field_snap", Optional[ConfigFieldSnap]),
-            ("source", ResourceSource),
+            ("origin", Optional[ResourceOrigin]),
         ],
     )
 ):
@@ -100,7 +101,7 @@ class ResourceDefSnap(
         name: str,
         description: Optional[str],
         config_field_snap: Optional[ConfigFieldSnap],
-        source: Optional[ResourceSource] = None,
+        origin: Optional[ResourceOrigin] = None,
     ):
         return super(ResourceDefSnap, cls).__new__(
             cls,
@@ -109,12 +110,7 @@ class ResourceDefSnap(
             config_field_snap=check.opt_inst_param(
                 config_field_snap, "config_field_snap", ConfigFieldSnap
             ),
-            source=cast(
-                ResourceSource,
-                check.opt_inst_param(
-                    source, "source", ResourceSource, default=ResourceSource.FROM_OVERRIDE
-                ),
-            ),
+            origin=check.opt_inst_param(origin, "origin", ResourceOrigin),
         )
 
 

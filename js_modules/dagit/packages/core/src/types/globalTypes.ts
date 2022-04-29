@@ -127,9 +127,9 @@ export enum RepositoryLocationLoadStatus {
   LOADING = "LOADING",
 }
 
-export enum ResourceSource {
-  FROM_DEFAULT = "FROM_DEFAULT",
-  FROM_OVERRIDE = "FROM_OVERRIDE",
+export enum ResourceOrigin {
+  FROM_REPO_DEFAULT = "FROM_REPO_DEFAULT",
+  FROM_SYSTEM_DEFAULT = "FROM_SYSTEM_DEFAULT",
 }
 
 export enum RunStatus {

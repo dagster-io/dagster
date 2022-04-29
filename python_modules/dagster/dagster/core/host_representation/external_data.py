@@ -32,7 +32,7 @@ from dagster.core.definitions.metadata import MetadataEntry
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.partition import PartitionScheduleDefinition, ScheduleType
-from dagster.core.definitions.resource_definition import ResourceSource
+from dagster.core.definitions.resource_definition import ResourceOrigin
 from dagster.core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster.core.definitions.sensor_definition import (
     AssetSensorDefinition,
@@ -810,9 +810,7 @@ def external_default_resource_data_from_defs(
             raise DagsterInvalidDefinitionError("Resource definition has no config type")
         external_resource_data.append(
             ExternalDefaultResourceData(
-                resource_def_snap=build_resource_def_snap(
-                    name, resource_def, ResourceSource.FROM_DEFAULT
-                ),
+                resource_def_snap=build_resource_def_snap(name, resource_def, None),
                 config_schema_snap=config_schema_snapshot_from_config_type(
                     cast(ConfigType, resource_config_type)
                 ),

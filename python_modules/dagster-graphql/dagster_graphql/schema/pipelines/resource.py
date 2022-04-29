@@ -6,19 +6,19 @@ from dagster.core.snap import ConfigSchemaSnapshot, ResourceDefSnap
 from ..config_types import GrapheneConfigTypeField
 
 
-class GrapheneResourceSource(graphene.Enum):
-    FROM_OVERRIDE = "FROM_OVERRIDE"
-    FROM_DEFAULT = "FROM_DEFAULT"
+class GrapheneResourceOrigin(graphene.Enum):
+    FROM_REPO_DEFAULT = "FROM_REPO_DEFAULT"
+    FROM_SYSTEM_DEFAULT = "FROM_SYSTEM_DEFAULT"
 
     class Meta:
-        name = "ResourceSource"
+        name = "ResourceOrigin"
 
 
 class GrapheneResource(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     configField = graphene.Field(GrapheneConfigTypeField)
-    source = graphene.Field(GrapheneResourceSource)
+    origin = graphene.Field(GrapheneResourceOrigin)
 
     class Meta:
         name = "Resource"
@@ -49,5 +49,5 @@ class GrapheneResource(graphene.ObjectType):
 
         return None
 
-    def resolve_source(self, _graphene_info):
-        return self._resource_def_snap.source
+    def resolve_origin(self, _graphene_info):
+        return self._resource_def_snap.origin

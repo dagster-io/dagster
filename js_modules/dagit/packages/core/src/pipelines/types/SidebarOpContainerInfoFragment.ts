@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ResourceSource } from "./../../types/globalTypes";
+import { ResourceOrigin } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: SidebarOpContainerInfoFragment
@@ -473,7 +473,7 @@ export interface SidebarOpContainerInfoFragment_modes_resources {
   name: string;
   description: string | null;
   configField: SidebarOpContainerInfoFragment_modes_resources_configField | null;
-  source: ResourceSource | null;
+  origin: ResourceOrigin | null;
 }
 
 export interface SidebarOpContainerInfoFragment_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {

@@ -23,6 +23,7 @@ from dagster.core.definitions.pipeline_definition import (
     PipelineDefinition,
     PipelineSubsetDefinition,
 )
+from dagster.core.definitions.resource_definition import ResourceOrigin
 from dagster.core.utils import toposort_flatten
 from dagster.serdes import (
     DefaultNamedTupleSerializer,
@@ -187,6 +188,8 @@ class PipelineSnapshot(
                 solids_to_execute=pipeline_def.op_selection_data.resolved_op_selection,
             )
 
+        resource_origins = _get_resource_origins_from_job_def(pipeline_def)
+
         return PipelineSnapshot(
             name=pipeline_def.name,
             description=pipeline_def.description,
@@ -198,7 +201,11 @@ class PipelineSnapshot(
                 pipeline_def.graph
             ),
             mode_def_snaps=[
-                build_mode_def_snap(md, pipeline_def.get_run_config_schema(md.name).config_type.key)
+                build_mode_def_snap(
+                    md,
+                    pipeline_def.get_run_config_schema(md.name).config_type.key,
+                    resource_origins,
+                )
                 for md in pipeline_def.mode_definitions
             ],
             lineage_snapshot=lineage,
@@ -255,6 +262,24 @@ class PipelineSnapshot(
             }
 
         return toposort_flatten(upstream_outputs)
+
+
+def _get_resource_origins_from_job_def(
+    pipeline_def: PipelineDefinition,
+) -> Optional[Dict[str, ResourceOrigin]]:
+    if not pipeline_def.is_job:
+        return None
+
+    job_def = cast(JobDefinition, pipeline_def)
+
+    resource_origins = {}
+    for resource_key in job_def.resource_defs.keys():
+        resource_origin = job_def.get_resource_origin(resource_key)
+
+        if resource_origin:
+            resource_origins[resource_key] = resource_origin
+
+    return resource_origins
 
 
 def _construct_enum_from_snap(config_type_snap: ConfigTypeSnap):

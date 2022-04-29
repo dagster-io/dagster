@@ -1091,12 +1091,12 @@ type Resource {
   name: String!
   description: String
   configField: ConfigTypeField
-  source: ResourceSource
+  origin: ResourceOrigin
 }
 
-enum ResourceSource {
-  FROM_OVERRIDE
-  FROM_DEFAULT
+enum ResourceOrigin {
+  FROM_REPO_DEFAULT
+  FROM_SYSTEM_DEFAULT
 }
 
 type Logger {
