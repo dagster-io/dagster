@@ -3,6 +3,7 @@ import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {RunTag} from '../runs/RunTag';
 import {PipelineSelector} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
@@ -89,6 +90,9 @@ const JOB_OVERVIEW_SIDEBAR_QUERY = gql`
           key
           value
         }
+        metadataEntries {
+          ...MetadataEntryFragment
+        }
       }
       ... on PipelineNotFoundError {
         message
@@ -99,6 +103,7 @@ const JOB_OVERVIEW_SIDEBAR_QUERY = gql`
       ...PythonErrorFragment
     }
   }
+  ${METADATA_ENTRY_FRAGMENT}
   ${SIDEBAR_MODE_INFO_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;

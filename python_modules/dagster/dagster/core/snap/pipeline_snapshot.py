@@ -19,6 +19,7 @@ from dagster.config.snap import (
     ConfigTypeSnap,
 )
 from dagster.core.definitions.job_definition import JobDefinition
+from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster.core.definitions.pipeline_definition import (
     PipelineDefinition,
     PipelineSubsetDefinition,
@@ -76,6 +77,7 @@ def _pipeline_snapshot_from_storage(
     description: Optional[str],
     tags: Optional[Dict[str, Any]],
     job_tags: Optional[Dict[str, Any]],
+    metadata: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]],
     config_schema_snapshot: ConfigSchemaSnapshot,
     dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
     solid_definitions_snapshot: SolidDefinitionsSnapshot,
@@ -91,6 +93,7 @@ def _pipeline_snapshot_from_storage(
     v2:
         - graph_def_name
     """
+    # TODO - add job_tags and metadata with default None for backcompat
     if graph_def_name is None:
         graph_def_name = name
 
@@ -99,6 +102,7 @@ def _pipeline_snapshot_from_storage(
         description=description,
         tags=tags,
         job_tags=job_tags,
+        metadata=metadata,
         config_schema_snapshot=config_schema_snapshot,
         dagster_type_namespace_snapshot=dagster_type_namespace_snapshot,
         solid_definitions_snapshot=solid_definitions_snapshot,
@@ -118,6 +122,7 @@ class PipelineSnapshot(
             ("description", Optional[str]),
             ("tags", Dict[str, Any]),
             ("job_tags", Dict[str, Any]),
+            ("metadata", List[Union[MetadataEntry, PartitionMetadataEntry]]),
             ("config_schema_snapshot", ConfigSchemaSnapshot),
             ("dagster_type_namespace_snapshot", DagsterTypeNamespaceSnapshot),
             ("solid_definitions_snapshot", SolidDefinitionsSnapshot),
@@ -134,6 +139,7 @@ class PipelineSnapshot(
         description: Optional[str],
         tags: Optional[Dict[str, Any]],
         job_tags: Optional[Dict[str, Any]],
+        metadata: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]],
         config_schema_snapshot: ConfigSchemaSnapshot,
         dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
         solid_definitions_snapshot: SolidDefinitionsSnapshot,
@@ -148,6 +154,7 @@ class PipelineSnapshot(
             description=check.opt_str_param(description, "description"),
             tags=check.opt_dict_param(tags, "tags"),
             job_tags=check.opt_dict_param(job_tags, "job_tags"),
+            metadata=check.opt_list_param(metadata, "metadata"),
             config_schema_snapshot=check.inst_param(
                 config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
             ),
@@ -197,6 +204,7 @@ class PipelineSnapshot(
             description=pipeline_def.description,
             tags=pipeline_def.tags,
             job_tags=pipeline_def.job_tags,
+            metadata=pipeline_def.metadata,
             config_schema_snapshot=build_config_schema_snapshot(pipeline_def),
             dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(pipeline_def),
             solid_definitions_snapshot=build_solid_definitions_snapshot(pipeline_def),

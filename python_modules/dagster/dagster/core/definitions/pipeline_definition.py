@@ -46,6 +46,7 @@ from .dependency import (
 )
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
+from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue, normalize_metadata
 from .mode import ModeDefinition
 from .node_definition import NodeDefinition
 from .preset import PresetDefinition
@@ -166,6 +167,7 @@ class PipelineDefinition:
         preset_defs: Optional[List[PresetDefinition]] = None,
         tags: Optional[Dict[str, Any]] = None,
         job_tags: Optional[Dict[str, Any]] = None,
+        metadata: List[Union[MetadataEntry, PartitionMetadataEntry]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         solid_retry_policy: Optional[RetryPolicy] = None,
         graph_def=None,
@@ -202,6 +204,7 @@ class PipelineDefinition:
         self._description = check.opt_str_param(description, "description")
         self._tags = validate_tags(tags)
         self._job_tags = validate_tags(job_tags)
+        self._metadata = metadata
 
         self._current_level_node_defs = self._graph_def.node_defs
 
@@ -300,6 +303,10 @@ class PipelineDefinition:
     @property
     def job_tags(self):
         return frozentags(self._job_tags)
+
+    @property
+    def metadata(self) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
+        return self._metadata
 
     @property
     def description(self):

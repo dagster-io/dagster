@@ -93,7 +93,7 @@ class JobDefinition(PipelineDefinition):
         self._op_selection_data = check.opt_inst_param(
             _op_selection_data, "_op_selection_data", OpSelectionData
         )
-        self._metadata = None
+        self._metadata = []
         if metadata is not None:
             self._metadata = normalize_metadata(metadata, [])
 
@@ -110,6 +110,7 @@ class JobDefinition(PipelineDefinition):
             preset_defs=preset_defs,
             tags=all_tags,
             job_tags=job_tags,
+            metadata=self._metadata,
             hook_defs=hook_defs,
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,
@@ -147,10 +148,6 @@ class JobDefinition(PipelineDefinition):
     @property
     def loggers(self) -> Mapping[str, LoggerDefinition]:
         return self.get_mode_definition().loggers
-
-    @property
-    def metadata(self) -> Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]]:
-        return self._metadata
 
     def execute_in_process(
         self,

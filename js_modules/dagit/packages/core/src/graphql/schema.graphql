@@ -112,6 +112,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
   tags: [PipelineTag!]!
   jobTags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
@@ -1112,6 +1113,7 @@ interface IPipelineSnapshot {
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
   jobTags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
@@ -1368,6 +1370,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
   tags: [PipelineTag!]!
   jobTags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
@@ -1468,6 +1471,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
   tags: [PipelineTag!]!
   jobTags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
