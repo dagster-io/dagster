@@ -869,7 +869,7 @@ def external_asset_graph_from_defs(
                 dependencies=list(deps[asset_key].values()),
                 depended_by=list(dep_by[asset_key].values()),
                 compute_kind=node_def.tags.get("kind"),
-                op_name=node_output_handle.node_handle.name,
+                op_name=str(node_output_handle.node_handle).split(".")[0],
                 op_names=op_names_by_asset_key[asset_key],
                 op_description=node_def.description,
                 job_names=job_names,
