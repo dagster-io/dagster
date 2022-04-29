@@ -3,6 +3,7 @@ from typing import (
     AbstractSet,
     Callable,
     Dict,
+    Iterable,
     List,
     Mapping,
     NamedTuple,
@@ -445,6 +446,10 @@ class AssetLayer:
     @property
     def dependency_node_handles_by_asset_key(self) -> Mapping[AssetKey, Sequence[NodeOutputHandle]]:
         return self._dependency_node_handles_by_asset_key
+
+    @property
+    def asset_keys(self) -> Iterable[AssetKey]:
+        return self._dependency_node_handles_by_asset_key.keys()
 
     def asset_key_for_input(self, node_handle: NodeHandle, input_name: str) -> Optional[AssetKey]:
         return self._asset_keys_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))
