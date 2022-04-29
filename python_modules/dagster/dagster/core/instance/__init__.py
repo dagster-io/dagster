@@ -15,6 +15,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generic,
     Iterable,
     List,
     Mapping,
@@ -22,11 +23,13 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    TypeVar,
     Union,
     cast,
 )
 
 import yaml
+from typing_extensions import Protocol
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -181,14 +184,19 @@ class InstanceType(Enum):
     EPHEMERAL = "EPHEMERAL"
 
 
-class MayHaveInstanceWeakref:
+T_DagsterInstance = TypeVar("T_DagsterInstance", bound="DagsterInstance")
+
+
+class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
     """Mixin for classes that can have a weakref back to a Dagster instance."""
 
+    _instance_weakref: Optional[weakref.ReferenceType[T_DagsterInstance]]
+
     def __init__(self):
-        self._instance_weakref: Optional[weakref.ReferenceType["DagsterInstance"]] = None
+        self._instance_weakref: Optional[weakref.ReferenceType[T_DagsterInstance]] = None
 
     @property
-    def _instance(self) -> "DagsterInstance":
+    def _instance(self) -> T_DagsterInstance:
         instance = (
             self._instance_weakref()
             # Backcompat with custom subclasses that don't call super().__init__()
@@ -196,9 +204,9 @@ class MayHaveInstanceWeakref:
             if (hasattr(self, "_instance_weakref") and self._instance_weakref is not None)
             else None
         )
-        return cast("DagsterInstance", instance)
+        return cast(T_DagsterInstance, instance)
 
-    def register_instance(self, instance: "DagsterInstance"):
+    def register_instance(self, instance: T_DagsterInstance):
         check.invariant(
             # Backcompat with custom subclasses that don't call super().__init__()
             # in their own __init__ implementations
