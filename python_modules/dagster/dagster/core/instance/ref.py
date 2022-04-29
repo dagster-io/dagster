@@ -266,14 +266,6 @@ class InstanceRef(
         return self.scheduler_data.rehydrate() if self.scheduler_data else None
 
     @property
-    def run_coordinator(self):
-        return self.run_coordinator_data.rehydrate() if self.run_coordinator_data else None
-
-    @property
-    def run_launcher(self):
-        return self.run_launcher_data.rehydrate() if self.run_launcher_data else None
-
-    @property
     def custom_instance_class(self):
         return (
             class_from_code_pointer(

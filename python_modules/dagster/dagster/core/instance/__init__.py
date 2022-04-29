@@ -55,7 +55,7 @@ from dagster.core.storage.pipeline_run import (
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, RESUME_RETRY_TAG, ROOT_RUN_ID_TAG
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import str_format_list
-from dagster.serdes import ConfigurableClass
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.seven import get_current_datetime_in_utc
 from dagster.utils import merge_dicts, traced
 from dagster.utils.backcompat import experimental_functionality_warning
@@ -271,15 +271,13 @@ class DagsterInstance:
         run_storage: "RunStorage",
         event_storage: "EventLogStorage",
         compute_log_manager: "ComputeLogManager",
-        run_coordinator: "RunCoordinator",
-        run_launcher: "RunLauncher",
+        run_coordinator_data: ConfigurableClassData,
+        run_launcher_data: ConfigurableClassData,
         scheduler: Optional["Scheduler"] = None,
         schedule_storage: Optional["ScheduleStorage"] = None,
         settings: Optional[Dict[str, Any]] = None,
         ref: Optional[InstanceRef] = None,
     ):
-        from dagster.core.launcher import RunLauncher
-        from dagster.core.run_coordinator import RunCoordinator
         from dagster.core.scheduler import Scheduler
         from dagster.core.storage.compute_log_manager import ComputeLogManager
         from dagster.core.storage.event_log import EventLogStorage
@@ -309,11 +307,15 @@ class DagsterInstance:
         if self._schedule_storage:
             self._schedule_storage.register_instance(self)
 
-        self._run_coordinator = check.inst_param(run_coordinator, "run_coordinator", RunCoordinator)
-        self._run_coordinator.register_instance(self)
+        self._run_coordinator_data = check.inst_param(
+            run_coordinator_data, "run_coordinator_data", ConfigurableClassData
+        )
+        self._run_coordinator = None
 
-        self._run_launcher = check.inst_param(run_launcher, "run_launcher", RunLauncher)
-        self._run_launcher.register_instance(self)
+        self._run_launcher_data = check.inst_param(
+            run_launcher_data, "run_launcher_data", ConfigurableClassData
+        )
+        self._run_launcher = None
 
         self._settings = check.opt_dict_param(settings, "settings")
 
@@ -342,8 +344,6 @@ class DagsterInstance:
     def ephemeral(
         tempdir: Optional[str] = None, preload: Optional[List["DebugRunPayload"]] = None
     ) -> "DagsterInstance":
-        from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-        from dagster.core.run_coordinator import DefaultRunCoordinator
         from dagster.core.storage.event_log import InMemoryEventLogStorage
         from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
         from dagster.core.storage.root import LocalArtifactStorage
@@ -358,8 +358,14 @@ class DagsterInstance:
             run_storage=InMemoryRunStorage(preload=preload),
             event_storage=InMemoryEventLogStorage(preload=preload),
             compute_log_manager=NoOpComputeLogManager(),
-            run_coordinator=DefaultRunCoordinator(),
-            run_launcher=SyncInMemoryRunLauncher(),
+            run_coordinator_data=ConfigurableClassData(
+                module_name="dagster.core.run_coordinator",
+                class_name="DefaultRunCoordinator",
+            ),
+            run_launcher_data=ConfigurableClassData(
+                module_name="dagster.core.launcher.sync_in_memory_run_launcher",
+                class_name="SyncInMemoryRunLauncher",
+            ),
         )
 
     @staticmethod
@@ -436,8 +442,8 @@ class DagsterInstance:
             compute_log_manager=instance_ref.compute_log_manager,
             schedule_storage=instance_ref.schedule_storage,
             scheduler=instance_ref.scheduler,
-            run_coordinator=instance_ref.run_coordinator,
-            run_launcher=instance_ref.run_launcher,
+            run_coordinator_data=instance_ref.run_coordinator_data,
+            run_launcher_data=instance_ref.run_launcher_data,
             settings=instance_ref.settings,
             ref=instance_ref,
             **kwargs,
@@ -510,8 +516,8 @@ class DagsterInstance:
             "compute_logs": self._info(self._compute_log_manager),
             "schedule_storage": self._info(self._schedule_storage),
             "scheduler": self._info(self._scheduler),
-            "run_coordinator": self._info(self._run_coordinator),
-            "run_launcher": self._info(self._run_launcher),
+            "run_coordinator": self._info(self.run_coordinator),
+            "run_launcher": self._info(self.run_launcher),
         }
         ret.update(
             {
@@ -551,12 +557,24 @@ class DagsterInstance:
 
     @property
     def run_coordinator(self) -> "RunCoordinator":
+        from dagster.core.run_coordinator import RunCoordinator
+
+        if self._run_coordinator == None:
+            self._run_coordinator = self._run_coordinator_data.rehydrate()
+            check.invariant(isinstance(self._run_coordinator, RunCoordinator))
+            self._run_coordinator.register_instance(self)
         return self._run_coordinator
 
     # run launcher
 
     @property
     def run_launcher(self) -> "RunLauncher":
+        from dagster.core.launcher import RunLauncher
+
+        if self._run_launcher == None:
+            self._run_launcher = self._run_launcher_data.rehydrate()
+            check.invariant(isinstance(self._run_launcher, RunLauncher))
+            self._run_launcher.register_instance(self)
         return self._run_launcher
 
     # compute logs
@@ -679,8 +697,10 @@ class DagsterInstance:
 
     def dispose(self):
         self._run_storage.dispose()
-        self.run_coordinator.dispose()
-        self._run_launcher.dispose()
+        if self._run_coordinator != None:
+            self._run_coordinator.dispose()
+        if self._run_launcher != None:
+            self._run_launcher.dispose()
         self._event_storage.dispose()
         self._compute_log_manager.dispose()
 
@@ -1651,7 +1671,7 @@ records = instance.get_event_records(
         )
 
         try:
-            submitted_run = self._run_coordinator.submit_run(
+            submitted_run = self.run_coordinator.submit_run(
                 SubmitRunContext(run, workspace=workspace)
             )
         except:
@@ -1715,7 +1735,7 @@ records = instance.get_event_records(
             check.failed(f"Failed to reload run {run_id}")
 
         try:
-            self._run_launcher.launch_run(LaunchRunContext(pipeline_run=run, workspace=workspace))
+            self.run_launcher.launch_run(LaunchRunContext(pipeline_run=run, workspace=workspace))
         except:
             error = serializable_error_info_from_exc_info(sys.exc_info())
             self.report_engine_event(
@@ -1757,7 +1777,7 @@ records = instance.get_event_records(
         )
 
         try:
-            self._run_launcher.resume_run(
+            self.run_launcher.resume_run(
                 ResumeRunContext(
                     pipeline_run=run,
                     workspace=workspace,

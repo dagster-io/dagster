@@ -19,8 +19,6 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.instance import DagsterInstance, InstanceType
-from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster.core.run_coordinator import DefaultRunCoordinator
 from dagster.core.snap import create_pipeline_snapshot_id
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
@@ -39,7 +37,7 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.utils import make_new_run_id
 from dagster.daemon.daemon import SensorDaemon
 from dagster.daemon.types import DaemonHeartbeat
-from dagster.serdes import serialize_pp
+from dagster.serdes import ConfigurableClassData, serialize_pp
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 win_py36 = seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
@@ -1354,8 +1352,14 @@ class TestRunStorage:
                     run_storage=storage,
                     event_storage=InMemoryEventLogStorage(),
                     compute_log_manager=NoOpComputeLogManager(),
-                    run_coordinator=DefaultRunCoordinator(),
-                    run_launcher=SyncInMemoryRunLauncher(),
+                    run_coordinator_data=ConfigurableClassData(
+                        module_name="dagster.core.run_coordinator",
+                        class_name="DefaultRunCoordinator",
+                    ),
+                    run_launcher_data=ConfigurableClassData(
+                        module_name="dagster.core.launcher",
+                        class_name="SyncInMemoryRunLauncher",
+                    ),
                 )
 
             freeze_datetime = to_timezone(

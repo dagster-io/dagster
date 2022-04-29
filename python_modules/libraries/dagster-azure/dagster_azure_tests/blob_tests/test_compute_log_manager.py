@@ -7,13 +7,12 @@ from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
 
 from dagster import DagsterEventType, graph, op
 from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
-from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster.core.run_coordinator import DefaultRunCoordinator
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 from dagster.core.test_utils import environ
+from dagster.serdes import ConfigurableClassData
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
@@ -60,8 +59,14 @@ def test_compute_log_manager(
                 run_storage=run_store,
                 event_storage=event_store,
                 compute_log_manager=manager,
-                run_coordinator=DefaultRunCoordinator(),
-                run_launcher=SyncInMemoryRunLauncher(),
+                run_coordinator_data=ConfigurableClassData(
+                    module_name="dagster.core.run_coordinator",
+                    class_name="DefaultRunCoordinator",
+                ),
+                run_launcher_data=ConfigurableClassData(
+                    module_name="dagster.core.launcher",
+                    class_name="SyncInMemoryRunLauncher",
+                ),
                 ref=InstanceRef.from_dir(temp_dir),
             )
             result = simple.execute_in_process(instance=instance)

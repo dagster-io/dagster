@@ -10,15 +10,13 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import check, file_relative_path
 from dagster.core.instance import DagsterInstance, InstanceType
-from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster.core.run_coordinator import DefaultRunCoordinator
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.event_log.sqlite import ConsolidatedSqliteEventLogStorage
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
-from dagster.core.test_utils import ExplodingRunLauncher, instance_for_test
+from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import (
@@ -28,6 +26,7 @@ from dagster.core.workspace.load_target import (
     WorkspaceFileTarget,
 )
 from dagster.grpc.server import GrpcServerProcess
+from dagster.serdes import ConfigurableClassData
 from dagster.utils import merge_dicts
 from dagster.utils.test import FilesystemTestScheduler
 from dagster.utils.test.postgres_instance import TestPostgresInstance
@@ -111,8 +110,14 @@ class InstanceManagers:
                     run_storage=InMemoryRunStorage(),
                     event_storage=InMemoryEventLogStorage(),
                     compute_log_manager=LocalComputeLogManager(temp_dir),
-                    run_launcher=SyncInMemoryRunLauncher(),
-                    run_coordinator=DefaultRunCoordinator(),
+                    run_coordinator_data=ConfigurableClassData(
+                        module_name="dagster.core.run_coordinator",
+                        class_name="DefaultRunCoordinator",
+                    ),
+                    run_launcher_data=ConfigurableClassData(
+                        module_name="dagster.core.launcher",
+                        class_name="SyncInMemoryRunLauncher",
+                    ),
                     schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
                     scheduler=FilesystemTestScheduler(temp_dir),
                 )
@@ -130,8 +135,14 @@ class InstanceManagers:
                     run_storage=InMemoryRunStorage(),
                     event_storage=InMemoryEventLogStorage(),
                     compute_log_manager=LocalComputeLogManager(temp_dir),
-                    run_launcher=ExplodingRunLauncher(),
-                    run_coordinator=DefaultRunCoordinator(),
+                    run_coordinator_data=ConfigurableClassData(
+                        module_name="dagster.core.run_coordinator",
+                        class_name="DefaultRunCoordinator",
+                    ),
+                    run_launcher_data=ConfigurableClassData(
+                        module_name="dagster.core.test_utils",
+                        class_name="ExplodingRunLauncher",
+                    ),
                     schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
                     scheduler=FilesystemTestScheduler(temp_dir),
                 )
@@ -316,8 +327,14 @@ class InstanceManagers:
                     run_storage=InMemoryRunStorage(),
                     event_storage=ConsolidatedSqliteEventLogStorage(temp_dir),
                     compute_log_manager=LocalComputeLogManager(temp_dir),
-                    run_coordinator=DefaultRunCoordinator(),
-                    run_launcher=SyncInMemoryRunLauncher(),
+                    run_coordinator_data=ConfigurableClassData(
+                        module_name="dagster.core.run_coordinator",
+                        class_name="DefaultRunCoordinator",
+                    ),
+                    run_launcher_data=ConfigurableClassData(
+                        module_name="dagster.core.launcher",
+                        class_name="SyncInMemoryRunLauncher",
+                    ),
                     scheduler=FilesystemTestScheduler(temp_dir),
                 )
                 yield instance

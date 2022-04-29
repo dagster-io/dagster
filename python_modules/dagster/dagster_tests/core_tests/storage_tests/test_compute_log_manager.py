@@ -3,8 +3,6 @@ from contextlib import contextmanager
 
 from dagster import check, job, op
 from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
-from dagster.core.launcher import DefaultRunLauncher
-from dagster.core.run_coordinator import DefaultRunCoordinator
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeLogFileData,
@@ -14,6 +12,7 @@ from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 from dagster.core.test_utils import environ, instance_for_test
+from dagster.serdes import ConfigurableClassData
 
 
 def test_compute_log_manager_instance():
@@ -66,8 +65,14 @@ def broken_compute_log_manager_instance(fail_on_setup=False, fail_on_teardown=Fa
                 compute_log_manager=BrokenComputeLogManager(
                     fail_on_setup=fail_on_setup, fail_on_teardown=fail_on_teardown
                 ),
-                run_coordinator=DefaultRunCoordinator(),
-                run_launcher=DefaultRunLauncher(),
+                run_coordinator_data=ConfigurableClassData(
+                    module_name="dagster.core.run_coordinator",
+                    class_name="DefaultRunCoordinator",
+                ),
+                run_launcher_data=ConfigurableClassData(
+                    module_name="dagster.core.launcher",
+                    class_name="DefaultRunLauncher",
+                ),
                 ref=InstanceRef.from_dir(temp_dir),
             )
 

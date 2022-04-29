@@ -8,13 +8,12 @@ from dagster_aws.s3 import S3ComputeLogManager
 
 from dagster import DagsterEventType, job, op
 from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
-from dagster.core.launcher import DefaultRunLauncher
-from dagster.core.run_coordinator import DefaultRunCoordinator
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 from dagster.core.test_utils import environ
+from dagster.serdes import ConfigurableClassData
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
@@ -49,8 +48,14 @@ def test_compute_log_manager(mock_s3_bucket):
                 run_storage=run_store,
                 event_storage=event_store,
                 compute_log_manager=manager,
-                run_coordinator=DefaultRunCoordinator(),
-                run_launcher=DefaultRunLauncher(),
+                run_coordinator_data=ConfigurableClassData(
+                    module_name="dagster.core.run_coordinator",
+                    class_name="DefaultRunCoordinator",
+                ),
+                run_launcher_data=ConfigurableClassData(
+                    module_name="dagster.core.launcher",
+                    class_name="DefaultRunLauncher",
+                ),
                 ref=InstanceRef.from_dir(temp_dir),
             )
             result = simple.execute_in_process(instance=instance)
@@ -140,8 +145,14 @@ def test_compute_log_manager_skip_empty_upload(mock_s3_bucket):
                 run_storage=run_store,
                 event_storage=event_store,
                 compute_log_manager=manager,
-                run_coordinator=DefaultRunCoordinator(),
-                run_launcher=DefaultRunLauncher(),
+                run_coordinator_data=ConfigurableClassData(
+                    module_name="dagster.core.run_coordinator",
+                    class_name="DefaultRunCoordinator",
+                ),
+                run_launcher_data=ConfigurableClassData(
+                    module_name="dagster.core.launcher",
+                    class_name="DefaultRunLauncher",
+                ),
                 ref=InstanceRef.from_dir(temp_dir),
             )
             result = simple.execute_in_process(instance=instance)

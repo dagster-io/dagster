@@ -18,11 +18,11 @@ from dagster import check
 from dagster.cli.debug import export_run
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.instance.ref import InstanceRef
-from dagster.core.run_coordinator import DefaultRunCoordinator, QueuedRunCoordinator
 from dagster.core.scheduler import DagsterDaemonScheduler
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
-from dagster.core.test_utils import ExplodingRunLauncher, environ
+from dagster.core.test_utils import environ
+from dagster.serdes import ConfigurableClassData
 from dagster.utils import find_free_port
 
 from .integration_utils import IS_BUILDKITE, check_output
@@ -207,8 +207,14 @@ def dagster_instance_for_user_deployments_subchart_disabled(
             helm_postgres_url_for_user_deployments_subchart_disabled
         ),
         compute_log_manager=NoOpComputeLogManager(),
-        run_coordinator=DefaultRunCoordinator(),
-        run_launcher=ExplodingRunLauncher(),
+        run_coordinator_data=ConfigurableClassData(
+            module_name="dagster.core.run_coordinator",
+            class_name="DefaultRunCoordinator",
+        ),
+        run_launcher_data=ConfigurableClassData(
+            module_name="dagster.core.test_utils",
+            class_name="ExplodingRunLauncher",
+        ),
     ) as instance:
         yield instance
 
@@ -238,8 +244,14 @@ def dagster_instance_for_daemon(
         event_storage=PostgresEventLogStorage(helm_postgres_url_for_daemon),
         schedule_storage=PostgresScheduleStorage(helm_postgres_url_for_daemon),
         compute_log_manager=NoOpComputeLogManager(),
-        run_coordinator=QueuedRunCoordinator(),
-        run_launcher=ExplodingRunLauncher(),
+        run_coordinator_data=ConfigurableClassData(
+            module_name="dagster.core.run_coordinator",
+            class_name="QueuedRunCoordinator",
+        ),
+        run_launcher_data=ConfigurableClassData(
+            module_name="dagster.core.test_utils",
+            class_name="ExplodingRunLauncher",
+        ),
         scheduler=DagsterDaemonScheduler(),
     ) as instance:
         yield instance
@@ -262,8 +274,14 @@ def dagster_instance_for_k8s_run_launcher(
         event_storage=PostgresEventLogStorage(helm_postgres_url_for_k8s_run_launcher),
         schedule_storage=PostgresScheduleStorage(helm_postgres_url_for_k8s_run_launcher),
         compute_log_manager=NoOpComputeLogManager(),
-        run_coordinator=DefaultRunCoordinator(),
-        run_launcher=ExplodingRunLauncher(),
+        run_coordinator_data=ConfigurableClassData(
+            module_name="dagster.core.run_coordinator",
+            class_name="DefaultRunCoordinator",
+        ),
+        run_launcher_data=ConfigurableClassData(
+            module_name="dagster.core.test_utils",
+            class_name="ExplodingRunLauncher",
+        ),
         ref=instance_ref,
     ) as instance:
         yield instance
@@ -293,8 +311,14 @@ def dagster_instance(helm_postgres_url):  # pylint: disable=redefined-outer-name
                 run_storage=PostgresRunStorage(helm_postgres_url),
                 event_storage=PostgresEventLogStorage(helm_postgres_url),
                 compute_log_manager=NoOpComputeLogManager(),
-                run_coordinator=DefaultRunCoordinator(),
-                run_launcher=ExplodingRunLauncher(),  # use graphql to launch any runs
+                run_coordinator_data=ConfigurableClassData(
+                    module_name="dagster.core.run_coordinator",
+                    class_name="DefaultRunCoordinator",
+                ),
+                run_launcher_data=ConfigurableClassData(
+                    module_name="dagster.core.test_utils",
+                    class_name="ExplodingRunLauncher",  # use graphql to launch any runs
+                ),
                 ref=InstanceRef.from_dir(tempdir),
             ) as instance:
                 yield instance
