@@ -1,14 +1,6 @@
 import pytest
 
-from dagster import (
-    AssetKey,
-    AssetsDefinition,
-    DagsterInvariantViolationError,
-    GraphOut,
-    Out,
-    graph,
-    op,
-)
+from dagster import AssetKey, AssetsDefinition, GraphOut, Out, graph, op
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
 from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster.core.host_representation.external_data import (
@@ -520,21 +512,6 @@ def test_used_source_asset():
             output_description=None,
         ),
     ]
-
-
-def test_source_asset_conflicts_with_asset():
-    bar_source_asset = SourceAsset(key=AssetKey("bar"), description="def")
-
-    @asset
-    def bar():
-        pass
-
-    job1 = build_assets_job("job1", [bar])
-
-    with pytest.raises(DagsterInvariantViolationError):
-        external_asset_graph_from_defs(
-            [job1], source_assets_by_key={AssetKey("bar"): bar_source_asset}
-        )
 
 
 def test_nasty_nested_graph_asset():
