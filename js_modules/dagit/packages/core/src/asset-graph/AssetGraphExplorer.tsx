@@ -1,4 +1,4 @@
-import {Box, Checkbox, Colors, Mono, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
+import {Box, Checkbox, Mono, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import flatMap from 'lodash/flatMap';
 import isEqual from 'lodash/isEqual';
 import pickBy from 'lodash/pickBy';
@@ -21,7 +21,7 @@ import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
-import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
+import {closestNodeInDirection, isNodeOffscreen, isPointWayOffscreen} from '../graph/common';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {
   GraphExplorerOptions,
@@ -43,7 +43,7 @@ import {PipelineSelector} from '../types/globalTypes';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
-import {AssetEdges} from './AssetEdges';
+import {AssetConnectedEdges, AssetDisconnectedEdges} from './AssetEdges';
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
 import {OmittedAssetsNotice} from './OmittedAssetsNotice';
@@ -310,6 +310,11 @@ const AssetGraphExplorerWithData: React.FC<
     }
   };
 
+  const onGoToPoint = React.useCallback(
+    (p) => viewportEl.current?.zoomToSVGCoords(p.x, p.y, true),
+    [viewportEl],
+  );
+
   return (
     <SplitPanelContainer
       identifier="explorer"
@@ -343,17 +348,27 @@ const AssetGraphExplorerWithData: React.FC<
             >
               {({scale: _scale}, viewportRect) => (
                 <SVGContainer width={layout.width} height={layout.height}>
-                  <AssetEdges
-                    edges={layout.edges}
-                    color={Colors.KeylineGray}
-                    // extradark={experiments && _scale < EXPERIMENTAL_MINI_SCALE}
+                  <AssetConnectedEdges
+                    highlighted={highlighted}
+                    edges={
+                      experiments
+                        ? layout.edges.filter(
+                            (e) =>
+                              !isPointWayOffscreen(e.from, viewportRect) &&
+                              !isPointWayOffscreen(e.to, viewportRect),
+                          )
+                        : layout.edges
+                    }
                   />
-                  <AssetEdges
-                    color={Colors.Blue500}
-                    edges={layout.edges.filter(
-                      ({fromId, toId}) => highlighted === fromId || highlighted === toId,
-                    )}
-                  />
+                  {experiments && (
+                    <AssetDisconnectedEdges
+                      viewport={viewportRect}
+                      layout={layout}
+                      highlighted={highlighted}
+                      setHighlighted={setHighlighted}
+                      onGoToPoint={onGoToPoint}
+                    />
+                  )}
 
                   {Object.values(layout.bundles)
                     .sort((a, b) => a.id.length - b.id.length)
@@ -389,6 +404,7 @@ const AssetGraphExplorerWithData: React.FC<
                           y={bounds.y}
                           width={bounds.width}
                           height={bounds.height + 10}
+                          style={{pointerEvents: 'none'}}
                           key={id}
                         >
                           <Mono
@@ -460,7 +476,7 @@ const AssetGraphExplorerWithData: React.FC<
                           <AssetNodeMinimal
                             definition={graphNode.definition}
                             selected={selectedGraphNodes.includes(graphNode)}
-                            fontSize={18 / _scale}
+                            fontSize={28}
                           />
                         ) : (
                           <AssetNode
