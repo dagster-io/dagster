@@ -193,6 +193,7 @@ class _Asset:
                 metadata=self.metadata or {},
                 io_manager_key=self.io_manager_key,
                 dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
+                description=self.description,
             )
 
             op = _Op(
