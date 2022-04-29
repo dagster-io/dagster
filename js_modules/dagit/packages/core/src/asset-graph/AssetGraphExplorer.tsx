@@ -432,33 +432,13 @@ const AssetGraphExplorerWithData: React.FC<
                       ) : null;
                     }
 
-                    if (experiments && _scale < EXPERIMENTAL_MINI_SCALE) {
+                    if (experiments) {
                       const isWithinBundle = Object.keys(layout.bundles).some((bundleId) =>
                         hasPathPrefix(path, JSON.parse(bundleId)),
                       );
-                      if (isWithinBundle) {
+                      if (isWithinBundle && _scale < EXPERIMENTAL_MINI_SCALE) {
                         return null;
                       }
-
-                      return (
-                        <foreignObject
-                          {...bounds}
-                          key={id}
-                          onMouseEnter={() => setHighlighted(id)}
-                          onMouseLeave={() => setHighlighted(null)}
-                          onClick={(e) => onSelectNode(e, {path}, graphNode)}
-                          onDoubleClick={(e) => {
-                            viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
-                            e.stopPropagation();
-                          }}
-                        >
-                          <AssetNodeMinimal
-                            definition={graphNode.definition}
-                            selected={selectedGraphNodes.includes(graphNode)}
-                            fontSize={18 / _scale}
-                          />
-                        </foreignObject>
-                      );
                     }
 
                     return (
@@ -476,6 +456,12 @@ const AssetGraphExplorerWithData: React.FC<
                       >
                         {!graphNode || !graphNode.definition.opNames.length ? (
                           <ForeignNode assetKey={{path}} />
+                        ) : experiments && _scale < EXPERIMENTAL_MINI_SCALE ? (
+                          <AssetNodeMinimal
+                            definition={graphNode.definition}
+                            selected={selectedGraphNodes.includes(graphNode)}
+                            fontSize={18 / _scale}
+                          />
                         ) : (
                           <AssetNode
                             definition={graphNode.definition}
