@@ -27,6 +27,11 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
+import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
+import {
+  LaunchPartitionBackfill,
+  LaunchPartitionBackfillVariables,
+} from '../instance/types/LaunchPartitionBackfill';
 import {LaunchButton} from '../launchpad/LaunchButton';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
 import {RunStatus} from '../types/globalTypes';
@@ -46,10 +51,6 @@ import {
   TopLabel,
   TopLabelTilted,
 } from './RunMatrixUtils';
-import {
-  LaunchPartitionBackfill,
-  LaunchPartitionBackfillVariables,
-} from './types/LaunchPartitionBackfill';
 import {PartitionStatusQuery, PartitionStatusQueryVariables} from './types/PartitionStatusQuery';
 import {
   PartitionsBackfillSelectorQuery,
@@ -732,53 +733,6 @@ const PARTITION_STATUS_QUERY = gql`
         message
       }
       ...PythonErrorFragment
-    }
-  }
-  ${PYTHON_ERROR_FRAGMENT}
-`;
-
-export const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
-  mutation LaunchPartitionBackfill($backfillParams: LaunchBackfillParams!) {
-    launchPartitionBackfill(backfillParams: $backfillParams) {
-      __typename
-      ... on LaunchBackfillSuccess {
-        backfillId
-      }
-      ... on PartitionSetNotFoundError {
-        message
-      }
-      ...PythonErrorFragment
-      ... on InvalidStepError {
-        invalidStepKey
-      }
-      ... on InvalidOutputError {
-        stepKey
-        invalidOutputName
-      }
-      ... on UnauthorizedError {
-        message
-      }
-      ... on PipelineNotFoundError {
-        message
-      }
-      ... on RunConflict {
-        message
-      }
-      ... on ConflictingExecutionParamsError {
-        message
-      }
-      ... on PresetNotFoundError {
-        message
-      }
-      ... on RunConfigValidationInvalid {
-        pipelineName
-        errors {
-          __typename
-          message
-          path
-          reason
-        }
-      }
     }
   }
   ${PYTHON_ERROR_FRAGMENT}

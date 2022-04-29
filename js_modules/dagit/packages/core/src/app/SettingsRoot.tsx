@@ -131,6 +131,16 @@ const SettingsRoot = () => {
                 />
               ),
             },
+            {
+              key: 'New partitions view (experimental)',
+              value: (
+                <Checkbox
+                  format="switch"
+                  checked={flags.includes(FeatureFlag.flagNewPartitionsView)}
+                  onChange={() => toggleFlag(FeatureFlag.flagNewPartitionsView)}
+                />
+              ),
+            },
           ]}
         />
       </Box>
