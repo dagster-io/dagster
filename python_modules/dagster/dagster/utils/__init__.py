@@ -188,7 +188,7 @@ class frozendict(dict):
     popitem = __readonly__
     clear = __readonly__
     update = __readonly__  # type: ignore[assignment]
-    setdefault = __readonly__   # type: ignore[assignment]
+    setdefault = __readonly__  # type: ignore[assignment]
     del __readonly__
 
     def __hash__(self):
