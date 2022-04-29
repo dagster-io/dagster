@@ -34,7 +34,12 @@ from dagster.core.storage.pipeline_run import (
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
 from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
-from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
+from dagster.core.storage.tags import (
+    PARENT_RUN_ID_TAG,
+    PARTITION_NAME_TAG,
+    PARTITION_SET_TAG,
+    ROOT_RUN_ID_TAG,
+)
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.utils import make_new_run_id
 from dagster.daemon.daemon import SensorDaemon
@@ -1019,6 +1024,52 @@ class TestRunStorage:
 
         assert first_root_run.run_id in run_groups
         assert second_root_run.run_id not in run_groups
+
+    def test_partition_status(self, storage):
+        one = TestRunStorage.build_run(
+            run_id=make_new_run_id(),
+            pipeline_name="foo_pipeline",
+            status=PipelineRunStatus.FAILURE,
+            tags={
+                PARTITION_NAME_TAG: "one",
+                PARTITION_SET_TAG: "foo_set",
+            },
+        )
+        storage.add_run(one)
+        two = TestRunStorage.build_run(
+            run_id=make_new_run_id(),
+            pipeline_name="foo_pipeline",
+            status=PipelineRunStatus.FAILURE,
+            tags={
+                PARTITION_NAME_TAG: "two",
+                PARTITION_SET_TAG: "foo_set",
+            },
+        )
+        storage.add_run(two)
+        two_retried = TestRunStorage.build_run(
+            run_id=make_new_run_id(),
+            pipeline_name="foo_pipeline",
+            status=PipelineRunStatus.SUCCESS,
+            tags={
+                PARTITION_NAME_TAG: "two",
+                PARTITION_SET_TAG: "foo_set",
+            },
+        )
+        storage.add_run(two_retried)
+        three = TestRunStorage.build_run(
+            run_id=make_new_run_id(),
+            pipeline_name="foo_pipeline",
+            status=PipelineRunStatus.SUCCESS,
+            tags={
+                PARTITION_NAME_TAG: "three",
+                PARTITION_SET_TAG: "foo_set",
+            },
+        )
+        storage.add_run(three)
+        partition_data = storage.get_run_partition_data("foo_set", "foo_pipeline")
+        assert len(partition_data) == 3
+        assert {_.partition for _ in partition_data} == {"one", "two", "three"}
+        assert {_.run_id for _ in partition_data} == {one.run_id, two_retried.run_id, three.run_id}
 
     def _skip_in_memory(self, storage):
         from dagster.core.storage.runs import InMemoryRunStorage

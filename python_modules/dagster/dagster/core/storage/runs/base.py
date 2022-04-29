@@ -8,6 +8,7 @@ from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 from dagster.core.storage.pipeline_run import (
     JobBucket,
     PipelineRun,
+    RunPartitionData,
     RunRecord,
     RunsFilter,
     TagBucket,
@@ -321,6 +322,12 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     @property
     def supports_bucket_queries(self):
         return True
+
+    @abstractmethod
+    def get_run_partition_data(
+        self, partition_set_name: str, job_name: str
+    ) -> List[RunPartitionData]:
+        """Get run partition data for a given partitioned job."""
 
     def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
         """Call this method to run any required data migrations"""

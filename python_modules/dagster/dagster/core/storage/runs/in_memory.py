@@ -15,10 +15,18 @@ from dagster.core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
 )
+from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster.daemon.types import DaemonHeartbeat
 from dagster.utils import EPOCH, frozendict, merge_dicts
 
-from ..pipeline_run import JobBucket, PipelineRun, RunRecord, RunsFilter, TagBucket
+from ..pipeline_run import (
+    JobBucket,
+    PipelineRun,
+    RunPartitionData,
+    RunRecord,
+    RunsFilter,
+    TagBucket,
+)
 from .base import RunStorage
 
 
@@ -329,6 +337,33 @@ class InMemoryRunStorage(RunStorage):
             }
             for root_run_id, run_group in root_run_id_to_group.items()
         }
+
+    def get_run_partition_data(
+        self, partition_set_name: str, job_name: str
+    ) -> List[RunPartitionData]:
+        """Get run partition data for a given partitioned job."""
+        check.str_param(partition_set_name, "partition_set_name")
+        check.str_param(job_name, "job_name")
+
+        run_filter = build_run_filter(
+            RunsFilter(pipeline_name=job_name, tags={PARTITION_SET_TAG: partition_set_name})
+        )
+        matching_runs = list(filter(run_filter, list(self._runs.values())[::-1]))
+        _partition_data_by_partition = {}
+        for run in matching_runs:
+            partition = run.tags.get(PARTITION_NAME_TAG)
+            if not partition or partition in _partition_data_by_partition:
+                continue
+
+            _partition_data_by_partition[partition] = RunPartitionData(
+                run_id=run.run_id,
+                partition=partition,
+                status=run.status,
+                start_time=None,
+                end_time=None,
+            )
+
+        return _partition_data_by_partition.values()
 
     # Daemon Heartbeats
 

@@ -5,7 +5,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import Callable, Dict, Iterable, List, NamedTuple, Optional, Set, Tuple, Union
 
 import pendulum
 import sqlalchemy as db
@@ -35,7 +35,15 @@ from dagster.serdes import (
 from dagster.seven import JSONDecodeError
 from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
-from ..pipeline_run import JobBucket, PipelineRun, RunRecord, RunsFilter, TagBucket
+from ..pipeline_run import (
+    DagsterRunStatus,
+    JobBucket,
+    PipelineRun,
+    RunPartitionData,
+    RunRecord,
+    RunsFilter,
+    TagBucket,
+)
 from .base import RunStorage
 from .migration import OPTIONAL_DATA_MIGRATIONS, REQUIRED_DATA_MIGRATIONS, RUN_PARTITIONS
 from .schema import (
@@ -791,6 +799,61 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         row = self.fetchone(query)
 
         return defensively_unpack_pipeline_snapshot_query(logging, row) if row else None
+
+    def get_run_partition_data(
+        self, partition_set_name: str, job_name: str
+    ) -> List[RunPartitionData]:
+        if self.has_built_index(RUN_PARTITIONS) and self.has_run_stats_index_cols():
+            query = self._runs_query(
+                filters=RunsFilter(
+                    pipeline_name=job_name,
+                    tags={
+                        PARTITION_SET_TAG: partition_set_name,
+                    },
+                ),
+                columns=["run_id", "status", "start_time", "end_time", "partition"],
+            )
+            rows = self.fetchall(query)
+
+            # dedup by partition
+            _partition_data_by_partition = {}
+            for row in rows:
+                if not row["partition"] or row["partition"] in _partition_data_by_partition:
+                    continue
+
+                _partition_data_by_partition[row["partition"]] = RunPartitionData(
+                    run_id=row["run_id"],
+                    partition=row["partition"],
+                    status=DagsterRunStatus[row["status"]],
+                    start_time=row["start_time"],
+                    end_time=row["end_time"],
+                )
+
+            return _partition_data_by_partition.values()
+        else:
+            query = self._runs_query(
+                filters=RunsFilter(
+                    pipeline_name=job_name,
+                    tags={
+                        PARTITION_SET_TAG: partition_set_name,
+                    },
+                ),
+            )
+            rows = self.fetchall(query)
+            _partition_data_by_partition = {}
+            for row in rows:
+                run = self._row_to_run(row)
+                partition = run.tags.get(PARTITION_TAG)
+                if not partition or partition in _partition_data_by_partition:
+                    continue
+
+                _partition_data_by_partition[partition] = RunPartitionData(
+                    run_id=run.run_id,
+                    partition=partition,
+                    status=run.status,
+                )
+
+            return _partition_data_by_partition.values()
 
     def _get_partition_runs(
         self, partition_set_name: str, partition_name: str
