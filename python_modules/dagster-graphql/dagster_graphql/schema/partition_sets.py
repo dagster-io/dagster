@@ -54,6 +54,7 @@ class GraphenePartitionStatus(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     partitionName = graphene.NonNull(graphene.String)
     runStatus = graphene.Field(GrapheneRunStatus)
+    runDuration = graphene.Field(graphene.Float)
 
     class Meta:
         name = "PartitionStatus"
@@ -238,7 +239,10 @@ class GraphenePartitionSet(graphene.ObjectType):
 
     def resolve_partitionStatusesOrError(self, graphene_info):
         return get_partition_set_partition_statuses(
-            graphene_info, self._external_repository_handle, self._external_partition_set.name
+            graphene_info,
+            self._external_repository_handle,
+            self._external_partition_set.name,
+            self._external_partition_set.pipeline_name,
         )
 
     def resolve_repositoryOrigin(self, _):

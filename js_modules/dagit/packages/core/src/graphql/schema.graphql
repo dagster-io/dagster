@@ -1392,6 +1392,7 @@ type PartitionStatus {
   id: String!
   partitionName: String!
   runStatus: RunStatus
+  runDuration: Float
 }
 
 type PartitionRun {
