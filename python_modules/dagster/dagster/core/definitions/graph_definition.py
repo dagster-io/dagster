@@ -42,6 +42,7 @@ from .dependency import (
     NodeInvocation,
     SolidInputHandle,
 )
+from .origin import OriginDefinition, FromGraphDefinition
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .logger_definition import LoggerDefinition
@@ -462,6 +463,7 @@ class GraphDefinition(NodeDefinition):
         op_selection: Optional[List[str]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         asset_layer: Optional["AssetLayer"] = None,
+        origin: Optional[Tuple[Union["GraphDefinition", "JobDefinition"], OriginDefinition]] = None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -527,6 +529,7 @@ class GraphDefinition(NodeDefinition):
             executor_def, "executor_def", ExecutorDefinition, default=multi_or_in_process_executor
         )
 
+        resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
         if resource_defs and "io_manager" in resource_defs:
             resource_defs_with_defaults = resource_defs
         else:
@@ -568,6 +571,9 @@ class GraphDefinition(NodeDefinition):
                 f"is an object of type {type(config)}"
             )
 
+        if not origin:
+            origin = FromGraphDefinition(self, list(resource_defs.keys()))
+
         return JobDefinition(
             name=job_name,
             description=description or self.description,
@@ -583,6 +589,7 @@ class GraphDefinition(NodeDefinition):
             version_strategy=version_strategy,
             op_retry_policy=op_retry_policy,
             asset_layer=asset_layer,
+            origin=origin,
         ).get_job_def_for_op_selection(op_selection)
 
     def coerce_to_job(self):

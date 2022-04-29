@@ -623,6 +623,7 @@ class CachingRepositoryData(RepositoryData):
                 definitions.
         """
         from dagster.core.asset_defs import AssetGroup
+        from .origin import FromGraphRepositoryCoercion
 
         pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
         graph_defs: Dict[str, GraphDefinition] = {}
@@ -722,6 +723,7 @@ class CachingRepositoryData(RepositoryData):
 
         pipelines: Dict[str, PipelineDefinition] = {}
         jobs: Dict[str, JobDefinition] = {}
+        default_resources_dict = default_resources_dict or {}
 
         for name, pipeline_or_job in pipelines_or_jobs.items():
             if isinstance(pipeline_or_job, JobDefinition):
@@ -730,7 +732,10 @@ class CachingRepositoryData(RepositoryData):
                 pipelines[name] = pipeline_or_job
 
         for name, graph_def in graph_defs.items():
-            coerced_with_defaults = graph_def.to_job(resource_defs=default_resources_dict)
+            coerced_with_defaults = graph_def.to_job(
+                resource_defs=default_resources_dict,
+                origin=FromGraphRepositoryCoercion(graph_def, list(default_resources_dict.keys())),
+            )
             if name in jobs:
                 check.failed(
                     f"Error when coercing graph '{name}' to job: A job already exists with name '{name}'."

@@ -49,6 +49,7 @@ from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
 from .run_request import RunRequest
 from .version_strategy import VersionStrategy
+from .origin import OriginDefinition
 
 if TYPE_CHECKING:
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
@@ -74,6 +75,7 @@ class JobDefinition(PipelineDefinition):
         version_strategy: Optional[VersionStrategy] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
         asset_layer: Optional[AssetLayer] = None,
+        origin: Optional[Tuple[Union[GraphDefinition, "JobDefinition"], OriginDefinition]] = None,
     ):
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
@@ -89,6 +91,7 @@ class JobDefinition(PipelineDefinition):
         self._op_selection_data = check.opt_inst_param(
             _op_selection_data, "_op_selection_data", OpSelectionData
         )
+        self._origin_def = origin
 
         super(JobDefinition, self).__init__(
             name=name,
@@ -121,6 +124,10 @@ class JobDefinition(PipelineDefinition):
     @property
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
         return self.get_mode_definition().resource_defs
+
+    @property
+    def origin_def(self) -> OriginDefinition:
+        return self._origin_def
 
     @property
     def partitioned_config(self) -> Optional[PartitionedConfig]:

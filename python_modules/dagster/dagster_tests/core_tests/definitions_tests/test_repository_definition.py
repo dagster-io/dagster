@@ -29,6 +29,7 @@ from dagster import (
 )
 from dagster.check import CheckError
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster.core.definitions.origin import FromGraphRepositoryCoercion
 
 
 def create_single_node_pipeline(name, called):
@@ -685,6 +686,8 @@ def test_graph_default_resources():
     assert coerced_job.name == "the_graph"
     result = coerced_job.execute_in_process()
     assert result.success
+
+    assert isinstance(coerced_job._origin_def, FromGraphRepositoryCoercion)
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
