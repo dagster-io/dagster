@@ -14,7 +14,7 @@ import subprocess
 import sys
 import tempfile
 import threading
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import OrderedDict
 from datetime import timezone
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, ContextManager, Generator, Generic, Iterator
@@ -188,7 +188,7 @@ class frozendict(dict):
     popitem = __readonly__
     clear = __readonly__
     update = __readonly__  # type: ignore[assignment]
-    setdefault = __readonly__
+    setdefault = __readonly__   # type: ignore[assignment]
     del __readonly__
 
     def __hash__(self):
