@@ -1249,7 +1249,7 @@ class DagsterInstance:
         self, partition_set_name: str, job_name: str
     ) -> List[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
-        return self._run_storage.get_run_partition_data(self, partition_set_name, job_name)
+        return self._run_storage.get_run_partition_data(partition_set_name, job_name)
 
     def wipe(self):
         self._run_storage.wipe()
