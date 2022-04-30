@@ -48,6 +48,7 @@ from dagster.core.storage.pipeline_run import (
     PipelineRun,
     PipelineRunStatsSnapshot,
     PipelineRunStatus,
+    RunPartitionData,
     RunRecord,
     RunsFilter,
     TagBucket,
@@ -1242,6 +1243,13 @@ class DagsterInstance:
     @property
     def supports_bucket_queries(self):
         return self._run_storage.supports_bucket_queries
+
+    @traced
+    def get_run_partition_data(
+        self, partition_set_name: str, job_name: str
+    ) -> List[RunPartitionData]:
+        """Get run partition data for a given partitioned job."""
+        return self._run_storage.get_run_partition_data(self, partition_set_name, job_name)
 
     def wipe(self):
         self._run_storage.wipe()
