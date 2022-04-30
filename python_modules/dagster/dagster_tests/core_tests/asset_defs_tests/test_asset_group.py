@@ -341,6 +341,22 @@ def test_asset_group_build_subset_job():
         group.build_job(name="test_subselect_only_one_key", selection="o1")
 
 
+def test_asset_group_build_job_selection_multi_component():
+    source_asset = SourceAsset(["apple", "banana"])
+
+    @asset(namespace="abc")
+    def asset1():
+        ...
+
+    group = AssetGroup([asset1], source_assets=[source_asset])
+    assert group.build_job(name="something", selection="abc>asset1").asset_layer.asset_keys == {
+        AssetKey(["abc", "asset1"])
+    }
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="source asset"):
+        group.build_job(name="something", selection="apple>banana")
+
+
 def test_asset_group_from_package_name():
     from . import asset_package
 
