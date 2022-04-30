@@ -5,7 +5,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Dict, Iterable, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 
 import pendulum
 import sqlalchemy as db
@@ -829,7 +829,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     end_time=row["end_time"],
                 )
 
-            return _partition_data_by_partition.values()
+            return list(_partition_data_by_partition.values())
         else:
             query = self._runs_query(
                 filters=RunsFilter(
@@ -843,7 +843,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             _partition_data_by_partition = {}
             for row in rows:
                 run = self._row_to_run(row)
-                partition = run.tags.get(PARTITION_TAG)
+                partition = run.tags.get(PARTITION_NAME_TAG)
                 if not partition or partition in _partition_data_by_partition:
                     continue
 
@@ -851,9 +851,11 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     run_id=run.run_id,
                     partition=partition,
                     status=run.status,
+                    start_time=None,
+                    end_time=None,
                 )
 
-            return _partition_data_by_partition.values()
+            return list(_partition_data_by_partition.values())
 
     def _get_partition_runs(
         self, partition_set_name: str, partition_name: str

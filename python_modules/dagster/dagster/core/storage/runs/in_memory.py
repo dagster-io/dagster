@@ -363,7 +363,7 @@ class InMemoryRunStorage(RunStorage):
                 end_time=None,
             )
 
-        return _partition_data_by_partition.values()
+        return list(_partition_data_by_partition.values())
 
     # Daemon Heartbeats
 
