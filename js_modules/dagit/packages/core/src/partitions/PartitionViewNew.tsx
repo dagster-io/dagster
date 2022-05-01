@@ -142,10 +142,13 @@ const PartitionViewContent: React.FC<{
     });
   });
   const statusData: {[name: string]: RunStatus | null} = {};
-  partitionSet.partitionStatusesOrError.results.forEach((p) => {
+  (partitionSet.partitionStatusesOrError.__typename === 'PartitionStatuses'
+    ? partitionSet.partitionStatusesOrError.results
+    : []
+  ).forEach((p) => {
     statusData[p.partitionName] = p.runStatus;
     if (selectedPartitions.includes(p.partitionName)) {
-      runDurationData[p.partitionName] = p.runDuration;
+      runDurationData[p.partitionName] = p.runDuration || undefined;
     }
   });
 
@@ -404,6 +407,7 @@ const PARTITIONS_STATUS_QUERY = gql`
           }
         }
         partitionStatusesOrError {
+          __typename
           ... on PartitionStatuses {
             results {
               id
