@@ -22,7 +22,6 @@ from dagster_k8s.job import (
 )
 from dagster_k8s.utils import (
     delete_job,
-    filter_dagster_events_from_pod_logs,
     get_pod_names_in_job,
     retrieve_pod_logs,
     wait_for_job_success,
@@ -42,6 +41,7 @@ from dagster.cli.api import ExecuteStepArgs
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.events import EngineEventData
 from dagster.core.events.log import EventLogEntry
+from dagster.core.events.utils import filter_dagster_events_from_cli_logs
 from dagster.core.execution.plan.objects import StepFailureData, UserFailureData
 from dagster.core.execution.retries import RetryMode
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
@@ -546,7 +546,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                     step_key=step_key,
                 )
 
-        events += filter_dagster_events_from_pod_logs(logs)
+        events += filter_dagster_events_from_cli_logs(logs)
         serialized_events = [serialize_dagster_namedtuple(event) for event in events]
         return serialized_events
 

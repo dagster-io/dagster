@@ -1,11 +1,10 @@
-from dagster_k8s import utils
-
 from dagster import check
 from dagster.core.events import DagsterEvent
+from dagster.core.events.utils import filter_dagster_events_from_cli_logs
 from dagster.core.execution.plan.objects import StepSuccessData
 
 
-def test_filter_dagster_events_from_pod_logs():
+def test_filter_dagster_events_from_cli_logs():
 
     sameple_output = """
     2020-07-17 11:31:58 - dagster - DEBUG - foo - new_run - STEP_START - Started execution of step "do_something".
@@ -58,7 +57,7 @@ def test_filter_dagster_events_from_pod_logs():
 """.split(
         "\n"
     )
-    res = utils.filter_dagster_events_from_pod_logs(sameple_output)
+    res = filter_dagster_events_from_cli_logs(sameple_output)
 
     assert len(res) == 7
 
@@ -67,7 +66,7 @@ def test_filter_dagster_events_from_pod_logs():
     check.inst(last_event.event_specific_data, StepSuccessData)
 
 
-def test_filter_dagster_events_from_pod_logs_coalesce():
+def test_filter_dagster_events_from_cli_logs_coalesce():
     logs = """
     {"__class__": "DagsterEvent", "event_specific
     _data": {"__class__": "StepSuccessData", "duration_ms": 13.923579000000075}, "event_typ
@@ -76,7 +75,7 @@ def test_filter_dagster_events_from_pod_logs_coalesce():
     """.split(
         "\n"
     )
-    res = utils.filter_dagster_events_from_pod_logs(logs)
+    res = filter_dagster_events_from_cli_logs(logs)
     assert len(res) == 1
 
     event = res[0]
