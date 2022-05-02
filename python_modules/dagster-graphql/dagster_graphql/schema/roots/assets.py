@@ -1,3 +1,4 @@
+# pylint: disable=missing-graphene-docstring
 import graphene
 
 from ..errors import GrapheneAssetNotFoundError, GraphenePythonError

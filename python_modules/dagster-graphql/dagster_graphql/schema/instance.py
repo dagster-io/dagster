@@ -1,3 +1,4 @@
+# pylint: disable=missing-graphene-docstring
 import sys
 
 import graphene

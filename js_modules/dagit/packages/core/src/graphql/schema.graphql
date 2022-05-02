@@ -47,6 +47,11 @@ type DagitQuery {
     runConfigData: RunConfigData
     mode: String!
   ): ExecutionPlanOrError!
+
+  """
+  Fetch an environment schema given an execution selection and a mode.
+          See the descripton on RunConfigSchema for more information.
+  """
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
   instance: Instance!
   assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
@@ -200,7 +205,30 @@ interface DagsterType {
 interface ConfigType {
   key: String!
   description: String
+
+  """
+  This is an odd and problematic field. It recursively goes down to
+  get all the types contained within a type. The case where it is horrible
+  are dictionaries and it recurses all the way down to the leaves. This means
+  that in a case where one is fetching all the types and then all the inner
+  types keys for those types, we are returning O(N^2) type keys, which
+  can cause awful performance for large schemas. When you have access
+  to *all* the types, you should instead only use the type_param_keys
+  field for closed generic types and manually navigate down the to
+  field types client-side.
+
+  Where it is useful is when you are fetching types independently and
+  want to be able to render them, but without fetching the entire schema.
+
+  We use this capability when rendering the sidebar.
+  """
   recursiveConfigTypes: [ConfigType!]!
+
+  """
+  This returns the keys for type parameters of any closed generic type,
+  (e.g. List, Optional). This should be used for reconstructing and
+  navigating the full schema client-side and not innerTypes.
+  """
   typeParamKeys: [String!]!
   isSelector: Boolean!
 }
@@ -278,6 +306,9 @@ enum LogLevel {
   DEBUG
 }
 
+"""
+The types of events that may be yielded by solid and pipeline execution.
+"""
 enum DagsterEventType {
   STEP_OUTPUT
   STEP_INPUT
@@ -346,6 +377,10 @@ type Run implements PipelineRun {
   solidSelection: [String!]
   stats: RunStatsSnapshotOrError!
   stepStats: [RunStepStats!]!
+
+  """
+  Compute logs are the stdout/stderr logs for a given solid step computation
+  """
   computeLogs(stepKey: String!): ComputeLogs!
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
@@ -377,6 +412,10 @@ interface PipelineRun {
   solidSelection: [String!]
   stats: RunStatsSnapshotOrError!
   stepStats: [RunStepStats!]!
+
+  """
+  Compute logs are the stdout/stderr logs for a given solid step computation
+  """
   computeLogs(stepKey: String!): ComputeLogs!
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
@@ -415,6 +454,12 @@ enum RunStatus {
   CANCELED
 }
 
+"""
+This interface supports the case where we can look up a pipeline successfully in the
+repository available to the DagsterInstance/graphql context, as well as the case where we know
+that a pipeline exists/existed thanks to materialized data such as logs and run metadata, but
+where we can't look the concrete pipeline up.
+"""
 interface PipelineReference {
   name: String!
   solidSelection: [String!]
@@ -509,6 +554,10 @@ type ComputeLogs {
 
 type ComputeLogFile {
   path: String!
+
+  """
+  The data output captured from step computation at query time
+  """
   data: String
   cursor: Int!
   size: Int!
@@ -539,11 +588,28 @@ type ExecutionStepOutput {
 }
 
 enum StepKind {
+  """
+  This is a user-defined computation step
+  """
   COMPUTE
+
+  """
+  This is a mapped step that has not yet been resolved
+  """
   UNRESOLVED_MAPPED
+
+  """
+  This is a collect step that is not yet resolved
+  """
   UNRESOLVED_COLLECT
 }
 
+"""
+This type is used when passing in a configuration object
+        for pipeline configuration. Can either be passed in as a string (the
+        JSON-serialized configuration object) or as the configuration object itself. In
+        either case, the object must conform to the constraints of the dagster config type system.
+"""
 scalar RunConfigData
 
 type PipelineTag {
@@ -635,6 +701,9 @@ type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   failureMetadata: FailureMetadata
 }
 
+"""
+An enumeration.
+"""
 enum ErrorSource {
   FRAMEWORK_ERROR
   USER_CODE_ERROR
@@ -1294,6 +1363,9 @@ type PartitionTags {
   results: [PipelineTag!]!
 }
 
+"""
+This type represents a filter on Dagster runs.
+"""
 input RunsFilter {
   runIds: [String]
   pipelineName: String
@@ -1407,11 +1479,17 @@ type Job implements SolidContainer & IPipelineSnapshot {
   repository: Repository!
 }
 
+"""
+A solid definition and its invocations within the repo.
+"""
 type UsedSolid {
   definition: ISolidDefinition!
   invocations: [NodeInvocationSite!]!
 }
 
+"""
+An invocation of a solid within a repo.
+"""
 type NodeInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
@@ -1428,6 +1506,9 @@ type LatestRun {
   run: Run
 }
 
+"""
+This type represents the fields necessary to identify a repository.
+"""
 input RepositorySelector {
   repositoryName: String!
   repositoryLocationName: String!
@@ -1470,6 +1551,10 @@ type InvalidSubsetError implements Error {
   pipeline: Pipeline!
 }
 
+"""
+This type represents the fields necessary to identify a
+        pipeline or pipeline subset.
+"""
 input PipelineSelector {
   pipelineName: String!
   repositoryName: String!
@@ -1527,6 +1612,10 @@ type GraphNotFoundError implements Error {
   repositoryLocationName: String!
 }
 
+"""
+This type represents the fields necessary to identify a
+        graph
+"""
 input GraphSelector {
   graphName: String!
   repositoryName: String!
@@ -1550,6 +1639,9 @@ type ScheduleNotFoundError implements Error {
   scheduleName: String!
 }
 
+"""
+This type represents the fields necessary to identify a schedule.
+"""
 input ScheduleSelector {
   repositoryName: String!
   repositoryLocationName: String!
@@ -1573,6 +1665,9 @@ type UnauthorizedError implements Error {
   message: String!
 }
 
+"""
+This type represents the fields necessary to identify a sensor.
+"""
 input SensorSelector {
   repositoryName: String!
   repositoryLocationName: String!
@@ -1587,6 +1682,9 @@ type Sensors {
 
 union InstigationStateOrError = InstigationState | PythonError
 
+"""
+This type represents the fields necessary to identify a schedule or sensor.
+"""
 input InstigationSelector {
   repositoryName: String!
   repositoryLocationName: String!
@@ -1628,6 +1726,10 @@ type InvalidPipelineRunsFilterError implements Error {
   message: String!
 }
 
+"""
+A run tag and the free-form values that have been associated
+        with it so far.
+"""
 type PipelineTagAndValues {
   key: String!
   values: [String!]!
@@ -1699,6 +1801,11 @@ type EvaluationStackMapKeyEntry {
   mapKey: GenericScalar!
 }
 
+"""
+The `GenericScalar` scalar type represents a generic
+GraphQL scalar value that could be:
+String, Boolean, Int, Float, List or Object.
+"""
 scalar GenericScalar
 
 type EvaluationStackMapValueEntry {
@@ -1728,9 +1835,35 @@ union RunConfigSchemaOrError =
   | ModeNotFoundError
   | PythonError
 
+"""
+The run config schema represents the all the config type
+        information given a certain execution selection and mode of execution of that
+        selection. All config interactions (e.g. checking config validity, fetching
+        all config types, fetching in a particular config type) should be done
+        through this type
+"""
 type RunConfigSchema {
+  """
+  Fetch the root environment type. Concretely this is the type that
+          is in scope at the root of configuration document for a particular execution selection.
+          It is the type that is in scope initially with a blank config editor.
+  """
   rootConfigType: ConfigType!
+
+  """
+  Fetch all the named config types that are in the schema. Useful
+          for things like a type browser UI, or for fetching all the types are in the
+          scope of a document so that the index can be built for the autocompleting editor.
+  """
   allConfigTypes: [ConfigType!]!
+
+  """
+  Parse a particular run config result. The return value
+          either indicates that the validation succeeded by returning
+          `PipelineConfigValidationValid` or that there are configuration errors
+          by returning `RunConfigValidationInvalid' which containers a list errors
+          so that can be rendered for the user
+  """
   isRunConfigValid(runConfigData: RunConfigData): PipelineConfigValidationResult!
 }
 
@@ -1800,12 +1933,27 @@ type GraphenePermission {
 }
 
 type DagitMutation {
+  """
+  Launch a run via the run launcher configured on the instance.
+  """
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchRunResult!
+
+  """
+  Launch a run via the run launcher configured on the instance.
+  """
   launchRun(executionParams: ExecutionParams!): LaunchRunResult!
+
+  """
+  Re-launch a run via the run launcher configured on the instance
+  """
   launchPipelineReexecution(
     executionParams: ExecutionParams
     reexecutionParams: ReexecutionParams
   ): LaunchRunReexecutionResult!
+
+  """
+  Re-launch a run via the run launcher configured on the instance
+  """
   launchRunReexecution(
     executionParams: ExecutionParams
     reexecutionParams: ReexecutionParams
@@ -1831,8 +1979,20 @@ type DagitMutation {
     repositoryLocationName: String!
   ): ShutdownRepositoryLocationMutationResult!
   wipeAssets(assetKeys: [AssetKeyInput!]!): AssetWipeMutationResult!
+
+  """
+  Launches a set of partition backfill runs via the run launcher configured on the instance.
+  """
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
+
+  """
+  Retries a set of partition backfill runs via the run launcher configured on the instance.
+  """
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
+
+  """
+  Marks a partition backfill as canceled.
+  """
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
   logTelemetry(action: String!, clientTime: String!, metadata: String!): LogTelemetryMutationResult!
 }
@@ -1890,14 +2050,38 @@ type NoModeProvidedError implements Error {
 }
 
 input ExecutionParams {
+  """
+  Defines the job / pipeline and solid subset that should be executed.
+          All subsequent executions in the same run group (for example, a single-step
+          re-execution) are scoped to the original run's selector and solid
+          subset.
+  """
   selector: JobOrPipelineSelector!
   runConfigData: RunConfigData
   mode: String
+
+  """
+  Defines run tags and parent / root relationships.
+
+  Note: To
+          'restart from failure', provide a `parentRunId` and pass the
+          'dagster/is_resume_retry' tag. Dagster's automatic step key selection will
+          override any stepKeys provided.
+  """
   executionMetadata: ExecutionMetadata
+
+  """
+  Defines step keys to execute within the execution plan defined
+          by the pipeline `selector`. To execute the entire execution plan, you can omit
+          this parameter, provide an empty array, or provide every step name.
+  """
   stepKeys: [String!]
   preset: String
 }
 
+"""
+This type represents the fields necessary to identify a job or pipeline
+"""
 input JobOrPipelineSelector {
   pipelineName: String
   jobName: String
@@ -1909,7 +2093,19 @@ input JobOrPipelineSelector {
 input ExecutionMetadata {
   runId: String
   tags: [ExecutionTag!]
+
+  """
+  The ID of the run at the root of the run group. All partial /
+          full re-executions should use the first run as the rootRunID so they are
+          grouped together.
+  """
   rootRunId: String
+
+  """
+  The ID of the run serving as the parent within the run group.
+          For the first re-execution, this will be the same as the `rootRunId`. For
+          subsequent runs, the root or a previous re-execution could be the parent run.
+  """
   parentRunId: String
 }
 
@@ -2054,6 +2250,10 @@ input LaunchBackfillParams {
   forceSynchronousSubmission: Boolean
 }
 
+"""
+This type represents the fields necessary to identify a
+        pipeline or pipeline subset.
+"""
 input PartitionSetSelector {
   partitionSetName: String!
   repositorySelector: RepositorySelector!
@@ -2188,14 +2388,23 @@ type DeleteRunMutation {
   Output: DeletePipelineRunResult!
 }
 
+"""
+Launches a set of partition backfill runs via the run launcher configured on the instance.
+"""
 type LaunchBackfillMutation {
   Output: LaunchBackfillResult!
 }
 
+"""
+Launch a run via the run launcher configured on the instance.
+"""
 type LaunchRunMutation {
   Output: LaunchRunResult!
 }
 
+"""
+Re-launch a run via the run launcher configured on the instance
+"""
 type LaunchRunReexecutionMutation {
   Output: LaunchRunReexecutionResult!
 }
@@ -2258,7 +2467,30 @@ union ConfigTypeOrError =
 type EnumConfigType implements ConfigType {
   key: String!
   description: String
+
+  """
+  This is an odd and problematic field. It recursively goes down to
+  get all the types contained within a type. The case where it is horrible
+  are dictionaries and it recurses all the way down to the leaves. This means
+  that in a case where one is fetching all the types and then all the inner
+  types keys for those types, we are returning O(N^2) type keys, which
+  can cause awful performance for large schemas. When you have access
+  to *all* the types, you should instead only use the type_param_keys
+  field for closed generic types and manually navigate down the to
+  field types client-side.
+
+  Where it is useful is when you are fetching types independently and
+  want to be able to render them, but without fetching the entire schema.
+
+  We use this capability when rendering the sidebar.
+  """
   recursiveConfigTypes: [ConfigType!]!
+
+  """
+  This returns the keys for type parameters of any closed generic type,
+  (e.g. List, Optional). This should be used for reconstructing and
+  navigating the full schema client-side and not innerTypes.
+  """
   typeParamKeys: [String!]!
   isSelector: Boolean!
   values: [EnumConfigValue!]!
@@ -2273,16 +2505,65 @@ type EnumConfigValue {
 type CompositeConfigType implements ConfigType {
   key: String!
   description: String
+
+  """
+  This is an odd and problematic field. It recursively goes down to
+  get all the types contained within a type. The case where it is horrible
+  are dictionaries and it recurses all the way down to the leaves. This means
+  that in a case where one is fetching all the types and then all the inner
+  types keys for those types, we are returning O(N^2) type keys, which
+  can cause awful performance for large schemas. When you have access
+  to *all* the types, you should instead only use the type_param_keys
+  field for closed generic types and manually navigate down the to
+  field types client-side.
+
+  Where it is useful is when you are fetching types independently and
+  want to be able to render them, but without fetching the entire schema.
+
+  We use this capability when rendering the sidebar.
+  """
   recursiveConfigTypes: [ConfigType!]!
+
+  """
+  This returns the keys for type parameters of any closed generic type,
+  (e.g. List, Optional). This should be used for reconstructing and
+  navigating the full schema client-side and not innerTypes.
+  """
   typeParamKeys: [String!]!
   isSelector: Boolean!
   fields: [ConfigTypeField!]!
 }
 
+"""
+Regular is an odd name in this context. It really means Scalar or Any.
+"""
 type RegularConfigType implements ConfigType {
   key: String!
   description: String
+
+  """
+  This is an odd and problematic field. It recursively goes down to
+  get all the types contained within a type. The case where it is horrible
+  are dictionaries and it recurses all the way down to the leaves. This means
+  that in a case where one is fetching all the types and then all the inner
+  types keys for those types, we are returning O(N^2) type keys, which
+  can cause awful performance for large schemas. When you have access
+  to *all* the types, you should instead only use the type_param_keys
+  field for closed generic types and manually navigate down the to
+  field types client-side.
+
+  Where it is useful is when you are fetching types independently and
+  want to be able to render them, but without fetching the entire schema.
+
+  We use this capability when rendering the sidebar.
+  """
   recursiveConfigTypes: [ConfigType!]!
+
+  """
+  This returns the keys for type parameters of any closed generic type,
+  (e.g. List, Optional). This should be used for reconstructing and
+  navigating the full schema client-side and not innerTypes.
+  """
   typeParamKeys: [String!]!
   isSelector: Boolean!
   givenName: String!
@@ -2291,7 +2572,30 @@ type RegularConfigType implements ConfigType {
 type ArrayConfigType implements ConfigType & WrappingConfigType {
   key: String!
   description: String
+
+  """
+  This is an odd and problematic field. It recursively goes down to
+  get all the types contained within a type. The case where it is horrible
+  are dictionaries and it recurses all the way down to the leaves. This means
+  that in a case where one is fetching all the types and then all the inner
+  types keys for those types, we are returning O(N^2) type keys, which
+  can cause awful performance for large schemas. When you have access
+  to *all* the types, you should instead only use the type_param_keys
+  field for closed generic types and manually navigate down the to
+  field types client-side.
+
+  Where it is useful is when you are fetching types independently and
+  want to be able to render them, but without fetching the entire schema.
+
+  We use this capability when rendering the sidebar.
+  """
   recursiveConfigTypes: [ConfigType!]!
+
+  """
+  This returns the keys for type parameters of any closed generic type,
+  (e.g. List, Optional). This should be used for reconstructing and
+  navigating the full schema client-side and not innerTypes.
+  """
   typeParamKeys: [String!]!
   isSelector: Boolean!
   ofType: ConfigType!
@@ -2304,7 +2608,30 @@ interface WrappingConfigType {
 type NullableConfigType implements ConfigType & WrappingConfigType {
   key: String!
   description: String
+
+  """
+  This is an odd and problematic field. It recursively goes down to
+  get all the types contained within a type. The case where it is horrible
+  are dictionaries and it recurses all the way down to the leaves. This means
+  that in a case where one is fetching all the types and then all the inner
+  types keys for those types, we are returning O(N^2) type keys, which
+  can cause awful performance for large schemas. When you have access
+  to *all* the types, you should instead only use the type_param_keys
+  field for closed generic types and manually navigate down the to
+  field types client-side.
+
+  Where it is useful is when you are fetching types independently and
+  want to be able to render them, but without fetching the entire schema.
+
+  We use this capability when rendering the sidebar.
+  """
   recursiveConfigTypes: [ConfigType!]!
+
+  """
+  This returns the keys for type parameters of any closed generic type,
+  (e.g. List, Optional). This should be used for reconstructing and
+  navigating the full schema client-side and not innerTypes.
+  """
   typeParamKeys: [String!]!
   isSelector: Boolean!
   ofType: ConfigType!
@@ -2313,7 +2640,30 @@ type NullableConfigType implements ConfigType & WrappingConfigType {
 type ScalarUnionConfigType implements ConfigType {
   key: String!
   description: String
+
+  """
+  This is an odd and problematic field. It recursively goes down to
+  get all the types contained within a type. The case where it is horrible
+  are dictionaries and it recurses all the way down to the leaves. This means
+  that in a case where one is fetching all the types and then all the inner
+  types keys for those types, we are returning O(N^2) type keys, which
+  can cause awful performance for large schemas. When you have access
+  to *all* the types, you should instead only use the type_param_keys
+  field for closed generic types and manually navigate down the to
+  field types client-side.
+
+  Where it is useful is when you are fetching types independently and
+  want to be able to render them, but without fetching the entire schema.
+
+  We use this capability when rendering the sidebar.
+  """
   recursiveConfigTypes: [ConfigType!]!
+
+  """
+  This returns the keys for type parameters of any closed generic type,
+  (e.g. List, Optional). This should be used for reconstructing and
+  navigating the full schema client-side and not innerTypes.
+  """
   typeParamKeys: [String!]!
   isSelector: Boolean!
   scalarType: ConfigType!
@@ -2325,7 +2675,30 @@ type ScalarUnionConfigType implements ConfigType {
 type MapConfigType implements ConfigType {
   key: String!
   description: String
+
+  """
+  This is an odd and problematic field. It recursively goes down to
+  get all the types contained within a type. The case where it is horrible
+  are dictionaries and it recurses all the way down to the leaves. This means
+  that in a case where one is fetching all the types and then all the inner
+  types keys for those types, we are returning O(N^2) type keys, which
+  can cause awful performance for large schemas. When you have access
+  to *all* the types, you should instead only use the type_param_keys
+  field for closed generic types and manually navigate down the to
+  field types client-side.
+
+  Where it is useful is when you are fetching types independently and
+  want to be able to render them, but without fetching the entire schema.
+
+  We use this capability when rendering the sidebar.
+  """
   recursiveConfigTypes: [ConfigType!]!
+
+  """
+  This returns the keys for type parameters of any closed generic type,
+  (e.g. List, Optional). This should be used for reconstructing and
+  navigating the full schema client-side and not innerTypes.
+  """
   typeParamKeys: [String!]!
   isSelector: Boolean!
   keyType: ConfigType!
@@ -2438,7 +2811,15 @@ type FloatMetadataEntry implements MetadataEntry {
 type IntMetadataEntry implements MetadataEntry {
   label: String!
   description: String
+
+  """
+  Nullable to allow graceful degrade on > 32 bit numbers
+  """
   intValue: Int
+
+  """
+  String representation of the int to support greater than 32 bit
+  """
   intRepr: String!
 }
 
