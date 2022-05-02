@@ -352,7 +352,7 @@ class JobDefinition(PipelineDefinition):
             else None
         )
 
-    def get_input_value(self, input_name: str) -> Any:
+    def get_direct_input_value(self, input_name: str) -> Any:
         if input_name not in self._input_values:
             raise DagsterInvalidInvocationError(
                 f"On job '{self.name}', attempted to retrieve input value for input named '{input_name}', but no value was provided. Provided input values: {sorted(list(self._input_values.keys()))}"
@@ -494,8 +494,8 @@ def get_subselected_graph_definition(
         ) from exc
 
 
-def get_input_values_from_job(target: PipelineDefinition) -> Optional[Mapping[str, Any]]:
+def get_direct_input_values_from_job(target: PipelineDefinition) -> Mapping[str, Any]:
     if target.is_job:
         return cast(JobDefinition, target)._input_values  # pylint: disable=protected-access
     else:
-        return None
+        return {}

@@ -128,6 +128,8 @@ def job(
     hooks: Optional[AbstractSet[HookDefinition]] = ...,
     op_retry_policy: Optional[RetryPolicy] = ...,
     version_strategy: Optional[VersionStrategy] = ...,
+    partitions_def: Optional["PartitionsDefinition"] = ...,
+    input_values: Optional[Mapping[str, Any]] = ...,
 ) -> _Job:
     ...
 
