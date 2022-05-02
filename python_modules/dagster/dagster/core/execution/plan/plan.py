@@ -1,7 +1,6 @@
 from collections import OrderedDict, defaultdict
 from typing import (
     TYPE_CHECKING,
-    Any,
     Callable,
     Dict,
     FrozenSet,
@@ -51,12 +50,11 @@ from .compute import create_step_outputs
 from .inputs import (
     FromConfig,
     FromDefaultValue,
+    FromDirectInputValue,
     FromDynamicCollect,
     FromMultipleSources,
     FromPendingDynamicStepOutput,
-    FromRootInputConfig,
     FromRootInputManager,
-    FromRootInputValue,
     FromStepOutput,
     FromUnresolvedStepOutput,
     StepInput,
@@ -159,7 +157,6 @@ class _PlanBuilder:
 
     def build(self) -> "ExecutionPlan":
         """Builds the execution plan"""
-        from dagster.core.definitions.job_definition import get_input_values_from_job
 
         _check_persistent_storage_requirement(
             self.pipeline,
@@ -199,7 +196,6 @@ class _PlanBuilder:
             pipeline_def.solids_in_topological_order,
             pipeline_def.dependency_structure,
             parent_step_inputs=root_inputs,
-            top_level_inputs=get_input_values_from_job(pipeline_def),
         )
 
         step_dict = {step.handle: step for step in self._steps.values()}
@@ -261,7 +257,6 @@ class _PlanBuilder:
         parent_step_inputs: Optional[
             List[Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]]
         ] = None,
-        top_level_inputs: Optional[Dict[str, Any]] = None,
     ):
         asset_layer = self.pipeline.get_definition().asset_layer
         for solid in solids:
@@ -417,12 +412,12 @@ def get_root_graph_input_source(
     input_name: str,
     input_def: InputDefinition,
     pipeline_def: PipelineDefinition,
-) -> Optional[Union[FromConfig, FromRootInputValue]]:
-    from dagster.core.definitions.job_definition import get_input_values_from_job
+) -> Optional[Union[FromConfig, FromDirectInputValue]]:
+    from dagster.core.definitions.job_definition import get_direct_input_values_from_job
 
-    input_values = get_input_values_from_job(pipeline_def)
+    input_values = get_direct_input_values_from_job(pipeline_def)
     if input_values and input_name in input_values:
-        return FromRootInputValue(input_name=input_name)
+        return FromDirectInputValue(input_name=input_name)
 
     input_config = plan_builder.resolved_run_config.inputs
 

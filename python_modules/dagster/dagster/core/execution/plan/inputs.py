@@ -497,17 +497,17 @@ class FromConfig(
 
 
 @whitelist_for_serdes
-class FromRootInputValue(
+class FromDirectInputValue(
     NamedTuple(
-        "_FromRootInputValue",
+        "_FromDirectInputValue",
         [("input_name", str)],
     ),
     StepInputSource,
 ):
-    """This root input source is for direct python values to be passed to a type loader"""
+    """This input source is for direct python values to be passed to a type loader"""
 
     def __new__(cls, input_name: str):
-        return super(FromRootInputValue, cls).__new__(
+        return super(FromDirectInputValue, cls).__new__(
             cls,
             input_name=input_name,
         )
@@ -531,7 +531,7 @@ class FromRootInputValue(
             msg_fn=lambda: (f'Error occurred while loading top-level input "{self.input_name}": '),
             log_manager=step_context.log,
         ):
-            return job_def.get_input_value(self.input_name)
+            return job_def.get_direct_input_value(self.input_name)
 
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
@@ -548,7 +548,7 @@ class FromRootInputValue(
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
-        return str(self.input_value)
+        return str(self.input_name)
 
 
 @whitelist_for_serdes

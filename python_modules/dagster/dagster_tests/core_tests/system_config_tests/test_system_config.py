@@ -40,6 +40,7 @@ def create_creation_data(pipeline_def):
         ignored_solids=[],
         required_resources=set(),
         is_using_graph_job_op_apis=pipeline_def.is_job,
+        direct_inputs=pipeline_def._input_values if pipeline_def.is_job else {},
     )
 
 

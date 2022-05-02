@@ -27,7 +27,7 @@ from dagster.core.storage.root_input_manager import (
     RootInputManagerDefinition,
 )
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
+from dagster.core.types.dagster_type import DagsterType
 from dagster.core.utils import str_format_set
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.backcompat import experimental_class_warning
@@ -1030,7 +1030,7 @@ def _create_run_config_schema(
     mode_definition: ModeDefinition,
     required_resources: Set[str],
 ) -> "RunConfigSchema":
-    from .job_definition import get_input_values_from_job
+    from .job_definition import get_direct_input_values_from_job
     from .run_config import (
         RunConfigSchemaCreationData,
         construct_config_type_dictionary,
@@ -1066,7 +1066,7 @@ def _create_run_config_schema(
             ignored_solids=ignored_solids,
             required_resources=required_resources,
             is_using_graph_job_op_apis=pipeline_def.is_job,
-            top_level_inputs=get_input_values_from_job(pipeline_def),
+            direct_inputs=get_direct_input_values_from_job(pipeline_def),
         )
     )
 
