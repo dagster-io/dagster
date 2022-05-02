@@ -20,14 +20,19 @@ from .constants import PG_DESTINATION_CONFIG, PG_SOURCE_CONFIG
 N_USERS = 100
 N_ORDERS = 10000
 
-def _safe_request(client: AirbyteResource, endpoint: str, data: Dict[str, object]) -> Dict[str, Any]:
+
+def _safe_request(
+    client: AirbyteResource, endpoint: str, data: Dict[str, object]
+) -> Dict[str, Any]:
     response = client.make_request(endpoint, data)
     assert response, "Request returned null response"
     return response
-    
+
 
 def _create_ab_source(client: AirbyteResource) -> str:
-    workspace_id = _safe_request(client, "/workspaces/list", data={})["workspaces"][0]["workspaceId"]
+    workspace_id = _safe_request(client, "/workspaces/list", data={})["workspaces"][0][
+        "workspaceId"
+    ]
 
     # get latest available Postgres source definition
     source_defs = client.make_request(
@@ -57,12 +62,13 @@ def _create_ab_source(client: AirbyteResource) -> str:
 
 
 def _create_ab_destination(client: AirbyteResource) -> str:
-    workspace_id = _safe_request(client, "/workspaces/list", data={})["workspaces"][0]["workspaceId"]
+    workspace_id = _safe_request(client, "/workspaces/list", data={})["workspaces"][0][
+        "workspaceId"
+    ]
 
     # get the latest available Postgres destination definition
     destination_defs = _safe_request(
-        client,
-        "/destination_definitions/list_latest", data={"workspaceId": workspace_id}
+        client, "/destination_definitions/list_latest", data={"workspaceId": workspace_id}
     )
     postgres_definitions = [
         dd for dd in destination_defs["destinationDefinitions"] if dd["name"] == "Postgres"
@@ -91,9 +97,9 @@ def setup_airbyte():
     source_id = _create_ab_source(client)
     destination_id = _create_ab_destination(client)
 
-    source_catalog = _safe_request(client, "/sources/discover_schema", data={"sourceId": source_id})[
-        "catalog"
-    ]
+    source_catalog = _safe_request(
+        client, "/sources/discover_schema", data={"sourceId": source_id}
+    )["catalog"]
 
     # create a connection between the new source and destination
     connection_id = _safe_request(
