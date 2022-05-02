@@ -27,8 +27,8 @@ def list():  # pylint: disable=redefined-builtin
 
 
 # Shared options between `build` and `build_all`
-opt_build_name =  click.option("--name", required=True, help="Name of image to build")
-opt_build_dagster_version =  click.option(
+opt_build_name = click.option("--name", required=True, help="Name of image to build")
+opt_build_dagster_version = click.option(
     "--dagster-version",
     required=True,
     help="Version of image to build",
@@ -47,13 +47,16 @@ opt_build_timestamp = click.option(
     help="Timestamp to build in format 2020-07-11T040642 (defaults to now UTC)",
 )
 
+
 @cli.command()
 @opt_build_name
 @opt_build_dagster_version
 @opt_build_timestamp
 @click.option("-v", "--python-version", type=click.STRING, required=True)
 @opt_build_platform
-def build(name: str, dagster_version: str, timestamp: str, python_version: str, platform: Optional[str]):
+def build(
+    name: str, dagster_version: str, timestamp: str, python_version: str, platform: Optional[str]
+):
     get_image(name).build(timestamp, dagster_version, python_version, platform)
 
 
@@ -69,6 +72,7 @@ def build_all(name: str, dagster_version: str, timestamp: str, platform: Optiona
     for python_version in image.python_versions:
         image.build(timestamp, dagster_version, python_version, platform)
 
+
 # Shared push options
 opt_push_name = click.option("--name", required=True, help="Name of image to push")
 opt_push_dagster_version = click.option(
@@ -76,6 +80,7 @@ opt_push_dagster_version = click.option(
     required=True,
     help="Version of image to push",
 )
+
 
 @cli.command()
 @opt_push_name

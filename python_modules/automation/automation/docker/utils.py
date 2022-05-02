@@ -7,7 +7,12 @@ from typing import Dict, Optional
 from dagster import check
 
 
-def execute_docker_build(image: str, docker_args: Optional[Dict[str, str]]=None, cwd: Optional[str]=None, platform: Optional[str] = None):
+def execute_docker_build(
+    image: str,
+    docker_args: Optional[Dict[str, str]] = None,
+    cwd: Optional[str] = None,
+    platform: Optional[str] = None,
+):
     check.str_param(image, "image")
     docker_args = check.opt_dict_param(docker_args, "docker_args", key_type=str, value_type=str)
     cwd = check.opt_str_param(cwd, "cwd")
