@@ -38,11 +38,6 @@ CLI_COMMON_FLAGS_CONFIG_SCHEMA = {
         is_required=False,
         description="Which target to load for the given profile.",
     ),
-    "select": Field(
-        config=StringSource,
-        is_required=False,
-        description="Which models to select from this project.",
-    ),
     "vars": Field(
         config=Permissive({}),
         is_required=False,
