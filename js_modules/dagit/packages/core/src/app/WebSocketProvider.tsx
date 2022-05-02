@@ -4,17 +4,21 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
+import {useFeatureFlags} from './Flags';
+
 type Availability = 'attempting-to-connect' | 'unavailable' | 'available';
 
 export type WebSocketContextType = {
   availability: Availability;
   status: number;
+  disabled?: boolean;
   websocketClient?: SubscriptionClient;
 };
 
 export const WebSocketContext = React.createContext<WebSocketContextType>({
   availability: 'attempting-to-connect',
   status: WebSocket.CONNECTING,
+  disabled: false,
 });
 
 const WS_EVENTS = [
@@ -36,6 +40,8 @@ interface Props {
 export const WebSocketProvider: React.FC<Props> = (props) => {
   const {children, websocketClient} = props;
   const [status, setStatus] = React.useState(websocketClient.status);
+  const {flagDisableWebsockets: disabled} = useFeatureFlags();
+
   const [availability, setAvailability] = React.useState<Availability>(
     websocketClient.status === WebSocket.OPEN
       ? 'available'
@@ -49,8 +55,9 @@ export const WebSocketProvider: React.FC<Props> = (props) => {
       availability,
       status,
       websocketClient,
+      disabled,
     }),
-    [availability, status, websocketClient],
+    [availability, disabled, status, websocketClient],
   );
 
   const debouncedSetter = React.useMemo(() => debounce(setStatus, DEBOUNCE_TIME), []);

@@ -110,6 +110,9 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
         return self.to_string() == other.to_string()
 
     def to_string(self, legacy: Optional[bool] = False) -> Optional[str]:
+        """
+        E.g. '["first_component", "second_component"]'
+        """
         if not self.path:
             return None
         if legacy:
@@ -142,6 +145,22 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
         if asset_key and asset_key.get("path"):
             return AssetKey(asset_key["path"])
         return None
+
+    @staticmethod
+    def from_coerceable(arg: "CoerceableToAssetKey") -> "AssetKey":
+        if isinstance(arg, AssetKey):
+            return check.inst_param(arg, "arg", AssetKey)
+        elif isinstance(arg, str):
+            return AssetKey([arg])
+        elif isinstance(arg, list):
+            check.list_param(arg, "arg", of_type=str)
+            return AssetKey(arg)
+        else:
+            check.tuple_param(arg, "arg", of_type=str)
+            return AssetKey(arg)
+
+
+CoerceableToAssetKey = Union[AssetKey, str, Sequence[str]]
 
 
 DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]
@@ -378,7 +397,7 @@ class AssetMaterialization(
 
     def __new__(
         cls,
-        asset_key: Union[List[str], AssetKey, str],
+        asset_key: CoerceableToAssetKey,
         description: Optional[str] = None,
         metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         partition: Optional[str] = None,

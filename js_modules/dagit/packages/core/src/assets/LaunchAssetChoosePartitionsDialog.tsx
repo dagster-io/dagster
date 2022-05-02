@@ -10,7 +10,8 @@ import {
   DialogFooter,
   Alert,
 } from '@dagster-io/ui';
-import {pick, reject} from 'lodash';
+import pick from 'lodash/pick';
+import reject from 'lodash/reject';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 import * as yaml from 'yaml';
@@ -20,6 +21,11 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {PartitionHealthSummary, usePartitionHealthData} from '../assets/PartitionHealthSummary';
 import {AssetKey} from '../assets/types';
+import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
+import {
+  LaunchPartitionBackfill,
+  LaunchPartitionBackfillVariables,
+} from '../instance/types/LaunchPartitionBackfill';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
 import {
   ConfigPartitionSelectionQuery,
@@ -30,15 +36,7 @@ import {
   PartitionRangeInput,
   stringForSpan,
 } from '../partitions/PartitionRangeInput';
-import {
-  LAUNCH_PARTITION_BACKFILL_MUTATION,
-  showBackfillErrorToast,
-  showBackfillSuccessToast,
-} from '../partitions/PartitionsBackfill';
-import {
-  LaunchPartitionBackfill,
-  LaunchPartitionBackfillVariables,
-} from '../partitions/types/LaunchPartitionBackfill';
+import {showBackfillErrorToast, showBackfillSuccessToast} from '../partitions/PartitionsBackfill';
 import {DagsterTag} from '../runs/RunTag';
 import {handleLaunchResult, LAUNCH_PIPELINE_EXECUTION_MUTATION} from '../runs/RunUtils';
 import {

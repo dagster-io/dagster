@@ -1,4 +1,5 @@
 # isort: skip_file
+# pylint: disable=unnecessary-ellipsis
 
 from dagster import repository, DefaultSensorStatus, SkipReason
 
@@ -195,7 +196,7 @@ def multi_asset_sensor(context):
     b_event_records = context.instance.get_event_records(
         EventRecordsFilter(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
-            asset_key=AssetKey("table_a"),
+            asset_key=AssetKey("table_b"),
             after_cursor=b_cursor,
         ),
         ascending=False,

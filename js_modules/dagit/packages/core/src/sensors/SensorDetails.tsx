@@ -1,18 +1,16 @@
 import {
   Box,
   Button,
-  CountdownStatus,
-  useCountdown,
   Group,
   MetadataTableWIP,
   PageHeader,
-  RefreshableCountdown,
   Tag,
   Heading,
   FontFamily,
 } from '@dagster-io/ui';
 import * as React from 'react';
 
+import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {AssetLink} from '../assets/AssetLink';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -53,10 +51,8 @@ export const SensorDetails: React.FC<{
   sensor: SensorFragment;
   repoAddress: RepoAddress;
   daemonHealth: boolean | null;
-  countdownDuration: number;
-  countdownStatus: CountdownStatus;
-  onRefresh: () => void;
-}> = ({sensor, repoAddress, daemonHealth, countdownDuration, countdownStatus, onRefresh}) => {
+  refreshState: QueryRefreshState;
+}> = ({sensor, repoAddress, daemonHealth, refreshState}) => {
   const {
     name,
     sensorState: {status, ticks},
@@ -72,14 +68,6 @@ export const SensorDetails: React.FC<{
   };
   const repo = useRepository(repoAddress);
   const pipelinesAndJobs = repo?.repository.pipelines;
-
-  const timeRemaining = useCountdown({
-    duration: countdownDuration,
-    status: countdownStatus,
-  });
-
-  const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
-  const seconds = Math.floor(timeRemaining / 1000);
 
   const latestTick = ticks.length ? ticks[0] : null;
   const targetCount = targets?.length || 0;
@@ -131,11 +119,7 @@ export const SensorDetails: React.FC<{
         }
         right={
           <Box margin={{top: 4}}>
-            <RefreshableCountdown
-              refreshing={countdownRefreshing}
-              seconds={seconds}
-              onRefresh={onRefresh}
-            />
+            <QueryRefreshCountdown refreshState={refreshState} />
           </Box>
         }
       />

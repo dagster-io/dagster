@@ -1,6 +1,6 @@
 import json
 import subprocess
-from typing import List
+from typing import List, Union
 
 import pytest
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
@@ -492,6 +492,29 @@ def test_user_deployment_default_image_tag_is_chart_version(
     assert image_tag == chart_version
 
 
+@pytest.mark.parametrize("tag", [5176135, "abc1234"])
+def test_user_deployment_tag_can_be_numeric(template: HelmTemplate, tag: Union[str, int]):
+    deployment = create_simple_user_deployment("foo")
+    deployment.image.tag = tag
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+
+    image = user_deployments[0].spec.template.spec.containers[0].image
+    _, image_tag = image.split(":")
+
+    assert image_tag == str(tag)
+
+
 def _assert_no_container_context(user_deployment):
     # No container context set by default
     env_names = [env.name for env in user_deployment.spec.template.spec.containers[0].env]
@@ -541,6 +564,8 @@ def test_user_deployment_include_config(template: HelmTemplate):
         "k8s": {
             "image_pull_policy": "Always",
             "env_config_maps": ["release-name-dagster-user-deployments-foo-user-env"],
+            "namespace": "default",
+            "service_account_name": "release-name-dagster-user-deployments-user-deployments",
         }
     }
 
@@ -622,6 +647,8 @@ def test_user_deployment_volumes(template: HelmTemplate, include_config_in_launc
                 "image_pull_policy": "Always",
                 "volume_mounts": volume_mounts,
                 "volumes": volumes,
+                "namespace": "default",
+                "service_account_name": "release-name-dagster-user-deployments-user-deployments",
             }
         }
     else:
@@ -676,6 +703,8 @@ def test_user_deployment_secrets_and_configmaps(
                     "my-configmap",
                     "my-other-configmap",
                 ],
+                "namespace": "default",
+                "service_account_name": "release-name-dagster-user-deployments-user-deployments",
             }
         }
     else:
@@ -721,6 +750,56 @@ def test_user_deployment_labels(template: HelmTemplate, include_config_in_launch
                     "release-name-dagster-user-deployments-foo-user-env",
                 ],
                 "labels": labels,
+                "namespace": "default",
+                "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+            }
+        }
+    else:
+        _assert_no_container_context(user_deployments[0])
+
+
+@pytest.mark.parametrize("include_config_in_launched_runs", [False, True])
+def test_user_deployment_resources(template: HelmTemplate, include_config_in_launched_runs: bool):
+    name = "foo"
+
+    resources = {
+        "requests": {"memory": "64Mi", "cpu": "250m"},
+        "limits": {"memory": "128Mi", "cpu": "500m"},
+    }
+
+    deployment = UserDeployment.construct(
+        name=name,
+        image={"repository": f"repo/{name}", "tag": "tag1", "pullPolicy": "Always"},
+        dagsterApiGrpcArgs=["-m", name],
+        port=3030,
+        resources=resources,
+        includeConfigInLaunchedRuns={"enabled": include_config_in_launched_runs},
+    )
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+
+    if include_config_in_launched_runs:
+        container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
+        assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        assert json.loads(container_context.value) == {
+            "k8s": {
+                "image_pull_policy": "Always",
+                "env_config_maps": [
+                    "release-name-dagster-user-deployments-foo-user-env",
+                ],
+                "resources": resources,
+                "namespace": "default",
+                "service_account_name": "release-name-dagster-user-deployments-user-deployments",
             }
         }
     else:
@@ -793,3 +872,30 @@ def test_subchart_default_postgres_password(subchart_template: HelmTemplate):
 
     assert container.env[1].name == "DAGSTER_PG_PASSWORD"
     assert container.env[1].value_from.secret_key_ref.name == "dagster-postgresql-secret"
+
+
+@pytest.mark.parametrize("tag", [5176135, "abc1234"])
+def test_subchart_tag_can_be_numeric(subchart_template: HelmTemplate, tag: Union[str, int]):
+    deployment_values = DagsterUserDeploymentsHelmValues.construct(
+        deployments=[
+            UserDeployment.construct(
+                name="foo",
+                image=kubernetes.Image.construct(
+                    repository="foo",
+                    tag=tag,
+                    pullPolicy="Always",
+                ),
+                dagsterApiGrpcArgs=[],
+                port=0,
+            )
+        ]
+    )
+
+    deployment_templates = subchart_template.render(deployment_values)
+
+    assert len(deployment_templates) == 1
+
+    image = deployment_templates[0].spec.template.spec.containers[0].image
+    _, image_tag = image.split(":")
+
+    assert image_tag == str(tag)

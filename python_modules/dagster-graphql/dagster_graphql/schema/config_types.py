@@ -225,6 +225,7 @@ class GrapheneConfigTypeField(graphene.ObjectType):
     config_type = graphene.NonNull(GrapheneConfigType)
     config_type_key = graphene.NonNull(graphene.String)
     is_required = graphene.NonNull(graphene.Boolean)
+    default_value_as_json = graphene.String()
 
     class Meta:
         name = "ConfigTypeField"
@@ -245,6 +246,9 @@ class GrapheneConfigTypeField(graphene.ObjectType):
 
     def resolve_config_type(self, _graphene_info):
         return to_config_type(self._config_schema_snapshot, self._field_snap.type_key)
+
+    def resolve_default_value_as_json(self, _graphene_info):
+        return self._field_snap.default_value_as_json_str
 
 
 class GrapheneCompositeConfigType(ConfigTypeMixin, graphene.ObjectType):

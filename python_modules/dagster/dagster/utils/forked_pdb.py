@@ -27,7 +27,7 @@ class ForkedPdb(pdb.Pdb):
     def interaction(self, frame, traceback):
         _stdin = sys.stdin
         try:
-            sys.stdin = open("/dev/stdin")
+            sys.stdin = open("/dev/stdin", encoding="utf8")
             pdb.Pdb.interaction(self, frame, traceback)
         finally:
             sys.stdin = _stdin

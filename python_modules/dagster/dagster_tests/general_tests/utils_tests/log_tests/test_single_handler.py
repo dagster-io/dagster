@@ -2,7 +2,7 @@ import logging
 
 from dagster import PipelineDefinition
 from dagster.core.execution.context.logger import InitLoggerContext
-from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
+from dagster.core.log_manager import DagsterLogManager
 from dagster.utils.log import construct_single_handler_logger
 
 

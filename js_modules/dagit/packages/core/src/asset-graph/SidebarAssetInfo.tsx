@@ -19,18 +19,16 @@ import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {pluginForMetadata} from '../plugins';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {RepoAddress} from '../workspace/types';
 
 import {LiveDataForNode, displayNameForAssetKey} from './Utils';
-import {SidebarAssetFragment} from './types/SidebarAssetFragment';
-import {SidebarAssetQuery} from './types/SidebarAssetQuery';
+import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetQuery';
 
 export const SidebarAssetInfo: React.FC<{
   assetKey: AssetKey;
   liveData: LiveDataForNode;
 }> = ({assetKey, liveData}) => {
   const partitionHealthData = usePartitionHealthData([assetKey]);
-  const {data} = useQuery<SidebarAssetQuery>(SIDEBAR_ASSET_QUERY, {
+  const {data} = useQuery<SidebarAssetQuery, SidebarAssetQueryVariables>(SIDEBAR_ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
     fetchPolicy: 'cache-and-network',
   });
@@ -50,6 +48,9 @@ export const SidebarAssetInfo: React.FC<{
 
   const repoAddress = buildRepoAddress(asset.repository.name, asset.repository.location.name);
   const {assetMetadata, assetType} = metadataForAssetNode(asset);
+  const hasAssetMetadata = assetType || assetMetadata.length > 0;
+
+  const OpMetadataPlugin = asset.op?.metadata && pluginForMetadata(asset.op.metadata);
 
   return (
     <>
@@ -68,8 +69,15 @@ export const SidebarAssetInfo: React.FC<{
 
       <div style={{borderBottom: `2px solid ${Colors.Gray300}`}} />
 
-      {(asset.description || !(asset.description || assetType || assetMetadata)) && (
-        <DescriptionSidebarSection asset={asset} repoAddress={repoAddress} />
+      {(asset.description || OpMetadataPlugin?.SidebarComponent || !hasAssetMetadata) && (
+        <SidebarSection title="Description">
+          <Box padding={{vertical: 16, horizontal: 24}}>
+            <Description description={asset.description || 'No description provided.'} />
+          </Box>
+          {asset.op && OpMetadataPlugin?.SidebarComponent && (
+            <OpMetadataPlugin.SidebarComponent definition={asset.op} repoAddress={repoAddress} />
+          )}
+        </SidebarSection>
       )}
 
       {assetMetadata.length > 0 && (
@@ -89,24 +97,6 @@ export const SidebarAssetInfo: React.FC<{
         </SidebarSection>
       )}
     </>
-  );
-};
-
-const DescriptionSidebarSection: React.FC<{
-  asset: SidebarAssetFragment;
-  repoAddress: RepoAddress;
-}> = ({asset, repoAddress}) => {
-  const Plugin = asset.op?.metadata && pluginForMetadata(asset.op.metadata);
-
-  return (
-    <SidebarSection title="Description">
-      <Box padding={{vertical: 16, horizontal: 24}}>
-        <Description description={asset.description || 'No description provided.'} />
-      </Box>
-      {asset.op && Plugin && Plugin.SidebarComponent && (
-        <Plugin.SidebarComponent definition={asset.op} repoAddress={repoAddress} />
-      )}
-    </SidebarSection>
   );
 };
 

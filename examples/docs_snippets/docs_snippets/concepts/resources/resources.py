@@ -1,6 +1,5 @@
 # isort: skip_file
-# pylint: disable=unused-argument
-# pylint: disable=reimported
+# pylint: disable=unused-argument,reimported,unnecessary-ellipsis
 from dagster import ResourceDefinition, graph, job
 
 

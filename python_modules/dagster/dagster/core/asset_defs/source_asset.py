@@ -1,7 +1,7 @@
 from typing import NamedTuple, Optional, Sequence, Union
 
 import dagster.check as check
-from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.events import AssetKey, CoerceableToAssetKey
 from dagster.core.definitions.metadata import (
     MetadataEntry,
     MetadataMapping,
@@ -28,7 +28,7 @@ class SourceAsset(
     that it's referenced from.
 
     Attributes:
-        key (AssetKey): The key of the asset.
+        key (Union[AssetKey, Sequence[str], str]): The key of the asset.
         metadata_entries (List[MetadataEntry]): Metadata associated with the asset.
         io_manager_key (str): The key for the IOManager that will be used to load the contents of
             the asset when it's used as an input to other assets inside a job.
@@ -39,7 +39,7 @@ class SourceAsset(
 
     def __new__(
         cls,
-        key: AssetKey,
+        key: CoerceableToAssetKey,
         metadata: Optional[MetadataUserInput] = None,
         io_manager_key: str = "io_manager",
         description: Optional[str] = None,
@@ -48,10 +48,9 @@ class SourceAsset(
 
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         metadata_entries = normalize_metadata(metadata, [], allow_invalid=True)
-
         return super().__new__(
             cls,
-            key=check.inst_param(key, "key", AssetKey),
+            key=AssetKey.from_coerceable(key),
             metadata_entries=metadata_entries,
             io_manager_key=check.str_param(io_manager_key, "io_manager_key"),
             description=check.opt_str_param(description, "description"),

@@ -11,8 +11,7 @@ import {
 import {AssetNodeLiveFragment} from './types/AssetNodeLiveFragment';
 import {
   RepositoryLiveFragment,
-  RepositoryLiveFragment_latestRunByStep_JobRunsCount,
-  RepositoryLiveFragment_latestRunByStep_LatestRun_run,
+  RepositoryLiveFragment_latestRunByStep_run,
 } from './types/RepositoryLiveFragment';
 
 type AssetNode = AssetGraphQuery_assetNodes;
@@ -161,8 +160,7 @@ export interface LiveDataForNode {
   computeStatus: Status;
   unstartedRunIds: string[]; // run in progress and step not started
   inProgressRunIds: string[]; // run in progress and step in progress
-  runsSinceMaterialization: RepositoryLiveFragment_latestRunByStep_JobRunsCount | null;
-  runWhichFailedToMaterialize: RepositoryLiveFragment_latestRunByStep_LatestRun_run | null;
+  runWhichFailedToMaterialize: RepositoryLiveFragment_latestRunByStep_run | null;
   lastMaterialization: AssetGraphLiveQuery_assetNodes_assetMaterializations | null;
   lastChanged: number;
 }
@@ -192,12 +190,10 @@ export const buildLiveData = (
     const runs = repo?.inProgressRunsByStep.find((r) => r.stepKey === liveNode.opName);
     const info = repo?.latestRunByStep.find((r) => r.stepKey === liveNode.opName);
 
-    const runsSinceMaterialization = info?.__typename === 'JobRunsCount' ? info : null;
     const latestRunForStepKey = info?.__typename === 'LatestRun' ? info.run : null;
 
     const runWhichFailedToMaterialize =
-      (!runsSinceMaterialization &&
-        latestRunForStepKey?.status === 'FAILURE' &&
+      (latestRunForStepKey?.status === 'FAILURE' &&
         (!lastMaterialization || lastMaterialization.runId !== latestRunForStepKey?.id) &&
         latestRunForStepKey) ||
       null;
@@ -207,7 +203,6 @@ export const buildLiveData = (
       lastMaterialization,
       inProgressRunIds: runs?.inProgressRuns.map((r) => r.id) || [],
       unstartedRunIds: runs?.unstartedRuns.map((r) => r.id) || [],
-      runsSinceMaterialization,
       runWhichFailedToMaterialize,
       computeStatus: isSourceAsset(graphNode.definition)
         ? 'good' // foreign nodes are always considered up-to-date
@@ -272,20 +267,11 @@ export const IN_PROGRESS_RUNS_FRAGMENT = gql`
 `;
 
 export const LAST_RUNS_WARNINGS_FRAGMENT = gql`
-  fragment LastRunsWarningsFragment on RunStatsByStep {
-    __typename
-    ... on LatestRun {
-      stepKey
-      run {
-        id
-        status
-      }
-    }
-    ... on JobRunsCount {
-      stepKey
-      jobNames
-      count
-      sinceLatestMaterialization
+  fragment LastRunsWarningsFragment on LatestRun {
+    stepKey
+    run {
+      id
+      status
     }
   }
 `;

@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 import {Colors} from '@dagster-io/ui';
-import {isEqual} from 'lodash';
+import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -8,7 +8,6 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {colorHash} from '../app/Util';
 
 import {PartitionGraphFragment} from './types/PartitionGraphFragment';
-
 export const PARTITION_GRAPH_FRAGMENT = gql`
   fragment PartitionGraphFragment on PipelineRun {
     id

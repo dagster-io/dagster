@@ -112,12 +112,12 @@ def launch_scheduled_runs(
     check.inst_param(workspace, "workspace", IWorkspace)
 
     workspace_snapshot = {
-        location_entry.origin: location_entry
+        location_entry.origin.location_name: location_entry
         for location_entry in workspace.get_workspace_snapshot().values()
     }
 
     all_schedule_states = {
-        schedule_state.origin.get_id(): schedule_state
+        schedule_state.selector_id: schedule_state
         for schedule_state in instance.all_instigator_state(instigator_type=InstigatorType.SCHEDULE)
     }
 
@@ -127,11 +127,11 @@ def launch_scheduled_runs(
         if repo_location:
             for repo in repo_location.get_repositories().values():
                 for schedule in repo.get_external_schedules():
-                    origin_id = schedule.get_external_origin().get_id()
+                    selector_id = schedule.selector_id
                     if schedule.get_current_instigator_state(
-                        all_schedule_states.get(origin_id)
+                        all_schedule_states.get(selector_id)
                     ).is_running:
-                        schedules[origin_id] = schedule
+                        schedules[selector_id] = schedule
         elif location_entry.load_error and log_verbose_checks:
             logger.warning(
                 f"Could not load location {location_entry.origin.location_name} to check for schedules due to the following error: {location_entry.load_error}"
@@ -142,8 +142,8 @@ def launch_scheduled_runs(
     # back again, their timestamps will start at the correct place)
     states_to_delete = {
         schedule_state
-        for origin_id, schedule_state in all_schedule_states.items()
-        if origin_id not in schedules
+        for selector_id, schedule_state in all_schedule_states.items()
+        if selector_id not in schedules
         and schedule_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
     }
     for state in states_to_delete:
@@ -153,9 +153,9 @@ def launch_scheduled_runs(
 
     if log_verbose_checks:
         unloadable_schedule_states = {
-            origin_id: schedule_state
-            for origin_id, schedule_state in all_schedule_states.items()
-            if origin_id not in schedules and schedule_state.status == InstigatorStatus.RUNNING
+            selector_id: schedule_state
+            for selector_id, schedule_state in all_schedule_states.items()
+            if selector_id not in schedules and schedule_state.status == InstigatorStatus.RUNNING
         }
 
         for schedule_state in unloadable_schedule_states.values():
@@ -167,18 +167,17 @@ def launch_scheduled_runs(
             repo_location_name = repo_location_origin.location_name
             repo_name = schedule_state.origin.external_repository_origin.repository_name
             if (
-                repo_location_origin not in workspace_snapshot
-                or not workspace_snapshot[repo_location_origin].repository_location
+                repo_location_origin.location_name not in workspace_snapshot
+                or not workspace_snapshot[repo_location_origin.location_name].repository_location
             ):
                 logger.warning(
                     f"Schedule {schedule_name} was started from a location "
-                    f"{repo_location_name} that can no longer be found in the workspace, or has "
-                    "metadata that has changed since the schedule was started. You can turn off "
-                    "this schedule in the Dagit UI from the Status tab."
+                    f"{repo_location_name} that can no longer be found in the workspace. You can "
+                    "turn off this schedule in the Dagit UI from the Status tab."
                 )
-            elif not workspace_snapshot[repo_location_origin].repository_location.has_repository(
-                repo_name
-            ):
+            elif not workspace_snapshot[
+                repo_location_origin.location_name
+            ].repository_location.has_repository(repo_name):
                 logger.warning(
                     f"Could not find repository {repo_name} in location {repo_location_name} to "
                     + f"run schedule {schedule_name}. If this repository no longer exists, you can "
@@ -203,9 +202,7 @@ def launch_scheduled_runs(
     for external_schedule in schedules.values():
         error_info = None
         try:
-            schedule_state = all_schedule_states.get(
-                external_schedule.get_external_origin().get_id()
-            )
+            schedule_state = all_schedule_states.get(external_schedule.selector_id)
             if not schedule_state:
                 assert external_schedule.default_status == DefaultScheduleStatus.RUNNING
                 schedule_state = InstigatorState(

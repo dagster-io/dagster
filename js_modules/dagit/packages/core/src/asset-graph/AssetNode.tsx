@@ -1,11 +1,12 @@
 import {gql} from '@apollo/client';
 import {Colors, Icon, Spinner, Tooltip, FontFamily, Box, CaptionMono} from '@dagster-io/ui';
-import {isEqual} from 'lodash';
+import isEqual from 'lodash/isEqual';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
+import {AssetKey} from '../assets/types';
 import {NodeHighlightColors} from '../graph/OpNode';
 import {OpTags} from '../graph/OpTags';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
@@ -26,11 +27,9 @@ const MISSING_LIVE_DATA = {
 export const AssetNode: React.FC<{
   definition: AssetNodeFragment;
   liveData?: LiveDataForNode;
-  metadata: {key: string; value: string}[];
   selected: boolean;
   inAssetCatalog?: boolean;
-}> = React.memo(({definition, metadata, selected, liveData, inAssetCatalog}) => {
-  const kind = metadata.find((m) => m.key === 'kind')?.value;
+}> = React.memo(({definition, selected, liveData, inAssetCatalog}) => {
   const stepKey = definition.opName || '';
 
   const displayName = withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {
@@ -138,13 +137,13 @@ export const AssetNode: React.FC<{
             )}
           </StatsRow>
         </Stats>
-        {kind && (
+        {definition.computeKind && (
           <OpTags
             minified={false}
             style={{right: -2, paddingTop: 5}}
             tags={[
               {
-                label: kind,
+                label: definition.computeKind,
                 onClick: () => {
                   window.requestAnimationFrame(() =>
                     document.dispatchEvent(new Event('show-kind-info')),
@@ -158,6 +157,32 @@ export const AssetNode: React.FC<{
     </AssetNodeContainer>
   );
 }, isEqual);
+
+export const AssetNodeMinimal: React.FC<{
+  selected: boolean;
+  definition: {assetKey: AssetKey};
+  fontSize: number;
+  color?: string;
+}> = ({selected, definition, fontSize, color}) => {
+  const displayName = withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {
+    maxLength: 17,
+  });
+  return (
+    <AssetNodeContainer $selected={selected} style={{position: 'absolute', borderRadius: 12}}>
+      <AssetNodeBox
+        style={{
+          border: `4px solid ${Colors.Blue200}`,
+          borderRadius: 10,
+          position: 'absolute',
+          inset: 4,
+          background: color,
+        }}
+      >
+        <NameMinimal style={{fontSize}}>{displayName}</NameMinimal>
+      </AssetNodeBox>
+    </AssetNodeContainer>
+  );
+};
 
 export const AssetRunLink: React.FC<{
   runId: string;
@@ -176,6 +201,7 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
   fragment AssetNodeLiveFragment on AssetNode {
     id
     opName
+    opNames
     repository {
       id
     }
@@ -192,9 +218,12 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
 export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeFragment on AssetNode {
     id
+    graphName
     opName
+    opNames
     description
     partitionDefinition
+    computeKind
     assetKey {
       path
     }
@@ -248,6 +277,16 @@ const Name = styled.div`
   border-top-right-radius: 5px;
   font-weight: 600;
   gap: 4px;
+`;
+
+const NameMinimal = styled(Name)`
+  font-weight: 600;
+  white-space: nowrap;
+  position: absolute;
+  background: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 `;
 
 const Description = styled.div`

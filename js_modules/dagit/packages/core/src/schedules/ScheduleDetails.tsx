@@ -2,12 +2,9 @@ import {
   Box,
   ButtonLink,
   Colors,
-  CountdownStatus,
-  useCountdown,
   Group,
   MetadataTableWIP,
   PageHeader,
-  RefreshableCountdown,
   Tag,
   Code,
   Heading,
@@ -16,6 +13,7 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
+import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {useCopyToClipboard} from '../app/browser';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -35,11 +33,9 @@ const TIME_FORMAT = {showSeconds: false, showTimezone: true};
 export const ScheduleDetails: React.FC<{
   schedule: ScheduleFragment;
   repoAddress: RepoAddress;
-  countdownDuration: number;
-  countdownStatus: CountdownStatus;
-  onRefresh: () => void;
+  refreshState: QueryRefreshState;
 }> = (props) => {
-  const {repoAddress, schedule, countdownDuration, countdownStatus, onRefresh} = props;
+  const {repoAddress, schedule, refreshState} = props;
   const {cronSchedule, executionTimezone, futureTicks, name, partitionSet, pipelineName} = schedule;
   const copyToClipboard = useCopyToClipboard();
 
@@ -47,11 +43,6 @@ export const ScheduleDetails: React.FC<{
   const isJob = isThisThingAJob(repo, pipelineName);
 
   const [copyText, setCopyText] = React.useState('Click to copy');
-
-  const timeRemaining = useCountdown({
-    duration: countdownDuration,
-    status: countdownStatus,
-  });
 
   // Restore the tooltip text after a delay.
   React.useEffect(() => {
@@ -76,8 +67,6 @@ export const ScheduleDetails: React.FC<{
   };
 
   const running = status === InstigationStatus.RUNNING;
-  const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
-  const seconds = Math.floor(timeRemaining / 1000);
 
   return (
     <>
@@ -112,13 +101,7 @@ export const ScheduleDetails: React.FC<{
             </Box>
           </>
         }
-        right={
-          <RefreshableCountdown
-            refreshing={countdownRefreshing}
-            seconds={seconds}
-            onRefresh={onRefresh}
-          />
-        }
+        right={<QueryRefreshCountdown refreshState={refreshState} />}
       />
       <MetadataTableWIP>
         <tbody>

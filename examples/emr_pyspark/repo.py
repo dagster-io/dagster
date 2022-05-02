@@ -7,8 +7,7 @@ from dagster_pyspark import pyspark_resource
 from pyspark.sql import DataFrame, Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-from dagster import IOManager, graph, io_manager, op, repository
-from dagster.core.definitions.no_step_launcher import no_step_launcher
+from dagster import IOManager, ResourceDefinition, graph, io_manager, op, repository
 
 
 class ParquetIOManager(IOManager):
@@ -59,7 +58,7 @@ emr_resource_defs = {
 }
 
 local_resource_defs = {
-    "pyspark_step_launcher": no_step_launcher,
+    "pyspark_step_launcher": ResourceDefinition.none_resource(),
     "pyspark": pyspark_resource.configured({"spark_conf": {"spark.default.parallelism": 1}}),
     "io_manager": parquet_io_manager.configured({"path_prefix": "."}),
 }

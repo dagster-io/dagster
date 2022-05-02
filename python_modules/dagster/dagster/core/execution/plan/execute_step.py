@@ -12,7 +12,6 @@ from dagster.core.definitions import (
     Materialization,
     Output,
     OutputDefinition,
-    SolidDefinition,
     TypeCheck,
 )
 from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
@@ -429,20 +428,27 @@ def _asset_key_and_partitions_for_output(
 
     manager_asset_key = output_manager.get_output_asset_key(output_context)
 
-    if output_def.is_asset:
+    pipeline_def = output_context.step_context.pipeline_def
+    node_handle = output_context.step_context.solid_handle
+    output_asset_info = pipeline_def.asset_layer.asset_info_for_output(
+        node_handle=output_context.step_context.solid_handle, output_name=output_def.name
+    )
+    if output_asset_info:
         if manager_asset_key is not None:
-            solid_def = cast(SolidDefinition, output_context.solid_def)
             raise DagsterInvariantViolationError(
-                f'Both the OutputDefinition and the IOManager of output "{output_def.name}" on '
-                f'solid "{solid_def.name}" associate it with an asset. Either remove '
-                "the asset_key parameter on the OutputDefinition or use an IOManager that does not "
-                "specify an AssetKey in its get_output_asset_key() function."
+                f'The IOManager of output "{output_def.name}" on node "{node_handle}" associates it '
+                f'with asset key "{manager_asset_key}", but this output has already been defined to '
+                f'produce asset "{output_asset_info.key}", either via a Software Defined Asset, '
+                "or by setting the asset_key parameter on the OutputDefinition. In most cases, this "
+                "means that you should use an IOManager that does not specify an AssetKey in its "
+                "get_output_asset_key() function for this output."
             )
         return (
-            output_def.get_asset_key(output_context),
-            output_def.get_asset_partitions(output_context) or set(),
+            output_asset_info.key,
+            output_asset_info.partitions_fn(output_context) or set(),
         )
-    elif manager_asset_key:
+
+    if manager_asset_key:
         return manager_asset_key, output_manager.get_output_asset_partitions(output_context)
 
     return None, set()

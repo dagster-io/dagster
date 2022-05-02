@@ -32,7 +32,7 @@ If release name contains chart name it will be used as a full name.
   {{- $ := index . 0 }}
 
   {{- with index . 1 }}
-    {{- $tag := .tag | default $.Chart.Version }}
+    {{- $tag := .tag | default $.Chart.Version | toYaml }}
     {{- printf "%s:%s" .repository $tag }}
   {{- end }}
 {{- end }}
@@ -122,5 +122,10 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
     {{- if .labels }}
     labels: {{- .labels | toYaml | nindent 6 }}
     {{- end }}
+    {{- if .resources }}
+    resources: {{- .resources | toYaml | nindent 6 }}
+    {{- end }}
+    namespace: {{ $.Release.Namespace }}
+    service_account_name: {{ include "dagsterUserDeployments.serviceAccountName" $ }}
   {{- end }}
 {{- end -}}

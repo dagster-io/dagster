@@ -18,7 +18,7 @@ WIN_PY36_COMPUTE_LOG_DISABLED_MSG = """\u001b[33mWARNING: Compute log capture is
 
 @contextmanager
 def redirect_to_file(stream, filepath):
-    with open(filepath, "a+", buffering=1) as file_stream:
+    with open(filepath, "a+", buffering=1, encoding="utf8") as file_stream:
         with redirect_stream(file_stream, stream):
             yield
 

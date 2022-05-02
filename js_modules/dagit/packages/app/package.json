@@ -31,6 +31,7 @@
     "eslint": "8.7.0",
     "eslint-webpack-plugin": "3.1.1",
     "prettier": "2.2.1",
+    "source-map-explorer": "^2.5.0",
     "typescript": "^4.5.4"
   },
   "scripts": {
@@ -38,7 +39,8 @@
     "build": "react-scripts build",
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
     "test": "react-scripts test",
-    "ts": "tsc -p ."
+    "ts": "tsc -p .",
+    "analyze": "source-map-explorer 'build/static/js/*.js'"
   },
   "browserslist": {
     "production": [

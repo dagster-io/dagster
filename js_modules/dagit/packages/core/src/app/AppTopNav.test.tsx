@@ -49,7 +49,7 @@ describe('AppTopNav', () => {
         apolloProps={{mocks: [defaultMocks]}}
         routerProps={{initialEntries: ['/workspace/my_repository@my_location']}}
       >
-        <AppTopNav searchPlaceholder="Test..." />
+        <AppTopNav searchPlaceholder="Test..." rightOfSearchBar={<div>RightOfSearchBar</div>} />
       </TestProvider>,
     );
 
@@ -58,6 +58,7 @@ describe('AppTopNav', () => {
       expect(runsLink.closest('a')).toHaveAttribute('href', '/instance/runs');
       expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/instance/assets');
       expect(screen.getByText('Status').closest('a')).toHaveAttribute('href', '/instance');
+      expect(screen.getByText('RightOfSearchBar')).toBeVisible();
     });
   });
 

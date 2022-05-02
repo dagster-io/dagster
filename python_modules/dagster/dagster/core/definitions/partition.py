@@ -32,7 +32,7 @@ from .schedule_definition import (
     ScheduleDefinition,
     ScheduleEvaluationContext,
 )
-from .utils import check_valid_name
+from .utils import check_valid_name, validate_tags
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
@@ -233,7 +233,7 @@ class ScheduleTimeBasedPartitionsDefinition(
 ):
     """Computes the partitions backwards from the scheduled execution times"""
 
-    def __new__(
+    def __new__(  # pylint: disable=arguments-differ
         cls,
         schedule_type: ScheduleType,
         start: datetime,
@@ -348,7 +348,7 @@ class DynamicPartitionsDefinition(
         [("partition_fn", Callable[[Optional[datetime]], Union[List[Partition], List[str]]])],
     ),
 ):
-    def __new__(
+    def __new__(  # pylint: disable=arguments-differ
         cls, partition_fn: Callable[[Optional[datetime]], Union[List[Partition], List[str]]]
     ):
         return super(DynamicPartitionsDefinition, cls).__new__(
@@ -432,7 +432,7 @@ class PartitionSetDefinition(Generic[T]):
                 if not current_time:
                     current_time = pendulum.now("UTC")
 
-                check.callable_param(partition_fn, "partition_fn")
+                check.callable_param(partition_fn, "partition_fn")  # type: ignore
 
                 if partition_fn_param_count == 1:
                     obj_list = cast(
@@ -495,7 +495,9 @@ class PartitionSetDefinition(Generic[T]):
         return copy.deepcopy(self._user_defined_run_config_fn_for_partition(partition))
 
     def tags_for_partition(self, partition: Partition[T]) -> Dict[str, str]:
-        user_tags = copy.deepcopy(self._user_defined_tags_fn_for_partition(partition))
+        user_tags = copy.deepcopy(
+            validate_tags(self._user_defined_tags_fn_for_partition(partition))
+        )
         check_tags(user_tags, "user_tags")
 
         tags = merge_dicts(user_tags, PipelineRun.tags_for_partition_set(self, partition))
@@ -594,10 +596,12 @@ class PartitionSetDefinition(Generic[T]):
                 yield SkipReason("Partition selector returned an empty list of partitions.")
                 return
 
+            partition_names = self.get_partition_names(context.scheduled_execution_time)
+
             missing_partition_names = [
                 partition.name
                 for partition in selected_partitions
-                if partition.name not in self.get_partition_names(context.scheduled_execution_time)
+                if partition.name not in partition_names
             ]
 
             if missing_partition_names:

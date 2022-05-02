@@ -132,7 +132,7 @@ SuccessOrFailureHookFn = Callable[["HookContext"], Any]
 
 
 @overload
-def success_hook(name: SuccessOrFailureHookFn) -> Union[HookDefinition, _Hook]:
+def success_hook(name: SuccessOrFailureHookFn) -> HookDefinition:
     ...
 
 
@@ -140,14 +140,14 @@ def success_hook(name: SuccessOrFailureHookFn) -> Union[HookDefinition, _Hook]:
 def success_hook(
     name: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
-) -> Callable[[SuccessOrFailureHookFn], Union[HookDefinition, _Hook]]:
+) -> Callable[[SuccessOrFailureHookFn], HookDefinition]:
     ...
 
 
 def success_hook(
     name: Optional[Union[SuccessOrFailureHookFn, str]] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
-) -> Union[HookDefinition, _Hook, Callable[[SuccessOrFailureHookFn], Union[HookDefinition, _Hook]]]:
+) -> Union[HookDefinition, Callable[[SuccessOrFailureHookFn], HookDefinition]]:
     """Create a hook on step success events with the specified parameters from the decorated function.
 
     Args:
@@ -171,7 +171,7 @@ def success_hook(
 
     """
 
-    def wrapper(fn: Callable[["HookContext"], Any]) -> Union[HookDefinition, _Hook]:
+    def wrapper(fn: SuccessOrFailureHookFn) -> HookDefinition:
 
         check.callable_param(fn, "fn")
 
@@ -206,7 +206,7 @@ def success_hook(
 
 
 @overload
-def failure_hook(name: SuccessOrFailureHookFn) -> Union[HookDefinition, _Hook]:
+def failure_hook(name: SuccessOrFailureHookFn) -> HookDefinition:
     ...
 
 
@@ -214,14 +214,14 @@ def failure_hook(name: SuccessOrFailureHookFn) -> Union[HookDefinition, _Hook]:
 def failure_hook(
     name: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
-) -> Callable[[SuccessOrFailureHookFn], Union[HookDefinition, _Hook]]:
+) -> Callable[[SuccessOrFailureHookFn], HookDefinition]:
     ...
 
 
 def failure_hook(
     name: Optional[Union[SuccessOrFailureHookFn, str]] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
-) -> Union[HookDefinition, _Hook, Callable[[SuccessOrFailureHookFn], Union[HookDefinition, _Hook]]]:
+) -> Union[HookDefinition, Callable[[SuccessOrFailureHookFn], HookDefinition]]:
     """Create a hook on step failure events with the specified parameters from the decorated function.
 
     Args:
@@ -245,7 +245,7 @@ def failure_hook(
 
     """
 
-    def wrapper(fn: Callable[["HookContext"], Any]) -> Union[HookDefinition, _Hook]:
+    def wrapper(fn: Callable[["HookContext"], Any]) -> HookDefinition:
         check.callable_param(fn, "fn")
 
         expected_positionals = ["context"]

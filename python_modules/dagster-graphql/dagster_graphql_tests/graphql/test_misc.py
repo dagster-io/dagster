@@ -21,13 +21,13 @@ from .production_query import PRODUCTION_QUERY
 
 @dagster_type_loader(str)
 def df_input_schema(_context, path):
-    with open(path, "r") as fd:
+    with open(path, "r", encoding="utf8") as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
 @dagster_type_materializer(str)
 def df_output_schema(_context, path, value):
-    with open(path, "w") as fd:
+    with open(path, "w", encoding="utf8") as fd:
         writer = csv.DictWriter(fd, fieldnames=value[0].keys())
         writer.writeheader()
         writer.writerows(rowdicts=value)

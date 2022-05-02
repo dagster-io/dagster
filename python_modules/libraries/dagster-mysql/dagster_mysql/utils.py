@@ -142,9 +142,7 @@ def wait_for_connection(conn_string, retry_limit=5, retry_wait=0.2):
 
 
 def mysql_alembic_config(dunder_file):
-    return get_alembic_config(
-        dunder_file, config_path="../alembic/alembic.ini", script_path="../alembic/"
-    )
+    return get_alembic_config(dunder_file, config_path="../alembic/alembic.ini")
 
 
 @contextmanager

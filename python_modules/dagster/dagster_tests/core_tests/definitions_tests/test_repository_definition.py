@@ -12,6 +12,7 @@ from dagster import (
     SensorDefinition,
     SolidDefinition,
     SourceAsset,
+    asset,
     build_schedule_from_partitioned_job,
     daily_partitioned_config,
     daily_schedule,
@@ -619,3 +620,27 @@ def test_source_assets():
         return [AssetGroup(assets=[], source_assets=[foo, bar])]
 
     assert my_repo.source_assets_by_key == {AssetKey("foo"): foo, AssetKey("bar"): bar}
+
+
+def test_multiple_asset_groups_one_repo():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    group1 = AssetGroup(assets=[asset1], source_assets=[SourceAsset(key=AssetKey("foo"))])
+    group2 = AssetGroup(assets=[asset2], source_assets=[SourceAsset(key=AssetKey("bar"))])
+
+    @repository
+    def my_repo():
+        return [group1, group2]
+
+    assert my_repo.source_assets_by_key.keys() == {AssetKey("foo"), AssetKey("bar")}
+    assert len(my_repo.get_all_jobs()) == 1
+    assert set(my_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
+        AssetKey(["asset1"]),
+        AssetKey(["asset2"]),
+    }

@@ -84,6 +84,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         volumes=exc_cfg.get("volumes"),
         labels=exc_cfg.get("labels"),
         namespace=exc_cfg.get("job_namespace"),
+        resources=exc_cfg.get("resources"),
     )
 
     return StepDelegatingExecutor(

@@ -25,9 +25,10 @@ interface LaunchRootExecutionButtonProps {
 
 export const LaunchRootExecutionButton: React.FC<LaunchRootExecutionButtonProps> = (props) => {
   const {canLaunchPipelineExecution} = usePermissions();
-  const [launchPipelineExecution] = useMutation<LaunchPipelineExecution>(
-    LAUNCH_PIPELINE_EXECUTION_MUTATION,
-  );
+  const [launchPipelineExecution] = useMutation<
+    LaunchPipelineExecution,
+    LaunchPipelineExecutionVariables
+  >(LAUNCH_PIPELINE_EXECUTION_MUTATION);
   const logTelemetry = useTelemetryAction();
   const history = useHistory();
 

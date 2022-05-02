@@ -206,7 +206,7 @@ def test_write_telemetry_log_line_writes_to_dagster_home():
     with tempfile.TemporaryDirectory() as temp_dir:
         with environ({"DAGSTER_HOME": temp_dir}):
             write_telemetry_log_line({"foo": "bar"})
-            with open(os.path.join(temp_dir, "logs", "event.log"), "r") as f:
+            with open(os.path.join(temp_dir, "logs", "event.log"), "r", encoding="utf8") as f:
                 res = json.load(f)
                 assert res == {"foo": "bar"}
 
@@ -217,7 +217,7 @@ def test_write_telemetry_log_line_writes_to_dagster_home():
             os.rmdir(os.path.join(temp_dir, "logs"))
 
             write_telemetry_log_line({"foo": "bar"})
-            with open(os.path.join(temp_dir, "logs", "event.log"), "r") as f:
+            with open(os.path.join(temp_dir, "logs", "event.log"), "r", encoding="utf8") as f:
                 res = json.load(f)
                 assert res == {"foo": "bar"}
 
@@ -230,6 +230,8 @@ def test_set_instance_id_from_empty_file():
         with environ({"DAGSTER_HOME": temp_dir}):
             # Write an empty file to the path
             open(
-                os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml"), "w"
+                os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml"),
+                "w",
+                encoding="utf8",
             ).close()
             assert get_or_set_instance_id()

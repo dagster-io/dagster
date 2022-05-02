@@ -264,6 +264,45 @@ dagster-user-deployments:
 
 `dagsterApiGrpcArgs` also supports loading repository definitions from a package name. To find the applicable arguments, [read here](/concepts/repositories-workspaces/workspaces#running-your-own-grpc-server).
 
+You can also specify configmaps, secrets, volumes, and labels for individual user code deployments, and use the `includeConfigInLaunchedRuns` key to tell Dagster to include that same configuration on any runs launched from jobs in that user code deployment:
+
+```yaml file=/deploying/kubernetes/user_code_deployment_config.yaml
+dagster-user-deployments:
+  enabled: true
+  deployments:
+    - name: "k8s-example-user-code-1"
+      image:
+        repository: "docker.io/dagster/user-code-example"
+        tag: latest
+        pullPolicy: Always
+      dagsterApiGrpcArgs:
+        - "--python-file"
+        - "/example_project/example_repo/repo.py"
+      port: 3030
+      envConfigMaps:
+        - my-config-map
+      envSecrets:
+        - my-secret
+      labels:
+        foo_label: bar_value
+      volumes:
+        - name: my-volume
+          configMap: my-config-map
+      volumeMounts:
+        - name: test-volume
+          mountPath: /opt/dagster/test_folder
+          subPath: test_file.yaml
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+      includeConfigInLaunchedRuns:
+        enabled: true
+```
+
 #### Running `step_isolated_job` (Optional)
 
 You'll need a slightly different configuration to run the job called `step_isolated_job`. This is because `step_isolated_job` uses an `s3_pickle_io_manager`, so you'll need to provide the user code k8s pods with AWS S3 credentials.

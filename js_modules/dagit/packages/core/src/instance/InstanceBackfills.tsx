@@ -25,6 +25,7 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
+import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -49,7 +50,9 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {workspacePathFromAddress, workspacePipelinePath} from '../workspace/workspacePath';
 
+import {BACKFILL_TABLE_FRAGMENT, BackfillTable as BackfillTableNew} from './BackfillTable';
 import {BackfillTerminationDialog} from './BackfillTerminationDialog';
+import {RESUME_BACKFILL_MUTATION} from './BackfillUtils';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {InstanceTabs} from './InstanceTabs';
 import {
@@ -60,6 +63,7 @@ import {
   InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs,
 } from './types/InstanceBackfillsQuery';
 import {InstanceHealthForBackfillsQuery} from './types/InstanceHealthForBackfillsQuery';
+import {resumeBackfill, resumeBackfillVariables} from './types/resumeBackfill';
 
 type Backfill = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results;
 type BackfillRun = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs;
@@ -117,6 +121,17 @@ export const InstanceBackfills = () => {
             .filter((daemon) => daemon.daemonType === 'BACKFILL')
             .map((daemon) => daemon.required && daemon.healthy);
           const isBackfillHealthy = backfillHealths.length && backfillHealths.every((x) => x);
+          const backfillTable = featureEnabled(FeatureFlag.flagNewPartitionsView) ? (
+            <BackfillTableNew
+              backfills={partitionBackfillsOrError.results.slice(0, PAGE_SIZE)}
+              refetch={queryResult.refetch}
+            />
+          ) : (
+            <BackfillTable
+              backfills={partitionBackfillsOrError.results.slice(0, PAGE_SIZE)}
+              refetch={queryResult.refetch}
+            />
+          );
 
           return (
             <div>
@@ -141,10 +156,7 @@ export const InstanceBackfills = () => {
                   />
                 </Box>
               )}
-              <BackfillTable
-                backfills={partitionBackfillsOrError.results.slice(0, PAGE_SIZE)}
-                refetch={queryResult.refetch}
-              />
+              {backfillTable}
               {partitionBackfillsOrError.results.length > 0 ? (
                 <div style={{marginTop: '16px'}}>
                   <CursorPaginationControls {...paginationProps} />
@@ -170,7 +182,9 @@ const INSTANCE_HEALTH_FOR_BACKFILLS_QUERY = gql`
 
 const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: () => void}) => {
   const [terminationBackfill, setTerminationBackfill] = React.useState<Backfill>();
-  const [resumeBackfill] = useMutation(RESUME_BACKFILL_MUTATION);
+  const [resumeBackfill] = useMutation<resumeBackfill, resumeBackfillVariables>(
+    RESUME_BACKFILL_MUTATION,
+  );
   const [cancelRunBackfill, setCancelRunBackfill] = React.useState<Backfill>();
   const {canCancelPartitionBackfill} = usePermissions();
 
@@ -199,7 +213,7 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
         icon: 'error',
         intent: 'danger',
       });
-    } else {
+    } else if (data && data.resumePartitionBackfill.__typename === 'PythonError') {
       const error = data.resumePartitionBackfill;
       SharedToaster.show({
         message: <div>An unexpected error occurred. This backfill was not retried.</div>,
@@ -443,14 +457,15 @@ const getProgressCounts = (backfill: Backfill) => {
     {numQueued: 0, numInProgress: 0, numSucceeded: 0, numFailed: 0},
   );
 
+  const numTotal = backfill.partitionNames.length;
   return {
     numQueued,
     numInProgress,
     numSucceeded,
     numFailed,
-    numUnscheduled: backfill.numTotal - backfill.numRequested,
+    numUnscheduled: numTotal - backfill.numRequested,
     numSkipped: backfill.numRequested - latestPartitionRuns.length,
-    numTotal: backfill.numTotal,
+    numTotal,
   };
 };
 
@@ -593,7 +608,7 @@ const BACKFILLS_QUERY = gql`
           backfillId
           status
           numRequested
-          numTotal
+          partitionNames
           runs {
             id
             canTerminate
@@ -619,6 +634,8 @@ const BACKFILLS_QUERY = gql`
           error {
             ...PythonErrorFragment
           }
+
+          ...BackfillTableFragment
         }
       }
       ...PythonErrorFragment
@@ -626,21 +643,5 @@ const BACKFILLS_QUERY = gql`
   }
 
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-const RESUME_BACKFILL_MUTATION = gql`
-  mutation resumeBackfill($backfillId: String!) {
-    resumePartitionBackfill(backfillId: $backfillId) {
-      __typename
-      ... on ResumeBackfillSuccess {
-        backfillId
-      }
-      ... on UnauthorizedError {
-        message
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  ${PYTHON_ERROR_FRAGMENT}
+  ${BACKFILL_TABLE_FRAGMENT}
 `;

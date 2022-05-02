@@ -148,7 +148,7 @@ def test_even_type_materialization_config():
 
     @dagster_type_materializer({"path": str})
     def save_to_file_materialization(_, cfg, value):
-        with open(cfg["path"], "w") as ff:
+        with open(cfg["path"], "w", encoding="utf8") as ff:
             ff.write(str(value))
             return AssetMaterialization(
                 "path",

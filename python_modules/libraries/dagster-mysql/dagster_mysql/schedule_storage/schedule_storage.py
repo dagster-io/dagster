@@ -1,9 +1,11 @@
+import pendulum
 import sqlalchemy as db
 
 from dagster import check
 from dagster.core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
+from dagster.core.storage.schedules.schema import InstigatorsTable
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 
 from ..utils import (
     MYSQL_POOL_RECYCLE,
@@ -105,3 +107,22 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     def upgrade(self):
         alembic_config = mysql_alembic_config(__file__)
         run_alembic_upgrade(alembic_config, self._engine)
+
+    def _add_or_update_instigators_table(self, conn, state):
+        selector_id = state.selector_id
+        conn.execute(
+            db.dialects.mysql.insert(InstigatorsTable)
+            .values(
+                selector_id=selector_id,
+                repository_selector_id=state.repository_selector_id,
+                status=state.status.value,
+                instigator_type=state.instigator_type.value,
+                instigator_body=serialize_dagster_namedtuple(state),
+            )
+            .on_duplicate_key_update(
+                status=state.status.value,
+                instigator_type=state.instigator_type.value,
+                instigator_body=serialize_dagster_namedtuple(state),
+                update_timestamp=pendulum.now("UTC"),
+            )
+        )

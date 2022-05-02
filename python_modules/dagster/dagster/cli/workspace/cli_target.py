@@ -32,6 +32,7 @@ from dagster.utils.hosted_user_process import recon_repository_from_origin
 
 if TYPE_CHECKING:
     from dagster.core.workspace.context import WorkspaceProcessContext
+
 from dagster.core.host_representation.external import ExternalPipeline
 
 WORKSPACE_TARGET_WARNING = "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port, --grpc-socket."
@@ -197,6 +198,7 @@ def python_target_click_options(is_using_job_op_graph_apis: bool = False):
             "--working-directory",
             "-d",
             help=f"Specify working directory to use when loading the repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'}.",
+            envvar="DAGSTER_WORKING_DIRECTORY",
         ),
         click.option(
             "--python-file",
@@ -205,15 +207,18 @@ def python_target_click_options(is_using_job_op_graph_apis: bool = False):
             # are better equipped to surface errors
             type=click.Path(exists=False),
             help=f"Specify python file where repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'} function lives",
+            envvar="DAGSTER_PYTHON_FILE",
         ),
         click.option(
             "--package-name",
             help=f"Specify Python package where repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'} function lives",
+            envvar="DAGSTER_PACKAGE_NAME",
         ),
         click.option(
             "--module-name",
             "-m",
             help=f"Specify module where repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'} function lives",
+            envvar="DAGSTER_MODULE_NAME",
         ),
         click.option(
             "--attribute",
@@ -222,6 +227,7 @@ def python_target_click_options(is_using_job_op_graph_apis: bool = False):
                 f"Attribute that is either a 1) repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'} or "
                 f"2) a function that returns a repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'}"
             ),
+            envvar="DAGSTER_ATTRIBUTE",
         ),
     ]
 

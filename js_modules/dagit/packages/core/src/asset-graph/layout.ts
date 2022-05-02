@@ -1,4 +1,5 @@
 import * as dagre from 'dagre';
+import uniq from 'lodash/uniq';
 
 import {IBounds, IPoint} from '../graph/common';
 
@@ -13,8 +14,9 @@ export interface AssetLayout {
 
 export type AssetLayoutEdge = {
   from: IPoint;
+  fromId: string;
   to: IPoint;
-  dashed: boolean;
+  toId: string;
 };
 
 export type AssetGraphLayout = {
@@ -22,6 +24,9 @@ export type AssetGraphLayout = {
   height: number;
   edges: AssetLayoutEdge[];
   nodes: {[id: string]: AssetLayout};
+
+  bundleEdges: AssetLayoutEdge[];
+  bundles: {[id: string]: AssetLayout};
 };
 
 const opts: {margin: number; mini: boolean} = {
@@ -29,8 +34,56 @@ const opts: {margin: number; mini: boolean} = {
   mini: false,
 };
 
+function identifyBundles(nodes: GraphNode[]) {
+  const pathPrefixes: {[prefixId: string]: string[]} = {};
+
+  for (const node of nodes) {
+    for (let ii = 1; ii < node.assetKey.path.length; ii++) {
+      const prefix = node.assetKey.path.slice(0, ii);
+      const key = JSON.stringify(prefix);
+      pathPrefixes[key] = pathPrefixes[key] || [];
+      pathPrefixes[key].push(node.id);
+    }
+  }
+
+  for (const key of Object.keys(pathPrefixes)) {
+    if (pathPrefixes[key].length <= 1) {
+      delete pathPrefixes[key];
+    }
+  }
+
+  const finalBundlePrefixes: {[prefixId: string]: string[]} = {};
+  const finalBundleIdForNodeId: {[id: string]: string} = {};
+
+  // Sort the prefix keys by length descending and iterate from the deepest folders first.
+  // Dedupe asset keys and replace asset keys we've already seen with the (deeper) folder
+  // they are within. This gets us "multi layer folders" of nodes.
+
+  // Turn this:
+  // {
+  //  "s3": [["s3", "collect"], ["s3", "prod", "a"], ["s3", "prod", "b"]],
+  //  "s3/prod": ["s3", "prod", "a"], ["s3", "prod", "b"]
+  // }
+
+  // Into this:
+  // {
+  //  "s3/prod": ["s3", "prod", "a"], ["s3", "prod", "b"]
+  //  "s3": [["s3", "collect"], ["s3", "prod"]],
+  // }
+
+  for (const prefixId of Object.keys(pathPrefixes).sort((a, b) => b.length - a.length)) {
+    finalBundlePrefixes[prefixId] = uniq(
+      pathPrefixes[prefixId].map((p) =>
+        finalBundleIdForNodeId[p] ? finalBundleIdForNodeId[p] : p,
+      ),
+    );
+    finalBundlePrefixes[prefixId].forEach((id) => (finalBundleIdForNodeId[id] = prefixId));
+  }
+  return finalBundlePrefixes;
+}
+
 export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
-  const g = new dagre.graphlib.Graph();
+  const g = new dagre.graphlib.Graph({compound: true});
 
   g.setGraph({
     rankdir: 'TB',
@@ -51,7 +104,16 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
       g.setNode(node.id, {width: opts.mini ? 230 : width, height});
     });
 
+  const bundleMapping = identifyBundles(Object.values(graphData.nodes));
+  for (const [parentId, nodeIds] of Object.entries(bundleMapping)) {
+    g.setNode(parentId, {});
+    for (const nodeId of nodeIds) {
+      g.setParent(nodeId, parentId);
+    }
+  }
+
   const foreignNodes = {};
+
   Object.keys(graphData.downstream).forEach((upstreamId) => {
     const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
     downstreamIds.forEach((downstreamId) => {
@@ -61,6 +123,7 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
       ) {
         return;
       }
+
       g.setEdge({v: upstreamId, w: downstreamId}, {weight: 1});
 
       if (!shouldRender(graphData.nodes[downstreamId])) {
@@ -88,35 +151,54 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
 
   let maxWidth = 0;
   let maxHeight = 0;
+
   const nodes: {[id: string]: AssetLayout} = {};
+  const bundles: {[id: string]: AssetLayout} = {};
+
   Object.keys(dagreNodesById).forEach((id) => {
     const dagreNode = dagreNodesById[id];
-    nodes[id] = {
-      id,
-      bounds: {
-        x: dagreNode.x - dagreNode.width / 2,
-        y: dagreNode.y - dagreNode.height / 2,
-        width: dagreNode.width,
-        height: dagreNode.height,
-      },
+    const bounds = {
+      x: dagreNode.x - dagreNode.width / 2,
+      y: dagreNode.y - dagreNode.height / 2,
+      width: dagreNode.width,
+      height: dagreNode.height,
     };
+    if (bundleMapping[id]) {
+      bundles[id] = {id, bounds};
+    } else {
+      nodes[id] = {id, bounds};
+    }
     maxWidth = Math.max(maxWidth, dagreNode.x + dagreNode.width / 2);
     maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height / 2);
   });
 
   const edges: AssetLayoutEdge[] = [];
+  const bundleEdges: AssetLayoutEdge[] = [];
+
   g.edges().forEach((e) => {
     const points = g.edge(e).points;
-    edges.push({
-      from: points[0],
-      to: points[points.length - 1],
-      dashed: false,
-    });
+    if (bundles[e.v] || bundles[e.w]) {
+      bundleEdges.push({
+        from: points[0],
+        fromId: e.v,
+        to: points[points.length - 1],
+        toId: e.w,
+      });
+    } else {
+      edges.push({
+        from: points[0],
+        fromId: e.v,
+        to: points[points.length - 1],
+        toId: e.w,
+      });
+    }
   });
 
   return {
     nodes,
     edges,
+    bundles,
+    bundleEdges,
     width: maxWidth + opts.margin,
     height: maxHeight + opts.margin,
   };
@@ -128,7 +210,7 @@ export const getForeignNodeDimensions = (id: string) => {
 };
 
 export const ASSET_NODE_ANNOTATIONS_MAX_WIDTH = 65;
-export const ASSET_NODE_NAME_MAX_LENGTH = 50;
+export const ASSET_NODE_NAME_MAX_LENGTH = 32;
 const DISPLAY_NAME_PX_PER_CHAR = 8.0;
 
 export const getAssetNodeDimensions = (def: {

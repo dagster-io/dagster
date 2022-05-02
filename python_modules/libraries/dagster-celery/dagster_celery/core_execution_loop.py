@@ -150,7 +150,7 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
                 except Exception:
                     yield DagsterEvent.engine_event(
                         pipeline_context,
-                        "Encountered error during celery task submission.".format(),
+                        "Encountered error during celery task submission.",
                         event_specific_data=EngineEventData.engine_error(
                             serializable_error_info_from_exc_info(sys.exc_info()),
                         ),

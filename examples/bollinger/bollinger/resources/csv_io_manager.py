@@ -27,7 +27,7 @@ class LocalCsvIOManager(MemoizableIOManager):
         fpath = self._get_fs_path(context.asset_key)
         os.makedirs(os.path.dirname(fpath), exist_ok=True)
         obj.to_csv(fpath)
-        with open(fpath + ".version", "w") as f:
+        with open(fpath + ".version", "w", encoding="utf8") as f:
             f.write(context.version if context.version else "None")
 
         yield MetadataEntry.int(obj.shape[0], "Rows")
@@ -66,7 +66,7 @@ class LocalCsvIOManager(MemoizableIOManager):
         version_fpath = fpath + ".version"
         if not os.path.exists(version_fpath):
             return False
-        with open(version_fpath, "r") as f:
+        with open(version_fpath, "r", encoding="utf8") as f:
             version = f.read()
 
         return version == context.version

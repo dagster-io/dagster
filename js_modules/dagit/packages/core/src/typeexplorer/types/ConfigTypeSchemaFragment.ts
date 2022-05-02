@@ -39,6 +39,7 @@ export interface ConfigTypeSchemaFragment_CompositeConfigType_fields {
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface ConfigTypeSchemaFragment_CompositeConfigType {

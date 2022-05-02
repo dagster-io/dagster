@@ -82,7 +82,7 @@ def execute_query_from_cli(workspace_process_context, query, variables=None, out
     # stdout
     if output:
         check.str_param(output, "output")
-        with open(output, "w") as f:
+        with open(output, "w", encoding="utf8") as f:
             f.write(str_res + "\n")
     else:
         print(str_res)  # pylint: disable=print-call
@@ -147,7 +147,7 @@ PREDEFINED_QUERIES = {
 @click.option(
     "--predefined",
     "-p",
-    type=click.Choice(PREDEFINED_QUERIES.keys()),
+    type=click.Choice(list(PREDEFINED_QUERIES.keys())),
     help="GraphQL document to execute, from a predefined set provided by dagster-graphql.",
 )
 @click.option(

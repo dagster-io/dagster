@@ -40,9 +40,12 @@ export interface AssetGraphQuery_assetNodes_dependedByKeys {
 export interface AssetGraphQuery_assetNodes {
   __typename: "AssetNode";
   id: string;
+  graphName: string | null;
   opName: string | null;
+  opNames: string[];
   description: string | null;
   partitionDefinition: string | null;
+  computeKind: string | null;
   assetKey: AssetGraphQuery_assetNodes_assetKey;
   repository: AssetGraphQuery_assetNodes_repository;
   jobNames: string[];

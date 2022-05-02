@@ -832,7 +832,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     # a dict where they meant to pass dict or Dict, etc.
     try:
         hash(dagster_type)
-    except TypeError:
+    except TypeError as e:
         raise DagsterInvalidDefinitionError(
             DAGSTER_INVALID_TYPE_ERROR_MESSAGE.format(
                 additional_msg=(
@@ -841,7 +841,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
                 ),
                 dagster_type=str(dagster_type),
             )
-        )
+        ) from e
 
     if BuiltinEnum.contains(dagster_type):
         return DagsterType.from_builtin_enum(dagster_type)

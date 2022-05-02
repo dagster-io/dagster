@@ -637,6 +637,57 @@ def test_simple_schedule(instance, workspace, external_repo):
         assert len(ticks) == 3
 
 
+# Verify that the scheduler uses selector and not origin to dedupe schedules
+def test_schedule_with_different_origin(instance, workspace, external_repo):
+    external_schedule = external_repo.get_external_schedule("simple_schedule")
+    existing_origin = external_schedule.get_external_origin()
+
+    repo_location_origin = existing_origin.external_repository_origin.repository_location_origin
+    modified_loadable_target_origin = repo_location_origin.loadable_target_origin._replace(
+        executable_path="/different/executable_path"
+    )
+
+    # Change metadata on the origin that shouldn't matter for execution
+    modified_origin = existing_origin._replace(
+        external_repository_origin=existing_origin.external_repository_origin._replace(
+            repository_location_origin=repo_location_origin._replace(
+                loadable_target_origin=modified_loadable_target_origin
+            )
+        )
+    )
+
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        schedule_state = InstigatorState(
+            modified_origin,
+            InstigatorType.SCHEDULE,
+            InstigatorStatus.RUNNING,
+            ScheduleInstigatorData(
+                external_schedule.cron_schedule, pendulum.now("UTC").timestamp()
+            ),
+        )
+        instance.add_instigator_state(schedule_state)
+
+        freeze_datetime = freeze_datetime.add(seconds=2)
+
+    with pendulum.test(freeze_datetime):
+        list(
+            launch_scheduled_runs(
+                instance,
+                workspace,
+                logger(),
+                pendulum.now("UTC"),
+            )
+        )
+
+        assert instance.get_runs_count() == 1
+        ticks = instance.get_ticks(existing_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 1
+
+
 def test_old_tick_schedule(instance, workspace, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),

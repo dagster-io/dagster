@@ -1,8 +1,9 @@
-import {gql, NetworkStatus, useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Tab, Tabs, Page} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable, TickHistoryTimeline} from '../instigation/TickHistory';
@@ -14,9 +15,7 @@ import {SensorDetails} from './SensorDetails';
 import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
 import {SensorPreviousRuns} from './SensorPreviousRuns';
-import {SensorRootQuery} from './types/SensorRootQuery';
-
-const INTERVAL = 15 * 1000;
+import {SensorRootQuery, SensorRootQueryVariables} from './types/SensorRootQuery';
 
 export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
   const {sensorName} = useParams<{sensorName: string}>();
@@ -28,25 +27,15 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
   };
 
   const [selectedTab, setSelectedTab] = React.useState<string>('ticks');
-  const queryResult = useQuery<SensorRootQuery>(SENSOR_ROOT_QUERY, {
-    variables: {
-      sensorSelector,
-    },
+  const queryResult = useQuery<SensorRootQuery, SensorRootQueryVariables>(SENSOR_ROOT_QUERY, {
+    variables: {sensorSelector},
     fetchPolicy: 'cache-and-network',
-    pollInterval: INTERVAL,
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });
 
-  const {networkStatus, refetch, stopPolling, startPolling} = queryResult;
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
-  const onRefresh = async () => {
-    stopPolling();
-    await refetch();
-    startPolling(INTERVAL);
-  };
-
-  const countdownStatus = networkStatus === NetworkStatus.ready ? 'counting' : 'idle';
   const tabs = (
     <Tabs selectedTabId={selectedTab} onChange={setSelectedTab}>
       <Tab id="ticks" title="Tick history" />
@@ -67,9 +56,7 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
               repoAddress={repoAddress}
               sensor={sensorOrError}
               daemonHealth={instance.daemonHealth.daemonStatus.healthy}
-              countdownDuration={INTERVAL}
-              countdownStatus={countdownStatus}
-              onRefresh={() => onRefresh()}
+              refreshState={refreshState}
             />
             {showDaemonWarning ? (
               <Box padding={{vertical: 16, horizontal: 24}}>

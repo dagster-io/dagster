@@ -162,7 +162,7 @@ class TestMySQLInstance:
             raise MySQLDockerError(
                 "Failed to launch docker container(s) via docker-compose: {}".format(err_text),
                 ex,
-            )
+            ) from ex
 
         conn_str = TestMySQLInstance.conn_string(**conn_args)
         wait_for_connection(conn_str, retry_limit=10, retry_wait=3)
@@ -205,9 +205,11 @@ def is_mysql_running(service_name):
     except subprocess.CalledProcessError as ex:
         lines = ex.output.decode().split("\n")
         if len(lines) == 2 and "Cannot connect to the Docker daemon" in lines[0]:
-            raise MySQLDockerError("Cannot connect to the Docker daemon", ex)
+            raise MySQLDockerError("Cannot connect to the Docker daemon", ex) from ex
         else:
-            raise MySQLDockerError("Could not verify mysql container was running as expected", ex)
+            raise MySQLDockerError(
+                "Could not verify mysql container was running as expected", ex
+            ) from ex
 
     decoded = output.decode()
     lines = decoded.split("\n")

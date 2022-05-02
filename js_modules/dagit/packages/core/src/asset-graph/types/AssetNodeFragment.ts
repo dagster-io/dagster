@@ -28,9 +28,12 @@ export interface AssetNodeFragment_repository {
 export interface AssetNodeFragment {
   __typename: "AssetNode";
   id: string;
+  graphName: string | null;
   opName: string | null;
+  opNames: string[];
   description: string | null;
   partitionDefinition: string | null;
+  computeKind: string | null;
   assetKey: AssetNodeFragment_assetKey;
   repository: AssetNodeFragment_repository;
 }

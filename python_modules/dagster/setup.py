@@ -19,7 +19,7 @@ def get_description() -> str:
 
 def get_version() -> str:
     version: Dict[str, str] = {}
-    with open("dagster/version.py") as fp:
+    with open("dagster/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     return version["__version__"]
@@ -79,9 +79,11 @@ if __name__ == "__main__":
             "pytz",
             "requests",
             "rx>=1.6,<2",  # https://github.com/dagster-io/dagster/issues/4089
+            "setuptools",
             "tabulate",
             "tqdm",
             "typing_compat",
+            "typing_extensions>=3.10",
             "sqlalchemy>=1.0",
             "toposort>=1.0",
             "watchdog>=0.8.3",
@@ -93,7 +95,6 @@ if __name__ == "__main__":
         extras_require={
             "docker": ["docker"],
             "test": [
-                "astroid>=2.3.3,<2.5",
                 "coverage==5.3",
                 "docker",
                 "freezegun>=0.3.15",
@@ -110,12 +111,12 @@ if __name__ == "__main__":
                 "pytest==6.1.1",
                 "responses==0.10.*",
                 "snapshottest==0.6.0",
-                "tox==3.14.2",
-                "tox-pip-version==0.0.7",
+                "tox==3.25.0",
                 "tqdm==4.48.0",  # pylint crash 48.1+
                 "yamllint",
                 "flake8>=3.7.8",
-                "pylint==2.6.0",
+                "astroid",  # let pylint determine the version
+                "pylint==2.13.7",
             ],
             "black": [
                 "black[jupyter]==22.3.0",
@@ -124,7 +125,7 @@ if __name__ == "__main__":
                 "isort==5.10.1",
             ],
             "mypy": [
-                "mypy==0.940",
+                "mypy==0.950",
                 "types-croniter",  # version will be resolved against croniter
                 "types-mock",  # version will be resolved against mock
                 "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)

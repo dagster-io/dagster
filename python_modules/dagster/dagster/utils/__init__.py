@@ -14,7 +14,7 @@ import subprocess
 import sys
 import tempfile
 import threading
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import OrderedDict
 from datetime import timezone
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, ContextManager, Generator, Generic, Iterator
@@ -188,7 +188,7 @@ class frozendict(dict):
     popitem = __readonly__
     clear = __readonly__
     update = __readonly__  # type: ignore[assignment]
-    setdefault = __readonly__
+    setdefault = __readonly__  # type: ignore[assignment]
     del __readonly__
 
     def __hash__(self):
@@ -307,11 +307,12 @@ def safe_tempfile_path_unmanaged() -> str:
 
 @contextlib.contextmanager
 def safe_tempfile_path() -> Iterator[str]:
+    path = None
     try:
         path = safe_tempfile_path_unmanaged()
         yield path
     finally:
-        if os.path.exists(path):
+        if path is not None and os.path.exists(path):
             os.unlink(path)
 
 
@@ -325,8 +326,11 @@ def ensure_gen(thing_or_gen: T) -> Generator[T, Any, Any]:
     pass
 
 
-def ensure_gen(thing_or_gen):
+def ensure_gen(
+    thing_or_gen: Union[T, Iterator[T], Generator[T, Any, Any]]
+) -> Generator[T, Any, Any]:
     if not inspect.isgenerator(thing_or_gen):
+        thing_or_gen = cast(T, thing_or_gen)
 
         def _gen_thing():
             yield thing_or_gen
@@ -352,7 +356,7 @@ def ensure_file(path):
 
 def touch_file(path):
     ensure_dir(os.path.dirname(path))
-    with open(path, "a"):
+    with open(path, "a", encoding="utf8"):
         os.utime(path, None)
 
 

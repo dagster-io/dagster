@@ -44,6 +44,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
         const repoPath = buildRepoPath(repoName, locationName);
 
         const allPipelinesAndJobs = pipelines
+          .filter((item) => !isAssetGroup(item.name))
           .reduce((flat, pipelineOrJob) => {
             const {name, isJob} = pipelineOrJob;
             return [
@@ -64,8 +65,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
                 type: SearchResultType.Pipeline,
               },
             ];
-          }, [] as SearchResult[])
-          .filter((item) => !isAssetGroup(item.label));
+          }, [] as SearchResult[]);
 
         const allSchedules: SearchResult[] = schedules.map((schedule) => ({
           key: `${repoPath}-${schedule.name}`,
@@ -83,17 +83,19 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
           type: SearchResultType.Sensor,
         }));
 
-        const allPartitionSets: SearchResult[] = partitionSets.map((partitionSet) => ({
-          key: `${repoPath}-${partitionSet.name}`,
-          label: partitionSet.name,
-          description: manyRepos ? `Partition set in ${repoPath}` : 'Partition set',
-          href: workspacePath(
-            repoName,
-            locationName,
-            `/pipeline_or_job/${partitionSet.pipelineName}/partitions?partitionSet=${partitionSet.name}`,
-          ),
-          type: SearchResultType.PartitionSet,
-        }));
+        const allPartitionSets: SearchResult[] = partitionSets
+          .filter((item) => !isAssetGroup(item.pipelineName))
+          .map((partitionSet) => ({
+            key: `${repoPath}-${partitionSet.name}`,
+            label: partitionSet.name,
+            description: manyRepos ? `Partition set in ${repoPath}` : 'Partition set',
+            href: workspacePath(
+              repoName,
+              locationName,
+              `/pipeline_or_job/${partitionSet.pipelineName}/partitions?partitionSet=${partitionSet.name}`,
+            ),
+            type: SearchResultType.PartitionSet,
+          }));
 
         return [
           ...inner,

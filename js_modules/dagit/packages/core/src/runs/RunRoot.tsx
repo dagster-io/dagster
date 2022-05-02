@@ -16,12 +16,12 @@ import {RunConfigDialog, RunDetails} from './RunDetails';
 import {RunFragments} from './RunFragments';
 import {RunStatusTag} from './RunStatusTag';
 import {RunStepKeysAssetList} from './RunStepKeysAssetList';
-import {RunRootQuery} from './types/RunRootQuery';
+import {RunRootQuery, RunRootQueryVariables} from './types/RunRootQuery';
 
 export const RunRoot = () => {
   const {runId} = useParams<{runId: string}>();
 
-  const {data, loading} = useQuery<RunRootQuery>(RUN_ROOT_QUERY, {
+  const {data, loading} = useQuery<RunRootQuery, RunRootQueryVariables>(RUN_ROOT_QUERY, {
     fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     variables: {runId},

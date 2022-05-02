@@ -63,13 +63,13 @@ class IntSourceType(ScalarUnion):
         value = _ensure_env_variable(cfg)
         try:
             return int(value)
-        except ValueError:
+        except ValueError as e:
             raise PostProcessingError(
                 (
                     'Value "{value}" stored in env variable "{var}" cannot be '
                     "coerced into an int."
                 ).format(value=value, var=cfg)
-            )
+            ) from e
 
 
 class BoolSourceType(ScalarUnion):
@@ -93,13 +93,13 @@ class BoolSourceType(ScalarUnion):
         value = _ensure_env_variable(cfg)
         try:
             return bool(value)
-        except ValueError:
+        except ValueError as e:
             raise PostProcessingError(
                 (
                     'Value "{value}" stored in env variable "{var}" cannot be '
                     "coerced into an bool."
                 ).format(value=value, var=cfg)
-            )
+            ) from e
 
 
 StringSource = StringSourceType()

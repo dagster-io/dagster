@@ -19,6 +19,7 @@ import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
+import {ReexecutionPolicy} from '../types/globalTypes';
 import {DagitReadOnlyCodeMirror} from '../ui/DagitCodeMirror';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
@@ -26,8 +27,9 @@ import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {workspacePathFromRunDetails} from '../workspace/workspacePath';
 
 import {DeletionDialog} from './DeletionDialog';
+import {ReexecutionDialog} from './ReexecutionDialog';
 import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from './RunFragments';
-import {doneStatuses} from './RunStatuses';
+import {doneStatuses, failedStatuses} from './RunStatuses';
 import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
   RunsQueryRefetchContext,
@@ -35,8 +37,14 @@ import {
   handleLaunchResult,
 } from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
-import {LaunchPipelineReexecution} from './types/LaunchPipelineReexecution';
-import {PipelineEnvironmentYamlQuery} from './types/PipelineEnvironmentYamlQuery';
+import {
+  LaunchPipelineReexecution,
+  LaunchPipelineReexecutionVariables,
+} from './types/LaunchPipelineReexecution';
+import {
+  PipelineEnvironmentYamlQuery,
+  PipelineEnvironmentYamlQueryVariables,
+} from './types/PipelineEnvironmentYamlQuery';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 export const RunActionsMenu: React.FC<{
@@ -53,16 +61,19 @@ export const RunActionsMenu: React.FC<{
 
   const copyConfig = useCopyToClipboard();
 
-  const [reexecute] = useMutation<LaunchPipelineReexecution>(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {
-    onCompleted: refetch,
-  });
-
-  const [loadEnv, {called, loading, data}] = useLazyQuery<PipelineEnvironmentYamlQuery>(
-    PIPELINE_ENVIRONMENT_YAML_QUERY,
+  const [reexecute] = useMutation<LaunchPipelineReexecution, LaunchPipelineReexecutionVariables>(
+    LAUNCH_PIPELINE_REEXECUTION_MUTATION,
     {
-      variables: {runId: run.runId},
+      onCompleted: refetch,
     },
   );
+
+  const [loadEnv, {called, loading, data}] = useLazyQuery<
+    PipelineEnvironmentYamlQuery,
+    PipelineEnvironmentYamlQueryVariables
+  >(PIPELINE_ENVIRONMENT_YAML_QUERY, {
+    variables: {runId: run.runId},
+  });
 
   const closeDialogs = () => {
     setVisibleDialog('none');
@@ -231,8 +242,14 @@ export const RunBulkActionsMenu: React.FC<{
   clearSelection: () => void;
 }> = React.memo(({selected, clearSelection}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
-  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
-  const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');
+  const {
+    canTerminatePipelineExecution,
+    canDeletePipelineRun,
+    canLaunchPipelineReexecution,
+  } = usePermissions();
+  const [visibleDialog, setVisibleDialog] = React.useState<
+    'none' | 'terminate' | 'delete' | 'reexecute-from-failure' | 'reexecute'
+  >('none');
 
   if (!canTerminatePipelineExecution && !canDeletePipelineRun) {
     return null;
@@ -247,6 +264,15 @@ export const RunBulkActionsMenu: React.FC<{
 
   const selectedIDs = selected.map((run) => run.runId);
   const deletionMap = selected.reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {});
+
+  const failedRuns = selected.filter((r) => failedStatuses.has(r?.status));
+  const failedMap = failedRuns.reduce((accum, run) => ({...accum, [run.id]: run.id}), {});
+
+  const reexecutableRuns = selected.filter((r) => doneStatuses.has(r?.status));
+  const reexecutableMap = reexecutableRuns.reduce(
+    (accum, run) => ({...accum, [run.id]: run.id}),
+    {},
+  );
 
   const closeDialogs = () => {
     setVisibleDialog('none');
@@ -285,6 +311,30 @@ export const RunBulkActionsMenu: React.FC<{
                 }}
               />
             ) : null}
+            {canLaunchPipelineReexecution ? (
+              <>
+                <MenuItem
+                  icon="refresh"
+                  text={`Re-execute ${reexecutableRuns.length} ${
+                    reexecutableRuns.length === 1 ? 'run' : 'runs'
+                  }`}
+                  disabled={reexecutableRuns.length === 0}
+                  onClick={() => {
+                    setVisibleDialog('reexecute');
+                  }}
+                />
+                <MenuItem
+                  icon="refresh"
+                  text={`Re-execute ${failedRuns.length} ${
+                    failedRuns.length === 1 ? 'run' : 'runs'
+                  } from failure`}
+                  disabled={failedRuns.length === 0}
+                  onClick={() => {
+                    setVisibleDialog('reexecute-from-failure');
+                  }}
+                />
+              </>
+            ) : null}
           </Menu>
         }
         position="bottom-right"
@@ -305,6 +355,20 @@ export const RunBulkActionsMenu: React.FC<{
         onComplete={onComplete}
         onTerminateInstead={() => setVisibleDialog('terminate')}
         selectedRuns={deletionMap}
+      />
+      <ReexecutionDialog
+        isOpen={visibleDialog === 'reexecute-from-failure'}
+        onClose={closeDialogs}
+        onComplete={onComplete}
+        selectedRuns={failedMap}
+        reexecutionPolicy={ReexecutionPolicy.FROM_FAILURE}
+      />
+      <ReexecutionDialog
+        isOpen={visibleDialog === 'reexecute'}
+        onClose={closeDialogs}
+        onComplete={onComplete}
+        selectedRuns={reexecutableMap}
+        reexecutionPolicy={ReexecutionPolicy.ALL_STEPS}
       />
     </>
   );

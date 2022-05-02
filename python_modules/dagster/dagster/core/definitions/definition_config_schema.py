@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Union
 
 from dagster import check
+from dagster.config.config_schema import ConfigSchemaType
 from dagster.config.config_type import ConfigAnyInstance, ConfigType
 from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.field import Field
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
 
 
 def convert_user_facing_definition_config_schema(
-    potential_schema: Union["IDefinitionConfigSchema", Dict[str, Any], None],
+    potential_schema: Optional[Union["IDefinitionConfigSchema", ConfigSchemaType]]
 ) -> "IDefinitionConfigSchema":
     if potential_schema is None:
         return DefinitionConfigSchema(Field(ConfigAnyInstance, is_required=False))

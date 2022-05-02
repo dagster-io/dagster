@@ -9,17 +9,16 @@ from dagster_dbt.types import DbtOutput
 
 from dagster import AssetGroup, AssetKey, MetadataEntry, ResourceDefinition, repository
 from dagster.core.asset_defs import build_assets_job
-from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 from dagster.utils import file_relative_path
 
 
 def test_load_from_manifest_json():
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r") as f:
+    with open(manifest_path, "r", encoding="utf8") as f:
         manifest_json = json.load(f)
 
     run_results_path = file_relative_path(__file__, "sample_run_results.json")
-    with open(run_results_path, "r") as f:
+    with open(run_results_path, "r", encoding="utf8") as f:
         run_results_json = json.load(f)
 
     dbt_assets = load_assets_from_dbt_manifest(manifest_json=manifest_json)
@@ -37,11 +36,11 @@ def test_load_from_manifest_json():
 
 def test_runtime_metadata_fn():
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r") as f:
+    with open(manifest_path, "r", encoding="utf8") as f:
         manifest_json = json.load(f)
 
     run_results_path = file_relative_path(__file__, "sample_run_results.json")
-    with open(run_results_path, "r") as f:
+    with open(run_results_path, "r", encoding="utf8") as f:
         run_results_json = json.load(f)
 
     def runtime_metadata_fn(context, node_info):
@@ -92,11 +91,11 @@ def assert_assets_match_project(dbt_assets):
     ]:
         out_def = assets_op.output_dict.get(model_name)
         assert out_def.hardcoded_asset_key == AssetKey([model_name])
-        assert out_def.metadata[ASSET_DEPENDENCY_METADATA_KEY] == {AssetKey("sort_by_calories")}
+        assert dbt_assets[0].asset_deps[AssetKey([model_name])] == {AssetKey("sort_by_calories")}
 
     root_out_def = assets_op.output_dict.get("sort_by_calories")
     assert root_out_def.hardcoded_asset_key == AssetKey(["sort_by_calories"])
-    assert not root_out_def.metadata[ASSET_DEPENDENCY_METADATA_KEY]
+    assert not dbt_assets[0].asset_deps[AssetKey(["sort_by_calories"])]
 
 
 def test_basic(
@@ -187,7 +186,7 @@ def test_select_from_manifest(
 ):  # pylint: disable=unused-argument
 
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r") as f:
+    with open(manifest_path, "r", encoding="utf8") as f:
         manifest_json = json.load(f)
     dbt_assets = load_assets_from_dbt_manifest(
         manifest_json,

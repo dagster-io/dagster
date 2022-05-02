@@ -72,8 +72,8 @@ def protoc(generated_dir: str):
             generated_grpc_path,
             tempfile_path,
         )
-        with open(tempfile_path, "r") as generated:
-            with open(generated_grpc_path, "w") as rewritten:
+        with open(tempfile_path, "r", encoding="utf8") as generated:
+            with open(generated_grpc_path, "w", encoding="utf8") as rewritten:
                 for line in GENERATED_HEADER:
                     rewritten.write(line)
 
@@ -91,8 +91,8 @@ def protoc(generated_dir: str):
             generated_pb2_path,
             tempfile_path,
         )
-        with open(tempfile_path, "r") as generated:
-            with open(generated_pb2_path, "w") as rewritten:
+        with open(tempfile_path, "r", encoding="utf8") as generated:
+            with open(generated_pb2_path, "w", encoding="utf8") as rewritten:
                 for line in GENERATED_HEADER:
                     rewritten.write(line)
 

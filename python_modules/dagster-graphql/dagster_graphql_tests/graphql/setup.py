@@ -99,13 +99,13 @@ LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
 @dagster_type_loader(String)
 def df_input_schema(_context, path):
-    with open(path, "r") as fd:
+    with open(path, "r", encoding="utf8") as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
 @dagster_type_materializer(String)
 def df_output_schema(_context, path, value):
-    with open(path, "w") as fd:
+    with open(path, "w", encoding="utf8") as fd:
         writer = csv.DictWriter(fd, fieldnames=value[0].keys())
         writer.writeheader()
         writer.writerows(rowdicts=value)
@@ -195,7 +195,7 @@ def csv_hello_world_solids_config():
 
 @solid(config_schema={"file": Field(String)})
 def loop(context):
-    with open(context.solid_config["file"], "w") as ff:
+    with open(context.solid_config["file"], "w", encoding="utf8") as ff:
         ff.write("yup")
 
     while True:
@@ -1396,7 +1396,7 @@ def hanging_asset(context, first_asset):  # pylint: disable=redefined-outer-name
     """
     Asset that hangs forever, used to test in-progress ops.
     """
-    with open(context.resources.hanging_asset_resource, "w") as ff:
+    with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
         ff.write("yup")
 
     while True:

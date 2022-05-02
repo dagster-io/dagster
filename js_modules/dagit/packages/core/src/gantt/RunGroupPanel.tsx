@@ -6,6 +6,7 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
@@ -13,6 +14,7 @@ import {RunStateSummary, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 
 import {
   RunGroupPanelQuery,
+  RunGroupPanelQueryVariables,
   RunGroupPanelQuery_runGroupOrError_RunGroup_runs,
 } from './types/RunGroupPanelQuery';
 
@@ -27,11 +29,17 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
   runId,
   runStatusLastChangedAt,
 }) => {
-  const {data, refetch} = useQuery<RunGroupPanelQuery>(RUN_GROUP_PANEL_QUERY, {
-    variables: {runId},
-    fetchPolicy: 'cache-and-network',
-    pollInterval: 15000, // 15s
-  });
+  const queryResult = useQuery<RunGroupPanelQuery, RunGroupPanelQueryVariables>(
+    RUN_GROUP_PANEL_QUERY,
+    {
+      variables: {runId},
+      fetchPolicy: 'cache-and-network',
+      notifyOnNetworkStatusChange: true,
+    },
+  );
+
+  const {data, refetch} = queryResult;
+  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   // Because the RunGroupPanel makes it's own query for the runs and their statuses,
   // the log + gantt chart UI can show that the run is "completed" for up to 15s before

@@ -23,6 +23,7 @@ from dagster import (
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.errors import DagsterSubprocessError
+from dagster.core.test_utils import instance_for_test
 from dagster.utils.merger import deep_merge_dicts
 from dagster.utils.test import create_test_pipeline_execution_context
 
@@ -114,9 +115,11 @@ def test_local():
 @mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.read_events")
 @mock.patch("dagster_aws.emr.emr.EmrJobRunner.is_emr_step_complete")
 def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events, mock_s3_bucket):
-    mock_read_events.return_value = execute_pipeline(
-        reconstructable(define_do_nothing_pipe), mode="local"
-    ).events_by_step_key["do_nothing_solid"]
+    with instance_for_test() as instance:
+        execute_pipeline(reconstructable(define_do_nothing_pipe), mode="local", instance=instance)
+        mock_read_events.return_value = [
+            record.event_log_entry for record in instance.get_event_records()
+        ]
 
     run_job_flow_args = dict(
         Instances={
@@ -233,6 +236,8 @@ def test_fetch_logs_on_fail(
     _mock_log_step_event, mock_log_logs, mock_wait_for_completion, _mock_boto3_resource
 ):
     mock_log = mock.MagicMock()
+    mock_step_context = mock.MagicMock()
+    mock_step_context.log = mock_log
     mock_wait_for_completion.side_effect = EmrError()
 
     step_launcher = EmrPySparkStepLauncher(
@@ -248,7 +253,7 @@ def test_fetch_logs_on_fail(
     )
 
     with pytest.raises(EmrError):
-        for _ in step_launcher.wait_for_completion_and_log(mock_log, None, None, None, None):
+        for _ in step_launcher.wait_for_completion_and_log(None, None, None, mock_step_context):
             pass
 
     assert mock_log_logs.call_count == 1

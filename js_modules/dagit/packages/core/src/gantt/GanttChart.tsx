@@ -230,8 +230,8 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
 
   const {rootServerURI} = React.useContext(AppContext);
 
-  const {availability, status} = React.useContext(WebSocketContext);
-  const lostWebsocket = availability === 'available' && status === WebSocket.CLOSED;
+  const {availability, disabled, status} = React.useContext(WebSocketContext);
+  const lostWebsocket = !disabled && availability === 'available' && status === WebSocket.CLOSED;
 
   // The slider in the UI updates `options.zoom` from 1-100. We convert that value
   // into a px-per-ms "scale", where the minimum is the value required to zoom-to-fit.

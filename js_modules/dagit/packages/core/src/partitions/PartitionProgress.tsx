@@ -28,6 +28,7 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {
   PartitionProgressQuery,
+  PartitionProgressQueryVariables,
   PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill,
   PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_runs,
 } from './types/PartitionProgressQuery';
@@ -44,14 +45,17 @@ export const PartitionProgress = (props: Props) => {
   const [shouldPoll, setShouldPoll] = React.useState(true);
   const [isTerminating, setIsTerminating] = React.useState(false);
 
-  const queryResult = useQuery<PartitionProgressQuery>(PARTITION_PROGRESS_QUERY, {
-    fetchPolicy: 'network-only',
-    notifyOnNetworkStatusChange: true,
-    variables: {
-      backfillId,
-      limit: 100000,
+  const queryResult = useQuery<PartitionProgressQuery, PartitionProgressQueryVariables>(
+    PARTITION_PROGRESS_QUERY,
+    {
+      fetchPolicy: 'network-only',
+      notifyOnNetworkStatusChange: true,
+      variables: {
+        backfillId,
+        limit: 100000,
+      },
     },
-  });
+  );
 
   // Technically we still poll if you disable polling on this page, just very very slowly.
   // The useQueryRefreshAtInterval hook is already complex enough, don't want to add a
@@ -130,10 +134,10 @@ export const PartitionProgress = (props: Props) => {
     numTotalRuns,
   } = counts;
   const numFinished = numSucceeded + numFailed;
-  const unscheduled = results.numTotal - results.numRequested;
+  const numTotal = results.partitionNames.length;
+  const unscheduled = numTotal - results.numRequested;
 
   const skipped = results.numRequested - numPartitionRuns;
-  const numTotal = results.numTotal;
 
   const table = (
     <TooltipTable>
@@ -287,7 +291,7 @@ const PARTITION_PROGRESS_QUERY = gql`
         backfillId
         status
         numRequested
-        numTotal
+        partitionNames
         runs(limit: $limit) {
           id
           canTerminate

@@ -143,7 +143,7 @@ class DagitWebserver(GraphQLServer):
         index_path = self.relative_path("webapp/build/index.html")
 
         try:
-            with open(index_path) as f:
+            with open(index_path, encoding="utf8") as f:
                 rendered_template = f.read()
                 return HTMLResponse(
                     rendered_template.replace('href="/', f'href="{self._app_path_prefix}/')

@@ -141,8 +141,10 @@ const AssetEntryRow: React.FC<{
 }> = React.memo(({prefixPath, path, assets, isSelected, onToggleChecked, onWipe, canWipe}) => {
   const fullPath = [...prefixPath, ...path];
   const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
+
   const representsSingleAsset =
     assets.length === 1 && fullPath.join('/') === assets[0].key.path.join('/');
+  const representsAtLeastOneSDA = assets.some((a) => !!a.definition);
   const asset = representsSingleAsset ? assets[0] : null;
 
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
@@ -217,6 +219,15 @@ const AssetEntryRow: React.FC<{
               <Button icon={<Icon name="expand_more" />} />
             </Popover>
           </Box>
+        ) : representsAtLeastOneSDA ? (
+          <Link
+            to={instanceAssetsExplorerPathToURL({
+              opsQuery: `+${tokenForAssetKey({path})}>+`,
+              opNames: [],
+            })}
+          >
+            <Button>View in Asset Graph</Button>
+          </Link>
         ) : (
           <span />
         )}
@@ -280,6 +291,7 @@ export const ASSET_TABLE_FRAGMENT = gql`
     definition {
       id
       opName
+      opNames
       description
       repository {
         id

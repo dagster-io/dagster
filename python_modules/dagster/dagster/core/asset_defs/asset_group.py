@@ -13,7 +13,6 @@ from typing import (
     Iterable,
     List,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -22,6 +21,7 @@ from typing import (
 )
 
 from dagster import check
+from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
@@ -43,17 +43,7 @@ from .source_asset import SourceAsset
 ASSET_GROUP_BASE_JOB_PREFIX = "__ASSET_GROUP"
 
 
-class AssetGroup(
-    NamedTuple(
-        "_AssetGroup",
-        [
-            ("assets", Sequence[AssetsDefinition]),
-            ("source_assets", Sequence[SourceAsset]),
-            ("resource_defs", Mapping[str, ResourceDefinition]),
-            ("executor_def", Optional[ExecutorDefinition]),
-        ],
-    )
-):
+class AssetGroup:
     """Defines a group of assets, along with environment information in the
     form of resources and an executor.
 
@@ -108,14 +98,15 @@ class AssetGroup(
 
     """
 
-    def __new__(
-        cls,
+    def __init__(
+        self,
         assets: Sequence[AssetsDefinition],
         source_assets: Optional[Sequence[SourceAsset]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
     ):
         check.sequence_param(assets, "assets", of_type=AssetsDefinition)
+
         source_assets = check.opt_sequence_param(
             source_assets, "source_assets", of_type=SourceAsset
         )
@@ -123,9 +114,6 @@ class AssetGroup(
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
         executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
-
-        source_assets_by_key = build_source_assets_by_key(source_assets)
-        root_manager = build_root_manager(source_assets_by_key)
 
         if "root_manager" in resource_defs:
             raise DagsterInvalidDefinitionError(
@@ -137,22 +125,32 @@ class AssetGroup(
         # In the case of collisions, merge_dicts takes values from the
         # dictionary latest in the list, so we place the user provided resource
         # defs after the defaults.
-        resource_defs = merge_dicts(
-            {"root_manager": root_manager, "io_manager": fs_asset_io_manager},
-            resource_defs,
-        )
+        resource_defs = merge_dicts({"io_manager": fs_asset_io_manager}, resource_defs)
 
         _validate_resource_reqs_for_asset_group(
             asset_list=assets, source_assets=source_assets, resource_defs=resource_defs
         )
 
-        return super(AssetGroup, cls).__new__(
-            cls,
-            assets=assets,
-            source_assets=source_assets,
-            resource_defs=resource_defs,
-            executor_def=executor_def,
-        )
+        self._assets = assets
+        self._source_assets = source_assets
+        self._resource_defs = resource_defs
+        self._executor_def = executor_def
+
+    @property
+    def assets(self):
+        return self._assets
+
+    @property
+    def source_assets(self):
+        return self._source_assets
+
+    @property
+    def resource_defs(self):
+        return self._resource_defs
+
+    @property
+    def executor_def(self):
+        return self._executor_def
 
     @staticmethod
     def is_base_job_name(name) -> bool:
@@ -209,8 +207,14 @@ class AssetGroup(
 
         if not isinstance(selection, str):
             selection = check.opt_list_param(selection, "selection", of_type=str)
-        executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
+        executor_def = check.opt_inst_param(
+            executor_def, "executor_def", ExecutorDefinition, self.executor_def
+        )
         description = check.opt_str_param(description, "description")
+        resource_defs = {
+            **self.resource_defs,
+            **{"root_manager": build_root_manager(build_source_assets_by_key(self.source_assets))},
+        }
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
@@ -218,8 +222,8 @@ class AssetGroup(
                 name=name,
                 assets=self.assets,
                 source_assets=self.source_assets,
-                resource_defs=self.resource_defs,
-                executor_def=self.executor_def,
+                resource_defs=resource_defs,
+                executor_def=executor_def,
             )
 
         if selection:
@@ -252,8 +256,8 @@ class AssetGroup(
                 name=name,
                 assets=included_assets,
                 source_assets=excluded_assets,
-                resource_defs=self.resource_defs,
-                executor_def=self.executor_def,
+                resource_defs=resource_defs,
+                executor_def=executor_def,
                 description=description,
                 tags=tags,
             )
@@ -353,11 +357,22 @@ class AssetGroup(
                 )
         return op_selection
 
+    def to_source_assets(self) -> Sequence[SourceAsset]:
+        """
+        Returns a list of source assets corresponding to all the non-source assets in this group.
+        """
+        return [
+            source_asset
+            for assets_def in self.assets
+            for source_asset in assets_def.to_source_assets()
+        ]
+
     @staticmethod
     def from_package_module(
         package_module: ModuleType,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
+        extra_source_assets: Optional[Sequence[SourceAsset]] = None,
     ) -> "AssetGroup":
         """
         Constructs an AssetGroup that includes all asset definitions and source assets in all
@@ -371,6 +386,8 @@ class AssetGroup(
                 definitions to include on the returned asset group.
             executor_def (Optional[ExecutorDefinition]): An executor to include on the returned
                 asset group.
+            extra_source_assets (Optional[Sequence[SourceAsset]]): Source assets to include in the
+                group in addition to the source assets found in the package.
 
         Returns:
             AssetGroup: An asset group with all the assets in the package.
@@ -379,6 +396,7 @@ class AssetGroup(
             _find_modules_in_package(package_module),
             resource_defs=resource_defs,
             executor_def=executor_def,
+            extra_source_assets=extra_source_assets,
         )
 
     @staticmethod
@@ -386,6 +404,7 @@ class AssetGroup(
         package_name: str,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
+        extra_source_assets: Optional[Sequence[SourceAsset]] = None,
     ) -> "AssetGroup":
         """
         Constructs an AssetGroup that includes all asset definitions and source assets in all
@@ -397,13 +416,18 @@ class AssetGroup(
                 definitions to include on the returned asset group.
             executor_def (Optional[ExecutorDefinition]): An executor to include on the returned
                 asset group.
+            extra_source_assets (Optional[Sequence[SourceAsset]]): Source assets to include in the
+                group in addition to the source assets found in the package.
 
         Returns:
             AssetGroup: An asset group with all the assets in the package.
         """
         package_module = import_module(package_name)
         return AssetGroup.from_package_module(
-            package_module, resource_defs=resource_defs, executor_def=executor_def
+            package_module,
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+            extra_source_assets=extra_source_assets,
         )
 
     @staticmethod
@@ -411,6 +435,7 @@ class AssetGroup(
         modules: Iterable[ModuleType],
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
+        extra_source_assets: Optional[Sequence[SourceAsset]] = None,
     ) -> "AssetGroup":
         """
         Constructs an AssetGroup that includes all asset definitions and source assets in the given
@@ -422,13 +447,19 @@ class AssetGroup(
                 definitions to include on the returned asset group.
             executor_def (Optional[ExecutorDefinition]): An executor to include on the returned
                 asset group.
+            extra_source_assets (Optional[Sequence[SourceAsset]]): Source assets to include in the
+                group in addition to the source assets found in the modules.
 
         Returns:
             AssetGroup: An asset group with all the assets defined in the given modules.
         """
         asset_ids: Set[int] = set()
         asset_keys: Dict[AssetKey, ModuleType] = dict()
-        source_assets: List[SourceAsset] = []
+        source_assets: List[SourceAsset] = list(
+            check.opt_sequence_param(
+                extra_source_assets, "extra_source_assets", of_type=SourceAsset
+            )
+        )
         assets: List[AssetsDefinition] = []
         for module in modules:
             for asset in _find_assets_in_module(module):
@@ -461,6 +492,7 @@ class AssetGroup(
     def from_current_module(
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
+        extra_source_assets: Optional[Sequence[SourceAsset]] = None,
     ) -> "AssetGroup":
         """
         Constructs an AssetGroup that includes all asset definitions and source assets in the module
@@ -471,6 +503,8 @@ class AssetGroup(
                 definitions to include on the returned asset group.
             executor_def (Optional[ExecutorDefinition]): An executor to include on the returned
                 asset group.
+            extra_source_assets (Optional[Sequence[SourceAsset]]): Source assets to include in the
+                group in addition to the source assets found in the module.
 
         Returns:
             AssetGroup: An asset group with all the assets defined in the module.
@@ -479,7 +513,9 @@ class AssetGroup(
         module = inspect.getmodule(caller[0])
         if module is None:
             check.failed("Could not find a module for the caller")
-        return AssetGroup.from_modules([module], resource_defs, executor_def)
+        return AssetGroup.from_modules(
+            [module], resource_defs, executor_def, extra_source_assets=extra_source_assets
+        )
 
     def materialize(
         self, selection: Optional[Union[str, List[str]]] = None
@@ -527,15 +563,7 @@ class AssetGroup(
             if len(assets_by_partitions_def.keys()) == 0 or assets_by_partitions_def.keys() == {
                 None
             }:
-                return [
-                    build_assets_job(
-                        ASSET_GROUP_BASE_JOB_PREFIX,
-                        assets=self.assets,
-                        source_assets=self.source_assets,
-                        resource_defs=self.resource_defs,
-                        executor_def=self.executor_def,
-                    )
-                ]
+                return [self.build_job(ASSET_GROUP_BASE_JOB_PREFIX)]
             else:
                 unpartitioned_assets = assets_by_partitions_def.get(None, [])
                 jobs = []
@@ -550,12 +578,130 @@ class AssetGroup(
                                 f"{ASSET_GROUP_BASE_JOB_PREFIX}_{i}",
                                 assets=assets_with_partitions + unpartitioned_assets,
                                 source_assets=[*self.source_assets, *self.assets],
-                                resource_defs=self.resource_defs,
+                                resource_defs={
+                                    **self.resource_defs,
+                                    "root_manager": build_root_manager(
+                                        build_source_assets_by_key(self.source_assets)
+                                    ),
+                                },
                                 executor_def=self.executor_def,
                             )
                         )
 
                 return jobs
+
+    def prefixed(self, key_prefix: str):
+        """
+        Returns an AssetGroup that's identical to this AssetGroup, but with prefixes on all the
+        asset keys. The prefix is not added to source assets.
+
+        Input asset keys that reference other assets within the group are "brought along" -
+        i.e. prefixed as well.
+
+        Example with a single asset:
+
+            .. code-block:: python
+
+                @asset
+                def asset1():
+                    ...
+
+                result = AssetGroup([asset1]).prefixed("my_prefix")
+                assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset1"])
+
+        Example with dependencies within the list of assets:
+
+            .. code-block:: python
+
+                @asset
+                def asset1():
+                    ...
+
+                @asset
+                def asset2(asset1):
+                    ...
+
+                result = AssetGroup([asset1, asset2]).prefixed("my_prefix")
+                assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset1"])
+                assert result.assets[1].asset_key == AssetKey(["my_prefix", "asset2"])
+                assert result.assets[1].dependency_asset_keys == {AssetKey(["my_prefix", "asset1"])}
+
+        Examples with input prefixes provided by source assets:
+
+            .. code-block:: python
+
+                asset1 = SourceAsset(AssetKey(["upstream_prefix", "asset1"]))
+
+                @asset
+                def asset2(asset1):
+                    ...
+
+                result = AssetGroup([asset2], source_assets=[asset1]).prefixed("my_prefix")
+                assert len(result.assets) == 1
+                assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset2"])
+                assert result.assets[0].dependency_asset_keys == {AssetKey(["upstream_prefix", "asset1"])}
+                assert result.source_assets[0].key == AssetKey(["upstream_prefix", "asset1"])
+        """
+
+        asset_keys = {
+            asset_key for assets_def in self.assets for asset_key in assets_def.asset_keys
+        }
+
+        result_assets: List[AssetsDefinition] = []
+        for assets_def in self.assets:
+            output_asset_key_replacements = {
+                asset_key: AssetKey([key_prefix] + asset_key.path)
+                for asset_key in assets_def.asset_keys
+            }
+            input_asset_key_replacements = {}
+            for dep_asset_key in assets_def.dependency_asset_keys:
+                if dep_asset_key in asset_keys:
+                    input_asset_key_replacements[dep_asset_key] = AssetKey(
+                        (key_prefix, *dep_asset_key.path)
+                    )
+
+            result_assets.append(
+                assets_def.with_replaced_asset_keys(
+                    output_asset_key_replacements=output_asset_key_replacements,
+                    input_asset_key_replacements=input_asset_key_replacements,
+                )
+            )
+
+        return AssetGroup(
+            assets=result_assets,
+            source_assets=self.source_assets,
+            resource_defs=self.resource_defs,
+            executor_def=self.executor_def,
+        )
+
+    def __add__(self, other: "AssetGroup") -> "AssetGroup":
+        check.inst_param(other, "other", AssetGroup)
+
+        if self.resource_defs != other.resource_defs:
+            raise DagsterInvalidDefinitionError(
+                "Can't add asset groups together with different resource definition dictionarys"
+            )
+
+        if self.executor_def != other.executor_def:
+            raise DagsterInvalidDefinitionError(
+                "Can't add asset groups together with different executor definitions"
+            )
+
+        return AssetGroup(
+            assets=self.assets + other.assets,
+            source_assets=self.source_assets + other.source_assets,
+            resource_defs=self.resource_defs,
+            executor_def=self.executor_def,
+        )
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, AssetGroup)
+            and self.assets == other.assets
+            and self.source_assets == other.source_assets
+            and self.resource_defs == other.resource_defs
+            and self.executor_def == other.executor_def
+        )
 
 
 def _find_assets_in_module(
@@ -586,7 +732,7 @@ def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]
                 yield submodule
     else:
         raise ValueError(
-            f"Tried find modules in package {package_module}, but its __file__ is None"
+            f"Tried to find modules in package {package_module}, but its __file__ is None"
         )
 
 
@@ -604,7 +750,10 @@ def _validate_resource_reqs_for_asset_group(
                 f"AssetGroup is missing required resource keys for asset '{asset_def.op.name}'. Missing resource keys: {missing_resource_keys}"
             )
 
-        for asset_key, output_def in asset_def.output_defs_by_asset_key.items():
+        for output_name, asset_key in asset_def.asset_keys_by_output_name.items():
+            output_def, _ = asset_def.node_def.resolve_output_to_origin(
+                output_name, NodeHandle(name=asset_def.node_def.name, parent=None)
+            )
             if output_def.io_manager_key and output_def.io_manager_key not in present_resource_keys:
                 raise DagsterInvalidDefinitionError(
                     f"Output '{output_def.name}' with AssetKey '{asset_key}' "

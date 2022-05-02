@@ -32,27 +32,17 @@ export interface RepositoryLiveFragment_inProgressRunsByStep {
   inProgressRuns: RepositoryLiveFragment_inProgressRunsByStep_inProgressRuns[];
 }
 
-export interface RepositoryLiveFragment_latestRunByStep_LatestRun_run {
+export interface RepositoryLiveFragment_latestRunByStep_run {
   __typename: "Run";
   id: string;
   status: RunStatus;
 }
 
-export interface RepositoryLiveFragment_latestRunByStep_LatestRun {
+export interface RepositoryLiveFragment_latestRunByStep {
   __typename: "LatestRun";
   stepKey: string;
-  run: RepositoryLiveFragment_latestRunByStep_LatestRun_run | null;
+  run: RepositoryLiveFragment_latestRunByStep_run | null;
 }
-
-export interface RepositoryLiveFragment_latestRunByStep_JobRunsCount {
-  __typename: "JobRunsCount";
-  stepKey: string;
-  jobNames: string[];
-  count: number;
-  sinceLatestMaterialization: boolean;
-}
-
-export type RepositoryLiveFragment_latestRunByStep = RepositoryLiveFragment_latestRunByStep_LatestRun | RepositoryLiveFragment_latestRunByStep_JobRunsCount;
 
 export interface RepositoryLiveFragment {
   __typename: "Repository";

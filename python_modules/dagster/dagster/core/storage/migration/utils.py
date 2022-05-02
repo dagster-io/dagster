@@ -34,7 +34,7 @@ _UPGRADING_INSTANCE = None
 
 @contextmanager
 def upgrading_instance(instance):
-    global _UPGRADING_INSTANCE  # pylint: disable=global-statement
+    global _UPGRADING_INSTANCE  # pylint: disable=global-statement,global-variable-not-assigned
     check.invariant(_UPGRADING_INSTANCE is None, "update already in progress")
     try:
         _UPGRADING_INSTANCE = instance
@@ -44,7 +44,7 @@ def upgrading_instance(instance):
 
 
 def get_currently_upgrading_instance():
-    global _UPGRADING_INSTANCE  # pylint: disable=global-statement
+    global _UPGRADING_INSTANCE  # pylint: disable=global-statement,global-variable-not-assigned
     check.invariant(_UPGRADING_INSTANCE is not None, "currently upgrading instance not set")
     return _UPGRADING_INSTANCE
 
@@ -198,6 +198,10 @@ def extract_asset_keys_idx_columns():
 
 def create_event_log_event_idx():
     if not has_table("event_logs"):
+        return
+
+    indices = [x.get("name") for x in get_inspector().get_indexes("event_logs")]
+    if "idx_event_type" in indices:
         return
 
     op.create_index(

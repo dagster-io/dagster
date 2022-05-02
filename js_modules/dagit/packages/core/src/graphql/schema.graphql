@@ -87,7 +87,7 @@ type Repository {
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
   inProgressRunsByStep: [InProgressRunsByStep!]!
-  latestRunByStep: [RunStatsByStep!]!
+  latestRunByStep: [LatestRun!]!
 }
 
 type RepositoryLocation {
@@ -217,11 +217,13 @@ type AssetNode {
     beforeTimestampMillis: String
     limit: Int
   ): [MaterializationEvent!]!
+  computeKind: String
   dependedBy: [AssetDependency!]!
   dependedByKeys: [AssetKey!]!
   dependencies: [AssetDependency!]!
   dependencyKeys: [AssetKey!]!
   description: String
+  graphName: String
   id: ID!
   jobNames: [String!]!
   jobs: [Pipeline!]!
@@ -230,6 +232,7 @@ type AssetNode {
   metadataEntries: [MetadataEntry!]!
   op: SolidDefinition
   opName: String
+  opNames: [String!]!
   partitionKeys: [String!]!
   partitionDefinition: String
   repository: Repository!
@@ -1041,6 +1044,7 @@ type ConfigTypeField {
   configType: ConfigType!
   configTypeKey: String!
   isRequired: Boolean!
+  defaultValueAsJson: String
 }
 
 type ResourceRequirement {
@@ -1256,7 +1260,9 @@ type PartitionSet {
   partitionsOrError(cursor: String, limit: Int, reverse: Boolean): PartitionsOrError!
   partition(partitionName: String!): Partition
   partitionStatusesOrError: PartitionStatusesOrError!
+  partitionRuns: [PartitionRun!]!
   repositoryOrigin: RepositoryOrigin!
+  backfills(cursor: String, limit: Int): [PartitionBackfill!]!
 }
 
 union PartitionsOrError = Partitions | PythonError
@@ -1314,6 +1320,33 @@ type PartitionStatus {
   id: String!
   partitionName: String!
   runStatus: RunStatus
+}
+
+type PartitionRun {
+  id: String!
+  partitionName: String!
+  run: Run
+}
+
+type PartitionBackfill {
+  backfillId: String!
+  status: BulkActionStatus!
+  partitionNames: [String!]!
+  numRequested: Int!
+  fromFailure: Boolean!
+  reexecutionSteps: [String!]!
+  partitionSetName: String!
+  timestamp: Float!
+  partitionSet: PartitionSet
+  runs(limit: Int): [Run!]!
+  error: PythonError
+}
+
+enum BulkActionStatus {
+  REQUESTED
+  COMPLETED
+  FAILED
+  CANCELED
 }
 
 type FutureInstigationTicks {
@@ -1390,18 +1423,9 @@ type InProgressRunsByStep {
   inProgressRuns: [Run!]!
 }
 
-union RunStatsByStep = LatestRun | JobRunsCount
-
 type LatestRun {
   stepKey: String!
   run: Run
-}
-
-type JobRunsCount {
-  stepKey: String!
-  jobNames: [String!]!
-  count: Int!
-  sinceLatestMaterialization: Boolean!
 }
 
 input RepositorySelector {
@@ -1764,27 +1788,6 @@ union AssetNodeOrError = AssetNode | AssetNotFoundError
 
 union PartitionBackfillOrError = PartitionBackfill | PythonError
 
-type PartitionBackfill {
-  backfillId: String!
-  status: BulkActionStatus!
-  numRequested: Int!
-  numTotal: Int!
-  fromFailure: Boolean!
-  reexecutionSteps: [String!]!
-  partitionSetName: String!
-  timestamp: Float!
-  partitionSet: PartitionSet
-  runs(limit: Int): [Run!]!
-  error: PythonError
-}
-
-enum BulkActionStatus {
-  REQUESTED
-  COMPLETED
-  FAILED
-  CANCELED
-}
-
 union PartitionBackfillsOrError = PartitionBackfills | PythonError
 
 type PartitionBackfills {
@@ -1799,8 +1802,14 @@ type GraphenePermission {
 type DagitMutation {
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchRunResult!
   launchRun(executionParams: ExecutionParams!): LaunchRunResult!
-  launchPipelineReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
-  launchRunReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
+  launchPipelineReexecution(
+    executionParams: ExecutionParams
+    reexecutionParams: ReexecutionParams
+  ): LaunchRunReexecutionResult!
+  launchRunReexecution(
+    executionParams: ExecutionParams
+    reexecutionParams: ReexecutionParams
+  ): LaunchRunReexecutionResult!
   startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   stopRunningSchedule(
     scheduleOriginId: String!
@@ -1917,6 +1926,16 @@ union LaunchRunReexecutionResult =
   | ConflictingExecutionParamsError
   | NoModeProvidedError
 
+input ReexecutionParams {
+  parentRunId: String!
+  policy: ReexecutionPolicy!
+}
+
+enum ReexecutionPolicy {
+  FROM_FAILURE
+  ALL_STEPS
+}
+
 union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult
 
 type ScheduleStateResult {
@@ -2027,9 +2046,10 @@ type LaunchBackfillSuccess {
 
 input LaunchBackfillParams {
   selector: PartitionSetSelector!
-  partitionNames: [String!]!
+  partitionNames: [String!]
   reexecutionSteps: [String!]
   fromFailure: Boolean
+  allPartitions: Boolean
   tags: [ExecutionTag!]
   forceSynchronousSubmission: Boolean
 }

@@ -1,5 +1,16 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, List, Optional, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    FrozenSet,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Union,
+)
 
 from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
@@ -21,6 +32,7 @@ from dagster.core.utils import str_format_set
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.backcompat import experimental_class_warning
 
+from .asset_layer import AssetLayer
 from .dependency import (
     DependencyDefinition,
     DependencyStructure,
@@ -95,6 +107,8 @@ class PipelineDefinition:
         solid_retry_policy (Optional[RetryPolicy]): The default retry policy for all solids in
             this pipeline. Only used if retry policy is not defined on the solid definition or
             solid invocation.
+        asset_layer (Optional[AssetLayer]): Structured object containing all definition-time asset
+            information for this pipeline.
 
 
         _parent_pipeline_def (INTERNAL ONLY): Used for tracking pipelines created using solid subsets.
@@ -156,6 +170,7 @@ class PipelineDefinition:
         graph_def=None,
         _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
         version_strategy: Optional[VersionStrategy] = None,
+        asset_layer: Optional[AssetLayer] = None,
     ):
         # If a graph is specificed directly use it
         if check.opt_inst_param(graph_def, "graph_def", GraphDefinition):
@@ -235,7 +250,7 @@ class PipelineDefinition:
                 mode_def,
                 self._current_level_node_defs,
                 self._graph_def._dagster_type_dict,
-                self._graph_def._node_dict,
+                self._graph_def.node_dict,
                 self._hook_defs,
                 self._graph_def._dependency_structure,
             )
@@ -256,6 +271,10 @@ class PipelineDefinition:
 
         if self.version_strategy is not None:
             experimental_class_warning("VersionStrategy")
+
+        self._asset_layer = check.opt_inst_param(
+            asset_layer, "asset_layer", AssetLayer, default=AssetLayer.from_graph(self.graph)
+        )
 
     @property
     def name(self):
@@ -484,6 +503,10 @@ class PipelineDefinition:
     def hook_defs(self) -> AbstractSet[HookDefinition]:
         return self._hook_defs
 
+    @property
+    def asset_layer(self) -> AssetLayer:
+        return self._asset_layer
+
     def get_all_hooks_for_handle(self, handle: NodeHandle) -> FrozenSet[HookDefinition]:
         """Gather all the hooks for the given solid from all places possibly attached with a hook.
 
@@ -694,11 +717,18 @@ def _get_pipeline_subset_def(
         ) from exc
 
 
+def _iterate_all_nodes(root_node_dict: Dict[str, Node]) -> Iterator[Node]:
+    for node in root_node_dict.values():
+        yield node
+        if node.is_graph:
+            yield from _iterate_all_nodes(node.definition.ensure_graph_def().node_dict)
+
+
 def _checked_resource_reqs_for_mode(
     mode_def: ModeDefinition,
     node_defs: List[NodeDefinition],
     dagster_type_dict: Dict[str, DagsterType],
-    solid_dict: Dict[str, Node],
+    root_node_dict: Dict[str, Node],
     pipeline_hook_defs: AbstractSet[HookDefinition],
     dependency_structure: DependencyStructure,
 ) -> Set[str]:
@@ -751,11 +781,11 @@ def _checked_resource_reqs_for_mode(
 
     # Validate unsatisfied inputs can be materialized from config
     resource_reqs.update(
-        _checked_input_resource_reqs_for_mode(dependency_structure, solid_dict, mode_def)
+        _checked_input_resource_reqs_for_mode(dependency_structure, root_node_dict, mode_def)
     )
 
-    for solid in solid_dict.values():
-        for hook_def in solid.hook_defs:
+    for node in _iterate_all_nodes(root_node_dict):
+        for hook_def in node.hook_defs:
             for required_resource in hook_def.required_resource_keys:
                 resource_reqs.add(required_resource)
                 if required_resource not in mode_resources:

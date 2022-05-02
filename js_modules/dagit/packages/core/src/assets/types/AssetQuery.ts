@@ -419,6 +419,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -492,6 +493,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -566,6 +568,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -614,6 +617,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -648,6 +652,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -722,6 +727,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -797,6 +803,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -873,6 +880,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -946,6 +954,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1020,6 +1029,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1068,6 +1078,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -1102,6 +1113,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1176,6 +1188,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1251,6 +1264,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1478,6 +1492,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1551,6 +1566,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1625,6 +1641,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1673,6 +1690,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -1707,6 +1725,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1781,6 +1800,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1856,6 +1876,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1932,6 +1953,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2005,6 +2027,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2079,6 +2102,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2127,6 +2151,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -2161,6 +2186,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2235,6 +2261,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2310,6 +2337,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2423,9 +2451,12 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  opNames: string[];
   jobNames: string[];
+  graphName: string | null;
   description: string | null;
   partitionDefinition: string | null;
+  computeKind: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetKey;
   repository: AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository;
   assetMaterializations: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations[];
@@ -2464,9 +2495,12 @@ export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  opNames: string[];
   jobNames: string[];
+  graphName: string | null;
   description: string | null;
   partitionDefinition: string | null;
+  computeKind: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetKey;
   repository: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository;
   assetMaterializations: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations[];
@@ -2485,7 +2519,10 @@ export interface AssetQuery_assetOrError_Asset_definition {
   jobs: AssetQuery_assetOrError_Asset_definition_jobs[];
   description: string | null;
   opName: string | null;
+  opNames: string[];
   jobNames: string[];
+  graphName: string | null;
+  computeKind: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_assetKey;
   assetMaterializations: AssetQuery_assetOrError_Asset_definition_assetMaterializations[];
   metadataEntries: AssetQuery_assetOrError_Asset_definition_metadataEntries[];

@@ -131,9 +131,10 @@ class GraphenePartitionSetSelector(graphene.InputObjectType):
 
 class GrapheneLaunchBackfillParams(graphene.InputObjectType):
     selector = graphene.NonNull(GraphenePartitionSetSelector)
-    partitionNames = non_null_list(graphene.String)
+    partitionNames = graphene.List(graphene.NonNull(graphene.String))
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
     fromFailure = graphene.Boolean()
+    allPartitions = graphene.Boolean()
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
     forceSynchronousSubmission = graphene.Boolean()
 
@@ -206,6 +207,22 @@ class GrapheneExecutionParams(graphene.InputObjectType):
 
     class Meta:
         name = "ExecutionParams"
+
+
+class GrapheneReexecutionPolicy(graphene.Enum):
+    FROM_FAILURE = "FROM_FAILURE"
+    ALL_STEPS = "ALL_STEPS"
+
+    class Meta:
+        name = "ReexecutionPolicy"
+
+
+class GrapheneReexecutionParams(graphene.InputObjectType):
+    parentRunId = graphene.NonNull(graphene.String)
+    policy = graphene.NonNull(GrapheneReexecutionPolicy)
+
+    class Meta:
+        name = "ReexecutionParams"
 
 
 class GrapheneMarshalledInput(graphene.InputObjectType):

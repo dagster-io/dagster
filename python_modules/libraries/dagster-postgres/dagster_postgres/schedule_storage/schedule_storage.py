@@ -1,9 +1,11 @@
+import pendulum
 import sqlalchemy as db
 
 from dagster import check
 from dagster.core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
+from dagster.core.storage.schedules.schema import InstigatorsTable
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 
 from ..utils import (
     create_pg_connection,
@@ -104,9 +106,31 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         return PostgresScheduleStorage(postgres_url, should_autocreate_tables)
 
     def connect(self, run_id=None):  # pylint: disable=arguments-differ, unused-argument
-        return create_pg_connection(self._engine, __file__, "schedule")
+        return create_pg_connection(self._engine, pg_alembic_config(__file__), "schedule")
 
     def upgrade(self):
         alembic_config = pg_alembic_config(__file__)
         with self.connect() as conn:
             run_alembic_upgrade(alembic_config, conn)
+
+    def _add_or_update_instigators_table(self, conn, state):
+        selector_id = state.selector_id
+        conn.execute(
+            db.dialects.postgresql.insert(InstigatorsTable)
+            .values(  # pylint: disable=no-value-for-parameter
+                selector_id=selector_id,
+                repository_selector_id=state.repository_selector_id,
+                status=state.status.value,
+                instigator_type=state.instigator_type.value,
+                instigator_body=serialize_dagster_namedtuple(state),
+            )
+            .on_conflict_do_update(
+                index_elements=[InstigatorsTable.c.selector_id],
+                set_={
+                    "status": state.status.value,
+                    "instigator_type": state.instigator_type.value,
+                    "instigator_body": serialize_dagster_namedtuple(state),
+                    "update_timestamp": pendulum.now("UTC"),
+                },
+            )
+        )

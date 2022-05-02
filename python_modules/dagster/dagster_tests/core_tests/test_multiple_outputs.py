@@ -7,7 +7,6 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
     InputDefinition,
-    ModeDefinition,
     Output,
     OutputDefinition,
     execute_pipeline,

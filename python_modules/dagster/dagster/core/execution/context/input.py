@@ -5,7 +5,6 @@ from dagster.core.definitions.events import AssetKey, AssetObservation
 from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
-from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
@@ -14,6 +13,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
     from dagster.core.definitions.resource_definition import Resources
+    from dagster.core.definitions.solid_definition import SolidDefinition
     from dagster.core.events import DagsterEvent
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.log_manager import DagsterLogManager
@@ -207,14 +207,9 @@ class InputContext:
     def asset_key(self) -> Optional[AssetKey]:
         if not self._name:
             return None
-
-        matching_input_defs = [
-            input_def
-            for input_def in cast(SolidDefinition, self._solid_def).input_defs
-            if input_def.name == self.name
-        ]
-        check.invariant(len(matching_input_defs) == 1)
-        return matching_input_defs[0].get_asset_key(self)
+        return self.step_context.pipeline_def.asset_layer.asset_key_for_input(
+            node_handle=self.step_context.solid_handle, input_name=self.name
+        )
 
     @property
     def step_context(self) -> "StepExecutionContext":
@@ -274,9 +269,8 @@ class InputContext:
         if self.upstream_output is None:
             check.failed("InputContext needs upstream_output to get asset_partitions_time_window")
 
-        partitions_def = self.upstream_output.solid_def.output_def_named(
-            self.upstream_output.name
-        ).asset_partitions_def
+        asset_info = self.upstream_output.asset_info
+        partitions_def = asset_info.partitions_def if asset_info else None
 
         if not partitions_def:
             raise ValueError(

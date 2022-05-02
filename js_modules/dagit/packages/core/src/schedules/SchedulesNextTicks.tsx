@@ -45,6 +45,7 @@ import {RepositorySchedulesFragment} from './types/RepositorySchedulesFragment';
 import {ScheduleFragment} from './types/ScheduleFragment';
 import {
   ScheduleTickConfigQuery,
+  ScheduleTickConfigQueryVariables,
   ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult,
   ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_runRequests,
 } from './types/ScheduleTickConfigQuery';
@@ -169,15 +170,15 @@ const NextTickMenu: React.FC<{
     scheduleName: schedule.name,
   };
   const [isOpen, setOpen] = React.useState<boolean>(false);
-  const [loadTickConfig, {called, loading, data}] = useLazyQuery<ScheduleTickConfigQuery>(
-    SCHEDULE_TICK_CONFIG_QUERY,
-    {
-      variables: {
-        scheduleSelector,
-        tickTimestamp,
-      },
+  const [loadTickConfig, {called, loading, data}] = useLazyQuery<
+    ScheduleTickConfigQuery,
+    ScheduleTickConfigQueryVariables
+  >(SCHEDULE_TICK_CONFIG_QUERY, {
+    variables: {
+      scheduleSelector,
+      tickTimestamp,
     },
-  );
+  });
 
   const infoReady = called ? !loading : false;
   const evaluationResult =

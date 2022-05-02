@@ -14,8 +14,6 @@ from dagster import (
     check,
 )
 from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
-from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
-from dagster.utils.backcompat import ExperimentalWarning
 
 
 @pytest.fixture(autouse=True)
@@ -23,13 +21,9 @@ def check_experimental_warnings():
     with warnings.catch_warnings(record=True) as record:
         yield
 
-        raises_warning = False
         for w in record:
             if "asset_key" in w.message.args[0]:
-                raises_warning = True
-                break
-
-        assert not raises_warning
+                assert False, f"Unexpected warning: {w.message.args[0]}"
 
 
 def test_asset_no_decorator_args():
@@ -50,7 +44,7 @@ def test_asset_with_inputs():
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
-    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey("arg1")
+    assert AssetKey("arg1") in my_asset.asset_keys_by_input_name.values()
 
 
 def test_asset_with_compute_kind():
@@ -99,7 +93,8 @@ def test_multi_asset_internal_asset_deps_metadata():
             "my_other_out_name": Out(metadata={"bar": "foo"}),
         },
         internal_asset_deps={
-            "my_out_name": {AssetKey("my_other_out_name"), AssetKey("my_in_name")}
+            "my_out_name": {AssetKey("my_other_out_name"), AssetKey("my_in_name")},
+            "my_other_out_name": {AssetKey("my_in_name")},
         },
     )
     def my_asset(my_in_name):  # pylint: disable=unused-argument
@@ -107,11 +102,12 @@ def test_multi_asset_internal_asset_deps_metadata():
         yield Output(2, "my_other_out_name")
 
     assert my_asset.asset_keys == {AssetKey("my_out_name"), AssetKey("my_other_out_name")}
-    assert my_asset.op.output_def_named("my_out_name").metadata == {
-        "foo": "bar",
-        ASSET_DEPENDENCY_METADATA_KEY: {AssetKey("my_other_out_name"), AssetKey("my_in_name")},
-    }
+    assert my_asset.op.output_def_named("my_out_name").metadata == {"foo": "bar"}
     assert my_asset.op.output_def_named("my_other_out_name").metadata == {"bar": "foo"}
+    assert my_asset.asset_deps == {
+        AssetKey("my_out_name"): {AssetKey("my_other_out_name"), AssetKey("my_in_name")},
+        AssetKey("my_other_out_name"): {AssetKey("my_in_name")},
+    }
 
 
 def test_multi_asset_internal_asset_deps_invalid():
@@ -178,7 +174,7 @@ def test_asset_with_inputs_and_namespace():
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
-    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey(["my_namespace", "arg1"])
+    assert AssetKey(["my_namespace", "arg1"]) in my_asset.asset_keys_by_input_name.values()
 
 
 def test_asset_with_context_arg():
@@ -198,7 +194,7 @@ def test_asset_with_context_arg_and_dep():
 
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.input_defs) == 1
-    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey("arg1")
+    assert AssetKey("arg1") in my_asset.asset_keys_by_input_name.values()
 
 
 def test_input_asset_key():
@@ -206,7 +202,7 @@ def test_input_asset_key():
     def my_asset(arg1):
         assert arg1
 
-    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey("foo")
+    assert AssetKey("foo") in my_asset.asset_keys_by_input_name.values()
 
 
 def test_input_asset_key_and_namespace():
@@ -222,7 +218,7 @@ def test_input_namespace_str():
     def my_asset(arg1):
         assert arg1
 
-    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey(["abc", "arg1"])
+    assert AssetKey(["abc", "arg1"]) in my_asset.asset_keys_by_input_name.values()
 
 
 def test_input_namespace_list():
@@ -230,7 +226,7 @@ def test_input_namespace_list():
     def my_asset(arg1):
         assert arg1
 
-    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey(["abc", "xyz", "arg1"])
+    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.asset_keys_by_input_name.values()
 
 
 def test_input_metadata():
@@ -291,7 +287,8 @@ def test_invoking_simple_assets():
     assert out == [1, 2, 3, 4, 5, 6]
 
     @asset
-    def arg_kwarg_asset(arg1, kwarg1=[0]):
+    def arg_kwarg_asset(arg1, kwarg1=None):
+        kwarg1 = kwarg1 or [0]
         return arg1 + kwarg1
 
     out = arg_kwarg_asset([1, 2, 3], kwarg1=[3, 2, 1])
@@ -337,3 +334,14 @@ def test_partitions_def():
         pass
 
     assert my_asset.partitions_def == partitions_def
+
+
+def test_op_tags():
+    tags = {"apple": "banana", "orange": {"rind": "fsd", "segment": "fjdskl"}}
+    tags_stringified = {"apple": "banana", "orange": '{"rind": "fsd", "segment": "fjdskl"}'}
+
+    @asset(op_tags=tags)
+    def my_asset():
+        ...
+
+    assert my_asset.op.tags == tags_stringified

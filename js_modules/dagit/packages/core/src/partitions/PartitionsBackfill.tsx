@@ -27,6 +27,11 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
+import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
+import {
+  LaunchPartitionBackfill,
+  LaunchPartitionBackfillVariables,
+} from '../instance/types/LaunchPartitionBackfill';
 import {LaunchButton} from '../launchpad/LaunchButton';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
 import {RunStatus} from '../types/globalTypes';
@@ -46,9 +51,11 @@ import {
   TopLabel,
   TopLabelTilted,
 } from './RunMatrixUtils';
-import {LaunchPartitionBackfill} from './types/LaunchPartitionBackfill';
-import {PartitionStatusQuery} from './types/PartitionStatusQuery';
-import {PartitionsBackfillSelectorQuery} from './types/PartitionsBackfillSelectorQuery';
+import {PartitionStatusQuery, PartitionStatusQueryVariables} from './types/PartitionStatusQuery';
+import {
+  PartitionsBackfillSelectorQuery,
+  PartitionsBackfillSelectorQueryVariables,
+} from './types/PartitionsBackfillSelectorQuery';
 
 const OVERSCROLL = 200;
 const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
@@ -106,25 +113,25 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     };
   }, [onLaunch]);
 
-  const {loading, data} = useQuery<PartitionsBackfillSelectorQuery>(
-    PARTITIONS_BACKFILL_SELECTOR_QUERY,
-    {
-      variables: {
-        repositorySelector,
-        partitionSetName,
-        pipelineSelector: {
-          ...repositorySelector,
-          pipelineName,
-        },
+  const {loading, data} = useQuery<
+    PartitionsBackfillSelectorQuery,
+    PartitionsBackfillSelectorQueryVariables
+  >(PARTITIONS_BACKFILL_SELECTOR_QUERY, {
+    variables: {
+      repositorySelector,
+      partitionSetName,
+      pipelineSelector: {
+        ...repositorySelector,
+        pipelineName,
       },
-      fetchPolicy: 'network-only',
     },
-  );
+    fetchPolicy: 'network-only',
+  });
 
-  const [
-    queryStatuses,
-    {loading: statusesLoading, data: statusesData},
-  ] = useLazyQuery<PartitionStatusQuery>(PARTITION_STATUS_QUERY, {
+  const [queryStatuses, {loading: statusesLoading, data: statusesData}] = useLazyQuery<
+    PartitionStatusQuery,
+    PartitionStatusQueryVariables
+  >(PARTITION_STATUS_QUERY, {
     variables: {
       repositorySelector,
       partitionSetName,
@@ -546,9 +553,10 @@ const LaunchBackfillButton: React.FC<{
 }) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const mounted = React.useRef(true);
-  const [launchBackfill, {loading}] = useMutation<LaunchPartitionBackfill>(
-    LAUNCH_PARTITION_BACKFILL_MUTATION,
-  );
+  const [launchBackfill, {loading}] = useMutation<
+    LaunchPartitionBackfill,
+    LaunchPartitionBackfillVariables
+  >(LAUNCH_PARTITION_BACKFILL_MUTATION);
 
   React.useEffect(() => {
     mounted.current = true;
@@ -725,53 +733,6 @@ const PARTITION_STATUS_QUERY = gql`
         message
       }
       ...PythonErrorFragment
-    }
-  }
-  ${PYTHON_ERROR_FRAGMENT}
-`;
-
-export const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
-  mutation LaunchPartitionBackfill($backfillParams: LaunchBackfillParams!) {
-    launchPartitionBackfill(backfillParams: $backfillParams) {
-      __typename
-      ... on LaunchBackfillSuccess {
-        backfillId
-      }
-      ... on PartitionSetNotFoundError {
-        message
-      }
-      ...PythonErrorFragment
-      ... on InvalidStepError {
-        invalidStepKey
-      }
-      ... on InvalidOutputError {
-        stepKey
-        invalidOutputName
-      }
-      ... on UnauthorizedError {
-        message
-      }
-      ... on PipelineNotFoundError {
-        message
-      }
-      ... on RunConflict {
-        message
-      }
-      ... on ConflictingExecutionParamsError {
-        message
-      }
-      ... on PresetNotFoundError {
-        message
-      }
-      ... on RunConfigValidationInvalid {
-        pipelineName
-        errors {
-          __typename
-          message
-          path
-          reason
-        }
-      }
     }
   }
   ${PYTHON_ERROR_FRAGMENT}

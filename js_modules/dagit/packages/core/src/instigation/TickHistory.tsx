@@ -21,6 +21,7 @@ import styled from 'styled-components/macro';
 
 import {SharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {ONE_MONTH, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useCopyToClipboard} from '../app/browser';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
@@ -258,15 +259,18 @@ export const TickHistoryTimeline = ({
   const [pollingPaused, pausePolling] = React.useState<boolean>(false);
 
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
-  const {data} = useQuery<TickHistoryQuery, TickHistoryQueryVariables>(JOB_TICK_HISTORY_QUERY, {
-    variables: {
-      instigationSelector,
-      limit: 15,
+  const queryResult = useQuery<TickHistoryQuery, TickHistoryQueryVariables>(
+    JOB_TICK_HISTORY_QUERY,
+    {
+      variables: {instigationSelector, limit: 15},
+      fetchPolicy: 'cache-and-network',
+      partialRefetch: true,
+      notifyOnNetworkStatusChange: true,
     },
-    fetchPolicy: 'cache-and-network',
-    partialRefetch: true,
-    pollInterval: !pollingPaused ? 1000 : 0,
-  });
+  );
+
+  useQueryRefreshAtInterval(queryResult, pollingPaused ? ONE_MONTH : 1000);
+  const {data} = queryResult;
 
   if (!data) {
     return (

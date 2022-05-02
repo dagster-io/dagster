@@ -263,13 +263,6 @@ def graphql_pg_extra_cmds_fn(_):
 # Some Dagster packages have more involved test configs or support only certain Python version;
 # special-case those here
 DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
-    # Examples: Airline Demo
-    ModuleBuildSpec(
-        "examples/airline_demo",
-        extra_cmds_fn=airline_demo_extra_cmds_fn,
-        buildkite_label="airline-demo",
-        supported_pythons=ExamplePythons,
-    ),
     ModuleBuildSpec(
         "examples/dbt_example",
         extra_cmds_fn=dbt_example_extra_cmds_fn,
@@ -482,6 +475,18 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         "python_modules/libraries/dagstermill",
         tox_env_suffixes=["-papermill1", "-papermill2"],
     ),
+    ModuleBuildSpec(
+        "python_modules/libraries/dagster-ge",
+        supported_pythons=(  # dropped python 3.6 support
+            [
+                SupportedPython.V3_7,
+                SupportedPython.V3_8,
+                SupportedPython.V3_9,
+            ]
+            if (branch_name == "master" or is_release_branch(branch_name))
+            else [SupportedPython.V3_9]
+        ),
+    ),
 ]
 
 
@@ -584,7 +589,7 @@ def coverage_step():
 
 
 def pylint_steps():
-    base_paths = [".buildkite", "bin", "docs/next/src"]
+    base_paths = [".buildkite", "scripts", "docs"]
     base_paths_ext = ['"%s/**.py"' % p for p in base_paths]
 
     return [
@@ -592,7 +597,7 @@ def pylint_steps():
         .run(
             # Deps needed to pylint docs
             """pip install \
-                -e python_modules/dagster \
+                -e python_modules/dagster[test] \
                 -e python_modules/dagster-graphql \
                 -e python_modules/dagit \
                 -e python_modules/automation \
@@ -600,10 +605,29 @@ def pylint_steps():
                 -e python_modules/libraries/dagster-celery \
                 -e python_modules/libraries/dagster-dask \
             """,
-            "pylint -j 0 `git ls-files %s` --rcfile=.pylintrc" % " ".join(base_paths_ext),
+            "pylint -j 0 --rcfile=pyproject.toml `git ls-files %s`" % " ".join(base_paths_ext),
         )
         .on_integration_image(SupportedPython.V3_7)
         .build()
+    ]
+
+
+def isort_steps():
+    return [
+        StepBuilder(":isort:")
+        .run("pip install -e python_modules/dagster[isort]", "make check_isort")
+        .on_integration_image(SupportedPython.V3_7)
+        .build(),
+    ]
+
+
+def black_steps():
+    return [
+        StepBuilder(":python-black:")
+        # See: https://github.com/dagster-io/dagster/issues/1999
+        .run("pip install -e python_modules/dagster[black]", "make check_black")
+        .on_integration_image(SupportedPython.V3_7)
+        .build(),
     ]
 
 
@@ -649,18 +673,11 @@ def dagster_steps():
     steps = []
     steps += publish_test_images()
 
+    # NOTE: these `pylint_steps` only cover misc python code, there are also package-specific pylint
+    # steps
     steps += pylint_steps()
-    steps += [
-        StepBuilder(":isort:")
-        .run("pip install -e python_modules/dagster[isort]", "make check_isort")
-        .on_integration_image(SupportedPython.V3_7)
-        .build(),
-        StepBuilder(":python-black:")
-        # See: https://github.com/dagster-io/dagster/issues/1999
-        .run("pip install -e python_modules/dagster[black]", "make check_black")
-        .on_integration_image(SupportedPython.V3_7)
-        .build(),
-    ]
+    steps += isort_steps()
+    steps += black_steps()
 
     for m in DAGSTER_PACKAGES_WITH_CUSTOM_TESTS:
         steps += m.get_tox_build_steps()

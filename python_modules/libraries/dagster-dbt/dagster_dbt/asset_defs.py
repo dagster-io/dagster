@@ -43,7 +43,7 @@ def _load_manifest_for_project(
         target_path=target_dir,
     )
     manifest_path = os.path.join(target_dir, "manifest.json")
-    with open(manifest_path, "r") as f:
+    with open(manifest_path, "r", encoding="utf8") as f:
         return json.load(f), cli_output
 
 

@@ -7,7 +7,7 @@ from dagster import job, op
 @op
 def load_cereals():
     dataset_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
-    with open(dataset_path, "r") as fd:
+    with open(dataset_path, "r", encoding="utf8") as fd:
         cereals = [row for row in csv.DictReader(fd)]
     return cereals
 

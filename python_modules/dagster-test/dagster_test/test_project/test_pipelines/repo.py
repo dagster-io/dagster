@@ -101,8 +101,16 @@ def docker_mode_defs():
     ]
 
 
-@solid(input_defs=[InputDefinition("word", String)], config_schema={"factor": IntSource})
+@solid(
+    input_defs=[InputDefinition("word", String)],
+    config_schema={
+        "factor": IntSource,
+        "should_segfault": Field(bool, is_required=False, default_value=False),
+    },
+)
 def multiply_the_word(context, word):
+    if context.solid_config.get("should_segfault"):
+        segfault()
     return word * context.solid_config["factor"]
 
 
@@ -620,7 +628,9 @@ def define_demo_k8s_executor_pipeline():
 
 @solid
 def check_volume_mount(context):
-    with open("/opt/dagster/test_mount_path/volume_mounted_file.yaml", "r") as mounted_file:
+    with open(
+        "/opt/dagster/test_mount_path/volume_mounted_file.yaml", "r", encoding="utf8"
+    ) as mounted_file:
         contents = mounted_file.read()
         context.log.info(f"Contents of mounted file: {contents}")
         assert contents == "BAR_CONTENTS"

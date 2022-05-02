@@ -84,12 +84,13 @@ class GrapheneAssetNode(graphene.ObjectType):
         beforeTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
-    computeKind: graphene.String
+    computeKind = graphene.String()
     dependedBy = non_null_list(GrapheneAssetDependency)
     dependedByKeys = non_null_list(GrapheneAssetKey)
     dependencies = non_null_list(GrapheneAssetDependency)
     dependencyKeys = non_null_list(GrapheneAssetKey)
     description = graphene.String()
+    graphName = graphene.String()
     id = graphene.NonNull(graphene.ID)
     jobNames = non_null_list(graphene.String)
     jobs = non_null_list(GraphenePipeline)
@@ -101,6 +102,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     op = graphene.Field(GrapheneSolidDefinition)
     opName = graphene.String()
+    opNames = non_null_list(graphene.String)
     partitionKeys = non_null_list(graphene.String)
     partitionDefinition = graphene.String()
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
@@ -293,6 +295,13 @@ class GrapheneAssetNode(graphene.ObjectType):
             for dep in self._external_asset_node.dependencies
         ]
 
+    def resolve_graphName(self, _graphene_info) -> Optional[str]:
+        # todo OwenKephart - return the correct graph name here
+        if self._external_asset_node.op_name:
+            return self._external_asset_node.op_name
+        else:
+            return None
+
     def resolve_jobNames(self, _graphene_info) -> List[str]:
         return self._external_asset_node.job_names
 
@@ -367,6 +376,13 @@ class GrapheneAssetNode(graphene.ObjectType):
             return build_solid_definition(pipeline, self._external_asset_node.op_name)
         else:
             return None
+
+    def resolve_opNames(self, _graphene_info) -> List[str]:
+        # todo OwenKephart: Return the correct list of op names.
+        if self._external_asset_node.op_name:
+            return [self._external_asset_node.op_name]
+        else:
+            return []
 
     def resolve_partitionDefinition(self, _graphene_info) -> Optional[str]:
         partitions_def_data = self._external_asset_node.partitions_def_data

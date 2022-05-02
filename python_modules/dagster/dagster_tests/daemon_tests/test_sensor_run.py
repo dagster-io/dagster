@@ -525,6 +525,54 @@ def test_simple_sensor(capfd):
             )
 
 
+def test_sensors_keyed_on_selector_not_origin():
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors() as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            external_sensor = external_repo.get_external_sensor("simple_sensor")
+
+            existing_origin = external_sensor.get_external_origin()
+
+            repo_location_origin = (
+                existing_origin.external_repository_origin.repository_location_origin
+            )
+            modified_loadable_target_origin = repo_location_origin.loadable_target_origin._replace(
+                executable_path="/different/executable_path"
+            )
+
+            # Change metadata on the origin that shouldn't matter for execution
+            modified_origin = existing_origin._replace(
+                external_repository_origin=existing_origin.external_repository_origin._replace(
+                    repository_location_origin=repo_location_origin._replace(
+                        loadable_target_origin=modified_loadable_target_origin
+                    )
+                )
+            )
+
+            instance.add_instigator_state(
+                InstigatorState(
+                    modified_origin,
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.RUNNING,
+                )
+            )
+
+            evaluate_sensors(instance, workspace)
+
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
+            assert len(ticks) == 1
+
+
 def test_bad_load_sensor_repository(capfd):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -1146,13 +1194,6 @@ def test_custom_interval_sensor_with_offset(monkeypatch):
             )
             assert len(ticks) == 2
             assert sum(sleeps) == 65
-
-
-def _get_unloadable_sensor_origin():
-    load_target = workspace_load_target()
-    return ExternalRepositoryOrigin(
-        load_target.create_origins()[0], "fake_repository"
-    ).get_instigator_origin("doesnt_exist")
 
 
 def test_sensor_start_stop():

@@ -350,9 +350,9 @@ def test_kitchen_sink_break_out():
     list_bool = config_snaps[noneable_list_bool.inner_type_key]
     assert list_bool.kind == ConfigTypeKind.ARRAY
 
-    map = config_snaps[dict_within_list.get_field("map").type_key]
-    assert map.kind == ConfigTypeKind.MAP
-    map_dict = config_snaps[map.inner_type_key]
+    amap = config_snaps[dict_within_list.get_field("map").type_key]
+    assert amap.kind == ConfigTypeKind.MAP
+    map_dict = config_snaps[amap.inner_type_key]
     assert len(map_dict.fields) == 2
     map_a = config_snaps[map_dict.get_field("map_a").type_key]
     assert map_a.kind == ConfigTypeKind.SCALAR

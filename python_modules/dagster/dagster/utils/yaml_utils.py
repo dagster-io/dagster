@@ -82,5 +82,5 @@ def merge_yaml_strings(yaml_strs):
 
 def load_yaml_from_path(path: str) -> object:
     check.str_param(path, "path")
-    with open(path, "r") as ff:
+    with open(path, "r", encoding="utf8") as ff:
         return yaml.safe_load(ff)

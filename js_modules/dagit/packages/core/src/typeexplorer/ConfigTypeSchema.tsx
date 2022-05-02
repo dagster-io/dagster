@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors} from '@dagster-io/ui';
+import {Colors, FontFamily, Popover} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -17,6 +17,7 @@ interface FieldData {
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 interface CommonTypeData {
@@ -88,16 +89,46 @@ function renderTypeRecursive(
         {type.isSelector && (
           <DictBlockComment indent={innerIndent} content="One of the following:" />
         )}
-        {type.fields.map((fieldData) => (
-          <DictEntry key={fieldData.name}>
-            <DictBlockComment indent={innerIndent} content={fieldData.description} />
-            {innerIndent}
-            <DictKey theme={props.theme}>{fieldData.name}</DictKey>
-            {!fieldData.isRequired && Optional}
-            {`: `}
-            {renderTypeRecursive(typeLookup[fieldData.configTypeKey], typeLookup, depth + 1, props)}
-          </DictEntry>
-        ))}
+        {type.fields.map((fieldData) => {
+          const keyDisplay = (
+            <DictKey
+              theme={props.theme}
+              style={
+                fieldData.defaultValueAsJson
+                  ? {borderBottom: `dashed ${Colors.Blue200} 1px`, cursor: 'pointer'}
+                  : undefined
+              }
+            >
+              {fieldData.name}
+            </DictKey>
+          );
+          return (
+            <DictEntry key={fieldData.name}>
+              <DictBlockComment indent={innerIndent} content={fieldData.description} />
+              {innerIndent}
+              {fieldData.defaultValueAsJson ? (
+                <Popover
+                  popoverClassName="config-tooltip"
+                  interactionKind="hover"
+                  hoverCloseDelay={100}
+                  content={<ConfigContent value={fieldData.defaultValueAsJson} />}
+                >
+                  {keyDisplay}
+                </Popover>
+              ) : (
+                keyDisplay
+              )}
+              {!fieldData.isRequired && Optional}
+              {`: `}
+              {renderTypeRecursive(
+                typeLookup[fieldData.configTypeKey],
+                typeLookup,
+                depth + 1,
+                props,
+              )}
+            </DictEntry>
+          );
+        })}
         {'  '.repeat(depth) + '}'}
       </>
     );
@@ -160,6 +191,41 @@ function renderTypeRecursive(
   return <span>{type.givenName}</span>;
 }
 
+const prettyJsonString = (value: string) => {
+  try {
+    const parsed = JSON.parse(value);
+    return JSON.stringify(parsed, null, 2);
+  } catch (e) {
+    return value;
+  }
+};
+
+const ConfigContent = React.memo(({value}: {value: string}) => (
+  <>
+    <ConfigHeader>
+      <strong>Default value</strong>
+    </ConfigHeader>
+    <ConfigJSON>{prettyJsonString(value)}</ConfigJSON>
+  </>
+));
+
+const ConfigHeader = styled.div`
+  background-color: ${Colors.Gray800};
+  color: ${Colors.White};
+  font-size: 13px;
+  padding: 8px;
+`;
+
+const ConfigJSON = styled.pre`
+  background-color: ${Colors.Gray900};
+  color: ${Colors.White};
+  whitespace: pre-wrap;
+  font-family: ${FontFamily.monospace};
+  font-size: 14px;
+  padding: 8px;
+  margin: 0;
+`;
+
 export const ConfigTypeSchema = React.memo((props: ConfigTypeSchemaProps) => {
   const {type, typesInScope} = props;
 
@@ -195,6 +261,7 @@ export const CONFIG_TYPE_SCHEMA_FRAGMENT = gql`
         description
         isRequired
         configTypeKey
+        defaultValueAsJson
       }
     }
     ... on ScalarUnionConfigType {

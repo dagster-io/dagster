@@ -104,7 +104,7 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
 
         easy()
 
-    with open(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")) as f:
+    with open(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"), encoding="utf8") as f:
         with tempfile.TemporaryDirectory() as temp_dir:
             with environ({"ENV_VAR": f.read(), "DAGSTER_HOME": temp_dir}):
                 run_store = SqliteRunStorage.from_local(temp_dir)

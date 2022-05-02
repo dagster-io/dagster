@@ -19,7 +19,7 @@ necessary files like tox.ini, etc.
 
 
 def add_to_examples_json(name):
-    with open(EXAMPLES_JSON_PATH, "r") as examples_file:
+    with open(EXAMPLES_JSON_PATH, "r", encoding="utf8") as examples_file:
         examples = json.load(examples_file)
 
     if name in {example["name"] for example in examples}:
@@ -31,7 +31,7 @@ def add_to_examples_json(name):
 
     examples.append({"name": name, "title": "", "description": ""})
 
-    with open(EXAMPLES_JSON_PATH, "w") as examples_file:
+    with open(EXAMPLES_JSON_PATH, "w", encoding="utf8") as examples_file:
         json.dump(examples, examples_file, indent=4)
 
 
@@ -63,11 +63,11 @@ def library(name):
 
         for fname in files:
             fpath = os.path.join(dname, fname)
-            with open(fpath) as f:
+            with open(fpath, encoding="utf8") as f:
                 s = f.read()
             s = s.replace("{{LIBRARY_NAME}}", name)
             s = s.replace("{{VERSION}}", version)
-            with open(fpath, "w") as f:
+            with open(fpath, "w", encoding="utf8") as f:
                 f.write(s)
 
             new_fname = fname.replace(".tmpl", "")
@@ -104,11 +104,11 @@ def example(name):
     for dname, _, files in os.walk(new_template_library_path):
         for fname in files:
             fpath = os.path.join(dname, fname)
-            with open(fpath) as f:
+            with open(fpath, encoding="utf8") as f:
                 s = f.read()
             s = s.replace("{{EXAMPLE_NAME}}", name)
             s = s.replace("{{VERSION}}", version)
-            with open(fpath, "w") as f:
+            with open(fpath, "w", encoding="utf8") as f:
                 f.write(s)
 
             new_fname = fname.replace(".tmpl", "").replace("{{EXAMPLE_NAME}}", name)

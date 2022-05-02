@@ -12,7 +12,7 @@ class TestMySQLRunStorage(TestRunStorage):
     __test__ = True
 
     @pytest.fixture(scope="function", name="storage")
-    def run_storage(self, conn_string):  # pylint: disable=arguments-differ
+    def run_storage(self, conn_string):  # pylint: disable=arguments-renamed
         storage = MySQLRunStorage.create_clean_storage(conn_string)
         assert storage
         return storage

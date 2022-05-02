@@ -74,7 +74,7 @@ export const LaunchButton = ({config, runCount}: LaunchButtonProps) => {
     <ShortcutHandler
       onShortcut={onClick}
       shortcutLabel="⌥L"
-      shortcutFilter={(e) => e.keyCode === 76 && e.altKey}
+      shortcutFilter={(e) => e.code === 'KeyL' && e.altKey}
     >
       <ButtonWithConfiguration
         status={status}
@@ -118,7 +118,7 @@ export const LaunchButtonDropdown = ({
     <ShortcutHandler
       onShortcut={() => onConfigSelected(primary)}
       shortcutLabel="⌥L"
-      shortcutFilter={(e) => e.keyCode === 76 && e.altKey}
+      shortcutFilter={(e) => e.code === 'KeyL' && e.altKey}
     >
       <ButtonWithConfiguration
         status={status}

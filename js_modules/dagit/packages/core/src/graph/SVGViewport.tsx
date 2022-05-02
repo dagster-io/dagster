@@ -265,6 +265,10 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     }
   }
 
+  focus() {
+    this.element.current?.focus();
+  }
+
   autocenter(animate = false) {
     const el = this.element.current!;
     const ownerRect = {width: el.clientWidth, height: el.clientHeight};
@@ -327,17 +331,21 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     this.setState({x, y, scale: nextScale});
   }
 
-  public smoothZoomToSVGBox(box: IBounds, newScale = this.state.scale) {
-    this.smoothZoomToSVGCoords(box.x + box.width / 2, box.y + box.height / 2, newScale);
+  public zoomToSVGBox(box: IBounds, animate: boolean, newScale = this.state.scale) {
+    this.zoomToSVGCoords(box.x + box.width / 2, box.y + box.height / 2, animate, newScale);
   }
 
-  public smoothZoomToSVGCoords(x: number, y: number, scale: number) {
+  public zoomToSVGCoords(x: number, y: number, animate: boolean, scale = this.state.scale) {
     const el = this.element.current!;
     const ownerRect = el.getBoundingClientRect();
     x = -x * scale + ownerRect.width / 2;
     y = -y * scale + ownerRect.height / 2;
 
-    this.smoothZoom({x, y, scale});
+    if (animate) {
+      this.smoothZoom({x, y, scale});
+    } else {
+      this.setState({x, y, scale});
+    }
   }
 
   public smoothZoom(to: {x: number; y: number; scale: number}) {
@@ -390,9 +398,9 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     const maxZoom = this.props.maxZoom || DEFAULT_ZOOM;
 
     if (Math.abs(maxZoom - this.state.scale) < 0.01) {
-      this.smoothZoomToSVGCoords(offset.x, offset.y, this.state.minScale);
+      this.zoomToSVGCoords(offset.x, offset.y, true, this.state.minScale);
     } else {
-      this.smoothZoomToSVGCoords(offset.x, offset.y, maxZoom);
+      this.zoomToSVGCoords(offset.x, offset.y, true, maxZoom);
     }
   };
 
@@ -401,7 +409,12 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
       return;
     }
 
-    const dir = ({37: 'left', 38: 'up', 39: 'right', 40: 'down'} as const)[e.keyCode];
+    const dir = ({
+      ArrowLeft: 'left',
+      ArrowUp: 'up',
+      ArrowRight: 'right',
+      ArrowDown: 'down',
+    } as const)[e.code];
     if (!dir) {
       return;
     }

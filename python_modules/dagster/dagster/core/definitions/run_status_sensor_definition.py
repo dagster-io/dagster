@@ -514,9 +514,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         )
 
     def __call__(self, *args, **kwargs):
-        context_provided = is_context_provided(get_function_params(self._run_status_sensor_fn))
-
-        if context_provided:
+        if is_context_provided(self._run_status_sensor_fn):
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
                     "Run status sensor function expected context argument, but no context argument "

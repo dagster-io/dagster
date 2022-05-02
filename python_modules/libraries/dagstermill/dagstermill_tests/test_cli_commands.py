@@ -17,7 +17,7 @@ EXPECTED_IMPORT_STATEMENT = "from dagstermill.examples.repository import define_
 
 
 def check_notebook_expected_output(notebook_path):
-    with open(notebook_path, "r") as f:
+    with open(notebook_path, "r", encoding="utf8") as f:
         notebook_content = json.loads(f.read())
         assert set(notebook_content.keys()) == {"cells", "metadata", "nbformat", "nbformat_minor"}
         assert notebook_content["metadata"] == {
@@ -86,13 +86,13 @@ def test_invalid_filename_example():
 
 def test_retroactive_scaffold():
     notebook_path = file_relative_path(__file__, "notebooks/retroactive.ipynb")
-    with open(notebook_path, "r") as fd:
+    with open(notebook_path, "r", encoding="utf8") as fd:
         retroactive_notebook = fd.read()
     try:
         runner = CliRunner()
         args = ["--notebook", notebook_path]
         runner.invoke(retroactively_scaffold_notebook, args)
-        with open(notebook_path, "r") as fd:
+        with open(notebook_path, "r", encoding="utf8") as fd:
             scaffolded = json.loads(fd.read())
             assert [
                 x
@@ -100,14 +100,14 @@ def test_retroactive_scaffold():
                 if "parameters" in x.get("metadata", {}).get("tags", [])
             ]
     finally:
-        with open(notebook_path, "w") as fd:
+        with open(notebook_path, "w", encoding="utf8") as fd:
             fd.write(retroactive_notebook)
 
 
 def test_double_scaffold():
     try:
         notebook_path = file_relative_path(__file__, "notebooks/overwrite.ipynb")
-        with open(notebook_path, "w") as fd:
+        with open(notebook_path, "w", encoding="utf8") as fd:
             fd.write("print('Hello, world!')")
 
         runner = CliRunner()

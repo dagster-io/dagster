@@ -480,7 +480,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             # a retry boundary. We still catch it here just in case we missed one so that we can
             # report it to the event log
             kubernetes.client.rest.ApiException,
-        ) as err:
+        ):
             instance.report_engine_event(
                 "Encountered unexpected error while waiting on Kubernetes job {} for step {}, "
                 "exiting.".format(job_name, step_key),
@@ -498,7 +498,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
 
         try:
             pod_names = get_pod_names_in_job(job_name, namespace=job_namespace)
-        except kubernetes.client.rest.ApiException as e:
+        except kubernetes.client.rest.ApiException:
             instance.report_engine_event(
                 "Encountered unexpected error retreiving Pods for Kubernetes job {} for step {}, "
                 "exiting.".format(job_name, step_key),
@@ -529,7 +529,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             try:
                 raw_logs = retrieve_pod_logs(pod_name, namespace=job_namespace)
                 logs += raw_logs.split("\n")
-            except kubernetes.client.rest.ApiException as e:
+            except kubernetes.client.rest.ApiException:
                 instance.report_engine_event(
                     "Encountered unexpected error while fetching pod logs for Kubernetes job {}, "
                     "Pod name {} for step {}. Will attempt to continue with other pods.".format(

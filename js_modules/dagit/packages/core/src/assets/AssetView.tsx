@@ -15,6 +15,7 @@ import * as React from 'react';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
+  useMergedRefresh,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
@@ -68,6 +69,8 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   const {assetOrError} = queryResult.data || queryResult.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
   const lastMaterializedAt = asset?.assetMaterializations[0]?.timestamp;
+  const viewingMostRecent = !params.asOf || Number(lastMaterializedAt) <= Number(params.asOf);
+
   const definition = asset?.definition;
 
   const repoAddress = definition
@@ -88,8 +91,10 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     notifyOnNetworkStatusChange: true,
   });
 
-  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
-  useQueryRefreshAtInterval(liveQueryResult, FIFTEEN_SECONDS);
+  const refreshState = useMergedRefresh(
+    useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS),
+    useQueryRefreshAtInterval(liveQueryResult, FIFTEEN_SECONDS),
+  );
 
   // Refresh immediately when a run is launched from this page
   useDidLaunchEvent(queryResult.refetch);
@@ -177,7 +182,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           >
             <Spinner purpose="page" />
           </Box>
-        ) : params.asOf ? (
+        ) : viewingMostRecent ? null : (
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
@@ -188,7 +193,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               hasDefinition={!!definition}
             />
           </Box>
-        ) : undefined}
+        )}
       </div>
       {isDefinitionLoaded &&
         (params.view === 'definition' ? (

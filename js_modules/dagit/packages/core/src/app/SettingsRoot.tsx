@@ -11,8 +11,10 @@ import {
 import * as React from 'react';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 import {FeatureFlag, getFeatureFlags, setFeatureFlags} from './Flags';
+import {SHORTCUTS_STORAGE_KEY} from './ShortcutHandler';
 import {TimezoneSelect} from './time/TimezoneSelect';
 import {automaticLabel} from './time/browserTimezone';
 
@@ -20,6 +22,10 @@ const SettingsRoot = () => {
   useDocumentTitle('User settings');
 
   const [flags, setFlags] = React.useState<FeatureFlag[]>(() => getFeatureFlags());
+  const [shortcutsEnabled, setShortcutsEnabled] = useStateWithStorage(
+    SHORTCUTS_STORAGE_KEY,
+    (value: any) => (typeof value === 'boolean' ? value : true),
+  );
 
   React.useEffect(() => {
     setFeatureFlags(flags);
@@ -37,6 +43,15 @@ const SettingsRoot = () => {
     [],
   );
 
+  const toggleKeyboardShortcuts = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const {checked} = e.target;
+    setShortcutsEnabled(checked);
+    // Delay slightly so that the switch visibly changes first.
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  };
+
   return (
     <div style={{height: '100vh', overflowY: 'auto'}}>
       <PageHeader title={<Heading>User settings</Heading>} />
@@ -48,7 +63,21 @@ const SettingsRoot = () => {
           rows={[
             {
               key: 'Timezone',
-              value: <TimezoneSelect trigger={trigger} />,
+              value: (
+                <Box margin={{bottom: 4}}>
+                  <TimezoneSelect trigger={trigger} />
+                </Box>
+              ),
+            },
+            {
+              key: 'Enable keyboard shortcuts',
+              value: (
+                <Checkbox
+                  checked={shortcutsEnabled}
+                  format="switch"
+                  onChange={toggleKeyboardShortcuts}
+                />
+              ),
             },
           ]}
         />
@@ -79,6 +108,36 @@ const SettingsRoot = () => {
                   format="switch"
                   checked={flags.includes(FeatureFlag.flagAlwaysCollapseNavigation)}
                   onChange={() => toggleFlag(FeatureFlag.flagAlwaysCollapseNavigation)}
+                />
+              ),
+            },
+            {
+              key: 'Disable WebSockets',
+              value: (
+                <Checkbox
+                  format="switch"
+                  checked={flags.includes(FeatureFlag.flagDisableWebsockets)}
+                  onChange={() => toggleFlag(FeatureFlag.flagDisableWebsockets)}
+                />
+              ),
+            },
+            {
+              key: 'Experimental asset graph display',
+              value: (
+                <Checkbox
+                  format="switch"
+                  checked={flags.includes(FeatureFlag.flagExperimentalAssetDAG)}
+                  onChange={() => toggleFlag(FeatureFlag.flagExperimentalAssetDAG)}
+                />
+              ),
+            },
+            {
+              key: 'New partitions view (experimental)',
+              value: (
+                <Checkbox
+                  format="switch"
+                  checked={flags.includes(FeatureFlag.flagNewPartitionsView)}
+                  onChange={() => toggleFlag(FeatureFlag.flagNewPartitionsView)}
                 />
               ),
             },

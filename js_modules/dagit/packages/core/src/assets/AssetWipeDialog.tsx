@@ -5,6 +5,8 @@ import * as React from 'react';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 
+import {AssetWipeMutation, AssetWipeMutationVariables} from './types/AssetWipeMutation';
+
 interface AssetKey {
   path: string[];
 }
@@ -16,10 +18,13 @@ export const AssetWipeDialog: React.FC<{
   onComplete: (assetKeys: AssetKey[]) => void;
   requery?: RefetchQueriesFunction;
 }> = ({assetKeys, isOpen, onClose, onComplete, requery}) => {
-  const [requestWipe] = useMutation(ASSET_WIPE_MUTATION, {
-    variables: {assetKeys: assetKeys.map((key) => ({path: key.path || []}))},
-    refetchQueries: requery,
-  });
+  const [requestWipe] = useMutation<AssetWipeMutation, AssetWipeMutationVariables>(
+    ASSET_WIPE_MUTATION,
+    {
+      variables: {assetKeys: assetKeys.map((key) => ({path: key.path || []}))},
+      refetchQueries: requery,
+    },
+  );
 
   const wipe = async () => {
     if (!assetKeys.length) {

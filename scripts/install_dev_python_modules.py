@@ -37,6 +37,7 @@ def main(quiet):
         "-e python_modules/libraries/dagster-k8s",
         "-e python_modules/libraries/dagster-celery-k8s",
         "-e python_modules/libraries/dagster-github",
+        "-e python_modules/libraries/dagster-mlflow",
         "-e python_modules/libraries/dagster-mysql",
         "-e python_modules/libraries/dagster-pagerduty",
         "-e python_modules/libraries/dagster-pandas",
