@@ -174,6 +174,7 @@ class AirbyteResource:
                     raise Failure(f"Encountered unexpected state `{state}` for job_id {job_id}")
         finally:
             # make sure that the Airbyte job does not outlive the python process
+            # cancelling a successfully completed job has no effect
             self.cancel_job(job_id)
 
         return AirbyteOutput(job_details=job_details, connection_details=connection_details)
