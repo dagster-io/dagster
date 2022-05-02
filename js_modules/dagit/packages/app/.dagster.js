@@ -76,6 +76,7 @@ module.exports = {
           'style-src': false,
         },
       },
+      outputFilename: 'csp-header.conf',
     };
   },
 
