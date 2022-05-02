@@ -12,7 +12,7 @@ from snowflake.connector.pandas_tools import pd_writer
 from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
 from sqlalchemy import create_engine
 
-from dagster import IOManager, InputContext, MetadataEntry, OutputContext, io_manager
+from dagster import IOManager, InputContext, MetadataEntry, OutputContext, check, io_manager
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 DB_SCHEMA = "hackernews"
@@ -73,7 +73,7 @@ class SnowflakeIOManager(IOManager):
         self._config = config
 
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
-        schema, table = DB_SCHEMA, context.asset_key.path[-1]
+        schema, table = DB_SCHEMA, context.asset_key.path[-1]  # type: ignore
 
         time_window = context.asset_partitions_time_window if context.has_asset_partitions else None
         with connect_snowflake(config=self._config, schema=schema) as con:
@@ -151,7 +151,8 @@ class SnowflakeIOManager(IOManager):
             return f"DELETE FROM {schema}.{table}"
 
     def load_input(self, context: InputContext) -> PandasDataFrame:
-        asset_key = context.upstream_output.asset_key
+        upstream_output = check.not_none(context.upstream_output)
+        asset_key = check.not_none(upstream_output.asset_key)
 
         schema, table = DB_SCHEMA, asset_key.path[-1]
         with connect_snowflake(config=self._config) as con:

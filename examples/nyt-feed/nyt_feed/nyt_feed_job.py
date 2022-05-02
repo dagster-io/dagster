@@ -32,7 +32,7 @@ class DataframeToCSVIOManager(IOManager):
         obj.to_csv(self._get_path(context), index=False)
 
     def load_input(self, context: InputContext) -> pd.DataFrame:
-        return pd.read_csv(self._get_path(context.upstream_output))
+        return pd.read_csv(self._get_path(context.upstream_output))  # type: ignore
 
 
 @io_manager(config_schema={"base_dir": str})

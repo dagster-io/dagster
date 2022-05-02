@@ -1,7 +1,8 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from dagster_fivetran.types import FivetranOutput
 
+import dagster.check as check
 from dagster import AssetMaterialization, MetadataValue
 
 
@@ -20,18 +21,18 @@ def _table_data_to_materialization(
     asset_key_prefix: List[str],
     schema_name: str,
     table_data: Dict[str, Any],
-) -> AssetMaterialization:
+) -> Optional[AssetMaterialization]:
     table_name = table_data["name_in_destination"]
     asset_key = asset_key_prefix + [schema_name, table_name]
     if not table_data["enabled"]:
         return None
-    metadata = {
+    metadata: Dict[str, MetadataValue] = {
         "connector_url": MetadataValue.url(
             get_fivetran_connector_url(fivetran_output.connector_details)
         )
     }
     if table_data.get("columns"):
-        metadata["column_info"] = MetadataValue.json(table_data.get("columns"))
+        metadata["column_info"] = MetadataValue.json(check.dict_elem(table_data, "columns"))
     return AssetMaterialization(
         asset_key=asset_key,
         description=f"Table generated via Fivetran sync: {schema_name}.{table_name}",

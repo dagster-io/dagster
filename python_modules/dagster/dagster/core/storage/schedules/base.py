@@ -29,7 +29,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def get_instigator_state(self, origin_id: str, selector_id: str) -> InstigatorState:
+    def get_instigator_state(self, origin_id: str, selector_id: str) -> Optional[InstigatorState]:
         """Return the instigator state for the given id
 
         Args:

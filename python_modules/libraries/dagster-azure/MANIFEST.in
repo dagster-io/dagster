@@ -3,3 +3,4 @@ recursive-include dagster_azure *.yaml
 recursive-include dagster_azure *.txt
 recursive-include dagster_azure *.template
 include LICENSE
+include dagster_azure/py.typed

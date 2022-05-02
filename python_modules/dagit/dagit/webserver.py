@@ -2,7 +2,7 @@ import gzip
 import io
 import uuid
 from os import path
-from typing import List
+from typing import Generic, List, TypeVar
 
 import nbformat
 from dagster_graphql import __version__ as dagster_graphql_version
@@ -29,7 +29,7 @@ from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.core.debug import DebugRunPayload
 from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster.core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
+from dagster.core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster.seven import json
 from dagster.utils import Counter, traced_counter
 
@@ -48,9 +48,14 @@ ROOT_ADDRESS_STATIC_RESOURCES = [
     "/robots.txt",
 ]
 
+T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
 
-class DagitWebserver(GraphQLServer):
-    def __init__(self, process_context: WorkspaceProcessContext, app_path_prefix: str = ""):
+
+class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
+
+    _process_context: T_IWorkspaceProcessContext
+
+    def __init__(self, process_context: T_IWorkspaceProcessContext, app_path_prefix: str = ""):
         self._process_context = process_context
         super().__init__(app_path_prefix)
 
@@ -63,7 +68,7 @@ class DagitWebserver(GraphQLServer):
     def relative_path(self, rel: str) -> str:
         return path.join(path.dirname(__file__), rel)
 
-    def make_request_context(self, conn: HTTPConnection) -> WorkspaceRequestContext:
+    def make_request_context(self, conn: HTTPConnection) -> BaseWorkspaceRequestContext:
         return self._process_context.create_request_context(conn)
 
     def build_middleware(self) -> List[Middleware]:
