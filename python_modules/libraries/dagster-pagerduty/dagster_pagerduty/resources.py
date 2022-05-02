@@ -1,3 +1,5 @@
+from typing import Optional
+
 import pypd
 
 from dagster import Field, resource
@@ -15,22 +17,22 @@ class PagerDutyService:
     for documentation and more information.
     """
 
-    def __init__(self, routing_key):
+    def __init__(self, routing_key: str):
         self.routing_key = routing_key
 
     def EventV2_create(
         self,
-        summary,
-        source,
-        severity,
-        event_action="trigger",
-        dedup_key=None,
-        timestamp=None,
-        component=None,
-        group=None,
-        event_class=None,
-        custom_details=None,
-    ):
+        summary: str,
+        source: str,
+        severity: str,
+        event_action: str = "trigger",
+        dedup_key: Optional[str] = None,
+        timestamp: Optional[str] = None,
+        component: Optional[str] = None,
+        group: Optional[str] = None,
+        event_class: Optional[str] = None,
+        custom_details: Optional[object] = None,
+    ) -> object:
         """Events API v2 enables you to add PagerDuty's advanced event and incident management
         functionality to any system that can make an outbound HTTP connection.
 
