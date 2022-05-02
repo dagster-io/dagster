@@ -190,8 +190,6 @@ T_DagsterInstance = TypeVar("T_DagsterInstance", bound="DagsterInstance")
 class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
     """Mixin for classes that can have a weakref back to a Dagster instance."""
 
-    _instance_weakref: Optional[weakref.ReferenceType[T_DagsterInstance]]
-
     def __init__(self):
         self._instance_weakref: Optional[weakref.ReferenceType[T_DagsterInstance]] = None
 
@@ -215,7 +213,7 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
         )
 
         # Store a weakref to avoid a circular reference / enable GC
-        self._instance_weakref = weakref.ref(instance)
+        self._instance_weakref = weakref.ref[T_DagsterInstance](instance)
 
 
 class DagsterInstance:
