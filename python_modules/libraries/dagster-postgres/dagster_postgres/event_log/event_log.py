@@ -1,7 +1,4 @@
-import logging
-import threading
-from collections import defaultdict
-from typing import Callable, List, MutableMapping, Optional
+from typing import Optional
 
 import sqlalchemy as db
 
@@ -14,15 +11,9 @@ from dagster.core.storage.event_log import (
     SqlEventLogStorageTable,
 )
 from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster.core.storage.event_log.polling_event_watcher import CallbackAfterCursor
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
-from dagster.serdes import (
-    ConfigurableClass,
-    ConfigurableClassData,
-    deserialize_json_to_dagster_namedtuple,
-)
+from dagster.serdes import ConfigurableClass, ConfigurableClassData, deserialize_as
 
-from ..pynotify import await_pg_notifications
 from ..utils import (
     create_pg_connection,
     pg_alembic_config,
@@ -32,6 +23,7 @@ from ..utils import (
     retry_pg_connection_fn,
     retry_pg_creation_fn,
 )
+from .event_watcher import PostgresEventWatcher
 
 CHANNEL_NAME = "run_events"
 
@@ -237,9 +229,22 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def watch(self, run_id, start_cursor, callback):
         if self._event_watcher is None:
-            self._event_watcher = PostgresEventWatcher(self.postgres_url, self._engine)
+            self._event_watcher = PostgresEventWatcher(
+                self.postgres_url,
+                [CHANNEL_NAME],
+                self._gen_event_log_entry_from_cursor,
+            )
 
         self._event_watcher.watch_run(run_id, start_cursor, callback)
+
+    def _gen_event_log_entry_from_cursor(self, cursor) -> EventLogEntry:
+        with self._engine.connect() as conn:
+            cursor_res = conn.execute(
+                db.select([SqlEventLogStorageTable.c.event]).where(
+                    SqlEventLogStorageTable.c.id == cursor
+                ),
+            )
+            return deserialize_as(cursor_res.scalar(), EventLogEntry)
 
     def end_watch(self, run_id, handler):
         if self._event_watcher is None:
@@ -256,123 +261,3 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self._disposed = True
             if self._event_watcher:
                 self._event_watcher.close()
-
-
-POLLING_CADENCE = 0.25
-
-
-def watcher_thread(
-    conn_string: str,
-    engine: db.engine.Engine,
-    handlers_dict: MutableMapping[str, List[CallbackAfterCursor]],
-    dict_lock: threading.Lock,
-    watcher_thread_exit: threading.Event,
-    watcher_thread_started: threading.Event,
-):
-    for notif in await_pg_notifications(
-        conn_string,
-        channels=[CHANNEL_NAME],
-        timeout=POLLING_CADENCE,
-        yield_on_timeout=True,
-        exit_event=watcher_thread_exit,
-        started_event=watcher_thread_started,
-    ):
-        if notif is None:
-            if watcher_thread_exit.is_set():
-                break
-        else:
-            run_id, index_str = notif.payload.split("_")
-            with dict_lock:
-                if run_id not in handlers_dict:
-                    continue
-
-            index = int(index_str)
-            with dict_lock:
-                handlers = handlers_dict.get(run_id, [])
-
-            with engine.connect() as conn:
-                cursor_res = conn.execute(
-                    db.select([SqlEventLogStorageTable.c.event]).where(
-                        SqlEventLogStorageTable.c.id == index
-                    ),
-                )
-                dagster_event: EventLogEntry = deserialize_json_to_dagster_namedtuple(
-                    cursor_res.scalar()
-                )
-
-            for callback_with_cursor in handlers:
-                if callback_with_cursor.start_cursor < index:
-                    try:
-                        callback_with_cursor.callback(dagster_event)
-                    except Exception:
-                        logging.exception(
-                            "Exception in callback for event watch on run %s.", run_id
-                        )
-
-
-class PostgresEventWatcher:
-    def __init__(self, conn_string: str, engine: db.engine.Engine):
-        self._conn_string: str = check.str_param(conn_string, "conn_string")
-        self._engine = engine
-        self._handlers_dict: MutableMapping[str, List[CallbackAfterCursor]] = defaultdict(list)
-        self._dict_lock: threading.Lock = threading.Lock()
-        self._watcher_thread_exit: Optional[threading.Event] = None
-        self._watcher_thread_started: Optional[threading.Event] = None
-        self._watcher_thread: Optional[threading.Thread] = None
-
-    def watch_run(
-        self,
-        run_id: str,
-        start_cursor: int,
-        callback: Callable[[EventLogEntry], None],
-        start_timeout=15,
-    ):
-        check.str_param(run_id, "run_id")
-        check.int_param(start_cursor, "start_cursor")
-        check.callable_param(callback, "callback")
-        if not self._watcher_thread:
-            self._watcher_thread_exit = threading.Event()
-            self._watcher_thread_started = threading.Event()
-
-            self._watcher_thread = threading.Thread(
-                target=watcher_thread,
-                args=(
-                    self._conn_string,
-                    self._engine,
-                    self._handlers_dict,
-                    self._dict_lock,
-                    self._watcher_thread_exit,
-                    self._watcher_thread_started,
-                ),
-                name="postgres-event-watch",
-            )
-            self._watcher_thread.daemon = True
-            self._watcher_thread.start()
-
-            # Wait until the watcher thread is actually listening before returning
-            self._watcher_thread_started.wait(start_timeout)
-            if not self._watcher_thread_started.is_set():
-                raise Exception("Watcher thread never started")
-
-        with self._dict_lock:
-            self._handlers_dict[run_id].append(CallbackAfterCursor(start_cursor + 1, callback))
-
-    def unwatch_run(self, run_id: str, handler: Callable[[EventLogEntry], None]):
-        check.str_param(run_id, "run_id")
-        check.callable_param(handler, "handler")
-        with self._dict_lock:
-            if run_id in self._handlers_dict:
-                self._handlers_dict[run_id] = [
-                    callback_with_cursor
-                    for callback_with_cursor in self._handlers_dict[run_id]
-                    if callback_with_cursor.callback != handler
-                ]
-                if not self._handlers_dict[run_id]:
-                    del self._handlers_dict[run_id]
-
-    def close(self):
-        if self._watcher_thread:
-            self._watcher_thread_exit.set()
-            self._watcher_thread.join()
-            self._watcher_thread_exit = None
-            self._watcher_thread = None

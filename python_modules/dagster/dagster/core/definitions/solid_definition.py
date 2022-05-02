@@ -1,5 +1,6 @@
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -8,7 +9,6 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Set,
     Tuple,
     Union,
     cast,
@@ -102,7 +102,7 @@ class SolidDefinition(NodeDefinition):
         config_schema: Optional[Union[ConfigSchemaType, IDefinitionConfigSchema]] = None,
         description: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
-        required_resource_keys: Optional[Union[Set[str], FrozenSet[str]]] = None,
+        required_resource_keys: Optional[AbstractSet[str]] = None,
         version: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):

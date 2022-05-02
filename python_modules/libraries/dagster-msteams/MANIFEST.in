@@ -1,2 +1,2 @@
 include README.md
-include LICENSE
+include LICENSEinclude dagster_msteams/py.typed
