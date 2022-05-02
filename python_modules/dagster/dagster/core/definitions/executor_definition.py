@@ -311,13 +311,13 @@ def multiprocess_executor(init_context):
 
     Any job that does not specify custom executors will use the multiprocess_executor by default.
     For jobs or legacy pipelines, to configure the multiprocess executor, include a fragment such
-    as the following in your config:
+    as the following in your run config:
 
     .. code-block:: yaml
 
         execution:
-          multiprocess:
-            config:
+          config:
+            multiprocess:
               max_concurrent: 4
 
     The ``max_concurrent`` arg is optional and tells the execution engine how many processes may run
