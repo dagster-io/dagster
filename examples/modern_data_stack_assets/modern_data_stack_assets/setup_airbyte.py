@@ -35,10 +35,9 @@ def _create_ab_source(client: AirbyteResource) -> str:
     ]
 
     # get latest available Postgres source definition
-    source_defs = client.make_request(
-        "/source_definitions/list_latest", data={"workspaceId": workspace_id}
+    source_defs = _safe_request(
+        client, "/source_definitions/list_latest", data={"workspaceId": workspace_id}
     )
-    assert source_defs
     postgres_definitions = [
         sd for sd in source_defs["sourceDefinitions"] if sd["name"] == "Postgres"
     ]
