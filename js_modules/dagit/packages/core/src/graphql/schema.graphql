@@ -2448,6 +2448,12 @@ type JsonMetadataEntry implements MetadataEntry {
   jsonString: String!
 }
 
+type BoolMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  boolValue: Boolean
+}
+
 type MarkdownMetadataEntry implements MetadataEntry {
   label: String!
   description: String

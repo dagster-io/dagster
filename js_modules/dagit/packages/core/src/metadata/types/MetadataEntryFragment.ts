@@ -65,6 +65,13 @@ export interface MetadataEntryFragment_IntMetadataEntry {
   intRepr: string;
 }
 
+export interface MetadataEntryFragment_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
 export interface MetadataEntryFragment_PipelineRunMetadataEntry {
   __typename: "PipelineRunMetadataEntry";
   label: string;
@@ -156,4 +163,4 @@ export interface MetadataEntryFragment_TableSchemaMetadataEntry {
   schema: MetadataEntryFragment_TableSchemaMetadataEntry_schema;
 }
 
-export type MetadataEntryFragment = MetadataEntryFragment_PathMetadataEntry | MetadataEntryFragment_JsonMetadataEntry | MetadataEntryFragment_UrlMetadataEntry | MetadataEntryFragment_TextMetadataEntry | MetadataEntryFragment_MarkdownMetadataEntry | MetadataEntryFragment_PythonArtifactMetadataEntry | MetadataEntryFragment_FloatMetadataEntry | MetadataEntryFragment_IntMetadataEntry | MetadataEntryFragment_PipelineRunMetadataEntry | MetadataEntryFragment_AssetMetadataEntry | MetadataEntryFragment_TableMetadataEntry | MetadataEntryFragment_TableSchemaMetadataEntry;
+export type MetadataEntryFragment = MetadataEntryFragment_PathMetadataEntry | MetadataEntryFragment_JsonMetadataEntry | MetadataEntryFragment_UrlMetadataEntry | MetadataEntryFragment_TextMetadataEntry | MetadataEntryFragment_MarkdownMetadataEntry | MetadataEntryFragment_PythonArtifactMetadataEntry | MetadataEntryFragment_FloatMetadataEntry | MetadataEntryFragment_IntMetadataEntry | MetadataEntryFragment_BoolMetadataEntry | MetadataEntryFragment_PipelineRunMetadataEntry | MetadataEntryFragment_AssetMetadataEntry | MetadataEntryFragment_TableMetadataEntry | MetadataEntryFragment_TableSchemaMetadataEntry;
