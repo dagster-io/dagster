@@ -143,7 +143,7 @@ def assert_runs_and_exists(client: DagsterGraphQLClient, name, subset_selection=
         run_config={},
         solid_selection=subset_selection,
     )
-    assert_run_success(client, run_id)
+    assert_run_success(client, int(run_id))
 
     locations = (
         client._get_repo_locations_and_names_with_pipeline(  # pylint: disable=protected-access
