@@ -32,8 +32,6 @@ from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.workspace.context import (
     BaseWorkspaceRequestContext,
     IWorkspaceProcessContext,
-    WorkspaceProcessContext,
-    WorkspaceRequestContext,
 )
 from dagster.seven import json
 from dagster.utils import Counter, traced_counter

@@ -63,7 +63,7 @@ class AirbyteResource:
             data (Optional[str]): JSON-formatted data string to be included in the request.
 
         Returns:
-            Dict[str, Any]: Parsed json data from the response to this request
+            Optional[Dict[str, Any]]: Parsed json data from the response to this request
         """
 
         headers = {"accept": "application/json"}
