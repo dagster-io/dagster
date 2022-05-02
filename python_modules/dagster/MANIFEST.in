@@ -1,6 +1,7 @@
 include README.rst
 include LICENSE
 include COPYING
+include dagster/py.typed
 recursive-include dagster *.md
 recursive-include dagster/core/storage/alembic *
 recursive-include dagster/core/storage/event_log/sqlite/alembic *

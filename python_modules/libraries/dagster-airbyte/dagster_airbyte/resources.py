@@ -63,7 +63,7 @@ class AirbyteResource:
             data (Optional[str]): JSON-formatted data string to be included in the request.
 
         Returns:
-            Dict[str, Any]: Parsed json data from the response to this request
+            Optional[Dict[str, Any]]: Parsed json data from the response to this request
         """
 
         headers = {"accept": "application/json"}
@@ -98,12 +98,12 @@ class AirbyteResource:
         return check.is_dict(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
 
     def start_sync(self, connection_id: str) -> dict:
-        return check.is_dict(
+        return check.not_none(
             self.make_request(endpoint="/connections/sync", data={"connectionId": connection_id})
         )
 
     def get_connection_details(self, connection_id: str) -> dict:
-        return check.is_dict(
+        return check.not_none(
             self.make_request(endpoint="/connections/get", data={"connectionId": connection_id})
         )
 

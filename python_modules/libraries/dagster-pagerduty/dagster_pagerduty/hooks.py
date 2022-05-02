@@ -71,7 +71,7 @@ def pagerduty_on_failure(
                     base_url=dagit_base_url, run_id=context.run_id
                 )
             }
-        context.resources.pagerduty.EventV2_create(
+        context.resources.pagerduty.EventV2_create(  # type: ignore
             summary=summary_fn(context),
             source=_source_fn(context),
             severity=severity,

@@ -5,6 +5,7 @@ create an Airbyte Connection between the source database and destination databas
 """
 # pylint: disable=print-call
 import random
+from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
@@ -20,13 +21,24 @@ N_USERS = 100
 N_ORDERS = 10000
 
 
+def _safe_request(
+    client: AirbyteResource, endpoint: str, data: Dict[str, object]
+) -> Dict[str, Any]:
+    response = client.make_request(endpoint, data)
+    assert response, "Request returned null response"
+    return response
+
+
 def _create_ab_source(client: AirbyteResource) -> str:
-    workspace_id = client.make_request("/workspaces/list", data={})["workspaces"][0]["workspaceId"]
+    workspace_id = _safe_request(client, "/workspaces/list", data={})["workspaces"][0][
+        "workspaceId"
+    ]
 
     # get latest available Postgres source definition
     source_defs = client.make_request(
         "/source_definitions/list_latest", data={"workspaceId": workspace_id}
     )
+    assert source_defs
     postgres_definitions = [
         sd for sd in source_defs["sourceDefinitions"] if sd["name"] == "Postgres"
     ]
@@ -35,7 +47,8 @@ def _create_ab_source(client: AirbyteResource) -> str:
     source_definition_id = postgres_definitions[0]["sourceDefinitionId"]
 
     # create Postgres source
-    source_id = client.make_request(
+    source_id = _safe_request(
+        client,
         "/sources/create",
         data={
             "sourceDefinitionId": source_definition_id,
@@ -49,11 +62,13 @@ def _create_ab_source(client: AirbyteResource) -> str:
 
 
 def _create_ab_destination(client: AirbyteResource) -> str:
-    workspace_id = client.make_request("/workspaces/list", data={})["workspaces"][0]["workspaceId"]
+    workspace_id = _safe_request(client, "/workspaces/list", data={})["workspaces"][0][
+        "workspaceId"
+    ]
 
     # get the latest available Postgres destination definition
-    destination_defs = client.make_request(
-        "/destination_definitions/list_latest", data={"workspaceId": workspace_id}
+    destination_defs = _safe_request(
+        client, "/destination_definitions/list_latest", data={"workspaceId": workspace_id}
     )
     postgres_definitions = [
         dd for dd in destination_defs["destinationDefinitions"] if dd["name"] == "Postgres"
@@ -63,7 +78,8 @@ def _create_ab_destination(client: AirbyteResource) -> str:
     destination_definition_id = postgres_definitions[0]["destinationDefinitionId"]
 
     # create Postgres destination
-    destination_id = client.make_request(
+    destination_id = _safe_request(
+        client,
         "/destinations/create",
         data={
             "destinationDefinitionId": destination_definition_id,
@@ -81,12 +97,13 @@ def setup_airbyte():
     source_id = _create_ab_source(client)
     destination_id = _create_ab_destination(client)
 
-    source_catalog = client.make_request("/sources/discover_schema", data={"sourceId": source_id})[
-        "catalog"
-    ]
+    source_catalog = _safe_request(
+        client, "/sources/discover_schema", data={"sourceId": source_id}
+    )["catalog"]
 
     # create a connection between the new source and destination
-    connection_id = client.make_request(
+    connection_id = _safe_request(
+        client,
         "/connections/create",
         data={
             "name": "Example Connection",

@@ -929,7 +929,7 @@ def not_none_param(
 
 def not_none(value: Optional[T], additional_message: Optional[str] = None) -> T:
     if value is None:
-        raise ValueError(f"Expected non-None value: {additional_message}")
+        raise CheckError(f"Expected non-None value: {additional_message}")
     return value
 
 
@@ -1412,7 +1412,7 @@ def invariant(condition: Any, desc: Optional[str] = None) -> bool:
     return True
 
 
-def assert_never(value: NoReturn) -> NoReturn:
+def assert_never(value: object) -> NoReturn:
     failed(f"Unhandled value: {value} ({type(value).__name__})")
 
 

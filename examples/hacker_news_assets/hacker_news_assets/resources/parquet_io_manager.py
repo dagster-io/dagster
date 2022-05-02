@@ -53,7 +53,7 @@ class PartitionedParquetIOManager(IOManager):
         )
 
     def _get_path(self, context: OutputContext):
-        key = context.asset_key.path[-1]
+        key = context.asset_key.path[-1]  # type: ignore
 
         if context.has_asset_partitions:
             start, end = context.asset_partitions_time_window
