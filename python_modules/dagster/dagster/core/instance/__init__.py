@@ -1,4 +1,3 @@
-import inspect
 import logging
 import logging.config
 import os
@@ -29,7 +28,6 @@ from typing import (
 )
 
 import yaml
-from typing_extensions import Protocol
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -213,7 +211,7 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
         )
 
         # Store a weakref to avoid a circular reference / enable GC
-        self._instance_weakref = weakref.ref[T_DagsterInstance](instance)
+        self._instance_weakref = weakref.ref(instance)
 
 
 class DagsterInstance:
