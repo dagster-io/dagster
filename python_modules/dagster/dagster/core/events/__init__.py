@@ -41,25 +41,25 @@ if TYPE_CHECKING:
     from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.execution.plan.step import ExecutionStep, StepKind
 
-    EventSpecificData = Union[
-        StepOutputData,
-        StepFailureData,
-        StepSuccessData,
-        "StepMaterializationData",
-        "StepExpectationResultData",
-        StepInputData,
-        "EngineEventData",
-        "HookErroredData",
-        StepRetryData,
-        "PipelineFailureData",
-        "PipelineCanceledData",
-        "ObjectStoreOperationResultData",
-        "HandledOutputData",
-        "LoadedInputData",
-        "ComputeLogsCaptureData",
-        "AssetObservationData",
-        "AssetMaterializationPlannedData",
-    ]
+EventSpecificData = Union[
+    StepOutputData,
+    StepFailureData,
+    StepSuccessData,
+    "StepMaterializationData",
+    "StepExpectationResultData",
+    StepInputData,
+    "EngineEventData",
+    "HookErroredData",
+    StepRetryData,
+    "PipelineFailureData",
+    "PipelineCanceledData",
+    "ObjectStoreOperationResultData",
+    "HandledOutputData",
+    "LoadedInputData",
+    "ComputeLogsCaptureData",
+    "AssetObservationData",
+    "AssetMaterializationPlannedData",
+]
 
 
 class DagsterEventType(Enum):
