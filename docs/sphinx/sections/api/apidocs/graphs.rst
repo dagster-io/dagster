@@ -2,7 +2,7 @@
 Graphs
 ======
 
-The replacement for :py:class:`composite_solid` / :py:class:`CompositeSolidDefinition` . It has a more intuitive name and there is no longer a distinction between a graph for execution (pipeline) and a graph for composition (composite solid).
+The core of a job is a _graph_ of ops - connected via data dependencies.
 
 .. currentmodule:: dagster
 
@@ -14,3 +14,14 @@ The replacement for :py:class:`composite_solid` / :py:class:`CompositeSolidDefin
 .. autoclass:: GraphIn
 
 .. autoclass:: GraphOut
+
+
+Explicit dependencies
+------------------------
+.. currentmodule:: dagster
+
+.. autoclass:: DependencyDefinition
+
+.. autoclass:: MultiDependencyDefinition
+
+.. autoclass:: NodeInvocation
