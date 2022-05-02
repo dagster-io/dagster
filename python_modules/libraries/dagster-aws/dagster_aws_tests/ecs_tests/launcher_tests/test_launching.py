@@ -10,6 +10,7 @@ from dagster_aws.ecs.tasks import TaskMetadata
 
 from dagster.check import CheckError
 from dagster.core.events import MetadataEntry
+from dagster.core.launcher.base import WorkerStatus
 
 
 @pytest.mark.parametrize("task_long_arn_format", ["enabled", "disabled"])
@@ -37,6 +38,8 @@ def test_default_launcher(
     task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
     task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
     task_definition = task_definition["taskDefinition"]
+
+    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
 
     # It has a new family, name, and image
     # We get the family name from the location name. With the InProcessExecutor that we use in tests,
@@ -88,6 +91,11 @@ def test_default_launcher(
     assert MetadataEntry("ECS Task ARN", value=task_arn) in event_metadata
     assert MetadataEntry("ECS Cluster", value=cluster_arn) in event_metadata
     assert MetadataEntry("Run ID", value=run.run_id) in event_metadata
+
+    # stop task and check status
+    ecs.stop_task(task=task_arn)
+    print(instance.run_launcher.check_run_worker_health(run).msg)
+    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.SUCCESS
 
 
 def test_task_definition_registration(

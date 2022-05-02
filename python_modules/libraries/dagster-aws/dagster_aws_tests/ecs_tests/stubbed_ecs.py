@@ -21,7 +21,7 @@ def stubbed(function):
     def method(self, **kwargs):
         self.stubber.add_response(
             method="method", # Name of the method being stubbed
-            service_response={}, # Stubber validates the resposne shape
+            service_response={}, # Stubber validates the response shape
             expected_params(**kwargs), # Stubber validates the params
         )
         self.client.method(**kwargs) # "super" (except we're not actually

@@ -112,7 +112,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 is_required=False,
                 description=(
                     "An array of AWS Secrets Manager secrets. These secrets will "
-                    "be mounted as environment variabls in the container. See "
+                    "be mounted as environment variables in the container. See "
                     "https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html."
                 ),
             ),
@@ -368,28 +368,20 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             return CheckRunHealthResult(WorkerStatus.UNKNOWN, "")
 
         t = tasks[0]
-        if t.get("healthStatus") == "UNHEALTHY":
-            return CheckRunHealthResult(
-                WorkerStatus.FAILED,
-                f"ECS task unhealthy. Stop code: {t['stopCode']}. Stop reason {t['stopReason']}.",
-            )
-        if t.get("healthStatus") == "UNKNOWN":
-            return CheckRunHealthResult(WorkerStatus.UNKNOWN, "ECS task health status is unknown.")
 
-        if t.get("lastStatus") == "RUNNING":
+        running_statuses = ["PROVISIONING", "PENDING", "ACTIVATING", "RUNNING"]
+        stopped_statuses = ["DEACTIVATING", "STOPPING", "DEPROVISIONING", "STOPPED"]
+
+        if t.get("lastStatus") in running_statuses:
             return CheckRunHealthResult(WorkerStatus.RUNNING)
+        elif t.get("lastStatus") in stopped_statuses:
+            for c in t.get("containers"):
+                if c.get("exitCode") != 0:
+                    return CheckRunHealthResult(
+                        WorkerStatus.FAILED,
+                        f"ECS task failed. Stop code: {t.get('stopCode')}. Stop reason {t.get('stopReason')}. "
+                        f"Container {c.get('name')} failed with exit code {c.get('exitCode')}",
+                    )
+            return CheckRunHealthResult(WorkerStatus.SUCCESS)
 
-        # job_name = get_job_name_from_run_id(
-        #     run.run_id, resume_attempt_number=self._instance.count_resume_run_attempts(run.run_id)
-        # )
-        # try:
-        #     job = self._batch_api.read_namespaced_job(namespace=self.job_namespace, name=job_name)
-        # except Exception:
-        #     return CheckRunHealthResult(
-        #         WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
-        #     )
-        # if job.status.failed:
-        #     return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
-        # if job.status.succeeded:
-        #     return CheckRunHealthResult(WorkerStatus.SUCCESS)
-        # return CheckRunHealthResult(WorkerStatus.RUNNING)
+        return CheckRunHealthResult(WorkerStatus.UNKNOWN, "ECS task health status is unknown.")
