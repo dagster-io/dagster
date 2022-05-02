@@ -195,6 +195,8 @@ def job(
         partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition keys
             that can parameterize the job. If this argument is supplied, the config argument
             can't also be supplied.
+        input_values (Optional[Mapping[str, Any]]):
+            A dictionary that maps python objects to the top-level inputs of a job.
 
     """
     if callable(name):
