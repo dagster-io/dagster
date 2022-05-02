@@ -22,8 +22,6 @@ from ..utils import (
     retry_mysql_creation_fn,
 )
 
-CHANNEL_NAME = "run_events"
-
 
 class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """MySQL-backed event log storage.
