@@ -178,6 +178,8 @@ class JobDefinition(PipelineDefinition):
                 (downstream dependencies) within 3 levels down.
                 * ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
+            input_values (Optional[Mapping[str, Any]]):
+                A dictionary that maps python objects to the top-level inputs of the job. Input values provided here will override input values that have been provided to the job directly.
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
 

@@ -514,6 +514,8 @@ class GraphDefinition(NodeDefinition):
                 argument can't also be supplied.
             asset_layer (Optional[AssetLayer]): Top level information about the assets this job
                 will produce. Generally should not be set manually.
+            input_values (Optional[Mapping[str, Any]]):
+                A dictionary that maps python objects to the top-level inputs of a job.
 
         Returns:
             JobDefinition
@@ -651,6 +653,8 @@ class GraphDefinition(NodeDefinition):
                 (downstream dependencies) within 3 levels down.
                 * ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
+            input_values (Optional[Mapping[str, Any]]):
+                A dictionary that maps python objects to the top-level inputs of the graph.
 
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
