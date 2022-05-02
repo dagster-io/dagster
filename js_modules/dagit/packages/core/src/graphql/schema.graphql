@@ -1932,19 +1932,22 @@ type GraphenePermission {
   value: Boolean!
 }
 
+"""
+Mutations to programatically interact with your Dagster instance.
+"""
 type DagitMutation {
   """
-  Launch a run via the run launcher configured on the instance.
+  Launches a job run.
   """
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchRunResult!
 
   """
-  Launch a run via the run launcher configured on the instance.
+  Launches a job run.
   """
   launchRun(executionParams: ExecutionParams!): LaunchRunResult!
 
   """
-  Re-launch a run via the run launcher configured on the instance
+  Re-executes a job run.
   """
   launchPipelineReexecution(
     executionParams: ExecutionParams
@@ -1952,7 +1955,7 @@ type DagitMutation {
   ): LaunchRunReexecutionResult!
 
   """
-  Re-launch a run via the run launcher configured on the instance
+  Re-executes a job run.
   """
   launchRunReexecution(
     executionParams: ExecutionParams
@@ -1966,34 +1969,70 @@ type DagitMutation {
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
   setSensorCursor(cursor: String, sensorSelector: SensorSelector!): SensorOrError!
   stopSensor(jobOriginId: String!, jobSelectorId: String!): StopSensorMutationResultOrError!
+
+  """
+  Terminates a run.
+  """
   terminatePipelineExecution(
     runId: String!
     terminatePolicy: TerminateRunPolicy
   ): TerminateRunResult!
+
+  """
+  Terminates a run.
+  """
   terminateRun(runId: String!, terminatePolicy: TerminateRunPolicy): TerminateRunResult!
+
+  """
+  Deletes a run from storage.
+  """
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
+
+  """
+  Deletes a run from storage.
+  """
   deleteRun(runId: String!): DeletePipelineRunResult!
+
+  """
+  Reloads a code location server.
+  """
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
+
+  """
+  Reloads the workspace and its code location servers.
+  """
   reloadWorkspace: ReloadWorkspaceMutationResult!
+
+  """
+  Shuts down a code location server.
+  """
   shutdownRepositoryLocation(
     repositoryLocationName: String!
   ): ShutdownRepositoryLocationMutationResult!
+
+  """
+  Deletes asset history from storage.
+  """
   wipeAssets(assetKeys: [AssetKeyInput!]!): AssetWipeMutationResult!
 
   """
-  Launches a set of partition backfill runs via the run launcher configured on the instance.
+  Launches a set of partition backfill runs.
   """
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
 
   """
-  Retries a set of partition backfill runs via the run launcher configured on the instance.
+  Retries a set of partition backfill runs.
   """
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
 
   """
-  Marks a partition backfill as canceled.
+  Cancels a set of partition backfill runs.
   """
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
+
+  """
+  Log telemetry about the Dagster instance.
+  """
   logTelemetry(action: String!, clientTime: String!, metadata: String!): LogTelemetryMutationResult!
 }
 
@@ -2144,6 +2183,9 @@ type StopSensorMutationResult {
   instigationState: InstigationState
 }
 
+"""
+The output from a run termination.
+"""
 union TerminateRunResult =
     TerminateRunSuccess
   | TerminateRunFailure
@@ -2151,39 +2193,63 @@ union TerminateRunResult =
   | UnauthorizedError
   | PythonError
 
+"""
+Output indicating that a run was terminated.
+"""
 type TerminateRunSuccess implements TerminatePipelineExecutionSuccess {
   run: Run!
 }
 
+"""
+Interface indicating that a run was terminated.
+"""
 interface TerminatePipelineExecutionSuccess {
   run: Run!
 }
 
+"""
+Output indicating that a run failed to terminate.
+"""
 type TerminateRunFailure implements TerminatePipelineExecutionFailure {
   run: Run!
   message: String!
 }
 
+"""
+Interface indicating that a run failed to terminate.
+"""
 interface TerminatePipelineExecutionFailure {
   run: Run!
   message: String!
 }
 
+"""
+The type of termination policy to use for a run.
+"""
 enum TerminateRunPolicy {
   SAFE_TERMINATE
   MARK_AS_CANCELED_IMMEDIATELY
 }
 
+"""
+The output from deleting a run.
+"""
 union DeletePipelineRunResult =
     DeletePipelineRunSuccess
   | UnauthorizedError
   | PythonError
   | RunNotFoundError
 
+"""
+Output indicating that a run was deleted.
+"""
 type DeletePipelineRunSuccess {
   runId: String!
 }
 
+"""
+The output from reloading a code location server.
+"""
 union ReloadRepositoryLocationMutationResult =
     WorkspaceLocationEntry
   | ReloadNotSupported
@@ -2199,24 +2265,39 @@ type RepositoryLocationNotFound implements Error {
   message: String!
 }
 
+"""
+The output from reloading the workspace.
+"""
 union ReloadWorkspaceMutationResult = Workspace | UnauthorizedError | PythonError
 
+"""
+The output from shutting down a code location server.
+"""
 union ShutdownRepositoryLocationMutationResult =
     ShutdownRepositoryLocationSuccess
   | RepositoryLocationNotFound
   | UnauthorizedError
   | PythonError
 
+"""
+Output indicating that a code location server was shut down.
+"""
 type ShutdownRepositoryLocationSuccess {
   repositoryLocationName: String!
 }
 
+"""
+The output from deleting asset history.
+"""
 union AssetWipeMutationResult =
     AssetNotFoundError
   | UnauthorizedError
   | PythonError
   | AssetWipeSuccess
 
+"""
+Output indicating that asset history was deleted.
+"""
 type AssetWipeSuccess {
   assetKeys: [AssetKey!]!
 }
@@ -2271,8 +2352,14 @@ type CancelBackfillSuccess {
   backfillId: String!
 }
 
+"""
+The output from logging telemetry.
+"""
 union LogTelemetryMutationResult = LogTelemetrySuccess | PythonError
 
+"""
+Output indicating that telemetry was logged.
+"""
 type LogTelemetrySuccess {
   action: String!
 }
@@ -2384,43 +2471,58 @@ type UnknownPipeline implements PipelineReference {
   solidSelection: [String!]
 }
 
+"""
+Deletes a run from storage.
+"""
 type DeleteRunMutation {
   Output: DeletePipelineRunResult!
 }
 
 """
-Launches a set of partition backfill runs via the run launcher configured on the instance.
+Launches a set of partition backfill runs.
 """
 type LaunchBackfillMutation {
   Output: LaunchBackfillResult!
 }
 
 """
-Launch a run via the run launcher configured on the instance.
+Launches a job run.
 """
 type LaunchRunMutation {
   Output: LaunchRunResult!
 }
 
 """
-Re-launch a run via the run launcher configured on the instance
+Re-executes a job run.
 """
 type LaunchRunReexecutionMutation {
   Output: LaunchRunReexecutionResult!
 }
 
+"""
+Reloads a code location server.
+"""
 type ReloadRepositoryLocationMutation {
   Output: ReloadRepositoryLocationMutationResult!
 }
 
+"""
+Reloads the workspace and its code location servers.
+"""
 type ReloadWorkspaceMutation {
   Output: ReloadWorkspaceMutationResult!
 }
 
+"""
+Shuts down a code location server.
+"""
 type ShutdownRepositoryLocationMutation {
   Output: ShutdownRepositoryLocationMutationResult!
 }
 
+"""
+Terminates a run.
+"""
 type TerminateRunMutation {
   Output: TerminateRunResult!
 }
