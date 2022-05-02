@@ -111,7 +111,7 @@ def normalize_metadata_value(raw_value: RawMetadataValue):
     elif isinstance(raw_value, float):
         return MetadataValue.float(raw_value)
     elif isinstance(raw_value, bool):
-        return MetadataValue.boolean(raw_value)
+        return MetadataValue.bool(raw_value)
     elif isinstance(raw_value, int):
         return MetadataValue.int(raw_value)
     elif isinstance(raw_value, dict):
@@ -352,7 +352,7 @@ class MetadataValue:
         return IntMetadataValue(value)
 
     @staticmethod
-    def boolean(value: bool) -> "BoolMetadataValue":
+    def bool(value: bool) -> "BoolMetadataValue":
         """Static constructor for a metadata value wrapping a bool as
         :py:class:`BoolMetadataValuye`. Can be used as the value type for the `metadata`
         parameter for supported events. For example:
