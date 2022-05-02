@@ -98,6 +98,9 @@ All metadata types inherit from `MetadataValue`. The following types are defined
 .. autoclass:: IntMetadataValue
     :members:
 
+.. autoclass:: BoolMetadataValue
+    :members:
+
 .. autoclass:: JsonMetadataValue
     :members:
 

@@ -58,6 +58,7 @@ from .input import GraphIn, In, InputDefinition, InputMapping
 from .job_definition import JobDefinition
 from .logger_definition import LoggerDefinition, build_init_logger_context, logger
 from .metadata import (
+    BoolMetadataValue,
     DagsterAssetMetadataValue,
     DagsterPipelineRunMetadataValue,
     FloatMetadataValue,

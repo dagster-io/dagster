@@ -37,6 +37,7 @@ RawMetadataValue = Union[
     int,
     list,
     str,
+    bool,
 ]
 
 MetadataMapping = Mapping[str, "MetadataValue"]
@@ -110,8 +111,10 @@ def normalize_metadata_value(raw_value: RawMetadataValue):
         return MetadataValue.text(raw_value)
     elif isinstance(raw_value, float):
         return MetadataValue.float(raw_value)
-    elif isinstance(raw_value, int):
-        return MetadataValue.int(raw_value)
+    # elif isinstance(raw_value, int):
+    # return MetadataValue.int(raw_value)
+    elif isinstance(raw_value, bool):
+        return MetadataValue.bool(raw_value)
     elif isinstance(raw_value, dict):
         return MetadataValue.json(raw_value)
     elif isinstance(raw_value, os.PathLike):
@@ -348,6 +351,29 @@ class MetadataValue:
         """
 
         return IntMetadataValue(value)
+
+    @staticmethod
+    def bool(value: bool) -> "BoolMetadataValue":
+        """Static constructor for a metadata value wrapping a bool as
+        :py:class:`BoolMetadataValue`. Can be used as the value type for the `metadata`
+        parameter for supported events. For example:
+
+        .. code-block:: python
+
+            @op
+            def emit_metadata(context, df):
+                yield AssetMaterialization(
+                    asset_key="my_dataset",
+                    metadata={
+                        "is_empty": MetadataValue.bool(len(df) == 0),
+                    },
+                )
+
+        Args:
+            value (bool): The bool value for a metadata entry.
+        """
+
+        return BoolMetadataValue(value)
 
     @staticmethod
     def pipeline_run(run_id: str) -> "DagsterPipelineRunMetadataValue":
@@ -641,6 +667,26 @@ class IntMetadataValue(
 
     def __new__(cls, value: Optional[int]):
         return super(IntMetadataValue, cls).__new__(cls, check.opt_int_param(value, "value"))
+
+
+@whitelist_for_serdes
+class BoolMetadataValue(
+    NamedTuple(
+        "_BoolMetadataValue",
+        [
+            ("value", Optional[bool]),
+        ],
+    ),
+    MetadataValue,
+):
+    """Container class for bool metadata entry data.
+
+    Args:
+        value (Optional[bool]): The bool value.
+    """
+
+    def __new__(cls, value: Optional[bool]):
+        return super(BoolMetadataValue, cls).__new__(cls, check.opt_bool_param(value, "value"))
 
 
 @whitelist_for_serdes(storage_name="DagsterPipelineRunMetadataEntryData")
