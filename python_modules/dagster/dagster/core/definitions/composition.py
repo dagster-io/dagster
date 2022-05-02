@@ -7,6 +7,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Set,
@@ -572,6 +573,7 @@ class PendingNodeInvocation:
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
+        input_values: Optional[Mapping[str, Any]] = None,
     ) -> "JobDefinition":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
@@ -581,6 +583,7 @@ class PendingNodeInvocation:
 
         tags = check.opt_dict_param(tags, "tags", key_type=str)
         hooks = check.opt_set_param(hooks, "hooks", HookDefinition)
+        input_values = check.opt_mapping_param(input_values, "input_values")
         op_retry_policy = check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy)
         job_hooks: Set[HookDefinition] = set()
         job_hooks.update(check.opt_set_param(hooks, "hooks", HookDefinition))
@@ -597,6 +600,7 @@ class PendingNodeInvocation:
             op_retry_policy=op_retry_policy,
             version_strategy=version_strategy,
             partitions_def=partitions_def,
+            input_values=input_values,
         )
 
     def execute_in_process(
@@ -606,6 +610,7 @@ class PendingNodeInvocation:
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
         run_id: Optional[str] = None,
+        input_values: Optional[Mapping[str, Any]] = None,
     ) -> "ExecuteInProcessResult":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
@@ -619,10 +624,7 @@ class PendingNodeInvocation:
         from .executor_definition import execute_in_process_executor
         from .job_definition import JobDefinition
 
-        if len(self.node_def.input_defs) > 0:
-            raise DagsterInvariantViolationError(
-                "Graphs with inputs cannot be used with execute_in_process at this time."
-            )
+        input_values = check.opt_mapping_param(input_values, "input_values")
 
         ephemeral_job = JobDefinition(
             name=self.given_alias,
@@ -632,6 +634,7 @@ class PendingNodeInvocation:
             tags=self.tags,
             hook_defs=self.hook_defs,
             op_retry_policy=self.retry_policy,
+            _input_values=input_values,
         )
 
         return core_execute_in_process(

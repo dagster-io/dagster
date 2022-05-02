@@ -1,5 +1,15 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Mapping,
+    Optional,
+    Union,
+    overload,
+)
 
 import dagster._check as check
 from dagster.core.decorator_utils import format_docstring_for_description
@@ -32,6 +42,7 @@ class _Job:
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
+        input_values: Optional[Mapping[str, Any]] = None,
     ):
         self.name = name
         self.description = description
@@ -44,6 +55,7 @@ class _Job:
         self.op_retry_policy = op_retry_policy
         self.version_strategy = version_strategy
         self.partitions_def = partitions_def
+        self.input_values = input_values
 
     def __call__(self, fn: Callable[..., Any]) -> JobDefinition:
         check.callable_param(fn, "fn")
@@ -93,6 +105,7 @@ class _Job:
             op_retry_policy=self.op_retry_policy,
             version_strategy=self.version_strategy,
             partitions_def=self.partitions_def,
+            input_values=self.input_values,
         )
         update_wrapper(job_def, fn)
         return job_def
@@ -131,6 +144,7 @@ def job(
     op_retry_policy: Optional[RetryPolicy] = None,
     version_strategy: Optional[VersionStrategy] = None,
     partitions_def: Optional["PartitionsDefinition"] = None,
+    input_values: Optional[Mapping[str, Any]] = None,
 ) -> Union[JobDefinition, _Job]:
     """Creates a job with the specified parameters from the decorated graph/op invocation function.
 
@@ -197,4 +211,5 @@ def job(
         op_retry_policy=op_retry_policy,
         version_strategy=version_strategy,
         partitions_def=partitions_def,
+        input_values=input_values,
     )

@@ -17,6 +17,7 @@ from typing import (
 import dagster._check as check
 from dagster.core.definitions import InputDefinition, NodeHandle, PipelineDefinition
 from dagster.core.definitions.events import AssetLineageInfo
+from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.metadata import MetadataEntry
 from dagster.core.definitions.version_strategy import ResourceVersionContext
 from dagster.core.errors import (
@@ -499,20 +500,16 @@ class FromConfig(
 class FromRootInputValue(
     NamedTuple(
         "_FromRootInputValue",
-        [
-            ("input_name", str),
-            ("input_value", Any),
-        ],
+        [("input_name", str)],
     ),
     StepInputSource,
 ):
     """This root input source is for direct python values to be passed to a type loader"""
 
-    def __new__(cls, input_name: str, input_value: Any):
+    def __new__(cls, input_name: str):
         return super(FromRootInputValue, cls).__new__(
             cls,
             input_name=input_name,
-            input_value=input_value,
         )
 
     def get_associated_input_def(self, pipeline_def: PipelineDefinition) -> InputDefinition:
@@ -521,12 +518,20 @@ class FromRootInputValue(
     def load_input_object(
         self, step_context: "StepExecutionContext", _input_def: InputDefinition
     ) -> Any:
+
+        pipeline_def = step_context.pipeline_def
+        if not pipeline_def.is_job:
+            raise DagsterInvariantViolationError(
+                "Using input values with pipeline API, which is unsupported."
+            )
+
+        job_def = cast(JobDefinition, pipeline_def)
         with user_code_error_boundary(
             DagsterTypeLoadingError,
             msg_fn=lambda: (f'Error occurred while loading top-level input "{self.input_name}": '),
             log_manager=step_context.log,
         ):
-            return self.input_value
+            return job_def.get_input_value(self.input_name)
 
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()

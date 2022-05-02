@@ -1096,3 +1096,33 @@ def test_graphs_break_type_checks():
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
         repro_2.execute_in_process()
+
+
+def test_to_job_input_values():
+    @op
+    def my_op(x, y):
+        return x + y
+
+    @graph
+    def my_graph(x, y):
+        return my_op(x, y)
+
+    result = my_graph.to_job(input_values={"x": 5, "y": 6}).execute_in_process()
+    assert result.success
+    assert result.output_value() == 11
+
+    result = my_graph.alias("blah").to_job(input_values={"x": 5, "y": 6}).execute_in_process()
+    assert result.success
+    assert result.output_value() == 11
+
+    # Test partial input value specification
+    result = my_graph.to_job(input_values={"x": 5}).execute_in_process(input_values={"y": 6})
+    assert result.success
+    assert result.output_value() == 11
+
+    # Test input value specification override
+    result = my_graph.to_job(input_values={"x": 5, "y": 6}).execute_in_process(
+        input_values={"y": 7}
+    )
+    assert result.success
+    assert result.output_value() == 12
