@@ -422,10 +422,7 @@ def get_root_graph_input_source(
 
     input_values = get_input_values_from_job(pipeline_def)
     if input_values and input_name in input_values:
-        return FromRootInputValue(
-            input_name=input_name,
-            input_value=input_values[input_name],
-        )
+        return FromRootInputValue(input_name=input_name)
 
     input_config = plan_builder.resolved_run_config.inputs
 

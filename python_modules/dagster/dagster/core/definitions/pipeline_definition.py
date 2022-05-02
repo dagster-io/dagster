@@ -970,24 +970,6 @@ def _checked_input_resource_reqs_for_mode(
             else:
                 # input is unconnected
                 input_def = handle.input_def
-                if (
-                    not input_def.dagster_type.loader
-                    and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-                    and not input_def.root_manager_key
-                    and not input_def.has_default_value
-                ):
-                    raise DagsterInvalidDefinitionError(
-                        "Input '{input_name}' in {described_node} is not connected to "
-                        "the output of a previous node and can not be loaded from configuration, "
-                        "making it impossible to execute. "
-                        "Possible solutions are:\n"
-                        "  * add a dagster_type_loader for the type '{dagster_type}'\n"
-                        "  * connect '{input_name}' to the output of another node\n".format(
-                            described_node=node.describe_node(),
-                            input_name=input_def.name,
-                            dagster_type=input_def.dagster_type.display_name,
-                        )
-                    )
 
                 # If a root manager is provided, it's always used. I.e. it has priority over
                 # the other ways of loading unsatisfied inputs - dagster type loaders and
