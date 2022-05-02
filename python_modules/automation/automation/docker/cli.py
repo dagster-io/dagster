@@ -50,24 +50,24 @@ opt_build_timestamp = click.option(
 @cli.command()
 @opt_build_name
 @opt_build_dagster_version
-@opt_build_platform
 @opt_build_timestamp
 @click.option("-v", "--python-version", type=click.STRING, required=True)
-def build(name: str, dagster_version: str, timestamp: str, python_version: str):
-    get_image(name).build(timestamp, dagster_version, python_version)
+@opt_build_platform
+def build(name: str, dagster_version: str, timestamp: str, python_version: str, platform: Optional[str]):
+    get_image(name).build(timestamp, dagster_version, python_version, platform)
 
 
 @cli.command()
 @opt_build_name
 @opt_build_dagster_version
-@opt_build_platform
 @opt_build_timestamp
-def build_all(name: str, dagster_version: str, timestamp: str):
+@opt_build_platform
+def build_all(name: str, dagster_version: str, timestamp: str, platform: Optional[str]):
     """Build all supported python versions for image"""
     image = get_image(name)
 
     for python_version in image.python_versions:
-        image.build(timestamp, dagster_version, python_version)
+        image.build(timestamp, dagster_version, python_version, platform)
 
 # Shared push options
 opt_push_name = click.option("--name", required=True, help="Name of image to push")
