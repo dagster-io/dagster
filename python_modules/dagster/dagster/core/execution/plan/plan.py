@@ -56,8 +56,7 @@ from .inputs import (
     FromPendingDynamicStepOutput,
     FromRootInputConfig,
     FromRootInputManager,
-    FromRootInputValuePlaceholder,
-    FromRootPlaceholder,
+    FromRootInputValue,
     FromStepOutput,
     FromUnresolvedStepOutput,
     StepInput,
@@ -316,7 +315,7 @@ class _PlanBuilder:
                     check.inst_param(
                         step_input_source,
                         "step_input_source",
-                        (StepInputSource, FromRootPlaceholder),
+                        StepInputSource,
                     )
                     step_inputs.append(
                         StepInput(
@@ -418,20 +417,20 @@ def get_root_graph_input_source(
     input_name: str,
     input_def: InputDefinition,
     pipeline_def: PipelineDefinition,
-) -> Optional[Union[FromRootInputConfig, FromRootInputValuePlaceholder]]:
+) -> Optional[Union[FromConfig, FromRootInputValue]]:
     from dagster.core.definitions.job_definition import get_input_values_from_job
 
     input_values = get_input_values_from_job(pipeline_def)
     if input_values and input_name in input_values:
-        return FromRootInputValuePlaceholder(
-            top_level_input_name=input_name,
+        return FromRootInputValue(
+            input_name=input_name,
             input_value=input_values[input_name],
         )
 
     input_config = plan_builder.resolved_run_config.inputs
 
     if input_config and input_name in input_config:
-        return FromRootInputConfig(input_name=input_name)
+        return FromConfig(input_name=input_name, solid_handle=None)
 
     if input_def.dagster_type.is_nothing:
         return None
@@ -569,11 +568,7 @@ def get_step_input_source(
         parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
         if parent_name in parent_inputs:
             parent_input = parent_inputs[parent_name]
-            if isinstance(parent_input.source, FromRootPlaceholder):
-                parent_input_source = parent_input.source.to_input_source(input_name, handle)
-            else:
-                parent_input_source = parent_input.source
-            return parent_input_source
+            return parent_input.source
         # else fall through to Nothing case or raise
 
     if solid.definition.input_has_default(input_name):
