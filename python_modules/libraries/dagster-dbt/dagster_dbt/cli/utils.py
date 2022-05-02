@@ -33,7 +33,14 @@ def execute_cli(
 
     # Format the dbt CLI flags in the command..
     warn_error = ["--warn-error"] if warn_error else []
-    command_list = [executable, "--log-format", "json", *warn_error, *command.split(" ")]
+    command_list = [
+        executable,
+        "--no-use-color",
+        "--log-format",
+        "json",
+        *warn_error,
+        *command.split(" "),
+    ]
 
     for flag, value in flags_dict.items():
         if not value:
