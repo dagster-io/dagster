@@ -339,7 +339,7 @@ class InMemoryRunStorage(RunStorage):
         }
 
     def get_run_partition_data(
-        self, partition_set_name: str, job_name: str
+        self, partition_set_name: str, job_name: str, repository_label: str
     ) -> List[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
         check.str_param(partition_set_name, "partition_set_name")

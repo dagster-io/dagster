@@ -801,7 +801,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return defensively_unpack_pipeline_snapshot_query(logging, row) if row else None
 
     def get_run_partition_data(
-        self, partition_set_name: str, job_name: str
+        self, partition_set_name: str, job_name: str, repository_label: str
     ) -> List[RunPartitionData]:
         if self.has_built_index(RUN_PARTITIONS) and self.has_run_stats_index_cols():
             query = self._runs_query(
