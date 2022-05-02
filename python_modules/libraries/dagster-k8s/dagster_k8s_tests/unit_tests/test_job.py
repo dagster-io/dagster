@@ -109,14 +109,14 @@ def test_construct_dagster_k8s_job_with_mounts():
     )
     job = construct_dagster_k8s_job(cfg, ["foo", "bar"], "job123").to_dict()
 
-    assert len(job["spec"]["template"]["spec"]["volumes"]) == 2
+    assert len(job["spec"]["template"]["spec"]["volumes"]) == 1
     foo_volumes = [
         volume for volume in job["spec"]["template"]["spec"]["volumes"] if volume["name"] == "foo"
     ]
     assert len(foo_volumes) == 1
     assert foo_volumes[0]["config_map"]["name"] == "settings-cm"
 
-    assert len(job["spec"]["template"]["spec"]["containers"][0]["volume_mounts"]) == 2
+    assert len(job["spec"]["template"]["spec"]["containers"][0]["volume_mounts"]) == 1
     foo_volumes_mounts = [
         volume
         for volume in job["spec"]["template"]["spec"]["containers"][0]["volume_mounts"]
@@ -140,7 +140,7 @@ def test_construct_dagster_k8s_job_with_mounts():
         ],
     )
     job = construct_dagster_k8s_job(cfg, ["foo", "bar"], "job123").to_dict()
-    assert len(job["spec"]["template"]["spec"]["volumes"]) == 2
+    assert len(job["spec"]["template"]["spec"]["volumes"]) == 1
     foo_volumes = [
         volume for volume in job["spec"]["template"]["spec"]["volumes"] if volume["name"] == "foo"
     ]
@@ -395,8 +395,7 @@ def test_construct_dagster_k8s_job_with_user_defined_volume_mounts_snake_case():
     volume_mounts = job["spec"]["template"]["spec"]["containers"][0]["volume_mounts"]
     volume_mounts_mapping = {volume_mount["name"]: volume_mount for volume_mount in volume_mounts}
 
-    assert len(volume_mounts_mapping) == 3
-    assert volume_mounts_mapping["dagster-instance"]
+    assert len(volume_mounts_mapping) == 2
     assert volume_mounts_mapping["a_volume_mount_one"]
     assert volume_mounts_mapping["a_volume_mount_two"]
 
@@ -446,8 +445,7 @@ def test_construct_dagster_k8s_job_with_user_defined_volume_mounts_camel_case():
     volume_mounts = job["spec"]["template"]["spec"]["containers"][0]["volume_mounts"]
     volume_mounts_mapping = {volume_mount["name"]: volume_mount for volume_mount in volume_mounts}
 
-    assert len(volume_mounts_mapping) == 3
-    assert volume_mounts_mapping["dagster-instance"]
+    assert len(volume_mounts_mapping) == 2
     assert volume_mounts_mapping["a_volume_mount_one"]
     assert volume_mounts_mapping["a_volume_mount_two"]
 
