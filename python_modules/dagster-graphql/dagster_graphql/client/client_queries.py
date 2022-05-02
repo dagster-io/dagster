@@ -123,3 +123,26 @@ mutation ($repositoryLocationName: String!) {
    }
 }
 """
+
+TERMINATE_RUN_JOB_MUTATION = """
+mutation TerminateRun($runId: String!) {
+  terminateRun(runId: $runId){
+    __typename
+    ... on TerminateRunSuccess{
+      run {
+        runId
+      }
+    }
+    ... on TerminateRunFailure {
+      message
+    }
+    ... on RunNotFoundError {
+      runId
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+"""
