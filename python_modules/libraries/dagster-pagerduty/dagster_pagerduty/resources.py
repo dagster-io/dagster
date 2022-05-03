@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, cast
 
 import pypd
 
@@ -132,7 +132,7 @@ class PagerDutyService:
         if dedup_key is not None:
             data["dedup_key"] = dedup_key
 
-        payload: Dict[str, object] = data["payload"]
+        payload: Dict[str, object] = cast(Dict[str, object], data["payload"])
 
         if timestamp is not None:
             payload["timestamp"] = timestamp
