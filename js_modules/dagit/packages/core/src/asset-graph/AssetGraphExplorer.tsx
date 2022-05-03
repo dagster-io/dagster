@@ -1,4 +1,12 @@
-import {Box, Checkbox, Mono, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
+import {
+  Box,
+  Checkbox,
+  MenuItem,
+  Mono,
+  NonIdealState,
+  SplitPanelContainer,
+  Suggest,
+} from '@dagster-io/ui';
 import flatMap from 'lodash/flatMap';
 import isEqual from 'lodash/isEqual';
 import pickBy from 'lodash/pickBy';
@@ -57,7 +65,7 @@ import {
   tokenForAssetKey,
   displayNameForAssetKey,
 } from './Utils';
-import {AssetGraphLayout} from './layout';
+import {AssetGraphLayout, identifyBundles} from './layout';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
 import {useAssetGraphData} from './useAssetGraphData';
 import {useFindJobForAsset} from './useFindJobForAsset';
@@ -549,6 +557,37 @@ const AssetGraphExplorerWithData: React.FC<
               placeholder="Type an asset subset…"
               onChange={(opsQuery) => onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')}
               popoverPosition="bottom-left"
+            />
+            <Suggest<string>
+              inputProps={{placeholder: 'View a folder'}}
+              items={Object.keys(
+                identifyBundles(props.assetKeys.map((c) => JSON.stringify(c.path))),
+              )}
+              itemRenderer={(folder, props) => (
+                <MenuItem
+                  text={displayNameForAssetKey({path: JSON.parse(folder)})}
+                  active={props.modifiers.active}
+                  onClick={props.handleClick}
+                  key={folder}
+                />
+              )}
+              noResults={<MenuItem disabled={true} text="Loading..." />}
+              inputValueRenderer={(str) => str}
+              selectedItem=""
+              onItemSelect={(item) => {
+                onChangeExplorerPath(
+                  {
+                    ...explorerPath,
+                    opsQuery: [
+                      explorerPath.opsQuery,
+                      `${displayNameForAssetKey({path: JSON.parse(item)})}>`,
+                    ]
+                      .filter(Boolean)
+                      .join(','),
+                  },
+                  'replace',
+                );
+              }}
             />
           </QueryOverlay>
         </>

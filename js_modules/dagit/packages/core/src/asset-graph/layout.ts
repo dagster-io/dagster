@@ -34,7 +34,7 @@ const opts: {margin: number; mini: boolean} = {
   mini: false,
 };
 
-function identifyBundles(nodeIds: string[]) {
+export function identifyBundles(nodeIds: string[]) {
   const pathPrefixes: {[prefixId: string]: string[]} = {};
 
   for (const nodeId of nodeIds) {
