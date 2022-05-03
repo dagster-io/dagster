@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, Optional
 
 import pypd
 
@@ -132,20 +132,22 @@ class PagerDutyService:
         if dedup_key is not None:
             data["dedup_key"] = dedup_key
 
+        payload: Dict[str, object] = data["payload"]
+
         if timestamp is not None:
-            data["payload"]["timestamp"] = timestamp
+            payload["timestamp"] = timestamp
 
         if component is not None:
-            data["payload"]["component"] = component
+            payload["component"] = component
 
         if group is not None:
-            data["payload"]["group"] = group
+            payload["group"] = group
 
         if event_class is not None:
-            data["payload"]["class"] = event_class
+            payload["class"] = event_class
 
         if custom_details is not None:
-            data["payload"]["custom_details"] = custom_details
+            payload["custom_details"] = custom_details
 
         return pypd.EventV2.create(data=data)
 
