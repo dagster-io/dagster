@@ -1,4 +1,5 @@
 import typing as t
+import sys
 from abc import abstractmethod
 from enum import Enum as PythonEnum
 from functools import partial
@@ -823,7 +824,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     )
 
     # First, check to see if we're using Dagster's generic output type to do the type catching.
-    if get_origin(dagster_type) == Output:
+    if _is_generic_output_annotation(dagster_type):
         dagster_type = get_args(dagster_type)[0]
 
     # Then, check to see if it is part of python's typing library
@@ -873,6 +874,17 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
             dagster_type=str(dagster_type), additional_msg="."
         )
     )
+
+def _is_generic_output_annotation(dagster_type: object) -> bool:
+    from dagster.seven.typing import get_origin
+    # On python version 3.6, get_origin cannot introspect the origin of a
+    # generic NamedTuple (returns tuple, not Output). So we need to use
+    # __origin__ directly. We only do this on python 3.6, since __origin__ is
+    # an internal implementation detail, and may not be supported in future versions.
+    if sys.version_info[0] == 3 and sys.version_info[1] <= 6:
+        return hasattr(dagster_type, "__origin__") and dagster_type.__origin__ == Output
+    else:
+        return get_origin(dagster_type) == Output
 
 
 def resolve_python_type_to_dagster_type(python_type: t.Type) -> DagsterType:
