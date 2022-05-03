@@ -1,17 +1,7 @@
 import warnings
 from datetime import datetime
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    FrozenSet,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Type,
-)
+from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional, Type
 
 from dagster import check
 from dagster.core.origin import PipelinePythonOrigin
