@@ -11,6 +11,7 @@ import {RepositoryLink} from '../nav/RepositoryLink';
 import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
 import {MenuLink} from '../ui/MenuLink';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
+import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
 import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';
@@ -64,6 +65,7 @@ export const AssetTable = ({
           selected={Array.from(checkedAssets)}
           clearSelection={() => onToggleAll(false)}
         />
+        <ReloadAllButton />
       </Box>
       <Table>
         <thead>
