@@ -676,6 +676,8 @@ class ExternalAssetNode(
             ("depended_by", Sequence[ExternalAssetDependedBy]),
             ("compute_kind", Optional[str]),
             ("op_name", Optional[str]),
+            ("op_names", Optional[Sequence[str]]),
+            ("graph_name", Optional[str]),
             ("op_description", Optional[str]),
             ("job_names", Sequence[str]),
             ("partitions_def_data", Optional[ExternalPartitionsDefinitionData]),
@@ -697,6 +699,8 @@ class ExternalAssetNode(
         depended_by: Sequence[ExternalAssetDependedBy],
         compute_kind: Optional[str] = None,
         op_name: Optional[str] = None,
+        op_names: Optional[Sequence[str]] = None,
+        graph_name: Optional[str] = None,
         op_description: Optional[str] = None,
         job_names: Optional[Sequence[str]] = None,
         partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
@@ -715,6 +719,8 @@ class ExternalAssetNode(
             ),
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             op_name=check.opt_str_param(op_name, "op_name"),
+            op_names=check.opt_list_param(op_names, "op_names"),
+            graph_name=check.opt_str_param(graph_name, "graph_name"),
             op_description=check.opt_str_param(
                 op_description or output_description, "op_description"
             ),
@@ -771,11 +777,19 @@ def external_asset_graph_from_defs(
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
     dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
     all_upstream_asset_keys: Set[AssetKey] = set()
+    op_names_by_asset_key: Dict[AssetKey, Sequence[NodeOutputHandle]] = {}
 
     for pipeline_def in pipelines:
         asset_info_by_node_output = pipeline_def.asset_layer.asset_info_by_node_output_handle
         for node_output_handle, asset_info in asset_info_by_node_output.items():
             output_key = asset_info.key
+            if output_key not in op_names_by_asset_key:
+                op_names_by_asset_key[output_key] = [
+                    str(handle)
+                    for handle in pipeline_def.asset_layer.dependency_node_handles_by_asset_key.get(
+                        output_key
+                    )
+                ]
             upstream_asset_keys = pipeline_def.asset_layer.upstream_assets_for_asset(output_key)
             all_upstream_asset_keys.update(upstream_asset_keys)
             node_defs_by_asset_key[output_key].append((node_output_handle, pipeline_def))
@@ -855,13 +869,21 @@ def external_asset_graph_from_defs(
                     "Only static partition and time window partitions are currently supported."
                 )
 
+        # if the asset is produced by an op at the top level of the graph, graph_name should be None
+        graph_name = None
+        node_handle = node_output_handle.node_handle
+        while node_handle.parent:
+            node_handle = node_handle.parent
+            graph_name = node_handle.name
+
         asset_nodes.append(
             ExternalAssetNode(
                 asset_key=asset_key,
                 dependencies=list(deps[asset_key].values()),
                 depended_by=list(dep_by[asset_key].values()),
                 compute_kind=node_def.tags.get("kind"),
-                op_name=str(node_output_handle.node_handle),
+                graph_name=graph_name,
+                op_names=op_names_by_asset_key[asset_key],
                 op_description=node_def.description,
                 job_names=job_names,
                 partitions_def_data=partitions_def_data,
