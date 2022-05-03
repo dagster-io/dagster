@@ -63,12 +63,12 @@ def get_tag_type(tag):
         return TagType.USER_PROVIDED
 
 
-def check_tags(obj, name):
-    check.opt_dict_param(obj, name, key_type=str, value_type=str)
+def check_reserved_tags(tags):
+    check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
 
-    for tag in obj.keys():
+    for tag in tags.keys():
         if not tag in USER_EDITABLE_SYSTEM_TAGS:
             check.invariant(
                 not tag.startswith(SYSTEM_TAG_PREFIX),
-                desc="User attempted to set tag with reserved system prefix: {tag}".format(tag=tag),
+                desc="Attempted to set tag with reserved system prefix: {tag}".format(tag=tag),
             )
