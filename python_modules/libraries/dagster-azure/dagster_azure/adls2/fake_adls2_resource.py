@@ -36,7 +36,7 @@ class FakeLeaseClient:
         self.id = None
 
         # client needs a ref to self to check if a given lease is valid
-        self.client.lease = self
+        self.client._lease = self
 
     def acquire(self, lease_duration=-1):  # pylint: disable=unused-argument
         if self.id is None:
@@ -136,18 +136,22 @@ class FakeADLS2FileClient:
     def __init__(self, name, fs_client):
         self.name = name
         self.contents = None
-        self.lease = None
+        self._lease = None
         self.fs_client = fs_client
+
+    @property
+    def lease(self):
+        return self._lease if self._lease is None else self._lease.id
 
     def get_file_properties(self):
         if self.contents is None:
             raise ResourceNotFoundError("File does not exist!")
-        lease_id = None if self.lease is None else self.lease.id
+        lease_id = None if self._lease is None else self._lease.id
         return {"lease": lease_id}
 
     def upload_data(self, contents, overwrite=False, lease=None):
-        if self.lease is not None:
-            if not self.lease.is_valid(lease):
+        if self._lease is not None:
+            if not self._lease.is_valid(lease):
                 raise Exception("Invalid lease!")
         if self.contents is not None or overwrite is True:
             if isinstance(contents, str):
@@ -167,8 +171,8 @@ class FakeADLS2FileClient:
         return FakeADLS2FileDownloader(contents=self.contents)
 
     def delete_file(self, lease=None):
-        if self.lease is not None:
-            if not self.lease.is_valid(lease):
+        if self._lease is not None:
+            if not self._lease.is_valid(lease):
                 raise Exception("Invalid lease!")
         self.fs_client.delete_file(self.name)
 
