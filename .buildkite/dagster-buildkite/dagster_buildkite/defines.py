@@ -26,7 +26,6 @@ VERSION_TEST_DIRECTIVES = {
     "test-py37": [SupportedPython.V3_7],
     "test-py38": [SupportedPython.V3_8],
     "test-py39": [SupportedPython.V3_9],
-    "test-py310": [SupportedPython.V3_10],
     "test-all": SupportedPythons,
 }
 
