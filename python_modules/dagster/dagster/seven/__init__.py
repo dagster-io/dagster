@@ -66,7 +66,7 @@ def is_ascii(str_):
 time_fn = time.perf_counter
 
 
-def get_arg_names(callable_):
+def get_args(callable_):
     return [
         parameter.name
         for parameter in inspect.signature(callable_).parameters.values()
