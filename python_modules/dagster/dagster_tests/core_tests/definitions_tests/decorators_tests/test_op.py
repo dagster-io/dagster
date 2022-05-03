@@ -1,3 +1,4 @@
+# type: ignore[return-value]
 import time
 from typing import Dict, Generator, List, Tuple
 
@@ -839,7 +840,6 @@ def test_output_generic_correct_inner_type():
 def test_output_generic_type_mismatches():
     @op
     def the_op_annotation_type_mismatch() -> int:
-        # type: ignore[return-value]
         return Output("foo")
 
     with pytest.raises(
@@ -850,7 +850,6 @@ def test_output_generic_type_mismatches():
 
     @op
     def the_op_output_annotation_type_mismatch() -> Output[int]:
-        # type: ignore[return-value]
         return "foo"
 
     with pytest.raises(
@@ -896,6 +895,6 @@ def test_generic_output_name_mismatch():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Received output named 'out2', but expected output named 'out1'.",
+        match="Bad state: Received a tuple of outputs. An output was explicitly named 'out2', which does not match the output definition specified for position 0: 'out1'.",
     ):
         execute_op_in_graph(the_op)
