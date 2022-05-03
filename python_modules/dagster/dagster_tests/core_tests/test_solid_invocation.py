@@ -1066,7 +1066,7 @@ def test_kwargs_via_partial_functools():
 
 
 def test_get_mapping_key():
-    context = build_op_context(upstream_mapping_key="the_key")
+    context = build_op_context(mapping_key="the_key")
 
     assert context.get_mapping_key() == "the_key"  # Ensure unbound context has mapping key
 
