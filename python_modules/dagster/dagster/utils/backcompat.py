@@ -1,8 +1,7 @@
 import inspect
 import warnings
 from functools import wraps
-from types import FunctionType
-from typing import Any, Callable, Optional, Type, TypeVar, cast
+from typing import Callable, Optional, Type, TypeVar, cast
 
 from dagster import check
 
@@ -52,7 +51,7 @@ def canonicalize_backcompat_args(
 
     canonicalize_backcompat_args returns the value as if *only* new_val were specified
     """
-    coerce_old_to_new = kwargs.get("coerce_old_to_new")
+    coerce_old_to_new = cast(Optional[Callable], kwargs.get("coerce_old_to_new"))
     additional_warn_txt = kwargs.get("additional_warn_txt")
     # stacklevel=3 punches up to the caller of canonicalize_backcompat_args
     stacklevel = kwargs.get("stacklevel", 3)

@@ -3,7 +3,7 @@ import logging
 import sys
 import traceback
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Callable, Dict, NamedTuple, Optional
+from typing import Dict, NamedTuple, Optional
 
 import coloredlogs
 import pendulum
@@ -12,9 +12,6 @@ from dagster import check, seven
 from dagster.config import Enum, EnumValue
 from dagster.core.definitions.logger_definition import logger
 from dagster.core.utils import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level
-
-if TYPE_CHECKING:
-    from dagster._core.events.log import EventLogEntry
 
 LogLevelEnum = Enum("log_level", list(map(EnumValue, PYTHON_LOGGING_LEVELS_MAPPING.keys())))
 

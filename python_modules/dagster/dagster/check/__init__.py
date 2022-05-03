@@ -18,6 +18,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
@@ -1102,28 +1103,30 @@ def opt_nullable_sequence_param(
 # ##### SET
 # ########################
 
+T_Set = TypeVar("T_Set", bound=AbstractSet)
+
 
 def set_param(
-    obj: AbstractSet[T],
+    obj: T_Set,
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> AbstractSet[T]:
+) -> T_Set:
     if not isinstance(obj, (frozenset, set)):
         raise _param_type_mismatch_exception(obj, (frozenset, set), param_name, additional_message)
 
     if not of_type:
-        return obj
+        return cast(T_Set, obj)
 
-    return _check_iterable_items(obj, of_type, "set")
+    return _check_iterable_items(cast(T_Set, obj), of_type, "set")
 
 
 def opt_set_param(
-    obj: Optional[AbstractSet[T]],
+    obj: Optional[T_Set],
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> AbstractSet[T]:
+) -> T_Set:
     """Ensures argument obj is a set or None; in the latter case, instantiates an empty set
     and returns it.
 
@@ -1131,13 +1134,13 @@ def opt_set_param(
     by of_type.
     """
     if obj is None:
-        return set()
+        return cast(T_Set, frozenset())
     elif obj is not None and not isinstance(obj, (frozenset, set)):
         raise _param_type_mismatch_exception(obj, (frozenset, set), param_name, additional_message)
     elif not of_type:
-        return obj
+        return cast(T_Set, obj)
 
-    return _check_iterable_items(obj, of_type, "set")
+    return _check_iterable_items(cast(T_Set, obj), of_type, "set")
 
 
 @overload
@@ -1152,20 +1155,20 @@ def opt_nullable_set_param(
 
 @overload
 def opt_nullable_set_param(
-    obj: AbstractSet[T],
+    obj: T_Set,
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = ...,
     additional_message: Optional[str] = ...,
-) -> AbstractSet[T]:
+) -> T_Set:
     ...
 
 
 def opt_nullable_set_param(
-    obj: Optional[AbstractSet[T]],
+    obj: Optional[T_Set],
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Optional[AbstractSet[T]]:
+) -> Optional[T_Set]:
     """Ensures argument obj is a set or None. Returns None if input is None.
     and returns it.
 
@@ -1177,9 +1180,9 @@ def opt_nullable_set_param(
     elif not isinstance(obj, (frozenset, set)):
         raise _param_type_mismatch_exception(obj, (frozenset, set), param_name, additional_message)
     elif not of_type:
-        return obj
+        return cast(T_Set, obj)
 
-    return _check_iterable_items(obj, of_type, "set")
+    return _check_iterable_items(cast(T_Set, obj), of_type, "set")
 
 
 # ########################

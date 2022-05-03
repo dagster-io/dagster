@@ -21,11 +21,11 @@ from dagster.core.host_representation.external_data import (
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.repository_definition import RepositoryDefinition
-    from dagster._core.host_representation.handle import RepositoryHandle
+    from dagster.core.definitions.repository_definition import RepositoryDefinition
+    from dagster.core.host_representation.handle import RepositoryHandle
 
 
-def recon_pipeline_from_origin(origin: PipelinePythonOrigin) -> "ReconstructablePipeline":
+def recon_pipeline_from_origin(origin: PipelinePythonOrigin) -> ReconstructablePipeline:
     check.inst_param(origin, "origin", PipelinePythonOrigin)
     recon_repo = recon_repository_from_origin(origin.repository_origin)
     return recon_repo.get_reconstructable_pipeline(origin.pipeline_name)

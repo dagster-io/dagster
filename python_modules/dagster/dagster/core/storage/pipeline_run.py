@@ -1,7 +1,18 @@
 import warnings
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Type
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    FrozenSet,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Type,
+)
 
 from dagster import check
 from dagster.core.origin import PipelinePythonOrigin
@@ -300,7 +311,7 @@ class PipelineRun(
         run_config: Optional[Mapping[str, object]] = None,
         mode: Optional[str] = None,
         solid_selection: Optional[List[str]] = None,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
+        solids_to_execute: Optional[FrozenSet[str]] = None,
         step_keys_to_execute: Optional[List[str]] = None,
         status: Optional[PipelineRunStatus] = None,
         tags: Optional[Dict[str, str]] = None,
