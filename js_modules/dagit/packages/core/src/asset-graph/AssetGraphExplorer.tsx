@@ -64,8 +64,9 @@ import {
   isSourceAsset,
   tokenForAssetKey,
   displayNameForAssetKey,
+  identifyBundles,
 } from './Utils';
-import {AssetGraphLayout, identifyBundles} from './layout';
+import {AssetGraphLayout} from './layout';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
 import {useAssetGraphData} from './useAssetGraphData';
 import {useFindJobForAsset} from './useFindJobForAsset';
@@ -323,6 +324,10 @@ const AssetGraphExplorerWithData: React.FC<
     [viewportEl],
   );
 
+  const allBundleNames = React.useMemo(() => {
+    return Object.keys(identifyBundles(props.assetKeys.map((a) => JSON.stringify(a.path))));
+  }, [props.assetKeys]);
+
   return (
     <SplitPanelContainer
       identifier="explorer"
@@ -558,37 +563,37 @@ const AssetGraphExplorerWithData: React.FC<
               onChange={(opsQuery) => onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')}
               popoverPosition="bottom-left"
             />
-            <Suggest<string>
-              inputProps={{placeholder: 'View a folder'}}
-              items={Object.keys(
-                identifyBundles(props.assetKeys.map((c) => JSON.stringify(c.path))),
-              )}
-              itemRenderer={(folder, props) => (
-                <MenuItem
-                  text={displayNameForAssetKey({path: JSON.parse(folder)})}
-                  active={props.modifiers.active}
-                  onClick={props.handleClick}
-                  key={folder}
-                />
-              )}
-              noResults={<MenuItem disabled={true} text="Loading..." />}
-              inputValueRenderer={(str) => str}
-              selectedItem=""
-              onItemSelect={(item) => {
-                onChangeExplorerPath(
-                  {
-                    ...explorerPath,
-                    opsQuery: [
-                      explorerPath.opsQuery,
-                      `${displayNameForAssetKey({path: JSON.parse(item)})}>`,
-                    ]
-                      .filter(Boolean)
-                      .join(','),
-                  },
-                  'replace',
-                );
-              }}
-            />
+            {allBundleNames.length > 0 && (
+              <Suggest<string>
+                inputProps={{placeholder: 'View a folder'}}
+                items={allBundleNames}
+                itemRenderer={(folder, props) => (
+                  <MenuItem
+                    text={displayNameForAssetKey({path: JSON.parse(folder)})}
+                    active={props.modifiers.active}
+                    onClick={props.handleClick}
+                    key={folder}
+                  />
+                )}
+                noResults={<MenuItem disabled={true} text="Loading..." />}
+                inputValueRenderer={(str) => str}
+                selectedItem=""
+                onItemSelect={(item) => {
+                  onChangeExplorerPath(
+                    {
+                      ...explorerPath,
+                      opsQuery: [
+                        explorerPath.opsQuery,
+                        `${displayNameForAssetKey({path: JSON.parse(item)})}>`,
+                      ]
+                        .filter(Boolean)
+                        .join(','),
+                    },
+                    'replace',
+                  );
+                }}
+              />
+            )}
           </QueryOverlay>
         </>
       }

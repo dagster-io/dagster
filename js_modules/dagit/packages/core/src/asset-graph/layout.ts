@@ -1,9 +1,8 @@
 import * as dagre from 'dagre';
-import uniq from 'lodash/uniq';
 
 import {IBounds, IPoint} from '../graph/common';
 
-import {GraphData, GraphNode, GraphId, displayNameForAssetKey} from './Utils';
+import {GraphData, GraphNode, GraphId, displayNameForAssetKey, identifyBundles} from './Utils';
 
 export interface AssetLayout {
   id: GraphId;
@@ -33,56 +32,6 @@ const opts: {margin: number; mini: boolean} = {
   margin: 100,
   mini: false,
 };
-
-export function identifyBundles(nodeIds: string[]) {
-  const pathPrefixes: {[prefixId: string]: string[]} = {};
-
-  for (const nodeId of nodeIds) {
-    const assetKeyPath = JSON.parse(nodeId);
-
-    for (let ii = 1; ii < assetKeyPath.length; ii++) {
-      const prefix = assetKeyPath.slice(0, ii);
-      const key = JSON.stringify(prefix);
-      pathPrefixes[key] = pathPrefixes[key] || [];
-      pathPrefixes[key].push(nodeId);
-    }
-  }
-
-  for (const key of Object.keys(pathPrefixes)) {
-    if (pathPrefixes[key].length <= 1) {
-      delete pathPrefixes[key];
-    }
-  }
-
-  const finalBundlePrefixes: {[prefixId: string]: string[]} = {};
-  const finalBundleIdForNodeId: {[id: string]: string} = {};
-
-  // Sort the prefix keys by length descending and iterate from the deepest folders first.
-  // Dedupe asset keys and replace asset keys we've already seen with the (deeper) folder
-  // they are within. This gets us "multi layer folders" of nodes.
-
-  // Turn this:
-  // {
-  //  "s3": [["s3", "collect"], ["s3", "prod", "a"], ["s3", "prod", "b"]],
-  //  "s3/prod": ["s3", "prod", "a"], ["s3", "prod", "b"]
-  // }
-
-  // Into this:
-  // {
-  //  "s3/prod": ["s3", "prod", "a"], ["s3", "prod", "b"]
-  //  "s3": [["s3", "collect"], ["s3", "prod"]],
-  // }
-
-  for (const prefixId of Object.keys(pathPrefixes).sort((a, b) => b.length - a.length)) {
-    finalBundlePrefixes[prefixId] = uniq(
-      pathPrefixes[prefixId].map((p) =>
-        finalBundleIdForNodeId[p] ? finalBundleIdForNodeId[p] : p,
-      ),
-    );
-    finalBundlePrefixes[prefixId].forEach((id) => (finalBundleIdForNodeId[id] = prefixId));
-  }
-  return finalBundlePrefixes;
-}
 
 export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
   const g = new dagre.graphlib.Graph({compound: true});
@@ -141,6 +90,7 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
   // and bundleMapping can reference bundles as children - this code can create multiple
   // layers of parents!
   const bundleMapping = identifyBundles(g.nodes());
+
   for (const [parentId, nodeIds] of Object.entries(bundleMapping)) {
     g.setNode(parentId, {});
     for (const nodeId of nodeIds) {
