@@ -21,6 +21,7 @@ from dagster.core.definitions import (
     AssetMaterialization,
     AssetObservation,
     AssetSensorDefinition,
+    BoolMetadataValue,
     CompositeSolidDefinition,
     ConfigMapping,
     DagsterAssetMetadataValue,

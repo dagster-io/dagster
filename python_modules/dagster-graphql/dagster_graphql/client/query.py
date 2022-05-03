@@ -29,6 +29,9 @@ fragment metadataEntryFragment on MetadataEntry {
   ... on IntMetadataEntry {
     intRepr
   }
+  ... on BoolMetadataEntry {
+    boolValue
+  }
   ... on JsonMetadataEntry {
     jsonString
   }
