@@ -282,25 +282,20 @@ class AssetGroup:
             if asset.op.name not in op_names_to_asset_keys:
                 op_names_to_asset_keys[asset.op.name] = set()
             for asset_key in asset.asset_keys:
-                asset_key_as_str = ".".join([piece for piece in asset_key.path])
+                asset_key_as_str = ">".join([piece for piece in asset_key.path])
                 op_names_to_asset_keys[asset.op.name].add(asset_key_as_str)
                 if not asset_key_as_str in asset_keys_to_ops:
                     asset_keys_to_ops[asset_key_as_str] = []
                 asset_keys_to_ops[asset_key_as_str].append(asset.op)
 
         for asset in self.source_assets:
-            if isinstance(asset, SourceAsset):
-                asset_key_as_str = ".".join([piece for piece in asset.key.path])
-                source_asset_keys.add(asset_key_as_str)
-            else:
-                for asset_key in asset.asset_keys:
-                    asset_key_as_str = ".".join([piece for piece in asset_key.path])
-                    source_asset_keys.add(asset_key_as_str)
+            asset_key_as_str = ">".join([piece for piece in asset.key.path])
+            source_asset_keys.add(asset_key_as_str)
 
         op_selection = []
 
         for clause in selection:
-            token_matching = re.compile(r"^(\*?\+*)?([.\w\d\[\]?_-]+)(\+*\*?)?$").search(
+            token_matching = re.compile(r"^(\*?\+*)?([>.\w\d\[\]?_-]+)(\+*\*?)?$").search(
                 clause.strip()
             )
             parts = token_matching.groups() if token_matching is not None else None
