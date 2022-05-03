@@ -3,7 +3,7 @@ import subprocess
 
 import yaml
 
-from .defines import SupportedPython, SupportedPythons
+from .defines import VERSION_TEST_DIRECTIVES, SupportedPython, SupportedPythons
 
 DAGIT_PATH = "js_modules/dagit"
 
@@ -98,10 +98,6 @@ def is_release_branch(branch_name: str):
     return branch_name.startswith("release-")
 
 
-# To test the full suite of Python versions on a PR, include this string anywhere in the branch name
-# or commit message.
-FULL_BUILD_MARKER_STR = "fullbuild"
-
 # To more specifically customize the tested Python versions for a branch, set environment variable
 # $DEFAULT_PYTHON_VERSIONS to a comma-separated list of python version specifiers of the form VX_Y
 # (i.e. attributes of `SupportedPython`).
@@ -111,19 +107,23 @@ DEFAULT_PYTHON_VERSIONS = [getattr(SupportedPython, ver) for ver in _versions.sp
 # By default only one representative Python version is tested on PRs, and all versions are
 # tested on master or release branches.
 def get_python_versions_for_branch(pr_versions=None):
-    pr_versions = pr_versions if pr_versions != None else DEFAULT_PYTHON_VERSIONS
 
     branch_name = os.getenv("BUILDKITE_BRANCH")
     assert branch_name is not None, "$BUILDKITE_BRANCH env var must be set."
     commit_message = os.getenv("BUILDKITE_MESSAGE")
     assert commit_message is not None, "$BUILDKITE_MESSAGE env var must be set."
 
-    if (
-        branch_name == "master"
-        or is_release_branch(branch_name)
-        or FULL_BUILD_MARKER_STR in branch_name
-        or FULL_BUILD_MARKER_STR in commit_message
-    ):
+    if branch_name == "master" or is_release_branch(branch_name):
         return SupportedPythons
+    elif pr_versions is None:
+        specified_versions = []
+        for k, v in VERSION_TEST_DIRECTIVES.items():
+            if k in commit_message or k in branch_name:
+                specified_versions.extend(v)
+        return (
+            list(set(specified_versions))
+            if len(specified_versions) > 0
+            else DEFAULT_PYTHON_VERSIONS
+        )
     else:
         return pr_versions
