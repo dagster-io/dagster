@@ -98,6 +98,12 @@ class JobDefinition(PipelineDefinition):
         self._input_values: Mapping[str, Any] = check.opt_mapping_param(
             _input_values, "_input_values"
         )
+        for input_name in sorted(list(self._input_values.keys())):
+            if not graph_def.has_input(input_name):
+                job_name = name or graph_def.name
+                raise DagsterInvalidDefinitionError(
+                    f"Error when constructing JobDefinition '{job_name}': Input value provided for key '{input_name}', but job has no top-level input with that name."
+                )
 
         super(JobDefinition, self).__init__(
             name=name,

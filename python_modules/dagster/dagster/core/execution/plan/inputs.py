@@ -504,7 +504,7 @@ class FromDirectInputValue(
     ),
     StepInputSource,
 ):
-    """This input source is for direct python values to be passed to a type loader"""
+    """This input source is for direct python values to be passed as inputs to ops."""
 
     def __new__(cls, input_name: str):
         return super(FromDirectInputValue, cls).__new__(
@@ -526,12 +526,7 @@ class FromDirectInputValue(
             )
 
         job_def = cast(JobDefinition, pipeline_def)
-        with user_code_error_boundary(
-            DagsterTypeLoadingError,
-            msg_fn=lambda: (f'Error occurred while loading top-level input "{self.input_name}": '),
-            log_manager=step_context.log,
-        ):
-            return job_def.get_direct_input_value(self.input_name)
+        return job_def.get_direct_input_value(self.input_name)
 
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
