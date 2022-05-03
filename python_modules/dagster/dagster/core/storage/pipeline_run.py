@@ -287,7 +287,7 @@ class PipelineRun(
             ("run_config", Mapping[str, object]),
             ("mode", Optional[str]),
             ("solid_selection", Optional[List[str]]),
-            ("solids_to_execute", Optional[AbstractSet[str]]),
+            ("solids_to_execute", Optional[FrozenSet[str]]),
             ("step_keys_to_execute", Optional[List[str]]),
             ("status", PipelineRunStatus),
             ("tags", Dict[str, str]),
