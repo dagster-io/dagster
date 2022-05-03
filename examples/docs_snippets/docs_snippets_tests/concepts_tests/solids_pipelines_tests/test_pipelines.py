@@ -24,7 +24,10 @@ from docs_snippets.concepts.solids_pipelines.pipelines import (
     one_plus_one_from_constructor,
     tagged_add_one,
 )
-from docs_snippets.concepts.solids_pipelines.retries import retry_job
+from docs_snippets.concepts.solids_pipelines.retries import (
+    default_and_override_job,
+    retry_job,
+)
 
 
 def test_one_plus_one():
@@ -90,4 +93,6 @@ def test_dynamic_examples():
 
 
 def test_retry_examples():
-    assert retry_job.execute_in_process(raise_on_error=False)  # just that it runs
+    # just that they run
+    assert retry_job.execute_in_process(raise_on_error=False)
+    assert default_and_override_job.execute_in_process(raise_on_error=False)
