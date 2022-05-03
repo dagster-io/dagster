@@ -242,6 +242,7 @@ export const extendBounds = (a: IBounds, b: IBounds) => {
   return {x: xmin, y: ymin, width: xmax - xmin, height: ymax - ymin};
 };
 
+export const ASSET_NODE_ICON_WIDTH = 20;
 export const ASSET_NODE_ANNOTATIONS_MAX_WIDTH = 65;
 export const ASSET_NODE_NAME_MAX_LENGTH = 32;
 const DISPLAY_NAME_PX_PER_CHAR = 8.0;
@@ -264,7 +265,9 @@ export const getAssetNodeDimensions = (def: {
       Math.max(
         200,
         Math.min(ASSET_NODE_NAME_MAX_LENGTH, displayName.length) * DISPLAY_NAME_PX_PER_CHAR,
-      ) + ASSET_NODE_ANNOTATIONS_MAX_WIDTH,
+      ) +
+      ASSET_NODE_ICON_WIDTH +
+      ASSET_NODE_ANNOTATIONS_MAX_WIDTH,
     height,
   };
 };
