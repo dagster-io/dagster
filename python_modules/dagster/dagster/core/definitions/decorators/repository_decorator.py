@@ -204,7 +204,7 @@ def repository(
         def lazy_loaded_repository():
             return {
                 'jobs': {'expensive_job': make_expensive_job},
-                'schedules': {'expensive_schedule: make_expensive_schedule}
+                'schedules': {'expensive_schedule': make_expensive_schedule}
             }
 
 
