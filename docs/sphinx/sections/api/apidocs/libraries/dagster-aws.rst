@@ -10,9 +10,6 @@ S3
 
 .. autoclass:: dagster_aws.s3.S3ComputeLogManager
 
-.. autoclass:: dagster_aws.s3.S3FileCache
-  :members:
-
 .. autoclass:: dagster_aws.s3.S3FileHandle
   :members:
 
