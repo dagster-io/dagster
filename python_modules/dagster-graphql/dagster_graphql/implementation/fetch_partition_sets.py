@@ -179,7 +179,7 @@ def get_partition_set_partition_statuses(
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(partition_set_name, "partition_set_name")
     run_partition_data = graphene_info.context.instance.run_storage.get_run_partition_data(
-        partition_set_name, job_name
+        partition_set_name, job_name, repository_handle.get_external_origin().get_id()
     )
     return GraphenePartitionStatuses(
         results=[
