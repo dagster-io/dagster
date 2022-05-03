@@ -17,10 +17,9 @@ describe('TokenizingField', () => {
     },
   ];
 
-  const expectOptions = (expected: string[]) => {
+  const getItems = () => {
     const items = screen.getAllByRole('listitem');
-    const actual = items.map((item) => item.textContent);
-    expect(actual).toEqual(expected);
+    return items.map((item) => item.textContent);
   };
 
   it('shows available autocompletion options when clicked', async () => {
@@ -31,7 +30,7 @@ describe('TokenizingField', () => {
     userEvent.click(input);
 
     await waitFor(() => {
-      expectOptions(['pipeline:', 'status:']);
+      expect(getItems()).toEqual(['pipeline:', 'status:']);
     });
   });
 
@@ -43,7 +42,7 @@ describe('TokenizingField', () => {
     userEvent.type(input, 'pipeli');
 
     await waitFor(() => {
-      expectOptions([
+      expect(getItems()).toEqual([
         'pipeline:',
         'pipeline:airline_demo_ingest',
         'pipeline:airline_demo_warehouse',
@@ -55,7 +54,7 @@ describe('TokenizingField', () => {
     userEvent.type(input, 'pipeline');
 
     await waitFor(() => {
-      expectOptions([
+      expect(getItems()).toEqual([
         'pipeline:',
         'pipeline:airline_demo_ingest',
         'pipeline:airline_demo_warehouse',
@@ -67,7 +66,7 @@ describe('TokenizingField', () => {
     userEvent.type(input, 'pipeline:');
 
     await waitFor(() => {
-      expectOptions([
+      expect(getItems()).toEqual([
         'pipeline:airline_demo_ingest',
         'pipeline:airline_demo_warehouse',
         'pipeline:composition',
@@ -83,7 +82,10 @@ describe('TokenizingField', () => {
     userEvent.type(input, 'airline');
 
     await waitFor(() => {
-      expectOptions(['pipeline:airline_demo_ingest', 'pipeline:airline_demo_warehouse']);
+      expect(getItems()).toEqual([
+        'pipeline:airline_demo_ingest',
+        'pipeline:airline_demo_warehouse',
+      ]);
     });
   });
 });

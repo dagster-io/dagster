@@ -81,6 +81,7 @@ describe('AppTopNav', () => {
     });
 
     // todo dish: Figure out what graphql-tools is doing with this mock. 🤪
+    // eslint-disable-next-line jest/no-disabled-tests
     it.skip('shows the error message when repo location errors are found', async () => {
       const mocks = {
         RepositoryLocationOrLoadError: () => ({
