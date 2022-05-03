@@ -882,6 +882,8 @@ def external_asset_graph_from_defs(
                 dependencies=list(deps[asset_key].values()),
                 depended_by=list(dep_by[asset_key].values()),
                 compute_kind=node_def.tags.get("kind"),
+                # backcompat
+                op_name=graph_name or op_names_by_asset_key[asset_key][0],
                 graph_name=graph_name,
                 op_names=op_names_by_asset_key[asset_key],
                 op_description=node_def.description,
