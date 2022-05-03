@@ -1126,3 +1126,33 @@ def test_to_job_input_values():
     )
     assert result.success
     assert result.output_value() == 12
+
+
+def test_input_values_name_not_found():
+    @op
+    def my_op(x, y):
+        return x + y
+
+    @graph
+    def my_graph(x, y):
+        return my_op(x, y)
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Error when constructing JobDefinition 'my_graph': Input value provided for key 'z', but job has no top-level input with that name.",
+    ):
+        my_graph.to_job(input_values={"z": 4})
+
+
+def test_input_values_override_default():
+    @op(ins={"x": In(default_value=5)})
+    def op_with_default_input(x):
+        return x
+
+    @graph
+    def my_graph(x):
+        return op_with_default_input(x)
+
+    result = my_graph.execute_in_process(input_values={"x": 6})
+    assert result.success
+    assert result.output_value() == 6
