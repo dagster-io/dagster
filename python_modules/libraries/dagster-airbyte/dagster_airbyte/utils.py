@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterator, List
 
 from dagster_airbyte.types import AirbyteOutput
 
@@ -29,7 +29,9 @@ def _materialization_for_stream(
     )
 
 
-def generate_materializations(output: AirbyteOutput, asset_key_prefix: List[str]):
+def generate_materializations(
+    output: AirbyteOutput, asset_key_prefix: List[str]
+) -> Iterator[AssetMaterialization]:
     prefix = output.connection_details.get("prefix") or ""
     # all the streams that are set to be sync'd by this connection
     all_stream_props = {
