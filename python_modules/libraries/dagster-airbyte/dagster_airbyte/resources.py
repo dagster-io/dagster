@@ -102,7 +102,6 @@ class AirbyteResource:
             self.make_request(endpoint="/connections/sync", data={"connectionId": connection_id})
         )
 
-
     def get_connection_details(self, connection_id: str) -> Dict[str, object]:
         return check.not_none(
             self.make_request(endpoint="/connections/get", data={"connectionId": connection_id})
@@ -150,9 +149,7 @@ class AirbyteResource:
                 cur_attempt = len(attempts)
                 # spit out the available Airbyte log info
                 if cur_attempt:
-                    log_lines = (
-                        attempts[logged_attempts].get("logs", {}).get("logLines", [])
-                    )
+                    log_lines = attempts[logged_attempts].get("logs", {}).get("logLines", [])
 
                     for line in log_lines[logged_lines:]:
                         sys.stdout.write(line + "\n")
