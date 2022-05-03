@@ -31,13 +31,13 @@ from dagster import HookContext, failure_hook, success_hook
 @success_hook(required_resource_keys={"slack"})
 def slack_message_on_success(context: HookContext):
     message = f"Op {context.op.name} finished successfully"
-    context.resources.slack.chat.post_message(channel="#foo", text=message)
+    context.resources.slack.chat_postMessage(channel="#foo", text=message)
 
 
 @failure_hook(required_resource_keys={"slack"})
 def slack_message_on_failure(context: HookContext):
     message = f"Op {context.op.name} failed"
-    context.resources.slack.chat.post_message(channel="#foo", text=message)
+    context.resources.slack.chat_postMessage(channel="#foo", text=message)
 ```
 
 ### Hook context
@@ -68,6 +68,32 @@ The <PyObject module="dagster" object="job" displayText="@job" /> decorator acce
 ```python file=/concepts/solids_pipelines/op_hooks.py startafter=start_repo_marker_1 endbefore=end_repo_marker_1
 @job(resource_defs={"slack": slack_resource}, hooks={slack_message_on_failure})
 def notif_all():
+    # the hook "slack_message_on_failure" is applied on every op instance within this graph
+    a()
+    b()
+```
+
+When you run this job, you can provide configuration to the slack resource in the run config:
+
+```yaml file=/concepts/solids_pipelines/prod_op_hooks.yaml
+resources:
+  slack:
+    config:
+      token: "xoxp-1234123412341234-12341234-1234" # replace with your slack token
+```
+
+or by using the [configured API](/concepts/configuration/configured):
+
+```python file=/concepts/solids_pipelines/op_hooks.py startafter=start_repo_marker_1_with_configured endbefore=end_repo_marker_1_with_configured
+@job(
+    resource_defs={
+        "slack": slack_resource.configured(
+            {"token": "xoxp-1234123412341234-12341234-1234"}
+        )
+    },
+    hooks={slack_message_on_failure},
+)
+def notif_all_configured():
     # the hook "slack_message_on_failure" is applied on every op instance within this graph
     a()
     b()
