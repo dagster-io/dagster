@@ -1,4 +1,4 @@
-from typing import Dict, List, Mapping, NamedTuple, Optional
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
