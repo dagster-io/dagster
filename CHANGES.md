@@ -2,7 +2,7 @@
 
 # 0.14.14
 
-New
+### New
 
 * When viewing a config schema in the Dagit launchpad, default values are now shown. Hover over an underlined key in the schema view to see the default value for that key.
 * dagster, dagit, and all extension libraries (dagster-\*) now contain py.typed files. This exposes them as typed libraries to static type checking tools like mypy. If your project is using mypy or another type checker, this may surface new type errors. For mypy, to restore the previous state and treat dagster or an extension library as untyped (i.e. ignore Dagster’s type annotations), add the following to your configuration file:
@@ -26,7 +26,7 @@ follow_imports = "skip"
 * If an exception is raised during an op, Dagster will now always run the failure hooks for that op. Before, certain system exceptions would prevent failure hooks from being run.
 * `mapping_key` can now be provided as an argument to `build_op_context`/`build_solid_context`. Doing so will allow the use of `OpExecutionContext.get_mapping_key()`.
 
-Bugfixes
+### Bugfixes
 
 * [dagit] Previously, when viewing a list of an asset’s materializations from a specified date/time, a banner would always indicate that it was a historical view. This banner is no longer shown when viewing the most recent materialization.
 * [dagit] Special cron strings like @daily were treated as invalid when converting to human-readable strings. These are now handled correctly.
@@ -39,11 +39,11 @@ Bugfixes
 * [dagit] Fixed issue where multi_assets would not show correct asset dependency information.
 * Fixed an issue with the sensor daemon, where the sensor would sometimes enter a race condition and overwrite the sensor status.
 
-Community Contributions
+### Community Contributions
 
 * [dagster-graphql] The Python DagsterGraphQLClient now supports terminating in-progress runs using `client.terminate_run(run_id)`. Thanks [@Javier162380](https://github.com/Javier162380)!
 
-Experimental
+### Experimental
 
 * Added an experimental view of the Partitions page / Backfill page, gated behind a feature flag in Dagit.
 
