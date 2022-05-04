@@ -79,7 +79,7 @@ class JobDefinition(PipelineDefinition):
         version_strategy: Optional[VersionStrategy] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
         asset_layer: Optional[AssetLayer] = None,
-        _input_values: Optional[Mapping[str, Any]] = None,
+        _input_values: Optional[Mapping[str, object]] = None,
     ):
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
@@ -95,7 +95,7 @@ class JobDefinition(PipelineDefinition):
         self._op_selection_data = check.opt_inst_param(
             _op_selection_data, "_op_selection_data", OpSelectionData
         )
-        self._input_values: Mapping[str, Any] = check.opt_mapping_param(
+        self._input_values: Mapping[str, object] = check.opt_mapping_param(
             _input_values, "_input_values"
         )
         for input_name in sorted(list(self._input_values.keys())):
@@ -157,7 +157,7 @@ class JobDefinition(PipelineDefinition):
         raise_on_error: bool = True,
         op_selection: Optional[List[str]] = None,
         run_id: Optional[str] = None,
-        input_values: Optional[Mapping[str, Any]] = None,
+        input_values: Optional[Mapping[str, object]] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute the Job in-process, gathering results in-memory.
@@ -377,7 +377,7 @@ class JobDefinition(PipelineDefinition):
             else None
         )
 
-    def get_direct_input_value(self, input_name: str) -> Any:
+    def get_direct_input_value(self, input_name: str) -> object:
         if input_name not in self._input_values:
             raise DagsterInvalidInvocationError(
                 f"On job '{self.name}', attempted to retrieve input value for input named '{input_name}', but no value was provided. Provided input values: {sorted(list(self._input_values.keys()))}"
