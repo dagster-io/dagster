@@ -383,8 +383,10 @@ def test_type_annotations_with_output():
     def my_op_returns_output() -> Output:
         return Output(5)
 
-    with pytest.raises(DagsterTypeCheckDidNotPass):
-        my_op_returns_output()
+    output = my_op_returns_output()
+    assert output.value == 5
+    result = execute_op_in_graph(my_op_returns_output)
+    assert result.output_for_node("my_op_returns_output") == 5
 
 
 # Document what happens when someone tries to use type annotations with generator
