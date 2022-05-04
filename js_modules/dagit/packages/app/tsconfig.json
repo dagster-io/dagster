@@ -4,11 +4,10 @@
       "@dagster-io/dagit-core/*": ["../core/src/*"],
       "@dagster-io/ui": ["../ui/src"]
     },
-    "target": "es5",
+    "target": "es6",
     "lib": [
-      "es6",
-      "dom",
-      "esnext.asynciterable"
+      "esnext",
+      "dom"
     ],
     "allowJs": true,
     "skipLibCheck": true,
