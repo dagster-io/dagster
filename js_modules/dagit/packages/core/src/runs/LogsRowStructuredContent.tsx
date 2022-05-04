@@ -377,12 +377,14 @@ const StepUpForRetryContent: React.FC<{
   }
 
   if (error) {
-    errorMessage = <span style={{color: Colors.Red500}}>{`${error.message}`}</span>;
-    errorStack = <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>;
-    if (error.cause) {
+    // If no cause, this was a `raise RetryRequest` inside the op. Show the trace for the main error.
+    if (!error.cause) {
+      errorMessage = <span style={{color: Colors.Red500}}>{`${error.message}`}</span>;
+      errorStack = <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>;
+    } else {
+      // If there is a cause, this was a different exception. Show that instead.
       errorCause = (
         <>
-          <br />
           {`The retry request was caused by the following exception:\n`}
           <span style={{color: Colors.Red500}}>{`${error.cause.message}`}</span>
           <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
