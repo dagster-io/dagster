@@ -68,6 +68,7 @@ def _coerce_solid_compute_fn_to_iterator(fn, output_defs, context, context_arg_p
 
 
 def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
+    from dagster.core.definitions.events import DEFAULT_OUTPUT
 
     if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
         raise DagsterInvariantViolationError(
@@ -108,9 +109,32 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
                 f"returned a tuple with {len(result)} elements"
             )
 
-        for output_def, element in zip(output_defs, result):
-            metadata = context.get_output_metadata(output_def.name)
-            yield Output(output_name=output_def.name, value=element, metadata=metadata)
+        for position, (output_def, element) in enumerate(zip(output_defs, result)):
+            # If an output object was provided directly, ensure that it matches
+            # with expected order from provided output definitions.
+            if isinstance(element, Output):
+                # If a name was explicitly provided on the output object, and
+                # that name does not match the name expected at this position,
+                # then throw an error.
+                if (
+                    not element.output_name == DEFAULT_OUTPUT
+                    and not element.output_name == output_def.name
+                ):
+                    raise DagsterInvariantViolationError(
+                        f"Bad state: Received a tuple of outputs. An output was "
+                        f"explicitly named '{element.output_name}', which does "
+                        "not match the output definition specified for "
+                        f"position {position}: '{output_def.name}'."
+                    )
+                yield Output(
+                    output_name=output_def.name,
+                    value=element.value,
+                    metadata_entries=element.metadata_entries,
+                )
+            else:
+                # If an output object was not returned, then construct one from any metadata that has been logged within the op's body.
+                metadata = context.get_output_metadata(output_def.name)
+                yield Output(output_name=output_def.name, value=element, metadata=metadata)
     elif result is not None:
         if not output_defs:
             raise DagsterInvariantViolationError(

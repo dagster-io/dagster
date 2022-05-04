@@ -40,14 +40,14 @@ def test_tempdir():
     assert not seven.temp_dir.get_system_temp_directory().startswith("/var")
 
 
-def test_get_args():
+def test_get_arg_names():
     def foo(one, two=2, three=None):  # pylint: disable=unused-argument
         pass
 
-    assert len(seven.get_args(foo)) == 3
-    assert "one" in seven.get_args(foo)
-    assert "two" in seven.get_args(foo)
-    assert "three" in seven.get_args(foo)
+    assert len(seven.get_arg_names(foo)) == 3
+    assert "one" in seven.get_arg_names(foo)
+    assert "two" in seven.get_arg_names(foo)
+    assert "three" in seven.get_arg_names(foo)
 
 
 def test_is_lambda():
