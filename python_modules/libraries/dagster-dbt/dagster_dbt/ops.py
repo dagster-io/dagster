@@ -1,9 +1,10 @@
 from dagster import Array, Bool, Field, In, Nothing, Out, Output, op
+from dagster.core.definitions.decorators.op_decorator import OpArgs
 
 from .types import DbtOutput
 from .utils import generate_events, generate_materializations
 
-_DEFAULT_OP_PROPS = dict(
+_DEFAULT_OP_PROPS = OpArgs(
     required_resource_keys={"dbt"},
     ins={"start_after": In(Nothing)},
     out=Out(DbtOutput, description="Parsed output from running the dbt command."),
@@ -32,6 +33,10 @@ Examples:
     def my_dbt_rpc_job():
         {op_name}()
     """
+
+
+# NOTE: mypy fails to properly track the type of `_DEFAULT_OP_PROPS` items when they are
+# double-splatted
 
 
 @op(
@@ -97,32 +102,32 @@ def dbt_run_op(context):
     yield Output(dbt_output)
 
 
-@op(**_DEFAULT_OP_PROPS)
+@op(**_DEFAULT_OP_PROPS)  # type: ignore
 def dbt_compile_op(context):
     return context.resources.dbt.compile()
 
 
-@op(**_DEFAULT_OP_PROPS)
+@op(**_DEFAULT_OP_PROPS)  # type: ignore
 def dbt_ls_op(context):
     return context.resources.dbt.ls()
 
 
-@op(**_DEFAULT_OP_PROPS)
+@op(**_DEFAULT_OP_PROPS)  # type: ignore
 def dbt_test_op(context):
     return context.resources.dbt.test()
 
 
-@op(**_DEFAULT_OP_PROPS)
+@op(**_DEFAULT_OP_PROPS)  # type: ignore
 def dbt_snapshot_op(context):
     return context.resources.dbt.snapshot()
 
 
-@op(**_DEFAULT_OP_PROPS)
+@op(**_DEFAULT_OP_PROPS)  # type: ignore
 def dbt_seed_op(context):
     return context.resources.dbt.seed()
 
 
-@op(**_DEFAULT_OP_PROPS)
+@op(**_DEFAULT_OP_PROPS)  # type: ignore
 def dbt_docs_generate_op(context):
     return context.resources.dbt.generate_docs()
 
