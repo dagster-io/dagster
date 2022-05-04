@@ -223,20 +223,18 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
                 />
               )}
               {explodeCompositesEnabled && (
-                <OptionsOverlay>
-                  <Checkbox
-                    format="switch"
-                    label="Explode graphs"
-                    checked={options.explodeComposites}
-                    onChange={() => {
-                      handleQueryChange('');
-                      setOptions({
-                        ...options,
-                        explodeComposites: !options.explodeComposites,
-                      });
-                    }}
-                  />
-                </OptionsOverlay>
+                <Checkbox
+                  format="switch"
+                  label="Explode graphs"
+                  checked={options.explodeComposites}
+                  onChange={() => {
+                    handleQueryChange('');
+                    setOptions({
+                      ...options,
+                      explodeComposites: !options.explodeComposites,
+                    });
+                  }}
+                />
               )}
             </OptionsOverlay>
           )}
