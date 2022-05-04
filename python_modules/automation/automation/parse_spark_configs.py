@@ -7,6 +7,7 @@ import re
 import sys
 from collections import namedtuple
 from enum import Enum
+from typing import Any, Dict, List, NamedTuple, Optional, cast
 
 import click
 import requests
@@ -149,8 +150,8 @@ CONFIG_TYPES = {
 }
 
 
-class SparkConfig(namedtuple("_SparkConfig", "path default meaning")):
-    def __new__(cls, path, default, meaning):
+class SparkConfig(NamedTuple("_SparkConfig", [("path", str), ("default", str), ("meaning", str)])):
+    def __new__(cls, path: str, default: object, meaning: str):
         # The original documentation strings include extraneous newlines, spaces
         return super(SparkConfig, cls).__new__(
             cls,
@@ -160,10 +161,10 @@ class SparkConfig(namedtuple("_SparkConfig", "path default meaning")):
         )
 
     @property
-    def split_path(self):
+    def split_path(self) -> List[str]:
         return self.path.split(".")
 
-    def write(self, printer):
+    def write(self, printer: IndentingBufferPrinter) -> None:
         config_type = CONFIG_TYPES.get(self.path, ConfigType.STRING).value
 
         printer.append("Field(")
@@ -180,14 +181,20 @@ class SparkConfig(namedtuple("_SparkConfig", "path default meaning")):
 
 
 class SparkConfigNode:
-    def __init__(self, value=None):
+
+    value: Optional[SparkConfig]
+    children: Dict[str, Any]
+
+    def __init__(self, value: Optional[SparkConfig] = None):
         self.value = value
         self.children = {}
 
-    def write(self, printer):
+    def write(self, printer: IndentingBufferPrinter) -> str:
         if not self.children:
+            assert self.value
             self.value.write(printer)
         else:
+            self.children = cast(Dict[str, SparkConfigNode], self.children)
             if self.value:
                 retdict = {"root": self.value}
                 retdict.update(self.children)
@@ -213,7 +220,7 @@ class SparkConfigNode:
         return printer.read()
 
 
-def extract(spark_docs_markdown_text):
+def extract(spark_docs_markdown_text: str) -> SparkConfigNode:
     import pytablereader as ptr
 
     tables = re.findall(TABLE_REGEX, spark_docs_markdown_text, re.DOTALL | re.MULTILINE)
@@ -248,7 +255,7 @@ def extract(spark_docs_markdown_text):
     return result
 
 
-def serialize(result):
+def serialize(result: SparkConfigNode) -> bytes:
     with IndentingBufferPrinter() as printer:
         printer.write_header()
         printer.line("from dagster import Bool, Field, Float, IntSource, Permissive, StringSource")
@@ -264,7 +271,7 @@ def serialize(result):
 
 
 @click.command()
-def run():
+def run() -> None:
     r = requests.get(
         "https://raw.githubusercontent.com/apache/spark/{}/docs/configuration.md".format(
             SPARK_VERSION

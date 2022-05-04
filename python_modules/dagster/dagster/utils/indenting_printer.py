@@ -9,6 +9,12 @@ LINE_LENGTH = 100
 
 
 class IndentingPrinter:
+
+    indent_level: int
+    current_indent: int
+    printer: Callable[[str], Any]
+    line_length: int
+
     def __init__(
         self,
         indent_level: int = 2,

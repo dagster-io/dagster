@@ -126,7 +126,7 @@ def example(name):
     print("Added metadata to {path}".format(path=EXAMPLES_JSON_PATH))
 
 
-def main():
+def main() -> None:
     click_cli = click.CommandCollection(sources=[cli], help=CLI_HELP)
     click_cli()
 
