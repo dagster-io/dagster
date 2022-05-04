@@ -1,6 +1,6 @@
 import contextlib
 import os
-from typing import Callable, Dict, List, NamedTuple, Optional
+from typing import Callable, Dict, Iterator, List, NamedTuple, Optional
 
 import yaml
 
@@ -22,7 +22,7 @@ IMAGES_PATH = os.path.join(os.path.dirname(__file__), "images")
 
 
 @contextlib.contextmanager
-def do_nothing(_cwd):
+def do_nothing(_cwd: str) -> Iterator[None]:
     yield
 
 
