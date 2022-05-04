@@ -42,11 +42,10 @@ class SkippedSensorRun(
 
 
 class SensorLaunchContext:
-    def __init__(self, external_sensor, state, tick, instance, logger):
+    def __init__(self, external_sensor, tick, instance, logger):
         self._external_sensor = external_sensor
         self._instance = instance
         self._logger = logger
-        self._state = state
         self._tick = tick
 
         self._should_update_cursor_on_failure = False
@@ -106,18 +105,22 @@ class SensorLaunchContext:
             self._tick.status != TickStatus.FAILURE
         ) or self._should_update_cursor_on_failure
 
-        last_run_key = (
-            self._state.instigator_data.last_run_key if self._state.instigator_data else None
+        # fetch the most recent state.  we do this as opposed to during context initialization time
+        # because we want to minimize the window of clobbering the sensor state upon updating the
+        # sensor state data.
+        state = self._instance.get_instigator_state(
+            self._external_sensor.get_external_origin_id(), self._external_sensor.selector_id
         )
+        last_run_key = state.instigator_data.last_run_key if state.instigator_data else None
         if self._tick.run_keys and should_update_cursor_and_last_run_key:
             last_run_key = self._tick.run_keys[-1]
 
-        cursor = self._state.instigator_data.cursor if self._state.instigator_data else None
+        cursor = state.instigator_data.cursor if state.instigator_data else None
         if should_update_cursor_and_last_run_key:
             cursor = self._tick.cursor
 
         self._instance.update_instigator_state(
-            self._state.with_data(
+            state.with_data(
                 SensorInstigatorData(
                     last_tick_timestamp=self._tick.timestamp,
                     last_run_key=last_run_key,
@@ -308,9 +311,7 @@ def execute_sensor_iteration(
 
             _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
 
-            with SensorLaunchContext(
-                external_sensor, sensor_state, tick, instance, logger
-            ) as tick_context:
+            with SensorLaunchContext(external_sensor, tick, instance, logger) as tick_context:
                 _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
                 yield from _evaluate_sensor(
                     tick_context,
