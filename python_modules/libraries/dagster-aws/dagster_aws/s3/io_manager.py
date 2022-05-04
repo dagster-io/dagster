@@ -15,7 +15,7 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         self.bucket = check.str_param(s3_bucket, "s3_bucket")
         self.s3_prefix = check.str_param(s3_prefix, "s3_prefix")
         self.s3 = s3_session
-        self.s3.head_bucket(Bucket=self.bucket)
+        self.s3.list_objects(Bucket=self.bucket, Prefix=self.s3_prefix, MaxKeys=1)
 
     def _get_path(self, context):
         return "/".join([self.s3_prefix, "storage", *context.get_output_identifier()])
