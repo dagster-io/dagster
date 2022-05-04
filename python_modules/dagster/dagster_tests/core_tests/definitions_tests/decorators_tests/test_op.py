@@ -900,3 +900,25 @@ def test_generic_output_name_mismatch():
         match="Bad state: Received a tuple of outputs. An output was explicitly named 'out2', which does not match the output definition specified for position 0: 'out1'.",
     ):
         execute_op_in_graph(the_op)
+
+
+def test_generic_dynamic_output():
+    @op
+    def basic() -> List[DynamicOutput[int]]:
+        return [DynamicOutput(mapping_key="1", value=1), DynamicOutput(mapping_key="2", value=2)]
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+    assert result.output_for_node("basic") == {"1": 1, "2": 2}
+
+
+def test_generic_dynamic_output_type_mismatch():
+    @op
+    def basic() -> List[DynamicOutput[int]]:
+        return [DynamicOutput(mapping_key="1", value=1), DynamicOutput(mapping_key="2", value="2")]
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step output "result" - expected type "Int". Description: Value "2" of python type "str" must be a int.',
+    ):
+        execute_op_in_graph(basic)

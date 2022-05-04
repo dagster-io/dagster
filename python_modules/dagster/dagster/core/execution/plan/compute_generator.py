@@ -5,6 +5,7 @@ from typing import Generator, cast
 import dagster._check as check
 from dagster.core.definitions import (
     AssetMaterialization,
+    DynamicOutput,
     ExpectationResult,
     Materialization,
     Output,
@@ -88,6 +89,9 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
             yield event
     elif isinstance(result, Output):
         yield result
+    elif isinstance(result, list) and all([isinstance(event, DynamicOutput) for event in result]):
+        for event in result:
+            yield event
     elif len(output_defs) == 1:
         if result is None and output_defs[0].is_required is False:
             context.log.warn(
