@@ -11,6 +11,7 @@ from docs_snippets.concepts.solids_pipelines.dynamic_pipeline.dynamic_pipeline i
     process_directory,
 )
 from docs_snippets.concepts.solids_pipelines.fan_in_pipeline import fan_in
+from docs_snippets.concepts.solids_pipelines.jobs_from_graphs import local_job, prod_job
 from docs_snippets.concepts.solids_pipelines.linear_pipeline import linear
 from docs_snippets.concepts.solids_pipelines.multiple_io_pipeline import (
     inputs_and_outputs,
@@ -96,3 +97,8 @@ def test_retry_examples():
     # just that they run
     assert retry_job.execute_in_process(raise_on_error=False)
     assert default_and_override_job.execute_in_process(raise_on_error=False)
+
+
+def test_jobs_from_graphs():
+    assert local_job.execute_in_process()
+    assert prod_job.execute_in_process()
