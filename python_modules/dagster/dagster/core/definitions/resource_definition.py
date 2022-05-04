@@ -31,7 +31,13 @@ from .definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
 from .resource_invocation import resource_invocation_result
-from .scoped_resources_builder import IContainsGenerator, Resources, ScopedResourcesBuilder  # type: ignore
+
+# pylint: disable=unused-import
+from .scoped_resources_builder import (  # type: ignore
+    IContainsGenerator,
+    Resources,
+    ScopedResourcesBuilder,
+)
 
 if TYPE_CHECKING:
     from dagster.core.execution.resources_init import InitResourceContext
