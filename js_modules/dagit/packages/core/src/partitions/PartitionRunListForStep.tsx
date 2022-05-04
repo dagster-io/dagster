@@ -5,6 +5,7 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
@@ -59,6 +60,7 @@ export const PartitionRunListForStep: React.FC<PartitionRunListForStepProps> = (
       />
     );
   }
+  const newPartitionsView = featureEnabled(FeatureFlag.flagNewPartitionsView);
   return (
     <div>
       <RunTable
@@ -69,16 +71,20 @@ export const PartitionRunListForStep: React.FC<PartitionRunListForStepProps> = (
             Step Info
           </th>,
         ]}
-        additionalColumnsForRow={(run) => [
-          <StepStatsColumn
-            key="context"
-            stats={props.stepStatsByRunId[run.runId] || null}
-            linkToLogs={`/instance/runs/${run.runId}?${qs.stringify({
-              selection: props.stepName,
-              logs: `step:${props.stepName}`,
-            })}`}
-          />,
-        ]}
+        additionalColumnsForRow={
+          newPartitionsView
+            ? undefined
+            : (run) => [
+                <StepStatsColumn
+                  key="context"
+                  stats={props.stepStatsByRunId[run.runId] || null}
+                  linkToLogs={`/instance/runs/${run.runId}?${qs.stringify({
+                    selection: props.stepName,
+                    logs: `step:${props.stepName}`,
+                  })}`}
+                />,
+              ]
+        }
       />
     </div>
   );
