@@ -42,6 +42,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.ecs = boto3.client("ecs")
         self.ec2 = boto3.resource("ec2")
         self.secrets_manager = boto3.client("secretsmanager")
+        self.logs = boto3.client("logs")
 
         self.task_definition = task_definition
         self.container_name = container_name
@@ -375,13 +376,34 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         if t.get("lastStatus") in running_statuses:
             return CheckRunHealthResult(WorkerStatus.RUNNING)
         elif t.get("lastStatus") in stopped_statuses:
-            for c in t.get("containers"):
-                if c.get("exitCode") != 0:
-                    return CheckRunHealthResult(
-                        WorkerStatus.FAILED,
-                        f"ECS task failed. Stop code: {t.get('stopCode')}. Stop reason {t.get('stopReason')}. "
-                        f"Container {c.get('name')} failed with exit code {c.get('exitCode')}",
-                    )
+            task_definition_arn = t.get("taskDefinitionArn")
+            task_definition = self.ecs.describe_task_definition(taskDefinition=task_definition_arn).get(
+                "taskDefinition"
+            )
+
+            container_definition = task_definition.get("containerDefinitions")[0]
+            log_stream_prefix = (
+                container_definition.get("logConfiguration").get("options").get("awslogs-stream-prefix")
+            )
+            container_name = container_definition.get("name")
+            task_id = t.get("task_arn").split("/")[-1]
+
+            log_stream = f"{log_stream_prefix}/{container_name}/{task_id}"
+
+            events = self.logs.get_log_events(
+                logGroupName=self.log_group,
+                logStreamName=log_stream,
+            ).get("events")
+
+
+
+            # for c in t.get("containers"):
+            #     if c.get("exitCode") != 0:
+            #         return CheckRunHealthResult(
+            #             WorkerStatus.FAILED,
+            #             f"ECS task failed. Stop code: {t.get('stopCode')}. Stop reason {t.get('stopReason')}. "
+            #             f"Container {c.get('name')} failed with exit code {c.get('exitCode')}",
+            #         )
             return CheckRunHealthResult(WorkerStatus.SUCCESS)
 
         return CheckRunHealthResult(WorkerStatus.UNKNOWN, "ECS task health status is unknown.")
