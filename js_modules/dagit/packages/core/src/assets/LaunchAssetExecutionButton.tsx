@@ -103,12 +103,20 @@ export const LaunchAssetExecutionButton: React.FC<{
                 tags: [
                   {
                     key: DagsterTag.StepSelection,
-                    value: ([] as string[]).concat.apply([], assets.map((o) => o.opNames)).join(','),
+                    value: ([] as string[]).concat
+                      .apply(
+                        [],
+                        assets.map((o) => o.opNames),
+                      )
+                      .join(','),
                   },
                 ],
               },
               runConfigData: {},
-              stepKeys: ([] as string[]).concat.apply([], assets.map((o) => o.opNames)),
+              stepKeys: ([] as string[]).concat.apply(
+                [],
+                assets.map((o) => o.opNames),
+              ),
               selector: {
                 repositoryLocationName: repoAddress.location,
                 repositoryName: repoAddress.name,
