@@ -385,7 +385,7 @@ def test_exity_run(run_config):  # pylint: disable=redefined-outer-name
             assert _message_exists(event_records, 'Execution of step "exity_solid" failed.')
             assert _message_exists(
                 event_records,
-                'Execution of run for "exity_pipeline" failed. An exception was thrown during execution.',
+                "Execution of run for \"exity_pipeline\" failed. Steps failed: ['exity_solid']",
             )
 
 
