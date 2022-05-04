@@ -294,6 +294,21 @@ def other_container_context_config(other_configured_secret):
 
 
 @pytest.fixture
+def environment_container_context_config():
+    return {
+        "ecs": {
+            "environment": [
+                {
+                    "name": "FOO",
+                    "valueFrom": "BAR",
+                }
+            ],
+            "secrets_tags": ["dagster"],
+        }
+    }
+
+
+@pytest.fixture
 def launch_run_with_container_context(
     pipeline, external_pipeline, workspace, container_context_config
 ):

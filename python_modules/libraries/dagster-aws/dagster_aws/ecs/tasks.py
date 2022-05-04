@@ -41,6 +41,7 @@ def default_ecs_task_definition(
     container_name,
     command=None,
     secrets=None,
+    environment=None,
     include_sidecars=False,
 ):
     # Start with the current process's task's definition but remove
@@ -72,6 +73,7 @@ def default_ecs_task_definition(
             "command": command if command else [],
         },
         secrets or {},
+        environment or {},
         {} if include_sidecars else {"dependsOn": []},
     )
 

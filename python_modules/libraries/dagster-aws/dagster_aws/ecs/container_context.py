@@ -18,7 +18,7 @@ ECS_CONTAINER_CONTEXT_SCHEMA = {
         is_required=False,
         description=(
             "An array of AWS Secrets Manager secrets. These secrets will "
-            "be mounted as environment variabls in the container. See "
+            "be mounted as environment variables in the container. See "
             "https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html."
         ),
     ),
@@ -30,13 +30,22 @@ ECS_CONTAINER_CONTEXT_SCHEMA = {
             "environment variables in the container."
         ),
     ),
+    "environment": Field(
+        Noneable(Array(Shape({"name": StringSource, "value": StringSource}))),
+        is_required=False,
+        description=(
+            "An array of environment variables. These will be mounted as environment variables in "
+            "the container. See "
+            "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/taskdef-envfiles.html"
+        ),
+    ),
 }
 
 
 class EcsContainerContext(
     NamedTuple(
         "_EcsContainerContext",
-        [("secrets", List[Any]), ("secrets_tags", List[str])],
+        [("secrets", List[Any]), ("secrets_tags", List[str]), ("environment", List[Any])],
     )
 ):
     """Encapsulates configuration that can be applied to an ECS task running Dagster code."""
@@ -45,17 +54,20 @@ class EcsContainerContext(
         cls,
         secrets: Optional[List[Any]] = None,
         secrets_tags: Optional[List[str]] = None,
+        environment: Optional[List[Any]] = None,
     ):
         return super(EcsContainerContext, cls).__new__(
             cls,
             secrets=check.opt_list_param(secrets, "secrets"),
             secrets_tags=check.opt_list_param(secrets_tags, "secrets_tags"),
+            environment=check.opt_list_param(environment, "environment"),
         )
 
     def merge(self, other: "EcsContainerContext") -> "EcsContainerContext":
         return EcsContainerContext(
             secrets=other.secrets + self.secrets,
             secrets_tags=other.secrets_tags + self.secrets_tags,
+            environment=other.environment + self.environment,
         )
 
     def get_secrets_dict(self, secrets_manager) -> Mapping[str, str]:
@@ -63,6 +75,9 @@ class EcsContainerContext(
             (get_tagged_secrets(secrets_manager, self.secrets_tags) if self.secrets_tags else {}),
             {secret["name"]: secret["valueFrom"] for secret in self.secrets},
         )
+
+    def get_environment_dict(self) -> Mapping[str, str]:
+        return {env["name"]: env["value"] for env in self.environment}
 
     @staticmethod
     def create_for_run(pipeline_run: PipelineRun, run_launcher: Optional["EcsRunLauncher"]):
@@ -72,6 +87,7 @@ class EcsContainerContext(
                 EcsContainerContext(
                     secrets=run_launcher.secrets,
                     secrets_tags=run_launcher.secrets_tags,
+                    environment=run_launcher.environment,
                 )
             )
 
@@ -111,4 +127,5 @@ class EcsContainerContext(
         return EcsContainerContext(
             secrets=processed_context_value.get("secrets"),
             secrets_tags=processed_context_value.get("secrets_tags"),
+            environment=processed_context_value.get("environment"),
         )

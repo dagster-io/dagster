@@ -5,7 +5,7 @@ from contextlib import suppress
 import boto3
 from botocore.exceptions import ClientError
 
-from dagster import Array, Field, Noneable, ScalarUnion, StringSource, check
+from dagster import Array, Field, Noneable, ScalarUnion, Shape, StringSource, check
 from dagster.core.events import EngineEventData, MetadataEntry
 from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.grpc.types import ExecuteRunArgs
@@ -105,7 +105,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 is_required=False,
                 description=(
                     "An array of AWS Secrets Manager secrets. These secrets will "
-                    "be mounted as environment variabls in the container. See "
+                    "be mounted as environment variables in the container. See "
                     "https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html."
                 ),
             ),
@@ -116,6 +116,15 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 description=(
                     "AWS Secrets Manager secrets with this tag will be mounted as "
                     "environment variables in the container. Defaults to 'dagster'."
+                ),
+            ),
+            "environment": Field(
+                Noneable(Array(Shape({"name": StringSource, "value": StringSource}))),
+                is_required=False,
+                description=(
+                    "An array of environment variables. These will be mounted as environment variables in "
+                    "the container. See "
+                    "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/taskdef-envfiles.html"
                 ),
             ),
             "include_sidecars": Field(
@@ -302,6 +311,11 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             else {}
         )
 
+        envs = container_context.get_environment_dict()
+        environment = {
+            "environment": [{"name": key, "value": value} for key, value in envs.items()]
+        }
+
         task_definition = {}
         with suppress(ClientError):
             task_definition = self.ecs.describe_task_definition(taskDefinition=family)[
@@ -318,6 +332,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             image,
             self.container_name,
             secrets=secrets_definition,
+            environment=environment,
             include_sidecars=self.include_sidecars,
         )
 

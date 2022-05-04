@@ -21,9 +21,15 @@ def other_secrets_container_context(other_container_context_config):
     return EcsContainerContext.create_from_config(other_container_context_config)
 
 
+@pytest.fixture
+def environment_container_context(environment_container_context_config):
+    return EcsContainerContext.create_from_config(environment_container_context_config)
+
+
 def test_empty_container_context(empty_container_context):
     assert empty_container_context.secrets == []
     assert empty_container_context.secrets_tags == []
+    assert empty_container_context.environment == []
 
 
 def test_invalid_config():
@@ -41,6 +47,7 @@ def test_merge(
     other_secrets_container_context,
     configured_secret,
     other_configured_secret,
+    environment_container_context,
 ):
     assert secrets_container_context.secrets == [
         {"name": "HELLO", "valueFrom": configured_secret.arn + "/hello"},
@@ -52,6 +59,8 @@ def test_merge(
     ]
 
     assert other_secrets_container_context.secrets_tags == ["other_secret_tag"]
+
+    assert environment_container_context.environment == [{"name": "FOO", "value": "BAR"}]
 
     merged = other_secrets_container_context.merge(secrets_container_context)
 
@@ -70,3 +79,7 @@ def test_merge(
         empty_container_context.merge(secrets_container_context).secrets_tags
         == secrets_container_context.secrets_tags
     )
+
+    merged = merged.merge(environment_container_context)
+
+    assert merged.environment == environment_container_context.environment
