@@ -47,6 +47,11 @@ export class Structured extends React.Component<StructuredProps, StructuredState
           />
         ),
       });
+    } else if (node.__typename === 'ExecutionStepUpForRetryEvent') {
+      showCustomAlert({
+        title: 'Step Retry',
+        body: <PythonErrorInfo error={node.error ? node.error : node} />,
+      });
     } else if (node.__typename === 'HookErroredEvent') {
       showCustomAlert({
         title: 'Error',
@@ -66,7 +71,7 @@ export class Structured extends React.Component<StructuredProps, StructuredState
       });
     } else {
       showCustomAlert({
-        title: (node.stepKey && node.stepKey) || 'Info',
+        title: node.stepKey || 'Info',
         body: (
           <StructuredContent>
             <LogsRowStructuredContent node={node} metadata={metadata} />
@@ -133,6 +138,11 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
         metadataEntries {
           ...MetadataEntryFragment
         }
+      }
+    }
+    ... on ExecutionStepUpForRetryEvent {
+      error {
+        ...PythonErrorFragment
       }
     }
     ... on ExecutionStepInputEvent {
