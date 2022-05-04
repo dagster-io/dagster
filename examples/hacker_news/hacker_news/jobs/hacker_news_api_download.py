@@ -5,6 +5,7 @@ from hacker_news.ops.id_range_for_time import id_range_for_time
 from hacker_news.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
 from hacker_news.resources.hn_resource import hn_api_subsample_client, hn_snapshot_client
 from hacker_news.resources.partition_bounds import partition_bounds
+from hacker_news.schedules.hourly_hn_download_schedule import hourly_download_config
 
 from dagster import graph, hourly_partitioned_config, in_process_executor
 
@@ -33,20 +34,6 @@ def hacker_news_api_download():
     items = download_items(id_range_for_time())
     build_comments(items)
     build_stories(items)
-
-
-@hourly_partitioned_config(start_date=datetime(2020, 12, 1))
-def hourly_download_config(start: datetime, end: datetime):
-    return {
-        "resources": {
-            "partition_bounds": {
-                "config": {
-                    "start": start.strftime("%Y-%m-%d %H:%M:%S"),
-                    "end": end.strftime("%Y-%m-%d %H:%M:%S"),
-                }
-            },
-        }
-    }
 
 
 download_prod_job = hacker_news_api_download.to_job(
