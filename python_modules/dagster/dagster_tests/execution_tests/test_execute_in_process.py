@@ -8,6 +8,7 @@ from dagster import (
     DynamicOut,
     DynamicOutput,
     Out,
+    Output,
     daily_partitioned_config,
     job,
     op,
@@ -306,3 +307,31 @@ def test_dagster_run():
     result = my_failure_job.execute_in_process(raise_on_error=False)
     assert not result.success
     assert not result.dagster_run.is_success
+
+
+def test_dynamic_output_for_node():
+    @op(out=DynamicOut())
+    def fanout():
+        for i in range(3):
+            yield DynamicOutput(value=i, mapping_key=str(i))
+
+    @op(
+        out={
+            "output1": Out(int),
+            "output2": Out(int),
+        }
+    )
+    def return_as_tuple(x):
+        yield Output(value=x, output_name="output1")
+        yield Output(value=5, output_name="output2")
+
+    @job
+    def myjob():
+        fanout().map(return_as_tuple)
+
+    # get result
+    result = myjob.execute_in_process()
+
+    # assertions
+    assert result.output_for_node("return_as_tuple", "output1") == {"0": 0, "1": 1, "2": 2}
+    assert result.output_for_node("return_as_tuple", "output2") == {"0": 5, "1": 5, "2": 5}
