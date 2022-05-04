@@ -122,12 +122,13 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             except db.exc.IntegrityError as exc:
                 raise DagsterRunAlreadyExists from exc
 
-            if pipeline_run.tags and len(pipeline_run.tags) > 0:
+            tags_to_insert = pipeline_run.tags_for_storage()
+            if tags_to_insert:
                 conn.execute(
                     RunTagsTable.insert(),  # pylint: disable=no-value-for-parameter
                     [
                         dict(run_id=pipeline_run.run_id, key=k, value=v)
-                        for k, v in pipeline_run.tags.items()
+                        for k, v in tags_to_insert.items()
                     ],
                 )
 
