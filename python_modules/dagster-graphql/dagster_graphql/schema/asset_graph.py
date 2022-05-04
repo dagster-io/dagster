@@ -140,8 +140,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         super().__init__(
             id=external_asset_node.asset_key.to_string(),
             assetKey=external_asset_node.asset_key,
-            opName=external_asset_node.op_name,
             description=external_asset_node.op_description,
+            opName=external_asset_node.op_name,
         )
 
     @property
@@ -296,13 +296,6 @@ class GrapheneAssetNode(graphene.ObjectType):
             for dep in self._external_asset_node.dependencies
         ]
 
-    def resolve_graphName(self, _graphene_info) -> Optional[str]:
-        # todo OwenKephart - return the correct graph name here
-        if self._external_asset_node.op_name:
-            return self._external_asset_node.op_name
-        else:
-            return None
-
     def resolve_jobNames(self, _graphene_info) -> Sequence[str]:
         return self._external_asset_node.job_names
 
@@ -378,12 +371,11 @@ class GrapheneAssetNode(graphene.ObjectType):
         else:
             return None
 
-    def resolve_opNames(self, _graphene_info) -> List[str]:
-        # todo OwenKephart: Return the correct list of op names.
-        if self._external_asset_node.op_name:
-            return [self._external_asset_node.op_name]
-        else:
-            return []
+    def resolve_opNames(self, _graphene_info) -> Sequence[str]:
+        return self._external_asset_node.op_names or []
+
+    def resolve_graphName(self, _graphene_info) -> Optional[str]:
+        return self._external_asset_node.graph_name
 
     def resolve_partitionDefinition(self, _graphene_info) -> Optional[str]:
         partitions_def_data = self._external_asset_node.partitions_def_data
