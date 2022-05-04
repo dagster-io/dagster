@@ -1,10 +1,10 @@
-from dagster import Array, Bool, Field, In, Nothing, Out, Output, op
-from dagster.core.definitions.decorators.op_decorator import OpArgs
+from typing import List, Tuple
+from dagster import Array, Bool, Field, In, Nothing, OpDefinition, Out, Output, op
 
 from .types import DbtOutput
 from .utils import generate_events, generate_materializations
 
-_DEFAULT_OP_PROPS = OpArgs(
+_DEFAULT_OP_PROPS = dict(
     required_resource_keys={"dbt"},
     ins={"start_after": In(Nothing)},
     out=Out(DbtOutput, description="Parsed output from running the dbt command."),
@@ -36,10 +36,10 @@ Examples:
 
 
 # NOTE: mypy fails to properly track the type of `_DEFAULT_OP_PROPS` items when they are
-# double-splatted
+# double-splatted, so we type-ignore the below op declarations.
 
 
-@op(
+@op(  # type: ignore
     **_DEFAULT_OP_PROPS,
     config_schema={
         "yield_asset_events": Field(
@@ -132,7 +132,7 @@ def dbt_docs_generate_op(context):
     return context.resources.dbt.generate_docs()
 
 
-for op, cmd in [
+for _op, cmd in [
     (dbt_build_op, "build"),
     (dbt_run_op, "run"),
     (dbt_compile_op, "compile"),
@@ -142,4 +142,4 @@ for op, cmd in [
     (dbt_seed_op, "seed"),
     (dbt_docs_generate_op, "docs generate"),
 ]:
-    op.__doc__ = _get_doc(op.name, cmd)
+    _op.__doc__ = _get_doc(_op.name, cmd)

@@ -29,7 +29,7 @@ def _node_result_to_metadata(node_result: Dict[str, Any]) -> Mapping[str, RawMet
 
 
 def _timing_to_metadata(timings: List[Dict[str, Any]]) -> Mapping[str, RawMetadataValue]:
-    metadata = {}
+    metadata: Dict[str, RawMetadataValue] = {}
     for timing in timings:
         if timing["name"] == "execute":
             desc = "Execution"
