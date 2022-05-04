@@ -6,8 +6,6 @@ from typing import (
     Callable,
     Dict,
     List,
-    Mapping,
-    NamedTuple,
     Optional,
     Union,
     cast,
@@ -18,11 +16,7 @@ from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
-from dagster.core.errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvalidInvocationError,
-    DagsterUnknownResourceError,
-)
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster.seven import funcsigs
 from dagster.utils.backcompat import experimental_arg_warning
 
@@ -37,7 +31,7 @@ from .definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
 from .resource_invocation import resource_invocation_result
-from .scoped_resources_builder import Resources, ScopedResourcesBuilder   # type: ignore
+from .scoped_resources_builder import Resources, ScopedResourcesBuilder  # type: ignore
 
 if TYPE_CHECKING:
     from dagster.core.execution.resources_init import InitResourceContext

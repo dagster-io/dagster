@@ -8,7 +8,11 @@
 # See: https://github.com/python/mypy/issues/7281
 
 from collections import namedtuple
-from typing import AbstractSet, NamedTuple, Optional
+from typing import AbstractSet, Mapping, NamedTuple, Optional
+
+import dagster.check as check
+from dagster.core.definitions.resource_definition import IContainsGenerator
+from dagster.core.errors import DagsterUnknownResourceError
 
 
 class Resources:
