@@ -335,6 +335,7 @@ def resolve_checked_solid_fn_inputs(
             if inp.dagster_type.kind == DagsterTypeKind.NOTHING
         )
     else:
+        # In graphs, all nothing inputs must be mapped to inputs of a given op.
         explicit_names = set(inp.name for inp in explicit_input_defs)
         nothing_names = set()
 
@@ -373,6 +374,20 @@ def resolve_checked_solid_fn_inputs(
                 used_inputs.add(param.name)
 
     undeclared_inputs = explicit_names - used_inputs
+
+    if decorator_name == "@graph":
+        undeclared_nothing_inputs = [
+            inp.name
+            for inp in explicit_input_defs
+            if inp.dagster_type.kind == DagsterTypeKind.NOTHING and inp.name in undeclared_inputs
+        ]
+        if undeclared_nothing_inputs:
+            undeclared_nothing_inputs_printed = ", ".join(undeclared_nothing_inputs)
+            raise DagsterInvalidDefinitionError(
+                f"Nothing-type input definitions declared in {decorator_name} "
+                "must be specified as input arguments to the decorated function."
+            )
+
     if not has_kwargs and undeclared_inputs:
         undeclared_inputs_printed = ", '".join(undeclared_inputs)
         raise DagsterInvalidDefinitionError(
