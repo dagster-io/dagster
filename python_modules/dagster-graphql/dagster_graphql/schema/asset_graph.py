@@ -371,7 +371,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         else:
             return None
 
-    def resolve_opNames(self, _graphene_info) -> List[str]:
+    def resolve_opNames(self, _graphene_info) -> Sequence[str]:
         return self._external_asset_node.op_names or []
 
     def resolve_graphName(self, _graphene_info) -> Optional[str]:
