@@ -213,13 +213,14 @@ class Output(Generic[T]):
     ):
 
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        self._metadata_entries = check.opt_list_param(
+        metadata_entries = check.opt_list_param(
             metadata_entries,
             "metadata_entries",
             of_type=(MetadataEntry, PartitionMetadataEntry),
         )
         self._value = value
         self._output_name = check.str_param(output_name, "output_name")
+        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
 
     @property
     def metadata_entries(self) -> List[Union[PartitionMetadataEntry, MetadataEntry]]:

@@ -879,9 +879,9 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
 
 
 def _is_generic_output_annotation(dagster_type: object) -> bool:
-    from dagster.seven.typing import get_args, get_origin
+    from dagster.seven.typing import get_origin
 
-    return get_origin(dagster_type) == Output
+    return dagster_type == Output or get_origin(dagster_type) == Output
 
 
 def resolve_python_type_to_dagster_type(python_type: t.Type) -> DagsterType:
