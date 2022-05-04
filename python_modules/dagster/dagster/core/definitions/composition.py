@@ -573,7 +573,7 @@ class PendingNodeInvocation:
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
-        input_values: Optional[Mapping[str, Any]] = None,
+        input_values: Optional[Mapping[str, object]] = None,
     ) -> "JobDefinition":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
@@ -610,7 +610,7 @@ class PendingNodeInvocation:
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
         run_id: Optional[str] = None,
-        input_values: Optional[Mapping[str, Any]] = None,
+        input_values: Optional[Mapping[str, object]] = None,
     ) -> "ExecuteInProcessResult":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(

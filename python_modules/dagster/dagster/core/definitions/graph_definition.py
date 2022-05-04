@@ -463,7 +463,7 @@ class GraphDefinition(NodeDefinition):
         op_selection: Optional[List[str]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         asset_layer: Optional["AssetLayer"] = None,
-        input_values: Optional[Mapping[str, Any]] = None,
+        input_values: Optional[Mapping[str, object]] = None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -629,7 +629,7 @@ class GraphDefinition(NodeDefinition):
         raise_on_error: bool = True,
         op_selection: Optional[List[str]] = None,
         run_id: Optional[str] = None,
-        input_values: Optional[Mapping[str, Any]] = None,
+        input_values: Optional[Mapping[str, object]] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute this graph in-process, collecting results in-memory.

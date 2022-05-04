@@ -42,7 +42,7 @@ class _Job:
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
-        input_values: Optional[Mapping[str, Any]] = None,
+        input_values: Optional[Mapping[str, object]] = None,
     ):
         self.name = name
         self.description = description
@@ -129,7 +129,7 @@ def job(
     op_retry_policy: Optional[RetryPolicy] = ...,
     version_strategy: Optional[VersionStrategy] = ...,
     partitions_def: Optional["PartitionsDefinition"] = ...,
-    input_values: Optional[Mapping[str, Any]] = ...,
+    input_values: Optional[Mapping[str, object]] = ...,
 ) -> _Job:
     ...
 
@@ -146,7 +146,7 @@ def job(
     op_retry_policy: Optional[RetryPolicy] = None,
     version_strategy: Optional[VersionStrategy] = None,
     partitions_def: Optional["PartitionsDefinition"] = None,
-    input_values: Optional[Mapping[str, Any]] = None,
+    input_values: Optional[Mapping[str, object]] = None,
 ) -> Union[JobDefinition, _Job]:
     """Creates a job with the specified parameters from the decorated graph/op invocation function.
 
