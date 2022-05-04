@@ -777,7 +777,7 @@ def external_asset_graph_from_defs(
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
     dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
     all_upstream_asset_keys: Set[AssetKey] = set()
-    op_names_by_asset_key: Dict[AssetKey, Sequence[NodeOutputHandle]] = {}
+    op_names_by_asset_key: Dict[AssetKey, Sequence[str]] = {}
 
     for pipeline_def in pipelines:
         asset_info_by_node_output = pipeline_def.asset_layer.asset_info_by_node_output_handle
@@ -787,7 +787,7 @@ def external_asset_graph_from_defs(
                 op_names_by_asset_key[output_key] = [
                     str(handle)
                     for handle in pipeline_def.asset_layer.dependency_node_handles_by_asset_key.get(
-                        output_key
+                        output_key, []
                     )
                 ]
             upstream_asset_keys = pipeline_def.asset_layer.upstream_assets_for_asset(output_key)
