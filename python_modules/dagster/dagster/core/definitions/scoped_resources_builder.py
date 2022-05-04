@@ -11,8 +11,12 @@ from collections import namedtuple
 from typing import AbstractSet, Mapping, NamedTuple, Optional
 
 import dagster.check as check
-from dagster.core.definitions.resource_definition import IContainsGenerator
 from dagster.core.errors import DagsterUnknownResourceError
+
+
+class IContainsGenerator:
+    """This class adds an additional tag to indicate that the resources object has at least one
+    resource that has been yielded from a generator, and thus may require teardown."""
 
 
 class Resources:

@@ -31,7 +31,7 @@ from .definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
 from .resource_invocation import resource_invocation_result
-from .scoped_resources_builder import Resources, ScopedResourcesBuilder  # type: ignore
+from .scoped_resources_builder import IContainsGenerator, Resources, ScopedResourcesBuilder  # type: ignore
 
 if TYPE_CHECKING:
     from dagster.core.execution.resources_init import InitResourceContext
@@ -317,11 +317,6 @@ def resource(
         )(resource_fn)
 
     return _wrap
-
-
-class IContainsGenerator:
-    """This class adds an additional tag to indicate that the resources object has at least one
-    resource that has been yielded from a generator, and thus may require teardown."""
 
 
 def make_values_resource(**kwargs: Any) -> ResourceDefinition:
