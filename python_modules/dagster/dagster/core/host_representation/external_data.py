@@ -7,7 +7,7 @@ for that.
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union
 
 from dagster import StaticPartitionsDefinition, check
 from dagster.core.asset_defs import SourceAsset
@@ -204,7 +204,7 @@ class ExternalPresetData(
         "_ExternalPresetData",
         [
             ("name", str),
-            ("run_config", Dict[str, Any]),
+            ("run_config", Mapping[str, object]),
             ("solid_selection", Optional[List[str]]),
             ("mode", str),
             ("tags", Dict[str, str]),
@@ -214,7 +214,7 @@ class ExternalPresetData(
     def __new__(
         cls,
         name: str,
-        run_config: Optional[Dict[str, Any]],
+        run_config: Optional[Mapping[str, object]],
         solid_selection: Optional[List[str]],
         mode: str,
         tags: Dict[str, str],
@@ -222,7 +222,7 @@ class ExternalPresetData(
         return super(ExternalPresetData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
+            run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
             solid_selection=check.opt_nullable_list_param(
                 solid_selection, "solid_selection", of_type=str
             ),
@@ -409,18 +409,18 @@ class ExternalSensorExecutionErrorData(
 class ExternalExecutionParamsData(
     NamedTuple(
         "_ExternalExecutionParamsData",
-        [("run_config", Dict[object, object]), ("tags", Dict[str, str])],
+        [("run_config", Mapping[str, object]), ("tags", Mapping[str, str])],
     )
 ):
     def __new__(
         cls,
-        run_config: Optional[Dict[object, object]] = None,
+        run_config: Optional[Mapping[str, object]] = None,
         tags: Optional[Dict[str, str]] = None,
     ):
         return super(ExternalExecutionParamsData, cls).__new__(
             cls,
-            run_config=check.opt_dict_param(run_config, "run_config"),
-            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
+            run_config=check.opt_mapping_param(run_config, "run_config"),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
         )
 
 
@@ -538,26 +538,26 @@ class ExternalPartitionNamesData(
 @whitelist_for_serdes
 class ExternalPartitionConfigData(
     NamedTuple(
-        "_ExternalPartitionConfigData", [("name", str), ("run_config", Dict[object, object])]
+        "_ExternalPartitionConfigData", [("name", str), ("run_config", Mapping[str, object])]
     )
 ):
-    def __new__(cls, name: str, run_config: Optional[Dict[object, object]] = None):
+    def __new__(cls, name: str, run_config: Optional[Mapping[str, object]] = None):
         return super(ExternalPartitionConfigData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            run_config=check.opt_dict_param(run_config, "run_config"),
+            run_config=check.opt_mapping_param(run_config, "run_config"),
         )
 
 
 @whitelist_for_serdes
 class ExternalPartitionTagsData(
-    NamedTuple("_ExternalPartitionTagsData", [("name", str), ("tags", Dict[object, object])])
+    NamedTuple("_ExternalPartitionTagsData", [("name", str), ("tags", Mapping[str, object])])
 ):
-    def __new__(cls, name: str, tags: Optional[Dict[object, object]] = None):
+    def __new__(cls, name: str, tags: Optional[Mapping[str, object]] = None):
         return super(ExternalPartitionTagsData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            tags=check.opt_dict_param(tags, "tags"),
+            tags=check.opt_mapping_param(tags, "tags"),
         )
 
 
@@ -565,15 +565,15 @@ class ExternalPartitionTagsData(
 class ExternalPartitionExecutionParamData(
     NamedTuple(
         "_ExternalPartitionExecutionParamData",
-        [("name", str), ("tags", Dict[object, object]), ("run_config", Dict[object, object])],
+        [("name", str), ("tags", Mapping[str, object]), ("run_config", Mapping[str, object])],
     )
 ):
-    def __new__(cls, name: str, tags: Dict[object, object], run_config: Dict[object, object]):
+    def __new__(cls, name: str, tags: Mapping[str, object], run_config: Mapping[str, object]):
         return super(ExternalPartitionExecutionParamData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            tags=check.dict_param(tags, "tags"),
-            run_config=check.opt_dict_param(run_config, "run_config"),
+            tags=check.mapping_param(tags, "tags"),
+            run_config=check.opt_mapping_param(run_config, "run_config"),
         )
 
 

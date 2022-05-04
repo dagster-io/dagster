@@ -1,4 +1,7 @@
 import time
+from typing import Callable, Dict, Generator, List, Optional, Tuple, TypeVar
+
+T = TypeVar("T")
 
 from dagster import check
 
@@ -14,13 +17,13 @@ BACKOFF_MAX_RETRIES = 4
 
 
 def backoff(
-    fn,
-    retry_on,
-    args=None,
-    kwargs=None,
-    max_retries=BACKOFF_MAX_RETRIES,
-    delay_generator=backoff_delay_generator(),
-):
+    fn: Callable[..., T],
+    retry_on: Tuple[object, ...],
+    args: Optional[List[object]] = None,
+    kwargs: Optional[Dict[str, object]] = None,
+    max_retries: int = BACKOFF_MAX_RETRIES,
+    delay_generator: Generator = backoff_delay_generator(),
+) -> T:
     """Straightforward backoff implementation.
 
     Note that this doesn't implement any jitter on the delays, so probably won't be appropriate for very

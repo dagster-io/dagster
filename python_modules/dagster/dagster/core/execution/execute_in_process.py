@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Mapping, Optional
 
 from dagster.core.definitions import NodeDefinition, PipelineDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
@@ -20,7 +20,7 @@ from .execute_in_process_result import ExecuteInProcessResult
 
 def core_execute_in_process(
     node: NodeDefinition,
-    run_config: Dict[str, Any],
+    run_config: Mapping[str, object],
     ephemeral_pipeline: PipelineDefinition,
     instance: Optional[DagsterInstance],
     output_capturing_enabled: bool,

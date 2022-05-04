@@ -1,10 +1,17 @@
+from typing import List, Optional
+
 from dagster import check
 from dagster.core.host_representation import RepositoryLocation
+from dagster.core.host_representation.external import ExternalPipeline
 from dagster.core.host_representation.origin import ExternalPipelineOrigin
 from dagster.core.host_representation.selector import PipelineSelector
 
 
-def external_pipeline_from_location(repo_location, external_pipeline_origin, solid_selection):
+def external_pipeline_from_location(
+    repo_location: RepositoryLocation,
+    external_pipeline_origin: ExternalPipelineOrigin,
+    solid_selection: Optional[List[str]],
+) -> ExternalPipeline:
     check.inst_param(repo_location, "repository_location", RepositoryLocation)
     check.inst_param(external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin)
 

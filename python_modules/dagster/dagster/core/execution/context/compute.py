@@ -169,7 +169,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.run_id
 
     @property
-    def run_config(self) -> dict:
+    def run_config(self) -> Mapping[str, object]:
         """dict: The run config for the current execution."""
         return self._step_execution_context.run_config
 
