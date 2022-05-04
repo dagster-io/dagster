@@ -22,6 +22,7 @@ from .tags import (
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
+    REPOSITORY_LABEL_TAG,
     RESUME_RETRY_TAG,
     SCHEDULE_NAME_TAG,
     SENSOR_NAME_TAG,
@@ -397,6 +398,20 @@ class PipelineRun(
 
     def get_parent_run_id(self):
         return self.tags.get(PARENT_RUN_ID_TAG)
+
+    def tags_for_storage(self):
+        repository_tags = {}
+        if self.external_pipeline_origin:
+            # tag the run with a label containing the repository name / location name, to allow for
+            # per-repository filtering of runs from dagit.
+            repository_tags[
+                REPOSITORY_LABEL_TAG
+            ] = self.external_pipeline_origin.external_repository_origin.get_label()
+
+        if not self.tags:
+            return repository_tags
+
+        return {**repository_tags, **self.tags}
 
     @property
     def is_finished(self):
