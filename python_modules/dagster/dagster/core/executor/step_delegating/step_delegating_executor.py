@@ -28,10 +28,12 @@ class StepDelegatingExecutor(Executor):
         retries: RetryMode,
         sleep_seconds: Optional[float] = None,
         check_step_health_interval_seconds: Optional[int] = None,
+        concurrency_limit: Optional[int] = None,
         should_verify_step: bool = False,
     ):
         self._step_handler = step_handler
         self._retries = retries
+        self._concurrency_limit = concurrency_limit
         self._sleep_seconds = cast(
             float, check.opt_float_param(sleep_seconds, "sleep_seconds", default=0.1)
         )
@@ -221,14 +223,19 @@ class StepDelegatingExecutor(Executor):
                             running_steps,
                         )
 
-                for step in active_execution.get_steps_to_execute():
-                    running_steps[step.key] = step
-                    self._log_new_events(
-                        self._step_handler.launch_step(
-                            self._get_step_handler_context(plan_context, [step], active_execution)
-                        ),
-                        plan_context,
-                        running_steps,
-                    )
+                max_steps_to_run = None
+                if self._concurrency_limit:
+                    max_steps_to_run = self._concurrency_limit - len(running_steps)
+
+                if (not max_steps_to_run) or  len(max_steps_to_run) > 0:
+                    for step in active_execution.get_steps_to_execute(max_steps_to_run):
+                        running_steps[step.key] = step
+                        self._log_new_events(
+                            self._step_handler.launch_step(
+                                self._get_step_handler_context(plan_context, [step], active_execution)
+                            ),
+                            plan_context,
+                            running_steps,
+                        )
 
                 time.sleep(self._sleep_seconds)
