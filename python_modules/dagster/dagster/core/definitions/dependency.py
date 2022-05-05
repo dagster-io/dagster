@@ -109,7 +109,7 @@ class Node:
         self,
         name: str,
         definition: "NodeDefinition",
-        graph_definition: "GraphDefinition",
+        graph_definition: Optional["GraphDefinition"] = None,
         tags: Optional[Dict[str, str]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         retry_policy: Optional[RetryPolicy] = None,
@@ -119,7 +119,7 @@ class Node:
 
         self.name = check.str_param(name, "name")
         self.definition = check.inst_param(definition, "definition", NodeDefinition)
-        self.graph_definition = check.inst_param(
+        self.graph_definition = check.opt_inst_param(
             graph_definition,
             "graph_definition",
             GraphDefinition,
@@ -199,12 +199,13 @@ class Node:
 
     def container_maps_input(self, input_name: str) -> bool:
         return (
-            self.graph_definition.input_mapping_for_pointer(InputPointer(self.name, input_name))
+            self.graph_definition
+            and self.graph_definition.input_mapping_for_pointer(InputPointer(self.name, input_name))
             is not None
         )
 
     def container_mapped_input(self, input_name: str) -> InputMapping:
-        mapping = self.graph_definition.input_mapping_for_pointer(
+        mapping = self.graph_definition and self.graph_definition.input_mapping_for_pointer(
             InputPointer(self.name, input_name)
         )
         if mapping is None:
@@ -215,14 +216,15 @@ class Node:
 
     def container_maps_fan_in_input(self, input_name: str, fan_in_index: int) -> bool:
         return (
-            self.graph_definition.input_mapping_for_pointer(
+            self.graph_definition
+            and self.graph_definition.input_mapping_for_pointer(
                 FanInInputPointer(self.name, input_name, fan_in_index)
             )
             is not None
         )
 
     def container_mapped_fan_in_input(self, input_name: str, fan_in_index: int) -> InputMapping:
-        mapping = self.graph_definition.input_mapping_for_pointer(
+        mapping = self.graph_definition and self.graph_definition.input_mapping_for_pointer(
             FanInInputPointer(self.name, input_name, fan_in_index)
         )
         if mapping is None:

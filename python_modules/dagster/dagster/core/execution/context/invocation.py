@@ -12,6 +12,7 @@ from dagster.core.definitions.events import (
     Materialization,
     UserEvent,
 )
+from dagster.core.definitions.graph_definition import GraphDefinition
 from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.op_definition import OpDefinition
@@ -374,6 +375,8 @@ class BoundSolidExecutionContext(OpExecutionContext):
         self._output_metadata: Dict[str, Any] = output_metadata
         self._mapping_key = mapping_key
 
+        self._solid = Node(self.solid_def.name, self.solid_def)
+
     @property
     def solid_config(self) -> Any:
         return self._solid_config
@@ -448,7 +451,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
 
     @property
     def solid(self) -> Node:
-        raise DagsterInvalidPropertyError(_property_msg("solid", "property"))
+        return self._solid
 
     @property
     def solid_def(self) -> SolidDefinition:

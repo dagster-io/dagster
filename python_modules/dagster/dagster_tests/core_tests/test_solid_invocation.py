@@ -1075,3 +1075,14 @@ def test_get_mapping_key():
         assert context.get_mapping_key() == "the_key"  # Ensure bound context has mapping key
 
     basic_op(context)
+
+
+def test_access_solid_from_build_op_context():
+    @op
+    def foo(context, x, y):
+        assert context.solid.name == "foo"
+        assert context.solid.has_input("x")
+        return x, y
+
+    with build_op_context() as context:
+        assert foo(context, 5, 6) == (5, 6)
