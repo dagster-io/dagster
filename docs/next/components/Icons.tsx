@@ -92,7 +92,7 @@ const SparklesIcon = (
   />
 );
 
-const CloudIcon = (
+const CloudUploadIcon = (
   <path
     strokeLinecap="round"
     strokeLinejoin="round"
@@ -111,18 +111,37 @@ const WarningIcon = (
 
 const ChevronRightIcon = (
   <path
-    stroke-linecap="round"
-    stroke-linejoin="round"
+    strokeLinecap="round"
+    strokeLinejoin="round"
     strokeWidth="2"
     d="M9 5l7 7-7 7"
   />
 );
+
 const ChevronDownIcon = (
   <path
     strokeLinecap="round"
     strokeLinejoin="round"
     strokeWidth="2"
     d="M19 9l-7 7-7-7"
+  />
+);
+
+const CloudIcon = (
+  <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
+  />
+);
+
+const ExternalLinkIcon = (
+  <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
   />
 );
 
@@ -138,11 +157,13 @@ const Icons = {
   Document: DocumentIcon,
   Users: UsersIcon,
   Sparkles: SparklesIcon,
-  Cloud: CloudIcon,
+  CloudUpload: CloudUploadIcon,
   InfoCircle: InfoCircleIcon,
   Warning: WarningIcon,
   ChevronRight: ChevronRightIcon,
   ChevronDown: ChevronDownIcon,
+  Cloud: CloudIcon,
+  ExternalLink: ExternalLinkIcon,
 };
 
 export default Icons;

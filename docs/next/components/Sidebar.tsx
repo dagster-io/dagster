@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Search } from "components/Search";
 import Icons from "../components/Icons";
 import Link from "./Link";
@@ -14,6 +13,70 @@ const getCurrentSection = (navigation) => {
   return match || navigation.find((item) => item.path === "/");
 };
 
+const MenuItem = ({ item, match, lvl, href = null }) => {
+  const rightIcon = item.isExternalLink
+    ? Icons["ExternalLink"]
+    : item.children && (match ? Icons["ChevronDown"] : Icons["ChevronRight"]);
+
+  return (
+    <a
+      className={cx(
+        "transition group flex justify-between items-center text-md font-medium rounded-md text-gray-800 dark:text-gray-200",
+        {
+          "hover:bg-lavender hover:bg-opacity-50 text-blurple": match,
+          "hover:text-gray-900 hover:bg-lavender hover:bg-opacity-50": !match,
+          "py-2": lvl <= 2,
+          "px-2": lvl === 0,
+          "pl-3 pr-2": lvl === 2,
+        }
+      )}
+      href={href}
+    >
+      <div className="flex justify-start">
+        {item.icon && (
+          <svg
+            className={cx("mr-3 h-6 w-6 text-gray-400 transition", {
+              "text-blurple": match,
+              "group-hover:text-gray-600": !match,
+            })}
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            {Icons[item.icon]}
+          </svg>
+        )}
+        <span
+          className={cx({
+            "DocSearch-lvl0": lvl === 0 && match,
+            "DocSearch-lvl2": lvl === 2 && match,
+          })}
+        >
+          {item.title}
+        </span>
+      </div>
+
+      {rightIcon && (
+        <svg
+          className={cx("mr-2 h-4 w-4 text-gray-400 transition", {
+            "text-blurple": match,
+            "group-hover:text-gray-600": !match,
+          })}
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          {rightIcon}
+        </svg>
+      )}
+    </a>
+  );
+};
+
 const TopLevelNavigation = () => {
   const navigation = useNavigation();
   const currentSection = getCurrentSection(navigation);
@@ -25,7 +88,20 @@ const TopLevelNavigation = () => {
 
         return (
           <>
-            <Link key={item.path} href={item.path}>
+            {item.isExternalLink ? (
+              <MenuItem
+                key={item.path}
+                href={item.path}
+                item={item}
+                match={match}
+                lvl={0}
+              />
+            ) : (
+              <Link key={item.path} href={item.path} passHref>
+                <MenuItem item={item} match={match} lvl={0} />
+              </Link>
+            )}
+            {/* <Link key={item.path} href={item.path}>
               <a
                 className={cx(
                   "transition group flex justify-between items-center px-2 py-2 text-md font-medium rounded-md text-gray-800 dark:text-gray-200",
@@ -54,21 +130,24 @@ const TopLevelNavigation = () => {
                     {item.title}
                   </span>
                 </div>
-                <svg
-                  className={cx("mr-3 h-4 w-4 text-gray-400 transition", {
-                    "text-blurple": match,
-                    "group-hover:text-gray-600": !match,
-                  })}
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  {match ? Icons["ChevronDown"] : Icons["ChevronRight"]}
-                </svg>
+
+                {rightIcon && (
+                  <svg
+                    className={cx("mr-2 h-4 w-4 text-gray-400 transition", {
+                      "text-blurple": match,
+                      "group-hover:text-gray-600": !match,
+                    })}
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    {rightIcon}
+                  </svg>
+                )}
               </a>
-            </Link>
+            </Link> */}
             {match && (
               <div key={item.title} className="mt-8">
                 <div
@@ -77,7 +156,7 @@ const TopLevelNavigation = () => {
                   aria-labelledby="second-level-nav"
                 >
                   <div className="border-l ml-5">
-                    <SecondaryNavigation />{" "}
+                    <SecondaryNavigation />
                   </div>
                 </div>
               </div>
@@ -107,9 +186,31 @@ const SecondaryNavigation = () => {
             (sectionOrItem) => sectionOrItem.path == asPathWithoutAnchor
           );
 
+        const rightIcon = sectionOrItem.isExternalLink
+          ? Icons["ExternalLink"]
+          : sectionOrItem.children &&
+            (match ? Icons["ChevronDown"] : Icons["ChevronRight"]);
+
         return (
           <>
-            <Link
+            {sectionOrItem.isExternalLink ? (
+              <MenuItem
+                key={sectionOrItem.path || sectionOrItem.children[0].path}
+                href={sectionOrItem.path || sectionOrItem.children[0].path}
+                item={sectionOrItem}
+                match={match}
+                lvl={2}
+              />
+            ) : (
+              <Link
+                key={sectionOrItem.path || sectionOrItem.children[0].path}
+                href={sectionOrItem.path || sectionOrItem.children[0].path}
+                passHref
+              >
+                <MenuItem item={sectionOrItem} match={match} lvl={2} />
+              </Link>
+            )}
+            {/* <Link
               key={sectionOrItem.path}
               href={sectionOrItem.path || sectionOrItem.children[0].path}
             >
@@ -133,24 +234,26 @@ const SecondaryNavigation = () => {
                   {sectionOrItem.title}
                 </span>
 
-                <svg
-                  className={cx("mr-2 h-4 w-4 text-gray-400 transition", {
-                    "text-blurple": match,
-                    "group-hover:text-gray-600": !match,
-                  })}
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  {match ? Icons["ChevronDown"] : Icons["ChevronRight"]}
-                </svg>
+                {rightIcon && (
+                  <svg
+                    className={cx("mr-1 h-4 w-4 text-gray-400 transition", {
+                      "text-blurple": match,
+                      "group-hover:text-gray-600": !match,
+                    })}
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    {rightIcon}
+                  </svg>
+                )}
               </a>
-            </Link>
+            </Link> */}
 
             {match && (
-              <div className="border-l ml-5 mt-2">
+              <div key={sectionOrItem.title} className="border-l ml-5 mt-2">
                 <div
                   className="mt-1 ml-1 space-y-1"
                   role="group"
@@ -181,7 +284,7 @@ const ThirdLevelNavigation = ({ section }) => {
     <Link href={section.path}>
       <a
         className={cx(
-          "group flex items-center px-3 py-2 text-sm text-gray-700 rounded-md",
+          "group flex items-center px-3 py-1 text-sm text-gray-700 rounded-md",
           {
             "hover:bg-lavender hover:bg-opacity-50 text-blurple":
               section.path === asPathWithoutAnchor,
