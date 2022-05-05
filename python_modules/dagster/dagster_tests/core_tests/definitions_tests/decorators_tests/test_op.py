@@ -1013,3 +1013,59 @@ def test_generic_dynamic_output_bare():
         @op
         def basic() -> DynamicOutput[int]:
             pass
+
+
+def test_generic_dynamic_output_empty():
+    @op
+    def basic() -> List[DynamicOutput]:
+        return []
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="No outputs found for output 'result' from node 'basic'.",
+    ):
+        result.output_for_node("basic")
+
+    @op(out=DynamicOut())
+    def basic_yield():
+        pass
+
+    result = execute_op_in_graph(basic_yield)
+    assert result.success
+
+
+def test_generic_dynamic_output_empty_with_type():
+    @op
+    def basic() -> List[DynamicOutput[str]]:
+        return []
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+
+    # Equivalent behavior in the dynamic yield case
+    @op(out=DynamicOut(dagster_type=str, is_required=False))
+    def basic_yield():
+        pass
+
+    result = execute_op_in_graph(basic_yield)
+    assert result.success
+
+    execute_op_in_graph(basic_yield_not_optional)
+
+
+def test_generic_dynamic_multiple_outputs_empty():
+    @op(out={"out1": Out(), "out2": DynamicOut()})
+    def basic() -> Tuple[Output, List[DynamicOutput]]:
+        return (Output(5), [])
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="No outputs found for output 'out2' from node 'basic'.",
+    ):
+        result.output_for_node("basic", "out2")
