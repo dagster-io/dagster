@@ -141,14 +141,14 @@ class SensorEvaluationContext:
 SensorExecutionContext = SensorEvaluationContext
 
 RawSensorEvaluationFunctionReturn = Union[
-    Iterator[Union[SkipReason, RunRequest]], SkipReason, RunRequest
+    Iterator[Union[SkipReason, RunRequest]], Iterable[RunRequest], SkipReason, RunRequest
 ]
 RawSensorEvaluationFunction = Union[
     Callable[[], RawSensorEvaluationFunctionReturn],
     Callable[[SensorEvaluationContext], RawSensorEvaluationFunctionReturn],
 ]
 SensorEvaluationFunction = Callable[
-    [SensorEvaluationContext], Iterator[Union[SkipReason, RunRequest]]
+    [SensorEvaluationContext], Union[SkipReason, RunRequest, Iterable[RunRequest]]
 ]
 
 
@@ -501,11 +501,9 @@ def wrap_sensor_evaluation(
             result = fn()  # type: ignore
 
         if inspect.isgenerator(result):
-            for item in result:
-                yield item
+            return list(result)
         elif isinstance(result, (SkipReason, RunRequest)):
-            yield result
-
+            return [result]
         elif result is not None:
             raise Exception(
                 (
