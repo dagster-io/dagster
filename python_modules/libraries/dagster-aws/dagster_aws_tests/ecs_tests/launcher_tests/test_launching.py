@@ -93,9 +93,18 @@ def test_default_launcher(
     assert MetadataEntry("Run ID", value=run.run_id) in event_metadata
 
     # stop task and check status
+    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
     ecs.stop_task(task=task_arn)
-    print(instance.run_launcher.check_run_worker_health(run).msg)
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.SUCCESS
+
+    # start another task to stop and check for failure
+    instance.launch_run(run.run_id, workspace)
+    tasks = ecs.list_tasks()["taskArns"]
+    task_arn = list(set(tasks).difference(initial_tasks))[0]
+    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
+    ecs.stop_task(task=task_arn, reason="FAILED")
+    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.FAILED
+    assert instance.run_launcher.check_run_worker_health(run).msg
 
 
 def test_task_definition_registration(

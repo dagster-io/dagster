@@ -16,7 +16,6 @@ from dagster.core.launcher.base import (
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass
-from dagster.utils import merge_dicts
 
 from ..secretsmanager import get_secrets_from_arns
 from .container_context import EcsContainerContext
@@ -376,34 +375,23 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         if t.get("lastStatus") in running_statuses:
             return CheckRunHealthResult(WorkerStatus.RUNNING)
         elif t.get("lastStatus") in stopped_statuses:
-            task_definition_arn = t.get("taskDefinitionArn")
-            task_definition = self.ecs.describe_task_definition(taskDefinition=task_definition_arn).get(
-                "taskDefinition"
-            )
 
-            container_definition = task_definition.get("containerDefinitions")[0]
-            log_stream_prefix = (
-                container_definition.get("logConfiguration").get("options").get("awslogs-stream-prefix")
-            )
-            container_name = container_definition.get("name")
-            task_id = t.get("task_arn").split("/")[-1]
+            failed_containers = []
+            for c in t.get("containers"):
+                if c.get("exitCode") != 0:
+                    failed_containers.append(c)
+            if len(failed_containers) > 0:
+                if len(failed_containers) > 1:
+                    container_str = "Containers"
+                else:
+                    container_str = "Container"
+                return CheckRunHealthResult(
+                    WorkerStatus.FAILED,
+                    f"ECS task failed. Stop code: {t.get('stopCode')}. Stop reason {t.get('stopReason')}. "
+                    f"{container_str} {c.get('name') for c in failed_containers} failed."
+                    f"Check the logs for task {t.get('taskArn')} for details.",
+                )
 
-            log_stream = f"{log_stream_prefix}/{container_name}/{task_id}"
-
-            events = self.logs.get_log_events(
-                logGroupName=self.log_group,
-                logStreamName=log_stream,
-            ).get("events")
-
-
-
-            # for c in t.get("containers"):
-            #     if c.get("exitCode") != 0:
-            #         return CheckRunHealthResult(
-            #             WorkerStatus.FAILED,
-            #             f"ECS task failed. Stop code: {t.get('stopCode')}. Stop reason {t.get('stopReason')}. "
-            #             f"Container {c.get('name')} failed with exit code {c.get('exitCode')}",
-            #         )
             return CheckRunHealthResult(WorkerStatus.SUCCESS)
 
         return CheckRunHealthResult(WorkerStatus.UNKNOWN, "ECS task health status is unknown.")

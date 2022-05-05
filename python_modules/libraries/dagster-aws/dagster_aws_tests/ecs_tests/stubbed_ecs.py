@@ -74,7 +74,7 @@ class StubbedEcs:
     first created a task definition.
 
     We can't extend botocore.client.ECS directly. Eventually, we might want to
-    register these methods as events instead of maintaing our own StubbedEcs
+    register these methods as events instead of maintaining our own StubbedEcs
     class:
     https://boto3.amazonaws.com/v1/documentation/api/latest/guide/events.html
     """
@@ -415,10 +415,17 @@ class StubbedEcs:
         task = kwargs.get("task")
         tasks = self.describe_tasks(tasks=[task], cluster=cluster)["tasks"]
 
+        reason = kwargs.get("reason")
+
         if tasks:
             stopped_task = tasks[0]
             self.tasks[cluster].remove(tasks[0])
             stopped_task["lastStatus"] = "STOPPED"
+            # breakpoint()
+            for c in stopped_task["containers"]:
+                c["exitCode"] = 0
+                if reason == "FAILED":
+                    c["exitCode"] = 1
             self.tasks[cluster].append(stopped_task)
             self.stubber.add_response(
                 method="stop_task",
