@@ -3,7 +3,7 @@ from typing import List, Optional, cast
 import kubernetes
 from dagster_k8s.launcher import K8sRunLauncher
 
-from dagster import Field, StringSource
+from dagster import Field, IntSource, StringSource
 from dagster import _check as check
 from dagster import executor
 from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
@@ -35,6 +35,7 @@ from .utils import delete_job
         {
             "job_namespace": Field(StringSource, is_required=False),
             "retries": get_retries_config(),
+            "max_concurrency": Field(IntSource, is_required=False),
         },
     ),
     requirements=multiple_process_executor_requirements(),
@@ -100,6 +101,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             kubeconfig_file=run_launcher.kubeconfig_file,
         ),
         retries=RetryMode.from_config(init_context.executor_config["retries"]),  # type: ignore
+        max_concurrency=exc_cfg.get("max_concurrency"),
         should_verify_step=True,
     )
 
