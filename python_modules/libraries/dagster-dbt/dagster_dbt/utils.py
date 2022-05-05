@@ -2,11 +2,16 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 import dateutil
 
-from dagster import AssetMaterialization, MetadataValue
+from dagster import AssetMaterialization, AssetObservation, MetadataValue
 from dagster import _check as check
 from dagster.core.definitions.metadata import RawMetadataValue
 
 from .types import DbtOutput
+
+
+def _node_type(unique_id: str) -> str:
+    # returns the type of the node (e.g. model, test, snapshot)
+    return unique_id.split(".")[0]
 
 
 def _node_result_to_metadata(node_result: Dict[str, Any]) -> Mapping[str, RawMetadataValue]:
@@ -77,6 +82,8 @@ def result_to_materialization(
     else:
         unique_id = result["unique_id"]
 
+    if
+
     id_prefix = unique_id.split(".")
 
     # only generate materializations for models
@@ -93,13 +100,18 @@ def result_to_materialization(
     )
 
 
-def generate_materializations(
-    dbt_output: DbtOutput, asset_key_prefix: Optional[List[str]] = None
-) -> Iterator[AssetMaterialization]:
+def generate_events(
+    dbt_output: DbtOutput,
+    node_info_to_asset_key: Optional[Callable[Dict[str, Any], AssetKey]] = lambda info: AssetKey(
+        info["unique_id"].split(".")
+    ),
+) -> Iterator[Union[AssetMaterialization, AssetObservation]]:
 
     """
-    This function yields :py:class:`dagster.AssetMaterialization` events for each model created by
-    a dbt run command (with information parsed from a :py:class:`~DbtOutput` object).
+    This function yields :py:class:`dagster.AssetMaterialization` events for each model updated by
+    a dbt command, and :py:class:`dagster.AssetObservation` events for each test run.
+
+    Information parsed from a :py:class:`~DbtOutput` object.
 
     Note that this will not work with output from the `dbt_rpc_resource`, because this resource does
     not wait for a response from the RPC server before returning. Instead, use the
@@ -133,8 +145,14 @@ def generate_materializations(
     asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
     for result in dbt_output.result["results"]:
-        materialization = result_to_materialization(
-            result, asset_key_prefix, docs_url=dbt_output.docs_url
+        schema_version = dbt_output.result.get("metadata", {}).get("dbt_schema_version")
+        # we can only generate
+        observation_compatible = isinstance(dbt_output, DbtCliOutput) and schema_version is not None
+        event = result_to_event(
+            result,
+            node_info_to_asset_key,
+            docs_url=dbt_output.docs_url,
+            schema_version=,
         )
         if materialization is not None:
             yield materialization
