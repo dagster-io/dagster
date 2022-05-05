@@ -65,7 +65,6 @@ export const PartitionRunListForStep: React.FC<PartitionRunListForStepProps> = (
     <div>
       <RunTable
         runs={data.pipelineRunsOrError.results}
-        onSetFilter={() => {}}
         additionalColumnHeaders={[
           <th key="context" style={{maxWidth: 150}}>
             Step Info
