@@ -3,6 +3,7 @@ from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, 
 
 from dagster import check
 from dagster.core.definitions.configurable import ConfigurableDefinition
+from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.executor_definition import (
     ExecutorDefinition,
     execute_in_process_executor,
@@ -239,6 +240,10 @@ class ResolvedRunConfig(
         env_dict["loggers"] = self.loggers
 
         return env_dict
+
+    def op_config(self, op_handle: NodeHandle) -> Any:
+        solid_config = self.solids.get(str(op_handle))
+        return solid_config.config if solid_config else None
 
 
 def config_map_executor(

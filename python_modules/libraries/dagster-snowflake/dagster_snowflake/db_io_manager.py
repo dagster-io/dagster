@@ -10,13 +10,17 @@ SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 T = TypeVar("T")
 
 
+class TablePartition(NamedTuple):
+    time_window: TimeWindow = None
+    partition_expr: str = None
+
+
 class TableSlice(NamedTuple):
     table: str
     schema: str
     database: str
     columns: Optional[Sequence[str]] = None
-    time_window: Optional[TimeWindow] = None
-    partition_expr: Optional[str] = None
+    partition: Optional[TablePartition] = None
 
 
 class DbTypeHandler(ABC, Generic[T]):
@@ -34,10 +38,12 @@ class DbTypeHandler(ABC, Generic[T]):
 
 
 class DbClient:
+    @staticmethod
     @abstractmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
         ...
 
+    @staticmethod
     @abstractmethod
     def get_select_statement(table_slice: TableSlice) -> str:
         ...
@@ -69,9 +75,13 @@ class DbIOManager(IOManager):
             f"DbIOManager does not have a handler for type '{obj_type}'. Has handlers "
             f"for types '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'",
         )
-        self._handlers_by_type[obj_type].handle_output(context, table_slice, obj)
+        handler_metadata = (
+            self._handlers_by_type[obj_type].handle_output(context, table_slice, obj) or {}
+        )
 
-        context.add_output_metadata({"Query": self._db_client.get_select_statement(table_slice)})
+        context.add_output_metadata(
+            {**handler_metadata, "Query": self._db_client.get_select_statement(table_slice)}
+        )
 
     def load_input(self, context: InputContext) -> object:
         obj_type = context.dagster_type.typing_type
@@ -80,11 +90,11 @@ class DbIOManager(IOManager):
             f"DbIOManager does not have a handler for type '{obj_type}'. Has handlers "
             f"for types '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'",
         )
-        return self._handlers_by_type[obj_type].load_input(
-            context, self._get_table_slice(context.upstream_output)
-        )
+        return self._handlers_by_type[obj_type].load_input(context, self._get_table_slice(context))
 
     def _get_table_slice(self, context: Union[OutputContext, InputContext]) -> TableSlice:
+        output_context = context if isinstance(context, OutputContext) else context.upstream_output
+
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
@@ -96,15 +106,28 @@ class DbIOManager(IOManager):
                 context.asset_partitions_time_window if context.has_asset_partitions else None
             )
         else:
-            table = context.name
-            schema = context.metadata.get("schema", "public")
+            table = output_context.name
+            schema = output_context.metadata.get("schema", "public")
             time_window = None
+
+        if time_window is not None:
+            partition_expr = output_context.metadata.get("partition_expr")
+            if partition_expr is None:
+                raise ValueError(
+                    f"Asset '{context.asset_key}' has partitions, but no 'partition_expr' metadata "
+                    "value, so we don't know what column to filter it on."
+                )
+            partition = TablePartition(
+                time_window=time_window,
+                partition_expr=partition_expr,
+            )
+        else:
+            partition = None
 
         return TableSlice(
             table=table,
             schema=schema,
             database=context.resource_config["database"],
-            time_window=time_window,
-            columns=None,
-            partition_expr=None,
+            partition=partition,
+            columns=context.metadata.get("columns"),
         )

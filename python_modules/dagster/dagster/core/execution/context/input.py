@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
 
 from dagster import check
-from dagster.core.definitions.events import AssetKey, AssetObservation
+from dagster.core.definitions.events import AssetKey, AssetObservation, CoerceableToAssetKey
 from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
@@ -59,6 +59,8 @@ class InputContext:
         resources: Optional[Union["Resources", Dict[str, Any]]] = None,
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
+        asset_key: Optional[AssetKey] = None,
+        asset_partition_key_range: Optional[PartitionKeyRange] = None,
     ):
         from dagster.core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster.core.execution.build_resources import build_resources
@@ -76,6 +78,8 @@ class InputContext:
         self._log = log_manager
         self._resource_config = resource_config
         self._step_context = step_context
+        self._asset_key = asset_key
+        self._asset_partition_key_range = asset_partition_key_range
 
         if isinstance(resources, Resources):
             self._resources_cm = None
@@ -204,12 +208,18 @@ class InputContext:
         return self._resources
 
     @property
-    def asset_key(self) -> Optional[AssetKey]:
-        if not self._name:
-            return None
-        return self.step_context.pipeline_def.asset_layer.asset_key_for_input(
-            node_handle=self.step_context.solid_handle, input_name=self.name
-        )
+    def has_asset_key(self) -> bool:
+        return self._asset_key is not None
+
+    @property
+    def asset_key(self) -> AssetKey:
+        if self._asset_key is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access asset_key, "
+                "but it was not provided when constructing the InputContext"
+            )
+
+        return self._asset_key
 
     @property
     def step_context(self) -> "StepExecutionContext":
@@ -236,10 +246,7 @@ class InputContext:
 
     @property
     def has_asset_partitions(self) -> bool:
-        if self._step_context is not None:
-            return self._step_context.has_asset_partitions_for_input(self.name)
-        else:
-            return False
+        return self._asset_partition_key_range is not None
 
     @property
     def asset_partition_key(self) -> str:
@@ -248,7 +255,14 @@ class InputContext:
         Raises an error if the input asset has no partitioning, or if the run covers a partition
         range for the input asset.
         """
-        return self.step_context.asset_partition_key_for_input(self.name)
+        start, end = self._asset_partition_key_range
+        if start == end:
+            return start
+        else:
+            check.failed(
+                f"Tried to access partition key for input '{self.name}' of step '{self.step_key}', "
+                f"but the step input has a partition range: '{start}' to '{end}'."
+            )
 
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
@@ -256,7 +270,7 @@ class InputContext:
 
         Raises an error if the input asset has no partitioning.
         """
-        return self.step_context.asset_partition_key_range_for_input(self.name)
+        return self._asset_partition_key_range
 
     @property
     def asset_partitions_time_window(self) -> TimeWindow:
@@ -372,6 +386,8 @@ def build_input_context(
     resources: Optional[Dict[str, Any]] = None,
     op_def: Optional[OpDefinition] = None,
     step_context: Optional["StepExecutionContext"] = None,
+    asset_key: Optional[CoerceableToAssetKey] = None,
+    asset_partition_key: Optional[str] = None,
 ) -> "InputContext":
     """Builds input context from provided parameters.
 
@@ -393,7 +409,9 @@ def build_input_context(
         resources (Optional[Dict[str, Any]]): The resources to make available from the context.
             For a given key, you can provide either an actual instance of an object, or a resource
             definition.
-        asset_key (Optional[AssetKey]): The asset key attached to the InputDefinition.
+        asset_key (Optional[Union[AssetKey, Sequence[str], str]]): The asset key corresponds to the
+            input.
+        asset_partition_key: Optional[str]: The asset partition key corresponding to the input.
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
         step_context (Optional[StepExecutionContext]): For internal use.
 
@@ -419,6 +437,7 @@ def build_input_context(
     resources = check.opt_dict_param(resources, "resources", key_type=str)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
+    asset_key = AssetKey.from_coerceable(asset_key) if asset_key else None
 
     return InputContext(
         name=name,
@@ -432,4 +451,8 @@ def build_input_context(
         resources=resources,
         step_context=step_context,
         op_def=op_def,
+        asset_key=asset_key,
+        asset_partition_key_range=PartitionKeyRange(asset_partition_key, asset_partition_key)
+        if asset_partition_key
+        else None,
     )

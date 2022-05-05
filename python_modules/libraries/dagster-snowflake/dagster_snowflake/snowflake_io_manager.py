@@ -2,7 +2,7 @@ from typing import Sequence
 
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
 
-from .db_io_manager import DbClient, DbIOManager, DbTypeHandler, TableSlice
+from .db_io_manager import DbClient, DbIOManager, DbTypeHandler, TablePartition, TableSlice
 from .resources import SnowflakeConnection
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -49,23 +49,20 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
 
 
 class SnowflakeDbClient(DbClient):
-    def delete_table_slice(self, context: OutputContext, table_slice: TableSlice) -> None:
+    @staticmethod
+    def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
         with SnowflakeConnection(
-            dict(**context.resource_config, schema=table_slice.schema), context.log
+            dict(**(context.resource_config or {}), schema=table_slice.schema), context.log
         ).get_connection() as con:
-            con.execute(
-                _get_cleanup_statement(
-                    table_slice.table, table_slice.schema, table_slice.time_window
-                )
-            )
+            con.execute(_get_cleanup_statement(table_slice))
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
-        if table_slice.time_window:
+        if table_slice.partition:
             return (
                 f"SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}\n"
-                + _time_window_where_clause(table_slice)
+                + _time_window_where_clause(table_slice.partition)
             )
         else:
             return f"""SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"""
@@ -76,17 +73,17 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
-    if table_slice.time_window:
+    if table_slice.partition:
         return (
             f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}\n"
-            + _time_window_where_clause(table_slice)
+            + _time_window_where_clause(table_slice.partition)
         )
     else:
         return f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"
 
 
-def _time_window_where_clause(table_slice: TableSlice) -> str:
-    start_dt, end_dt = table_slice.time_window
+def _time_window_where_clause(table_partition: TablePartition) -> str:
+    start_dt, end_dt = table_partition.time_window
     start_dt_str = start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
-    return f"""WHERE {table_slice.partition_expr} BETWEEN '{start_dt_str}' AND '{end_dt_str}'"""
+    return f"""WHERE {table_partition.partition_expr} BETWEEN '{start_dt_str}' AND '{end_dt_str}'"""

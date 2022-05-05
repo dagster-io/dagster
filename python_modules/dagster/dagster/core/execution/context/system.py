@@ -485,6 +485,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             step_context=self,
             resource_config=resource_config,
             resources=resources,
+            asset_key=self.pipeline_def.asset_layer.asset_key_for_input(
+                node_handle=self.solid_handle, input_name=name
+            ),
+            asset_partition_key_range=self.asset_partition_key_range_for_input(name),
         )
 
     def for_hook(self, hook_def: HookDefinition) -> "HookContext":
@@ -722,36 +726,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 f"Tried to access partition key for output '{output_name}' of step '{self.step.key}', "
                 f"but the step output has a partition range: '{start}' to '{end}'."
             )
-
-    def asset_partitions_time_window_for_output(self, output_name: str) -> TimeWindow:
-        """The time window for the partitions of the asset correponding to the given output.
-
-        Raises an error if either of the following are true:
-        - The output asset has no partitioning.
-        - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
-        """
-        asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
-            self.solid_handle, output_name
-        )
-        partitions_def = asset_info.partitions_def if asset_info else None
-
-        if not partitions_def:
-            raise ValueError(
-                "Tried to get asset partitions for an output that does not correspond to a "
-                "partitioned asset."
-            )
-
-        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            raise ValueError(
-                "Tried to get asset partitions for an output that correponds to a partitioned "
-                "asset that is not partitioned with a TimeWindowPartitionsDefinition."
-            )
-        partition_key_range = self.asset_partition_key_range_for_output(output_name)
-        return TimeWindow(
-            # mypy thinks partitions_def is <nothing> here because ????
-            partitions_def.time_window_for_partition_key(partition_key_range.start).start,  # type: ignore
-            partitions_def.time_window_for_partition_key(partition_key_range.end).end,  # type: ignore
-        )
 
     def get_input_lineage(self) -> List[AssetLineageInfo]:
         if not self._input_lineage:

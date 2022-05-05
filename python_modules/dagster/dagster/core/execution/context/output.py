@@ -7,16 +7,20 @@ from dagster.core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    CoerceableToAssetKey,
     Materialization,
     MetadataEntry,
     PartitionMetadataEntry,
 )
 from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.time_window_partitions import TimeWindow
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.utils import build_resources_for_manager
+
+from .asset_partitions import asset_partition_key_range_for_output, asset_partitions_time_window
 
 if TYPE_CHECKING:
     from dagster.core.definitions import PipelineDefinition
@@ -76,6 +80,7 @@ class OutputContext:
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
         asset_info: Optional[AssetOutputInfo] = None,
+        asset_partition_key_range: Optional[PartitionKeyRange] = None,
     ):
         from dagster.core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster.core.execution.build_resources import build_resources
@@ -97,6 +102,7 @@ class OutputContext:
         self._resource_config = resource_config
         self._step_context = step_context
         self._asset_info = asset_info
+        self._asset_partition_key_range = asset_partition_key_range
 
         if isinstance(resources, Resources):
             self._resources_cm = None
@@ -285,19 +291,23 @@ class OutputContext:
 
     @property
     def has_asset_partitions(self) -> bool:
-        if self._step_context is not None:
-            return self._step_context.has_asset_partitions_for_output(self.name)
-        else:
-            return False
+        return self._asset_partition_key_range is not None
 
     @property
     def asset_partition_key(self) -> str:
-        """The partition key for output asset.
+        """The partition key for the output asset.
 
         Raises an error if the output asset has no partitioning, or if the run covers a partition
         range for the output asset.
         """
-        return self.step_context.asset_partition_key_for_output(self.name)
+        start, end = self._asset_partition_key_range
+        if start == end:
+            return start
+        else:
+            check.failed(
+                f"Tried to access partition key for output '{self.name}' of step '{self.step_key}', "
+                f"but the step output has a partition range: '{start}' to '{end}'."
+            )
 
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
@@ -305,7 +315,7 @@ class OutputContext:
 
         Raises an error if the output asset has no partitioning.
         """
-        return self.step_context.asset_partition_key_range_for_output(self.name)
+        return self._asset_partition_key_range
 
     @property
     def asset_partitions_time_window(self) -> TimeWindow:
@@ -315,7 +325,9 @@ class OutputContext:
         - The output asset has no partitioning.
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
         """
-        return self.step_context.asset_partitions_time_window_for_output(self.name)
+        return asset_partitions_time_window(
+            self._asset_info.partitions_def, self.asset_partition_key_range
+        )
 
     def get_run_scoped_output_identifier(self) -> List[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique
@@ -557,9 +569,13 @@ def get_output_context(
     io_manager_key = output_def.io_manager_key
     resource_config = resolved_run_config.resources[io_manager_key].config
 
-    node_handle = execution_plan.get_step_by_key(step.key).solid_handle
     asset_info = pipeline_def.asset_layer.asset_info_for_output(
-        node_handle=node_handle, output_name=step_output.name
+        node_handle=step.solid_handle, output_name=step_output.name
+    )
+    asset_partition_key_range = asset_partition_key_range_for_output(
+        output_name=step_output_handle.output_name,
+        op_handle=step.solid_handle,
+        resolved_run_config=resolved_run_config,
     )
 
     if step_context:
@@ -587,6 +603,7 @@ def get_output_context(
         resource_config=resource_config,
         resources=resources,
         asset_info=asset_info,
+        asset_partition_key_range=asset_partition_key_range,
     )
 
 
@@ -621,7 +638,9 @@ def build_output_context(
     resources: Optional[Dict[str, Any]] = None,
     solid_def: Optional[SolidDefinition] = None,
     op_def: Optional[OpDefinition] = None,
-    asset_key: Optional[Union[AssetKey, str]] = None,
+    asset_key: Optional[CoerceableToAssetKey] = None,
+    asset_partition_key: Optional[str] = None,
+    asset_partitions_def: Optional[PartitionsDefinition] = None,
 ) -> "OutputContext":
     """Builds output context from provided parameters.
 
@@ -648,6 +667,7 @@ def build_output_context(
         op_def (Optional[OpDefinition]): The definition of the op that produced the output.
         asset_key: Optional[Union[AssetKey, Sequence[str], str]]: The asset key corresponding to the
             output.
+        asset_partition_key: Optional[str]: The asset partition key corresponding to the output.
 
     Examples:
 
@@ -674,6 +694,9 @@ def build_output_context(
     solid_def = check.opt_inst_param(solid_def, "solid_def", SolidDefinition)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     asset_key = AssetKey.from_coerceable(asset_key) if asset_key else None
+    asset_partitions_def = check.opt_inst_param(
+        asset_partitions_def, "asset_partitions_def", PartitionsDefinition
+    )
 
     return OutputContext(
         step_key=step_key,
@@ -691,5 +714,10 @@ def build_output_context(
         resources=resources,
         step_context=None,
         op_def=op_def,
-        asset_info=AssetOutputInfo(key=asset_key) if asset_key else None,
+        asset_info=AssetOutputInfo(key=asset_key, partitions_def=asset_partitions_def)
+        if asset_key
+        else None,
+        asset_partition_key_range=PartitionKeyRange(asset_partition_key, asset_partition_key)
+        if asset_partition_key
+        else None,
     )

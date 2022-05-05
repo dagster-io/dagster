@@ -1,9 +1,18 @@
 from unittest.mock import MagicMock
 
 from dagster_snowflake import DbTypeHandler
-from dagster_snowflake.db_io_manager import DbClient, DbIOManager, TableSlice
+from dagster_snowflake.db_io_manager import DbClient, DbIOManager, TablePartition, TableSlice
+from pendulum import datetime
 
-from dagster import AssetKey, InputContext, OutputContext, build_input_context, build_output_context
+from dagster import (
+    AssetKey,
+    DailyPartitionsDefinition,
+    InputContext,
+    OutputContext,
+    build_input_context,
+    build_output_context,
+)
+from dagster.core.definitions.time_window_partitions import TimeWindow
 from dagster.core.types.dagster_type import resolve_dagster_type
 
 resource_config = {
@@ -53,14 +62,14 @@ def test_asset_out():
     handler = IntHandler()
     db_client = MagicMock(spec=DbClient)
     manager = DbIOManager(type_handlers=[handler], db_client=db_client)
-    output_context = build_output_context(
-        asset_key=AssetKey(["schema1", "table1"]), resource_config=resource_config
-    )
+    asset_key = AssetKey(["schema1", "table1"])
+    output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
     manager.handle_output(output_context, 5)
     input_context = build_input_context(
         upstream_output=output_context,
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(int),
+        asset_key=asset_key,
     )
     assert manager.load_input(input_context) == 7
 
@@ -70,9 +79,72 @@ def test_asset_out():
     db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
 
     assert len(handler.handle_input_calls) == 1
-    assert handler.handle_input_calls[0][1:] == (
-        TableSlice(database="database_abc", schema="schema1", table="table1"),
+    assert handler.handle_input_calls[0][1] == table_slice
+
+
+def test_asset_out_columns():
+    handler = IntHandler()
+    db_client = MagicMock(spec=DbClient)
+    manager = DbIOManager(type_handlers=[handler], db_client=db_client)
+    asset_key = AssetKey(["schema1", "table1"])
+    output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
+    manager.handle_output(output_context, 5)
+    input_context = build_input_context(
+        asset_key=asset_key,
+        upstream_output=output_context,
+        resource_config=resource_config,
+        dagster_type=resolve_dagster_type(int),
+        metadata={"columns": ["apple", "banana"]},
     )
+    assert manager.load_input(input_context) == 7
+
+    assert len(handler.handle_output_calls) == 1
+    table_slice = TableSlice(database="database_abc", schema="schema1", table="table1")
+    assert handler.handle_output_calls[0][1:] == (table_slice, 5)
+    db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
+
+    assert len(handler.handle_input_calls) == 1
+    assert handler.handle_input_calls[0][1] == TableSlice(
+        database="database_abc", schema="schema1", table="table1", columns=["apple", "banana"]
+    )
+
+
+def test_asset_out_partitioned():
+    handler = IntHandler()
+    db_client = MagicMock(spec=DbClient)
+    manager = DbIOManager(type_handlers=[handler], db_client=db_client)
+    asset_key = AssetKey(["schema1", "table1"])
+    output_context = build_output_context(
+        asset_key=asset_key,
+        resource_config=resource_config,
+        asset_partition_key="2020-01-02",
+        asset_partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        metadata={"partition_expr": "abc"},
+    )
+    manager.handle_output(output_context, 5)
+    input_context = build_input_context(
+        asset_key=asset_key,
+        upstream_output=output_context,
+        resource_config=resource_config,
+        dagster_type=resolve_dagster_type(int),
+        asset_partition_key="2020-01-02",
+    )
+    assert manager.load_input(input_context) == 7
+
+    assert len(handler.handle_output_calls) == 1
+    table_slice = TableSlice(
+        database="database_abc",
+        schema="schema1",
+        table="table1",
+        partition=TablePartition(
+            time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)), partition_expr="abc"
+        ),
+    )
+    assert handler.handle_output_calls[0][1:] == (table_slice, 5)
+    db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
+
+    assert len(handler.handle_input_calls) == 1
+    assert handler.handle_input_calls[0][1] == table_slice
 
 
 def test_different_output_and_input_types():
@@ -80,9 +152,8 @@ def test_different_output_and_input_types():
     str_handler = StringHandler()
     db_client = MagicMock(spec=DbClient)
     manager = DbIOManager(type_handlers=[int_handler, str_handler], db_client=db_client)
-    output_context = build_output_context(
-        asset_key=AssetKey(["schema1", "table1"]), resource_config=resource_config
-    )
+    asset_key = AssetKey(["schema1", "table1"])
+    output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
     manager.handle_output(output_context, 5)
     assert len(int_handler.handle_output_calls) == 1
     assert len(str_handler.handle_output_calls) == 0
@@ -91,6 +162,7 @@ def test_different_output_and_input_types():
     db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
 
     input_context = build_input_context(
+        asset_key=asset_key,
         upstream_output=output_context,
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(str),
@@ -99,9 +171,7 @@ def test_different_output_and_input_types():
 
     assert len(str_handler.handle_input_calls) == 1
     assert len(int_handler.handle_input_calls) == 0
-    assert str_handler.handle_input_calls[0][1:] == (
-        TableSlice(database="database_abc", schema="schema1", table="table1"),
-    )
+    assert str_handler.handle_input_calls[0][1] == table_slice
 
 
 def test_non_asset_out():
@@ -125,6 +195,4 @@ def test_non_asset_out():
     db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
 
     assert len(handler.handle_input_calls) == 1
-    assert handler.handle_input_calls[0][1:] == (
-        TableSlice(database="database_abc", schema="schema1", table="table1"),
-    )
+    assert handler.handle_input_calls[0][1] == table_slice
