@@ -181,17 +181,7 @@ class AssetLineageInfo(
 T = TypeVar("T")
 
 
-class Output(
-    NamedTuple(
-        "_Output",
-        [
-            ("value", Any),
-            ("output_name", str),
-            ("metadata_entries", List[Union[PartitionMetadataEntry, MetadataEntry]]),
-        ],
-    ),
-    Generic[T],
-):
+class Output(Generic[T]):
     """Event corresponding to one of a op's outputs.
 
     Op compute functions must explicitly yield events of this type when they have more than
@@ -214,8 +204,8 @@ class Output(
             list, and one of the data classes returned by a MetadataValue static method.
     """
 
-    def __new__(
-        cls,
+    def __init__(
+        self,
         value: T,
         output_name: Optional[str] = DEFAULT_OUTPUT,
         metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
@@ -228,26 +218,24 @@ class Output(
             "metadata_entries",
             of_type=(MetadataEntry, PartitionMetadataEntry),
         )
+        self._value = value
+        self._output_name = check.str_param(output_name, "output_name")
+        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
 
-        return super(Output, cls).__new__(
-            cls,
-            value,
-            check.str_param(output_name, "output_name"),
-            normalize_metadata(metadata, metadata_entries),
-        )
+    @property
+    def metadata_entries(self) -> List[Union[PartitionMetadataEntry, MetadataEntry]]:
+        return self._metadata_entries
+
+    @property
+    def value(self) -> Any:
+        return self._value
+
+    @property
+    def output_name(self) -> str:
+        return self._output_name
 
 
-class DynamicOutput(
-    NamedTuple(
-        "_DynamicOutput",
-        [
-            ("value", Any),
-            ("mapping_key", str),
-            ("output_name", str),
-            ("metadata_entries", List[Union[PartitionMetadataEntry, MetadataEntry]]),
-        ],
-    )
-):
+class DynamicOutput:
     """
     Variant of :py:class:`Output <dagster.Output>` used to support
     dynamic mapping & collect. Each ``DynamicOutput`` produced by an op represents
@@ -274,8 +262,8 @@ class DynamicOutput(
             list, and one of the data classes returned by a MetadataValue static method.
     """
 
-    def __new__(
-        cls,
+    def __init__(
+        self,
         value: Any,
         mapping_key: str,
         output_name: Optional[str] = DEFAULT_OUTPUT,
@@ -287,14 +275,26 @@ class DynamicOutput(
         metadata_entries = check.opt_list_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
+        self._mapping_key = check_valid_name(check.str_param(mapping_key, "mapping_key"))
+        self._output_name = check.str_param(output_name, "output_name")
+        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
+        self._value = value
 
-        return super(DynamicOutput, cls).__new__(
-            cls,
-            value=value,
-            mapping_key=check_valid_name(check.str_param(mapping_key, "mapping_key")),
-            output_name=check.str_param(output_name, "output_name"),
-            metadata_entries=normalize_metadata(metadata, metadata_entries),
-        )
+    @property
+    def metadata_entries(self) -> List[Union[PartitionMetadataEntry, MetadataEntry]]:
+        return self._metadata_entries
+
+    @property
+    def mapping_key(self) -> str:
+        return self._mapping_key
+
+    @property
+    def value(self) -> Any:
+        return self._value
+
+    @property
+    def output_name(self) -> str:
+        return self._output_name
 
 
 @whitelist_for_serdes
