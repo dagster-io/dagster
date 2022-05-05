@@ -2164,10 +2164,10 @@ union LaunchRunReexecutionResult =
 
 input ReexecutionParams {
   parentRunId: String!
-  policy: ReexecutionPolicy!
+  strategy: ReexecutionStrategy!
 }
 
-enum ReexecutionPolicy {
+enum ReexecutionStrategy {
   FROM_FAILURE
   ALL_STEPS
 }
