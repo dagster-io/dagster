@@ -1,4 +1,6 @@
 import { useVersion } from "../util/useVersion";
+import Icons from "../components/Icons";
+
 import { Menu, Transition } from "@headlessui/react";
 import Link from "./Link";
 
@@ -11,18 +13,18 @@ export function VersionDropdown() {
   } = useVersion();
 
   return (
-    <div className="z-20 px-3 relative inline-block text-left">
+    <div className="z-20 relative inline-flex text-left">
       <div className="relative block text-left">
         <Menu>
           {({ open }) => (
             <>
               <div>
-                <Menu.Button className="group w-full bg-gray-50 dark:bg-gray-800 rounded-md px-3.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:border-gray-200 border-2 dark:border-gray-700">
+                <Menu.Button className="group w-32 rounded-full px-4 py-2 text-gray-400 border border-gray-300 hover:bg-white transition-colors duration-200">
                   <span className="flex w-full justify-between items-center">
                     <span className="flex min-w-0 items-center justify-between space-x-3">
                       <span className="flex-1 min-w-0">
                         <span className="text-gray-900 text-sm font-medium truncate"></span>{" "}
-                        <span className="text-gray-500 dark:text-gray-300 text-sm truncate">
+                        <span className="text-gray-900 dark:text-gray-300 text-sm truncate">
                           {currentVersion}{" "}
                           {currentVersion === latestVersion && "(latest)"}
                         </span>
@@ -30,17 +32,14 @@ export function VersionDropdown() {
                     </span>
                     {/* Heroicon name: selector */}
                     <svg
-                      className="flex-shrink-0 h-5 w-5 text-gray-400 group-hover:text-gray-500"
+                      className="h-3 w-3"
                       xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
                       viewBox="0 0 20 20"
-                      fill="currentColor"
+                      stroke="currentColor"
                       aria-hidden="true"
                     >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                      />
+                      {Icons["ChevronDown"]}
                     </svg>
                   </span>
                 </Menu.Button>
@@ -57,7 +56,7 @@ export function VersionDropdown() {
               >
                 <Menu.Items
                   static
-                  className="absolute mx-3 right-0 left-0 mt-2 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-200 overflow-y-scroll max-h-(screen-60)"
+                  className="absolute w-60 mx-3 right-0 left-0 mt-2 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-200 overflow-y-scroll max-h-(screen-60)"
                 >
                   <div className="px-4 py-3">
                     <p className="text-sm leading-5">

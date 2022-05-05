@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
+import Icons from "../components/Icons";
+import { VersionDropdown } from "../components/VersionDropdown";
 
 import { Transition } from "@headlessui/react";
 import newGithubIssueUrl from "new-github-issue-url";
@@ -489,6 +491,61 @@ export const FeedbackModal = ({
 //   );
 // };
 
+const BreadcrumbNav = () => {
+  const { asPathWithoutAnchor } = useVersion();
+  console.log(asPathWithoutAnchor.split("/"));
+  // TODO: HERE!!!!!!!!!!!!!
+  return (
+    <nav className="flex px-4 py-3" aria-label="Breadcrumb">
+      <ol className="inline-flex space-x-1 md:space-x-3">
+        <li className="inline-flex">
+          <a
+            href="#"
+            className="inline-flex text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+          >
+            Tutorial
+          </a>
+        </li>
+        <li>
+          <div className="flex items-center">
+            <svg
+              className="w-3 h-3 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 20 20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {Icons["ChevronRight"]}
+            </svg>
+            <a
+              href="#"
+              className="ml-1 text-sm font-medium text-gray-700 hover:text-gray-900 md:ml-2 dark:text-gray-400 dark:hover:text-white"
+            >
+              Intro Tutorial
+            </a>
+          </div>
+        </li>
+        <li aria-current="page">
+          <div className="flex items-center">
+            <svg
+              className="w-3 h-3 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 20 20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {Icons["ChevronRight"]}
+            </svg>
+            <span className="ml-1 text-sm font-medium text-gray-400 md:ml-2 dark:text-gray-500">
+              Setup for the Tutorial
+            </span>
+          </div>
+        </li>
+      </ol>
+    </nav>
+  );
+};
+
 const Layout = ({ children }) => {
   const [isFeedbackOpen, setOpenFeedback] = useState<boolean>(false);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
@@ -519,7 +576,7 @@ const Layout = ({ children }) => {
         className=""
         style={{
           minHeight: "calc(100vh - 10rem)",
-          backgroundImage: 'url("../assets/head-texture.jpg")',
+          backgroundImage: 'url("/assets/head-texture.jpg")',
           backgroundRepeat: "no-repeat",
           backgroundPosition: "top middle",
           backgroundSize: "fit",
@@ -600,7 +657,28 @@ const Layout = ({ children }) => {
               isMobileMenuOpen={isMobileMenuOpen}
               closeMobileMenu={closeMobileMenu}
             />
-            {children}
+            <div className="mt-5 flex flex-col">
+              <div className="flex justify-between px-4">
+                <div className="flex justify-start px-4">
+                  <div className="flex">
+                    <VersionDropdown />
+                  </div>
+                  <div className="flex">
+                    <BreadcrumbNav />
+                  </div>
+                </div>
+
+                <div className="flex-none">
+                  <button
+                    onClick={toggleFeedback}
+                    className="hidden lg:inline-block px-2 py-2 ml-2 text-sm rounded-full border border-gray-300 text-gray-600 hover:text-gray-700 hover:bg-white transition-colors duration-200"
+                  >
+                    Share Feedback
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-row"> {children}</div>
+            </div>
           </div>
         </div>
       </div>

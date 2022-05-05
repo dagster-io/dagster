@@ -104,13 +104,8 @@ function MDXRenderer({ data }: { data: MDXData }) {
   const { query } = useRouter();
   const { editMode } = query;
 
-  const {
-    mdxSource,
-    frontMatter,
-    searchIndex,
-    tableOfContents,
-    githubLink,
-  } = data;
+  const { mdxSource, frontMatter, searchIndex, tableOfContents, githubLink } =
+    data;
 
   const content = hydrate(mdxSource, {
     components,
@@ -131,13 +126,13 @@ function MDXRenderer({ data }: { data: MDXData }) {
         }}
       />
       <div
-        className="flex-1 min-w-0 relative z-0 focus:outline-none pt-8"
+        className="flex-1 min-w-0 relative z-0 focus:outline-none pt-4"
         tabIndex={0}
       >
         {/* Start main area*/}
 
         <VersionNotice />
-        <div className="py-6 px-4 sm:px-6 lg:px-8 w-full">
+        <div className="py-4 px-4 sm:px-6 lg:px-8 w-full">
           <div className="DocSearch-content prose dark:prose-dark max-w-none">
             {content}
           </div>
@@ -146,14 +141,12 @@ function MDXRenderer({ data }: { data: MDXData }) {
         {/* End main area */}
       </div>
       {!editMode && (
-        <aside className="hidden relative xl:block flex-none w-96 flex-shrink-0 border-gray-200">
+        <aside className="hidden relative xl:block flex-none w-96 flex shrink-0 border-gray-200">
           {/* Start secondary column (hidden on smaller screens) */}
-          <div className="flex flex-col justify-between  sticky top-24  py-6 px-4 sm:px-6 lg:px-8">
-            <div className="mb-8 border border-gray-100 rounded-lg px-4 py-4 relative overflow-y-scroll max-h-(screen-60)">
-              <div className="uppercase text-sm font-semibold text-gable-green">
-                On this page
-              </div>
-              <div className="mt-4 ">
+          <div className="flex flex-col justify-between sticky top-24  py-6 px-4 sm:px-6 lg:px-8">
+            <div className="mb-8 border border-gray-100 rounded-lg px-4 py-2 relative overflow-y-scroll max-h-(screen-60)">
+              <div className="font-semibold text-gable-green">On This Page</div>
+              <div className="mt-6">
                 {tableOfContents.items[0].items && (
                   <SidebarNavigation items={tableOfContents.items[0].items} />
                 )}
@@ -196,13 +189,13 @@ function HTMLRenderer({ data }: { data: HTMLData }) {
   return (
     <>
       <div
-        className="flex-1 min-w-0 relative z-0 focus:outline-none pt-8"
+        className="flex-1 min-w-0 relative z-0 focus:outline-none pt-4"
         tabIndex={0}
       >
         {/* Start main area*/}
 
         <VersionNotice />
-        <div className="py-6 px-4 sm:px-6 lg:px-8 w-full">
+        <div className="py-4 px-4 sm:px-6 lg:px-8 w-full">
           <div
             className="DocSearch-content prose dark:prose-dark max-w-none"
             dangerouslySetInnerHTML={markup}
