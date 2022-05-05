@@ -177,11 +177,19 @@ def test_unconfigurable_inputs_pipeline():
     def noop(_):
         pass
 
-    with pytest.raises(DagsterInvalidDefinitionError):
-        # NewType is not connect and can not be provided with config
-        @pipeline
-        def _bad_inputs():
-            noop()
+    @pipeline
+    def _bad_inputs():
+        noop()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Input '_' of solid 'noop' has no upstream output, no default "
+        "value, and no dagster type loader. Must provide a value to this input "
+        "via either a direct input value mapped from the top-level graph, or a "
+        "root input manager key. To learn more, see the docs for unconnected "
+        "inputs: https://docs.dagster.io/concepts/io-management/unconnected-inputs#unconnected-inputs.",
+    ):
+        execute_pipeline(_bad_inputs)
 
 
 def test_dupe_defs_fail():
