@@ -31,7 +31,7 @@ def _in_tracking_dict(handle, tracking):
         return handle.to_key() in tracking
 
 
-class ReexecutionPolicy(enum.Enum):
+class ReexecutionStrategy(enum.Enum):
     ALL_STEPS = "ALL_STEPS"
     FROM_FAILURE = "FROM_FAILURE"
 

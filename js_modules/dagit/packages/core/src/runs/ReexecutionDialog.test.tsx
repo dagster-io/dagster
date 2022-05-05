@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
 import {TestProvider} from '../testing/TestProvider';
-import {ReexecutionPolicy} from '../types/globalTypes';
+import {ReexecutionStrategy} from '../types/globalTypes';
 
 import {ReexecutionDialog} from './ReexecutionDialog';
 
@@ -14,20 +14,20 @@ describe('ReexecutionDialog', () => {
     'ijkl-9012': 'ijkl-9012',
   };
 
-  const Test = (props: {policy: ReexecutionPolicy}) => (
+  const Test = (props: {strategy: ReexecutionStrategy}) => (
     <ReexecutionDialog
       isOpen
       onClose={jest.fn()}
       onComplete={jest.fn()}
       selectedRuns={selectedMap}
-      reexecutionPolicy={props.policy}
+      reexecutionStrategy={props.strategy}
     />
   );
 
   it('prompts the user with the number of runs to re-execute', async () => {
     render(
       <TestProvider>
-        <Test policy={ReexecutionPolicy.FROM_FAILURE} />
+        <Test strategy={ReexecutionStrategy.FROM_FAILURE} />
       </TestProvider>,
     );
 
@@ -41,7 +41,7 @@ describe('ReexecutionDialog', () => {
   it('moves into loading state upon re-execution', async () => {
     render(
       <TestProvider>
-        <Test policy={ReexecutionPolicy.FROM_FAILURE} />
+        <Test strategy={ReexecutionStrategy.FROM_FAILURE} />
       </TestProvider>,
     );
 
@@ -71,7 +71,7 @@ describe('ReexecutionDialog', () => {
 
     render(
       <TestProvider apolloProps={{mocks: [mocks]}}>
-        <Test policy={ReexecutionPolicy.FROM_FAILURE} />
+        <Test strategy={ReexecutionStrategy.FROM_FAILURE} />
       </TestProvider>,
     );
 
@@ -94,7 +94,7 @@ describe('ReexecutionDialog', () => {
 
     render(
       <TestProvider apolloProps={{mocks: [mocks]}}>
-        <Test policy={ReexecutionPolicy.FROM_FAILURE} />
+        <Test strategy={ReexecutionStrategy.FROM_FAILURE} />
       </TestProvider>,
     );
 
