@@ -259,7 +259,7 @@
   },
   {
     "title": "Deployment",
-    "icon": "Cloud",
+    "icon": "CloudUpload",
     "path": "/deployment",
     "children": [
       {
@@ -696,22 +696,23 @@
     "path": "/community",
     "children": [
       {
-        "title": "Community",
-        "children": [
-          {
-            "title": "Code of Conduct",
-            "path": "/community/code-of-conduct"
-          },
-          {
-            "title": "Contributing",
-            "path": "/community/contributing"
-          },
-          {
-            "title": "Changing Public APIs",
-            "path": "/community/public-apis"
-          }
-        ]
+        "title": "Code of Conduct",
+        "path": "/community/code-of-conduct"
+      },
+      {
+        "title": "Contributing",
+        "path": "/community/contributing"
+      },
+      {
+        "title": "Changing Public APIs",
+        "path": "/community/public-apis"
       }
     ]
+  },
+  {
+    "title": "Dagster Cloud Docs",
+    "icon": "Cloud",
+    "path": "https://docs.dagster.cloud/",
+    "isExternalLink": true
   }
 ]

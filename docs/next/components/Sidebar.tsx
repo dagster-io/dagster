@@ -1,3 +1,5 @@
+import React from "react";
+
 import { Search } from "components/Search";
 import Icons from "../components/Icons";
 import Link from "./Link";
@@ -12,8 +14,17 @@ const getCurrentSection = (navigation) => {
   );
   return match || navigation.find((item) => item.path === "/");
 };
+interface FancyButtonProps {
+  item: any;
+  match: boolean;
+  lvl: number;
+  href?: string;
+}
 
-const MenuItem = ({ item, match, lvl, href = null }) => {
+const MenuItem = React.forwardRef<
+  HTMLAnchorElement,
+  React.PropsWithChildren<FancyButtonProps>
+>(({ item, match, lvl, href }, ref) => {
   const rightIcon = item.isExternalLink
     ? Icons["ExternalLink"]
     : item.children && (match ? Icons["ChevronDown"] : Icons["ChevronRight"]);
@@ -31,6 +42,7 @@ const MenuItem = ({ item, match, lvl, href = null }) => {
         }
       )}
       href={href}
+      ref={ref}
     >
       <div className="flex justify-start">
         {item.icon && (
@@ -75,7 +87,7 @@ const MenuItem = ({ item, match, lvl, href = null }) => {
       )}
     </a>
   );
-};
+});
 
 const TopLevelNavigation = () => {
   const navigation = useNavigation();
@@ -101,53 +113,6 @@ const TopLevelNavigation = () => {
                 <MenuItem item={item} match={match} lvl={0} />
               </Link>
             )}
-            {/* <Link key={item.path} href={item.path}>
-              <a
-                className={cx(
-                  "transition group flex justify-between items-center px-2 py-2 text-md font-medium rounded-md text-gray-800 dark:text-gray-200",
-                  {
-                    "hover:bg-lavender hover:bg-opacity-50 text-blurple": match,
-                    "hover:text-gray-900 hover:bg-lavender hover:bg-opacity-50":
-                      !match,
-                  }
-                )}
-              >
-                <div className="flex justify-start">
-                  <svg
-                    className={cx("mr-3 h-6 w-6 text-gray-400 transition", {
-                      "text-blurple": match,
-                      "group-hover:text-gray-600": !match,
-                    })}
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    {Icons[item.icon]}
-                  </svg>
-                  <span className={cx({ "DocSearch-lvl0": match })}>
-                    {item.title}
-                  </span>
-                </div>
-
-                {rightIcon && (
-                  <svg
-                    className={cx("mr-2 h-4 w-4 text-gray-400 transition", {
-                      "text-blurple": match,
-                      "group-hover:text-gray-600": !match,
-                    })}
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    {rightIcon}
-                  </svg>
-                )}
-              </a>
-            </Link> */}
             {match && (
               <div key={item.title} className="mt-8">
                 <div
@@ -210,48 +175,6 @@ const SecondaryNavigation = () => {
                 <MenuItem item={sectionOrItem} match={match} lvl={2} />
               </Link>
             )}
-            {/* <Link
-              key={sectionOrItem.path}
-              href={sectionOrItem.path || sectionOrItem.children[0].path}
-            >
-              <a
-                className={cx(
-                  "group flex justify-between items-center px-3 py-2 text-md font-medium text-gray-700",
-                  {
-                    "hover:bg-lavender hover:bg-opacity-50 text-blurple":
-                      sectionOrItem.path === asPathWithoutAnchor,
-                    "hover:text-gray-900 hover:bg-lavender hover:bg-opacity-50":
-                      sectionOrItem.path !== asPathWithoutAnchor,
-                  }
-                )}
-              >
-                <span
-                  className={cx({
-                    "DocSearch-lvl2":
-                      sectionOrItem.path === asPathWithoutAnchor,
-                  })}
-                >
-                  {sectionOrItem.title}
-                </span>
-
-                {rightIcon && (
-                  <svg
-                    className={cx("mr-1 h-4 w-4 text-gray-400 transition", {
-                      "text-blurple": match,
-                      "group-hover:text-gray-600": !match,
-                    })}
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    {rightIcon}
-                  </svg>
-                )}
-              </a>
-            </Link> */}
-
             {match && (
               <div key={sectionOrItem.title} className="border-l ml-5 mt-2">
                 <div
@@ -281,7 +204,7 @@ const ThirdLevelNavigation = ({ section }) => {
   const { asPathWithoutAnchor } = useVersion();
 
   return (
-    <Link href={section.path}>
+    <Link key={section.path} href={section.path}>
       <a
         className={cx(
           "group flex items-center px-3 py-1 text-sm text-gray-700 rounded-md",
