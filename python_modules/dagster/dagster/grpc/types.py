@@ -22,6 +22,7 @@ class ExecutionPlanSnapshotArgs(
         "_ExecutionPlanSnapshotArgs",
         [
             ("pipeline_origin", ExternalPipelineOrigin),
+            ("asset_selection", List[str]),
             ("solid_selection", List[str]),
             ("run_config", Mapping[str, object]),
             ("mode", str),

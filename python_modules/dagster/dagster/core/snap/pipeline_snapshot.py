@@ -422,6 +422,8 @@ class PipelineSnapshotLineage(
             ("parent_snapshot_id", str),
             ("solid_selection", Optional[List[str]]),
             ("solids_to_execute", Optional[AbstractSet[str]]),
+            # maybe?
+            ("asset_selection", Optional[List[str]]),
         ],
     )
 ):

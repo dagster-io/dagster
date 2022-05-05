@@ -877,6 +877,7 @@ class DagsterInstance:
             run_id=run_id,
             run_config=run_config,
             mode=mode,
+            asset_selection=asset_selection,
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,

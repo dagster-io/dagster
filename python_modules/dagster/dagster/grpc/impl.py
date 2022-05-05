@@ -357,6 +357,7 @@ def get_external_execution_plan_snapshot(recon_pipeline, args):
 
     try:
         pipeline = (
+            # here we would modify the recon pipeline to take in asset selection
             recon_pipeline.subset_for_execution(args.solid_selection)
             if args.solid_selection
             else recon_pipeline

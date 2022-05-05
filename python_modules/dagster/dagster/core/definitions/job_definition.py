@@ -231,6 +231,15 @@ class JobDefinition(PipelineDefinition):
     def op_selection_data(self) -> Optional[OpSelectionData]:
         return self._op_selection_data
 
+    def get_job_def_for_asset_selection(
+        self,
+        asset_selection: Optional[List[str]] = None,
+    ) -> "JobDefinition":
+
+        asset_group = self.asset_group
+        assert asset_group is not None
+        return asset_group.build_job(self.name, selection=asset_selection)
+
     def get_job_def_for_op_selection(
         self,
         op_selection: Optional[List[str]] = None,

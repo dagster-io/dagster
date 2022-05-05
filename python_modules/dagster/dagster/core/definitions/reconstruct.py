@@ -127,6 +127,7 @@ class ReconstructablePipeline(
             ("pipeline_name", str),
             ("solid_selection_str", Optional[str]),
             ("solids_to_execute", Optional[FrozenSet[str]]),
+            ("assets_to_execute", Optional[FrozenSet[str]]),
         ],
     ),
     IPipeline,
@@ -172,11 +173,18 @@ class ReconstructablePipeline(
         defn = self.repository.get_definition().get_pipeline(self.pipeline_name)
 
         if isinstance(defn, JobDefinition):
+            if self.assets_to_execute:
+                return (
+                    self.repository.get_definition()
+                    .get_pipeline(self.pipeline_name)
+                    .get_job_def_for_asset_selection(self.assets_to_execute)
+                )
             return (
                 self.repository.get_definition().get_pipeline(self.pipeline_name)
                 # jobs use pre-resolved selection
                 .get_job_def_for_op_selection(self.solid_selection)
             )
+        # TODO: error if you get here with PipelineDef and assets to execute
         return (
             self.repository.get_definition().get_pipeline(self.pipeline_name)
             # pipelines use post-resolved selection

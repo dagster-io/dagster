@@ -367,6 +367,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.opt_inst_param(instance, "instance", DagsterInstance)
 
         execution_plan = create_execution_plan(
+            # here we will want to do a subset based on external_pipeline.assets_to_execute
             pipeline=self.get_reconstructable_pipeline(
                 external_pipeline.name
             ).subset_for_execution_from_existing_pipeline(external_pipeline.solids_to_execute),
@@ -691,6 +692,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             run_config=run_config,
             mode=mode,
             pipeline_snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
+            asset_selection=external_pipeline.asset_selection,
             solid_selection=external_pipeline.solid_selection,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
