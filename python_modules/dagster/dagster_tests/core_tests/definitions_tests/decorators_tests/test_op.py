@@ -922,3 +922,94 @@ def test_generic_dynamic_output_type_mismatch():
         match='Type check failed for step output "result" - expected type "Int". Description: Value "2" of python type "str" must be a int.',
     ):
         execute_op_in_graph(basic)
+
+
+def test_generic_dynamic_output_mix_with_regular():
+    @op(out={"regular": Out(), "dynamic": DynamicOut()})
+    def basic() -> Tuple[Output[int], List[DynamicOutput[str]]]:
+        return (
+            Output(5),
+            [
+                DynamicOutput(mapping_key="1", value="foo"),
+                DynamicOutput(mapping_key="2", value="bar"),
+            ],
+        )
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+
+    assert result.output_for_node("basic", "regular") == 5
+    assert result.output_for_node("basic", "dynamic") == {"1": "foo", "2": "bar"}
+
+
+def test_generic_dynamic_output_mix_with_regular_type_mismatch():
+    @op(out={"regular": Out(), "dynamic": DynamicOut()})
+    def basic() -> Tuple[Output[int], List[DynamicOutput[str]]]:
+        return (
+            Output(5),
+            [
+                DynamicOutput(mapping_key="1", value="foo"),
+                DynamicOutput(mapping_key="2", value=5),
+            ],
+        )
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step output "dynamic" - expected type "String". Description: Value "5" of python type "int" must be a string.',
+    ):
+        execute_op_in_graph(basic)
+
+
+def test_generic_dynamic_output_name_not_provided():
+    @op
+    def basic() -> List[DynamicOutput[int]]:
+        return [DynamicOutput(value=5, mapping_key="blah", output_name="blah")]
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='Core compute for op "basic" returned an output "blah" that does not exist.',
+    ):
+        execute_op_in_graph(basic)
+
+
+def test_generic_dynamic_output_name_mismatch():
+    @op(out={"the_name": DynamicOut()})
+    def basic() -> List[DynamicOutput[int]]:
+        return [DynamicOutput(value=5, mapping_key="blah", output_name="bad_name")]
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='Core compute for op "basic" returned an output "bad_name" that does not exist.',
+    ):
+        execute_op_in_graph(basic)
+
+
+def test_generic_dynamic_output_bare_list():
+    @op
+    def basic() -> List[DynamicOutput]:
+        return [DynamicOutput(4, mapping_key="1")]
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+    assert result.output_for_node("basic") == {"1": 4}
+
+
+def test_generic_dynamic_output_bare():
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Op annotated with return type DynamicOutput. DynamicOutputs can only be returned in the context of a List or Mapping. If only one output is needed, use the Output API.",
+    ):
+
+        @op
+        def basic() -> DynamicOutput:
+            pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Op annotated with return type DynamicOutput. DynamicOutputs can only be returned in the context of a List or Mapping. If only one output is needed, use the Output API.",
+    ):
+
+        @op
+        def basic() -> DynamicOutput[int]:
+            pass

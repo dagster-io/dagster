@@ -894,8 +894,14 @@ def is_dynamic_output_annotation(dagster_type: object) -> bool:
         "Do not pass runtime type classes. Got {}".format(dagster_type),
     )
 
+    if dagster_type == DynamicOutput or get_origin(dagster_type) == DynamicOutput:
+        raise DagsterInvariantViolationError(
+            "Op annotated with return type DynamicOutput. DynamicOutputs can only be returned in the context of a List or Mapping. If only one output is needed, use the Output API."
+        )
+
     if get_origin(dagster_type) == list and len(get_args(dagster_type)) == 1:
-        return get_origin(get_args(dagster_type)[0]) == DynamicOutput
+        list_inner_type = get_args(dagster_type)[0]
+        return list_inner_type == DynamicOutput or get_origin(list_inner_type) == DynamicOutput
     return False
 
 
