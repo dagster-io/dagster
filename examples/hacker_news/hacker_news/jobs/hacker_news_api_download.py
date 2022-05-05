@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from hacker_news.ops.download_items import build_comments, build_stories, download_items
 from hacker_news.ops.id_range_for_time import id_range_for_time
 from hacker_news.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
@@ -7,7 +5,7 @@ from hacker_news.resources.hn_resource import hn_api_subsample_client, hn_snapsh
 from hacker_news.resources.partition_bounds import partition_bounds
 from hacker_news.schedules.hourly_hn_download_schedule import hourly_download_config
 
-from dagster import graph, hourly_partitioned_config, in_process_executor
+from dagster import graph, in_process_executor
 
 DOWNLOAD_TAGS = {
     "dagster-k8s/config": {
