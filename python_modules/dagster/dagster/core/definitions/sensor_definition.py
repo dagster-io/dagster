@@ -5,7 +5,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Generator,
     Iterator,
     List,
     NamedTuple,
@@ -557,7 +556,7 @@ def build_sensor_context(
 
 
 AssetMaterializationFunctionReturn = Union[
-    Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason
+    Iterator[Union[RunRequest, SkipReason]], List[RunRequest], RunRequest, SkipReason
 ]
 AssetMaterializationFunction = Callable[
     ["SensorExecutionContext", "EventLogEntry"],
@@ -574,7 +573,7 @@ class AssetSensorDefinition(SensorDefinition):
         asset_key (AssetKey): The asset_key this sensor monitors.
         pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the sensor
             fires. Cannot be used in conjunction with `job` or `jobs` parameters.
-        asset_materialization_fn (Callable[[SensorEvaluationContext, EventLogEntry], Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason]]): The core
+        asset_materialization_fn (Callable[[SensorEvaluationContext, EventLogEntry], Union[Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason]]): The core
             evaluation function for the sensor, which is run at an interval to determine whether a
             run should be launched or not. Takes a :py:class:`~dagster.SensorEvaluationContext` and
             an EventLogEntry corresponding to an AssetMaterialization event.
