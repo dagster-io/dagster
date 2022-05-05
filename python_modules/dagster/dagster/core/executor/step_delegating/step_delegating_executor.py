@@ -225,9 +225,8 @@ class StepDelegatingExecutor(Executor):
 
                 max_steps_to_run = None
                 if self._concurrency_limit:
-                    max_steps_to_run = self._concurrency_limit - len(running_steps)
-
-                if (not max_steps_to_run) or len(max_steps_to_run) > 0:
+                    max_steps_to_run = self._concurrency_limit - len(running_steps)                
+                if (max_steps_to_run is None) or max_steps_to_run > 0:
                     for step in active_execution.get_steps_to_execute(max_steps_to_run):
                         running_steps[step.key] = step
                         self._log_new_events(
