@@ -141,14 +141,14 @@ class SensorEvaluationContext:
 SensorExecutionContext = SensorEvaluationContext
 
 RawSensorEvaluationFunctionReturn = Union[
-    Iterator[Union[SkipReason, RunRequest]], Iterable[RunRequest], SkipReason, RunRequest
+    Iterator[Union[SkipReason, RunRequest]], List[RunRequest], SkipReason, RunRequest
 ]
 RawSensorEvaluationFunction = Union[
     Callable[[], RawSensorEvaluationFunctionReturn],
     Callable[[SensorEvaluationContext], RawSensorEvaluationFunctionReturn],
 ]
 SensorEvaluationFunction = Callable[
-    [SensorEvaluationContext], Union[SkipReason, RunRequest, Iterable[RunRequest]]
+    [SensorEvaluationContext], Iterator[Union[SkipReason, RunRequest]]
 ]
 
 
@@ -500,10 +500,12 @@ def wrap_sensor_evaluation(
         else:
             result = fn()  # type: ignore
 
-        if inspect.isgenerator(result):
-            return list(result)
+        if inspect.isgenerator(result) or isinstance(result, list):
+            for item in result:
+                yield item
         elif isinstance(result, (SkipReason, RunRequest)):
-            return [result]
+            yield result
+
         elif result is not None:
             raise Exception(
                 (
@@ -601,7 +603,7 @@ class AssetSensorDefinition(SensorDefinition):
         pipeline_name: Optional[str],
         asset_materialization_fn: Callable[
             ["SensorExecutionContext", "EventLogEntry"],
-            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+            RawSensorEvaluationFunctionReturn,
         ],
         solid_selection: Optional[List[str]] = None,
         mode: Optional[str] = None,
@@ -639,7 +641,12 @@ class AssetSensorDefinition(SensorDefinition):
                     return
 
                 event_record = event_records[0]
-                yield from materialization_fn(context, event_record.event_log_entry)
+                result = materialization_fn(context, event_record.event_log_entry)
+                if inspect.isgenerator(result) or isinstance(result, list):
+                    for item in result:
+                        yield item
+                elif isinstance(result, (SkipReason, RunRequest)):
+                    yield result
                 context.update_cursor(str(event_record.storage_id))
 
             return _fn
