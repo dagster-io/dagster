@@ -35,7 +35,11 @@ from .utils import delete_job
         {
             "job_namespace": Field(StringSource, is_required=False),
             "retries": get_retries_config(),
-            "max_concurrency": Field(IntSource, is_required=False),
+            "max_concurrency": Field(
+                IntSource,
+                is_required=False,
+                description="Maximum number of concurrent pods launched for one run",
+            ),
         },
     ),
     requirements=multiple_process_executor_requirements(),
@@ -65,6 +69,10 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             env_secrets: ...
             env_vars: ...
             job_image: ... # leave out if using userDeployments
+            max_concurrent: 6
+
+    The ``max_concurrent`` arg is optional and tells the execution engine how many containers can be run
+    concurrently for one job. By default, or if you set ``max_concurrent`` to be 0, there is no limit.
 
     Configuration set on the Kubernetes Jobs and Pods created by the `K8sRunLauncher` will also be
     set on Kubernetes Jobs and Pods created by the `k8s_job_executor`.
@@ -101,7 +109,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             kubeconfig_file=run_launcher.kubeconfig_file,
         ),
         retries=RetryMode.from_config(init_context.executor_config["retries"]),  # type: ignore
-        concurrency_limit=exc_cfg.get("max_concurrency"),
+        max_concurrent=exc_cfg.get("max_concurrent"),
         should_verify_step=True,
     )
 
