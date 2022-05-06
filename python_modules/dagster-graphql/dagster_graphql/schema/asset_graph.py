@@ -373,10 +373,12 @@ class GrapheneAssetNode(graphene.ObjectType):
             return None
 
     def resolve_opNames(self, _graphene_info) -> Sequence[str]:
-        return self._external_asset_node.op_names or []
+        return self._external_asset_node.op_names or list(
+            filter(None, [self._external_asset_node.op_name])
+        )
 
     def resolve_graphName(self, _graphene_info) -> Optional[str]:
-        return self._external_asset_node.graph_name
+        return self._external_asset_node.graph_name or self._external_asset_node.op_name
 
     def resolve_partitionDefinition(self, _graphene_info) -> Optional[str]:
         partitions_def_data = self._external_asset_node.partitions_def_data
