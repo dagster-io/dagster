@@ -7,6 +7,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Mapping,
     Optional,
     Set,
     Tuple,
@@ -517,7 +518,7 @@ class GraphDefinition(NodeDefinition):
             JobDefinition
         """
         from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
-        from .job_definition import JobDefinition, PendingJobDefinition
+        from .job_definition import JobDefinition
         from .partition import PartitionedConfig, PartitionsDefinition
 
         job_name = check_valid_name(name or self.name)
@@ -654,7 +655,7 @@ class GraphDefinition(NodeDefinition):
             PendingJobDefinition
         """
         from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
-        from .job_definition import JobDefinition, PendingJobDefinition
+        from .job_definition import PendingJobDefinition
         from .partition import PartitionedConfig, PartitionsDefinition
 
         job_name = check_valid_name(name or self.name)
@@ -689,7 +690,7 @@ class GraphDefinition(NodeDefinition):
             # Using config mapping here is a trick to make it so that the preset will be used even
             # when no config is supplied for the job.
             config_mapping = _config_mapping_with_default_value(
-                self._get_config_schema(resource_defs_with_defaults, executor_def, logger_defs),
+                self._get_config_schema(resource_defs, executor_def, logger_defs),
                 config,
                 job_name,
                 self.name,
@@ -729,7 +730,7 @@ class GraphDefinition(NodeDefinition):
 
     def _get_config_schema(
         self,
-        resource_defs: Optional[Dict[str, ResourceDefinition]],
+        resource_defs: Optional[Mapping[str, ResourceDefinition]],
         executor_def: "ExecutorDefinition",
         logger_defs: Optional[Dict[str, LoggerDefinition]],
     ) -> ConfigType:
@@ -787,7 +788,7 @@ class GraphDefinition(NodeDefinition):
         from dagster.core.instance import DagsterInstance
 
         from .executor_definition import execute_in_process_executor
-        from .job_definition import JobDefinition, PendingJobDefinition
+        from .job_definition import JobDefinition
 
         instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         resources = check.opt_dict_param(resources, "resources", key_type=str)

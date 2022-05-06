@@ -8,6 +8,7 @@ from typing import (
     Generator,
     Iterator,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Sequence,
@@ -30,9 +31,10 @@ from dagster.serdes import whitelist_for_serdes
 from ..decorator_utils import get_function_params
 from .events import AssetKey
 from .graph_definition import GraphDefinition
-from .job_definition import JobDefinition
+from .job_definition import JobDefinition, PendingJobDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
+from .resource_definition import ResourceDefinition
 from .run_request import PipelineRunReaction, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
@@ -320,7 +322,7 @@ class SensorDefinition:
         return self._targets
 
     @property
-    def job(self) -> PipelineDefinition:
+    def job(self) -> Union["PipelineDefinition", "JobDefinition", "PendingJobDefinition"]:
         if self._targets:
             if len(self._targets) == 1 and isinstance(self._targets[0], DirectTarget):
                 return self._targets[0].pipeline
@@ -403,11 +405,14 @@ class SensorDefinition:
                 return True
         return False
 
-    def load_targets(self) -> List[PipelineDefinition]:
+    def load_targets(
+        self, resource_defs: Optional[Mapping[str, ResourceDefinition]] = None
+    ) -> Sequence[PipelineDefinition]:
+        resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):
-                targets.append(target.load())
+                targets.append(target.load(resource_defs))
         return targets
 
     def check_valid_run_requests(self, run_requests: List[RunRequest]):

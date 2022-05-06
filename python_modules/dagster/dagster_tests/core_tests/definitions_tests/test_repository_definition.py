@@ -727,3 +727,153 @@ def test_job_partial_resource_spec():
         @repository
         def the_repo_doesnt_satisfy_resource_reqs():
             return [{"baz": ResourceDefinition.hardcoded_resource("blah")}, the_job]
+
+
+def test_sensor_graph_coercion_dupe_names():
+    # Demonstrate that sensor coercion is broken when non-equal job with same name exists in repo
+    @op
+    def an_op():
+        pass
+
+    @op
+    def a_diff_op():
+        pass
+
+    @graph
+    def the_name():
+        an_op()
+
+    @job(name="the_name")
+    def the_job_with_name():
+        a_diff_op()
+
+    @sensor(job=the_name)
+    def the_sensor():
+        pass
+
+    @repository
+    def the_repo():
+        return [the_job_with_name, the_sensor]
+
+    assert len(the_repo.get_all_jobs()) == 1
+    assert the_repo.get_all_jobs()[0] != the_job_with_name
+
+
+def test_partial_job_sensor_targeting():
+    @op(required_resource_keys={"foo", "bar"})
+    def the_op(context):
+        assert context.resources.foo == "hello"
+        assert context.resources.bar == "goodbye"
+
+    @graph
+    def the_graph():
+        the_op()
+
+    the_job = the_graph.to_partial_job(
+        name="the_job", resource_defs={"foo": ResourceDefinition.hardcoded_resource("hello")}
+    )
+
+    @sensor(job=the_job)
+    def basic_sensor():
+        pass
+
+    @repository
+    def the_repo():
+        return [basic_sensor, {"bar": ResourceDefinition.hardcoded_resource("goodbye")}]
+
+    assert [job.name for job in the_repo.get_all_jobs()] == ["the_job"]
+
+    @repository
+    def the_repo_dupe_job():
+        return [basic_sensor, {"bar": ResourceDefinition.hardcoded_resource("goodbye")}, the_job]
+
+    assert [job.name for job in the_repo.get_all_jobs()] == ["the_job"]
+
+    @job(name="the_job")
+    def diff_job():
+        pass
+
+    @repository
+    def the_repo_dupe_name_different_job():
+        return [basic_sensor, {"bar": ResourceDefinition.hardcoded_resource("goodbye")}, diff_job]
+
+    assert [job.name for job in the_repo_dupe_name_different_job.get_all_jobs()] == ["the_job"]
+    # Demonstrate that the job placed in repo is silently overridden.
+    assert the_repo_dupe_name_different_job.get_all_jobs()[0] != diff_job
+
+
+def test_partial_job_schedule_targeting():
+    @op(required_resource_keys={"foo", "bar"})
+    def the_op(context):
+        assert context.resources.foo == "hello"
+        assert context.resources.bar == "goodbye"
+
+    @graph
+    def the_graph():
+        the_op()
+
+    the_job = the_graph.to_partial_job(
+        name="the_job", resource_defs={"foo": ResourceDefinition.hardcoded_resource("hello")}
+    )
+
+    @schedule(job=the_job, cron_schedule="* * * * *")
+    def basic_schedule():
+        pass
+
+    @repository
+    def the_repo():
+        return [basic_schedule, {"bar": ResourceDefinition.hardcoded_resource("goodbye")}]
+
+    assert [job.name for job in the_repo.get_all_jobs()] == ["the_job"]
+
+    @repository
+    def the_repo_dupe_job():
+        return [basic_schedule, {"bar": ResourceDefinition.hardcoded_resource("goodbye")}, the_job]
+
+    assert [job.name for job in the_repo.get_all_jobs()] == ["the_job"]
+
+    @job(name="the_job")
+    def diff_job():
+        pass
+
+    @repository
+    def the_repo_dupe_name_different_job():
+        return [basic_schedule, {"bar": ResourceDefinition.hardcoded_resource("goodbye")}, diff_job]
+
+    assert [job.name for job in the_repo_dupe_name_different_job.get_all_jobs()] == ["the_job"]
+    # Demonstrate that the job placed in repo is silently overridden.
+    assert the_repo_dupe_name_different_job.get_all_jobs()[0] != diff_job
+
+
+def test_dupe_job_sensor_and_schedule():
+    @op(required_resource_keys={"foo", "bar"})
+    def the_op(context):
+        assert context.resources.foo == "hello"
+        assert context.resources.bar == "goodbye"
+
+    @graph
+    def the_graph():
+        the_op()
+
+    the_job = the_graph.to_partial_job(
+        name="the_job", resource_defs={"foo": ResourceDefinition.hardcoded_resource("hello")}
+    )
+
+    @schedule(job=the_job, cron_schedule="* * * * *")
+    def basic_schedule():
+        pass
+
+    @sensor(job=the_job)
+    def basic_sensor():
+        pass
+
+    @repository
+    def the_repo_all_dupes():
+        return [
+            basic_schedule,
+            basic_sensor,
+            the_job,
+            {"bar": ResourceDefinition.hardcoded_resource("goodbye")},
+        ]
+
+    assert [job.name for job in the_repo_all_dupes.get_all_jobs()] == ["the_job"]

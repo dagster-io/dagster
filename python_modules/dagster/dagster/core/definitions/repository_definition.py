@@ -663,19 +663,12 @@ class CachingRepositoryData(RepositoryData):
                         f"Duplicate definition found for {definition.name}"
                     )
                 sensors[definition.name] = definition
-                if definition.has_loadable_targets():
-                    targets = definition.load_targets()
-                    for target in targets:
-                        pipelines_or_jobs[target.name] = target
             elif isinstance(definition, ScheduleDefinition):
                 if definition.name in sensors or definition.name in schedules:
                     raise DagsterInvalidDefinitionError(
                         f"Duplicate definition found for {definition.name}"
                     )
                 schedules[definition.name] = definition
-                if definition.has_loadable_target():
-                    target = definition.load_target()
-                    pipelines_or_jobs[target.name] = target
                 if isinstance(definition, PartitionScheduleDefinition):
                     partition_set_def = definition.get_partition_set()
                     if (
@@ -711,7 +704,7 @@ class CachingRepositoryData(RepositoryData):
                     )
                 elif partial_job_def.name in pipelines_or_jobs:
                     raise DagsterInvalidDefinitionError(
-                        f"Duplicate {pipelines_or_jobs[partial_job_def.name].target_type} found for job '{name}'"
+                        f"Duplicate {pipelines_or_jobs[partial_job_def.name].target_type} found for job '{partial_job_def.name}'"
                     )
                 partial_job_defs[partial_job_def.name] = partial_job_def
 
@@ -760,6 +753,23 @@ class CachingRepositoryData(RepositoryData):
                 resource_defs=default_resources_dict or {}
             )
             jobs[name] = job_def_defaults_applied
+
+        for name, sensor_def in sensors.items():
+            if sensor_def.has_loadable_targets():
+                targets = sensor_def.load_targets(resource_defs=default_resources_dict or {})
+                for target in targets:
+                    if target.is_job:
+                        jobs[target.name] = cast(JobDefinition, target)
+                    else:
+                        pipelines[target.name] = target
+
+        for name, schedule_def in schedules.items():
+            if schedule_def.has_loadable_target():
+                target = schedule_def.load_target(resource_defs=default_resources_dict or {})
+                if target.is_job:
+                    jobs[target.name] = cast(JobDefinition, target)
+                else:
+                    pipelines[target.name] = target
 
         return CachingRepositoryData(
             pipelines=pipelines,

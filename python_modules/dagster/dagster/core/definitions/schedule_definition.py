@@ -2,7 +2,19 @@ import copy
 from contextlib import ExitStack
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import pendulum
 from typing_extensions import TypeGuard
@@ -24,8 +36,10 @@ from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
 from ..storage.pipeline_run import PipelineRun
 from .graph_definition import GraphDefinition
+from .job_definition import JobDefinition, PendingJobDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
+from .resource_definition import ResourceDefinition
 from .run_request import RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name, validate_tags
@@ -447,7 +461,7 @@ class ScheduleDefinition:
         return self._execution_timezone
 
     @property
-    def job(self) -> PipelineDefinition:
+    def job(self) -> Union["PipelineDefinition", "JobDefinition", "PendingJobDefinition"]:
         if isinstance(self._target, DirectTarget):
             return self._target.pipeline
         raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
@@ -516,9 +530,12 @@ class ScheduleDefinition:
     def has_loadable_target(self):
         return isinstance(self._target, DirectTarget)
 
-    def load_target(self):
+    def load_target(
+        self, resource_defs: Optional[Mapping[str, ResourceDefinition]] = None
+    ) -> "PipelineDefinition":
+        resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
         if isinstance(self._target, DirectTarget):
-            return self._target.load()
+            return self._target.load(resource_defs=resource_defs)
 
         check.failed("Target is not loadable")
 

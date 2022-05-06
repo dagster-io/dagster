@@ -63,7 +63,7 @@ class JobDefinition(PipelineDefinition):
     def __init__(
         self,
         graph_def: GraphDefinition,
-        resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         config_mapping: Optional[ConfigMapping] = None,
@@ -81,7 +81,7 @@ class JobDefinition(PipelineDefinition):
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
         mode_def = ModeDefinition(
-            resource_defs=resource_defs,
+            resource_defs=cast(Optional[Dict[str, ResourceDefinition]], resource_defs),
             logger_defs=logger_defs,
             executor_defs=[executor_def] if executor_def else None,
             _config_mapping=config_mapping,
@@ -474,7 +474,7 @@ def get_subselected_graph_definition(
 
 
 class PendingJobDefinition(NamedTuple):
-    resource_defs: Optional[Dict[str, ResourceDefinition]]
+    resource_defs: Optional[Mapping[str, ResourceDefinition]]
     loggers: Optional[Dict[str, LoggerDefinition]]
     executor_def: Optional[ExecutorDefinition]
     config_mapping: Optional[ConfigMapping]
@@ -492,8 +492,6 @@ class PendingJobDefinition(NamedTuple):
 
     def coerce_to_job_def(self, resource_defs: Dict[str, ResourceDefinition]) -> JobDefinition:
         override_resource_defs = self.resource_defs
-        loggers = self.loggers
-        executor_def = self.executor_def
 
         resource_defs = merge_dicts(
             resource_defs, override_resource_defs if override_resource_defs else {}
@@ -535,7 +533,7 @@ class PendingJobDefinition(NamedTuple):
             description=self.description,
             resource_defs=self.resource_defs,
             loggers=self.loggers,
-            executor_defs=self.executor_defs,
+            executor_def=self.executor_def,
             config_mapping=self.config_mapping,
             partitioned_config=self.partitioned_config,
             preset_defs=self.preset_defs,

@@ -35,7 +35,7 @@ class OpSelectionData(
     """
 
     def __new__(cls, op_selection, resolved_op_selection, parent_job_def):
-        from dagster.core.definitions.job_definition import JobDefinition, PendingJobDefinition
+        from dagster.core.definitions.job_definition import JobDefinition
 
         return super(OpSelectionData, cls).__new__(
             cls,
