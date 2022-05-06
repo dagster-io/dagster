@@ -2,12 +2,9 @@ from typing import Any, Dict
 
 import requests
 
-from dagster import usable_as_dagster_type
-
 from ..types import DbtOutput
 
 
-@usable_as_dagster_type
 class DbtRpcOutput(DbtOutput):
     """The output from executing a dbt command via the dbt RPC server.
 
