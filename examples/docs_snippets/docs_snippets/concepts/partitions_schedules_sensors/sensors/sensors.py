@@ -234,11 +234,11 @@ def my_s3_sensor(context):
     since_key = context.cursor or None
     new_s3_keys = get_s3_keys("my_s3_bucket", since_key=since_key)
     if not new_s3_keys:
-        yield SkipReason("No new s3 files found for bucket my_s3_bucket.")
-        return
-    for s3_key in new_s3_keys:
-        yield RunRequest(run_key=s3_key, run_config={})
-        context.update_cursor(s3_key)
+        return SkipReason("No new s3 files found for bucket my_s3_bucket.")
+    last_key = new_s3_keys[-1]
+    run_requests = [RunRequest(run_key=s3_key, run_config={}) for s3_key in new_s3_keys]
+    context.update_cursor(last_key)
+    return run_requests
 
 
 # end_s3_sensors_marker
