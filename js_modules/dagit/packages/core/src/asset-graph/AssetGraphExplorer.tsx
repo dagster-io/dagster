@@ -95,7 +95,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     graphAssetKeys,
     allAssetKeys,
     applyingEmptyDefault,
-  } = useAssetGraphData(props.pipelineSelector, props.explorerPath.opsQuery, props.filterNodes);
+  } = useAssetGraphData(props.pipelineSelector, props.explorerPath.opsQuery);
 
   const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(
     props.pipelineSelector,
@@ -536,7 +536,10 @@ const AssetGraphExplorerWithData: React.FC<
             style={{position: 'absolute', right: 12, top: 12}}
           >
             <Box flex={{alignItems: 'center', gap: 12}}>
-              <QueryRefreshCountdown refreshState={liveDataRefreshState} />
+              <QueryRefreshCountdown
+                refreshState={liveDataRefreshState}
+                dataDescription="materializations"
+              />
 
               <LaunchAssetExecutionButton
                 title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
