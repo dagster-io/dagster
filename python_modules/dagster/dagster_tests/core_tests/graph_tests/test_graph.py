@@ -51,6 +51,26 @@ def get_ops():
     return emit_one, add
 
 
+def test_top_level_inputs_execution():
+    @op
+    def the_op(leaf_in: int):
+        return leaf_in + 1
+
+    @graph
+    def the_graph(the_in):
+        return the_op(the_in)
+
+    result = the_graph.execute_in_process(input_values={"the_in": 2})
+    assert result.success
+    assert result.output_value() == 3
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step input "leaf_in" - expected type "Int". Description: Value "bad_value" of python type "str" must be a int.',
+    ):
+        the_graph.execute_in_process(input_values={"the_in": "bad_value"})
+
+
 def test_basic_graph():
     emit_one, add = get_ops()
 
@@ -1072,3 +1092,63 @@ def test_graphs_break_type_checks():
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
         repro_2.execute_in_process()
+
+
+def test_to_job_input_values():
+    @op
+    def my_op(x, y):
+        return x + y
+
+    @graph
+    def my_graph(x, y):
+        return my_op(x, y)
+
+    result = my_graph.to_job(input_values={"x": 5, "y": 6}).execute_in_process()
+    assert result.success
+    assert result.output_value() == 11
+
+    result = my_graph.alias("blah").to_job(input_values={"x": 5, "y": 6}).execute_in_process()
+    assert result.success
+    assert result.output_value() == 11
+
+    # Test partial input value specification
+    result = my_graph.to_job(input_values={"x": 5}).execute_in_process(input_values={"y": 6})
+    assert result.success
+    assert result.output_value() == 11
+
+    # Test input value specification override
+    result = my_graph.to_job(input_values={"x": 5, "y": 6}).execute_in_process(
+        input_values={"y": 7}
+    )
+    assert result.success
+    assert result.output_value() == 12
+
+
+def test_input_values_name_not_found():
+    @op
+    def my_op(x, y):
+        return x + y
+
+    @graph
+    def my_graph(x, y):
+        return my_op(x, y)
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Error when constructing JobDefinition 'my_graph': Input value provided for key 'z', but job has no top-level input with that name.",
+    ):
+        my_graph.to_job(input_values={"z": 4})
+
+
+def test_input_values_override_default():
+    @op(ins={"x": In(default_value=5)})
+    def op_with_default_input(x):
+        return x
+
+    @graph
+    def my_graph(x):
+        return op_with_default_input(x)
+
+    result = my_graph.execute_in_process(input_values={"x": 6})
+    assert result.success
+    assert result.output_value() == 6

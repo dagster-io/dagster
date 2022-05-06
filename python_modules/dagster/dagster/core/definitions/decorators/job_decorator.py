@@ -1,5 +1,15 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Mapping,
+    Optional,
+    Union,
+    overload,
+)
 
 from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
@@ -32,6 +42,7 @@ class _Job:
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
+        input_values: Optional[Mapping[str, object]] = None,
     ):
         self.name = name
         self.description = description
@@ -44,6 +55,7 @@ class _Job:
         self.op_retry_policy = op_retry_policy
         self.version_strategy = version_strategy
         self.partitions_def = partitions_def
+        self.input_values = input_values
 
     def __call__(self, fn: Callable[..., Any]) -> JobDefinition:
         check.callable_param(fn, "fn")
@@ -93,6 +105,7 @@ class _Job:
             op_retry_policy=self.op_retry_policy,
             version_strategy=self.version_strategy,
             partitions_def=self.partitions_def,
+            input_values=self.input_values,
         )
         update_wrapper(job_def, fn)
         return job_def
@@ -115,6 +128,8 @@ def job(
     hooks: Optional[AbstractSet[HookDefinition]] = ...,
     op_retry_policy: Optional[RetryPolicy] = ...,
     version_strategy: Optional[VersionStrategy] = ...,
+    partitions_def: Optional["PartitionsDefinition"] = ...,
+    input_values: Optional[Mapping[str, object]] = ...,
 ) -> _Job:
     ...
 
@@ -131,6 +146,7 @@ def job(
     op_retry_policy: Optional[RetryPolicy] = None,
     version_strategy: Optional[VersionStrategy] = None,
     partitions_def: Optional["PartitionsDefinition"] = None,
+    input_values: Optional[Mapping[str, object]] = None,
 ) -> Union[JobDefinition, _Job]:
     """Creates a job with the specified parameters from the decorated graph/op invocation function.
 
@@ -179,6 +195,8 @@ def job(
         partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition keys
             that can parameterize the job. If this argument is supplied, the config argument
             can't also be supplied.
+        input_values (Optional[Mapping[str, Any]]):
+            A dictionary that maps python objects to the top-level inputs of a job.
 
     """
     if callable(name):
@@ -197,4 +215,5 @@ def job(
         op_retry_policy=op_retry_policy,
         version_strategy=version_strategy,
         partitions_def=partitions_def,
+        input_values=input_values,
     )

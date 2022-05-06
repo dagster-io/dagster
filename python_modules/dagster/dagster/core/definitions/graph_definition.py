@@ -7,6 +7,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Mapping,
     Optional,
     Set,
     Tuple,
@@ -462,6 +463,7 @@ class GraphDefinition(NodeDefinition):
         op_selection: Optional[List[str]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         asset_layer: Optional["AssetLayer"] = None,
+        input_values: Optional[Mapping[str, object]] = None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -512,6 +514,8 @@ class GraphDefinition(NodeDefinition):
                 argument can't also be supplied.
             asset_layer (Optional[AssetLayer]): Top level information about the assets this job
                 will produce. Generally should not be set manually.
+            input_values (Optional[Mapping[str, Any]]):
+                A dictionary that maps python objects to the top-level inputs of a job.
 
         Returns:
             JobDefinition
@@ -526,6 +530,7 @@ class GraphDefinition(NodeDefinition):
         executor_def = check.opt_inst_param(
             executor_def, "executor_def", ExecutorDefinition, default=multi_or_in_process_executor
         )
+        input_values = check.opt_mapping_param(input_values, "input_values")
 
         if resource_defs and "io_manager" in resource_defs:
             resource_defs_with_defaults = resource_defs
@@ -583,6 +588,7 @@ class GraphDefinition(NodeDefinition):
             version_strategy=version_strategy,
             op_retry_policy=op_retry_policy,
             asset_layer=asset_layer,
+            _input_values=input_values,
         ).get_job_def_for_op_selection(op_selection)
 
     def coerce_to_job(self):
@@ -623,6 +629,7 @@ class GraphDefinition(NodeDefinition):
         raise_on_error: bool = True,
         op_selection: Optional[List[str]] = None,
         run_id: Optional[str] = None,
+        input_values: Optional[Mapping[str, object]] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute this graph in-process, collecting results in-memory.
@@ -646,6 +653,8 @@ class GraphDefinition(NodeDefinition):
                 (downstream dependencies) within 3 levels down.
                 * ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
+            input_values (Optional[Mapping[str, Any]]):
+                A dictionary that maps python objects to the top-level inputs of the graph.
 
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
@@ -659,6 +668,7 @@ class GraphDefinition(NodeDefinition):
 
         instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         resources = check.opt_dict_param(resources, "resources", key_type=str)
+        input_values = check.opt_mapping_param(input_values, "input_values")
 
         resource_defs = wrap_resources_for_execution(resources)
 
@@ -667,6 +677,7 @@ class GraphDefinition(NodeDefinition):
             graph_def=self,
             executor_def=execute_in_process_executor,
             resource_defs=resource_defs,
+            _input_values=input_values,
         ).get_job_def_for_op_selection(op_selection)
 
         run_config = run_config if run_config is not None else {}

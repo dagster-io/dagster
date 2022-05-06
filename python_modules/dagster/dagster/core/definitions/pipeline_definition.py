@@ -27,7 +27,7 @@ from dagster.core.storage.root_input_manager import (
     RootInputManagerDefinition,
 )
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
+from dagster.core.types.dagster_type import DagsterType
 from dagster.core.utils import str_format_set
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.backcompat import experimental_class_warning
@@ -970,24 +970,6 @@ def _checked_input_resource_reqs_for_mode(
             else:
                 # input is unconnected
                 input_def = handle.input_def
-                if (
-                    not input_def.dagster_type.loader
-                    and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-                    and not input_def.root_manager_key
-                    and not input_def.has_default_value
-                ):
-                    raise DagsterInvalidDefinitionError(
-                        "Input '{input_name}' in {described_node} is not connected to "
-                        "the output of a previous node and can not be loaded from configuration, "
-                        "making it impossible to execute. "
-                        "Possible solutions are:\n"
-                        "  * add a dagster_type_loader for the type '{dagster_type}'\n"
-                        "  * connect '{input_name}' to the output of another node\n".format(
-                            described_node=node.describe_node(),
-                            input_name=input_def.name,
-                            dagster_type=input_def.dagster_type.display_name,
-                        )
-                    )
 
                 # If a root manager is provided, it's always used. I.e. it has priority over
                 # the other ways of loading unsatisfied inputs - dagster type loaders and
@@ -1048,6 +1030,7 @@ def _create_run_config_schema(
     mode_definition: ModeDefinition,
     required_resources: Set[str],
 ) -> "RunConfigSchema":
+    from .job_definition import get_direct_input_values_from_job
     from .run_config import (
         RunConfigSchemaCreationData,
         construct_config_type_dictionary,
@@ -1083,6 +1066,7 @@ def _create_run_config_schema(
             ignored_solids=ignored_solids,
             required_resources=required_resources,
             is_using_graph_job_op_apis=pipeline_def.is_job,
+            direct_inputs=get_direct_input_values_from_job(pipeline_def),
         )
     )
 
