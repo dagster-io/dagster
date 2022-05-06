@@ -99,7 +99,9 @@ ScheduleExecutionContext = ScheduleEvaluationContext
 RunConfig = Dict[str, Any]
 RunRequestIterator = Iterator[Union[RunRequest, SkipReason]]
 
-ScheduleEvaluationFunctionReturn = Union[RunRequest, SkipReason, RunConfig, RunRequestIterator]
+ScheduleEvaluationFunctionReturn = Union[
+    RunRequest, SkipReason, RunConfig, RunRequestIterator, List[RunRequest]
+]
 RawScheduleEvaluationFunction = Union[
     Callable[[ScheduleEvaluationContext], ScheduleEvaluationFunctionReturn],
     Callable[[], ScheduleEvaluationFunctionReturn],

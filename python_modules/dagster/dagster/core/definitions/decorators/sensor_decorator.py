@@ -44,10 +44,10 @@ def sensor(
     decorated function may:
 
     1. Return a `RunRequest` object.
-    2. Yield multiple of `RunRequest` objects.
-    3. Return or yield a `SkipReason` object, providing a descriptive message of why no runs were
-       requested.
-    4. Return or yield nothing (skipping without providing a reason)
+    2. Return a list of `RunRequest` objects.
+    3. Return a `SkipReason` object, providing a descriptive message of why no runs were requested.
+    4. Return nothing (skipping without providing a reason)
+    5. Yield a `SkipReason` or yield one ore more `RunRequest` objects.
 
     Takes a :py:class:`~dagster.SensorEvaluationContext`.
 
@@ -113,10 +113,10 @@ def asset_sensor(
     function.  The decorated function may:
 
     1. Return a `RunRequest` object.
-    2. Yield multiple of `RunRequest` objects.
-    3. Return or yield a `SkipReason` object, providing a descriptive message of why no runs were
-       requested.
-    4. Return or yield nothing (skipping without providing a reason)
+    2. Return a list of `RunRequest` objects.
+    3. Return a `SkipReason` object, providing a descriptive message of why no runs were requested.
+    4. Return nothing (skipping without providing a reason)
+    5. Yield a `SkipReason` or yield one ore more `RunRequest` objects.
 
     Takes a :py:class:`~dagster.SensorEvaluationContext` and an EventLogEntry corresponding to an
     AssetMaterialization event.
@@ -151,7 +151,7 @@ def asset_sensor(
         def _wrapped_fn(context, event):
             result = fn(context, event)
 
-            if inspect.isgenerator(result):
+            if inspect.isgenerator(result) or isinstance(result, list):
                 for item in result:
                     yield item
             elif isinstance(result, (RunRequest, SkipReason)):
