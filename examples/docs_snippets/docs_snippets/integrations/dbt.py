@@ -40,9 +40,7 @@ def scope_dbt_cli_run():
 
     from dagster import job
 
-    my_dbt_resource = dbt_cli_resource.configured(
-        {"project_dir": "path/to/dbt/project"}
-    )
+    my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/project"})
 
     @job(resource_defs={"dbt": my_dbt_resource})
     def my_dbt_job():
@@ -117,9 +115,7 @@ def scope_dbt_cli_run_after_another_op():
 
     from dagster import job
 
-    my_dbt_resource = dbt_cli_resource.configured(
-        {"project_dir": "path/to/dbt/project"}
-    )
+    my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/project"})
 
     @job(resource_defs={"dbt": my_dbt_resource})
     def my_dbt_job():
@@ -179,9 +175,7 @@ def scope_dbt_rpc_run_and_wait():
 
     from dagster import job, op
 
-    my_remote_sync_rpc = dbt_rpc_sync_resource.configured(
-        {"host": "80.80.80.80", "port": 8080}
-    )
+    my_remote_sync_rpc = dbt_rpc_sync_resource.configured({"host": "80.80.80.80", "port": 8080})
 
     @op(required_resource_keys={"dbt_sync"})
     def run_staging_models_and_wait(context):
