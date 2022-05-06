@@ -18,8 +18,20 @@ export function getJSONForKey(key: string) {
   }
 }
 
+const DID_WRITE_LOCALSTORAGE = '';
+
 export function useStateWithStorage<T>(key: string, validate: (json: any) => T) {
   const [version, setVersion] = React.useState(0);
+
+  React.useEffect(() => {
+    const listener = (event: Event) => {
+      if (event instanceof CustomEvent && event.detail === key) {
+        setVersion((v) => v + 1);
+      }
+    };
+    document.addEventListener(DID_WRITE_LOCALSTORAGE, listener);
+    return () => document.removeEventListener(DID_WRITE_LOCALSTORAGE, listener);
+  }, [key]);
 
   // Note: This hook doesn't keep the loaded data in state -- instead it uses a version bit and
   // a ref to load the value from localStorage when the `key` changes or when the `version` changes.
@@ -38,7 +50,7 @@ export function useStateWithStorage<T>(key: string, validate: (json: any) => T) 
       } else {
         window.localStorage.setItem(key, JSON.stringify(next));
       }
-      setVersion((v) => v + 1);
+      document.dispatchEvent(new CustomEvent(DID_WRITE_LOCALSTORAGE, {detail: key}));
       return next;
     },
     [validate, key],

@@ -11,12 +11,10 @@ import {
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
 import {AssetViewModeSwitch} from './AssetViewModeSwitch';
-import {useAssetView} from './useAssetView';
 
 export const InstanceAssetGraphExplorer: React.FC = () => {
   const params = useParams();
   const history = useHistory();
-  const [_, _setView] = useAssetView();
   const explorerPath = instanceAssetsExplorerPathFromString(params[0]);
 
   return (
@@ -31,15 +29,7 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
         flex={{direction: 'row', gap: 12}}
       >
-        <AssetViewModeSwitch
-          view="graph"
-          setView={(view) => {
-            if (view !== 'graph') {
-              _setView(view);
-              history.push('/instance/assets');
-            }
-          }}
-        />
+        <AssetViewModeSwitch />
         <div style={{flex: 1}} />
         <ReloadAllButton label="Reload definitions" />
       </Box>
