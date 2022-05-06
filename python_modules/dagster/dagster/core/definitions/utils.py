@@ -136,7 +136,7 @@ def config_from_files(config_files: List[str]) -> Dict[str, Any]:
         globbed_files = glob(file_glob)
         if not globbed_files:
             raise DagsterInvariantViolationError(
-                'File or glob pattern "{file_glob}" for "config_files"'
+                'File or glob pattern "{file_glob}" for "config_files" '
                 "produced no results.".format(file_glob=file_glob)
             )
 
