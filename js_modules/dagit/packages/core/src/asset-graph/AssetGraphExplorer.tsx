@@ -521,7 +521,10 @@ const AssetGraphExplorerWithData: React.FC<
             style={{position: 'absolute', right: 12, top: 12}}
           >
             <Box flex={{alignItems: 'center', gap: 12}}>
-              <QueryRefreshCountdown refreshState={liveDataRefreshState} />
+              <QueryRefreshCountdown
+                refreshState={liveDataRefreshState}
+                dataDescription="materializations"
+              />
 
               <LaunchAssetExecutionButton
                 title={titleForLaunch(selectedGraphNodes, liveDataByNode)}

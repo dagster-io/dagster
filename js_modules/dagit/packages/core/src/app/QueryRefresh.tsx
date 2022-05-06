@@ -144,7 +144,13 @@ export function useMergedRefresh(
   }, args);
 }
 
-export const QueryRefreshCountdown = ({refreshState}: {refreshState: QueryRefreshState}) => {
+export const QueryRefreshCountdown = ({
+  refreshState,
+  dataDescription,
+}: {
+  refreshState: QueryRefreshState;
+  dataDescription?: string;
+}) => {
   const status = refreshState.networkStatus === NetworkStatus.ready ? 'counting' : 'idle';
   const timeRemaining = useCountdown({duration: refreshState.nextFireDelay, status});
 
@@ -153,6 +159,7 @@ export const QueryRefreshCountdown = ({refreshState}: {refreshState: QueryRefres
       refreshing={status === 'idle' || timeRemaining === 0}
       seconds={Math.floor(timeRemaining / 1000)}
       onRefresh={() => refreshState.refetch()}
+      dataDescription={dataDescription}
     />
   );
 };

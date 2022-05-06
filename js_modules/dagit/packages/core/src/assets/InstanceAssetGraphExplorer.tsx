@@ -41,7 +41,7 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
           }}
         />
         <div style={{flex: 1}} />
-        <ReloadAllButton />
+        <ReloadAllButton label="Reload definitions" />
       </Box>
       <AssetGraphExplorer
         options={{preferAssetRendering: true, explodeComposites: true}}
