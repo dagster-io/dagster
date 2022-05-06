@@ -1,6 +1,8 @@
 import {Box, Colors, FontFamily, Heading, PageHeader} from '@dagster-io/ui';
 import dagre from 'dagre';
-import {flatMap, keyBy, uniqBy} from 'lodash';
+import flatMap from 'lodash/flatMap';
+import keyBy from 'lodash/keyBy';
+import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
 import {useParams} from 'react-router';
 import {Link} from 'react-router-dom';
@@ -26,7 +28,6 @@ import {LoadingSpinner} from '../ui/Loading';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
 import {AssetViewModeSwitch} from './AssetViewModeSwitch';
-import {useAssetView} from './useAssetView';
 
 const INSET = 20;
 const PADDING = 30;
@@ -100,6 +101,9 @@ const runMinimalDagreLayout = (
 };
 
 function alignToGrid(boxes: Box[], viewportWidth: number) {
+  if (viewportWidth === 0) {
+    return;
+  }
   // Make Dagre's layout more "grid compatible" by centering each row and
   // wrapping rows so they don't scroll offscreen
   const splitWidth = viewportWidth - 40;
