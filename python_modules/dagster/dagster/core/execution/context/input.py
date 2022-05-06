@@ -255,12 +255,12 @@ class InputContext:
         Raises an error if the input asset has no partitioning, or if the run covers a partition
         range for the input asset.
         """
-        start, end = self._asset_partition_key_range
+        start, end = self.asset_partition_key_range
         if start == end:
             return start
         else:
             check.failed(
-                f"Tried to access partition key for input '{self.name}' of step '{self.step_key}', "
+                f"Tried to access partition key for input '{self.name}'"
                 f"but the step input has a partition range: '{start}' to '{end}'."
             )
 
@@ -270,6 +270,12 @@ class InputContext:
 
         Raises an error if the input asset has no partitioning.
         """
+        if self._asset_partition_key_range is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access asset partitions, "
+                "but they were not provided when constructing the InputContext"
+            )
+
         return self._asset_partition_key_range
 
     @property

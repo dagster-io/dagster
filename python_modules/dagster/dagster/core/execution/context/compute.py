@@ -24,6 +24,7 @@ from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import DagsterRun, PipelineRun
 from dagster.utils.forked_pdb import ForkedPdb
 
+from .asset_partitions import asset_partitions_time_window
 from .system import StepExecutionContext
 
 
@@ -298,7 +299,9 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         - The output asset has no partitioning.
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
         """
-        return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
+        return asset_partitions_time_window(
+            self._asset_info.partitions_def, self.asset_partition_key_range_for_output(output_name)
+        )
 
     def has_tag(self, key: str) -> bool:
         """Check if a logging tag is set.

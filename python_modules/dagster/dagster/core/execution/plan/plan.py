@@ -884,7 +884,19 @@ class ExecutionPlan(
                     step_output_handle=step_output_handle,
                     run_id=None,
                     log_manager=log_manager,
-                    step_context=None,
+                    step_context=StepExecutionContext(
+                        plan_data=self,
+                        execution_data=ExecutionData(
+                            scoped_resources_builder=None,
+                            resolved_run_config=resolved_run_config,
+                            pipeline_def=pipeline_def,
+                            mode_def=mode_def,
+                        ),
+                        log_manager=self._log_manager.with_tags(**step.logging_tags),
+                        step=step,
+                        output_capture=False,
+                        previous_attempt_count=0,
+                    ),
                     resources=resources,
                     version=step_output_versions[step_output_handle],
                 )

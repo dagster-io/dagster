@@ -33,10 +33,6 @@ from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
-from dagster.core.definitions.time_window_partitions import (
-    TimeWindow,
-    TimeWindowPartitionsDefinition,
-)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import ExecutionStep
@@ -49,6 +45,7 @@ from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.types.dagster_type import DagsterType
 
+from .asset_partitions import asset_partition_key_range_for_output, asset_partitions_time_window
 from .input import InputContext
 from .output import OutputContext, get_output_context
 
@@ -705,17 +702,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return False
 
     def asset_partition_key_range_for_output(self, output_name: str) -> PartitionKeyRange:
-        op_config = self.op_config
-        if op_config is not None and "assets" in op_config:
-            all_output_asset_partitions = op_config["assets"].get("output_partitions")
-            if all_output_asset_partitions is not None:
-                this_output_asset_partitions = all_output_asset_partitions.get(output_name)
-                if this_output_asset_partitions is not None:
-                    return PartitionKeyRange(
-                        this_output_asset_partitions["start"], this_output_asset_partitions["end"]
-                    )
-
-        check.failed("The output has no asset partitions")
+        return asset_partition_key_range_for_output(
+            op_handle=self.solid_handle,
+            output_name=output_name,
+            resolved_run_config=self.resolved_run_config,
+        )
 
     def asset_partition_key_for_output(self, output_name: str) -> str:
         start, end = self.asset_partition_key_range_for_output(output_name)

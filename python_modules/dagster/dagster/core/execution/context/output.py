@@ -300,7 +300,7 @@ class OutputContext:
         Raises an error if the output asset has no partitioning, or if the run covers a partition
         range for the output asset.
         """
-        start, end = self._asset_partition_key_range
+        start, end = self.asset_partition_key_range
         if start == end:
             return start
         else:
@@ -315,6 +315,12 @@ class OutputContext:
 
         Raises an error if the output asset has no partitioning.
         """
+        if self._asset_partition_key_range is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access asset partitions, "
+                "but they were not provided when constructing the OutputContext"
+            )
+
         return self._asset_partition_key_range
 
     @property
@@ -325,6 +331,12 @@ class OutputContext:
         - The output asset has no partitioning.
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
         """
+        if self._asset_info is None or self._asset_info.partitions_def is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access the asset partitions time window, "
+                "but no partitions definition was provided when constructing the OutputContext"
+            )
+
         return asset_partitions_time_window(
             self._asset_info.partitions_def, self.asset_partition_key_range
         )
