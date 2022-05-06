@@ -22,7 +22,7 @@ from dagster.core.selector import parse_solid_selection
 from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster.utils import frozenlist, make_readonly_value
 from dagster.utils.backcompat import experimental
-
+from dagster.core.definitions.events import AssetKey
 from .pipeline_base import IPipeline
 
 if TYPE_CHECKING:
@@ -127,7 +127,7 @@ class ReconstructablePipeline(
             ("pipeline_name", str),
             ("solid_selection_str", Optional[str]),
             ("solids_to_execute", Optional[FrozenSet[str]]),
-            ("assets_to_execute", Optional[FrozenSet[str]]),
+            ("asset_selection", Optional[FrozenSet[AssetKey]]),
         ],
     ),
     IPipeline,
@@ -152,6 +152,7 @@ class ReconstructablePipeline(
         pipeline_name,
         solid_selection_str=None,
         solids_to_execute=None,
+        asset_selection=None,
     ):
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         return super(ReconstructablePipeline, cls).__new__(
@@ -160,6 +161,7 @@ class ReconstructablePipeline(
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             solid_selection_str=check.opt_str_param(solid_selection_str, "solid_selection_str"),
             solids_to_execute=solids_to_execute,
+            asset_selection=asset_selection,
         )
 
     @property
@@ -173,11 +175,11 @@ class ReconstructablePipeline(
         defn = self.repository.get_definition().get_pipeline(self.pipeline_name)
 
         if isinstance(defn, JobDefinition):
-            if self.assets_to_execute:
+            if self.asset_selection:
                 return (
                     self.repository.get_definition()
                     .get_pipeline(self.pipeline_name)
-                    .get_job_def_for_asset_selection(self.assets_to_execute)
+                    .get_job_def_for_asset_selection(self.asset_selection)
                 )
             return (
                 self.repository.get_definition().get_pipeline(self.pipeline_name)
@@ -239,6 +241,13 @@ class ReconstructablePipeline(
             )
         else:
             raise Exception(f"Unexpected pipeline/job type {pipeline_def.__class__.__name__}")
+
+    def asset_subset_for_execution(self, asset_selection):  # TODO add typecheck
+        return ReconstructablePipeline(
+            repository=self.repository,
+            pipeline_name=self.pipeline_name,
+            asset_selection=frozenset(asset_selection),
+        )
 
     def subset_for_execution(
         self, solid_selection: Optional[List[str]]

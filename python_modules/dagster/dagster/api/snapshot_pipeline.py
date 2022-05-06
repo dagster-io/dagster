@@ -6,6 +6,7 @@ from dagster.core.host_representation.external_data import ExternalPipelineSubse
 from dagster.core.host_representation.origin import ExternalPipelineOrigin
 from dagster.grpc.types import PipelineSubsetSnapshotArgs
 from dagster.serdes import deserialize_as
+from dagster.core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
     from dagster.grpc.client import DagsterGrpcClient
@@ -15,6 +16,7 @@ def sync_get_external_pipeline_subset_grpc(
     api_client: "DagsterGrpcClient",
     pipeline_origin: ExternalPipelineOrigin,
     solid_selection: Optional[List[str]] = None,
+    asset_selection: Optional[List[AssetKey]] = None,
 ) -> ExternalPipelineSubsetResult:
     from dagster.grpc.client import DagsterGrpcClient
 
@@ -25,7 +27,9 @@ def sync_get_external_pipeline_subset_grpc(
     result = deserialize_as(
         api_client.external_pipeline_subset(
             pipeline_subset_snapshot_args=PipelineSubsetSnapshotArgs(
-                pipeline_origin=pipeline_origin, solid_selection=solid_selection
+                pipeline_origin=pipeline_origin,
+                solid_selection=solid_selection,
+                asset_selection=asset_selection,
             ),
         ),
         ExternalPipelineSubsetResult,

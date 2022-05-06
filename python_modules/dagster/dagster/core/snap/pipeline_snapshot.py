@@ -423,7 +423,7 @@ class PipelineSnapshotLineage(
             ("solid_selection", Optional[List[str]]),
             ("solids_to_execute", Optional[AbstractSet[str]]),
             # maybe?
-            ("asset_selection", Optional[List[str]]),
+            # ("asset_selection", Optional[List[str]]),
         ],
     )
 ):

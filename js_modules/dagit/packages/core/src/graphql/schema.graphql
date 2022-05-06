@@ -2128,6 +2128,7 @@ input JobOrPipelineSelector {
   repositoryName: String!
   repositoryLocationName: String!
   solidSelection: [String!]
+  assetSelection: [[String!]!]
 }
 
 input ExecutionMetadata {

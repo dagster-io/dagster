@@ -7,6 +7,7 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from .pipelines.status import GrapheneRunStatus
 from .runs import GrapheneRunConfigData
 from .util import non_null_list
+from .asset_key import GrapheneAssetKey
 
 
 class GrapheneAssetKeyInput(graphene.InputObjectType):
@@ -105,6 +106,7 @@ class GrapheneJobOrPipelineSelector(graphene.InputObjectType):
     repositoryName = graphene.NonNull(graphene.String)
     repositoryLocationName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
+    assetSelection = graphene.List(non_null_list(graphene.String))
 
     class Meta:
         description = """This type represents the fields necessary to identify a job or pipeline"""

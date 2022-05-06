@@ -3,6 +3,8 @@ from typing import List, NamedTuple, Optional
 from dagster import check
 from dagster.serdes import create_snapshot_id, whitelist_for_serdes
 
+from dagster.core.definitions.events import AssetKey
+
 
 class PipelineSelector(
     NamedTuple(
@@ -12,6 +14,7 @@ class PipelineSelector(
             ("repository_name", str),
             ("pipeline_name", str),
             ("solid_selection", Optional[List[str]]),
+            ("asset_selection", Optional[List[AssetKey]]),
         ],
     )
 ):
@@ -25,6 +28,7 @@ class PipelineSelector(
         repository_name: str,
         pipeline_name: str,
         solid_selection: Optional[List[str]],
+        asset_selection: Optional[List[AssetKey]] = None,
     ):
         return super(PipelineSelector, cls).__new__(
             cls,
@@ -32,6 +36,7 @@ class PipelineSelector(
             repository_name=check.str_param(repository_name, "repository_name"),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
+            asset_selection=asset_selection,
         )
 
     def to_graphql_input(self):

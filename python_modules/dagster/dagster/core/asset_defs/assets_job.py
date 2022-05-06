@@ -55,6 +55,7 @@ def build_assets_job(
     config: Optional[Union[ConfigMapping, Dict[str, Any], PartitionedConfig]] = None,
     tags: Optional[Dict[str, Any]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
+    _asset_group=None,  # TODO add typecheck
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
 
@@ -119,7 +120,7 @@ def build_assets_job(
         tags=tags,
         executor_def=executor_def,
         asset_layer=AssetLayer.from_graph_and_assets_node_mapping(
-            graph, assets_defs_by_node_handle
+            graph, assets_defs_by_node_handle, _asset_group
         ),
     )
 

@@ -366,6 +366,7 @@ class AssetLayer:
             key_type=AssetKey,
             value_type=Set,
         )
+        self.source_asset_group = source_asset_group
 
     @staticmethod
     def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
@@ -382,6 +383,7 @@ class AssetLayer:
     def from_graph_and_assets_node_mapping(
         graph_def: GraphDefinition,
         assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
+        _asset_group=None,
     ) -> "AssetLayer":
         """
         Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
@@ -431,6 +433,7 @@ class AssetLayer:
             dependency_node_handles_by_asset_key=_asset_key_to_dep_node_handles(
                 graph_def, assets_defs_by_node_handle
             ),
+            source_asset_group=_asset_group,
         )
 
     @property

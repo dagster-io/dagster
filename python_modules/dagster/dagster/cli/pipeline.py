@@ -671,6 +671,8 @@ def execute_launch_command(
 
         solid_selection = get_solid_selection_from_args(kwargs)
 
+        asset_selection = get_asset_selection_from_args(kwargs)
+
         pipeline_run = _create_external_pipeline_run(
             instance=instance,
             repo_location=repo_location,

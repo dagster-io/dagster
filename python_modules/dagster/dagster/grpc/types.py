@@ -14,6 +14,7 @@ from dagster.core.origin import PipelinePythonOrigin, get_python_environment_ent
 from dagster.serdes import serialize_dagster_namedtuple, whitelist_for_serdes
 from dagster.utils import frozenlist
 from dagster.utils.error import SerializableErrorInfo
+from dagster.core.definitions.events import AssetKey
 
 
 @whitelist_for_serdes
@@ -36,6 +37,7 @@ class ExecutionPlanSnapshotArgs(
     def __new__(
         cls,
         pipeline_origin: ExternalPipelineOrigin,
+        asset_selection: List[str],
         solid_selection: List[str],
         run_config: Mapping[str, object],
         mode: str,
@@ -49,6 +51,7 @@ class ExecutionPlanSnapshotArgs(
             pipeline_origin=check.inst_param(
                 pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
             ),
+            asset_selection=asset_selection,  # TODO add typecheck
             solid_selection=check.opt_list_param(solid_selection, "solid_selection", of_type=str),
             run_config=check.dict_param(run_config, "run_config", key_type=str),
             mode=check.str_param(mode, "mode"),
@@ -404,10 +407,19 @@ class PartitionSetExecutionParamArgs(
 class PipelineSubsetSnapshotArgs(
     NamedTuple(
         "_PipelineSubsetSnapshotArgs",
-        [("pipeline_origin", ExternalPipelineOrigin), ("solid_selection", Optional[List[str]])],
+        [
+            ("pipeline_origin", ExternalPipelineOrigin),
+            ("solid_selection", Optional[List[str]]),
+            ("asset_selection", Optional[List[AssetKey]]),
+        ],
     )
 ):
-    def __new__(cls, pipeline_origin: ExternalPipelineOrigin, solid_selection: List[str]):
+    def __new__(
+        cls,
+        pipeline_origin: ExternalPipelineOrigin,
+        solid_selection: List[str],
+        asset_selection: List[AssetKey],
+    ):
         return super(PipelineSubsetSnapshotArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
@@ -416,6 +428,7 @@ class PipelineSubsetSnapshotArgs(
             solid_selection=check.list_param(solid_selection, "solid_selection", of_type=str)
             if solid_selection
             else None,
+            asset_selection=asset_selection,
         )
 
 

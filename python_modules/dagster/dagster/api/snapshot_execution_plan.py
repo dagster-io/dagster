@@ -11,6 +11,7 @@ from dagster.core.snap.execution_plan_snapshot import (
 )
 from dagster.grpc.types import ExecutionPlanSnapshotArgs
 from dagster.serdes import deserialize_as
+from dagster.core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
     from dagster.grpc.client import DagsterGrpcClient
@@ -22,6 +23,7 @@ def sync_get_external_execution_plan_grpc(
     run_config: Mapping[str, Any],
     mode: str,
     pipeline_snapshot_id: str,
+    asset_selection: Optional[List[AssetKey]] = None,
     solid_selection: Optional[List[str]] = None,
     step_keys_to_execute: Optional[List[str]] = None,
     known_state: Optional[KnownExecutionState] = None,

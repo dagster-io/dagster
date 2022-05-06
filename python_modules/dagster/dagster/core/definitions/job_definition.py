@@ -14,6 +14,7 @@ from typing import (
 )
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.composition import MappedInputPlaceholder
 from dagster.core.definitions.dependency import (
     DependencyDefinition,
@@ -141,6 +142,7 @@ class JobDefinition(PipelineDefinition):
         partition_key: Optional[str] = None,
         raise_on_error: bool = True,
         op_selection: Optional[List[str]] = None,
+        # asset_selection: Optional[List[AssetKey]] = None,
         run_id: Optional[str] = None,
     ) -> "ExecuteInProcessResult":
         """
@@ -174,6 +176,8 @@ class JobDefinition(PipelineDefinition):
         """
         from dagster.core.definitions.executor_definition import execute_in_process_executor
         from dagster.core.execution.execute_in_process import core_execute_in_process
+
+        # TODO: Enable subset selection from asset selection
 
         run_config = check.opt_dict_param(run_config, "run_config")
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
@@ -233,12 +237,11 @@ class JobDefinition(PipelineDefinition):
 
     def get_job_def_for_asset_selection(
         self,
-        asset_selection: Optional[List[str]] = None,
+        asset_selection: Optional[List[AssetKey]] = None,
     ) -> "JobDefinition":
-
-        asset_group = self.asset_group
-        assert asset_group is not None
-        return asset_group.build_job(self.name, selection=asset_selection)
+        asset_group = self.asset_layer.source_asset_group
+        new_job = asset_group.build_asset_selection_job(asset_selection=asset_selection)
+        return new_job
 
     def get_job_def_for_op_selection(
         self,
@@ -343,6 +346,20 @@ class JobDefinition(PipelineDefinition):
             if self.op_selection_data
             else None
         )
+
+
+def _get_op_selection_from_node_handle(node_handle):
+
+    op_name = ""
+    curr_node = node_handle
+    while curr_node:
+        if op_name == "":
+            op_name = curr_node.name
+        else:
+            op_name = curr_node.name + "." + op_name
+        curr_node = curr_node.parent
+
+    return op_name
 
 
 def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):

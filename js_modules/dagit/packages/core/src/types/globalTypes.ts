@@ -200,6 +200,7 @@ export interface JobOrPipelineSelector {
   repositoryName: string;
   repositoryLocationName: string;
   solidSelection?: string[] | null;
+  assetSelection?: string[][] | null;
 }
 
 export interface LaunchBackfillParams {

@@ -260,11 +260,6 @@ class ExternalPipeline(RepresentedPipeline):
         return self._repository_handle
 
     @property
-    def asset_selection(self):
-        # maybe lineage snapshot is used?
-        return None
-
-    @property
     def solid_selection(self):
         return (
             self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_selection
@@ -276,6 +271,14 @@ class ExternalPipeline(RepresentedPipeline):
     def solids_to_execute(self):
         return (
             self._pipeline_index.pipeline_snapshot.lineage_snapshot.solids_to_execute
+            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            else None
+        )
+
+    @property
+    def asset_selection(self):
+        return (
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.asset_selection
             if self._pipeline_index.pipeline_snapshot.lineage_snapshot
             else None
         )

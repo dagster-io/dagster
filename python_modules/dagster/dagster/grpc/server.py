@@ -458,6 +458,7 @@ class DagsterApiServer(DagsterApiServicer):
                 get_external_pipeline_subset_result(
                     self._recon_pipeline_from_origin(pipeline_subset_snapshot_args.pipeline_origin),
                     pipeline_subset_snapshot_args.solid_selection,
+                    pipeline_subset_snapshot_args.asset_selection,
                 )
             )
         )

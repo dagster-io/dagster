@@ -5,6 +5,7 @@ import sys
 from typing import Generator, List, Optional
 
 import pendulum
+from dagster.core.definitions.events import AssetKey
 
 from dagster import check
 from dagster.core.definitions import ScheduleEvaluationContext
@@ -199,7 +200,9 @@ def start_run_in_subprocess(
 
 
 def get_external_pipeline_subset_result(
-    recon_pipeline: ReconstructablePipeline, solid_selection: Optional[List[str]]
+    recon_pipeline: ReconstructablePipeline,
+    solid_selection: Optional[List[str]],
+    asset_selection: Optional[List[AssetKey]],
 ):
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
     check.opt_list_param(solid_selection, "solid_selection", str)
@@ -212,9 +215,16 @@ def get_external_pipeline_subset_result(
             return ExternalPipelineSubsetResult(
                 success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
             )
+    elif asset_selection:
+        try:
+            sub_pipeline = recon_pipeline.asset_subset_for_execution(asset_selection)
+            definition = sub_pipeline.get_definition()
+        except Exception:
+            return ExternalPipelineSubsetResult(
+                success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
+            )
     else:
         definition = recon_pipeline.get_definition()
-
     external_pipeline_data = external_pipeline_data_from_def(definition)
     return ExternalPipelineSubsetResult(success=True, external_pipeline_data=external_pipeline_data)
 
@@ -362,6 +372,9 @@ def get_external_execution_plan_snapshot(recon_pipeline, args):
             if args.solid_selection
             else recon_pipeline
         )
+
+        if args.asset_selection:
+            pipeline = recon_pipeline.asset_subset_for_execution(args.asset_selection)
 
         return snapshot_from_execution_plan(
             create_execution_plan(
