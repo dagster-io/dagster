@@ -89,11 +89,17 @@ export function identifyBundles(assetIds: string[]) {
   // }
 
   for (const prefixId of Object.keys(pathPrefixes).sort((a, b) => b.length - a.length)) {
-    finalBundlePrefixes[prefixId] = uniq(
+    const contents = uniq(
       pathPrefixes[prefixId].map((p) =>
         finalBundleIdForNodeId[p] ? finalBundleIdForNodeId[p] : p,
       ),
     );
+    if (contents.length === 1 && finalBundlePrefixes[contents[0]]) {
+      // If this bundle contains exactly one bundle, no need to show both outlines.
+      // Just show the inner one. eg: a > b > asset1, a > b > asset2, just show a > b.
+      continue;
+    }
+    finalBundlePrefixes[prefixId] = contents;
     finalBundlePrefixes[prefixId].forEach((id) => (finalBundleIdForNodeId[id] = prefixId));
   }
   return finalBundlePrefixes;
