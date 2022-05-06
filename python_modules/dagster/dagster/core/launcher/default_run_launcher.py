@@ -55,6 +55,42 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             inst_data=inst_data, wait_for_processes=config_value.get("wait_for_processes", False)
         )
 
+    @staticmethod
+    def launch_run_from_grpc_client(instance, run, grpc_client):
+        instance.add_run_tags(
+            run.run_id,
+            {
+                GRPC_INFO_TAG: seven.json.dumps(
+                    merge_dicts(
+                        {"host": grpc_client.host},
+                        (
+                            {"port": grpc_client.port}
+                            if grpc_client.port
+                            else {"socket": grpc_client.socket}
+                        ),
+                        ({"use_ssl": True} if grpc_client.use_ssl else {}),
+                    )
+                )
+            },
+        )
+
+        res = deserialize_as(
+            grpc_client.start_run(
+                ExecuteExternalPipelineArgs(
+                    pipeline_origin=run.external_pipeline_origin,
+                    pipeline_run_id=run.run_id,
+                    instance_ref=instance.get_ref(),
+                )
+            ),
+            StartRunResult,
+        )
+        if not res.success:
+            raise (
+                DagsterLaunchFailedError(
+                    res.message, serializable_error_info=res.serializable_error_info
+                )
+            )
+
     def launch_run(self, context: LaunchRunContext) -> None:
         run = context.pipeline_run
 
@@ -76,39 +112,9 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             "DefaultRunLauncher: Can't launch runs for pipeline not loaded from a GRPC server",
         )
 
-        self._instance.add_run_tags(
-            run.run_id,
-            {
-                GRPC_INFO_TAG: seven.json.dumps(
-                    merge_dicts(
-                        {"host": repository_location.host},
-                        (
-                            {"port": repository_location.port}
-                            if repository_location.port
-                            else {"socket": repository_location.socket}
-                        ),
-                        ({"use_ssl": True} if repository_location.use_ssl else {}),
-                    )
-                )
-            },
+        DefaultRunLauncher.launch_run_from_grpc_client(
+            self._instance, run, repository_location.client
         )
-
-        res = deserialize_as(
-            repository_location.client.start_run(
-                ExecuteExternalPipelineArgs(
-                    pipeline_origin=external_pipeline_origin,
-                    pipeline_run_id=run.run_id,
-                    instance_ref=self._instance.get_ref(),
-                )
-            ),
-            StartRunResult,
-        )
-        if not res.success:
-            raise (
-                DagsterLaunchFailedError(
-                    res.message, serializable_error_info=res.serializable_error_info
-                )
-            )
 
         self._run_ids.add(run.run_id)
 

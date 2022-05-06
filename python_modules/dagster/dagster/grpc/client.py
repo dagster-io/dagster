@@ -78,6 +78,10 @@ class DagsterGrpcClient:
         else:
             self._server_address = "unix:" + os.path.abspath(socket)
 
+    @property
+    def use_ssl(self) -> bool:
+        return self._use_ssl
+
     @contextmanager
     def _channel(self):
         options = [
