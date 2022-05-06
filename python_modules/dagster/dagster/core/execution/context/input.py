@@ -204,12 +204,28 @@ class InputContext:
         return self._resources
 
     @property
-    def asset_key(self) -> Optional[AssetKey]:
-        if not self._name:
-            return None
-        return self.step_context.pipeline_def.asset_layer.asset_key_for_input(
+    def has_asset_key(self) -> bool:
+        return (
+            self._step_context is not None
+            and self._name is not None
+            and self._step_context.pipeline_def.asset_layer.asset_key_for_input(
+                node_handle=self.step_context.solid_handle, input_name=self._name
+            )
+            is not None
+        )
+
+    @property
+    def asset_key(self) -> AssetKey:
+        result = self.step_context.pipeline_def.asset_layer.asset_key_for_input(
             node_handle=self.step_context.solid_handle, input_name=self.name
         )
+        if result is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access asset_key, "
+                "but it was not provided when constructing the InputContext"
+            )
+
+        return result
 
     @property
     def step_context(self) -> "StepExecutionContext":
@@ -317,7 +333,7 @@ class InputContext:
 
         metadata = check.dict_param(metadata, "metadata", key_type=str)
         self._metadata_entries.extend(normalize_metadata(metadata, []))
-        if self.asset_key:
+        if self.has_asset_key:
             check.opt_str_param(description, "description")
 
             observation = AssetObservation(

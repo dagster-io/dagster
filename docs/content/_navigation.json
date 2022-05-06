@@ -685,6 +685,10 @@
             "path": "/_apidocs/libraries/dagster-snowflake"
           },
           {
+            "title": "Snowflake + Pandas (dagster-snowflake-pandas)",
+            "path": "/_apidocs/libraries/dagster-snowflake-pandas"
+          },
+          {
             "title": "Spark (dagster-spark)",
             "path": "/_apidocs/libraries/dagster-spark"
           },
