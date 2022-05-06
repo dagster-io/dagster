@@ -1,3 +1,5 @@
+import re
+
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
@@ -68,7 +70,10 @@ class TestSolidSelections(NonLaunchableGraphQLContextTestMatrix):
         assert result.data
         assert result.data["runConfigSchemaOrError"]["__typename"] == "InvalidSubsetError"
 
-        assert (
-            "Input 'some_input' of solid 'fail_subset' has no upstream output, no default value, and no dagster type loader"
-            in result.data["runConfigSchemaOrError"]["message"]
+        assert re.match(
+            (
+                r".*DagsterInvalidSubsetError[\s\S]*"
+                r"add a dagster_type_loader for the type 'InputTypeWithoutHydration'"
+            ),
+            result.data["runConfigSchemaOrError"]["message"],
         )
