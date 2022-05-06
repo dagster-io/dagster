@@ -27,7 +27,7 @@ from dagster.core.storage.root_input_manager import (
     RootInputManagerDefinition,
 )
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.core.types.dagster_type import DagsterType
+from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.core.utils import str_format_set
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.backcompat import experimental_class_warning
@@ -971,6 +971,20 @@ def _checked_input_resource_reqs_for_mode(
                 # input is unconnected
                 input_def = handle.input_def
 
+                if not _is_input_resolvable(input_def, node, outer_solids):
+                    raise DagsterInvalidDefinitionError(
+                        "Input '{input_name}' in {described_node} is not connected to "
+                        "the output of a previous node and can not be loaded from configuration, "
+                        "making it impossible to execute. "
+                        "Possible solutions are:\n"
+                        "  * add a dagster_type_loader for the type '{dagster_type}'\n"
+                        "  * connect '{input_name}' to the output of another node\n".format(
+                            described_node=node.describe_node(),
+                            input_name=input_def.name,
+                            dagster_type=input_def.dagster_type.display_name,
+                        )
+                    )
+
                 # If a root manager is provided, it's always used. I.e. it has priority over
                 # the other ways of loading unsatisfied inputs - dagster type loaders and
                 # default values.
@@ -987,6 +1001,31 @@ def _checked_input_resource_reqs_for_mode(
                         raise DagsterInvalidDefinitionError(error_msg)
 
     return resource_reqs
+
+
+def _is_input_resolvable(input_def, node, upstream_nodes):
+    # If input is not loadable via config, check if loadable via top-level input (meaning it is mapped all the way up the graph composition).
+    if (
+        not input_def.dagster_type.loader
+        and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
+        and not input_def.root_manager_key
+        and not input_def.has_default_value
+    ):
+        if not upstream_nodes:
+            return False
+        for node in upstream_nodes[::-1]:
+            mapped_upstream = False
+            for input_mapping in node.definition.input_mappings():
+                if (
+                    input_mapping.maps_to.solid_name == node.name
+                    and input_mapping.maps_to.input_name == input_def.name
+                ):
+                    mapped_upstream = True
+            if not mapped_upstream:
+                return False
+        return True
+    else:
+        return True
 
 
 def _get_missing_resource_error_msg(
