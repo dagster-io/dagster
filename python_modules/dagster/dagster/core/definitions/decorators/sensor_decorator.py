@@ -47,6 +47,7 @@ def sensor(
     2. Return a list of `RunRequest` objects.
     3. Return a `SkipReason` object, providing a descriptive message of why no runs were requested.
     4. Return nothing (skipping without providing a reason)
+    5. Yield a `SkipReason` or yield one ore more `RunRequest` objects.
 
     Takes a :py:class:`~dagster.SensorEvaluationContext`.
 
@@ -115,6 +116,7 @@ def asset_sensor(
     2. Return a list of `RunRequest` objects.
     3. Return a `SkipReason` object, providing a descriptive message of why no runs were requested.
     4. Return nothing (skipping without providing a reason)
+    5. Yield a `SkipReason` or yield one ore more `RunRequest` objects.
 
     Takes a :py:class:`~dagster.SensorEvaluationContext` and an EventLogEntry corresponding to an
     AssetMaterialization event.
