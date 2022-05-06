@@ -997,7 +997,7 @@ def do_composition(
         fn_name=graph_name,
         compute_fn=compute_fn,
         explicit_input_defs=provided_input_defs,
-        exclude_nothing=False,
+        is_composition_fn=True,
     )
 
     kwargs = {input_def.name: InputMappingNode(input_def) for input_def in actual_input_defs}

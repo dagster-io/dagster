@@ -118,7 +118,7 @@ class _Op:
             fn_name=self.name,
             compute_fn=compute_fn,
             explicit_input_defs=input_defs,
-            exclude_nothing=True,
+            is_composition_fn=False,
         )
 
         op_def = OpDefinition(

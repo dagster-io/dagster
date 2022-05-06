@@ -126,7 +126,7 @@ class _Solid:
             fn_name=self.name,
             compute_fn=compute_fn,
             explicit_input_defs=self.input_defs,
-            exclude_nothing=True,
+            is_composition_fn=False,
         )
 
         solid_def = SolidDefinition(
@@ -306,7 +306,7 @@ def resolve_checked_solid_fn_inputs(
     fn_name: str,
     compute_fn: DecoratedSolidFunction,
     explicit_input_defs: List[InputDefinition],
-    exclude_nothing: bool,
+    is_composition_fn: bool,
 ) -> List[InputDefinition]:
     """
     Validate provided input definitions and infer the remaining from the type signature of the compute_fn.
@@ -319,11 +319,12 @@ def resolve_checked_solid_fn_inputs(
             DecoratedSolidFunction wrapper.
         explicit_input_defs (List[InputDefinition]): The input definitions that were explicitly
             provided in the decorator.
-        exclude_nothing (bool): True if Nothing type inputs should be excluded from compute_fn
-            arguments.
+        is_composition_fn (bool): True if the decorated compute function is a composition function
+            and False if it is a compute function.
     """
 
-    if exclude_nothing:
+    if not is_composition_fn:
+        # In ops, it is not necessary to define nothing-type inputs as explicit argument params
         explicit_names = set(
             inp.name
             for inp in explicit_input_defs
@@ -375,27 +376,39 @@ def resolve_checked_solid_fn_inputs(
 
     undeclared_inputs = explicit_names - used_inputs
 
-    if decorator_name == "@graph":
+    if is_composition_fn:
+        # Because it is possible to not specify nothing-type inputs as arguments to decorated
+        # ops, it is a common pitfall for users to define nothing-type inputs to graphs but
+        # fail to specify them as input arguments to the decorated graph or not pass them
+        # to dependent ops. This error specifically distinguishes this behavior to reduce confusion.
         undeclared_nothing_inputs = [
             inp.name
             for inp in explicit_input_defs
-            if inp.dagster_type.kind == DagsterTypeKind.NOTHING and inp.name in undeclared_inputs
+            if inp.dagster_type.is_nothing and inp.name in undeclared_inputs
         ]
         if undeclared_nothing_inputs:
             undeclared_nothing_inputs_printed = ", ".join(undeclared_nothing_inputs)
             raise DagsterInvalidDefinitionError(
                 f"Nothing-type input definitions declared in {decorator_name} "
-                "must be specified as input arguments to the decorated function."
+                "must be specified as input arguments to the decorated function "
+                "and passed to dependent ops."
             )
 
     if not has_kwargs and undeclared_inputs:
         undeclared_inputs_printed = ", '".join(undeclared_inputs)
-        raise DagsterInvalidDefinitionError(
-            f"{decorator_name} '{fn_name}' decorated function does not have parameter(s) "
-            f"'{undeclared_inputs_printed}', which are in provided input_defs. {decorator_name} "
-            "decorated functions should only have keyword arguments that match input names and, if "
-            "system information is required, a first positional parameter named 'context'."
-        )
+        if is_composition_fn:
+            raise DagsterInvalidDefinitionError(
+                f"{decorator_name} '{fn_name}' decorated function does not have parameter(s) "
+                f"'{undeclared_inputs_printed}', which are in provided input_defs. {decorator_name} "
+                "decorated functions should only have keyword arguments that match input names."
+            )
+        else:
+            raise DagsterInvalidDefinitionError(
+                f"{decorator_name} '{fn_name}' decorated function does not have parameter(s) "
+                f"'{undeclared_inputs_printed}', which are in provided input_defs. {decorator_name} "
+                "decorated functions should only have keyword arguments that match input names and, if "
+                "system information is required, a first positional parameter named 'context'."
+            )
 
     inferred_props = {
         inferred.name: inferred

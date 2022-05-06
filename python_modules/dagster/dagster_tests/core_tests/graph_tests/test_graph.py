@@ -1080,6 +1080,7 @@ def test_nothing_inputs():
         return "foo"
 
     with pytest.raises(DagsterInvalidDefinitionError, match="Nothing-type"):
+
         @graph(ins={"dummy": In(dagster_type=Nothing)})
         def g():
             return foo()
