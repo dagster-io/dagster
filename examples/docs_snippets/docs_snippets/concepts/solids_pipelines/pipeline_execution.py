@@ -43,3 +43,35 @@ def execute_subset():
 @op
 def total(in_1: int, in_2: int, in_3: int, in_4: int):
     return in_1 + in_2 + in_3 + in_4
+
+
+ip_yaml = """
+# start_ip_yaml
+
+execution:
+  config:
+    in_process:
+
+# end_ip_yaml
+"""
+
+# start_mp_cfg
+@job(
+    config={
+        "execution": {
+            "config": {
+                "multiprocess": {
+                    "start_method": {
+                        "forkserver": {},
+                    },
+                    "max_concurrent": 4,
+                },
+            }
+        }
+    }
+)
+def forkserver_job():
+    multi_three(add_two(return_one()))
+
+
+# end_mp_cfg
