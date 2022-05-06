@@ -32,7 +32,13 @@ from .utils import delete_job
         DagsterK8sJobConfig.config_type_job(),
         {"job_namespace": Field(StringSource, is_required=False)},
         {"retries": get_retries_config()},
-        {"max_concurrent": Field(IntSource, is_required=False, description="Maximum number of concurrent containers launched for one job")},
+        {
+            "max_concurrent": Field(
+                IntSource,
+                is_required=False,
+                description="Maximum number of concurrent containers launched for one job",
+            )
+        },
     ),
     requirements=multiple_process_executor_requirements(),
 )
