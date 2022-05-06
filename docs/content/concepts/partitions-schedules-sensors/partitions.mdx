@@ -347,6 +347,8 @@ A few rules govern partition-to-partition dependencies:
 - When the upstream asset and downstream asset are both time window-partitioned, each partition in the downstream asset depends on all partitions in the upstream asset that intersect its time window. For example, if an asset with a <PyObject object="DailyPartitionsDefinition" /> depends on an asset with an <PyObject object="HourlyPartitionsDefinition" />, then partition `2022-04-12` of the daily asset the would depend on 24 partitions of the hourly asset: `2022-04-12-00:00` through `2022-04-12-23:00`.
 
 ## See it in action
+
 For more examples of partitions, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news):
-* [Defining an hourly partitioned schedule](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news/hacker_news/schedules/hourly_hn_download_schedule.py)
-* [Specifying the partition to a job](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news/hacker_news/jobs/hacker_news_api_download.py)
+
+- [Defining an hourly partitioned schedule](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news/hacker_news/schedules/hourly_hn_download_schedule.py)
+- [Specifying the partition to a job](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news/hacker_news/jobs/hacker_news_api_download.py)
