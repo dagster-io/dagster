@@ -93,6 +93,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     assetGraphData,
     graphQueryItems,
     graphAssetKeys,
+    allAssetKeys,
     applyingEmptyDefault,
   } = useAssetGraphData(props.pipelineSelector, props.explorerPath.opsQuery, props.filterNodes);
 
@@ -110,12 +111,11 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   return (
     <Loading allowStaleData queryResult={fetchResult}>
       {() => {
-        if (!assetGraphData) {
+        if (!assetGraphData || !allAssetKeys) {
           return <NonIdealState icon="error" title="Query Error" />;
         }
 
         const hasCycles = graphHasCycles(assetGraphData);
-        const assetKeys = fetchResult.data?.assetNodes.map((a) => a.assetKey) || [];
 
         if (hasCycles) {
           return (
@@ -129,8 +129,8 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
         return (
           <AssetGraphExplorerWithData
             key={props.explorerPath.pipelineName}
-            assetKeys={assetKeys}
             assetGraphData={assetGraphData}
+            allAssetKeys={allAssetKeys}
             graphQueryItems={graphQueryItems}
             applyingEmptyDefault={applyingEmptyDefault}
             liveDataRefreshState={liveDataRefreshState}
@@ -145,7 +145,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
 
 const AssetGraphExplorerWithData: React.FC<
   {
-    assetKeys: AssetKey[];
+    allAssetKeys: AssetKey[];
     assetGraphData: GraphData;
     graphQueryItems: GraphQueryItem[];
     liveDataByNode: LiveData;
@@ -325,8 +325,8 @@ const AssetGraphExplorerWithData: React.FC<
   );
 
   const allBundleNames = React.useMemo(() => {
-    return Object.keys(identifyBundles(props.assetKeys.map((a) => JSON.stringify(a.path))));
-  }, [props.assetKeys]);
+    return Object.keys(identifyBundles(props.allAssetKeys.map((a) => JSON.stringify(a.path))));
+  }, [props.allAssetKeys]);
 
   return (
     <SplitPanelContainer
@@ -553,7 +553,7 @@ const AssetGraphExplorerWithData: React.FC<
                 )}
               />
             </Box>
-            {!props.pipelineSelector && <OmittedAssetsNotice assetKeys={props.assetKeys} />}
+            {!props.pipelineSelector && <OmittedAssetsNotice assetKeys={props.allAssetKeys} />}
           </Box>
           <QueryOverlay>
             <GraphQueryInput

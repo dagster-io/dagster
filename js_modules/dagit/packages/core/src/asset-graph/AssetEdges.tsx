@@ -15,7 +15,7 @@ export const AssetConnectedEdges: React.FC<{
   // Note: we render the highlighted edges twice, but it's so that the first item with
   // all the edges in it can remain memoized.
   return (
-    <React.Fragment key="connected">
+    <React.Fragment>
       <AssetEdges color={Colors.KeylineGray} edges={edges} />
       <AssetEdges
         color={Colors.Blue500}
