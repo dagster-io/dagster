@@ -674,7 +674,7 @@ class AssetGroup:
 
         if self.resource_defs != other.resource_defs:
             raise DagsterInvalidDefinitionError(
-                "Can't add asset groups together with different resource definition dictionarys"
+                "Can't add asset groups together with different resource definition dictionaries"
             )
 
         if self.executor_def != other.executor_def:
