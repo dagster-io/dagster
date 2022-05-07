@@ -63,3 +63,13 @@ def test_format_docstring_for_description():
         format_docstring_for_description(no_indentation_at_start)
         == no_indentation_at_start_expected
     )
+
+    def newline():
+        """abc
+
+        123
+        """
+
+    newline_expected = "abc\n\n123"
+
+    assert format_docstring_for_description(newline) == newline_expected
