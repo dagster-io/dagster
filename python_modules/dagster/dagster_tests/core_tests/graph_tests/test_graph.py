@@ -1,5 +1,6 @@
 import enum
 import json
+from datetime import datetime
 
 import pendulum
 import pytest
@@ -1156,3 +1157,23 @@ def test_input_values_override_default():
     result = my_graph.execute_in_process(input_values={"x": 6})
     assert result.success
     assert result.output_value() == 6
+
+
+def test_op_selection_unsatisfied_input_nested():
+    @op
+    def ingest(x: datetime) -> str:
+        return str(x)
+
+    @graph
+    def the_graph(x):
+        ingest(x)
+
+    @graph
+    def the_top_level_graph():
+        the_graph()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Input 'x' of op 'ingest' has no upstream output, no default value, and no dagster type loader.",
+    ):
+        the_top_level_graph.to_job()

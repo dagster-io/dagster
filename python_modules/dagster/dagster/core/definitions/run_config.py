@@ -197,15 +197,6 @@ def get_inputs_field(
             input_field = get_input_manager_input_field(solid, inp, resource_defs)
         elif inp.dagster_type.loader and not has_upstream:
             input_field = get_type_loader_input_field(solid, name, inp)
-        elif (
-            not inp.has_default_value
-            and not inp.dagster_type.kind == DagsterTypeKind.NOTHING
-            and not inp.dagster_type.loader
-            and not has_upstream
-        ):
-            raise DagsterInvalidDefinitionError(
-                f"Input '{name}' of {solid.describe_node()} has no upstream output, no default value, and no dagster type loader. Must provide a value to this input via either a direct input value mapped from the top-level graph, or a root input manager key. To learn more, see the docs for unconnected inputs: https://docs.dagster.io/concepts/io-management/unconnected-inputs#unconnected-inputs."
-            )
         else:
             input_field = None
 

@@ -1,9 +1,18 @@
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional, cast, List
 
-from dagster.core.definitions import NodeDefinition, PipelineDefinition
+from dagster.core.definitions import (
+    NodeDefinition,
+    NodeHandle,
+    PipelineDefinition,
+    OpDefinition,
+    JobDefinition,
+    Node,
+    GraphDefinition,
+)
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
+from dagster.core.types.dagster_type import DagsterTypeKind
 
 from .api import (
     ExecuteRunWithPlanIterable,
@@ -16,21 +25,24 @@ from .context_creation_pipeline import (
     orchestration_context_event_generator,
 )
 from .execute_in_process_result import ExecuteInProcessResult
+from dagster.core.errors import DagsterInvalidInvocationError
 
 
 def core_execute_in_process(
     node: NodeDefinition,
     run_config: Mapping[str, object],
-    ephemeral_pipeline: PipelineDefinition,
+    ephemeral_pipeline: JobDefinition,
     instance: Optional[DagsterInstance],
     output_capturing_enabled: bool,
     raise_on_error: bool,
     run_tags: Optional[Dict[str, Any]] = None,
     run_id: Optional[str] = None,
 ) -> ExecuteInProcessResult:
-    pipeline_def = ephemeral_pipeline
-    mode_def = pipeline_def.get_mode_definition()
-    pipeline = InMemoryPipeline(pipeline_def)
+    job_def = ephemeral_pipeline
+    mode_def = job_def.get_mode_definition()
+    pipeline = InMemoryPipeline(job_def)
+
+    _check_top_level_inputs(job_def)
 
     execution_plan = create_execution_plan(
         pipeline,
@@ -43,10 +55,10 @@ def core_execute_in_process(
 
     with ephemeral_instance_if_missing(instance) as execute_instance:
         pipeline_run = execute_instance.create_run_for_pipeline(
-            pipeline_def=pipeline_def,
+            pipeline_def=job_def,
             run_config=run_config,
             mode=mode_def.name,
-            tags={**pipeline_def.tags, **(run_tags or {})},
+            tags={**job_def.tags, **(run_tags or {})},
             run_id=run_id,
         )
         run_id = pipeline_run.run_id
@@ -78,3 +90,55 @@ def core_execute_in_process(
     return ExecuteInProcessResult(
         node, event_list, execute_instance.get_run_by_id(run_id), output_capture
     )
+
+
+def _check_top_level_inputs(job_def: JobDefinition) -> None:
+    for input_mapping in job_def.graph.input_mappings:
+        node = job_def.graph.solid_named(input_mapping.maps_to.solid_name)
+        top_level_input_name = input_mapping.definition.name
+        input_name = input_mapping.maps_to.input_name
+        _check_top_level_inputs_for_node(
+            node,
+            top_level_input_name,
+            job_def.has_direct_input_value(top_level_input_name),
+            input_name,
+            job_def.name,
+            None,
+        )
+
+
+def _check_top_level_inputs_for_node(
+    node: Node,
+    top_level_input_name: str,
+    top_level_input_provided: bool,
+    input_name: str,
+    job_name: str,
+    parent_handle: Optional[NodeHandle],
+) -> None:
+    if isinstance(node.definition, GraphDefinition):
+        graph_def = cast(GraphDefinition, node.definition)
+        for input_mapping in graph_def.input_mappings:
+            next_node = graph_def.solid_named(input_mapping.maps_to.solid_name)
+            input_name = input_mapping.maps_to.input_name
+            _check_top_level_inputs_for_node(
+                next_node,
+                top_level_input_name,
+                top_level_input_provided,
+                input_name,
+                job_name,
+                NodeHandle(node.name, parent_handle),
+            )
+    else:
+        cur_node_handle = NodeHandle(node.name, parent_handle)
+        op_def = cast(OpDefinition, node.definition)
+        input_def = op_def.input_def_named(input_name)
+        if (
+            not input_def.dagster_type.loader
+            and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
+            and not input_def.root_manager_key
+            and not input_def.has_default_value
+            and not top_level_input_provided
+        ):
+            raise DagsterInvalidInvocationError(
+                f"Attempted to invoke execute_in_process for '{job_name}' without specifying an input_value for input '{top_level_input_name}', but downstream input {input_def.name} of op '{str(cur_node_handle)}' has no other way of being loaded."
+            )

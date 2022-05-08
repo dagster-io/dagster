@@ -377,6 +377,9 @@ class JobDefinition(PipelineDefinition):
             else None
         )
 
+    def has_direct_input_value(self, input_name: str) -> bool:
+        return input_name in self._input_values
+
     def get_direct_input_value(self, input_name: str) -> object:
         if input_name not in self._input_values:
             raise DagsterInvalidInvocationError(

@@ -200,11 +200,8 @@ def test_dict_type_loader_typing_fail():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Input 'dict_input' of solid 'emit_dict' has no upstream output, no default value, "
-        "and no dagster type loader. Must provide a value to this input via "
-        "either a direct input value mapped from the top-level graph, or a root "
-        "input manager key. To learn more, see the docs for unconnected inputs: "
-        "https://docs.dagster.io/concepts/io-management/unconnected-inputs#unconnected-inputs.",
+        match="Input 'dict_input' of solid 'emit_dict' has no upstream output, "
+        "no default value, and no dagster type loader.",
     ):
         execute_solid(
             emit_dict,

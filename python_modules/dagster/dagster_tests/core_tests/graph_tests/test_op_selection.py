@@ -15,9 +15,14 @@ from dagster import (
     repository,
     root_input_manager,
 )
-from dagster.core.errors import DagsterInvalidSubsetError
+from dagster.core.errors import (
+    DagsterInvalidSubsetError,
+    DagsterInvalidConfigError,
+    DagsterInvalidInvocationError,
+)
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+from datetime import datetime
 
 
 @op
@@ -664,3 +669,33 @@ def test_op_selection_unsatisfied_input_failure():
 
     with pytest.raises(DagsterInvalidSubsetError):
         the_graph.to_job(op_selection=["ingest"])
+
+
+def test_op_selection_nested_unsatisfied_input_values():
+    @op
+    def some_other_op():
+        pass
+
+    @op
+    def ingest(x: datetime) -> str:
+        return str(x)
+
+    @graph
+    def the_graph(x):
+        ingest(x)
+        some_other_op()
+
+    @graph
+    def the_top_level_graph(x):
+        the_graph(x)
+
+    the_job = the_top_level_graph.to_job(op_selection=["the_graph.ingest"])
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Attempted to invoke execute_in_process for 'the_top_level_graph' without specifying an input_value for input 'x', but downstream input x of op 'the_graph.ingest' has no other way of being loaded.",
+    ):
+        the_job.execute_in_process()
+
+    result = the_job.execute_in_process(input_values={"x": datetime.now()})
+    assert result.success
