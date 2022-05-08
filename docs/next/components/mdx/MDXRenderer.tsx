@@ -1,32 +1,22 @@
+import React, { useState } from "react";
+
+import { flatten, useNavigation } from "util/useNavigation";
 import MDXComponents, {
   SearchIndexContext,
 } from "components/mdx/MDXComponents";
 import Pagination from "components/Pagination";
 import Icons from "components/Icons";
-import { VersionDropdown } from "components/VersionDropdown";
+import FeedbackModal from "components/FeedbackModal";
+import VersionDropdown from "components/VersionDropdown";
 
-import { SphinxPrefix, sphinxPrefixFromPage } from "util/useSphinx";
-import { useVersion, versionFromPage } from "util/useVersion";
+import { useVersion } from "util/useVersion";
 
-import axios from "axios";
-import { GetStaticProps } from "next";
 import Link from "components/Link";
 import { MdxRemote } from "next-mdx-remote/types";
 import { NextSeo } from "next-seo";
-import SidebarNavigation, { getItems } from "components/mdx/SidebarNavigation";
-import { latestAllPaths } from "util/useNavigation";
-import { promises as fs } from "fs";
-import generateToc from "mdast-util-toc";
+import SidebarNavigation from "components/mdx/SidebarNavigation";
 import hydrate from "next-mdx-remote/hydrate";
-import matter from "gray-matter";
-import mdx from "remark-mdx";
-import path from "path";
-import rehypePlugins from "components/mdx/rehypePlugins";
-import remark from "remark";
-import renderToString from "next-mdx-remote/render-to-string";
 import { useRouter } from "next/router";
-
-import { Shimmer } from "components/Shimmer";
 
 const components: MdxRemote.Components = MDXComponents;
 
@@ -86,61 +76,68 @@ export const VersionNotice = () => {
 };
 
 const BreadcrumbNav = () => {
+  // TODO!!!!!!!!!: some prob w/ the logic
   const { asPathWithoutAnchor } = useVersion();
-  console.log(asPathWithoutAnchor.split("/"));
-  // TODO: HERE!!!!!!!!!!!!!
+  const pathChunks = asPathWithoutAnchor.split("/");
+
+  let currNav = useNavigation();
+  let breadcrumbItems = [];
+  for (let i = 1; i < pathChunks.length; i++) {
+    // pre-processing: if a nav object doesn't have `path`, fall back to the path of its first child
+    let parsedCurrNav = currNav.map((navObj) => {
+      if (navObj.path) {
+        return navObj;
+      } else {
+        return { ...navObj, path: navObj.children[0].path };
+      }
+    });
+
+    let itemPath = pathChunks.slice(0, i + 1).join("/");
+    let matchedNav = parsedCurrNav.find(
+      // some obj may not have its own path so we use startsWith to find the matched first child
+      (navObj) => navObj.path.startsWith(itemPath)
+    );
+    if (matchedNav) {
+      breadcrumbItems.push({ path: matchedNav.path, title: matchedNav.title });
+      currNav = matchedNav.children;
+    } else {
+      break;
+    }
+  }
+
   return (
     <nav className="flex px-4 py-3" aria-label="Breadcrumb">
       <ol className="inline-flex space-x-1 md:space-x-3">
-        <li className="inline-flex">
-          <a
-            href="#"
-            className="inline-flex text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-          >
-            Tutorial
-          </a>
-        </li>
-        <li>
-          <div className="flex items-center">
-            <svg
-              className="w-3 h-3 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 20 20"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {Icons["ChevronRight"]}
-            </svg>
-            <a
-              href="#"
-              className="ml-1 text-sm font-medium text-gray-700 hover:text-gray-900 md:ml-2 dark:text-gray-400 dark:hover:text-white"
-            >
-              Intro Tutorial
-            </a>
-          </div>
-        </li>
-        <li aria-current="page">
-          <div className="flex items-center">
-            <svg
-              className="w-3 h-3 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 20 20"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {Icons["ChevronRight"]}
-            </svg>
-            <span className="ml-1 text-sm font-medium text-gray-400 md:ml-2 dark:text-gray-500">
-              Setup for the Tutorial
-            </span>
-          </div>
-        </li>
+        {breadcrumbItems.map((item, index) => {
+          return (
+            <li key={item.path}>
+              <div className="flex items-center">
+                {index > 0 && (
+                  <svg
+                    className="w-3 h-3 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    {Icons["ChevronRight"]}
+                  </svg>
+                )}
+                <a
+                  href={item.path}
+                  className="ml-1 text-sm font-medium text-gray-700 hover:text-gray-900 md:ml-2 dark:text-gray-400 dark:hover:text-white"
+                >
+                  {item.title}
+                </a>
+              </div>
+            </li>
+          );
+        })}
       </ol>
     </nav>
   );
 };
 
-export const VersionedContentLayout = ({ content }) => {
+export const VersionedContentLayout = ({ toggleFeedback, children }) => {
   return (
     <div
       className="flex-1 min-w-0 relative z-0 focus:outline-none pt-4"
@@ -159,21 +156,19 @@ export const VersionedContentLayout = ({ content }) => {
 
           <div className="flex-none">
             <button
-              // onClick={}
+              onClick={toggleFeedback}
               className="hidden lg:inline-block px-2 py-2 ml-2 text-sm rounded-full border border-gray-300 text-gray-600 hover:text-gray-700 hover:bg-white transition-colors duration-200"
             >
               Share Feedback
             </button>
           </div>
         </div>
-        <div className="flex flex-row">
+        <div className="flex flex-col">
           {/* Start main area*/}
 
           <VersionNotice />
           <div className="py-4 px-4 sm:px-6 lg:px-8 w-full">
-            <div className="DocSearch-content prose dark:prose-dark max-w-none">
-              {content}
-            </div>
+            {children}
             <Pagination />
           </div>
           {/* End main area */}
@@ -266,7 +261,13 @@ export function UnversionedMDXRenderer({ data }: { data: MDXData }) {
   );
 }
 
-function VersionedMDXRenderer({ data }: { data: MDXData }) {
+function VersionedMDXRenderer({
+  data,
+  toggleFeedback,
+}: {
+  data: MDXData;
+  toggleFeedback: any;
+}) {
   const { query } = useRouter();
   const { editMode } = query;
 
@@ -293,7 +294,11 @@ function VersionedMDXRenderer({ data }: { data: MDXData }) {
         }}
       />
 
-      <VersionedContentLayout content={content} />
+      <VersionedContentLayout toggleFeedback={toggleFeedback}>
+        <div className="DocSearch-content prose dark:prose-dark max-w-none">
+          {content}
+        </div>
+      </VersionedContentLayout>
 
       {!editMode && (
         <aside className="hidden relative xl:block flex-none w-96 flex shrink-0 border-gray-200">

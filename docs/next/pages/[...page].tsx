@@ -1,3 +1,5 @@
+import React, { useState } from "react";
+
 import MDXRenderer, {
   MDXData,
   VersionedContentLayout,
@@ -5,9 +7,11 @@ import MDXRenderer, {
 import MDXComponents, {
   SearchIndexContext,
 } from "../components/mdx/MDXComponents";
+import FeedbackModal from "components/FeedbackModal";
+
 import Pagination from "../components/Pagination";
 import Icons from "../components/Icons";
-import { VersionDropdown } from "../components/VersionDropdown";
+// import { VersionDropdown } from "../components/VersionDropdown";
 
 import { SphinxPrefix, sphinxPrefixFromPage } from "../util/useSphinx";
 import { useVersion, versionFromPage } from "../util/useVersion";
@@ -273,14 +277,26 @@ type Props =
 //   );
 // }
 
-function HTMLRenderer({ data }: { data: HTMLData }) {
+function HTMLRenderer({
+  data,
+  toggleFeedback,
+}: {
+  data: HTMLData;
+  toggleFeedback: any;
+}) {
   const { body, toc } = data;
   const markup = { __html: body };
   const tocMarkup = { __html: toc };
 
   return (
     <>
-      <VersionedContentLayout content={markup} />
+      <VersionedContentLayout toggleFeedback={toggleFeedback}>
+        <div
+          className="DocSearch-content prose dark:prose-dark max-w-none"
+          dangerouslySetInnerHTML={markup}
+        />
+      </VersionedContentLayout>
+
       <aside className="hidden relative xl:block flex-none w-96 flex-shrink-0 border-gray-200">
         {/* Start secondary column (hidden on smaller screens) */}
         <div className="flex flex-col justify-between  sticky top-24  py-6 px-4 sm:px-6 lg:px-8">
@@ -298,6 +314,16 @@ function HTMLRenderer({ data }: { data: HTMLData }) {
 }
 
 export default function MdxPage(props: Props) {
+  const [isFeedbackOpen, setOpenFeedback] = useState<boolean>(false);
+
+  const closeFeedback = () => {
+    setOpenFeedback(false);
+  };
+
+  const toggleFeedback = () => {
+    setOpenFeedback(!isFeedbackOpen);
+  };
+
   const router = useRouter();
 
   // If the page is not yet generated, this shimmer/skeleton will be displayed
@@ -306,11 +332,16 @@ export default function MdxPage(props: Props) {
     return <Shimmer />;
   }
 
-  if (props.type == PageType.MDX) {
-    return <MDXRenderer data={props.data} />;
-  } else {
-    return <HTMLRenderer data={props.data} />;
-  }
+  return (
+    <>
+      <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
+      {props.type == PageType.MDX ? (
+        <MDXRenderer data={props.data} toggleFeedback={toggleFeedback} />
+      ) : (
+        <HTMLRenderer data={props.data} toggleFeedback={toggleFeedback} />
+      )}
+    </>
+  );
 }
 
 async function getVersionedContent(

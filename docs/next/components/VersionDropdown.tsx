@@ -4,7 +4,7 @@ import Icons from "../components/Icons";
 import { Menu, Transition } from "@headlessui/react";
 import Link from "./Link";
 
-export function VersionDropdown() {
+export default function VersionDropdown() {
   const {
     latestVersion,
     version: currentVersion,
