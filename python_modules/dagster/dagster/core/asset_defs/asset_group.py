@@ -258,6 +258,12 @@ class AssetGroup:
             # no assets in this def are selected
             elif len(selected_subset) == 0:
                 excluded_assets.add(asset)
+            elif asset.can_subset:
+                # subset of the asset that we want
+                subset_asset = asset.subset_for(selected_asset_keys)
+                included_assets.add(subset_asset)
+                # subset of the asset that we don't want
+                excluded_assets.add(asset.subset_for(asset.asset_keys - subset_asset.asset_keys))
             else:
                 raise DagsterInvalidDefinitionError(
                     f"When building job, the AssetsDefinition '{asset.node_def.name}' "

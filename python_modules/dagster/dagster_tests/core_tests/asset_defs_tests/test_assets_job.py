@@ -665,7 +665,7 @@ def test_asset_def_from_graph_inputs():
 
     @graph(ins={"x": GraphIn(), "y": GraphIn()})
     def my_graph(x, y):
-        my_op(x, y)
+        return my_op(x, y)
 
     assets_def = AssetsDefinition.from_graph(
         graph_def=my_graph,
