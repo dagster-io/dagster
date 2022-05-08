@@ -62,7 +62,7 @@ def param_is_var_keyword(param: funcsigs.Parameter) -> bool:
 def format_docstring_for_description(fn: Callable) -> Optional[str]:
     if fn.__doc__ is not None:
         docstring = fn.__doc__
-        if docstring[0].isspace():
+        if len(docstring) > 0 and docstring[0].isspace():
             return textwrap.dedent(docstring).strip()
         else:
             first_newline_pos = docstring.find("\n")
