@@ -7,7 +7,7 @@ from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_fr
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError
 from dagster_dbt.types import DbtOutput
 
-from dagster import AssetGroup, AssetKey, MetadataEntry, ResourceDefinition, repository
+from dagster import AssetGroup, AssetKey, MetadataEntry, ResourceDefinition, asset, repository
 from dagster.core.asset_defs import build_assets_job
 from dagster.utils import file_relative_path
 
@@ -93,14 +93,16 @@ def assert_assets_match_project(dbt_assets):
         "sort_hot_cereals_by_calories",
         "sort_cold_cereals_by_calories",
     ]:
-        out_def = assets_op.output_dict.get(model_name)
-        assert out_def.hardcoded_asset_key == AssetKey(["test-schema", model_name])
+        assert dbt_assets[0].asset_keys_by_output_name[model_name] == AssetKey(
+            ["test-schema", model_name]
+        )
         assert dbt_assets[0].asset_deps[AssetKey(["test-schema", model_name])] == {
             AssetKey(["test-schema", "sort_by_calories"])
         }
 
-    root_out_def = assets_op.output_dict.get("sort_by_calories")
-    assert root_out_def.hardcoded_asset_key == AssetKey(["test-schema", "sort_by_calories"])
+    assert dbt_assets[0].asset_keys_by_output_name["sort_by_calories"] == AssetKey(
+        ["test-schema", "sort_by_calories"]
+    )
     assert not dbt_assets[0].asset_deps[AssetKey(["test-schema", "sort_by_calories"])]
 
 
@@ -304,3 +306,63 @@ def test_node_info_to_asset_key(
         assert len(observations) == 17
     else:
         assert len(observations) == 0
+
+
+@pytest.mark.parametrize(
+    "job_selection,expected_asset_names",
+    [
+        (
+            "*",
+            "sort_by_calories,sort_cold_cereals_by_calories,sort_hot_cereals_by_calories,least_caloric,hanger1,hanger2",
+        ),
+        (
+            "test-schema>sort_by_calories+",
+            "sort_by_calories,least_caloric,sort_cold_cereals_by_calories,sort_hot_cereals_by_calories,hanger1",
+        ),
+        ("*test-schema>hanger2", "hanger2,least_caloric,sort_by_calories"),
+        (
+            ["test-schema>sort_cold_cereals_by_calories", "test-schema>least_caloric"],
+            "sort_cold_cereals_by_calories,least_caloric",
+        ),
+    ],
+)
+def test_subsetting(
+    dbt_build,
+    conn_string,
+    test_project_dir,
+    dbt_config_dir,
+    job_selection,
+    expected_asset_names,
+):  # pylint: disable=unused-argument
+
+    dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
+
+    @asset(namespace="test-schema")
+    def hanger1(sort_by_calories):
+        return None
+
+    @asset(namespace="test-schema")
+    def hanger2(least_caloric):
+        return None
+
+    result = (
+        AssetGroup(
+            dbt_assets + [hanger1, hanger2],
+            resource_defs={
+                "dbt": dbt_cli_resource.configured(
+                    {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+                )
+            },
+        )
+        .build_job(name="dbt_job", selection=job_selection)
+        .execute_in_process()
+    )
+
+    assert result.success
+    all_keys = {
+        event.event_specific_data.materialization.asset_key
+        for event in result.all_events
+        if event.event_type_value == "ASSET_MATERIALIZATION"
+    }
+    expected_keys = {AssetKey(["test-schema", name]) for name in expected_asset_names.split(",")}
+    assert all_keys == expected_keys
