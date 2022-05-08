@@ -198,7 +198,7 @@ class _Asset:
             )
 
             op = _Op(
-                name="__".join(out_asset_key.path),
+                name="__".join(out_asset_key.path).replace("-", "_"),
                 description=self.description,
                 ins=dict(asset_ins.values()),
                 out=out,
@@ -417,12 +417,12 @@ def build_asset_ins(
         )
 
         ins_by_asset_key[asset_key] = (
-            input_name,
+            input_name.replace("-", "_"),
             In(metadata=metadata, root_manager_key="root_manager"),
         )
 
     for asset_key in non_argument_deps:
-        stringified_asset_key = "_".join(asset_key.path)
+        stringified_asset_key = "_".join(asset_key.path).replace("-", "_")
         # mypy doesn't realize that Nothing is a valid type here
         ins_by_asset_key[asset_key] = (stringified_asset_key, In(cast(type, Nothing)))
 

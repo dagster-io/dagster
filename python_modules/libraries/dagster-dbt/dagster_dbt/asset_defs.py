@@ -12,12 +12,17 @@ from dagster_dbt.utils import generate_events
 from dagster import (
     AssetKey,
     AssetMaterialization,
+    AssetsDefinition,
+    In,
     MetadataValue,
+    Nothing,
     Out,
     Output,
     SolidExecutionContext,
     TableColumn,
     TableSchema,
+    get_dagster_logger,
+    op,
 )
 from dagster import _check as check
 from dagster import get_dagster_logger
@@ -63,6 +68,15 @@ def _get_node_asset_key(node_info):
     return AssetKey(components)
 
 
+def _get_node_description(node_info):
+    code_block = textwrap.indent(node_info["raw_sql"], "    ")
+    description_sections = [
+        node_info["description"],
+        f"#### Raw SQL:\n```\n{code_block}\n```",
+    ]
+    return "\n\n".join(filter(None, description_sections))
+
+
 def _dbt_nodes_to_assets(
     dbt_nodes: Mapping[str, Any],
     select: str,
@@ -74,17 +88,23 @@ def _dbt_nodes_to_assets(
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
     use_build_command: bool = False,
 ) -> AssetsDefinition:
+
     outs: Dict[str, Out] = {}
-    sources: Set[AssetKey] = set()
+    asset_ins: Dict[AssetKey, Tuple[str, In]] = {}
+
+    asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
+
     out_name_to_node_info: Dict[str, Mapping[str, Any]] = {}
-    internal_asset_deps: Dict[str, Set[AssetKey]] = {}
+
     package_name = None
     for unique_id in selected_unique_ids:
-        asset_deps = set()
+        cur_asset_deps = set()
         node_info = dbt_nodes[unique_id]
         package_name = node_info.get("package_name", package_name)
+
         for dep_name in node_info["depends_on"]["nodes"]:
             dep_type = dbt_nodes[dep_name]["resource_type"]
+
             # ignore seeds/snapshots
             if dep_type not in ["source", "model"]:
                 continue
@@ -92,42 +112,47 @@ def _dbt_nodes_to_assets(
 
             # if it's a source, it will be used as an input to this multi-asset
             if dep_type == "source":
-                sources.add(dep_asset_key)
-            # regardless of type, list this as a dependency for the current asset
-            asset_deps.add(dep_asset_key)
-        code_block = textwrap.indent(node_info["raw_sql"], "    ")
-        description_sections = [
-            node_info["description"],
-            f"#### Raw SQL:\n```\n{code_block}\n```",
-        ]
-        description = "\n\n".join(filter(None, description_sections))
+                asset_ins[dep_asset_key] = (dep_name.replace(".", "_"), In(Nothing))
 
+            # regardless of type, list this as a dependency for the current asset
+            cur_asset_deps.add(dep_asset_key)
+
+        # generate the Out that corresponds to this model
         node_name = node_info["name"]
         outs[node_name] = Out(
-            asset_key=node_info_to_asset_key(node_info),
-            description=description,
+            description=_get_node_description(node_info),
             io_manager_key=io_manager_key,
             metadata=_columns_to_metadata(node_info["columns"]),
+            is_required=False,
         )
         out_name_to_node_info[node_name] = node_info
-        internal_asset_deps[node_name] = asset_deps
+
+        # set the asset dependencies for this asset
+        asset_deps[node_info_to_asset_key(node_info)] = cur_asset_deps
 
     # prevent op name collisions between multiple dbt multi-assets
     op_name = f"run_dbt_{package_name}"
     if select != "*":
         op_name += "_" + hashlib.md5(select.encode()).hexdigest()[-5:]
 
-    @multi_asset(
+    @op(
         name=op_name,
-        non_argument_deps=sources,
-        outs=outs,
+        tags={"kind": "dbt"},
+        ins=dict(asset_ins.values()),
+        out=outs,
         required_resource_keys={"dbt"},
-        compute_kind="dbt",
-        internal_asset_deps=internal_asset_deps,
     )
-    def _dbt_project_multi_assset(context):
+    def dbt_op(context):
         dbt_output = None
         try:
+            # in the case that we're running everything, opt for the cleaner selection string
+            if len(context.selected_output_names) != len(outs):
+                # for each output that we want to emit, translate to a dbt select string by converting
+                # the out to it's corresponding fqn
+                select = [
+                    ".".join(out_name_to_node_info[out_name]["fqn"])
+                    for out_name in context.selected_output_names
+                ]
             if use_build_command:
                 dbt_output = context.resources.dbt.build(select=select)
             else:
@@ -165,7 +190,18 @@ def _dbt_nodes_to_assets(
                 else:
                     yield event
 
-    return _dbt_project_multi_assset
+    return AssetsDefinition(
+        asset_keys_by_input_name={
+            input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
+        },
+        asset_keys_by_output_name={
+            output_name: node_info_to_asset_key(out_name_to_node_info[output_name])
+            for output_name in outs.keys()
+        },
+        node_def=dbt_op,
+        can_subset=True,
+        asset_deps=asset_deps,
+    )
 
 
 def _columns_to_metadata(columns: Mapping[str, Any]) -> Optional[Mapping[str, Any]]:
