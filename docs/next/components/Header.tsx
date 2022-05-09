@@ -150,31 +150,31 @@ const Header = () => {
         >
           <div className="pt-2 pb-3">
             <a
-              href="/"
+              href="https:/dagster.io"
               className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
             >
               Home
             </a>
             <a
-              href="/blog"
+              href="https:/dagster.io/blog"
               className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
             >
               Blog
             </a>
             <a
-              href="/community"
+              href="https:/dagster.io/community"
               className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
             >
               Community
             </a>
             <a
-              href="https://docs.dagster.io"
+              href="/"
               className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
             >
               Docs
             </a>
             <a
-              href="/cloud"
+              href="https:/dagster.io/cloud"
               className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
             >
               Dagster Cloud

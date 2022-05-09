@@ -167,13 +167,7 @@ import Header from "../components/Header";
 // };
 
 const Layout = ({ children }) => {
-  // const [isFeedbackOpen, setOpenFeedback] = useState<boolean>(false);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
-  // const [isDarkMode, setDarkMode] = useLocalStorage<boolean>(
-  //   "dagster.dark",
-  //   false
-  // );
-
   const openMobileMenu = () => {
     setMobileMenuOpen(true);
   };
@@ -196,70 +190,12 @@ const Layout = ({ children }) => {
         }}
       >
         {/* max-w-screen-xl */}
-        {/* w-screen  */}
         <Header />
+        {/* w-screen  */}
         <div
           className="w-screen mx-auto px-4 sm:px-6 lg:px-8"
           style={{ paddingTop: "64px" }}
         >
-          <>
-            {/* Placeholder spacer for navbar */}
-            {/* <div className="relative hidden lg:flex lg:flex-shrink-0">
-          <div className="flex flex-col w-80 border-r border-gray-200 dark:border-gray-700 pt-4 pb-4 bg-gray-100 dark:bg-gray-900"></div>
-        </div> */}
-            {/* End placeholder spacer for navbar */}
-            <div className="w-full min-w-0">
-              <div className="max-w-7xl mx-auto">
-                <div className="relative w-full">
-                  <div className="lg:hidden">
-                    <div className="flex items-center justify-between bg-gray-50 border-b border-gray-200 px-4 py-1.5">
-                      <div className="flex items-center">
-                        <img
-                          className="w-32 inline-block"
-                          src="/assets/logos/dagster-logo.svg"
-                        />
-                      </div>
-
-                      <div>
-                        <button
-                          onClick={openMobileMenu}
-                          type="button"
-                          className="-mr-3 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900"
-                        >
-                          <span className="sr-only">Open sidebar</span>
-                          {/* Heroicon name: menu */}
-                          <svg
-                            className="h-6 w-6"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            aria-hidden="true"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4 6h16M4 12h16M4 18h16"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  {/* <Header
-                openFeedback={toggleFeedback}
-                isDarkMode={isDarkMode}
-                setDarkMode={setDarkMode}
-              /> */}
-
-                  {/* <div className="w-full relative z-0 flex justify-center mb-8">
-                {children}
-              </div> */}
-                </div>
-              </div>
-            </div>
-          </>
           <div className="mt-10 flex justify-center">
             <Sidebar
               isMobileMenuOpen={isMobileMenuOpen}
