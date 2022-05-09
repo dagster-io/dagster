@@ -48,20 +48,22 @@ class OpSelectionData(
 
 
 def generate_asset_dep_graph(assets_defs: Sequence["AssetsDefinition"]) -> Dict[str, Any]:
-    graph: Dict[str, Any] = {"upstream": {}, "downstream": {}}
+    upstream: Dict[str, AbstractSet[str]] = {}
+    downstream: Dict[str, AbstractSet[str]] = {}
+
     for assets_def in assets_defs:
         for asset_key in assets_def.asset_keys:
             asset_name = asset_key.to_user_string()
-            upstream_asset_keys = assets_def.asset_deps[asset_key]
-            graph["upstream"][asset_name] = set()
+            upstream[asset_name] = set()
+            downstream[asset_name] = downstream.get(asset_name, set())
             # for each asset upstream of this one, set that as upstream, and this downstream of it
+            upstream_asset_keys = assets_def.asset_deps[asset_key]
             for upstream_key in upstream_asset_keys:
                 upstream_name = upstream_key.to_user_string()
-                if upstream_name not in graph["downstream"]:
-                    graph["downstream"][upstream_name] = set()
-                graph["upstream"][asset_name].add(upstream_name)
-                graph["downstream"][upstream_name].add(asset_name)
-    return graph
+                upstream[asset_name].add(upstream_name)
+                downstream[upstream_name] = downstream.get(upstream_name, set()) | {asset_name}
+
+    return {"upstream": upstream, "downstream": downstream}
 
 
 def generate_dep_graph(pipeline_def):

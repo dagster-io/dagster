@@ -522,6 +522,215 @@ def test_subset_does_not_respect_context():
     assert _all_asset_keys(result) == specified_keys | {AssetKey("a"), AssetKey("b")}
 
 
+def test_subset_cycle_resolution_embed_assets_in_complex_graph():
+    """
+    This represents a single large multi-asset with two assets embedded inside of it.
+
+    Ops:
+        foo produces: a, b, c, d, e, f, g, h
+        x produces: x
+        y produces: y
+
+    Upstream Assets:
+        a: []
+        b: []
+        c: [b]
+        d: [b]
+        e: [x, c]
+        f: [d]
+        g: [e]
+        h: [g, y]
+        x: [a]
+        y: [e, f]
+
+    """
+
+    @multi_asset(
+        outs={name: Out(is_required=False) for name in "a,b,c,d,e,f,g,h".split(",")},
+        internal_asset_deps={
+            "a": set(),
+            "b": set(),
+            "c": {AssetKey("b")},
+            "d": {AssetKey("b")},
+            "e": {AssetKey("c"), AssetKey("x")},
+            "f": {AssetKey("d")},
+            "g": {AssetKey("e")},
+            "h": {AssetKey("g"), AssetKey("y")},
+        },
+        can_subset=True,
+    )
+    def foo(context, x, y):
+        a = b = c = d = e = f = g = h = None
+        if "a" in context.selected_output_names:
+            a = 1
+            yield Output(a, "a")
+        if "b" in context.selected_output_names:
+            b = 1
+            yield Output(b, "b")
+        if "c" in context.selected_output_names:
+            c = (b or 1) + 1
+            yield Output(c, "c")
+        if "d" in context.selected_output_names:
+            d = (b or 1) + 1
+            yield Output(d, "d")
+        if "e" in context.selected_output_names:
+            e = x + (c or 2)
+            yield Output(e, "e")
+        if "f" in context.selected_output_names:
+            f = (d or 1) + 1
+            yield Output(f, "f")
+        if "g" in context.selected_output_names:
+            g = (e or 4) + 1
+            yield Output(g, "g")
+        if "h" in context.selected_output_names:
+            h = (g or 5) + y
+            yield Output(h, "h")
+
+    @asset
+    def x(a):
+        return a + 1
+
+    @asset
+    def y(e, f):
+        return e + f
+
+    job = AssetGroup([foo, x, y]).build_job("job")
+
+    # should produce a job with foo(a,b,c,d,f) -> x -> foo(e,g) -> y -> foo(h)
+    assert len(list(job.graph.iterate_solid_defs())) == 5
+    result = job.execute_in_process()
+
+    assert _all_asset_keys(result) == {AssetKey(x) for x in "a,b,c,d,e,f,g,h,x,y".split(",")}
+    assert result.output_for_node("foo_3", "h") == 12
+
+
+def test_subset_cycle_resolution_complex():
+    """
+    Ops:
+        foo produces: a, b, c, d, e, f
+        x produces: x
+        y produces: y
+        z produces: z
+
+    Upstream Assets:
+        a: []
+        b: [x]
+        c: [x]
+        d: [y]
+        e: [c]
+        f: [d]
+        x: [a]
+        y: [b, c]
+
+    """
+
+    @multi_asset(
+        outs={name: Out(is_required=False) for name in "a,b,c,d,e,f".split(",")},
+        internal_asset_deps={
+            "a": set(),
+            "b": {AssetKey("x")},
+            "c": {AssetKey("x")},
+            "d": {AssetKey("y")},
+            "e": {AssetKey("c")},
+            "f": {AssetKey("d")},
+        },
+        can_subset=True,
+    )
+    def foo(context, x, y):
+        if "a" in context.selected_output_names:
+            yield Output(1, "a")
+        if "b" in context.selected_output_names:
+            yield Output(x + 1, "b")
+        if "c" in context.selected_output_names:
+            c = x + 2
+            yield Output(c, "c")
+        if "d" in context.selected_output_names:
+            d = y + 1
+            yield Output(d, "d")
+        if "e" in context.selected_output_names:
+            yield Output(c + 1, "e")
+        if "f" in context.selected_output_names:
+            yield Output(d + 1, "f")
+
+    @asset
+    def x(a):
+        return a + 1
+
+    @asset
+    def y(b, c):
+        return b + c
+
+    job = AssetGroup([foo, x, y]).build_job("job")
+
+    # should produce a job with foo -> x -> foo -> y -> foo
+    assert len(list(job.graph.iterate_solid_defs())) == 5
+    result = job.execute_in_process()
+
+    assert _all_asset_keys(result) == {AssetKey(x) for x in "a,b,c,d,e,f,x,y".split(",")}
+    assert result.output_for_node("x") == 2
+    assert result.output_for_node("y") == 7
+    assert result.output_for_node("foo_3", "f") == 9
+
+
+def test_subset_cycle_resolution_basic():
+    """
+    Ops:
+        foo produces: a, b
+        foo_prime produces: a', b'
+
+    Assets:
+        a -> a' -> b -> b'
+    """
+
+    @multi_asset(
+        outs={"a": Out(is_required=False), "b": Out(is_required=False)},
+        internal_asset_deps={
+            "a": set(),
+            "b": {AssetKey("a_prime")},
+        },
+        can_subset=True,
+    )
+    def foo(context, a_prime):
+        context.log.info(context.selected_asset_keys)
+        if AssetKey("a") in context.selected_asset_keys:
+            yield Output(1, "a")
+        if AssetKey("b") in context.selected_asset_keys:
+            yield Output(a_prime + 1, "b")
+
+    @multi_asset(
+        outs={"a_prime": Out(is_required=False), "b_prime": Out(is_required=False)},
+        internal_asset_deps={
+            "a_prime": {AssetKey("a")},
+            "b_prime": {AssetKey("b")},
+        },
+        can_subset=True,
+    )
+    def foo_prime(context, a, b):
+        context.log.info(context.selected_asset_keys)
+        if AssetKey("a_prime") in context.selected_asset_keys:
+            yield Output(a + 1, "a_prime")
+        if AssetKey("b_prime") in context.selected_asset_keys:
+            yield Output(b + 1, "b_prime")
+
+    job = AssetGroup([foo, foo_prime]).build_job("job")
+
+    # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
+    assert len(list(job.graph.iterate_solid_defs())) == 4
+
+    result = job.execute_in_process()
+    assert result.output_for_node("foo", "a") == 1
+    assert result.output_for_node("foo_prime", "a_prime") == 2
+    assert result.output_for_node("foo_2", "b") == 3
+    assert result.output_for_node("foo_prime_2", "b_prime") == 4
+
+    assert _all_asset_keys(result) == {
+        AssetKey("a"),
+        AssetKey("b"),
+        AssetKey("a_prime"),
+        AssetKey("b_prime"),
+    }
+
+
 def test_asset_group_build_job_selection_multi_component():
     source_asset = SourceAsset(["apple", "banana"])
 

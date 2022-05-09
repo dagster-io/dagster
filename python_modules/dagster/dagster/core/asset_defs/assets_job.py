@@ -236,44 +236,55 @@ def build_deps(
     Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]],
     Mapping[NodeHandle, AssetsDefinition],
 ]:
+    # TODO: make this nicer
+    # sort these so that nodes get a consistent name
+    assets_defs = sorted(
+        assets_defs, key=lambda x: ",".join(sorted(z.to_user_string() for z in x.asset_keys))
+    )
     node_outputs_by_asset: Dict[AssetKey, Tuple[NodeDefinition, str]] = {}
     assets_defs_by_node_handle: Dict[NodeHandle, AssetsDefinition] = {}
 
-    for assets_def in assets_defs:
-        for output_name, asset_key in assets_def.asset_keys_by_output_name.items():
-            if asset_key in node_outputs_by_asset:
-                raise DagsterInvalidDefinitionError(
-                    f"The same asset key was included for two definitions: '{asset_key.to_string()}'"
-                )
-
-            node_outputs_by_asset[asset_key] = (assets_def.node_def, output_name)
-
-    deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
     # if the same graph/op is used in multiple assets_definitions, their invocations much have
     # different names. we keep track of definitions that share a name and add a suffix to their
     # invocations to solve this issue
     collisions: Dict[str, int] = {}
+    node_alias_and_output_by_asset_key: Dict[AssetKey, Tuple[str, str]] = {}
     for assets_def in assets_defs:
         node_name = assets_def.node_def.name
         if collisions.get(node_name):
             collisions[node_name] += 1
-            alias = f"{node_name}_{collisions[node_name]}"
-            node_key = NodeInvocation(node_name, alias)
+            node_alias = f"{node_name}_{collisions[node_name]}"
         else:
             collisions[node_name] = 1
-            alias = node_name
-            node_key = node_name
+            node_alias = node_name
+        assets_defs_by_node_handle[NodeHandle(node_alias, parent=None)] = assets_def
+        for output_name, key in assets_def.asset_keys_by_output_name.items():
+            node_alias_and_output_by_asset_key[key] = (node_alias, output_name)
+
+    deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
+    for node_handle, assets_def in assets_defs_by_node_handle.items():
+        # the key that we'll use to reference the node inside this AssetsDefinition
+        node_def_name = assets_def.node_def.name
+        if node_handle.name != node_def_name:
+            node_key = NodeInvocation(node_def_name, alias=node_handle.name)
+        else:
+            node_key = node_def_name
         deps[node_key] = {}
-        assets_defs_by_node_handle[NodeHandle(alias, parent=None)] = assets_def
-        for input_name, asset_key in assets_def.asset_keys_by_input_name.items():
-            if asset_key in node_outputs_by_asset:
-                node_def, output_name = node_outputs_by_asset[asset_key]
-                deps[node_key][input_name] = DependencyDefinition(node_def.name, output_name)
-            elif asset_key not in source_paths:
+
+        # connect each input of this AssetsDefinition to the proper upstream node
+        for input_name, upstream_asset_key in assets_def.asset_keys_by_input_name.items():
+            if upstream_asset_key in node_alias_and_output_by_asset_key:
+                upstream_node_alias, upstream_output_name = node_alias_and_output_by_asset_key[
+                    upstream_asset_key
+                ]
+                deps[node_key][input_name] = DependencyDefinition(
+                    upstream_node_alias, upstream_output_name
+                )
+            elif upstream_asset_key not in source_paths:
                 input_def = assets_def.node_def.input_def_named(input_name)
                 if not input_def.dagster_type.is_nothing:
                     raise DagsterInvalidDefinitionError(
-                        f"Input asset '{asset_key.to_string()}' for asset "
+                        f"Input asset '{upstream_asset_key.to_string()}' for asset "
                         f"'{next(iter(assets_def.asset_keys)).to_string()}' is not "
                         "produced by any of the provided asset ops and is not one of the provided "
                         "sources"
