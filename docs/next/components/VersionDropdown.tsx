@@ -1,3 +1,5 @@
+import React from "react";
+
 import { useVersion } from "../util/useVersion";
 import Icons from "../components/Icons";
 
@@ -70,9 +72,9 @@ export default function VersionDropdown() {
                   <div className="py-1">
                     {versions.map((version) => {
                       return (
-                        <Link key={asPath} href={asPath} version={version}>
-                          <Menu.Item>
-                            {({ active }) => (
+                        <Menu.Item key={version}>
+                          {({ active }) => (
+                            <Link href={asPath} version={version}>
                               <a
                                 className={`${
                                   active
@@ -82,9 +84,9 @@ export default function VersionDropdown() {
                               >
                                 {version}
                               </a>
-                            )}
-                          </Menu.Item>
-                        </Link>
+                            </Link>
+                          )}
+                        </Menu.Item>
                       );
                     })}
                   </div>

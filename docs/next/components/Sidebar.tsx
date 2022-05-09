@@ -104,7 +104,7 @@ const TopLevelNavigation = () => {
 
         return (
           <div key={item.path}>
-            {item.isExternalLink ? (
+            {item.isExternalLink || item.isUnversioned ? (
               <MenuItem href={item.path} item={item} match={match} lvl={0} />
             ) : (
               <Link href={item.path} passHref>

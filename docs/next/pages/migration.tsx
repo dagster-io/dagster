@@ -1,16 +1,13 @@
-import MDXComponents, {
-  SearchIndexContext,
-} from "../components/mdx/MDXComponents";
-import { MDXData, UnversionedMDXRenderer } from "components/mdx/MDXRenderer";
+import React from "react";
+
+import MDXComponents from "../components/mdx/MDXComponents";
+import FeedbackModal from "../components/FeedbackModal";
+import { MDXData, UnversionedMDXRenderer } from "../components/mdx/MDXRenderer";
 
 import { GetStaticProps } from "next";
-import Link from "../components/Link";
 import { MdxRemote } from "next-mdx-remote/types";
-import { NextSeo } from "next-seo";
-import SidebarNavigation from "components/mdx/SidebarNavigation";
 import { promises as fs } from "fs";
 import generateToc from "mdast-util-toc";
-import hydrate from "next-mdx-remote/hydrate";
 import matter from "gray-matter";
 import mdx from "remark-mdx";
 import path from "path";
@@ -18,7 +15,6 @@ import rehypePlugins from "components/mdx/rehypePlugins";
 import remark from "remark";
 import renderToString from "next-mdx-remote/render-to-string";
 import { useRouter } from "next/router";
-import { useVersion } from "../util/useVersion";
 import visit from "unist-util-visit";
 import { Shimmer } from "components/Shimmer";
 
@@ -34,6 +30,16 @@ type Props = {
 };
 
 export default function MdxPage(props: Props) {
+  const [isFeedbackOpen, setOpenFeedback] = React.useState<boolean>(false);
+
+  const closeFeedback = () => {
+    setOpenFeedback(false);
+  };
+
+  const toggleFeedback = () => {
+    setOpenFeedback(!isFeedbackOpen);
+  };
+
   const router = useRouter();
 
   // If the page is not yet generated, this shimmer/skeleton will be displayed
@@ -42,7 +48,15 @@ export default function MdxPage(props: Props) {
     return <Shimmer />;
   }
 
-  return <UnversionedMDXRenderer data={props.data} />;
+  return (
+    <>
+      <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
+      <UnversionedMDXRenderer
+        data={props.data}
+        toggleFeedback={toggleFeedback}
+      />
+    </>
+  );
 }
 
 // Travel the tree to get the headings

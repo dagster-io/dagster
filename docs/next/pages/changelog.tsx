@@ -1,5 +1,9 @@
+import React from "react";
+
 import MDXComponents from "../components/mdx/MDXComponents";
-import { MDXData, UnversionedMDXRenderer } from "components/mdx/MDXRenderer";
+import FeedbackModal from "../components/FeedbackModal";
+import { MDXData, UnversionedMDXRenderer } from "../components/mdx/MDXRenderer";
+
 import { GetStaticProps } from "next";
 import { MdxRemote } from "next-mdx-remote/types";
 import { promises as fs } from "fs";
@@ -26,6 +30,16 @@ type Props = {
 };
 
 export default function MdxPage(props: Props) {
+  const [isFeedbackOpen, setOpenFeedback] = React.useState<boolean>(false);
+
+  const closeFeedback = () => {
+    setOpenFeedback(false);
+  };
+
+  const toggleFeedback = () => {
+    setOpenFeedback(!isFeedbackOpen);
+  };
+
   const router = useRouter();
 
   // If the page is not yet generated, this shimmer/skeleton will be displayed
@@ -34,7 +48,15 @@ export default function MdxPage(props: Props) {
     return <Shimmer />;
   }
 
-  return <UnversionedMDXRenderer data={props.data} />;
+  return (
+    <>
+      <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
+      <UnversionedMDXRenderer
+        data={props.data}
+        toggleFeedback={toggleFeedback}
+      />
+    </>
+  );
 }
 
 // Travel the tree to get the headings

@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import MDXRenderer, {
   MDXData,
   VersionedContentLayout,
-} from "components/mdx/MDXRenderer";
+} from "../components/mdx/MDXRenderer";
 import MDXComponents, {
   SearchIndexContext,
 } from "../components/mdx/MDXComponents";
@@ -61,7 +61,7 @@ function HTMLRenderer({
 
   return (
     <>
-      <VersionedContentLayout toggleFeedback={toggleFeedback}>
+      <VersionedContentLayout>
         <div
           className="DocSearch-content prose dark:prose-dark max-w-none"
           dangerouslySetInnerHTML={markup}
