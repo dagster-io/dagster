@@ -18,7 +18,7 @@ from pandas.core.dtypes.common import (
     is_string_dtype,
 )
 
-from dagster import DagsterInvariantViolationError, check
+from dagster import DagsterInvariantViolationError, _check as check
 
 PANDAS_NUMERIC_TYPES = {"int64", "float"}
 

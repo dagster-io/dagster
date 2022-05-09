@@ -9,7 +9,7 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union
 
-from dagster import StaticPartitionsDefinition, check
+from dagster import StaticPartitionsDefinition, _check as check
 from dagster.core.asset_defs import SourceAsset
 from dagster.core.definitions import (
     JobDefinition,

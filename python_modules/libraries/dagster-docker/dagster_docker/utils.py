@@ -3,7 +3,7 @@ from typing import Tuple
 
 from docker_image import reference
 
-from dagster import Field, StringSource, check
+from dagster import Field, StringSource, _check as check
 from dagster.utils import merge_dicts
 
 from .container_context import DOCKER_CONTAINER_CONTEXT_SCHEMA

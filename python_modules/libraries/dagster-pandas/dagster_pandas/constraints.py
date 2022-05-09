@@ -6,7 +6,7 @@ from functools import wraps
 import pandas as pd
 from pandas import DataFrame
 
-from dagster import DagsterType, MetadataEntry, TypeCheck, check
+from dagster import DagsterType, MetadataEntry, TypeCheck, _check as check
 from dagster.utils.backcompat import experimental_class_warning
 
 

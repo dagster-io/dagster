@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
-from dagster import Array, Field, Permissive, StringSource, check
+from dagster import Array, Field, Permissive, StringSource, _check as check
 from dagster.config.validate import process_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.storage.pipeline_run import PipelineRun

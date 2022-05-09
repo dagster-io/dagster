@@ -5,7 +5,7 @@ from contextlib import suppress
 import boto3
 from botocore.exceptions import ClientError
 
-from dagster import Array, Field, Noneable, ScalarUnion, StringSource, check
+from dagster import Array, Field, Noneable, ScalarUnion, StringSource, _check as check
 from dagster.core.events import EngineEventData, MetadataEntry
 from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.grpc.types import ExecuteRunArgs

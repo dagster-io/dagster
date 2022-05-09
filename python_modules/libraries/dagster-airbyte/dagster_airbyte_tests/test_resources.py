@@ -3,7 +3,7 @@ import responses
 from dagster_airbyte import AirbyteOutput, AirbyteState, airbyte_resource
 from dagster_airbyte.utils import generate_materializations
 
-from dagster import Failure, MetadataEntry, build_init_resource_context, check
+from dagster import Failure, MetadataEntry, build_init_resource_context, _check as check
 
 from .utils import get_sample_connection_json, get_sample_job_json
 

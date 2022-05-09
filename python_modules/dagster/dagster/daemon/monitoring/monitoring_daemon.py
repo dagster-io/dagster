@@ -1,7 +1,7 @@
 import sys
 import time
 
-from dagster import DagsterInstance, check
+from dagster import DagsterInstance, _check as check
 from dagster.core.events import DagsterEventType
 from dagster.core.launcher import WorkerStatus
 from dagster.core.storage.pipeline_run import (

@@ -3,7 +3,7 @@ import os
 import dateutil.parser
 from airflow.exceptions import AirflowException, AirflowSkipException
 
-from dagster import DagsterEventType, check
+from dagster import DagsterEventType, _check as check
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.plan import can_isolate_steps, should_skip_step

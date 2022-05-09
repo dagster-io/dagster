@@ -3,7 +3,7 @@ import os
 import sys
 from typing import List, Optional
 
-from dagster import MetadataEntry, check
+from dagster import MetadataEntry, _check as check
 from dagster.core.errors import (
     DagsterExecutionInterruptedError,
     DagsterSubprocessError,

@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Any, Dict, List
 
-from dagster import Failure, MetadataEntry, check
+from dagster import Failure, MetadataEntry, _check as check
 
 
 class DagsterDbtError(Failure, ABC):
