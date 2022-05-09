@@ -24,24 +24,8 @@ import { Shimmer } from "components/Shimmer";
 
 const components: MdxRemote.Components = MDXComponents;
 
-// type MDXData = {
-//   mdxSource: MdxRemote.Source;
-//   frontMatter: {
-//     title: string;
-//     description: string;
-//   };
-//   searchIndex: any;
-//   tableOfContents: any;
-//   githubLink: string;
-// };
-
-// type HTMLData = {
-//   body: string;
-// };
-
 enum PageType {
   MDX = "MDX",
-  // HTML = "HTML",
 }
 
 type Props = {

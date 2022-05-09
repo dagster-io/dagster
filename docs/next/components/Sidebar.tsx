@@ -1,6 +1,6 @@
 import React from "react";
 
-import { Menu, Transition } from "@headlessui/react";
+import { Transition } from "@headlessui/react";
 
 import { Search } from "components/Search";
 import Icons from "../components/Icons";

@@ -23,7 +23,7 @@ export default function VersionDropdown() {
                   <span className="flex w-full justify-between items-center">
                     <span className="flex min-w-0 items-center justify-between space-x-3">
                       <span className="flex-1 min-w-0">
-                        <span className="text-gray-900 dark:text-gray-300 text-xs lg:text-base truncate">
+                        <span className="text-gray-900 dark:text-gray-300 text-xs lg:text-sm truncate">
                           {currentVersion}{" "}
                           {currentVersion === latestVersion && "(latest)"}
                         </span>
