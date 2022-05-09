@@ -109,7 +109,7 @@ const BreadcrumbNav = () => {
   return (
     breadcrumbItems.length > 1 && (
       <nav className="flex flex-nowrap lg:px-4 py-3" aria-label="Breadcrumb">
-        <ol className="inline-flex space-x-1 lg:space-x-3">
+        <ol className="md:inline-flex space-x-1 lg:space-x-3">
           {breadcrumbItems.map((item, index) => {
             return (
               <li key={item.path}>
@@ -126,7 +126,7 @@ const BreadcrumbNav = () => {
                   )}
                   <a
                     href={item.path}
-                    className="break-words ml-1 lg:ml-2 text-xs lg:text-sm lg:font-medium text-gray-700 hover:text-gray-900 truncate"
+                    className="ml-1 lg:ml-2 text-xs lg:text-sm lg:font-medium text-gray-700 hover:text-gray-900 truncate"
                   >
                     {item.title}
                   </a>
