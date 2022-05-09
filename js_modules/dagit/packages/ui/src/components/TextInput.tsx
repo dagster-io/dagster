@@ -34,7 +34,7 @@ export const TextInput = React.forwardRef(
           $hasIcon={!!icon}
           type={type}
         />
-        {rightElement ? rightElement : null}
+        {rightElement ? <RightContainer>{rightElement}</RightContainer> : null}
       </Container>
     );
   },
@@ -58,7 +58,7 @@ export const TextInputContainerStyles = css`
 const Container = styled.div<{$disabled: boolean}>`
   ${TextInputContainerStyles}
 
-  ${IconWrapper}:first-child {
+  > ${IconWrapper}:first-child {
     position: absolute;
     left: 8px;
     top: 8px;
@@ -69,6 +69,16 @@ const Container = styled.div<{$disabled: boolean}>`
           `
         : null};
   }
+`;
+
+const RightContainer = styled.div`
+  position: absolute;
+  bottom: 0;
+  top: 0;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 `;
 
 export const TextInputStyles = css`
