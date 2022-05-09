@@ -37,12 +37,12 @@ def patch_sys_meta_path():
 
 
 @pytest.mark.usefixtures("patch_sys_meta_path")
-def test_deprecated_top_level_submodule_import():
+def test_aliased_module_finder_import():
     assert importlib.import_module("dagster.foo") == importlib.import_module("dagster.core")
 
 
 @pytest.mark.usefixtures("patch_sys_meta_path")
-def test_deprecated_nested_submodule_import():
+def test_aliased_module_finder_nested_import():
     assert importlib.import_module("dagster.foo.definitions") == importlib.import_module(
         "dagster.core.definitions"
     )
