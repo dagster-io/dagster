@@ -860,14 +860,22 @@ def test_run_groups():
 
 def test_repository_batching():
     with instance_for_test() as instance:
-        repo = get_repo_at_time_1()
-        foo_pipeline = repo.get_pipeline("foo_pipeline")
-        evolving_pipeline = repo.get_pipeline("evolving_pipeline")
-        foo_run_ids = [execute_pipeline(foo_pipeline, instance=instance).run_id for i in range(3)]
-        evolving_run_ids = [
-            execute_pipeline(evolving_pipeline, instance=instance).run_id for i in range(2)
-        ]
+        from .utils import sync_execute_get_run_log_data
+
+        def _execute_run(graphql_context, pipeline_name):
+            payload = sync_execute_get_run_log_data(
+                context=graphql_context,
+                variables={
+                    "executionParams": {
+                        "selector": infer_pipeline_selector(graphql_context, pipeline_name)
+                    }
+                },
+            )
+            return payload["run"]["runId"]
+
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
+            foo_run_ids = [_execute_run(context, "foo_pipeline") for _ in range(3)]
+            evolving_run_ids = [_execute_run(context, "evolving_pipeline") for _ in range(2)]
             traced_counter.set(Counter())
             result = execute_dagster_graphql(
                 context,
