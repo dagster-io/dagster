@@ -775,6 +775,87 @@ class CachingRepositoryData(RepositoryData):
             )
             pipelines_or_jobs[name] = resolved_job
 
+        for name, sensor_def in sensors.items():
+            if sensor_def.has_loadable_targets():
+                targets = sensor_def.load_targets()
+                for target in targets:
+                    if isinstance(target, GraphDefinition):
+                        if target.name not in coerced_graphs:
+                            if target.name in pipelines_or_jobs:
+                                target_type = pipelines_or_jobs[target.name].target_type
+                                raise DagsterInvalidDefinitionError(
+                                    f"Error when building repository: sensor '{name}'"
+                                    f" targets a graph named '{target.name}', but a "
+                                    f"{target_type} was provided to the repository "
+                                    "with the same name. Disambiguate "
+                                    "between these by providing a separate name to one of these."
+                                )
+
+                            coerced_graphs[target.name] = target.coerce_to_job()
+                            pipelines_or_jobs[target.name] = coerced_graphs[target.name]
+                        elif coerced_graphs[target.name].graph != target:
+                            raise DagsterInvalidDefinitionError(
+                                f"Error when building repository: sensor '{name}'"
+                                f" targets a graph named '{target.name}', but a "
+                                "different graph was provided to the repository "
+                                "with the same name. Disambiguate "
+                                "between these by providing a separate name to one of the graphs."
+                            )
+                    else:
+                        if (
+                            target.name in pipelines_or_jobs
+                            and pipelines_or_jobs[target.name] != target
+                        ):
+                            dupe_target_type = pipelines_or_jobs[target.name].target_type
+                            raise DagsterInvalidDefinitionError(
+                                f"Error when building repository: sensor '{name}'"
+                                f" targets a {target.target_type} '{target.name}', but a "
+                                f"different {dupe_target_type} was provided to the repository "
+                                "with the same name. Disambiguate "
+                                "between these by providing a separate name to one of them."
+                            )
+                        pipelines_or_jobs[target.name] = target
+
+        for name, schedule_def in schedules.items():
+            if schedule_def.has_loadable_target():
+                target = schedule_def.load_target()
+                if isinstance(target, GraphDefinition):
+                    if target.name not in coerced_graphs:
+                        if target.name in pipelines_or_jobs:
+                            target_type = pipelines_or_jobs[target.name].target_type
+                            raise DagsterInvalidDefinitionError(
+                                f"Error when building repository: schedule '{name}'"
+                                f" targets a graph named '{target.name}', but a "
+                                f"{target_type} with the same name was provided "
+                                "to the repository. Disambiguate "
+                                "between these by providing a separate name to one of these."
+                            )
+
+                        coerced_graphs[target.name] = target.coerce_to_job()
+                        pipelines_or_jobs[target.name] = coerced_graphs[target.name]
+                    elif coerced_graphs[target.name].graph != target:
+                        raise DagsterInvalidDefinitionError(
+                            f"Error when building repository: schedule '{name}'"
+                            f" targets a graph named '{target.name}', but a "
+                            "different graph was provided to the repository "
+                            "with the same name. Disambiguate "
+                            "between these by providing a separate name to one of the graphs."
+                        )
+                else:
+                    if (
+                        target.name in pipelines_or_jobs
+                        and pipelines_or_jobs[target.name] != target
+                    ):
+                        dupe_target_type = pipelines_or_jobs[target.name].target_type
+                        raise DagsterInvalidDefinitionError(
+                            f"Error when building repository: schedule '{name}'"
+                            f" targets {target.target_type} '{target.name}', but a "
+                            f"different {dupe_target_type} with the same name "
+                            "was provided to the repository. Disambiguate "
+                            "between these by providing a separate name to one of them."
+                        )
+                    pipelines_or_jobs[target.name] = target
+
         pipelines: Dict[str, PipelineDefinition] = {}
         jobs: Dict[str, JobDefinition] = {}
         for name, pipeline_or_job in pipelines_or_jobs.items():

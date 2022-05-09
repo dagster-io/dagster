@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, List, NamedTuple, Optional, Union
 
 import dagster._check as check
 
