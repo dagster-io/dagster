@@ -1,9 +1,9 @@
 import {Box} from '@dagster-io/ui';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
 import {AssetNode} from '../asset-graph/AssetNode';
-import {ForeignNode} from '../asset-graph/ForeignNode';
 import {LiveData, toGraphId} from '../asset-graph/Utils';
 
 import {AssetNodeDefinitionFragment_dependencies} from './types/AssetNodeDefinitionFragment';
@@ -15,39 +15,35 @@ export const AssetNodeList: React.FC<{
   const history = useHistory();
 
   return (
-    <Box
-      flex={{gap: 5}}
-      padding={{horizontal: 12}}
-      style={{
-        height: 112,
-        overflowX: 'auto',
-        width: '100%',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {items.map(({asset}) => {
-        return (
-          <div
-            key={asset.id}
-            style={{position: 'relative', flexShrink: 0, width: 240, height: 90}}
-            onClick={(e) => {
-              e.stopPropagation();
-              history.push(`/instance/assets/${asset.assetKey.path.join('/')}?view=definition`);
-            }}
-          >
-            {asset.jobNames.length ? (
-              <AssetNode
-                definition={asset}
-                inAssetCatalog
-                selected={false}
-                liveData={liveDataByNode[toGraphId(asset.assetKey)]}
-              />
-            ) : (
-              <ForeignNode assetKey={asset.assetKey} />
-            )}
-          </div>
-        );
-      })}
-    </Box>
+    <Container flex={{gap: 4}} padding={{horizontal: 12}}>
+      {items.map(({asset}) => (
+        <AssetNodeWrapper
+          key={asset.id}
+          onClick={(e) => {
+            e.stopPropagation();
+            history.push(`/instance/assets/${asset.assetKey.path.join('/')}?view=definition`);
+          }}
+        >
+          <AssetNode
+            definition={asset}
+            inAssetCatalog
+            selected={false}
+            liveData={liveDataByNode[toGraphId(asset.assetKey)]}
+          />
+        </AssetNodeWrapper>
+      ))}
+    </Container>
   );
 };
+
+const Container = styled(Box)`
+  height: 112px;
+  overflow-x: auto;
+  width: 100%;
+  white-space: nowrap;
+`;
+
+const AssetNodeWrapper = styled.div`
+  cursor: pointer;
+  width: 240px;
+`;
