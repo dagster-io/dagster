@@ -74,7 +74,7 @@ const MenuItem = React.forwardRef<
 
       {rightIcon && (
         <svg
-          className={cx("mr-2 h-4 w-4 text-gray-400 transition", {
+          className={cx("mr-2 h-4 w-4 text-gray-400 transition flex-shrink-0", {
             "text-blurple": match,
             "group-hover:text-gray-600": !match,
           })}

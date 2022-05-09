@@ -1,12 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 
-import { flatten, useNavigation } from "util/useNavigation";
+import { useNavigation } from "util/useNavigation";
 import MDXComponents, {
   SearchIndexContext,
 } from "components/mdx/MDXComponents";
 import Pagination from "components/Pagination";
 import Icons from "components/Icons";
-import FeedbackModal from "components/FeedbackModal";
 import VersionDropdown from "components/VersionDropdown";
 
 import { useVersion } from "util/useVersion";
@@ -76,31 +75,33 @@ export const VersionNotice = () => {
 };
 
 const BreadcrumbNav = () => {
-  // TODO!!!!!!!!!: some prob w/ the logic
   const { asPathWithoutAnchor } = useVersion();
-  const pathChunks = asPathWithoutAnchor.split("/");
 
-  let currNav = useNavigation();
-  let breadcrumbItems = [];
-  for (let i = 1; i < pathChunks.length; i++) {
-    // pre-processing: if a nav object doesn't have `path`, fall back to the path of its first child
-    let parsedCurrNav = currNav.map((navObj) => {
-      if (navObj.path) {
-        return navObj;
-      } else {
-        return { ...navObj, path: navObj.children[0].path };
+  let navigation = useNavigation();
+
+  function traverse(currNode, path, stack) {
+    if (currNode.path === path) {
+      return [...stack, currNode];
+    }
+    if (currNode.children === undefined) {
+      return;
+    }
+
+    let childrenNodes = currNode.children;
+    for (let i = 0; i < childrenNodes.length; i++) {
+      let match = traverse(childrenNodes[i], path, [...stack, currNode]);
+      if (match) {
+        return match;
       }
-    });
+    }
+  }
 
-    let itemPath = pathChunks.slice(0, i + 1).join("/");
-    let matchedNav = parsedCurrNav.find(
-      // some obj may not have its own path so we use startsWith to find the matched first child
-      (navObj) => navObj.path.startsWith(itemPath)
-    );
-    if (matchedNav) {
-      breadcrumbItems.push({ path: matchedNav.path, title: matchedNav.title });
-      currNav = matchedNav.children;
-    } else {
+  let breadcrumbItems = [];
+
+  for (let i = 0; i < navigation.length; i++) {
+    let matchedStack = traverse(navigation[i], asPathWithoutAnchor, []);
+    if (matchedStack) {
+      breadcrumbItems = matchedStack;
       break;
     }
   }

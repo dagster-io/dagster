@@ -64,15 +64,15 @@ const Header = ({ openMobileDocsMenu }) => {
               viewBox="0 0 24 24"
             >
               <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
               />
             </svg>
           </button>
         </div>
         <a
-          href="https:/dagster.io"
+          href="https://dagster.io"
           className="flex-shrink-0 flex items-center z-50 w-36 lg:w-3/12"
         >
           <img
@@ -83,13 +83,13 @@ const Header = ({ openMobileDocsMenu }) => {
         </a>
         <div className="hidden sm:ml-6 md:flex my-1 text-lg text-gable-green gap-1 w-10/12 md:w-6/12 justify-center">
           <a
-            href="https:/dagster.io/blog"
+            href="https://dagster.io/blog"
             className="py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
           >
             Blog
           </a>
           <a
-            href="https:/dagster.io/community"
+            href="https://dagster.io/community"
             className="py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
           >
             Community
@@ -101,7 +101,7 @@ const Header = ({ openMobileDocsMenu }) => {
             Docs
           </a>
           <a
-            href="https:/dagster.io/cloud"
+            href="https://dagster.io/cloud"
             className="py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
           >
             <span className="hidden lg:inline">Dagster</span> Cloud
@@ -170,19 +170,19 @@ const Header = ({ openMobileDocsMenu }) => {
         >
           <div className="pt-2 pb-3">
             <a
-              href="https:/dagster.io"
+              href="https://dagster.io"
               className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
             >
               Home
             </a>
             <a
-              href="https:/dagster.io/blog"
+              href="https://dagster.io/blog"
               className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
             >
               Blog
             </a>
             <a
-              href="https:/dagster.io/community"
+              href="https://dagster.io/community"
               className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
             >
               Community
@@ -194,7 +194,7 @@ const Header = ({ openMobileDocsMenu }) => {
               Docs
             </a>
             <a
-              href="https:/dagster.io/cloud"
+              href="https://dagster.io/cloud"
               className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
             >
               Dagster Cloud
