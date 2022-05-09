@@ -33,8 +33,6 @@ import {ConfigEditorRunConfigSchemaFragment} from './types/ConfigEditorRunConfig
 interface ConfigEditorProps {
   configCode: string;
   readOnly: boolean;
-  // todo dish: Remove this prop
-  showWhitespace?: boolean;
   runConfigSchema?: ConfigEditorRunConfigSchemaFragment;
 
   checkConfig: YamlModeValidateFunction;
