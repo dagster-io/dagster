@@ -10,7 +10,7 @@ from dagster import (
     DagsterInvalidConfigError,
     ModeDefinition,
     PipelineRun,
-    check,
+    _check as check,
     execute_pipeline,
     execute_solid,
     pipeline,

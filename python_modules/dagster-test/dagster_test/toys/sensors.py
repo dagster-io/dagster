@@ -8,7 +8,7 @@ from dagster import (
     RunRequest,
     SkipReason,
     asset_sensor,
-    check,
+    _check as check,
     pipeline_failure_sensor,
     sensor,
 )

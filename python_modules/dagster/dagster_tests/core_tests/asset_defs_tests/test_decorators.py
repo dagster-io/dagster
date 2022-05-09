@@ -11,7 +11,7 @@ from dagster import (
     StaticPartitionsDefinition,
     String,
     build_op_context,
-    check,
+    _check as check,
 )
 from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
 

@@ -14,7 +14,7 @@ from dagster import (
     MetadataEntry,
     Permissive,
     StringSource,
-    check,
+    _check as check,
     executor,
     multiple_process_executor_requirements,
 )

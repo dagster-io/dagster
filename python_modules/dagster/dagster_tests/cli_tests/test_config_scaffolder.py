@@ -5,7 +5,7 @@ from dagster import (
     ResourceDefinition,
     SolidDefinition,
     String,
-    check,
+    _check as check,
 )
 from dagster.cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
 from dagster.config import config_type

@@ -33,7 +33,7 @@ from dagster import (
     DagsterInstance,
     Executor,
     MetadataEntry,
-    check,
+    _check as check,
     executor,
     multiple_process_executor_requirements,
 )

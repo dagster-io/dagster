@@ -24,7 +24,7 @@ from dagster import (
     RetryRequested,
     asset,
     build_assets_job,
-    check,
+    _check as check,
     op,
     pipeline,
     resource,

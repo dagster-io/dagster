@@ -26,7 +26,7 @@ from dagster import (
     Set,
     String,
     Tuple,
-    check,
+    _check as check,
     execute_pipeline,
     execute_solid,
     pipeline,

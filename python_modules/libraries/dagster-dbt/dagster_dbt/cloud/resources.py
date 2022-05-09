@@ -14,7 +14,7 @@ from dagster import (
     MetadataValue,
     StringSource,
     __version__,
-    check,
+    _check as check,
     get_dagster_logger,
     resource,
 )

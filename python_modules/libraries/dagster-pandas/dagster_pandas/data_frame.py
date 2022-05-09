@@ -14,7 +14,7 @@ from dagster import (
     MetadataEntry,
     StringSource,
     TypeCheck,
-    check,
+    _check as check,
     dagster_type_loader,
     dagster_type_materializer,
 )

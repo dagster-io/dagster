@@ -16,7 +16,7 @@ from dagster import (
     SolidExecutionContext,
     TableColumn,
     TableSchema,
-    check,
+    _check as check,
     get_dagster_logger,
 )
 from dagster.core.asset_defs import AssetsDefinition, multi_asset

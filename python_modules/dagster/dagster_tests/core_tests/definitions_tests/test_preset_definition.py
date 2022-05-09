@@ -10,7 +10,7 @@ from dagster import (
     ModeDefinition,
     PipelineDefinition,
     PresetDefinition,
-    check,
+    _check as check,
     execute_pipeline,
     lambda_solid,
     pipeline,

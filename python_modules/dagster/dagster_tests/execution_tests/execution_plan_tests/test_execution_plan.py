@@ -5,7 +5,7 @@ from dagster import (
     Int,
     Output,
     OutputDefinition,
-    check,
+    _check as check,
     composite_solid,
     execute_pipeline,
     lambda_solid,

@@ -12,7 +12,7 @@ from dagster import (
     Output,
     OutputDefinition,
     PipelineRun,
-    check,
+    _check as check,
     execute_pipeline,
     pipeline,
     solid,

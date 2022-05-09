@@ -9,7 +9,7 @@ from dagster import (
     Out,
     Output,
     StringSource,
-    check,
+    _check as check,
     dagster_type_loader,
     op,
 )

@@ -18,7 +18,7 @@ from dagster import (
     PipelineDefinition,
     ResourceDefinition,
     String,
-    check,
+    _check as check,
     execute_pipeline,
     execute_pipeline_iterator,
     pipeline,
