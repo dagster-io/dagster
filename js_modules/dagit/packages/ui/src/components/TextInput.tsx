@@ -5,7 +5,7 @@ import {Colors} from './Colors';
 import {IconName, Icon, IconWrapper} from './Icon';
 import {FontFamily} from './styles';
 
-interface Props extends Omit<React.ComponentPropsWithRef<'input'>, 'type' | 'onChange'> {
+interface Props extends Omit<React.ComponentPropsWithRef<'input'>, 'onChange'> {
   icon?: IconName;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   strokeColor?: string;
@@ -14,7 +14,14 @@ interface Props extends Omit<React.ComponentPropsWithRef<'input'>, 'type' | 'onC
 
 export const TextInput = React.forwardRef(
   (props: Props, ref: React.ForwardedRef<HTMLInputElement>) => {
-    const {icon, disabled, strokeColor = Colors.Gray300, rightElement, ...rest} = props;
+    const {
+      icon,
+      disabled,
+      strokeColor = Colors.Gray300,
+      rightElement,
+      type = 'text',
+      ...rest
+    } = props;
 
     return (
       <Container $disabled={!!disabled}>
@@ -25,7 +32,7 @@ export const TextInput = React.forwardRef(
           disabled={disabled}
           ref={ref}
           $hasIcon={!!icon}
-          type="text"
+          type={type}
         />
         {rightElement ? rightElement : null}
       </Container>
