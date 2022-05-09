@@ -13,18 +13,17 @@ export default function VersionDropdown() {
   } = useVersion();
 
   return (
-    <div className="z-20 relative inline-flex text-left">
-      <div className="relative block text-left">
+    <div className="z-20 relative inline-flex text-left w-full">
+      <div className="relative block text-left w-full">
         <Menu>
           {({ open }) => (
             <>
               <div>
-                <Menu.Button className="group w-32 rounded-full px-4 py-2 text-gray-400 border border-gray-300 hover:bg-white transition-colors duration-200">
+                <Menu.Button className="group w-24 lg:w-32 rounded-full px-2 lg:px-4 lg:py-2 text-gray-400 border border-gray-300 hover:bg-white transition-colors duration-200">
                   <span className="flex w-full justify-between items-center">
                     <span className="flex min-w-0 items-center justify-between space-x-3">
                       <span className="flex-1 min-w-0">
-                        <span className="text-gray-900 text-sm font-medium truncate"></span>{" "}
-                        <span className="text-gray-900 dark:text-gray-300 text-sm truncate">
+                        <span className="text-gray-900 dark:text-gray-300 text-xs lg:text-base truncate">
                           {currentVersion}{" "}
                           {currentVersion === latestVersion && "(latest)"}
                         </span>
@@ -32,7 +31,7 @@ export default function VersionDropdown() {
                     </span>
                     {/* Heroicon name: selector */}
                     <svg
-                      className="h-3 w-3"
+                      className="h-2 w-2 lg:h-3 lg:w-3"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 20 20"
@@ -56,7 +55,7 @@ export default function VersionDropdown() {
               >
                 <Menu.Items
                   static
-                  className="absolute w-60 mx-3 right-0 left-0 mt-2 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-200 overflow-y-scroll max-h-(screen-60)"
+                  className="absolute w-full lg:w-60 lg:mx-3 right-0 left-0 mt-2 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-200 overflow-y-scroll max-h-(screen-60)"
                 >
                   <div className="px-4 py-3">
                     <p className="text-sm leading-5">

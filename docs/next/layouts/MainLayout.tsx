@@ -167,19 +167,19 @@ import Header from "../components/Header";
 // };
 
 const Layout = ({ children }) => {
-  const [isMobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
-  const openMobileMenu = () => {
-    setMobileMenuOpen(true);
+  const [isMobileDocsMenuOpen, setMobileDocsMenuOpen] =
+    useState<boolean>(false);
+  const openMobileDocsMenu = () => {
+    setMobileDocsMenuOpen(true);
   };
 
-  const closeMobileMenu = () => {
-    setMobileMenuOpen(false);
+  const closeMobileDocsMenu = () => {
+    setMobileDocsMenuOpen(false);
   };
 
   return (
     <>
       <div
-        className=""
         style={{
           minHeight: "100vh",
           backgroundImage: 'url("/assets/head-texture.jpg")',
@@ -189,17 +189,15 @@ const Layout = ({ children }) => {
           backgroundColor: "#FAF9F7",
         }}
       >
-        {/* max-w-screen-xl */}
-        <Header />
-        {/* w-screen  */}
+        <Header openMobileDocsMenu={openMobileDocsMenu} />
         <div
           className="w-screen mx-auto px-4 sm:px-6 lg:px-8"
           style={{ paddingTop: "64px" }}
         >
-          <div className="mt-10 flex justify-center">
+          <div className="mt-6 lg:mt-10 flex justify-center">
             <Sidebar
-              isMobileMenuOpen={isMobileMenuOpen}
-              closeMobileMenu={closeMobileMenu}
+              isMobileDocsMenuOpen={isMobileDocsMenuOpen}
+              closeMobileDocsMenu={closeMobileDocsMenu}
             />
             {children}
           </div>

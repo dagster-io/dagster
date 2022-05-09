@@ -2,10 +2,11 @@ import { useRouter } from "next/router";
 import * as React from "react";
 import { useState } from "react";
 import { JoinSlackButton } from "./JoinSlackButton";
+import Icons from "components/Icons";
 
 const COLLAPSING_PX = -16;
 
-const Header = () => {
+const Header = ({ openMobileDocsMenu }) => {
   const [isMobileHeaderOpen, setIsMobileHeaderOpen] = useState(false);
 
   const lastScrollY = React.useRef(0);
@@ -47,10 +48,29 @@ const Header = () => {
         className="absolute z-0 inset-0 bg-white shadow-sm"
         ref={headerBgRef}
       />
-
       <div className="hidden md:block" />
 
       <nav className="z-10 flex justify-between items-center text-gable-green px-4">
+        <div className="flex items-center lg:hidden z-50">
+          {/* Mobile docs menu button */}
+          <button
+            onClick={openMobileDocsMenu}
+            className="inline-flex items-center bg-white bg-opacity-50 justify-center p-2 rounded-md text-gable-green hover:text-gable-green-darker hover:bg-opacity-100 focus:outline-none focus:bg-opacity-100 focus:text-gray-500 transition duration-150 ease-in-out"
+          >
+            <svg
+              className="block h-6 w-6"
+              stroke="currentColor"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+              />
+            </svg>
+          </button>
+        </div>
         <a
           href="https:/dagster.io"
           className="flex-shrink-0 flex items-center z-50 w-36 lg:w-3/12"
