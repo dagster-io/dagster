@@ -39,7 +39,7 @@ const Header = ({ openMobileDocsMenu }) => {
 
   return (
     <div
-      className="fixed top-0 pt-6 pb-2 w-full z-50 px-2 lg:px-10 flex flex-col border-b border-grey-100"
+      className="fixed top-0 pt-6 pb-2 w-full z-50 px-2 lg:px-10 flex flex-col lg:border-b border-grey-100"
       ref={headerRef}
     >
       <div

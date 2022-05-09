@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
@@ -31,7 +31,7 @@ const Layout = ({ children }) => {
           className="w-screen mx-auto px-4 sm:px-6 lg:px-8"
           style={{ paddingTop: "64px" }}
         >
-          <div className="mt-6 lg:mt-10 flex justify-center">
+          <div className="mt-10 flex justify-center">
             <Sidebar
               isMobileDocsMenuOpen={isMobileDocsMenuOpen}
               closeMobileDocsMenu={closeMobileDocsMenu}

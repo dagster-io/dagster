@@ -142,16 +142,16 @@ const SecondaryNavigation = () => {
     <>
       {currentSection.children.map((sectionOrItem) => {
         const match =
-          sectionOrItem.children &&
-          sectionOrItem.children.find(
-            (sectionOrItem) => sectionOrItem.path == asPathWithoutAnchor
-          );
+          sectionOrItem.path === asPathWithoutAnchor ||
+          (sectionOrItem.children &&
+            sectionOrItem.children.find(
+              (item) => item.path === asPathWithoutAnchor
+            ));
 
         return (
           <div key={sectionOrItem.path || sectionOrItem.children[0].path}>
             {sectionOrItem.isExternalLink ? (
               <MenuItem
-                key={sectionOrItem.path || sectionOrItem.children[0].path}
                 href={sectionOrItem.path || sectionOrItem.children[0].path}
                 item={sectionOrItem}
                 match={match}
@@ -159,14 +159,13 @@ const SecondaryNavigation = () => {
               />
             ) : (
               <Link
-                key={sectionOrItem.path || sectionOrItem.children[0].path}
                 href={sectionOrItem.path || sectionOrItem.children[0].path}
                 passHref
               >
                 <MenuItem item={sectionOrItem} match={match} lvl={2} />
               </Link>
             )}
-            {match && (
+            {match && sectionOrItem.children && (
               <div className="border-l ml-5 mt-2">
                 <div
                   className="mt-1 ml-1 space-y-1"
