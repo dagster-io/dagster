@@ -156,15 +156,6 @@ export const VersionedContentLayout = ({ toggleFeedback, children }) => {
               <BreadcrumbNav />
             </div>
           </div>
-
-          <div className="hidden lg:inline-block flex-none">
-            <button
-              onClick={toggleFeedback}
-              className="px-2 py-2 text-sm rounded-full border border-gray-300 text-gray-600 hover:text-gray-700 hover:bg-white transition-colors duration-200"
-            >
-              Share Feedback
-            </button>
-          </div>
         </div>
         <div className="flex flex-col">
           {/* Start main area*/}
@@ -307,7 +298,7 @@ function VersionedMDXRenderer({
         <aside className="hidden relative xl:block flex-none w-80 flex shrink-0 border-l border-gray-200">
           {/* Start secondary column (hidden on smaller screens) */}
           <div className="flex flex-col justify-between sticky top-24 py-6 px-4">
-            <div className="mb-8 px-4 py-2 relative overflow-y-scroll max-h-(screen-60)">
+            <div className="mb-8 px-4 pt-2 pb-10 relative overflow-y-scroll max-h-(screen-60) border-b border-gray-200">
               <div className="font-semibold text-gable-green">On This Page</div>
               <div className="mt-6">
                 {navigationItems && (
@@ -315,26 +306,68 @@ function VersionedMDXRenderer({
                 )}
               </div>
             </div>
-
-            <div className="mb-8 border border-gray-100 rounded-full px-4 py-2 relative overflow-y-scroll max-h-(screen-60)">
-              <div className="flex items-center group">
-                <svg
-                  className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
-                  role="img"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <title>GitHub icon</title>
-                  <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
-                </svg>
-                <a
-                  className="ml-2 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
-                  href={githubLink}
-                >
-                  Edit Page on Github
-                </a>
-              </div>
+            <div className="py-2 px-4 flex items-center group">
+              <svg
+                className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
+                role="img"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+              </svg>
+              <a
+                className="text-sm ml-2 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
+                href={githubLink}
+              >
+                Edit Page on GitHub
+              </a>
+            </div>
+            <div className="py-2 px-4 flex items-center group">
+              <svg
+                className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
+                role="img"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                fill="none"
+                strokeWidth="2"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
+              </svg>
+              <button
+                className="text-sm ml-2 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
+                onClick={toggleFeedback}
+              >
+                Share Feedback
+              </button>
+            </div>
+            <div className="py-2 px-4 flex items-center group">
+              <svg
+                className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
+                role="img"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                fill="none"
+                strokeWidth="2"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                />
+              </svg>
+              <a
+                className="text-sm ml-2 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
+                href="https://github.com/dagster-io/dagster"
+              >
+                Star us on GitHub
+              </a>
             </div>
           </div>
           {/* End secondary column */}

@@ -710,6 +710,16 @@
     ]
   },
   {
+    "title": "Changelog",
+    "icon": "Clock",
+    "path": "/changelog"
+  },
+  {
+    "title": "Migration Guides",
+    "icon": "Change",
+    "path": "/migration"
+  },
+  {
     "title": "Dagster Cloud Docs",
     "icon": "Cloud",
     "path": "https://docs.dagster.cloud/",

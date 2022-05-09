@@ -45,6 +45,8 @@ const MenuItem = React.forwardRef<
       )}
       href={href}
       ref={ref}
+      target={item.isExternalLink ? "_blank" : "_self"}
+      rel="noopener noreferrer"
     >
       <div className="flex justify-start">
         {item.icon && (
