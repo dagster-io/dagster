@@ -43,7 +43,7 @@ from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
 from .mode import ModeDefinition
-from .partition import PartitionSetDefinition, PartitionedConfig
+from .partition import PartitionSetDefinition, PartitionedConfig, PartitionsDefinition
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
@@ -291,6 +291,14 @@ class JobDefinition(PipelineDefinition):
             )
 
         return self._cached_partition_set
+
+    @property
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        mode = self.get_mode_definition()
+        if not mode.partitioned_config:
+            return None
+
+        return mode.partitioned_config.partitions_def
 
     def run_request_for_partition(self, partition_key: str, run_key: Optional[str]) -> RunRequest:
         partition_set = self.get_partition_set_def()
