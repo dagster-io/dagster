@@ -18,7 +18,7 @@ from dagster import (
     dagster_type_loader,
     dagster_type_materializer,
 )
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster.config.field_utils import Selector
 from dagster.core.definitions.metadata import normalize_metadata
 from dagster.core.errors import DagsterInvalidMetadata

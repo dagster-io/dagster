@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 import pytest
 
 from dagster import DagsterInstance
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster.core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster.utils import touch_file
 

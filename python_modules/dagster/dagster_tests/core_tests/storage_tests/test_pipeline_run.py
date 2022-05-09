@@ -3,7 +3,7 @@ import sys
 import pytest
 
 import dagster._check as check
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster.core.code_pointer import ModuleCodePointer
 from dagster.core.host_representation.origin import (
     ExternalPipelineOrigin,

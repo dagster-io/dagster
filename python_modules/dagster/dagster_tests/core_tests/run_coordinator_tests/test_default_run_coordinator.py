@@ -1,7 +1,7 @@
 import pytest
 from dagster_tests.api_tests.utils import get_bar_workspace
 
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster.core.run_coordinator import SubmitRunContext
 from dagster.core.run_coordinator.default_run_coordinator import DefaultRunCoordinator
 from dagster.core.storage.pipeline_run import PipelineRunStatus
