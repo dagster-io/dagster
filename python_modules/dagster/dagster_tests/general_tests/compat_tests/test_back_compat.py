@@ -23,7 +23,8 @@ from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster.core.storage.migration.utils import upgrading_instance
-from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster.core.storage.tags import REPOSITORY_LABEL_TAG
 from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id
 from dagster.serdes.serdes import (
     WhitelistMap,
@@ -885,3 +886,25 @@ def test_tick_selector_index_migration():
             assert "idx_tick_selector_timestamp" not in get_sqlite3_indexes(db_path, "job_ticks")
             instance.upgrade()
             assert "idx_tick_selector_timestamp" in get_sqlite3_indexes(db_path, "job_ticks")
+
+
+def test_repo_label_tag_migration():
+    src_dir = file_relative_path(__file__, "snapshot_0_14_14_pre_repo_label_tags/sqlite")
+    import sqlalchemy as db  # pylint: disable=unused-import
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            job_repo_filter = RunsFilter(
+                job_name="hammer",
+                tags={REPOSITORY_LABEL_TAG: "toys_repository@dagster_test.graph_job_op_toys.repo"},
+            )
+
+            count = instance.get_runs_count(job_repo_filter)
+            assert count == 0
+
+            instance.upgrade()
+
+            count = instance.get_runs_count(job_repo_filter)
+            assert count == 2

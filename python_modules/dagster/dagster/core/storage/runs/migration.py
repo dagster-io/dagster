@@ -11,10 +11,12 @@ from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 
 RUN_PARTITIONS = "run_partitions"
 RUN_START_END = "run_start_end_overwritten"  # was run_start_end, but renamed to overwrite bad timestamps written
+RUN_REPO_LABEL_TAGS = "run_repo_label_tags"
 
 # for `dagster instance migrate`, paired with schema changes
 REQUIRED_DATA_MIGRATIONS = {
     RUN_PARTITIONS: lambda: migrate_run_partition,
+    RUN_REPO_LABEL_TAGS: lambda: migrate_run_repo_tags,
 }
 # for `dagster instance reindex`, optionally run for better read performance
 OPTIONAL_DATA_MIGRATIONS = {
@@ -138,3 +140,19 @@ def add_run_stats(run_storage: RunStorage, run_id: str) -> None:
                 end_time=run_stats.end_time,
             )
         )
+
+
+def migrate_run_repo_tags(run_storage: RunStorage, print_fn=None):
+    from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
+
+    from .schema import RunTagsTable, RunsTable
+
+    if not isinstance(run_storage, SqlRunStorage):
+        return
+
+    if print_fn:
+        print_fn("Querying run storage.")
+
+    for run in chunked_run_iterator(run_storage, print_fn):
+        if run.external_pipeline_origin:
+            run_storage.add_run_tags(run.run_id, run.tags_for_storage())
