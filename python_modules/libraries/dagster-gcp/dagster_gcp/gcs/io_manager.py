@@ -3,7 +3,7 @@ import pickle
 from google.api_core.exceptions import Forbidden, TooManyRequests
 from google.cloud import storage  # type: ignore
 
-from dagster import Field, IOManager, StringSource, check, io_manager
+from dagster import Field, IOManager, StringSource, _check as check, io_manager
 from dagster.utils import PICKLE_PROTOCOL
 from dagster.utils.backoff import backoff
 

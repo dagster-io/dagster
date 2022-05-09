@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 
-from dagster import Array, Field, Noneable, check, resource
+from dagster import Array, Field, Noneable, _check as check, resource
 from dagster.core.test_utils import environ
 from dagster.utils.merger import merge_dicts
 

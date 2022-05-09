@@ -4,7 +4,7 @@ from typing import Union
 import pandas
 import pyspark
 
-from dagster import AssetKey, Field, IOManager, MetadataEntry, OutputContext, check, io_manager
+from dagster import AssetKey, Field, IOManager, MetadataEntry, OutputContext, _check as check, io_manager
 from dagster.seven.temp_dir import get_system_temp_directory
 
 

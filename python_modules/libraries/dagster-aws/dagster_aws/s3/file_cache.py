@@ -1,7 +1,7 @@
 import boto3
 from botocore.exceptions import ClientError
 
-from dagster import Field, check, resource
+from dagster import Field, _check as check, resource
 from dagster.core.storage.file_cache import FileCache
 
 from .file_manager import S3FileHandle

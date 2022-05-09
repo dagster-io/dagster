@@ -1,4 +1,4 @@
-from dagster import Field, InputDefinition, Nothing, OutputDefinition, Permissive, check, op, solid
+from dagster import Field, InputDefinition, Nothing, OutputDefinition, Permissive, _check as check, op, solid
 
 from .databricks import wait_for_run_to_complete
 
