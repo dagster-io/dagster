@@ -304,11 +304,11 @@ function findComputeStatusForId(
 }
 
 export function tokenForAssetKey(key: {path: string[]}) {
-  return key.path.join('>');
+  return key.path.join('/');
 }
 
 export function displayNameForAssetKey(key: {path: string[]}) {
-  return key.path.join(' > ');
+  return key.path.join(' / ');
 }
 
 export const IN_PROGRESS_RUNS_FRAGMENT = gql`
