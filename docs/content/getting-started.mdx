@@ -1,94 +1,87 @@
 # Getting Started with Dagster
 
-<p className="text-2xl mt-0 text-gray-500 tracking-tight font-light">
-  Dagster is the data orchestration platform built for productivity.
-</p>
+## What's Dagster?
 
-## Installing Dagster
+Dagster is a system for building and maintaining data assets, such as tables, data sets, machine learning models, or reports.
 
-To install Dagster into an existing Python environment, run:
+With Dagster, you declare the assets that you want to exist, the dependencies between them, and how they should be updated.  Dagster then takes responsibility for keeping your assets up-to-date, as well as for tracking their history.
+
+For example, you might say “The recommendations table is derived by applying a function to the users table, the items table, and recommender ML model. It should be updated hourly.”
+
+```python
+from dagster import AssetGroup, ScheduleDefinition, asset
+
+@asset(io_manager="snowflake")
+def recommendations(users, items, recommender):
+    return recommender.predict(users, items)
+
+schedule = ScheduleDefinition(
+    job=AssetGroup([recommendations]).build_job(),
+    cron_schedule="@hourly",
+)
+```
+
+Dagster hosts an inspectable, versioned blueprint of the assets that you intend to exist and the history of computations that have mutated those assets.  This can be used to surface discrepancies between your expected assets and the assets that exist in persistent storage. To resolve these discrepancies, Dagster can automatically kick off computations, or you can launch computations manually.
+
+
+<img src="/images/getting-started/asset-graph.png" />
+
+At Dagster’s core is a general-purpose orchestration engine that allows defining and executing graphs of arbitrary computations. For operations that don’t involve assets, you can program against this orchestrator directly.
+
+
+```python
+from dagster import op, job
+from my_utils import all_my_tables, is_bad_table, send_slack_message
+
+@op
+def find_bad_tables() -> list[str]:
+    return [table for table in all_my_tables if is_bad_table(table)]
+
+@op
+def report_bad_tables(bad_tables: list[str]) -> None:
+    send_slack_message("The bad tables are:" + ', '.join(bad_tables))
+
+@job
+def bad_tables_job():
+    report_bad_tables(find_bad_tables())
+```
+
+Dagster’s integration libraries make it easy to declare assets that are computed using systems like dbt, Fivetran, Airbyte, and Spark. A graph of Dagster assets can include an ML model built using Python that depends on a table built using dbt that depends on a table ingested using Airbyte. E.g. this code:
+
+```python
+from dagster_airbyte import build_airbyte_assets
+from dagster_dbt import load_assets_from_dbt_project
+
+airbyte_assets = build_airbyte_assets(
+    connection_id=AIRBYTE_CONNECTION_ID, destination_tables=["orders", "users"]
+)
+
+dbt_assets = load_assets_from_dbt_project(
+    project_dir=DBT_PROJECT_DIR
+)
+
+all_together_now = airbyte_assets + dbt_assets
+```
+
+Can result in this asset graph:
+
+<img src="/images/getting-started/modern-data-stack-asset-graph.png" />
+
+
+## Quick Start
+
+### Installing Dagster
+
+To install the latest version of Dagster into an existing Python environment, run:
 
 ```bash
 pip install dagster
 ```
 
-This will install the latest stable version of the core Dagster packages in your current Python environment.
+### Defining an Asset
 
-## Writing a Job
+...
 
-Let's get your first job up and running.
-
-```python file=/getting_started/hello_world.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
-from dagster import job, op
-
-
-@op
-def get_name():
-    return "dagster"
-
-
-@op
-def hello(name: str):
-    print(f"Hello, {name}!")
-
-
-@job
-def hello_dagster():
-    hello(get_name())
-```
-
-Save the code above in a file named `hello_world.py`.
-
-You can execute the job in three different ways: [Dagit](/concepts/dagit/dagit), [Dagster Python API](/concepts/ops-jobs-graphs/job-execution#python-apis), or [Dagster CLI](/\_apidocs/cli#dagster-pipeline-execute).
-
-## Running the Job in Dagit
-
-Dagit is a web-based interface for viewing and interacting with Dagster objects.
-
-```bash
-pip install dagit
-```
-
-To visualize your job in Dagit, run the following command:
-
-```bash
-dagit -f hello_world.py
-```
-
-Then navigate to <http://localhost:3000> to start using Dagit:
-
-<Image
-alt="dagit-def"
-src="/images/getting-started/dagit-def.png"
-width={4032}
-height={2454}
-/>
-
-Click on the "Launchpad" tab, then press the "Launch Run" button to launch the job.
-
-<Image
-alt="dagit-run"
-src="/images/getting-started/dagit-run.png"
-width={4032}
-height={2454}
-/>
-
-## Running the Job Programmatically
-
-You can also execute the job without the UI.
-
-**Dagster Python API**
-
-```python file=/getting_started/hello_world.py startafter=start_execute_marker endbefore=end_execute_marker
-if __name__ == "__main__":
-    result = hello_dagster.execute_in_process()
-```
-
-**Dagster CLI**
-
-```bash
-dagster job execute -f hello_world.py
-```
 
 ---
 
