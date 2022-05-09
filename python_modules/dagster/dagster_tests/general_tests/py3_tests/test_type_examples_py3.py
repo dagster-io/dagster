@@ -26,12 +26,9 @@ from dagster import (
     Set,
     String,
     Tuple,
-    _check as check,
-    execute_pipeline,
-    execute_solid,
-    pipeline,
-    solid,
 )
+from dagster import _check as check
+from dagster import execute_pipeline, execute_solid, pipeline, solid
 
 
 @solid

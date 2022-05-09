@@ -2,8 +2,9 @@ from typing import TYPE_CHECKING, Dict, Mapping
 
 from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader
 
-from dagster import AssetKey, DagsterEventType, EventRecordsFilter, _check as check
 import dagster.seven as seven
+from dagster import AssetKey, DagsterEventType, EventRecordsFilter
+from dagster import _check as check
 from dagster.core.events import ASSET_EVENTS
 
 from .utils import capture_error

@@ -3,7 +3,8 @@ from enum import Enum
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
-from dagster import DagsterInstance, _check as check
+from dagster import DagsterInstance
+from dagster import _check as check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation import ExternalRepository

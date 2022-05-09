@@ -11,15 +11,9 @@ import papermill
 from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
 
-from dagster import (
-    InputDefinition,
-    OpDefinition,
-    Output,
-    OutputDefinition,
-    SolidDefinition,
-    _check as check,
-    seven,
-)
+from dagster import InputDefinition, OpDefinition, Output, OutputDefinition, SolidDefinition
+from dagster import _check as check
+from dagster import seven
 from dagster.core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster.core.definitions.metadata import MetadataValue
 from dagster.core.definitions.reconstruct import ReconstructablePipeline

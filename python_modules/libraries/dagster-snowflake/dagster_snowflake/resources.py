@@ -3,7 +3,8 @@ import warnings
 from contextlib import closing, contextmanager
 from typing import Mapping
 
-import dagster._check as check, resource
+import dagster._check as check
+from dagster import resource
 
 from .configs import define_snowflake_config
 

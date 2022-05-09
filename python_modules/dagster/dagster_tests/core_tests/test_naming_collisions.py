@@ -1,13 +1,6 @@
-from dagster import (
-    Field,
-    Output,
-    OutputDefinition,
-    String,
-    _check as check,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster import Field, Output, OutputDefinition, String
+from dagster import _check as check
+from dagster import execute_pipeline, pipeline, solid
 
 
 def define_pass_value_solid(name, description=None):

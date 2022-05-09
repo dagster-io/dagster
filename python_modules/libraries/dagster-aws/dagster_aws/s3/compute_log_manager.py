@@ -4,8 +4,9 @@ from contextlib import contextmanager
 import boto3
 from botocore.errorfactory import ClientError
 
-from dagster import Field, StringSource, _check as check
 import dagster.seven as seven
+from dagster import Field, StringSource
+from dagster import _check as check
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,

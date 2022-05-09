@@ -5,7 +5,9 @@ import subprocess
 import sys
 from typing import TYPE_CHECKING, Iterator, Optional, cast
 
-from dagster import Field, StringSource, _check as check, resource
+from dagster import Field, StringSource
+from dagster import _check as check
+from dagster import resource
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
 from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster.core.definitions.step_launcher import StepLauncher, StepRunRef

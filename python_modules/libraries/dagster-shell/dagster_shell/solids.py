@@ -10,10 +10,9 @@ from dagster import (
     Nothing,
     OutputDefinition,
     Permissive,
-    _check as check,
-    op,
-    solid,
 )
+from dagster import _check as check
+from dagster import op, solid
 
 from .utils import execute, execute_script_file
 

@@ -3,13 +3,10 @@ from unittest import mock
 
 import pytest
 
+from dagster import DagsterEventType, ModeDefinition, NodeInvocation, PipelineDefinition
+from dagster import _check as check
 from dagster import (
-    DagsterEventType,
-    ModeDefinition,
-    NodeInvocation,
-    PipelineDefinition,
     build_hook_context,
-    _check as check,
     execute_pipeline,
     graph,
     job,

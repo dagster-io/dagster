@@ -6,7 +6,9 @@ from typing import List, Optional
 from airflow.models import Connection
 from airflow.models.baseoperator import BaseOperator
 
-from dagster import Any, In, Nothing, OpDefinition, Out, _check as check, op
+from dagster import Any, In, Nothing, OpDefinition, Out
+from dagster import _check as check
+from dagster import op
 
 
 @contextmanager

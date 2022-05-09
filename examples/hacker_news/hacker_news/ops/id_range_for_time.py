@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 
-from dagster import Out, Output, Tuple, _check as check, op
+from dagster import Out, Output, Tuple
+from dagster import _check as check
+from dagster import op
 
 
 def binary_search_nearest_left(get_value, start, end, min_target):

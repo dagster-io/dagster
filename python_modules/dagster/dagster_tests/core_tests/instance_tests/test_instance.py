@@ -4,7 +4,9 @@ import pytest
 import yaml
 from dagster_tests.api_tests.utils import get_bar_workspace
 
-from dagster import PipelineDefinition, _check as check, execute_pipeline, pipeline, solid
+from dagster import PipelineDefinition
+from dagster import _check as check
+from dagster import execute_pipeline, pipeline, solid
 from dagster._check import CheckError
 from dagster.config import Field
 from dagster.core.errors import (

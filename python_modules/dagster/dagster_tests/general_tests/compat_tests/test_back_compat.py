@@ -10,17 +10,9 @@ from typing import NamedTuple, Optional, Union
 
 import pytest
 
-from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    Output,
-    _check as check,
-    execute_pipeline,
-    file_relative_path,
-    job,
-    pipeline,
-    solid,
-)
+from dagster import AssetKey, AssetMaterialization, Output
+from dagster import _check as check
+from dagster import execute_pipeline, file_relative_path, job, pipeline, solid
 from dagster.cli.debug import DebugRunPayload
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.errors import DagsterInstanceSchemaOutdated

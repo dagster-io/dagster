@@ -13,7 +13,9 @@ from dagster_databricks.databricks import (
 from dagster_pyspark.utils import build_pyspark_zip
 from requests import HTTPError
 
-from dagster import Bool, Field, IntSource, StringSource, _check as check, resource
+from dagster import Bool, Field, IntSource, StringSource
+from dagster import _check as check
+from dagster import resource
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import raise_execution_interrupts
 from dagster.core.execution.plan.external_step import (

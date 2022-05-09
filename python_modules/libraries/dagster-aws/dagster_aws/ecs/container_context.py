@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any, List, Mapping, NamedTuple, Optional
 
-from dagster import Array, Field, Noneable, Shape, StringSource, _check as check
+from dagster import Array, Field, Noneable, Shape, StringSource
+from dagster import _check as check
 from dagster.config.validate import process_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.storage.pipeline_run import PipelineRun

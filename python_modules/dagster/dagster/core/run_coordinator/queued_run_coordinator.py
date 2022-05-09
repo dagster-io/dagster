@@ -2,7 +2,8 @@ import logging
 import time
 from typing import Any, Dict, List, NamedTuple, Optional
 
-from dagster import DagsterEvent, DagsterEventType, IntSource, String, _check as check
+from dagster import DagsterEvent, DagsterEventType, IntSource, String
+from dagster import _check as check
 from dagster.builtins import Bool
 from dagster.config import Field
 from dagster.config.config_type import Array, Noneable, ScalarUnion

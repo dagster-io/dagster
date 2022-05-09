@@ -2,8 +2,8 @@ from typing import Dict
 
 import click
 
-from dagster import __version__ as dagster_version
 import dagster._check as check
+from dagster import __version__ as dagster_version
 from dagster.cli.pipeline import (
     add_step_to_table,
     execute_backfill_command,

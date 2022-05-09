@@ -7,16 +7,9 @@ from dagster_test.graph_job_op_toys.log_file import log_file_job
 from dagster_test.graph_job_op_toys.log_s3 import log_s3_job
 from slack_sdk.web.client import WebClient
 
-from dagster import (
-    AssetKey,
-    RunFailureSensorContext,
-    RunRequest,
-    SkipReason,
-    asset_sensor,
-    _check as check,
-    run_failure_sensor,
-    sensor,
-)
+from dagster import AssetKey, RunFailureSensorContext, RunRequest, SkipReason
+from dagster import _check as check
+from dagster import asset_sensor, run_failure_sensor, sensor
 
 
 def get_directory_files(directory_name, since=None):
