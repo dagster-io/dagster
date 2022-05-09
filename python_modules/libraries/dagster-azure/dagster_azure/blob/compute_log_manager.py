@@ -2,7 +2,8 @@ import itertools
 import os
 from contextlib import contextmanager
 
-from dagster import Field, StringSource, check, seven
+from dagster import Field, StringSource, check
+import dagster.seven as seven
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,
