@@ -42,7 +42,7 @@ if __name__ == "__main__":
         extras_require={
             "redshift": ["psycopg2-binary"],
             "pyspark": ["dagster-pyspark"],
-            "test": ["moto>=2.2.8", "requests-mock"],
+            "test": ["moto>=2.2.8", "requests-mock", "xmltodict==0.12.0"],
         },
         zip_safe=False,
     )
