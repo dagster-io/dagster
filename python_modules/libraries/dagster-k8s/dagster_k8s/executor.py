@@ -30,8 +30,10 @@ from .utils import delete_job
     name="k8s",
     config_schema=merge_dicts(
         DagsterK8sJobConfig.config_type_job(),
-        {"job_namespace": Field(StringSource, is_required=False)},
-        {"retries": get_retries_config()},
+        {
+            "job_namespace": Field(StringSource, is_required=False),
+            "retries": get_retries_config(),
+        },
     ),
     requirements=multiple_process_executor_requirements(),
 )
