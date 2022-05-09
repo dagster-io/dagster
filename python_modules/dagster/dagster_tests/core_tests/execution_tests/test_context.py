@@ -40,12 +40,12 @@ def test_solid_execution_context():
         assert context.job_name == "foo"
 
         with pytest.raises(Exception):
-            context.job_def
+            context.job_def  # pylint: disable=pointless-statement
 
         assert context.op_config is None
 
         with pytest.raises(Exception):
-            context.op_def
+            context.op_def  # pylint: disable=pointless-statement
 
         check.inst(context.pipeline_run, PipelineRun)
         assert context.pipeline_name == "foo"
