@@ -4,15 +4,16 @@ from dagster import AssetGroup, schedule_from_partitions
 
 from . import assets
 
-core_assets_prod = AssetGroup.from_package_module(
-    package_module=assets, resource_defs=RESOURCES_PROD
-).prefixed("core")
-core_assets_staging = AssetGroup.from_package_module(
-    package_module=assets, resource_defs=RESOURCES_STAGING
-).prefixed("core")
-core_assets_local = AssetGroup.from_package_module(
-    package_module=assets, resource_defs=RESOURCES_LOCAL
-).prefixed("core")
+
+def core_assets(resource_defs):
+    return AssetGroup.from_package_module(
+        package_module=assets, resource_defs=resource_defs
+    ).prefixed("core")
+
+
+core_assets_prod = core_assets(resource_defs=RESOURCES_PROD)
+core_assets_staging = core_assets(resource_defs=RESOURCES_STAGING)
+core_assets_local = core_assets(resource_defs=RESOURCES_LOCAL)
 
 RUN_TAGS = {
     "dagster-k8s/config": {

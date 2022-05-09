@@ -26,18 +26,16 @@ dbt_assets = load_assets_from_dbt_manifest(
     io_manager_key="warehouse_io_manager",
 )
 
-activity_analytics_assets_prod = AssetGroup.from_package_module(
-    package_module=assets, resource_defs=RESOURCES_PROD
-).prefixed("activity_analytics") + AssetGroup(dbt_assets, resource_defs=RESOURCES_PROD)
 
-activity_analytics_assets_staging = AssetGroup.from_package_module(
-    package_module=assets, resource_defs=RESOURCES_STAGING
-).prefixed("activity_analytics") + AssetGroup(dbt_assets, resource_defs=RESOURCES_STAGING)
+def activity_analytics_assets(resource_defs):
+    return AssetGroup.from_package_module(
+        package_module=assets, resource_defs=resource_defs
+    ).prefixed("activity_analytics") + AssetGroup(dbt_assets, resource_defs=resource_defs)
 
-activity_analytics_assets_local = AssetGroup.from_package_module(
-    package_module=assets, resource_defs=RESOURCES_LOCAL
-).prefixed("activity_analytics") + AssetGroup(dbt_assets, resource_defs=RESOURCES_LOCAL)
 
+activity_analytics_assets_prod = activity_analytics_assets(resource_defs=RESOURCES_PROD)
+activity_analytics_assets_staging = activity_analytics_assets(resource_defs=RESOURCES_STAGING)
+activity_analytics_assets_local = activity_analytics_assets(resource_defs=RESOURCES_LOCAL)
 
 activity_analytics_assets_sensor_prod = make_hn_tables_updated_sensor(
     activity_analytics_assets_prod.build_job(name="story_activity_analytics_job")
