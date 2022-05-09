@@ -29,6 +29,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         container_name="run",
         secrets=None,
         secrets_tag="dagster",
+        environment=None,
         include_sidecars=False,
     ):
         self._inst_data = inst_data
@@ -57,6 +58,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         self.secrets_tags = [secrets_tag] if secrets_tag else []
         self.include_sidecars = include_sidecars
+
+        self.environment = check.opt_list_param(environment, "environment")
 
         if self.task_definition:
             task_definition = self.ecs.describe_task_definition(taskDefinition=task_definition)

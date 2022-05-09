@@ -274,6 +274,7 @@ def container_context_config(configured_secret):
                 }
             ],
             "secrets_tags": ["dagster"],
+            "environment": [{"name": "foo", "value": "bar"}],
         }
     }
 
@@ -300,10 +301,24 @@ def environment_container_context_config():
             "environment": [
                 {
                     "name": "FOO",
-                    "valueFrom": "BAR",
+                    "value": "BAR",
                 }
             ],
-            "secrets_tags": ["dagster"],
+        }
+    }
+
+
+@pytest.fixture
+def other_environment_container_context_config():
+    return {
+        "ecs": {
+            "environment": [
+                {
+                    "name": "Hello",
+                    "value": "Goodbye",
+                },
+                {"name": "FOO", "value": "BAZ"},
+            ],
         }
     }
 

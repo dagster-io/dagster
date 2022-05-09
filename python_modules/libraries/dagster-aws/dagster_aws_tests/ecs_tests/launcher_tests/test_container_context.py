@@ -26,6 +26,11 @@ def environment_container_context(environment_container_context_config):
     return EcsContainerContext.create_from_config(environment_container_context_config)
 
 
+@pytest.fixture
+def other_environment_container_context(other_environment_container_context_config):
+    return EcsContainerContext.create_from_config(other_environment_container_context_config)
+
+
 def test_empty_container_context(empty_container_context):
     assert empty_container_context.secrets == []
     assert empty_container_context.secrets_tags == []
@@ -40,6 +45,13 @@ def test_invalid_config():
             {"ecs": {"secrets": {"foo": "bar"}}}
         )  # invalid formatting
 
+    with pytest.raises(
+        DagsterInvalidConfigError, match="Errors while parsing ECS container context"
+    ):
+        EcsContainerContext.create_from_config(
+            {"ecs": {"environment": {"foo": "bar"}}}
+        )  # invalid formatting
+
 
 def test_merge(
     empty_container_context,
@@ -48,6 +60,7 @@ def test_merge(
     configured_secret,
     other_configured_secret,
     environment_container_context,
+    other_environment_container_context,
 ):
     assert secrets_container_context.secrets == [
         {"name": "HELLO", "valueFrom": configured_secret.arn + "/hello"},
@@ -61,6 +74,11 @@ def test_merge(
     assert other_secrets_container_context.secrets_tags == ["other_secret_tag"]
 
     assert environment_container_context.environment == [{"name": "FOO", "value": "BAR"}]
+
+    assert other_environment_container_context.environment == [
+        {"name": "Hello", "value": "Goodbye"},
+        {"name": "FOO", "value": "BAZ"},
+    ]
 
     merged = other_secrets_container_context.merge(secrets_container_context)
 
@@ -82,4 +100,17 @@ def test_merge(
 
     merged = merged.merge(environment_container_context)
 
-    assert merged.environment == environment_container_context.environment
+    assert (
+        merged.environment
+        == environment_container_context.environment + secrets_container_context.environment
+    )
+
+    merged = merged.merge(other_environment_container_context)
+
+    assert len(merged.environment) == 4
+    assert merged.environment == [
+        {"name": "Hello", "value": "Goodbye"},
+        {"name": "FOO", "value": "BAZ"},
+        {"name": "FOO", "value": "BAR"},
+        {"name": "foo", "value": "bar"},
+    ]
