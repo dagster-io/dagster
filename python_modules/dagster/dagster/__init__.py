@@ -3,34 +3,6 @@ import typing
 
 from pep562 import pep562
 
-import dagster._module_alias_map as _module_alias_map
-
-# Imports of a key will return the module named by the corresponding value.
-sys.meta_path.insert(
-    _module_alias_map.get_meta_path_insertion_index(),
-    _module_alias_map.AliasedModuleFinder(
-        {
-            "dagster.api": "dagster._api",
-            "dagster.builtins": "dagster._builtins",
-            "dagster.check": "dagster._check",
-            "dagster.cli": "dagster._cli",
-            "dagster.config": "dagster._config",
-            "dagster.core": "dagster._core",
-            "dagster.daemon": "dagster._daemon",
-            "dagster.experimental": "dagster._experimental",
-            "dagster.generate": "dagster._generate",
-            "dagster.grpc": "dagster._grpc",
-            "dagster.loggers": "dagster._loggers",
-            "dagster.primitive_mapping": "dagster._primitive_mapping",
-            "dagster.scheduler": "dagster._scheduler",
-            "dagster.serdes": "dagster._serdes",
-            "dagster.seven": "dagster._seven",
-            "dagster.utils": "dagster._utils",
-            "dagster.version": "dagster._version",
-        }
-    ),
-)
-
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
 from dagster.config.config_schema import ConfigSchema

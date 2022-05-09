@@ -1,11 +1,12 @@
 import importlib
 import inspect
-import pkgutil
 import re
+import sys
 
 import pytest
 
 import dagster
+from dagster._module_alias_map import AliasedModuleFinder, get_meta_path_insertion_index
 
 
 def test_all():
@@ -27,26 +28,21 @@ def test_deprecated_imports():
     assert EventMetadataEntry is MetadataEntry
 
 
+@pytest.fixture
+def patch_sys_meta_path():
+    aliased_finder = AliasedModuleFinder({"dagster.foo": "dagster.core"})
+    sys.meta_path.insert(get_meta_path_insertion_index(), aliased_finder)
+    yield
+    sys.meta_path.remove(aliased_finder)
+
+
+@pytest.mark.usefixtures("patch_sys_meta_path")
 def test_deprecated_top_level_submodule_import():
-
-    # one hardcoded
-    assert importlib.import_module("dagster.core") == importlib.import_module("dagster._core")
-
-    exclude_submodules = ["_module_alias_map"]
-
-    # all top level private (single-underscore prefix) submodule
-    private_submodules = [
-        p.name
-        for p in pkgutil.iter_modules(dagster.__path__)
-        if re.match(r"^_[^_]", p.name) and not p.name in exclude_submodules
-    ]
-    for submodule in private_submodules:
-        assert importlib.import_module(f"dagster.{submodule}") == importlib.import_module(
-            f"dagster.{submodule[1:]}"  # strip the leading underscore
-        )
+    assert importlib.import_module("dagster.foo") == importlib.import_module("dagster.core")
 
 
+@pytest.mark.usefixtures("patch_sys_meta_path")
 def test_deprecated_nested_submodule_import():
-    assert importlib.import_module("dagster.core.definitions") == importlib.import_module(
-        "dagster._core.definitions"
+    assert importlib.import_module("dagster.foo.definitions") == importlib.import_module(
+        "dagster.core.definitions"
     )
