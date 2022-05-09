@@ -518,7 +518,7 @@ class ScheduleDefinition:
     def has_loadable_target(self):
         return isinstance(self._target, DirectTarget)
 
-    def load_target(self):
+    def load_target(self) -> Union[GraphDefinition, PipelineDefinition]:
         if isinstance(self._target, DirectTarget):
             return self._target.load()
 

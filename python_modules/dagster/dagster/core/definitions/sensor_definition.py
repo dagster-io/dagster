@@ -402,7 +402,7 @@ class SensorDefinition:
                 return True
         return False
 
-    def load_targets(self) -> List[PipelineDefinition]:
+    def load_targets(self) -> List[Union[JobDefinition, GraphDefinition]]:
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):
