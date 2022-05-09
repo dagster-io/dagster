@@ -1,14 +1,6 @@
 import pytest
 
-from dagster import (
-    AssetKey,
-    AssetsDefinition,
-    DagsterInvariantViolationError,
-    GraphOut,
-    Out,
-    graph,
-    op,
-)
+from dagster import AssetKey, AssetsDefinition, GraphOut, Out, graph, op
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
 from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster.core.host_representation.external_data import (
@@ -36,6 +28,8 @@ def test_single_asset_job():
             dependencies=[],
             depended_by=[],
             op_name="asset1",
+            graph_name=None,
+            op_names=["asset1"],
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
@@ -62,6 +56,8 @@ def test_two_asset_job():
             dependencies=[],
             depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey("asset2"))],
             op_name="asset1",
+            graph_name=None,
+            op_names=["asset1"],
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
@@ -72,6 +68,8 @@ def test_two_asset_job():
             dependencies=[ExternalAssetDependency(upstream_asset_key=AssetKey("asset1"))],
             depended_by=[],
             op_name="asset2",
+            graph_name=None,
+            op_names=["asset2"],
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
@@ -102,6 +100,8 @@ def test_input_name_matches_output_name():
             dependencies=[ExternalAssetDependency(upstream_asset_key=AssetKey("not_result"))],
             depended_by=[],
             op_name="something",
+            graph_name=None,
+            op_names=["something"],
             output_name="result",
             job_names=["assets_job"],
         ),
@@ -133,6 +133,8 @@ def test_two_downstream_assets_job():
                 ExternalAssetDependedBy(downstream_asset_key=AssetKey("asset2_b")),
             ],
             op_name="asset1",
+            graph_name=None,
+            op_names=["asset1"],
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
@@ -143,6 +145,8 @@ def test_two_downstream_assets_job():
             dependencies=[ExternalAssetDependency(upstream_asset_key=AssetKey("asset1"))],
             depended_by=[],
             op_name="asset2_a",
+            graph_name=None,
+            op_names=["asset2_a"],
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
@@ -153,6 +157,8 @@ def test_two_downstream_assets_job():
             dependencies=[ExternalAssetDependency(upstream_asset_key=AssetKey("asset1"))],
             depended_by=[],
             op_name="asset2_b",
+            graph_name=None,
+            op_names=["asset2_b"],
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
@@ -182,6 +188,8 @@ def test_cross_job_asset_dependency():
             dependencies=[],
             depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey("asset2"))],
             op_name="asset1",
+            graph_name=None,
+            op_names=["asset1"],
             op_description=None,
             job_names=["assets_job1"],
             output_name="result",
@@ -192,6 +200,8 @@ def test_cross_job_asset_dependency():
             dependencies=[ExternalAssetDependency(upstream_asset_key=AssetKey("asset1"))],
             depended_by=[],
             op_name="asset2",
+            graph_name=None,
+            op_names=["asset2"],
             op_description=None,
             job_names=["assets_job2"],
             output_name="result",
@@ -216,6 +226,8 @@ def test_same_asset_in_multiple_pipelines():
             dependencies=[],
             depended_by=[],
             op_name="asset1",
+            graph_name=None,
+            op_names=["asset1"],
             op_description=None,
             job_names=["job1", "job2"],
             output_name="result",
@@ -244,6 +256,8 @@ def test_basic_multi_asset():
             dependencies=[],
             depended_by=[],
             op_name="assets",
+            graph_name=None,
+            op_names=["assets"],
             op_description=None,
             job_names=["assets_job"],
             output_name=f"out{i}",
@@ -302,6 +316,8 @@ def test_inter_op_dependency():
             ],
             depended_by=[],
             op_name="downstream",
+            graph_name=None,
+            op_names=["downstream"],
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
@@ -315,6 +331,8 @@ def test_inter_op_dependency():
                 ExternalAssetDependedBy(downstream_asset_key=AssetKey(["only_in"])),
             ],
             op_name="in1",
+            graph_name=None,
+            op_names=["in1"],
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
@@ -325,6 +343,8 @@ def test_inter_op_dependency():
             dependencies=[],
             depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey(["only_in"]))],
             op_name="in2",
+            graph_name=None,
+            op_names=["in2"],
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
@@ -341,6 +361,8 @@ def test_inter_op_dependency():
                 ExternalAssetDependedBy(downstream_asset_key=AssetKey(["only_out"])),
             ],
             op_name="assets",
+            graph_name=None,
+            op_names=["assets"],
             op_description=None,
             job_names=["assets_job"],
             output_name="mixed",
@@ -366,6 +388,8 @@ def test_inter_op_dependency():
                 ),
             ],
             op_name="assets",
+            graph_name=None,
+            op_names=["assets"],
             op_description=None,
             job_names=["assets_job"],
             output_name="only_in",
@@ -381,6 +405,8 @@ def test_inter_op_dependency():
                 ExternalAssetDependedBy(downstream_asset_key=AssetKey(["downstream"])),
             ],
             op_name="assets",
+            graph_name=None,
+            op_names=["assets"],
             op_description=None,
             job_names=["assets_job"],
             output_name="only_out",
@@ -417,6 +443,8 @@ def test_source_asset_with_op():
         ExternalAssetNode(
             asset_key=AssetKey("bar"),
             op_name="bar",
+            graph_name=None,
+            op_names=["bar"],
             op_description=None,
             dependencies=[ExternalAssetDependency(AssetKey("foo"))],
             depended_by=[],
@@ -474,6 +502,8 @@ def test_used_source_asset():
         ExternalAssetNode(
             asset_key=AssetKey("foo"),
             op_name="foo",
+            graph_name=None,
+            op_names=["foo"],
             op_description=None,
             dependencies=[ExternalAssetDependency(upstream_asset_key=AssetKey(["bar"]))],
             depended_by=[],
@@ -482,21 +512,6 @@ def test_used_source_asset():
             output_description=None,
         ),
     ]
-
-
-def test_source_asset_conflicts_with_asset():
-    bar_source_asset = SourceAsset(key=AssetKey("bar"), description="def")
-
-    @asset
-    def bar():
-        pass
-
-    job1 = build_assets_job("job1", [bar])
-
-    with pytest.raises(DagsterInvariantViolationError):
-        external_asset_graph_from_defs(
-            [job1], source_assets_by_key={AssetKey("bar"): bar_source_asset}
-        )
 
 
 def test_nasty_nested_graph_asset():
@@ -567,6 +582,7 @@ def test_nasty_nested_graph_asset():
             node._replace(
                 dependencies=sorted(node.dependencies, key=lambda d: d.upstream_asset_key),
                 depended_by=sorted(node.depended_by, key=lambda d: d.downstream_asset_key),
+                op_names=sorted(node.op_names),
             )
             for node in external_asset_nodes
         ],
@@ -582,7 +598,15 @@ def test_nasty_nested_graph_asset():
                 ExternalAssetDependency(AssetKey(["zero"])),
             ],
             depended_by=[ExternalAssetDependedBy(AssetKey(["twenty"]))],
-            op_name="create_thirteen_and_six.add_five.add_one_2",
+            op_name="create_thirteen_and_six",
+            graph_name="create_thirteen_and_six",
+            op_names=[
+                "create_thirteen_and_six.add_five.add_one",
+                "create_thirteen_and_six.add_five.add_one_2",
+                "create_thirteen_and_six.add_five.add_three.add_one",
+                "create_thirteen_and_six.add_five.add_three.add_one_2",
+                "create_thirteen_and_six.add_five.add_three.add_one_3",
+            ],
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
@@ -595,7 +619,9 @@ def test_nasty_nested_graph_asset():
                 ExternalAssetDependency(AssetKey(["thirteen"])),
             ],
             depended_by=[],
-            op_name="create_twenty.sum_plus_one.add_one",
+            op_name="create_twenty",
+            graph_name="create_twenty",
+            op_names=["create_twenty.sum_plus_one.add_one", "create_twenty.sum_plus_one.get_sum"],
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
@@ -611,6 +637,8 @@ def test_nasty_nested_graph_asset():
                 ExternalAssetDependedBy(AssetKey(["thirteen"])),
             ],
             op_name="zero",
+            graph_name=None,
+            op_names=["zero"],
             op_description=None,
             job_names=["assets_job"],
             output_name="result",

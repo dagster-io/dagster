@@ -1,4 +1,4 @@
-import {Tag} from '@dagster-io/ui';
+import {Box, Caption, Colors, Popover, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -17,56 +17,86 @@ export enum DagsterTag {
   SensorName = 'dagster/sensor_name',
 }
 
+export type TagType = {
+  key: string;
+  value: string;
+};
+
+type TagAction = {
+  label: React.ReactNode;
+  onClick: (tag: TagType) => void;
+};
+
 interface IRunTagProps {
-  tag: {
-    key: string;
-    value: string;
-  };
-  onClick?: (tag: {key: string; value: string}) => void;
+  tag: TagType;
+  actions?: TagAction[];
 }
 
-export const RunTag = ({tag, onClick}: IRunTagProps) => {
-  const isDagsterTag = tag.key.startsWith(DagsterTag.Namespace);
-  const displayTag = isDagsterTag
-    ? {key: tag.key.substr(DagsterTag.Namespace.length), value: tag.value}
-    : tag;
+export const RunTag = ({tag, actions}: IRunTagProps) => {
+  const {key, value} = tag;
+  const isDagsterTag = key.startsWith(DagsterTag.Namespace);
 
-  const onTagClick = () => {
-    onClick && onClick(tag);
-  };
-
-  return <TagDeprecated isDagsterTag={isDagsterTag} onClick={onTagClick} tag={displayTag} />;
-};
-
-interface ITagProps {
-  tag: {
-    key: string;
-    value: string;
-  };
-  onClick?: (tag: {key: string; value: string}) => void;
-  isDagsterTag?: boolean;
-}
-
-export const TagDeprecated = ({tag, onClick, isDagsterTag}: ITagProps) => {
-  const onTagClick = () => onClick && onClick(tag);
-
-  return (
-    <TagButton onClick={onTagClick}>
-      <Tag intent={isDagsterTag ? 'none' : 'primary'} interactive>
-        {`${tag.key}: ${tag.value}`}
-      </Tag>
-    </TagButton>
+  const displayedTag = React.useMemo(
+    () => (isDagsterTag ? {key: key.slice(DagsterTag.Namespace.length), value} : {key, value}),
+    [isDagsterTag, key, value],
   );
+
+  const button = (
+    <Tag intent={isDagsterTag ? 'none' : 'primary'} interactive>
+      {`${displayedTag.key}: ${displayedTag.value}`}
+    </Tag>
+  );
+
+  if (actions?.length) {
+    return (
+      <Popover
+        content={<TagActions actions={actions} tag={displayedTag} />}
+        hoverOpenDelay={100}
+        hoverCloseDelay={100}
+        placement="top"
+        interactionKind="hover"
+      >
+        {button}
+      </Popover>
+    );
+  }
+
+  return button;
 };
+
+const TagActions = ({tag, actions}: {tag: TagType; actions: TagAction[]}) => (
+  <ActionContainer background={Colors.Gray900} flex={{direction: 'row'}}>
+    {actions.map(({label, onClick}, ii) => (
+      <TagButton key={ii} onClick={() => onClick(tag)}>
+        <Caption>{label}</Caption>
+      </TagButton>
+    ))}
+  </ActionContainer>
+);
+
+const ActionContainer = styled(Box)`
+  border-radius: 8px;
+  overflow: hidden;
+`;
 
 const TagButton = styled.button`
   border: none;
-  background: none;
-  padding: 0;
-  margin: 0;
+  background: ${Colors.Dark};
+  color: ${Colors.Gray200};
+  cursor: pointer;
+  padding: 8px 12px;
   text-align: left;
+
+  :not(:last-child) {
+    box-shadow: -1px 0 0 inset ${Colors.Gray600};
+  }
 
   :focus {
     outline: none;
+  }
+
+  :hover {
+    background-color: ${Colors.Gray800};
+    color: ${Colors.White};
   }
 `;

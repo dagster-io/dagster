@@ -346,7 +346,7 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
             return launch_reexecution_from_parent_run(
                 graphene_info,
                 reexecution_params["parentRunId"],
-                reexecution_params["policy"],
+                reexecution_params["strategy"],
             )
 
 

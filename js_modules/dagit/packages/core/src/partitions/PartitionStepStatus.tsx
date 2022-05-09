@@ -14,7 +14,6 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useViewport} from '../gantt/useViewport';
-import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {linkToRunEvent} from '../runs/RunUtils';
 import {RunFilterToken} from '../runs/RunsFilterInput';
@@ -75,18 +74,10 @@ const timeboundsOfPartitions = (partitionColumns: {steps: {unix: number}[]}[]) =
   return [minUnix, maxUnix] as const;
 };
 
-const PartitionRunSelectionQueryConfig: QueryPersistedStateConfig<PartitionRunSelection | null> = {
-  encode: (val) => ({partitionName: val?.partitionName, stepName: val?.stepName}),
-  decode: (qs) =>
-    qs.partitionName && qs.stepName
-      ? {partitionName: qs.partitionName, stepName: qs.stepName}
-      : null,
-};
-
 export const PartitionStepStatus: React.FC<PartitionStepStatusProps> = (props) => {
   const {viewport, containerProps} = useViewport();
   const [hovered, setHovered] = React.useState<PartitionRunSelection | null>(null);
-  const [focused, setFocused] = useQueryPersistedState(PartitionRunSelectionQueryConfig);
+  const [focused, setFocused] = React.useState<PartitionRunSelection | null>(null);
   const {setPageSize} = props;
 
   React.useEffect(() => {

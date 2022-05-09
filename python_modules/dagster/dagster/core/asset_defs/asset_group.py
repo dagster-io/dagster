@@ -282,25 +282,20 @@ class AssetGroup:
             if asset.op.name not in op_names_to_asset_keys:
                 op_names_to_asset_keys[asset.op.name] = set()
             for asset_key in asset.asset_keys:
-                asset_key_as_str = ".".join([piece for piece in asset_key.path])
+                asset_key_as_str = ">".join([piece for piece in asset_key.path])
                 op_names_to_asset_keys[asset.op.name].add(asset_key_as_str)
                 if not asset_key_as_str in asset_keys_to_ops:
                     asset_keys_to_ops[asset_key_as_str] = []
                 asset_keys_to_ops[asset_key_as_str].append(asset.op)
 
         for asset in self.source_assets:
-            if isinstance(asset, SourceAsset):
-                asset_key_as_str = ".".join([piece for piece in asset.key.path])
-                source_asset_keys.add(asset_key_as_str)
-            else:
-                for asset_key in asset.asset_keys:
-                    asset_key_as_str = ".".join([piece for piece in asset_key.path])
-                    source_asset_keys.add(asset_key_as_str)
+            asset_key_as_str = ">".join([piece for piece in asset.key.path])
+            source_asset_keys.add(asset_key_as_str)
 
         op_selection = []
 
         for clause in selection:
-            token_matching = re.compile(r"^(\*?\+*)?([.\w\d\[\]?_-]+)(\+*\*?)?$").search(
+            token_matching = re.compile(r"^(\*?\+*)?([>.\w\d\[\]?_-]+)(\+*\*?)?$").search(
                 clause.strip()
             )
             parts = token_matching.groups() if token_matching is not None else None
@@ -679,7 +674,7 @@ class AssetGroup:
 
         if self.resource_defs != other.resource_defs:
             raise DagsterInvalidDefinitionError(
-                "Can't add asset groups together with different resource definition dictionarys"
+                "Can't add asset groups together with different resource definition dictionaries"
             )
 
         if self.executor_def != other.executor_def:
@@ -743,7 +738,9 @@ def _validate_resource_reqs_for_asset_group(
 ):
     present_resource_keys = set(resource_defs.keys())
     for asset_def in asset_list:
-        resource_keys = set(asset_def.op.required_resource_keys or {})
+        resource_keys: Set[str] = set()
+        for op_def in asset_def.node_def.iterate_solid_defs():
+            resource_keys.update(set(op_def.required_resource_keys or {}))
         missing_resource_keys = list(set(resource_keys) - present_resource_keys)
         if missing_resource_keys:
             raise DagsterInvalidDefinitionError(

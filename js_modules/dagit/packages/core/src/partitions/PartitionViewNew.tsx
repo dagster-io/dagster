@@ -28,7 +28,6 @@ import {PartitionStepStatus} from './PartitionStepStatus';
 import {
   PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses_results,
   PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
-  PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionRuns,
   PartitionsStatusQuery_partitionSetOrError_PartitionSet,
   PartitionsStatusQuery,
   PartitionsStatusQueryVariables,
@@ -143,17 +142,15 @@ const PartitionViewContent: React.FC<{
     });
   });
   const statusData: {[name: string]: RunStatus | null} = {};
-  partitionSet.partitionRuns.forEach(
-    (partition: PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionRuns) => {
-      statusData[partition.partitionName] = partition.run ? partition.run.status : null;
-      if (selectedPartitions.includes(partition.partitionName)) {
-        runDurationData[partition.partitionName] =
-          partition.run && partition.run.startTime && partition.run.endTime
-            ? partition.run.endTime - partition.run.startTime
-            : undefined;
-      }
-    },
-  );
+  (partitionSet.partitionStatusesOrError.__typename === 'PartitionStatuses'
+    ? partitionSet.partitionStatusesOrError.results
+    : []
+  ).forEach((p) => {
+    statusData[p.partitionName] = p.runStatus;
+    if (selectedPartitions.includes(p.partitionName)) {
+      runDurationData[p.partitionName] = p.runDuration || undefined;
+    }
+  });
 
   const onSubmit = React.useCallback(() => setBlockDialog(true), []);
 
@@ -409,22 +406,14 @@ const PARTITIONS_STATUS_QUERY = gql`
             }
           }
         }
-        partitionRuns {
-          id
-          partitionName
-          run {
-            id
-            status
-            startTime
-            endTime
-          }
-        }
         partitionStatusesOrError {
+          __typename
           ... on PartitionStatuses {
             results {
               id
               partitionName
               runStatus
+              runDuration
             }
           }
           ...PythonErrorFragment

@@ -22,11 +22,11 @@ APIs from the core `dagster` package, divided roughly by topic:
 
 - [Loggers](/\_apidocs/loggers) APIs to define where logs go.
 
-- [Repositories](/\_apidocs/repositories) APIs to define collections of pipelines and other definitions that tools such as the Dagster CLI or Dagit can load from.
+- [Repositories](/\_apidocs/repositories) APIs to define collections of jobs and other definitions that tools such as the Dagster CLI or Dagit can load from.
 
 - [Config](/\_apidocs/config) The types available to describe config schemas.
 
-- [Types](/\_apidocs/types) Primitive types available for the input and output values of solids, and the APIs used to define and test new Dagster types.
+- [Types](/\_apidocs/types) The Dagster type system helps describe and verify at runtime the values that ops accept and produce.
 
 - [Dagster CLI](/\_apidocs/cli) Browse repositories and execute jobs from the command line
 
@@ -70,7 +70,7 @@ Dagster also provides a growing set of optional add-on libraries to integrate wi
 
 - [Airbyte](/\_apidocs/libraries/dagster-airbyte) (`dagster-airbyte`) Dagster integrations to run Airbyte jobs.
 
-- [Airflow](/\_apidocs/libraries/dagster-airflow) (`dagster-airflow`) Tools for compiling Dagster pipelines to Airflow DAGs, and for ingesting Airflow DAGs to represent them in Dagster.
+- [Airflow](/\_apidocs/libraries/dagster-airflow) (`dagster-airflow`) Tools for compiling Dagster jobs to Airflow DAGs, and for ingesting Airflow DAGs to represent them in Dagster.
 
 - [AWS](/\_apidocs/libraries/dagster-aws) (`dagster-aws`) Dagster integrations for working with AWS resources.
 
@@ -90,7 +90,7 @@ Dagster also provides a growing set of optional add-on libraries to integrate wi
 
 - [Databricks](/\_apidocs/libraries/dagster-databricks) (`dagster-databricks`) Provides ops and resources for integrating with Databricks.
 
-- [Datadog](/\_apidocs/libraries/dagster-datadog) (`dagster-datadog`) Provides an integration with Datadog, to support publishing metrics to Datadog from within Dagster solids.
+- [Datadog](/\_apidocs/libraries/dagster-datadog) (`dagster-datadog`) Provides an integration with Datadog, to support publishing metrics to Datadog from within Dagster ops.
 
 - [Docker](/\_apidocs/libraries/dagster-docker) (`dagster-docker`) Provides components for deploying Dagster to Docker.
 
@@ -98,7 +98,7 @@ Dagster also provides a growing set of optional add-on libraries to integrate wi
 
 - [GE](/\_apidocs/libraries/dagster-ge) (`dagster-ge`) Dagster integrations for working with [Great Expectations](https://greatexpectations.io/) data quality tests.
 
-- [GitHub](/\_apidocs/libraries/dagster-github) (`dagster-github`) Provides a resource for issuing GitHub GraphQL queries and filing GitHub issues from Dagster pipelines.
+- [GitHub](/\_apidocs/libraries/dagster-github) (`dagster-github`) Provides a resource for issuing GitHub GraphQL queries and filing GitHub issues from Dagster jobs.
 
 - [Kubernetes](/\_apidocs/libraries/dagster-k8s) (`dagster-k8s`) Provides components for deploying Dagster to Kubernetes.
 
@@ -108,7 +108,7 @@ Dagster also provides a growing set of optional add-on libraries to integrate wi
 
 - [MySQL](/\_apidocs/libraries/dagster-mysql) (`dagster-mysql`) Includes implementations of run and event log storage built on MySQL.
 
-- [PagerDuty](/\_apidocs/libraries/dagster-pagerduty) (`dagster-pagerduty`) Provides an integration for generating PagerDuty events from Dagster solids.
+- [PagerDuty](/\_apidocs/libraries/dagster-pagerduty) (`dagster-pagerduty`) Provides an integration for generating PagerDuty events from Dagster ops.
 
 - [Pandas](/\_apidocs/libraries/dagster-pandas) (`dagster-pandas`) Provides support for using pandas DataFrames in Dagster and utilities for performing data validation.
 
@@ -120,7 +120,7 @@ Dagster also provides a growing set of optional add-on libraries to integrate wi
 
 - [Pyspark](/\_apidocs/libraries/dagster-pyspark) (`dagster-pyspark`) Provides an integration with pyspark.
 
-- [Shell](/\_apidocs/libraries/dagster-shell) (`dagster-shell`) Provides utilities for issuing shell commands from Dagster pipelines.
+- [Shell](/\_apidocs/libraries/dagster-shell) (`dagster-shell`) Provides utilities for issuing shell commands from Dagster jobs.
 
 - [Slack](/\_apidocs/libraries/dagster-slack) (`dagster-slack`) Provides a simple integration with Slack.
 
@@ -130,6 +130,6 @@ Dagster also provides a growing set of optional add-on libraries to integrate wi
 
 - [SSH / SFTP](/\_apidocs/libraries/dagster-ssh) (`dagster-ssh`) Provides an integration for running commands over SSH and retrieving / posting files via SFTP.
 
-- [Twilio](/\_apidocs/libraries/dagster-twilio) (`dagster-twilio`) Provides a resource for posting SMS messages from solids via Twilio.
+- [Twilio](/\_apidocs/libraries/dagster-twilio) (`dagster-twilio`) Provides a resource for posting SMS messages from ops via Twilio.
 
 - [GraphQL](/\_apidocs/libraries/dagster-graphql) (`dagster-graphql`) Provides resources for interfacing with a Dagster deployment over GraphQL.

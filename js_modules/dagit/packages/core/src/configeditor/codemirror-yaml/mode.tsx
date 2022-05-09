@@ -61,6 +61,27 @@ function parentsAddingChildKeyToLast(parents: IParseStateParent[], key: string) 
   ];
 }
 
+const indentMark = (col: number) => {
+  switch (col % 14) {
+    case 0:
+      return 'zero';
+    case 2:
+      return 'one';
+    case 4:
+      return 'two';
+    case 6:
+      return 'three';
+    case 8:
+      return 'four';
+    case 10:
+      return 'five';
+    case 12:
+      return 'six';
+    default:
+      return '';
+  }
+};
+
 function parentsAddingChildKeyAtIndent(parents: IParseStateParent[], key: string, indent: number) {
   parents = parentsPoppingItemsDeeperThan(parents, indent);
   parents = parentsAddingChildKeyToLast(parents, key);
@@ -88,6 +109,7 @@ export const RegExps = {
 CodeMirror.defineMode('yaml', () => {
   return {
     lineComment: '#',
+    flattenSpans: false,
     fold: 'indent',
     startState: (): IParseState => {
       return {
@@ -102,6 +124,7 @@ CodeMirror.defineMode('yaml', () => {
     },
     token: (stream, state: IParseState) => {
       const ch = stream.peek();
+      const col = stream.column();
 
       // reset escape, indent and trailing
       const wasEscaped = state.escaped;
@@ -109,12 +132,18 @@ CodeMirror.defineMode('yaml', () => {
       state.escaped = false;
       state.trailingSpace = false;
 
+      // indent
+      if (col % 2 === 0 && ch === ' ' && stream.match(/  /)) {
+        state.trailingSpace = true;
+        return `indent ${indentMark(col)}`;
+      }
+
       // whitespace
       const trailingSpace = stream.eatSpace();
       if (trailingSpace) {
         state.trailingSpace = true;
-        return 'whitespace';
       }
+
       // escape
       if (ch === '\\') {
         state.escaped = true;

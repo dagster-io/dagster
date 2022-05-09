@@ -29,26 +29,12 @@ export interface PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitio
 
 export type PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionsOrError = PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError | PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions;
 
-export interface PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionRuns_run {
-  __typename: "Run";
-  id: string;
-  status: RunStatus;
-  startTime: number | null;
-  endTime: number | null;
-}
-
-export interface PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionRuns {
-  __typename: "PartitionRun";
-  id: string;
-  partitionName: string;
-  run: PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionRuns_run | null;
-}
-
 export interface PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses_results {
   __typename: "PartitionStatus";
   id: string;
   partitionName: string;
   runStatus: RunStatus | null;
+  runDuration: number | null;
 }
 
 export interface PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses {
@@ -77,7 +63,6 @@ export interface PartitionsStatusQuery_partitionSetOrError_PartitionSet {
   name: string;
   pipelineName: string;
   partitionsOrError: PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionsOrError;
-  partitionRuns: PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionRuns[];
   partitionStatusesOrError: PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError;
 }
 

@@ -405,7 +405,7 @@ def get_run_config_from_file_list(file_list: Optional[List[str]]):
 
 def _check_execute_external_pipeline_args(
     external_pipeline: ExternalPipeline,
-    run_config: Dict[str, object],
+    run_config: Mapping[str, object],
     mode: Optional[str],
     preset: Optional[str],
     tags: Optional[Mapping[str, object]],
@@ -498,7 +498,7 @@ def _create_external_pipeline_run(
     repo_location: RepositoryLocation,
     external_repo: ExternalRepository,
     external_pipeline: ExternalPipeline,
-    run_config: Dict[str, object],
+    run_config: Mapping[str, object],
     mode: Optional[str],
     preset: Optional[str],
     tags: Optional[Mapping[str, object]],

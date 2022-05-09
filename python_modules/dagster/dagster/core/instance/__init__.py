@@ -49,6 +49,7 @@ from dagster.core.storage.pipeline_run import (
     PipelineRun,
     PipelineRunStatsSnapshot,
     PipelineRunStatus,
+    RunPartitionData,
     RunRecord,
     RunsFilter,
     TagBucket,
@@ -81,7 +82,7 @@ if TYPE_CHECKING:
     from dagster.core.debug import DebugRunPayload
     from dagster.core.events import DagsterEvent, DagsterEventType
     from dagster.core.events.log import EventLogEntry
-    from dagster.core.execution.plan.resume_retry import ReexecutionPolicy
+    from dagster.core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster.core.execution.stats import RunStepKeyStatsSnapshot
     from dagster.core.host_representation import (
         ExternalPipeline,
@@ -1024,14 +1025,14 @@ class DagsterInstance:
         parent_run: PipelineRun,
         repo_location: "RepositoryLocation",
         external_pipeline: "ExternalPipeline",
-        policy: "ReexecutionPolicy",
+        strategy: "ReexecutionStrategy",
         extra_tags: Optional[Dict[str, Any]] = None,
         run_config: Optional[Dict[str, Any]] = None,
         mode: Optional[str] = None,
         use_parent_run_tags: bool = False,
     ) -> PipelineRun:
         from dagster.core.execution.plan.resume_retry import (
-            ReexecutionPolicy,
+            ReexecutionStrategy,
             get_retry_steps_from_parent_run,
         )
         from dagster.core.host_representation import ExternalPipeline, RepositoryLocation
@@ -1039,7 +1040,7 @@ class DagsterInstance:
         check.inst_param(parent_run, "parent_run", PipelineRun)
         check.inst_param(repo_location, "repo_location", RepositoryLocation)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-        check.inst_param(policy, "policy", ReexecutionPolicy)
+        check.inst_param(strategy, "strategy", ReexecutionStrategy)
         check.opt_dict_param(extra_tags, "extra_tags", key_type=str)
         check.opt_dict_param(run_config, "run_config", key_type=str)
         check.opt_str_param(mode, "mode")
@@ -1063,7 +1064,7 @@ class DagsterInstance:
         mode = cast(str, mode if mode is not None else parent_run.mode)
         run_config = run_config if run_config is not None else parent_run.run_config
 
-        if policy == ReexecutionPolicy.FROM_FAILURE:
+        if strategy == ReexecutionStrategy.FROM_FAILURE:
             check.invariant(
                 parent_run.status == PipelineRunStatus.FAILURE,
                 "Cannot reexecute from failure a run that is not failed",
@@ -1073,11 +1074,11 @@ class DagsterInstance:
                 self, parent_run=parent_run
             )
             tags[RESUME_RETRY_TAG] = "true"
-        elif policy == ReexecutionPolicy.ALL_STEPS:
+        elif strategy == ReexecutionStrategy.ALL_STEPS:
             step_keys_to_execute = None
             known_state = None
         else:
-            raise DagsterInvariantViolationError(f"Unknown reexecution policy: {policy}")
+            raise DagsterInvariantViolationError(f"Unknown reexecution strategy: {strategy}")
 
         external_execution_plan = repo_location.get_external_execution_plan(
             external_pipeline,
@@ -1246,6 +1247,15 @@ class DagsterInstance:
     @property
     def supports_bucket_queries(self):
         return self._run_storage.supports_bucket_queries
+
+    @traced
+    def get_run_partition_data(
+        self, partition_set_name: str, job_name: str, repository_label: str
+    ) -> List[RunPartitionData]:
+        """Get run partition data for a given partitioned job."""
+        return self._run_storage.get_run_partition_data(
+            partition_set_name, job_name, repository_label
+        )
 
     def wipe(self):
         self._run_storage.wipe()
@@ -1973,21 +1983,6 @@ records = instance.get_event_records(
         self.dispose()
         if DagsterInstance._EXIT_STACK:
             DagsterInstance._EXIT_STACK.close()
-
-    def get_addresses_for_step_output_versions(self, step_output_versions):
-        """
-        For each given step output, finds whether an output exists with the given
-        version, and returns its address if it does.
-
-        Args:
-            step_output_versions (Dict[(str, StepOutputHandle), str]):
-                (pipeline name, step output handle) -> version.
-
-        Returns:
-            Dict[(str, StepOutputHandle), str]: (pipeline name, step output handle) -> address.
-                For each step output, an address if there is one and None otherwise.
-        """
-        return self._event_storage.get_addresses_for_step_output_versions(step_output_versions)
 
     # dagster daemon
     def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat"):

@@ -21,6 +21,14 @@ TOX_MAP = {
     SupportedPython.V3_6: "py36",
 }
 
+VERSION_TEST_DIRECTIVES = {
+    "test-py36": [SupportedPython.V3_6],
+    "test-py37": [SupportedPython.V3_7],
+    "test-py38": [SupportedPython.V3_8],
+    "test-py39": [SupportedPython.V3_9],
+    "test-all": SupportedPythons,
+}
+
 
 # https://github.com/dagster-io/dagster/issues/1662
 DO_COVERAGE = True

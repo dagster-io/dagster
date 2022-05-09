@@ -12,6 +12,7 @@ import {AssetKey} from './types';
 type AssetMinimal = {
   assetKey: {path: string[]};
   opName: string | null;
+  opNames: string[];
   jobNames: string[];
   partitionDefinition: string | null;
   repository: {name: string; location: {name: string}};
@@ -102,12 +103,15 @@ export const LaunchAssetExecutionButton: React.FC<{
                 tags: [
                   {
                     key: DagsterTag.StepSelection,
-                    value: assets.map((o) => o.opName!).join(','),
+                    value: assets
+                      .map((o) => o.opNames)
+                      .flat()
+                      .join(','),
                   },
                 ],
               },
               runConfigData: {},
-              stepKeys: assets.map((o) => o.opName!),
+              stepKeys: assets.map((o) => o.opNames).flat(),
               selector: {
                 repositoryLocationName: repoAddress.location,
                 repositoryName: repoAddress.name,

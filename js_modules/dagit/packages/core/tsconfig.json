@@ -3,13 +3,8 @@
     "paths": {
       "@dagster-io/ui": ["../ui/src"]
     },
-    "module": "esnext",
-    "target": "es5",
-    "lib": [
-      "es6",
-      "dom",
-      "esnext.asynciterable"
-    ],
+    "module": "es2022",
+    "target": "es2022",
     "sourceMap": true,
     "allowJs": true,
     "jsx": "react",

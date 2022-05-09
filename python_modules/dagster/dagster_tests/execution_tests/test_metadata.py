@@ -5,6 +5,7 @@ import pytest
 from dagster import (
     AssetMaterialization,
     AssetObservation,
+    BoolMetadataValue,
     DagsterEventType,
     FloatMetadataValue,
     IntMetadataValue,
@@ -326,3 +327,32 @@ def test_complex_table_schema():
         ),
         TableSchema,
     )
+
+
+def test_bool_metadata_value():
+    @solid(output_defs=[])
+    def the_solid():
+        yield AssetMaterialization(
+            asset_key="foo",
+            metadata={"first_bool": True, "second_bool": BoolMetadataValue(False)},
+        )
+
+    @pipeline
+    def the_pipeline():
+        the_solid()
+
+    result = execute_pipeline(the_pipeline)
+
+    assert result
+    assert result.success
+
+    materialization_events = solid_events_for_type(
+        result, "the_solid", DagsterEventType.ASSET_MATERIALIZATION
+    )
+    assert len(materialization_events) == 1
+    materialization = materialization_events[0].event_specific_data.materialization
+    entry_map = {
+        entry.label: entry.entry_data.__class__ for entry in materialization.metadata_entries
+    }
+    assert entry_map["first_bool"] == BoolMetadataValue
+    assert entry_map["second_bool"] == BoolMetadataValue

@@ -1,9 +1,6 @@
 from typing import Any, Dict, NamedTuple
 
-from dagster import usable_as_dagster_type
 
-
-@usable_as_dagster_type
 class AirbyteOutput(
     NamedTuple(
         "_AirbyteOutput",

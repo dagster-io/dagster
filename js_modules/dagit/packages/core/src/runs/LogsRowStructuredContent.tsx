@@ -15,7 +15,7 @@ import {
   MetadataEntryLink,
 } from '../metadata/MetadataEntry';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
-import {ErrorSource} from '../types/globalTypes';
+import {DagsterEventType, ErrorSource} from '../types/globalTypes';
 
 import {EventTypeColumn} from './LogsRowComponents';
 import {IRunMetadataDict} from './RunMetadataProvider';
@@ -43,7 +43,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       );
 
     case 'ExecutionStepUpForRetryEvent':
-      return <DefaultContent eventType={eventType} message={node.message} eventIntent="warning" />;
+      return <StepUpForRetryContent error={node.error} message={node.message} />;
 
     case 'ExecutionStepStartEvent':
       if (!node.stepKey || metadata.logCaptureSteps) {
@@ -351,6 +351,58 @@ const FailureContent: React.FC<{
         {contextMessage}
         {errorMessage}
         <MetadataEntries entries={metadataEntries} />
+        {errorStack}
+        {errorCause}
+      </Box>
+    </>
+  );
+};
+
+const StepUpForRetryContent: React.FC<{
+  message?: string;
+  error?: PythonErrorFragment | null;
+}> = ({message, error}) => {
+  let contextMessage = null;
+  let errorCause = null;
+  let errorMessage = null;
+  let errorStack = null;
+
+  if (message) {
+    contextMessage = (
+      <>
+        <span>{message}</span>
+        <br />
+      </>
+    );
+  }
+
+  if (error) {
+    // If no cause, this was a `raise RetryRequest` inside the op. Show the trace for the main error.
+    if (!error.cause) {
+      errorMessage = <span style={{color: Colors.Red500}}>{`${error.message}`}</span>;
+      errorStack = <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>;
+    } else {
+      // If there is a cause, this was a different exception. Show that instead.
+      errorCause = (
+        <>
+          {`The retry request was caused by the following exception:\n`}
+          <span style={{color: Colors.Red500}}>{`${error.cause.message}`}</span>
+          <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
+        </>
+      );
+    }
+  }
+
+  return (
+    <>
+      <EventTypeColumn>
+        <Tag minimal intent="warning">
+          {eventTypeToDisplayType(DagsterEventType.STEP_UP_FOR_RETRY)}
+        </Tag>
+      </EventTypeColumn>
+      <Box padding={{horizontal: 12}} style={{flex: 1}}>
+        {contextMessage}
+        {errorMessage}
         {errorStack}
         {errorCause}
       </Box>

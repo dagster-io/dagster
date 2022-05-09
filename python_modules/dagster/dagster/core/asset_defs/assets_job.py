@@ -266,7 +266,8 @@ def build_deps(
                 input_def = assets_def.node_def.input_def_named(input_name)
                 if not input_def.dagster_type.is_nothing:
                     raise DagsterInvalidDefinitionError(
-                        f"Input asset '{asset_key.to_string()}' for asset '{asset_key}' is not "
+                        f"Input asset '{asset_key.to_string()}' for asset "
+                        f"'{next(iter(assets_def.asset_keys)).to_string()}' is not "
                         "produced by any of the provided asset ops and is not one of the provided "
                         "sources"
                     )

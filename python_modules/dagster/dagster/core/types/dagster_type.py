@@ -804,7 +804,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
     )
-    from dagster.seven.typing import get_args, get_origin
+    from dagster.seven.typing import get_args
     from dagster.utils.typing_api import is_typing_type
 
     from .python_dict import Dict, PythonDict
@@ -823,8 +823,10 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     )
 
     # First, check to see if we're using Dagster's generic output type to do the type catching.
-    if get_origin(dagster_type) == Output:
-        dagster_type = get_args(dagster_type)[0]
+    if _is_generic_output_annotation(dagster_type):
+        type_args = get_args(dagster_type)
+        # If no inner type was provided, forward Any type.
+        dagster_type = type_args[0] if len(type_args) == 1 else Any
 
     # Then, check to see if it is part of python's typing library
     if is_typing_type(dagster_type):
@@ -873,6 +875,12 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
             dagster_type=str(dagster_type), additional_msg="."
         )
     )
+
+
+def _is_generic_output_annotation(dagster_type: object) -> bool:
+    from dagster.seven.typing import get_origin
+
+    return dagster_type == Output or get_origin(dagster_type) == Output
 
 
 def resolve_python_type_to_dagster_type(python_type: t.Type) -> DagsterType:

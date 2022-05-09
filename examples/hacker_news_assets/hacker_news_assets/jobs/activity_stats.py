@@ -7,9 +7,9 @@ def make_activity_stats_job(asset_group: AssetGroup) -> JobDefinition:
     return asset_group.build_job(
         name="activity_stats",
         selection=[
-            "comment_daily_stats",
-            "story_daily_stats",
-            "activity_daily_stats",
+            "hackernews>comment_daily_stats",
+            "hackernews>story_daily_stats",
+            "hackernews>activity_daily_stats",
             "activity_forecast",
         ],
     )

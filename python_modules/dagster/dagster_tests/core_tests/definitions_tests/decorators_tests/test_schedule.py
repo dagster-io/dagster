@@ -1,4 +1,5 @@
 import inspect
+import json
 import re
 from datetime import datetime, time
 
@@ -23,6 +24,7 @@ from dagster import (
     weekly_schedule,
 )
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster.utils import merge_dicts
 from dagster.utils.partitions import (
     DEFAULT_DATE_FORMAT,
     DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
@@ -738,6 +740,22 @@ def test_schedule_decorators_bad():
         @schedule(cron_schedule="* * * * * *", pipeline_name="foo_pipeline")
         def bad_cron_string_three(context):
             return {}
+
+
+def test_schedule_with_nested_tags():
+
+    nested_tags = {"foo": {"bar": "baz"}}
+
+    @schedule(cron_schedule="* * * * *", pipeline_name="foo_pipeline", tags=nested_tags)
+    def my_tag_schedule():
+        return {}
+
+    assert my_tag_schedule.evaluate_tick(
+        build_schedule_context(scheduled_execution_time=pendulum.now())
+    )[0][0].tags == merge_dicts(
+        {key: json.dumps(val) for key, val in nested_tags.items()},
+        {"dagster/schedule_name": "my_tag_schedule"},
+    )
 
 
 def test_scheduled_jobs():

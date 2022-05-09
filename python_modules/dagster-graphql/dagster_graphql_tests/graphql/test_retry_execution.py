@@ -6,14 +6,14 @@ from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
     PIPELINE_REEXECUTION_INFO_QUERY,
 )
-from dagster_graphql.schema.inputs import GrapheneReexecutionPolicy
+from dagster_graphql.schema.inputs import GrapheneReexecutionStrategy
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     execute_dagster_graphql_and_finish_runs,
     infer_pipeline_selector,
 )
 
-from dagster.core.execution.plan.resume_retry import ReexecutionPolicy
+from dagster.core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import poll_for_finished_run
@@ -534,7 +534,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         retry = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             LAUNCH_PIPELINE_REEXECUTION_MUTATION,
-            variables={"reexecutionParams": {"parentRunId": run_id, "policy": "ALL_STEPS"}},
+            variables={"reexecutionParams": {"parentRunId": run_id, "strategy": "ALL_STEPS"}},
         )
 
         run_id = retry.data["launchPipelineReexecution"]["run"]["runId"]
@@ -583,7 +583,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
             graphql_context,
             LAUNCH_PIPELINE_REEXECUTION_MUTATION,
             variables={
-                "reexecutionParams": {"parentRunId": parent_run_id, "policy": "FROM_FAILURE"}
+                "reexecutionParams": {"parentRunId": parent_run_id, "strategy": "FROM_FAILURE"}
             },
         )
         assert "DagsterInvalidConfigError" in str(
@@ -621,7 +621,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         retry = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             LAUNCH_PIPELINE_REEXECUTION_MUTATION,
-            variables={"reexecutionParams": {"parentRunId": run_id, "policy": "FROM_FAILURE"}},
+            variables={"reexecutionParams": {"parentRunId": run_id, "strategy": "FROM_FAILURE"}},
         )
 
         run_id = retry.data["launchPipelineReexecution"]["run"]["runId"]
@@ -634,10 +634,10 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         assert step_did_succeed(logs, "after_failure")
 
 
-def test_graphene_reexecution_policy():
-    """Check that graphene enum has corresponding values in the ReexecutionPolicy enum"""
-    for policy in GrapheneReexecutionPolicy.__enum__:
-        assert ReexecutionPolicy[policy.value]
+def test_graphene_reexecution_strategy():
+    """Check that graphene enum has corresponding values in the ReexecutionStrategy enum"""
+    for strategy in GrapheneReexecutionStrategy.__enum__:
+        assert ReexecutionStrategy[strategy.value]
 
 
 def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
