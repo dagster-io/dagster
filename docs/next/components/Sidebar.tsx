@@ -99,22 +99,16 @@ const TopLevelNavigation = () => {
         const match = item == currentSection;
 
         return (
-          <>
+          <div key={item.path}>
             {item.isExternalLink ? (
-              <MenuItem
-                key={item.path}
-                href={item.path}
-                item={item}
-                match={match}
-                lvl={0}
-              />
+              <MenuItem href={item.path} item={item} match={match} lvl={0} />
             ) : (
-              <Link key={item.path} href={item.path} passHref>
+              <Link href={item.path} passHref>
                 <MenuItem item={item} match={match} lvl={0} />
               </Link>
             )}
             {match && (
-              <div key={item.title} className="mt-8">
+              <div className="mt-8">
                 <div
                   className="ml-1"
                   role="group"
@@ -126,7 +120,7 @@ const TopLevelNavigation = () => {
                 </div>
               </div>
             )}
-          </>
+          </div>
         );
       })}
     </div>
@@ -151,16 +145,10 @@ const SecondaryNavigation = () => {
             (sectionOrItem) => sectionOrItem.path == asPathWithoutAnchor
           );
 
-        const rightIcon = sectionOrItem.isExternalLink
-          ? Icons["ExternalLink"]
-          : sectionOrItem.children &&
-            (match ? Icons["ChevronDown"] : Icons["ChevronRight"]);
-
         return (
-          <>
+          <div key={sectionOrItem.path || sectionOrItem.children[0].path}>
             {sectionOrItem.isExternalLink ? (
               <MenuItem
-                key={sectionOrItem.path || sectionOrItem.children[0].path}
                 href={sectionOrItem.path || sectionOrItem.children[0].path}
                 item={sectionOrItem}
                 match={match}
@@ -168,7 +156,6 @@ const SecondaryNavigation = () => {
               />
             ) : (
               <Link
-                key={sectionOrItem.path || sectionOrItem.children[0].path}
                 href={sectionOrItem.path || sectionOrItem.children[0].path}
                 passHref
               >
@@ -176,7 +163,7 @@ const SecondaryNavigation = () => {
               </Link>
             )}
             {match && (
-              <div key={sectionOrItem.title} className="border-l ml-5 mt-2">
+              <div className="border-l ml-5 mt-2">
                 <div
                   className="mt-1 ml-1 space-y-1"
                   role="group"
@@ -193,7 +180,7 @@ const SecondaryNavigation = () => {
                 </div>
               </div>
             )}
-          </>
+          </div>
         );
       })}
     </>

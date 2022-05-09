@@ -95,9 +95,9 @@ const Header = () => {
             {" "}
             Sign in
           </a>
-          <p className="self-center hidden xl:block">
+          <div className="self-center hidden xl:block">
             <JoinSlackButton header />
-          </p>
+          </div>
         </div>
 
         <div className="flex items-center md:hidden z-50">
