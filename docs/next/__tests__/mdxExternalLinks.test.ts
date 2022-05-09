@@ -3,10 +3,6 @@ import path from "path";
 import fg from "fast-glob";
 import { Node } from "hast";
 import visit from "unist-util-visit";
-import { flatten } from "../util/useNavigation";
-import masterNavigation from "../../content/_navigation.json";
-import generateToc from "mdast-util-toc";
-import { getItems, getIds } from "../components/mdx/SidebarNavigation";
 import matter from "gray-matter";
 
 // remark
@@ -15,6 +11,7 @@ import remark from "remark";
 
 const ROOT_DIR = path.resolve(__dirname, "../../");
 const DOCS_DIR = path.resolve(ROOT_DIR, "content");
+const DAGSTER_DIR = path.resolve(ROOT_DIR, "..")
 interface LinkElement extends Node {
   type: "link" | "image";
   url: string;
@@ -39,11 +36,10 @@ test("No dead external MDX links", async () => {
   );
 
   for (const filePath in astStore) {
-    const externalLinks = collectExternalLinks(astStore[filePath], filePath);
+    const externalLinks = collectExternalLinks(astStore[filePath]);
     allExternalLinksStore[filePath] = externalLinks;
   }
 
-  const allMdxFileSet = new Set(allMdxFilePaths);
   const deadLinks: Array<{ sourceFile: string; deadLink: string }> = [];
 
   let linkCount = 0;
@@ -53,7 +49,7 @@ test("No dead external MDX links", async () => {
 
     for (const link of linkList) {
       linkCount++;
-      if (!isLinkLegit(link, allMdxFileSet, astStore)) {
+      if (!isLinkLegit(link)) {
         deadLinks.push({
           sourceFile: path.resolve(DOCS_DIR, source),
           deadLink: link,
@@ -68,52 +64,24 @@ test("No dead external MDX links", async () => {
   expect(deadLinks).toEqual([]);
 });
 
-function getMatchCandidates(targetPath: string): Array<string> {
-  return [`${targetPath}.mdx`, `${targetPath}/index.mdx`];
-}
 
 function isLinkLegit(
   rawTarget: string,
-  allMdxFileSet: Set<string>,
-  astStore: { [filePath: string]: Node }
 ): boolean {
   // TODO: Validate links to API Docs
-  if (rawTarget.startsWith("_apidocs/")) {
-    return true;
-  }
 
-  // Validate links to public assets
-  if (rawTarget.startsWith("assets/") || rawTarget.startsWith("images/")) {
-    return fileExists(path.resolve(ROOT_DIR, "next/public", rawTarget));
-  }
+  const splitter = new RegExp('\/master\/')
 
-  // Validate regular content links
-  if (!rawTarget.includes("#")) {
-    // the link target doesn't have a "#" anchor
-    return getMatchCandidates(rawTarget).some((name) =>
-      allMdxFileSet.has(name)
-    );
-  }
+  const filePath = rawTarget.split(splitter)[1]
 
-  // Validate links with anchors
-  const [target, anchor] = rawTarget.split("#");
-  const targetFilePath = getMatchCandidates(target).find((name) =>
-    allMdxFileSet.has(name)
-  );
-  if (targetFilePath) {
-    const allAnchors = collectHeadingsAsAnchors(astStore[targetFilePath]);
-    return allAnchors.includes(anchor);
-  }
-
-  return false;
+  return fileExists(path.resolve(DAGSTER_DIR, filePath))
 }
 
-// traverse the mdx ast to find all internal links
+// traverse the mdx ast to find all links to our examples
 function collectExternalLinks(
   tree: Node,
-  currentFilePath: string
 ): Array<string> {
-  const externalLinkRegex = /^(https?:\/\/)/;
+  const externalLinkRegex = /^(https?:\/\/github\.com\/dagster\-io\/dagster\/.*\/master)/;
   const result: Array<string> = [];
 
   visit(tree, ["link", "image"], (node: LinkElement, index) => {
@@ -129,16 +97,11 @@ function collectExternalLinks(
 }
 
 function fileExists(filePath: string): boolean {
+
   try {
     fs.statSync(filePath);
     return true;
   } catch (_) {
     return false;
   }
-}
-
-function collectHeadingsAsAnchors(tree: Node): string[] {
-  const node = generateToc(tree, {});
-  const tableOfContents = getItems(node.map, {});
-  return getIds(tableOfContents.items[0].items);
 }
