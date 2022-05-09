@@ -1,6 +1,6 @@
 from typing import List, NamedTuple, Optional, Union
 
-from dagster import check
+import dagster._check as check
 
 from .graph_definition import GraphDefinition
 from .pipeline_definition import PipelineDefinition

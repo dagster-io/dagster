@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 import pytest
 
-from dagster import check
+import dagster._check as check
 from dagster.check import (
     CheckError,
     ElementCheckError,

@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Generic, List, NamedTuple, Optional, Typ
 import pendulum
 from dateutil.relativedelta import relativedelta
 
-from dagster import check
+import dagster._check as check
 from dagster.serdes import whitelist_for_serdes
 
 from ...core.definitions.utils import validate_tags

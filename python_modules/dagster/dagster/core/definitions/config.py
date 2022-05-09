@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional, Union, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.builtins import BuiltinEnum
 from dagster.config import ConfigType
 from dagster.config.post_process import resolve_defaults

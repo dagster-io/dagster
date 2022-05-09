@@ -1,4 +1,4 @@
-from dagster import check
+import dagster._check as check
 from dagster.core.events import DagsterEvent
 from dagster.core.events.utils import filter_dagster_events_from_cli_logs
 from dagster.core.execution.plan.objects import StepSuccessData

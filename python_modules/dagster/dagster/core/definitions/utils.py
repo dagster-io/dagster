@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import pkg_resources
 import yaml
 
-from dagster import check
+import dagster._check as check
 import dagster.seven as seven
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.storage.tags import check_reserved_tags

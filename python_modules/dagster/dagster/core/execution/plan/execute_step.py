@@ -3,7 +3,7 @@ import warnings
 from collections import defaultdict
 from typing import AbstractSet, Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions import (
     AssetKey,
     AssetMaterialization,

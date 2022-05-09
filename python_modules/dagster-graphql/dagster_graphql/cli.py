@@ -5,7 +5,7 @@ import requests
 from graphql import graphql
 
 from dagster import __version__ as dagster_version
-from dagster import check
+import dagster._check as check
 import dagster.seven as seven
 from dagster.cli.workspace import workspace_target_argument
 from dagster.cli.workspace.cli_target import (

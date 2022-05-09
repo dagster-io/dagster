@@ -15,7 +15,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+import dagster._check as check
 import dagster.seven as seven
 from dagster.core.errors import DagsterInvalidMetadata
 from dagster.serdes import whitelist_for_serdes

@@ -1,7 +1,7 @@
 import warnings
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.asset_layer import AssetOutputInfo
 from dagster.core.definitions.events import (
     AssetKey,

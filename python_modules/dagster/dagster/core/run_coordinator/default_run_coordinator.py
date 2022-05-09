@@ -1,4 +1,4 @@
-from dagster import check
+import dagster._check as check
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 

@@ -50,7 +50,7 @@ def my_op() -> MyClass:
 
 
 # start_test_dagster_type
-from dagster import check_dagster_type, Dict, Any
+import dagster._check as check_dagster_type, Dict, Any
 
 
 def test_dagster_type():

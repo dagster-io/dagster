@@ -11,7 +11,7 @@ import kubernetes
 
 from dagster import Array, BoolSource, Field, Noneable, StringSource
 from dagster import __version__ as dagster_version
-from dagster import check
+import dagster._check as check
 from dagster.config.field_utils import Permissive, Shape
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError

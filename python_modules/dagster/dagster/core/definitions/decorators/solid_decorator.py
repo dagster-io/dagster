@@ -13,7 +13,7 @@ from typing import (
     overload,
 )
 
-from dagster import check
+import dagster._check as check
 from dagster.config.config_schema import ConfigSchemaType
 from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.core.errors import DagsterInvalidDefinitionError

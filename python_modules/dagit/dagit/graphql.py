@@ -20,7 +20,7 @@ from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from starlette.routing import BaseRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
-from dagster import check
+import dagster._check as check
 from dagster.seven import json
 
 

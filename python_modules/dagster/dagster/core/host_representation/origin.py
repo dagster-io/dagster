@@ -18,7 +18,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+import dagster._check as check
 from dagster.core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
 from dagster.core.origin import DEFAULT_DAGSTER_ENTRY_POINT
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin

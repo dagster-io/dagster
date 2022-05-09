@@ -6,7 +6,7 @@ from typing import Callable, Iterable, Mapping, Optional, Sequence, cast
 import pendulum
 import sqlalchemy as db
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick, TickData, TickStatus

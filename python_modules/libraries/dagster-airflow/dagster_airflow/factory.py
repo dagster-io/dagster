@@ -7,7 +7,7 @@ from airflow import DAG
 from airflow.models.baseoperator import BaseOperator
 from dagster_airflow.operators.util import check_storage_specified
 
-from dagster import check
+import dagster._check as check
 import dagster.seven as seven
 from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan

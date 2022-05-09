@@ -1,7 +1,7 @@
 import boto3
 from botocore.handlers import disable_signing
 
-from dagster import check
+import dagster._check as check
 
 from ..utils import construct_boto_client_retry_config
 

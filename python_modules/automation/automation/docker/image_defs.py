@@ -6,7 +6,7 @@ from typing import Callable, Dict, Iterator, List, Optional
 
 from automation.git import git_repo_root
 
-from dagster import check
+import dagster._check as check
 
 from .dagster_docker import DagsterDockerImage
 

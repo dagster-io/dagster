@@ -6,7 +6,7 @@ from typing import cast
 
 import pendulum
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.errors import DagsterUserCodeUnreachableError

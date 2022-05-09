@@ -1,7 +1,7 @@
 import pickle
 import warnings
 
-from dagster import check
+import dagster._check as check
 import dagster.seven as seven
 from dagster.config.config_type import (
     ConfigAnyInstance,

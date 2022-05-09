@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 
-from dagster import check
+import dagster._check as check
 import dagster.seven as seven
 
 
