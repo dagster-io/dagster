@@ -230,7 +230,7 @@ event_log_storage:
 
 # and this config grabs the database credentials from environment variables
 event_log_storage:
-  module: dagster_mysql.event_log_storage
+  module: dagster_mysql.event_log
   class: MySQLEventLogStorage
   config:
     mysql_db:
@@ -246,14 +246,14 @@ event_log_storage:
 
 # and this config sets the credentials via DB connection string / url:
 event_log_storage:
-  module: dagster_mysql.event_log_storage
+  module: dagster_mysql.event_log
   class: MySQLEventLogStorage
   config:
     mysql_url: { MYSQL_DB_CONN_STRING }
 
 # this config grabs the MySQL connection string from environment variables
 event_log_storage:
-  module: dagster_mysql.event_log_storage
+  module: dagster_mysql.event_log
   class: MySQLEventLogStorage
   config:
     mysql_url:

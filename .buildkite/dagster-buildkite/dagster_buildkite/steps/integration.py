@@ -147,7 +147,7 @@ def build_spec_daemon_suite():
 
 
 def build_spec_k8s_suite():
-    tox_env_suffixes = ["-default"]
+    tox_env_suffixes = ["-default", "-subchart"]
     directory = os.path.join("integration_tests", "test_suites", "k8s-integration-test-suite")
     return build_steps_integration_suite(directory, tox_env_suffixes, upload_coverage=True)
 

@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from io import StringIO
 from textwrap import TextWrapper
+from typing import Any, Callable
 
 from dagster import check
 
@@ -8,7 +9,13 @@ LINE_LENGTH = 100
 
 
 class IndentingPrinter:
-    def __init__(self, indent_level=2, printer=print, current_indent=0, line_length=LINE_LENGTH):
+    def __init__(
+        self,
+        indent_level: int = 2,
+        printer: Callable[..., Any] = print,
+        current_indent: int = 0,
+        line_length: int = LINE_LENGTH,
+    ):
         self.current_indent = current_indent
         self.indent_level = check.int_param(indent_level, "indent_level")
         self.printer = check.callable_param(printer, "printer")
@@ -16,11 +23,11 @@ class IndentingPrinter:
 
         self._line_so_far = ""
 
-    def append(self, text):
+    def append(self, text: str) -> None:
         check.str_param(text, "text")
         self._line_so_far += text
 
-    def line(self, text):
+    def line(self, text: str) -> None:
         check.str_param(text, "text")
         self.printer(self.current_indent_str + self._line_so_far + text)
         self._line_so_far = ""

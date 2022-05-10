@@ -708,6 +708,10 @@ class ExternalPartitionSet:
     def pipeline_name(self):
         return self._external_partition_set_data.pipeline_name
 
+    @property
+    def repository_handle(self):
+        return self._handle.repository_handle
+
     def get_external_origin(self):
         return self._handle.get_external_origin()
 

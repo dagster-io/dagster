@@ -9,7 +9,6 @@ from dagster_dbt.types import DbtOutput
 
 from dagster import AssetGroup, AssetKey, MetadataEntry, ResourceDefinition, repository
 from dagster.core.asset_defs import build_assets_job
-from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 from dagster.utils import file_relative_path
 
 
@@ -70,7 +69,7 @@ def test_runtime_metadata_fn():
     assert len(materializations) == 4
     assert materializations[0].metadata_entries == [
         MetadataEntry("op_name", value=dbt_assets[0].op.name),
-        MetadataEntry("dbt_model", value=materializations[0].asset_key.path[0]),
+        MetadataEntry("dbt_model", value=materializations[0].asset_key.path[-1]),
     ]
 
 
@@ -91,12 +90,14 @@ def assert_assets_match_project(dbt_assets):
         "sort_cold_cereals_by_calories",
     ]:
         out_def = assets_op.output_dict.get(model_name)
-        assert out_def.hardcoded_asset_key == AssetKey([model_name])
-        assert out_def.metadata[ASSET_DEPENDENCY_METADATA_KEY] == {AssetKey("sort_by_calories")}
+        assert out_def.hardcoded_asset_key == AssetKey(["test-schema", model_name])
+        assert dbt_assets[0].asset_deps[AssetKey(["test-schema", model_name])] == {
+            AssetKey(["test-schema", "sort_by_calories"])
+        }
 
     root_out_def = assets_op.output_dict.get("sort_by_calories")
-    assert root_out_def.hardcoded_asset_key == AssetKey(["sort_by_calories"])
-    assert not root_out_def.metadata[ASSET_DEPENDENCY_METADATA_KEY]
+    assert root_out_def.hardcoded_asset_key == AssetKey(["test-schema", "sort_by_calories"])
+    assert not dbt_assets[0].asset_deps[AssetKey(["test-schema", "sort_by_calories"])]
 
 
 def test_basic(

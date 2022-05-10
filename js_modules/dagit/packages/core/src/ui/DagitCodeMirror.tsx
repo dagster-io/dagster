@@ -77,6 +77,38 @@ export const DagitCodeMirrorStyle = createGlobalStyle`
     .CodeMirror-gutters {
       background-color: ${Colors.Gray50};
     }
+
+    .cm-indent {
+      display: inline-block;
+
+      &.cm-zero {
+        box-shadow: -1px 0 0 ${Colors.Green200};
+      }
+
+      &.cm-one {
+        box-shadow: -1px 0 0 ${Colors.Blue100};
+      }
+
+      &.cm-two {
+        box-shadow: -1px 0 0 ${Colors.LightPurple};
+      }
+
+      &.cm-three {
+        box-shadow: -1px 0 0 ${Colors.Red200};
+      }
+
+      &.cm-four {
+        box-shadow: -1px 0 0 ${Colors.Yellow200};
+      }
+
+      &.cm-five {
+        box-shadow: -1px 0 0 ${Colors.Olive200};
+      }
+
+      &.cm-six {
+        box-shadow: -1px 0 0 ${Colors.Gray300};
+      }
+    }
   }
 
   div.CodeMirror-lint-tooltip {

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Dict, NamedTuple, Optional, Sequence
+from typing import TYPE_CHECKING, Dict, Mapping, NamedTuple, Optional, Sequence
 
 from dagster import check
 from dagster.core.definitions.reconstruct import ReconstructablePipeline
@@ -35,7 +35,7 @@ class StepRunRef(
 
     def __new__(
         cls,
-        run_config: Dict[str, object],
+        run_config: Mapping[str, object],
         pipeline_run: PipelineRun,
         run_id: str,
         retry_mode: RetryMode,

@@ -23,6 +23,12 @@ from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipel
 
 
 def test_launcher_from_config(kubeconfig_file):
+
+    resources = {
+        "requests": {"memory": "64Mi", "cpu": "250m"},
+        "limits": {"memory": "128Mi", "cpu": "500m"},
+    }
+
     default_config = {
         "service_account_name": "dagit-admin",
         "instance_config_map": "dagster-instance",
@@ -31,6 +37,7 @@ def test_launcher_from_config(kubeconfig_file):
         "job_image": "fake_job_image",
         "load_incluster_config": False,
         "kubeconfig_file": kubeconfig_file,
+        "resources": resources,
     }
 
     with instance_for_test(
@@ -45,6 +52,7 @@ def test_launcher_from_config(kubeconfig_file):
         run_launcher = instance.run_launcher
         assert isinstance(run_launcher, K8sRunLauncher)
         assert run_launcher.fail_pod_on_run_failure == None
+        assert run_launcher.resources == resources
 
     with instance_for_test(
         overrides={
@@ -73,9 +81,21 @@ def test_launcher_with_container_context(kubeconfig_file):
         kubeconfig_file=kubeconfig_file,
         k8s_client_batch_api=mock_k8s_client_batch_api,
         env_vars=["FOO_TEST"],
+        resources={
+            "requests": {"memory": "64Mi", "cpu": "250m"},
+            "limits": {"memory": "128Mi", "cpu": "500m"},
+        },
     )
 
-    container_context_config = {"k8s": {"env_vars": ["BAR_TEST"]}}
+    container_context_config = {
+        "k8s": {
+            "env_vars": ["BAR_TEST"],
+            "resources": {
+                "limits": {"memory": "64Mi", "cpu": "250m"},
+                "requests": {"memory": "32Mi", "cpu": "125m"},
+            },
+        }
+    }
 
     # Create fake external pipeline.
     recon_pipeline = reconstructable(fake_pipeline)
@@ -125,6 +145,12 @@ def test_launcher_with_container_context(kubeconfig_file):
 
         container = kwargs["body"].spec.template.spec.containers[0]
 
+        resources = container.resources
+        assert resources.to_dict() == {
+            "limits": {"memory": "64Mi", "cpu": "250m"},
+            "requests": {"memory": "32Mi", "cpu": "125m"},
+        }
+
         env_names = [env.name for env in container.env]
 
         assert "BAR_TEST" in env_names
@@ -158,6 +184,10 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         kubeconfig_file=kubeconfig_file,
         k8s_client_batch_api=mock_k8s_client_batch_api,
         labels=labels,
+        resources={
+            "requests": {"memory": "64Mi", "cpu": "250m"},
+            "limits": {"memory": "128Mi", "cpu": "500m"},
+        },
     )
 
     # Construct Dagster run tags with user defined k8s config.

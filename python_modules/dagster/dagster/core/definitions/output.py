@@ -319,6 +319,10 @@ class OutputPointer(NamedTuple("_OutputPointer", [("solid_name", str), ("output_
             check.opt_str_param(output_name, "output_name", DEFAULT_OUTPUT),
         )
 
+    @property
+    def node_name(self):
+        return self.solid_name
+
 
 class OutputMapping(
     NamedTuple("_OutputMapping", [("definition", OutputDefinition), ("maps_from", OutputPointer)])

@@ -40,6 +40,17 @@ def even_better():
 
 # policy2_end
 
+# policy3_start
+default_policy = RetryPolicy(max_retries=1)
+flakey_op_policy = RetryPolicy(max_retries=10)
+
+
+@job(op_retry_policy=default_policy)
+def default_and_override_job():
+    problematic.with_retry_policy(flakey_op_policy)()
+
+
+# policy3_end
 
 # manual_start
 @op

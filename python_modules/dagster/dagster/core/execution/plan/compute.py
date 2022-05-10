@@ -13,6 +13,7 @@ from dagster.core.definitions import (
     NodeHandle,
     Output,
 )
+from dagster.core.definitions.asset_layer import AssetLayer
 from dagster.core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.compute import SolidExecutionContext
@@ -35,7 +36,7 @@ SolidOutputUnion = Union[
 
 
 def create_step_outputs(
-    solid: Node, handle: NodeHandle, resolved_run_config: ResolvedRunConfig
+    solid: Node, handle: NodeHandle, resolved_run_config: ResolvedRunConfig, asset_layer: AssetLayer
 ) -> List[StepOutput]:
     check.inst_param(solid, "solid", Node)
     check.inst_param(handle, "handle", NodeHandle)
@@ -48,21 +49,24 @@ def create_step_outputs(
         current_handle = current_handle.parent
         config_output_names = config_output_names.union(solid_config.outputs.output_names)
 
-    return [
-        StepOutput(
-            solid_handle=handle,
-            name=output_def.name,
-            dagster_type_key=output_def.dagster_type.key,
-            properties=StepOutputProperties(
-                is_required=output_def.is_required,
-                is_dynamic=output_def.is_dynamic,
-                is_asset=output_def.is_asset,
-                should_materialize=output_def.name in config_output_names,
-                asset_key=output_def.hardcoded_asset_key,
-            ),
+    step_outputs: List[StepOutput] = []
+    for name, output_def in solid.definition.output_dict.items():
+        asset_info = asset_layer.asset_info_for_output(handle, name)
+        step_outputs.append(
+            StepOutput(
+                solid_handle=handle,
+                name=output_def.name,
+                dagster_type_key=output_def.dagster_type.key,
+                properties=StepOutputProperties(
+                    is_required=output_def.is_required,
+                    is_dynamic=output_def.is_dynamic,
+                    is_asset=asset_info is not None,
+                    should_materialize=output_def.name in config_output_names,
+                    asset_key=asset_info.key if asset_info else None,
+                ),
+            )
         )
-        for name, output_def in solid.definition.output_dict.items()
-    ]
+    return step_outputs
 
 
 def _validate_event(event: Any, step_context: StepExecutionContext) -> SolidOutputUnion:

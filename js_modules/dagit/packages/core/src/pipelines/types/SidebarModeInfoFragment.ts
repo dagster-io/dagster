@@ -39,6 +39,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_ArrayC
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -112,6 +113,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_EnumCo
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -186,6 +188,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_Regula
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -234,6 +237,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_Compos
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -268,6 +272,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_Compos
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -342,6 +347,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_Scalar
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -417,6 +423,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_MapCon
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -505,6 +512,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_ArrayCon
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -578,6 +586,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_EnumConf
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -652,6 +661,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_RegularC
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -700,6 +710,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_Composit
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -734,6 +745,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_Composit
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -808,6 +820,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_ScalarUn
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -883,6 +896,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_MapConfi
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType {

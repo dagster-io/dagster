@@ -38,13 +38,14 @@ import {
 } from './RunMatrixUtils';
 import {RunTagsTokenizingField} from './RunTagsTokenizingField';
 import {SliceSlider} from './SliceSlider';
+import {PartitionMatrixStepRunFragment} from './types/PartitionMatrixStepRunFragment';
 import {
   PartitionRunMatrixPipelineQuery,
   PartitionRunMatrixPipelineQueryVariables,
 } from './types/PartitionRunMatrixPipelineQuery';
-import {PartitionRunMatrixRunFragment} from './types/PartitionRunMatrixRunFragment';
 import {PartitionRuns} from './useChunkedPartitionsQuery';
 import {
+  PARTITION_MATRIX_STEP_RUN_FRAGMENT,
   DisplayOptions,
   isStepKeyForNode,
   MatrixStep,
@@ -144,6 +145,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
 
   const data = useMatrixData({
     partitions: props.partitions,
+    partitionNames: props.partitions.map((x) => x.name),
     stepQuery: props.stepQuery,
     solidHandles,
     options,
@@ -414,7 +416,9 @@ export const PARTITION_RUN_MATRIX_RUN_FRAGMENT = gql`
         success
       }
     }
+    ...PartitionMatrixStepRunFragment
   }
+  ${PARTITION_MATRIX_STEP_RUN_FRAGMENT}
 `;
 
 // add in the explorer fragment, so we can reconstruct the faux-plan steps from the exploded plan
@@ -551,7 +555,7 @@ const IconSorter: React.FC<{$asc: boolean; $sorting: boolean}> = ({$asc, $sortin
 
 const PartitionStepSquare: React.FC<{
   step: MatrixStep;
-  runs: PartitionRunMatrixRunFragment[];
+  runs: PartitionMatrixStepRunFragment[];
   runsLoaded: boolean;
   options: DisplayOptions;
   hovered: PartitionRunSelection | null;
@@ -576,7 +580,7 @@ const PartitionStepSquare: React.FC<{
   const {name, color, unix} = step;
 
   const className = `square
-  ${!runsLoaded ? 'loading' : runs.length === 0 ? 'empty' : ''} 
+  ${!runsLoaded ? 'loading' : runs.length === 0 ? 'empty' : ''}
   ${(options.showPrevious ? color : StatusSquareFinalColor[color] || color).toLowerCase()}`;
 
   const content = (

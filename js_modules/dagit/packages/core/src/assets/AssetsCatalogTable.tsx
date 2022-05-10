@@ -13,11 +13,8 @@ import {
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
-import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
-import {buildRepoPath} from '../workspace/buildRepoAddress';
 
 import {AssetTable, ASSET_TABLE_FRAGMENT} from './AssetTable';
 import {AssetViewModeSwitch} from './AssetViewModeSwitch';
@@ -33,7 +30,6 @@ const PAGE_SIZE = 50;
 type Asset = AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes;
 
 export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPath = []}) => {
-  const {visibleRepos, allRepos} = React.useContext(WorkspaceContext);
   const [cursor, setCursor] = useQueryPersistedState<string | undefined>({queryKey: 'cursor'});
   const [search, setSearch] = useQueryPersistedState<string | undefined>({queryKey: 'q'});
   const [view, _setView] = useAssetView();
@@ -91,10 +87,7 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
             .toLowerCase()
             .trim();
 
-          const filtered = (visibleRepos.length === allRepos.length
-            ? assets
-            : filterAssetsToRepos(assets, visibleRepos)
-          ).filter(
+          const filtered = assets.filter(
             (a) =>
               !searchSeparatorAgnostic ||
               tokenForAssetKey(a.key).toLowerCase().includes(searchSeparatorAgnostic),
@@ -123,7 +116,6 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
                   actionBarComponents={
                     <>
                       <AssetViewModeSwitch view={view} setView={setView} />
-                      <RepoFilterButton />
                       <TextInput
                         value={search || ''}
                         style={{width: '30vw', minWidth: 150, maxWidth: 400}}
@@ -235,18 +227,5 @@ function buildNamespaceProps(assets: Asset[], prefixPath: string[], cursor: stri
 const filterAssetsByNamespace = (assets: Asset[], paths: string[][]) => {
   return assets.filter((asset) =>
     paths.some((path) => path.every((part, i) => part === asset.key.path[i])),
-  );
-};
-
-const filterAssetsToRepos = (assets: Asset[], visibleRepos: DagsterRepoOption[]) => {
-  const visibleRepoHashes = visibleRepos.map((v) =>
-    buildRepoPath(v.repository.name, v.repositoryLocation.name),
-  );
-  return assets.filter(
-    (a) =>
-      !a.definition ||
-      visibleRepoHashes.includes(
-        buildRepoPath(a.definition.repository.name, a.definition.repository.location.name),
-      ),
   );
 };

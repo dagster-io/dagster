@@ -87,7 +87,7 @@ def test_hook_resource():
         a.with_hooks({slack_message_on_success, slack_message_on_failure})()
 
     foo.execute_in_process()
-    assert slack_mock.chat.post_message.call_count == 1
+    assert slack_mock.chat_postMessage.call_count == 1
 
 
 def test_failure_hook_solid_exception():

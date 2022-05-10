@@ -1,3 +1,4 @@
+# pylint: disable=missing-graphene-docstring
 import graphene
 
 from dagster import check
@@ -87,8 +88,8 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
     backfillId = graphene.NonNull(graphene.String)
     status = graphene.NonNull(GrapheneBulkActionStatus)
+    partitionNames = non_null_list(graphene.String)
     numRequested = graphene.NonNull(graphene.Int)
-    numTotal = graphene.NonNull(graphene.Int)
     fromFailure = graphene.NonNull(graphene.Boolean)
     reexecutionSteps = non_null_list(graphene.String)
     partitionSetName = graphene.NonNull(graphene.String)
@@ -107,9 +108,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             backfillId=backfill_job.backfill_id,
             partitionSetName=backfill_job.partition_set_origin.partition_set_name,
             status=backfill_job.status,
-            numTotal=len(backfill_job.partition_names),
             fromFailure=bool(backfill_job.from_failure),
             reexecutionSteps=backfill_job.reexecution_steps,
+            partitionNames=backfill_job.partition_names,
             timestamp=backfill_job.backfill_timestamp,
         )
 

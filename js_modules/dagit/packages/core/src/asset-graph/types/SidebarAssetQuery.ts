@@ -71,6 +71,13 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_In
   intRepr: string;
 }
 
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_PipelineRunMetadataEntry {
   __typename: "PipelineRunMetadataEntry";
   label: string;
@@ -162,7 +169,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_Ta
   schema: SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries = SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_PathMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_JsonMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_UrlMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_TextMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_MarkdownMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_FloatMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_IntMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_PipelineRunMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_AssetMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_TableMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_TableSchemaMetadataEntry;
+export type SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries = SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_PathMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_JsonMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_UrlMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_TextMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_MarkdownMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_FloatMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_IntMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_BoolMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_PipelineRunMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_AssetMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_TableMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_TableSchemaMetadataEntry;
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_assetKey {
   __typename: "AssetKey";
@@ -231,6 +238,13 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   intValue: number | null;
   intRepr: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_PipelineRunMetadataEntry {
@@ -324,7 +338,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   schema: SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries = SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_PathMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_JsonMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_UrlMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_TextMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_MarkdownMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_FloatMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_IntMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_PipelineRunMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_TableMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry;
+export type SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries = SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_PathMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_JsonMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_UrlMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_TextMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_MarkdownMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_FloatMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_IntMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_BoolMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_PipelineRunMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_TableMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry;
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -358,6 +372,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -431,6 +446,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -505,6 +521,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -553,6 +570,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -587,6 +605,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -661,6 +680,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -736,6 +756,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -812,6 +833,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -885,6 +907,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -959,6 +982,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1007,6 +1031,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -1041,6 +1066,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1115,6 +1141,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1190,6 +1217,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1292,6 +1320,13 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   intRepr: string;
 }
 
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_PipelineRunMetadataEntry {
   __typename: "PipelineRunMetadataEntry";
   label: string;
@@ -1383,7 +1418,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   schema: SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries = SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_PathMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_JsonMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_UrlMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_TextMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_MarkdownMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_FloatMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_IntMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_PipelineRunMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry;
+export type SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries = SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_PathMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_JsonMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_UrlMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_TextMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_MarkdownMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_FloatMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_IntMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_BoolMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_PipelineRunMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry;
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -1417,6 +1452,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1490,6 +1526,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1564,6 +1601,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1612,6 +1650,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -1646,6 +1685,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1720,6 +1760,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1795,6 +1836,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1871,6 +1913,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1944,6 +1987,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2018,6 +2062,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2066,6 +2111,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -2100,6 +2146,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2174,6 +2221,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2249,6 +2297,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitio
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {

@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Dict, List, NamedTuple, Optional
 
 from dagster import check
-from dagster.core.execution.plan.resume_retry import ReexecutionPolicy
+from dagster.core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation import (
     ExternalPartitionSet,
@@ -230,7 +230,7 @@ def create_backfill_run(
             last_run,
             repo_location,
             external_pipeline,
-            ReexecutionPolicy.FROM_FAILURE,
+            ReexecutionStrategy.FROM_FAILURE,
             extra_tags=tags,
             run_config=partition_data.run_config,
             mode=external_partition_set.mode,

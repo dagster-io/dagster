@@ -148,7 +148,7 @@ class EventLogEntry(
         return self.user_message
 
 
-def construct_event_record(logger_message):
+def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogEntry:
     check.inst_param(logger_message, "logger_message", StructuredLoggerMessage)
 
     return EventLogEntry(

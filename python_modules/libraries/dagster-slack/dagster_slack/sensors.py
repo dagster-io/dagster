@@ -1,21 +1,24 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
-from slack_sdk import WebClient
+from slack_sdk.web.client import WebClient
 
 from dagster import DefaultSensorStatus
 from dagster.core.definitions import GraphDefinition, PipelineDefinition
 from dagster.core.definitions.run_status_sensor_definition import (
     PipelineFailureSensorContext,
     RunFailureSensorContext,
+    RunStatusSensorContext,
     pipeline_failure_sensor,
     run_failure_sensor,
 )
 
+T = TypeVar("T", bound=RunStatusSensorContext)
+
 
 def _build_slack_blocks_and_text(
-    context: RunFailureSensorContext,
-    text_fn: Callable[[RunFailureSensorContext], str],
-    blocks_fn: Optional[Callable[[RunFailureSensorContext], List[Dict]]],
+    context: T,
+    text_fn: Callable[[T], str],
+    blocks_fn: Optional[Callable[[T], List[Dict]]],
     dagit_base_url: Optional[str],
 ) -> Tuple[List[Dict[str, Any]], str]:
     blocks: List[Dict[str, Any]] = [
@@ -55,7 +58,9 @@ def _build_slack_blocks_and_text(
     return blocks, main_body_text
 
 
-def _default_failure_message_text_fn(context: PipelineFailureSensorContext) -> str:
+def _default_failure_message_text_fn(
+    context: Union[PipelineFailureSensorContext, RunFailureSensorContext]
+) -> str:
     return f"Error: ```{context.failure_event.message}```"
 
 

@@ -1,3 +1,15 @@
+## 1.0.4 (April 28, 2022)
+
+- Create a build-specific `tsconfig` that excludes `stories` and `test` files
+- Clean up `lodash` imports
+- Update `workspaces` icon
+- Fix rendering of `Suggest` component lists
+- Add `topBorder` prop to `DialogFooter`
+- Remove `HighlightedCodeBlock`
+- Allow `:` character in tag values for `TokenizingField`
+- Add Slack icon
+- Use `@dagster-io/eslint-config`
+
 ## 1.0.3 (April 6, 2022)
 
 - Remove work-in-progress suffixes on components

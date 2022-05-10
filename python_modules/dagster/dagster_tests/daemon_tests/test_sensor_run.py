@@ -275,6 +275,11 @@ def bad_request_unspecified(_ctx):
     yield RunRequest(run_key=None)
 
 
+@sensor(job=the_job)
+def request_list_sensor(_ctx):
+    return [RunRequest(run_key="1"), RunRequest(run_key="2")]
+
+
 @repository
 def the_repo():
     return [
@@ -306,6 +311,7 @@ def the_repo():
         bad_request_untargeted,
         bad_request_mismatch,
         bad_request_unspecified,
+        request_list_sensor,
     ]
 
 
@@ -2300,3 +2306,37 @@ def test_status_in_code_sensor():
                     )
                     == 0
                 )
+
+
+def test_run_request_list_sensor():
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors() as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            external_sensor = external_repo.get_external_sensor("request_list_sensor")
+            instance.add_instigator_state(
+                InstigatorState(
+                    external_sensor.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.RUNNING,
+                )
+            )
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
+            assert len(ticks) == 0
+
+            evaluate_sensors(instance, workspace)
+
+            assert instance.get_runs_count() == 2
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
+            assert len(ticks) == 1

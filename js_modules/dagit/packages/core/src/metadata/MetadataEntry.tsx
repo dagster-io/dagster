@@ -151,6 +151,8 @@ export const MetadataEntry: React.FC<{
       return <>{entry.floatValue}</>;
     case 'IntMetadataEntry':
       return <>{entry.intValue !== null ? entry.intValue : entry.intRepr}</>;
+    case 'BoolMetadataEntry':
+      return entry.boolValue !== null ? <>{entry.boolValue.toString()}</> : null;
     case 'PipelineRunMetadataEntry':
       return (
         <MetadataEntryLink to={`/instance/runs/${entry.runId}`}>{entry.runId}</MetadataEntryLink>
@@ -202,6 +204,9 @@ export const METADATA_ENTRY_FRAGMENT = gql`
     ... on IntMetadataEntry {
       intValue
       intRepr
+    }
+    ... on BoolMetadataEntry {
+      boolValue
     }
     ... on PipelineRunMetadataEntry {
       runId

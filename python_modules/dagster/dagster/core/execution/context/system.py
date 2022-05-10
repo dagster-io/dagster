@@ -85,7 +85,7 @@ class IPlanContext(ABC):
         return self.pipeline_run.run_id
 
     @property
-    def run_config(self) -> dict:
+    def run_config(self) -> Mapping[str, object]:
         return self.pipeline_run.run_config
 
     @property
@@ -730,7 +730,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         - The output asset has no partitioning.
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
         """
-        partitions_def = self.solid_def.output_def_named(output_name).asset_partitions_def
+        asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
+            self.solid_handle, output_name
+        )
+        partitions_def = asset_info.partitions_def if asset_info else None
 
         if not partitions_def:
             raise ValueError(

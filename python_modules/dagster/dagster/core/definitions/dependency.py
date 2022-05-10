@@ -67,6 +67,7 @@ class NodeInvocation(
     :py:func:`@job <job>` API:
 
     .. code-block:: python
+
         from dagster import job
 
         @job

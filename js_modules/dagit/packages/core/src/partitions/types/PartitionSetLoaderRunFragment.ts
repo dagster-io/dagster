@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RunStatus, StepEventStatus } from "./../../types/globalTypes";
+import { StepEventStatus, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: PartitionSetLoaderRunFragment
@@ -60,9 +60,11 @@ export interface PartitionSetLoaderRunFragment_stepStats {
 export interface PartitionSetLoaderRunFragment {
   __typename: "Run";
   id: string;
-  status: RunStatus;
   tags: PartitionSetLoaderRunFragment_tags[];
   runId: string;
   stats: PartitionSetLoaderRunFragment_stats;
   stepStats: PartitionSetLoaderRunFragment_stepStats[];
+  status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
 }

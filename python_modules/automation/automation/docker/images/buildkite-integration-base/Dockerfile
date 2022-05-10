@@ -113,16 +113,12 @@ RUN echo "--- \033[32m:linux: Misc installs and cleanup\033[0m" \
 RUN curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
 
 # Install Python deps, awscli, pipenv, pyspark
-ADD trigger_maven.py .
 RUN echo "--- \033[32m:python: Install Python deps\033[0m" \
     && pip install -U pip setuptools wheel \
     && pip install \
         awscli \
         pipenv \
-    && pip --no-cache-dir install pyspark==$PYSPARK_VERSION \
-    # This instigates some package downloads required by the airline-demo
-    && python trigger_maven.py \
-    && rm trigger_maven.py
+    && pip --no-cache-dir install pyspark==$PYSPARK_VERSION
 
 RUN wget http://download.redis.io/redis-stable.tar.gz \
     && tar xvzf redis-stable.tar.gz \

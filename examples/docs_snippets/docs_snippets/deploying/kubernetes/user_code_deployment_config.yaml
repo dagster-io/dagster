@@ -23,5 +23,12 @@ dagster-user-deployments:
         - name: test-volume
           mountPath: /opt/dagster/test_folder
           subPath: test_file.yaml
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
       includeConfigInLaunchedRuns:
         enabled: true

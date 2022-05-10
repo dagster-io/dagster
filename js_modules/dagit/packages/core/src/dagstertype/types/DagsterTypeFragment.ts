@@ -65,6 +65,13 @@ export interface DagsterTypeFragment_metadataEntries_IntMetadataEntry {
   intRepr: string;
 }
 
+export interface DagsterTypeFragment_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
 export interface DagsterTypeFragment_metadataEntries_PipelineRunMetadataEntry {
   __typename: "PipelineRunMetadataEntry";
   label: string;
@@ -156,7 +163,7 @@ export interface DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry {
   schema: DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type DagsterTypeFragment_metadataEntries = DagsterTypeFragment_metadataEntries_PathMetadataEntry | DagsterTypeFragment_metadataEntries_JsonMetadataEntry | DagsterTypeFragment_metadataEntries_UrlMetadataEntry | DagsterTypeFragment_metadataEntries_TextMetadataEntry | DagsterTypeFragment_metadataEntries_MarkdownMetadataEntry | DagsterTypeFragment_metadataEntries_PythonArtifactMetadataEntry | DagsterTypeFragment_metadataEntries_FloatMetadataEntry | DagsterTypeFragment_metadataEntries_IntMetadataEntry | DagsterTypeFragment_metadataEntries_PipelineRunMetadataEntry | DagsterTypeFragment_metadataEntries_AssetMetadataEntry | DagsterTypeFragment_metadataEntries_TableMetadataEntry | DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry;
+export type DagsterTypeFragment_metadataEntries = DagsterTypeFragment_metadataEntries_PathMetadataEntry | DagsterTypeFragment_metadataEntries_JsonMetadataEntry | DagsterTypeFragment_metadataEntries_UrlMetadataEntry | DagsterTypeFragment_metadataEntries_TextMetadataEntry | DagsterTypeFragment_metadataEntries_MarkdownMetadataEntry | DagsterTypeFragment_metadataEntries_PythonArtifactMetadataEntry | DagsterTypeFragment_metadataEntries_FloatMetadataEntry | DagsterTypeFragment_metadataEntries_IntMetadataEntry | DagsterTypeFragment_metadataEntries_BoolMetadataEntry | DagsterTypeFragment_metadataEntries_PipelineRunMetadataEntry | DagsterTypeFragment_metadataEntries_AssetMetadataEntry | DagsterTypeFragment_metadataEntries_TableMetadataEntry | DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry;
 
 export interface DagsterTypeFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -190,6 +197,7 @@ export interface DagsterTypeFragment_inputSchemaType_ArrayConfigType_recursiveCo
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -263,6 +271,7 @@ export interface DagsterTypeFragment_inputSchemaType_EnumConfigType_recursiveCon
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -337,6 +346,7 @@ export interface DagsterTypeFragment_inputSchemaType_RegularConfigType_recursive
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -385,6 +395,7 @@ export interface DagsterTypeFragment_inputSchemaType_CompositeConfigType_fields 
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -419,6 +430,7 @@ export interface DagsterTypeFragment_inputSchemaType_CompositeConfigType_recursi
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -493,6 +505,7 @@ export interface DagsterTypeFragment_inputSchemaType_ScalarUnionConfigType_recur
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -568,6 +581,7 @@ export interface DagsterTypeFragment_inputSchemaType_MapConfigType_recursiveConf
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -644,6 +658,7 @@ export interface DagsterTypeFragment_outputSchemaType_ArrayConfigType_recursiveC
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -717,6 +732,7 @@ export interface DagsterTypeFragment_outputSchemaType_EnumConfigType_recursiveCo
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -791,6 +807,7 @@ export interface DagsterTypeFragment_outputSchemaType_RegularConfigType_recursiv
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -839,6 +856,7 @@ export interface DagsterTypeFragment_outputSchemaType_CompositeConfigType_fields
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -873,6 +891,7 @@ export interface DagsterTypeFragment_outputSchemaType_CompositeConfigType_recurs
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -947,6 +966,7 @@ export interface DagsterTypeFragment_outputSchemaType_ScalarUnionConfigType_recu
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1022,6 +1042,7 @@ export interface DagsterTypeFragment_outputSchemaType_MapConfigType_recursiveCon
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1124,6 +1145,13 @@ export interface DagsterTypeFragment_innerTypes_metadataEntries_IntMetadataEntry
   intRepr: string;
 }
 
+export interface DagsterTypeFragment_innerTypes_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
 export interface DagsterTypeFragment_innerTypes_metadataEntries_PipelineRunMetadataEntry {
   __typename: "PipelineRunMetadataEntry";
   label: string;
@@ -1215,7 +1243,7 @@ export interface DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetad
   schema: DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type DagsterTypeFragment_innerTypes_metadataEntries = DagsterTypeFragment_innerTypes_metadataEntries_PathMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_JsonMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_UrlMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_TextMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_MarkdownMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_PythonArtifactMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_FloatMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_IntMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_PipelineRunMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_AssetMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_TableMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetadataEntry;
+export type DagsterTypeFragment_innerTypes_metadataEntries = DagsterTypeFragment_innerTypes_metadataEntries_PathMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_JsonMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_UrlMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_TextMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_MarkdownMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_PythonArtifactMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_FloatMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_IntMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_BoolMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_PipelineRunMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_AssetMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_TableMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetadataEntry;
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -1249,6 +1277,7 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_ArrayConfigType_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1322,6 +1351,7 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_EnumConfigType_r
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1396,6 +1426,7 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_RegularConfigTyp
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1444,6 +1475,7 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_CompositeConfigT
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -1478,6 +1510,7 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_CompositeConfigT
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1552,6 +1585,7 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_ScalarUnionConfi
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1627,6 +1661,7 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_MapConfigType_re
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1703,6 +1738,7 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_ArrayConfigType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1776,6 +1812,7 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_EnumConfigType_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1850,6 +1887,7 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_RegularConfigTy
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1898,6 +1936,7 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_CompositeConfig
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -1932,6 +1971,7 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_CompositeConfig
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2006,6 +2046,7 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_ScalarUnionConf
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2081,6 +2122,7 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_MapConfigType_r
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {

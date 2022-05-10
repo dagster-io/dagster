@@ -690,17 +690,17 @@ def test_inst():
     with pytest.raises(CheckError, match="not a Bar"):
         check.inst(Foo(), Bar)
 
-    with pytest.raises(CheckError, match="Desc: Expected only a Bar"):
+    with pytest.raises(CheckError, match="Expected only a Bar"):
         check.inst(Foo(), Bar, "Expected only a Bar")
 
     with pytest.raises(CheckError, match=re.escape("not one of ['Bar', 'Foo']")):
         check.inst(1, (Foo, Bar))
 
     with pytest.raises(CheckError, match=re.escape("not one of ['Bar', 'Foo']")):
-        check.inst(1, (Foo, Bar), desc="a desc")
+        check.inst(1, (Foo, Bar), additional_message="a desc")
 
-    with pytest.raises(CheckError, match=re.escape("Desc: a desc")):
-        check.inst(1, (Foo, Bar), desc="a desc")
+    with pytest.raises(CheckError, match=re.escape("a desc")):
+        check.inst(1, (Foo, Bar), additional_message="a desc")
 
 
 def test_inst_param():

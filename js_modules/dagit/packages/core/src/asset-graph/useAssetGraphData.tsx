@@ -43,6 +43,7 @@ export function useAssetGraphData(
     assetGraphData,
     graphQueryItems,
     graphAssetKeys,
+    allAssetKeys,
     applyingEmptyDefault,
   } = React.useMemo(() => {
     if (fetchResultFilteredNodes === undefined) {
@@ -57,6 +58,7 @@ export function useAssetGraphData(
     const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, opsQuery);
 
     return {
+      allAssetKeys: fetchResultFilteredNodes.map((n) => n.assetKey),
       graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
       assetGraphData: buildGraphData(all.map((n) => n.node)),
       graphQueryItems,
@@ -69,6 +71,7 @@ export function useAssetGraphData(
     assetGraphData,
     graphQueryItems,
     graphAssetKeys,
+    allAssetKeys,
     applyingEmptyDefault,
   };
 }

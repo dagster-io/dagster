@@ -4,8 +4,11 @@ import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from './Utils';
 
-export const ForeignNode: React.FC<{assetKey: {path: string[]}}> = React.memo(({assetKey}) => (
-  <ForeignNodeLink>
+export const ForeignNode: React.FC<{
+  assetKey: {path: string[]};
+  backgroundColor?: string;
+}> = React.memo(({assetKey, backgroundColor}) => (
+  <ForeignNodeLink style={{backgroundColor}}>
     <span className="label">{displayNameForAssetKey(assetKey)}</span>
     <Icon name="open_in_new" color={Colors.Gray500} />
   </ForeignNodeLink>

@@ -121,6 +121,26 @@ const SettingsRoot = () => {
                 />
               ),
             },
+            {
+              key: 'Experimental asset graph display',
+              value: (
+                <Checkbox
+                  format="switch"
+                  checked={flags.includes(FeatureFlag.flagExperimentalAssetDAG)}
+                  onChange={() => toggleFlag(FeatureFlag.flagExperimentalAssetDAG)}
+                />
+              ),
+            },
+            {
+              key: 'New partitions view (experimental)',
+              value: (
+                <Checkbox
+                  format="switch"
+                  checked={flags.includes(FeatureFlag.flagNewPartitionsView)}
+                  onChange={() => toggleFlag(FeatureFlag.flagNewPartitionsView)}
+                />
+              ),
+            },
           ]}
         />
       </Box>

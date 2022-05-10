@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterator, List, Mapping, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional, cast
 
 from dagster import check
 from dagster.core.definitions.dependency import Node, NodeHandle
@@ -10,7 +10,9 @@ from dagster.core.definitions.events import (
     Materialization,
     UserEvent,
 )
+from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.mode import ModeDefinition
+from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
@@ -19,7 +21,7 @@ from dagster.core.errors import DagsterInvalidPropertyError
 from dagster.core.events import DagsterEvent
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.pipeline_run import DagsterRun, PipelineRun
 from dagster.utils.forked_pdb import ForkedPdb
 
 from .system import StepExecutionContext
@@ -115,9 +117,18 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.op_config
 
     @property
+    def op_config(self) -> Any:
+        return self.solid_config
+
+    @property
     def pipeline_run(self) -> PipelineRun:
         """PipelineRun: The current pipeline run"""
         return self._step_execution_context.pipeline_run
+
+    @property
+    def run(self) -> DagsterRun:
+        """DagsterRun: The current run"""
+        return cast(DagsterRun, self.pipeline_run)
 
     @property
     def instance(self) -> DagsterInstance:
@@ -169,7 +180,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.run_id
 
     @property
-    def run_config(self) -> dict:
+    def run_config(self) -> Mapping[str, object]:
         """dict: The run config for the current execution."""
         return self._step_execution_context.run_config
 
@@ -179,9 +190,26 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.pipeline_def
 
     @property
+    def job_def(self) -> JobDefinition:
+        """JobDefinition: The currently executing job."""
+        return cast(
+            JobDefinition,
+            check.inst(
+                self.pipeline_def,
+                JobDefinition,
+                "Accessing job_def inside a legacy pipeline. Use pipeline_def instead.",
+            ),
+        )
+
+    @property
     def pipeline_name(self) -> str:
         """str: The name of the currently executing pipeline."""
         return self._step_execution_context.pipeline_name
+
+    @property
+    def job_name(self) -> str:
+        """str: The name of the currently executing job."""
+        return self.pipeline_name
 
     @property
     def mode_def(self) -> ModeDefinition:
@@ -202,6 +230,14 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.solid_handle
 
     @property
+    def op_handle(self) -> NodeHandle:
+        """NodeHandle: The current op's handle.
+
+        :meta private:
+        """
+        return self.solid_handle
+
+    @property
     def solid(self) -> Node:
         """Solid: The current solid object.
 
@@ -211,9 +247,30 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.pipeline_def.get_solid(self.solid_handle)
 
     @property
+    def op(self) -> Node:
+        """Solid: The current op object.
+
+        :meta private:
+
+        """
+        return self.solid
+
+    @property
     def solid_def(self) -> SolidDefinition:
         """SolidDefinition: The current solid definition."""
         return self._step_execution_context.pipeline_def.get_solid(self.solid_handle).definition
+
+    @property
+    def op_def(self) -> OpDefinition:
+        """OpDefinition: The current op definition."""
+        return cast(
+            OpDefinition,
+            check.inst(
+                self.solid_def,
+                OpDefinition,
+                "Called op_def on a legacy solid. Use solid_def instead.",
+            ),
+        )
 
     @property
     def has_partition_key(self) -> bool:

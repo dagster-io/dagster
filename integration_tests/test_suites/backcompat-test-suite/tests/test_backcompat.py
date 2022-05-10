@@ -29,7 +29,7 @@ RELEASE_TEST_MAP = {
 }
 
 
-def assert_run_success(client, run_id: int):
+def assert_run_success(client, run_id):
     start_time = time.time()
     while True:
         if time.time() - start_time > MAX_TIMEOUT_SECONDS:

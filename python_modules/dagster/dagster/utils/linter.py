@@ -35,6 +35,11 @@ class DagsterChecker(BaseChecker):
                 "pendulum datetime"
             ),
         ),
+        "W0005": (
+            "Graphene object without docstring",
+            "missing-graphene-docstring",
+            "A docstring must be written for Graphene GraphQL object",
+        ),
     }
     options = ()
 
@@ -91,6 +96,10 @@ class DagsterChecker(BaseChecker):
             and (node.func.attrname == "in_tz")
         ):
             self.add_message("pendulum-in-tz", node=node)
+
+    def visit_classdef(self, node):
+        if any(n for n in node.basenames if "graphene" in n) and not node.doc_node:
+            self.add_message("missing-graphene-docstring", node=node)
 
 
 def register_solid_transform():

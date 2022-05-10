@@ -11,7 +11,7 @@ Jobs often interact with external resources like Hadoop/Spark clusters or data w
 
 ## Parameterizing Jobs with Resources
 
-Dagster models interactions with features of the external environment as **resources**. Dagster's library modules such as [`dagster_aws`](/\_apidocs/libraries/dagster_aws), [`dagster_gcp`](/\_apidocs/libraries/dagster_gcp), and [`dagster_slack`](/\_apidocs/libraries/dagster_slack) provide out-of-the-box implementations for many common external services.
+Dagster models interactions with features of the external environment as **resources**. Dagster's library modules such as [`dagster_aws`](/\_apidocs/libraries/dagster-aws), [`dagster_gcp`](/\_apidocs/libraries/dagster-gcp), and [`dagster_slack`](/\_apidocs/libraries/dagster-slack) provide out-of-the-box implementations for many common external services.
 
 Typically, your data processing jobs will want to store their results in a data warehouse somewhere separate from the raw data sources. We'll adjust our toy job so that it does a little more work on our cereal dataset, stores the finished product in a swappable data warehouse, and lets the team know when we're finished.
 

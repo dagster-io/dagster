@@ -628,7 +628,7 @@ class CachingRepositoryData(RepositoryData):
         schedules: Dict[str, ScheduleDefinition] = {}
         sensors: Dict[str, SensorDefinition] = {}
         source_assets: Dict[AssetKey, SourceAsset] = {}
-        encountered_asset_group = False
+        combined_asset_group = None
         for definition in repository_definitions:
             if isinstance(definition, PipelineDefinition):
                 if (
@@ -694,24 +694,21 @@ class CachingRepositoryData(RepositoryData):
                 pipelines_or_jobs[coerced.name] = coerced
 
             elif isinstance(definition, AssetGroup):
-                if encountered_asset_group:
-                    raise DagsterInvalidDefinitionError(
-                        "When constructing repository, attempted to pass multiple AssetGroups. "
-                        "There can only be one AssetGroup per repository."
-                    )
-
-                encountered_asset_group = True
-                asset_group = definition
-
-                for job_def in asset_group.get_base_jobs():
-                    pipelines_or_jobs[job_def.name] = job_def
-
-                source_assets = {
-                    source_asset.key: source_asset for source_asset in asset_group.source_assets
-                }
-
+                if combined_asset_group:
+                    combined_asset_group += definition
+                else:
+                    combined_asset_group = definition
             else:
                 check.failed(f"Unexpected repository entry {definition}")
+
+        if combined_asset_group:
+            for job_def in combined_asset_group.get_base_jobs():
+                pipelines_or_jobs[job_def.name] = job_def
+
+            source_assets = {
+                source_asset.key: source_asset
+                for source_asset in combined_asset_group.source_assets
+            }
 
         pipelines: Dict[str, PipelineDefinition] = {}
         jobs: Dict[str, JobDefinition] = {}

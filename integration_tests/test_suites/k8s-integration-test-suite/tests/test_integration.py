@@ -27,11 +27,11 @@ from dagster.utils.yaml_utils import merge_yamls
 @pytest.mark.integration
 def test_k8s_run_launcher_default(
     dagster_instance_for_k8s_run_launcher,
-    helm_namespace_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
     dagit_url_for_k8s_run_launcher,
 ):
     pods = DagsterKubernetesClient.production_client().core_api.list_namespaced_pod(
-        namespace=helm_namespace_for_k8s_run_launcher
+        namespace=user_code_namespace_for_k8s_run_launcher
     )
     celery_pod_names = [p.metadata.name for p in pods.items if "celery-workers" in p.metadata.name]
     check.invariant(not celery_pod_names)
@@ -44,7 +44,7 @@ def test_k8s_run_launcher_default(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=helm_namespace_for_k8s_run_launcher
+        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
@@ -73,7 +73,7 @@ def get_celery_engine_config(dagster_docker_image, job_namespace):
 def test_k8s_run_launcher_with_celery_executor_fails(
     dagster_docker_image,
     dagster_instance_for_k8s_run_launcher,
-    helm_namespace_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
     dagit_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
@@ -85,7 +85,7 @@ def test_k8s_run_launcher_with_celery_executor_fails(
         ),
         get_celery_engine_config(
             dagster_docker_image=dagster_docker_image,
-            job_namespace=helm_namespace_for_k8s_run_launcher,
+            job_namespace=user_code_namespace_for_k8s_run_launcher,
         ),
     )
 
@@ -125,7 +125,7 @@ def test_k8s_run_launcher_with_celery_executor_fails(
 @pytest.mark.integration
 def test_failing_k8s_run_launcher(
     dagster_instance_for_k8s_run_launcher,
-    helm_namespace_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
     dagit_url_for_k8s_run_launcher,
 ):
     run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
@@ -137,7 +137,7 @@ def test_failing_k8s_run_launcher(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=helm_namespace_for_k8s_run_launcher
+        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "PIPELINE_SUCCESS" not in result, "no match, result: {}".format(result)
@@ -150,7 +150,7 @@ def test_failing_k8s_run_launcher(
 @pytest.mark.integration
 def test_k8s_run_launcher_terminate(
     dagster_instance_for_k8s_run_launcher,
-    helm_namespace_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
     dagit_url_for_k8s_run_launcher,
 ):
     pipeline_name = "slow_pipeline"
@@ -163,7 +163,9 @@ def test_k8s_run_launcher_terminate(
         dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
     )
 
-    wait_for_job(job_name="dagster-run-%s" % run_id, namespace=helm_namespace_for_k8s_run_launcher)
+    wait_for_job(
+        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+    )
 
     timeout = datetime.timedelta(0, 30)
     start_time = datetime.datetime.now()
@@ -191,7 +193,7 @@ def test_k8s_run_launcher_terminate(
 
 @pytest.mark.integration
 def test_k8s_run_launcher_secret_from_deployment(
-    helm_namespace_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
     dagit_url_for_k8s_run_launcher,
 ):
     # This run_config requires that WORD_FACTOR be set on both the user code deployment
@@ -208,7 +210,7 @@ def test_k8s_run_launcher_secret_from_deployment(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=helm_namespace_for_k8s_run_launcher
+        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)

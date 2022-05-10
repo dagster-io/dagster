@@ -35,6 +35,7 @@ def construct_job_manifest(name, cmd):
     )
 
 
+@pytest.mark.default
 def test_wait_for_pod(cluster_provider, namespace):  # pylint: disable=unused-argument
     api = kubernetes.client.CoreV1Api()
 
@@ -86,6 +87,7 @@ def test_wait_for_pod(cluster_provider, namespace):  # pylint: disable=unused-ar
                 pass
 
 
+@pytest.mark.default
 def test_wait_for_job(cluster_provider, namespace):  # pylint: disable=unused-argument
     # Without this sleep, we get the following error on kind:
     # HTTP response body:

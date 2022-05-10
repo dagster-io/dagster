@@ -385,6 +385,9 @@ class ExternalRepositoryOrigin(
             RepositorySelector(self.repository_location_origin.location_name, self.repository_name)
         )
 
+    def get_label(self) -> str:
+        return f"{self.repository_name}@{self.repository_location_origin.location_name}"
+
     def get_pipeline_origin(self, pipeline_name: str) -> "ExternalPipelineOrigin":
         return ExternalPipelineOrigin(self, pipeline_name)
 

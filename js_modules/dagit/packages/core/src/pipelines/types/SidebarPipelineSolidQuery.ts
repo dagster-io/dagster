@@ -170,6 +170,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -243,6 +244,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -317,6 +319,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -365,6 +368,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -399,6 +403,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -473,6 +478,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -548,6 +554,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType {

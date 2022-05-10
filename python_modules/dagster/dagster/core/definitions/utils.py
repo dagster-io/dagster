@@ -9,6 +9,7 @@ import yaml
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.storage.tags import check_reserved_tags
 from dagster.utils import frozentags
 from dagster.utils.yaml_utils import merge_yaml_strings, merge_yamls
 
@@ -79,7 +80,7 @@ def struct_to_string(name, **kwargs):
     return "{name}({props_str})".format(name=name, props_str=props_str)
 
 
-def validate_tags(tags: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+def validate_tags(tags: Optional[Dict[str, Any]], allow_reserved_tags=True) -> Dict[str, str]:
     valid_tags = {}
     for key, value in check.opt_dict_param(tags, "tags", key_type=str).items():
         if not isinstance(value, str):
@@ -107,6 +108,9 @@ def validate_tags(tags: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         else:
             valid_tags[key] = value
 
+    if not allow_reserved_tags:
+        check_reserved_tags(valid_tags)
+
     return frozentags(valid_tags)
 
 
@@ -132,7 +136,7 @@ def config_from_files(config_files: List[str]) -> Dict[str, Any]:
         globbed_files = glob(file_glob)
         if not globbed_files:
             raise DagsterInvariantViolationError(
-                'File or glob pattern "{file_glob}" for "config_files"'
+                'File or glob pattern "{file_glob}" for "config_files" '
                 "produced no results.".format(file_glob=file_glob)
             )
 

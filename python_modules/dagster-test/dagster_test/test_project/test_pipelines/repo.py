@@ -101,8 +101,16 @@ def docker_mode_defs():
     ]
 
 
-@solid(input_defs=[InputDefinition("word", String)], config_schema={"factor": IntSource})
+@solid(
+    input_defs=[InputDefinition("word", String)],
+    config_schema={
+        "factor": IntSource,
+        "should_segfault": Field(bool, is_required=False, default_value=False),
+    },
+)
 def multiply_the_word(context, word):
+    if context.solid_config.get("should_segfault"):
+        segfault()
     return word * context.solid_config["factor"]
 
 
@@ -243,13 +251,31 @@ def define_demo_job_celery():
     return demo_job_celery
 
 
+@solid(required_resource_keys={"buggy_resource"})
+def hello(context):
+    context.log.info("Hello, world from IMAGE 1")
+
+
 def define_docker_celery_pipeline():
     from dagster_celery_docker import celery_docker_executor
+
+    @resource
+    def resource_with_output():
+        print("writing to stdout")  # pylint: disable=print-call
+        return 42
+
+    @solid(required_resource_keys={"resource_with_output"})
+    def use_resource_with_output_solid():
+        pass
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
+                resource_defs={
+                    "s3": s3_resource,
+                    "io_manager": s3_pickle_io_manager,
+                    "resource_with_output": resource_with_output,
+                },
                 executor_defs=default_executors + [celery_docker_executor],
             )
         ]
@@ -257,6 +283,7 @@ def define_docker_celery_pipeline():
     def docker_celery_pipeline():
         count_letters(multiply_the_word())
         get_environment_solid()
+        use_resource_with_output_solid()
 
     return docker_celery_pipeline
 

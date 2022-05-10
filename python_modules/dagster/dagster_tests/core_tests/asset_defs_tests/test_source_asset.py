@@ -17,3 +17,8 @@ def test_source_asset_metadata():
         "foo": MetadataValue.text("bar"),
         "baz": MetadataValue.text("[object] (unserializable)"),
     }
+
+
+def test_source_asset_key_args():
+    assert SourceAsset(key="foo").key == AssetKey(["foo"])
+    assert SourceAsset(key=["bar", "foo"]).key == AssetKey(["bar", "foo"])
