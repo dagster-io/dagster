@@ -100,7 +100,7 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
   const focus = new Set<T>();
 
   for (const clause of clauses) {
-    const parts = /(\*?\+*)([.\w\d>\[\]\"_-]+)(\+*\*?)/.exec(clause.trim());
+    const parts = /(\*?\+*)([.\w\d>\[\]\"_\/-]+)(\+*\*?)/.exec(clause.trim());
     if (!parts) {
       continue;
     }

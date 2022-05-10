@@ -60,7 +60,9 @@ from dagster import (
     TableConstraints,
     TableRecord,
     TableSchema,
-    check,
+)
+from dagster import _check as check
+from dagster import (
     composite_solid,
     dagster_type_loader,
     dagster_type_materializer,

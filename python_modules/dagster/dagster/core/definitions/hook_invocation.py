@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, List, NamedTuple, Optional, cast
 
-import dagster.check as check
+import dagster._check as check
 
 from ..errors import DagsterInvariantViolationError
 from ..execution.context.hook import BoundHookContext, UnboundHookContext

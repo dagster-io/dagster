@@ -1,6 +1,7 @@
 import pytest
 
-from dagster import OpExecutionContext, check, execute_pipeline, job, op, pipeline, solid
+import dagster._check as check
+from dagster import OpExecutionContext, execute_pipeline, job, op, pipeline, solid
 from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
@@ -40,12 +41,12 @@ def test_solid_execution_context():
         assert context.job_name == "foo"
 
         with pytest.raises(Exception):
-            context.job_def
+            context.job_def  # pylint: disable=pointless-statement
 
         assert context.op_config is None
 
         with pytest.raises(Exception):
-            context.op_def
+            context.op_def  # pylint: disable=pointless-statement
 
         check.inst(context.pipeline_run, PipelineRun)
         assert context.pipeline_name == "foo"

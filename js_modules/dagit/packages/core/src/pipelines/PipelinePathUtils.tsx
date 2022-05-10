@@ -16,10 +16,12 @@ export function explorerPathToString(path: ExplorerPath) {
   const root = [
     path.pipelineName,
     path.snapshotId ? `@${path.snapshotId}` : ``,
-    path.opsQuery ? `~${path.explodeComposites ? '!' : ''}${path.opsQuery}` : ``,
+    path.opsQuery
+      ? `~${path.explodeComposites ? '!' : ''}${encodeURIComponent(path.opsQuery)}`
+      : ``,
   ].join('');
 
-  return `${root}/${path.opNames.join('/')}`;
+  return `${root}/${path.opNames.map(encodeURIComponent).join('/')}`;
 }
 
 export function explorerPathFromString(path: string): ExplorerPath {
@@ -39,9 +41,9 @@ export function explorerPathFromString(path: string): ExplorerPath {
   return {
     pipelineName,
     snapshotId,
-    opsQuery,
+    opsQuery: decodeURIComponent(opsQuery),
     explodeComposites: explodeComposites === '!',
-    opNames,
+    opNames: opNames.map(decodeURIComponent),
   };
 }
 

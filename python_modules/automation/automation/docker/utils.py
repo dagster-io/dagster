@@ -4,7 +4,7 @@ import sys
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
-from dagster import check
+import dagster._check as check
 
 
 def execute_docker_build(

@@ -20,7 +20,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.executor_definition import in_process_executor
@@ -696,7 +696,7 @@ class AssetGroup:
 
         if self.resource_defs != other.resource_defs:
             raise DagsterInvalidDefinitionError(
-                "Can't add asset groups together with different resource definition dictionarys"
+                "Can't add asset groups together with different resource definition dictionaries"
             )
 
         if self.executor_def != other.executor_def:

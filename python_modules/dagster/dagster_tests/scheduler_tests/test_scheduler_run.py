@@ -273,6 +273,23 @@ def define_multi_run_schedule():
     )
 
 
+@schedule(
+    pipeline_name="the_pipeline",
+    cron_schedule="0 0 * * *",
+    execution_timezone="UTC",
+)
+def multi_run_list_schedule(context):
+    if not context.scheduled_execution_time:
+        date = pendulum.now().subtract(days=1)
+    else:
+        date = pendulum.instance(context.scheduled_execution_time).subtract(days=1)
+
+    return [
+        RunRequest(run_key="A", run_config=_solid_config(date), tags={"label": "A"}),
+        RunRequest(run_key="B", run_config=_solid_config(date), tags={"label": "B"}),
+    ]
+
+
 def define_multi_run_schedule_with_missing_run_key():
     def gen_runs(context):
         if not context.scheduled_execution_time:
@@ -405,6 +422,7 @@ def the_repo():
         skip_schedule,
         wrong_config_schedule,
         define_multi_run_schedule(),
+        multi_run_list_schedule,
         define_multi_run_schedule_with_missing_run_key(),
         partitionless_schedule,
         large_schedule,
@@ -1650,6 +1668,76 @@ def test_multi_runs(instance, workspace, external_repo):
     )
     with pendulum.test(freeze_datetime):
         external_schedule = external_repo.get_external_schedule("multi_run_schedule")
+        schedule_origin = external_schedule.get_external_origin()
+        instance.start_schedule(external_schedule)
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 0
+
+        # launch_scheduled_runs does nothing before the first tick
+        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 0
+
+    freeze_datetime = freeze_datetime.add(seconds=2)
+    with pendulum.test(freeze_datetime):
+        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        assert instance.get_runs_count() == 2
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 1
+
+        expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
+
+        runs = instance.get_runs()
+        validate_tick(
+            ticks[0],
+            external_schedule,
+            expected_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id for run in runs],
+        )
+
+        wait_for_all_runs_to_start(instance)
+        runs = instance.get_runs()
+        validate_run_started(instance, runs[0], execution_time=create_pendulum_time(2019, 2, 28))
+        validate_run_started(instance, runs[1], execution_time=create_pendulum_time(2019, 2, 28))
+
+        # Verify idempotence
+        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        assert instance.get_runs_count() == 2
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 1
+        assert ticks[0].status == TickStatus.SUCCESS
+
+    freeze_datetime = freeze_datetime.add(days=1)
+    with pendulum.test(freeze_datetime):
+
+        # Traveling one more day in the future before running results in a tick
+        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        assert instance.get_runs_count() == 4
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 2
+        assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
+        runs = instance.get_runs()
+
+
+def test_multi_run_list(instance, workspace, external_repo):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(
+            year=2019,
+            month=2,
+            day=27,
+            hour=23,
+            minute=59,
+            second=59,
+            tz="UTC",
+        ),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        external_schedule = external_repo.get_external_schedule("multi_run_list_schedule")
         schedule_origin = external_schedule.get_external_origin()
         instance.start_schedule(external_schedule)
 

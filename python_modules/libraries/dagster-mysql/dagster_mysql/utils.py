@@ -7,7 +7,8 @@ from urllib.parse import urlparse
 import mysql.connector as mysql
 import sqlalchemy as db
 
-from dagster import Field, IntSource, Selector, StringSource, check
+from dagster import Field, IntSource, Selector, StringSource
+from dagster import _check as check
 from dagster.core.storage.sql import get_alembic_config, handle_schema_errors
 
 # 1 hr - anything less than 8 hrs (MySQL's default `wait_timeout` should work)

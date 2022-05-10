@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Mapping, NamedTuple, Optional
 
-from dagster import check
+import dagster._check as check
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.events import AssetKey
 from dagster.core.execution.plan.state import KnownExecutionState
@@ -23,7 +23,7 @@ class ExecutionPlanSnapshotArgs(
         "_ExecutionPlanSnapshotArgs",
         [
             ("pipeline_origin", ExternalPipelineOrigin),
-            ("asset_selection", List[str]),
+            ("asset_selection", List[AssetKey]),
             ("solid_selection", List[str]),
             ("run_config", Mapping[str, object]),
             ("mode", str),
@@ -37,7 +37,7 @@ class ExecutionPlanSnapshotArgs(
     def __new__(
         cls,
         pipeline_origin: ExternalPipelineOrigin,
-        asset_selection: List[str],
+        asset_selection: List[AssetKey],
         solid_selection: List[str],
         run_config: Mapping[str, object],
         mode: str,
@@ -51,7 +51,7 @@ class ExecutionPlanSnapshotArgs(
             pipeline_origin=check.inst_param(
                 pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
             ),
-            asset_selection=check.opt_list_param(asset_selection, "asset_selection", of_type=str),
+            asset_selection=check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey),
             solid_selection=check.opt_list_param(solid_selection, "solid_selection", of_type=str),
             run_config=check.dict_param(run_config, "run_config", key_type=str),
             mode=check.str_param(mode, "mode"),

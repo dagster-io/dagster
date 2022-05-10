@@ -10,7 +10,8 @@ from dagster_k8s.job import (
 )
 from dagster_k8s.utils import delete_job
 
-from dagster import DagsterInvariantViolationError, MetadataEntry, check
+from dagster import DagsterInvariantViolationError, MetadataEntry
+from dagster import _check as check
 from dagster.config.field import resolve_to_config_type
 from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData

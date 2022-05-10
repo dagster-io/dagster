@@ -284,7 +284,7 @@ def test_load_with_error(capfd):
         process.wait()
 
         _, err = capfd.readouterr()
-        assert "No module named" in err
+        assert "Dagster recognizes standard cron expressions" in err
     finally:
         if process.poll() is None:
             process.terminate()
@@ -469,7 +469,7 @@ def test_lazy_load_with_error():
             DagsterGrpcClient(port=port).list_repositories()
         )
         assert isinstance(list_repositories_response, SerializableErrorInfo)
-        assert "No module named" in list_repositories_response.message
+        assert "Dagster recognizes standard cron expressions" in list_repositories_response.message
     finally:
         process.terminate()
 
@@ -502,7 +502,9 @@ def test_lazy_load_via_env_var():
                 DagsterGrpcClient(port=port).list_repositories()
             )
             assert isinstance(list_repositories_response, SerializableErrorInfo)
-            assert "No module named" in list_repositories_response.message
+            assert (
+                "Dagster recognizes standard cron expressions" in list_repositories_response.message
+            )
         finally:
             process.terminate()
 

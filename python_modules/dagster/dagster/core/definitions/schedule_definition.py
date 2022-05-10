@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional, Ty
 import pendulum
 from typing_extensions import TypeGuard
 
-from dagster import check
+import dagster._check as check
 
 from ...serdes import whitelist_for_serdes
 from ...utils import ensure_gen, merge_dicts
@@ -99,7 +99,9 @@ ScheduleExecutionContext = ScheduleEvaluationContext
 RunConfig = Dict[str, Any]
 RunRequestIterator = Iterator[Union[RunRequest, SkipReason]]
 
-ScheduleEvaluationFunctionReturn = Union[RunRequest, SkipReason, RunConfig, RunRequestIterator]
+ScheduleEvaluationFunctionReturn = Union[
+    RunRequest, SkipReason, RunConfig, RunRequestIterator, List[RunRequest]
+]
 RawScheduleEvaluationFunction = Union[
     Callable[[ScheduleEvaluationContext], ScheduleEvaluationFunctionReturn],
     Callable[[], ScheduleEvaluationFunctionReturn],

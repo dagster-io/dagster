@@ -1,6 +1,6 @@
 from graphql.execution.base import ResolveInfo
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
 from dagster.core.scheduler.instigation import InstigatorState, SensorInstigatorData

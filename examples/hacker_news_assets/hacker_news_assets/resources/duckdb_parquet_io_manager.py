@@ -3,7 +3,9 @@ import os
 import duckdb
 import pandas as pd
 
-from dagster import Field, check, io_manager
+from dagster import Field
+from dagster import _check as check
+from dagster import io_manager
 from dagster.seven.temp_dir import get_system_temp_directory
 
 from .parquet_io_manager import PartitionedParquetIOManager
@@ -41,7 +43,7 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
         )
 
     def _table_path(self, context):
-        return f"hackernews.{context.asset_key.path[-1]}"
+        return f"{context.asset_key.path[-2]}.{context.asset_key.path[-1]}"
 
     def _connect_duckdb(self, context):
         return duckdb.connect(database=context.resource_config["duckdb_path"], read_only=False)

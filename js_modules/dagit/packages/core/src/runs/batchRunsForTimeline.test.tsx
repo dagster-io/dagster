@@ -7,7 +7,7 @@ describe('batchRunsForTimeline', () => {
   const minChunkWidth = 2;
   const minMultipleWidth = 18;
 
-  const test = (runs: RunWithTime[]) =>
+  const getBatch = (runs: RunWithTime[]) =>
     batchRunsForTimeline({runs, start, end, width, minChunkWidth, minMultipleWidth});
 
   describe('Overlapping', () => {
@@ -20,7 +20,7 @@ describe('batchRunsForTimeline', () => {
       const runB = {startTime: 30, endTime: 70};
       const runs = [runA, runB];
 
-      const batched = test(runs);
+      const batched = getBatch(runs);
       expect(batched.length).toBe(1);
       const batch = batched[0];
       expect(batch.startTime).toBe(10);
@@ -40,7 +40,7 @@ describe('batchRunsForTimeline', () => {
       const runB = {startTime: 30, endTime: 40};
       const runs = [runA, runB];
 
-      const batched = test(runs);
+      const batched = getBatch(runs);
       expect(batched.length).toBe(1);
       const batch = batched[0];
       expect(batch.startTime).toBe(10);
@@ -62,7 +62,7 @@ describe('batchRunsForTimeline', () => {
       const runC = {startTime: 40, endTime: 90};
       const runs = [runA, runB, runC];
 
-      const batched = test(runs);
+      const batched = getBatch(runs);
       expect(batched.length).toBe(1);
       const batch = batched[0];
       expect(batch.startTime).toBe(10);
@@ -85,7 +85,7 @@ describe('batchRunsForTimeline', () => {
       const runC = {startTime: 40, endTime: 70};
       const runs = [runA, runB, runC];
 
-      const batched = test(runs);
+      const batched = getBatch(runs);
       expect(batched.length).toBe(1);
       const batch = batched[0];
       expect(batch.startTime).toBe(10);
@@ -106,7 +106,7 @@ describe('batchRunsForTimeline', () => {
       const runB = {startTime: 40, endTime: 100};
       const runs = [runA, runB];
 
-      const batched = test(runs);
+      const batched = getBatch(runs);
       expect(batched.length).toBe(1);
       const batch = batched[0];
       expect(batch.startTime).toBe(10);
@@ -126,7 +126,7 @@ describe('batchRunsForTimeline', () => {
       const runB = {startTime: 50, endTime: 70};
       const runs = [runA, runB];
 
-      const batched = test(runs);
+      const batched = getBatch(runs);
       expect(batched.length).toBe(1);
       const batch = batched[0];
       expect(batch.startTime).toBe(10);
@@ -148,7 +148,7 @@ describe('batchRunsForTimeline', () => {
       const runB = {startTime: 40, endTime: 70};
       const runs = [runA, runB];
 
-      const batched = test(runs);
+      const batched = getBatch(runs);
       expect(batched.length).toBe(2);
 
       // Batch A contains the later run due to sorting.
@@ -178,7 +178,7 @@ describe('batchRunsForTimeline', () => {
       const runC = {startTime: 80, endTime: 90};
       const runs = [runA, runB, runC];
 
-      const batched = test(runs);
+      const batched = getBatch(runs);
       expect(batched.length).toBe(3);
 
       // Sorting results in later runs being in the first batch.
@@ -207,7 +207,7 @@ describe('batchRunsForTimeline', () => {
   describe('Minimum widths', () => {
     it('uses minimum chunk width for tiny runs', () => {
       const tinyRun = {startTime: 10, endTime: 11};
-      const batched = test([tinyRun]);
+      const batched = getBatch([tinyRun]);
 
       const [batch] = batched;
       expect(batch.startTime).toBe(10);
@@ -220,7 +220,7 @@ describe('batchRunsForTimeline', () => {
     it('uses minimum multiple-run width for batched runs', () => {
       const tinyRunA = {startTime: 10, endTime: 11};
       const tinyRunB = {startTime: 10, endTime: 12};
-      const batched = test([tinyRunA, tinyRunB]);
+      const batched = getBatch([tinyRunA, tinyRunB]);
 
       const [batch] = batched;
       expect(batch.startTime).toBe(10);

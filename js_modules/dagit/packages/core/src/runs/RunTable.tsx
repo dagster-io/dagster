@@ -30,7 +30,7 @@ import {RunTableRunFragment} from './types/RunTableRunFragment';
 interface RunTableProps {
   runs: RunTableRunFragment[];
   filter?: RunsFilter;
-  onSetFilter: (search: RunFilterToken[]) => void;
+  onSetFilter?: (search: RunFilterToken[]) => void;
   nonIdealState?: React.ReactNode;
   actionBarComponents?: React.ReactNode;
   highlightedIds?: string[];
@@ -178,7 +178,7 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
 const RunRow: React.FC<{
   run: RunTableRunFragment;
   canTerminateOrDelete: boolean;
-  onSetFilter: (search: RunFilterToken[]) => void;
+  onSetFilter?: (search: RunFilterToken[]) => void;
   checked?: boolean;
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
   additionalColumns?: React.ReactNode[];

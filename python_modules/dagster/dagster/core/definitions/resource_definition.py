@@ -12,7 +12,7 @@ from typing import (
     overload,
 )
 
-from dagster import check
+import dagster._check as check
 from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.configurable import AnonymousConfigurableDefinition

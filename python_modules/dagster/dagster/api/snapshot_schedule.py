@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.schedule_definition import ScheduleExecutionData
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.external_data import ExternalScheduleExecutionErrorData

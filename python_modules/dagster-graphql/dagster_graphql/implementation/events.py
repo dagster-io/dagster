@@ -2,7 +2,8 @@ from math import isnan
 
 from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
 
-from dagster import check, seven
+import dagster._check as check
+import dagster.seven as seven
 from dagster.core.definitions.metadata import (
     BoolMetadataValue,
     DagsterAssetMetadataValue,

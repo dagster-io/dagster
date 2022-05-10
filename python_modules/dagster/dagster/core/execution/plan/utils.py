@@ -2,7 +2,7 @@ import sys
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.events import Failure, RetryRequested
 from dagster.core.errors import (
     DagsterError,

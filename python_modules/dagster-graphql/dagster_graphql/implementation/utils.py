@@ -4,7 +4,7 @@ from typing import cast
 
 from graphql.execution.base import ResolveInfo
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.host_representation import GraphSelector, PipelineSelector
 from dagster.core.workspace.context import BaseWorkspaceRequestContext

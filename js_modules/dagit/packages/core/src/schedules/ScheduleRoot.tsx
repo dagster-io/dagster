@@ -137,14 +137,7 @@ export const SchedulePreviousRuns: React.FC<{
   }
 
   const runs = data?.pipelineRunsOrError.results;
-  return (
-    <RunTable
-      actionBarComponents={tabs}
-      onSetFilter={() => {}}
-      runs={runs}
-      highlightedIds={highlightedIds}
-    />
-  );
+  return <RunTable actionBarComponents={tabs} runs={runs} highlightedIds={highlightedIds} />;
 };
 
 const SCHEDULE_ROOT_QUERY = gql`

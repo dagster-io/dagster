@@ -1,7 +1,7 @@
 # pylint: disable=missing-graphene-docstring
 import graphene
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.execution.backfill import BulkActionStatus
 from dagster.core.host_representation import (

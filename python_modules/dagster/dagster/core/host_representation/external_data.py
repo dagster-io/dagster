@@ -9,7 +9,8 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union
 
-from dagster import StaticPartitionsDefinition, check
+from dagster import StaticPartitionsDefinition
+from dagster import _check as check
 from dagster.core.asset_defs import SourceAsset
 from dagster.core.definitions import (
     JobDefinition,
@@ -33,7 +34,7 @@ from dagster.core.definitions.sensor_definition import (
     SensorDefinition,
 )
 from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
@@ -817,26 +818,21 @@ def external_asset_graph_from_defs(
     ]
 
     for source_asset in source_assets_by_key.values():
-        if source_asset.key in node_defs_by_asset_key:
-            raise DagsterInvariantViolationError(
-                f"Asset with key {source_asset.key.to_string()} is defined both as a source asset"
-                " and as a non-source asset"
+        if source_asset.key not in node_defs_by_asset_key:
+            # TODO: For now we are dropping partition metadata entries
+            metadata_entries = [
+                entry for entry in source_asset.metadata_entries if isinstance(entry, MetadataEntry)
+            ]
+            asset_nodes.append(
+                ExternalAssetNode(
+                    asset_key=source_asset.key,
+                    dependencies=list(deps[source_asset.key].values()),
+                    depended_by=list(dep_by[source_asset.key].values()),
+                    job_names=[],
+                    op_description=source_asset.description,
+                    metadata_entries=metadata_entries,
+                )
             )
-
-        # TODO: For now we are dropping partition metadata entries
-        metadata_entries = [
-            entry for entry in source_asset.metadata_entries if isinstance(entry, MetadataEntry)
-        ]
-        asset_nodes.append(
-            ExternalAssetNode(
-                asset_key=source_asset.key,
-                dependencies=list(deps[source_asset.key].values()),
-                depended_by=list(dep_by[source_asset.key].values()),
-                job_names=[],
-                op_description=source_asset.description,
-                metadata_entries=metadata_entries,
-            )
-        )
 
     for asset_key, node_tuple_list in node_defs_by_asset_key.items():
         node_output_handle, job_def = node_tuple_list[0]

@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, Union
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.resource_definition import (
     IContainsGenerator,

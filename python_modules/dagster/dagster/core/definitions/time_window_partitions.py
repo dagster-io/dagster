@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import pendulum
 
-from dagster import check
+import dagster._check as check
 from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster.utils.schedules import schedule_execution_time_iterator
 

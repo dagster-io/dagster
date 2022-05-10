@@ -3,6 +3,18 @@ import typing
 
 from pep562 import pep562
 
+import dagster._module_alias_map as _module_alias_map
+
+# Imports of a key will return the module named by the corresponding value.
+sys.meta_path.insert(
+    _module_alias_map.get_meta_path_insertion_index(),
+    _module_alias_map.AliasedModuleFinder(
+        {
+            "dagster.check": "dagster._check",
+        }
+    ),
+)
+
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
 from dagster.config.config_schema import ConfigSchema

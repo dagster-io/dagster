@@ -1,7 +1,7 @@
 # Contains mode, resources, loggers
 from typing import List, NamedTuple, Optional
 
-from dagster import check
+import dagster._check as check
 from dagster.config.snap import ConfigFieldSnap, snap_from_field
 from dagster.core.definitions import LoggerDefinition, ModeDefinition, ResourceDefinition
 from dagster.serdes import whitelist_for_serdes

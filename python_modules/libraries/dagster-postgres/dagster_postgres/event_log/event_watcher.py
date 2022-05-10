@@ -3,7 +3,7 @@ import threading
 from collections import defaultdict
 from typing import Callable, List, MutableMapping, Optional
 
-from dagster import check
+import dagster._check as check
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log.polling_event_watcher import CallbackAfterCursor
 

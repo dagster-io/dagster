@@ -1,8 +1,10 @@
 import sys
 import warnings
 from contextlib import closing, contextmanager
+from typing import Mapping
 
-from dagster import check, resource
+import dagster._check as check
+from dagster import resource
 
 from .configs import define_snowflake_config
 
@@ -21,15 +23,15 @@ except ImportError:
 
 
 class SnowflakeConnection:
-    def __init__(self, context):  # pylint: disable=too-many-locals
+    def __init__(self, config: Mapping[str, str], log):  # pylint: disable=too-many-locals
         # Extract parameters from resource config. Note that we can't pass None values to
         # snowflake.connector.connect() because they will override the default values set within the
         # connector; remove them from the conn_args dict.
-        self.connector = context.resource_config.get("connector", None)
+        self.connector = config.get("connector", None)
 
         if self.connector == "sqlalchemy":
             self.conn_args = {
-                k: context.resource_config.get(k)
+                k: config.get(k)
                 for k in (
                     "account",
                     "user",
@@ -41,12 +43,12 @@ class SnowflakeConnection:
                     "cache_column_metadata",
                     "numpy",
                 )
-                if context.resource_config.get(k) is not None
+                if config.get(k) is not None
             }
 
         else:
             self.conn_args = {
-                k: context.resource_config.get(k)
+                k: config.get(k)
                 for k in (
                     "account",
                     "user",
@@ -66,11 +68,11 @@ class SnowflakeConnection:
                     "timezone",
                     "authenticator",
                 )
-                if context.resource_config.get(k) is not None
+                if config.get(k) is not None
             }
 
         self.autocommit = self.conn_args.get("autocommit", False)
-        self.log = context.log
+        self.log = log
 
     @contextmanager
     def get_connection(self, raw_conn=True):
@@ -183,7 +185,7 @@ def snowflake_resource(context):
         )
 
     """
-    return SnowflakeConnection(context)
+    return SnowflakeConnection(context.resource_config, context.log)
 
 
 def _filter_password(args):

@@ -29,7 +29,7 @@ from typing import (
 
 import yaml
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.pipeline_definition import (
