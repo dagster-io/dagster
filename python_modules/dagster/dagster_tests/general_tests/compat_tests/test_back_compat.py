@@ -890,11 +890,8 @@ def test_tick_selector_index_migration():
 
 def test_repo_label_tag_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_14_14_pre_repo_label_tags/sqlite")
-    import sqlalchemy as db  # pylint: disable=unused-import
 
     with copy_directory(src_dir) as test_dir:
-        db_path = os.path.join(test_dir, "history", "runs.db")
-
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             job_repo_filter = RunsFilter(
                 job_name="hammer",
