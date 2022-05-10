@@ -4,9 +4,9 @@ from collections import defaultdict, deque
 from typing import TYPE_CHECKING, AbstractSet, Dict, List, NamedTuple
 
 from dagster.core.definitions.dependency import DependencyStructure
+from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.utils import check
-from dagster.core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
     from dagster.core.definitions.job_definition import JobDefinition

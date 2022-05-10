@@ -18,8 +18,8 @@ from dagster_graphql.test.utils import (
 )
 
 from dagster import (
-    AssetGroup,
     Any,
+    AssetGroup,
     AssetKey,
     AssetMaterialization,
     AssetObservation,

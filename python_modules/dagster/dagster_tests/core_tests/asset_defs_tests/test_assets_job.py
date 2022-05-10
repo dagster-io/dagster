@@ -2,7 +2,6 @@ import os
 
 import pytest
 
-from dagster.core.test_utils import instance_for_test
 from dagster import (
     AssetGroup,
     AssetKey,
@@ -28,6 +27,7 @@ from dagster.core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_icontains_solids,
 )
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import safe_tempfile_path
 
 

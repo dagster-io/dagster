@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation.origin import ExternalPipelineOrigin
@@ -11,7 +12,6 @@ from dagster.core.snap.execution_plan_snapshot import (
 )
 from dagster.grpc.types import ExecutionPlanSnapshotArgs
 from dagster.serdes import deserialize_as
-from dagster.core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
     from dagster.grpc.client import DagsterGrpcClient

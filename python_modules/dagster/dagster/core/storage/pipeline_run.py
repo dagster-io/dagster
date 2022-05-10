@@ -4,6 +4,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional, Type
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
@@ -17,7 +18,6 @@ from dagster.serdes.serdes import (
     unpack_inner_value,
     whitelist_for_serdes,
 )
-from dagster.core.definitions.events import AssetKey
 
 from .tags import (
     BACKFILL_ID_TAG,

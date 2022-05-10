@@ -18,6 +18,7 @@ from dagster.config.snap import (
     ConfigType,
     ConfigTypeSnap,
 )
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.pipeline_definition import (
     PipelineDefinition,
@@ -45,7 +46,6 @@ from .solid import (
     SolidDefinitionsSnapshot,
     build_solid_definitions_snapshot,
 )
-from dagster.core.definitions.events import AssetKey
 
 
 def create_pipeline_snapshot_id(snapshot: "PipelineSnapshot") -> str:

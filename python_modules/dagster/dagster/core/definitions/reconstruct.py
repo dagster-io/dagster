@@ -12,6 +12,7 @@ from dagster.core.code_pointer import (
     ModuleCodePointer,
     get_python_file_from_target,
 )
+from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
@@ -22,7 +23,7 @@ from dagster.core.selector import parse_solid_selection
 from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster.utils import frozenlist, make_readonly_value
 from dagster.utils.backcompat import experimental
-from dagster.core.definitions.events import AssetKey
+
 from .pipeline_base import IPipeline
 
 if TYPE_CHECKING:
@@ -187,7 +188,7 @@ class ReconstructablePipeline(
                 .get_job_def_for_op_selection(self.solid_selection)
             )
 
-        check.invariant(self.asset_selection, "Asset selection cannot be provided with a pipeline")
+        check.invariant(self.asset_selection == None, "Asset selection cannot be provided with a pipeline")
         return (
             self.repository.get_definition().get_pipeline(self.pipeline_name)
             # pipelines use post-resolved selection

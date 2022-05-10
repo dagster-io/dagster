@@ -1,18 +1,16 @@
 import os
 import time
-import pytest
 
+import pytest
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_pipeline_selector,
     infer_repository_selector,
 )
-from dagster.core.errors import (
-    DagsterInvariantViolationError,
-)
 
 from dagster import AssetKey, DagsterEventType
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils import safe_tempfile_path
 
 # from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
@@ -302,6 +300,7 @@ def _create_run(
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
         variables={"executionParams": {"selector": selector, "mode": mode, "stepKeys": step_keys}},
     )
+    print(result)
     assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
     graphql_context.instance.run_launcher.join()
     return result.data["launchPipelineExecution"]["run"]["runId"]

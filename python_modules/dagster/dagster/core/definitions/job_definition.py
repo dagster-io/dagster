@@ -14,7 +14,6 @@ from typing import (
 )
 
 from dagster import check
-from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.composition import MappedInputPlaceholder
 from dagster.core.definitions.dependency import (
     DependencyDefinition,
@@ -26,13 +25,14 @@ from dagster.core.definitions.dependency import (
     NodeInvocation,
     SolidOutputHandle,
 )
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster.core.selector.subset_selector import (
+    AssetSelectionData,
     LeafNodeSelection,
     OpSelectionData,
-    AssetSelectionData,
     parse_op_selection,
 )
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager

@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Mapping, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
+from dagster.core.definitions.events import AssetKey
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryMode
 from dagster.core.host_representation.origin import (
@@ -14,7 +15,6 @@ from dagster.core.origin import PipelinePythonOrigin, get_python_environment_ent
 from dagster.serdes import serialize_dagster_namedtuple, whitelist_for_serdes
 from dagster.utils import frozenlist
 from dagster.utils.error import SerializableErrorInfo
-from dagster.core.definitions.events import AssetKey
 
 
 @whitelist_for_serdes
