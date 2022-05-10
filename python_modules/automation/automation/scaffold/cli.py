@@ -47,9 +47,7 @@ def cli():
 def library(name: str):
     """Scaffolds a Dagster library <NAME> in python_modules/libraries/dagster-<NAME>."""
     template_library_path = os.path.join(ASSETS_PATH, "dagster-library-tmpl")
-    new_template_library_path = os.path.abspath(
-        f"python_modules/libraries/dagster-{name}"
-    )
+    new_template_library_path = os.path.abspath(f"python_modules/libraries/dagster-{name}")
 
     if os.path.exists(new_template_library_path):
         raise click.UsageError(f"Library with name {name} already exists")

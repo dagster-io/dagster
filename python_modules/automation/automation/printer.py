@@ -1,8 +1,7 @@
 import os
 import sys
 from io import StringIO
-from typing import Any, Callable, List,Type
-from typing_extensions import Literal
+from typing import Any, Callable, List, Type
 
 from dagster.utils.indenting_printer import IndentingPrinter
 
@@ -22,7 +21,12 @@ class IndentingBufferPrinter(IndentingPrinter):
     def __enter__(self) -> "IndentingBufferPrinter":
         return self
 
-    def __exit__(self, _exception_type: Type[BaseException], _exception_value: BaseException, _traceback: List[str]) -> None:
+    def __exit__(
+        self,
+        _exception_type: Type[BaseException],
+        _exception_value: BaseException,
+        _traceback: List[str],
+    ) -> None:
         self.buffer.close()
 
     def read(self) -> str:

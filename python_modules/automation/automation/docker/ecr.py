@@ -44,7 +44,9 @@ def ensure_ecr_login(aws_region: str = DEFAULT_AWS_ECR_REGION):
     )
 
 
-def ecr_image(image: str, tag: Optional[str], aws_account_id: str, aws_region: str=DEFAULT_AWS_ECR_REGION) -> str:
+def ecr_image(
+    image: str, tag: Optional[str], aws_account_id: str, aws_region: str = DEFAULT_AWS_ECR_REGION
+) -> str:
     check.str_param(image, "image")
     check.opt_str_param(aws_account_id, "tag")
     check.str_param(aws_account_id, "aws_account_id")
