@@ -612,3 +612,9 @@ def uses_db_connection():
 ```
 
 If a resource you want to initialize has dependencies on other resources, those can be included in the dictionary passed to <PyObject object="build_resources"/>. For more in-depth usage, check out the [Initializing Resources Outside of Execution](/concepts/resources#initializing-resources-outside-of-execution) section.
+
+## See it in action
+
+For more examples of sensors, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news):
+
+- [Sensor factory](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news/hacker_news/sensors/hn_tables_updated_sensor.py)
