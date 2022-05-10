@@ -16,7 +16,7 @@ import { NextSeo } from "next-seo";
 import SidebarNavigation from "components/mdx/SidebarNavigation";
 import hydrate from "next-mdx-remote/hydrate";
 import { useRouter } from "next/router";
-
+import GitHubButton from "react-github-btn";
 const components: MdxRemote.Components = MDXComponents;
 
 export type MDXData = {
@@ -277,27 +277,14 @@ export function UnversionedMDXRenderer({
               </button>
             </div>
             <div className="py-2 px-4 flex items-center group">
-              <svg
-                className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
-                role="img"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                fill="none"
-                strokeWidth="2"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                />
-              </svg>
-              <a
-                className="text-sm ml-2 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
+              <GitHubButton
                 href="https://github.com/dagster-io/dagster"
+                data-icon="octicon-star"
+                data-show-count="true"
+                aria-label="Star dagster-io/dagster on GitHub"
               >
-                Star us on GitHub
-              </a>
+                Star
+              </GitHubButton>
             </div>
           </div>
           {/* End secondary column */}
@@ -402,27 +389,14 @@ function VersionedMDXRenderer({
               </button>
             </div>
             <div className="py-2 px-4 flex items-center group">
-              <svg
-                className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
-                role="img"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                fill="none"
-                strokeWidth="2"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                />
-              </svg>
-              <a
-                className="text-sm ml-2 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
+              <GitHubButton
                 href="https://github.com/dagster-io/dagster"
+                data-icon="octicon-star"
+                data-show-count="true"
+                aria-label="Star dagster-io/dagster on GitHub"
               >
-                Star us on GitHub
-              </a>
+                Star
+              </GitHubButton>
             </div>
           </div>
           {/* End secondary column */}
