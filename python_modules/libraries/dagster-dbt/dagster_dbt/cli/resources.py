@@ -1,8 +1,7 @@
 from typing import Any, Dict, List, Optional, Set
 
-from dagster import Permissive
-from dagster import _check as check
-from dagster import resource
+import dagster._check as check
+from dagster import Permissive, resource
 from dagster.utils.merger import merge_dicts
 
 from ..dbt_resource import DbtResource
