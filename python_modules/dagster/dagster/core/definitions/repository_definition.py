@@ -1175,7 +1175,7 @@ class RepositoryDefinition:
 
 def _process_and_validate_target(
     schedule_or_sensor_def: Union[SensorDefinition, ScheduleDefinition],
-    coerced_graphs: Dict[str, GraphDefinition],
+    coerced_graphs: Dict[str, JobDefinition],
     pipelines_or_jobs: Dict[str, PipelineDefinition],
     target: Union[GraphDefinition, PipelineDefinition],
 ):
