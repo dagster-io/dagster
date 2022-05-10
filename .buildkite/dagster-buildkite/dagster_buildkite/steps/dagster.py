@@ -485,6 +485,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ),
     ModuleBuildSpec(
         "python_modules/libraries/dagstermill",
+        tox_env_suffixes=["-papermill1", "-papermill2"],
     ),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-ge",
