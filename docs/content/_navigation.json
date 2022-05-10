@@ -711,15 +711,20 @@
   },
   {
     "title": "Changelog",
-    "icon": "Clock",
-    "path": "/changelog",
-    "isUnversioned": true
-  },
-  {
-    "title": "Migration Guides",
     "icon": "Change",
-    "path": "/migration",
-    "isUnversioned": true
+    "path": "/changelog",
+    "children": [
+      {
+        "title": "Changelog",
+        "path": "/changelog",
+        "isUnversioned": true
+      },
+      {
+        "title": "Migration Guides",
+        "path": "/migration",
+        "isUnversioned": true
+      }
+    ]
   },
   {
     "title": "Dagster Cloud Docs",

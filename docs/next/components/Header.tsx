@@ -16,10 +16,10 @@ const Header = ({ openMobileDocsMenu }) => {
       if (!headerRef.current || !headerBgRef.current) return;
       const dy = window.scrollY - lastScrollY.current;
 
-      const alpha = Math.min(Math.max(0, (window.scrollY - 100) / 70), 1);
+      const alpha = Math.min(Math.max(0, (window.scrollY - 30) / 70), 1);
       headerBgRef.current.style.opacity = `${alpha}`;
 
-      const targetTop = dy < 0 || window.scrollY < 100 ? 0 : COLLAPSING_PX;
+      const targetTop = dy < 0 || window.scrollY < 30 ? 0 : COLLAPSING_PX;
       const currentTop = Number(headerRef.current.style.top.replace("px", ""));
       if (targetTop !== currentTop) {
         headerRef.current.style.top = `${Math.min(

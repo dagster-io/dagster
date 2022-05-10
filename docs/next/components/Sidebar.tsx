@@ -150,20 +150,21 @@ const SecondaryNavigation = () => {
               (item) => item.path === asPathWithoutAnchor
             ));
 
+        const itemWithPath = sectionOrItem.path
+          ? sectionOrItem
+          : sectionOrItem.children[0];
+
         return (
-          <div key={sectionOrItem.path || sectionOrItem.children[0].path}>
-            {sectionOrItem.isExternalLink ? (
+          <div key={itemWithPath.path}>
+            {itemWithPath.isExternalLink || itemWithPath.isUnversioned ? (
               <MenuItem
-                href={sectionOrItem.path || sectionOrItem.children[0].path}
+                href={itemWithPath.path}
                 item={sectionOrItem}
                 match={match}
                 lvl={2}
               />
             ) : (
-              <Link
-                href={sectionOrItem.path || sectionOrItem.children[0].path}
-                passHref
-              >
+              <Link href={itemWithPath.path} passHref>
                 <MenuItem item={sectionOrItem} match={match} lvl={2} />
               </Link>
             )}
