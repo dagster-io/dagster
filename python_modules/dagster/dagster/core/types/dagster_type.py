@@ -804,7 +804,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
     )
-    from dagster.seven.typing import get_args, get_origin
+    from dagster.seven.typing import get_args
     from dagster.utils.typing_api import is_typing_type
 
     from .python_dict import Dict, PythonDict
@@ -896,7 +896,7 @@ def is_dynamic_output_annotation(dagster_type: object) -> bool:
 
     if dagster_type == DynamicOutput or get_origin(dagster_type) == DynamicOutput:
         raise DagsterInvariantViolationError(
-            "Op annotated with return type DynamicOutput. DynamicOutputs can only be returned in the context of a List or Mapping. If only one output is needed, use the Output API."
+            "Op annotated with return type DynamicOutput. DynamicOutputs can only be returned in the context of a List. If only one output is needed, use the Output API."
         )
 
     if get_origin(dagster_type) == list and len(get_args(dagster_type)) == 1:

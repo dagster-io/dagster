@@ -998,7 +998,7 @@ def test_generic_dynamic_output_bare():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Op annotated with return type DynamicOutput. DynamicOutputs can only be returned in the context of a List or Mapping. If only one output is needed, use the Output API.",
+        match="Op annotated with return type DynamicOutput. DynamicOutputs can only be returned in the context of a List. If only one output is needed, use the Output API.",
     ):
 
         @op
@@ -1007,7 +1007,7 @@ def test_generic_dynamic_output_bare():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Op annotated with return type DynamicOutput. DynamicOutputs can only be returned in the context of a List or Mapping. If only one output is needed, use the Output API.",
+        match="Op annotated with return type DynamicOutput. DynamicOutputs can only be returned in the context of a List. If only one output is needed, use the Output API.",
     ):
 
         @op
@@ -1052,8 +1052,6 @@ def test_generic_dynamic_output_empty_with_type():
 
     result = execute_op_in_graph(basic_yield)
     assert result.success
-
-    execute_op_in_graph(basic_yield_not_optional)
 
 
 def test_generic_dynamic_multiple_outputs_empty():
