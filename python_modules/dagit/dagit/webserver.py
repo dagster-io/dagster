@@ -139,7 +139,6 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         # parse content to HTML
         notebook = nbformat.reads(notebook_content, as_version=4)
         html_exporter = HTMLExporter()
-        html_exporter.template_file = "basic"
         (body, resources) = html_exporter.from_notebook_node(notebook)
         return HTMLResponse("<style>" + resources["inlining"]["css"][0] + "</style>" + body)
 
