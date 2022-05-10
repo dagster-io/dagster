@@ -50,7 +50,6 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
             return [
               ...flat,
               {
-                key: `${repoPath}-${name}`,
                 label: name,
                 description: manyRepos
                   ? `${isJob ? 'Job' : 'Pipeline'} in ${repoPath}`
@@ -68,7 +67,6 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
           }, [] as SearchResult[]);
 
         const allSchedules: SearchResult[] = schedules.map((schedule) => ({
-          key: `${repoPath}-${schedule.name}`,
           label: schedule.name,
           description: manyRepos ? `Schedule in ${repoPath}` : 'Schedule',
           href: workspacePath(repoName, locationName, `/schedules/${schedule.name}`),
@@ -76,7 +74,6 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
         }));
 
         const allSensors: SearchResult[] = sensors.map((sensor) => ({
-          key: `${repoPath}-${sensor.name}`,
           label: sensor.name,
           description: manyRepos ? `Sensor in ${repoPath}` : 'Sensor',
           href: workspacePath(repoName, locationName, `/sensors/${sensor.name}`),
@@ -86,7 +83,6 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
         const allPartitionSets: SearchResult[] = partitionSets
           .filter((item) => !isAssetGroup(item.pipelineName))
           .map((partitionSet) => ({
-            key: `${repoPath}-${partitionSet.name}`,
             label: partitionSet.name,
             description: manyRepos ? `Partition set in ${repoPath}` : 'Partition set',
             href: workspacePath(
@@ -119,7 +115,6 @@ const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
   const {nodes} = data.assetsOrError;
   const allEntries = nodes.map(({key}) => {
     return {
-      key: displayNameForAssetKey(key),
       label: displayNameForAssetKey(key),
       segments: key.path,
       description: 'Asset',
