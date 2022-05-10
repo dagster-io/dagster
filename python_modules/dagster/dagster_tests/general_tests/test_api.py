@@ -1,9 +1,12 @@
+import importlib
 import inspect
 import re
+import sys
 
 import pytest
 
 import dagster
+from dagster._module_alias_map import AliasedModuleFinder, get_meta_path_insertion_index
 
 
 def test_all():
@@ -23,3 +26,23 @@ def test_deprecated_imports():
     with pytest.warns(DeprecationWarning, match=re.escape('"EventMetadataEntry" is deprecated')):
         from dagster import EventMetadataEntry, MetadataEntry
     assert EventMetadataEntry is MetadataEntry
+
+
+@pytest.fixture
+def patch_sys_meta_path():
+    aliased_finder = AliasedModuleFinder({"dagster.foo": "dagster.core"})
+    sys.meta_path.insert(get_meta_path_insertion_index(), aliased_finder)
+    yield
+    sys.meta_path.remove(aliased_finder)
+
+
+@pytest.mark.usefixtures("patch_sys_meta_path")
+def test_aliased_module_finder_import():
+    assert importlib.import_module("dagster.foo") == importlib.import_module("dagster.core")
+
+
+@pytest.mark.usefixtures("patch_sys_meta_path")
+def test_aliased_module_finder_nested_import():
+    assert importlib.import_module("dagster.foo.definitions") == importlib.import_module(
+        "dagster.core.definitions"
+    )
