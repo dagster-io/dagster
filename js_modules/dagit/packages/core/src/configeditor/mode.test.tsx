@@ -1,4 +1,3 @@
-import 'jest';
 import {RegExps} from './codemirror-yaml/mode';
 
 it('recognizes a double quoted string with escaped double quotes', () => {
