@@ -322,7 +322,7 @@ class SensorDefinition:
     def job(self) -> PipelineDefinition:
         if self._targets:
             if len(self._targets) == 1 and isinstance(self._targets[0], DirectTarget):
-                return self._targets[0].pipeline
+                return self._targets[0].target
             elif len(self._targets) > 1:
                 raise DagsterInvalidDefinitionError(
                     "Job property not available when SensorDefinition has multiple jobs."
