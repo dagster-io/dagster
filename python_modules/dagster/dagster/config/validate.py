@@ -1,6 +1,6 @@
 from typing import Dict, List, Mapping, Optional, Set, TypeVar, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.utils import ensure_single_item, frozendict
 
 from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind

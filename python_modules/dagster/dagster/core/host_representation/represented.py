@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from dagster import check
+import dagster._check as check
 
 from .pipeline_index import PipelineIndex
 

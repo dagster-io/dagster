@@ -10,9 +10,9 @@ from dagster import (
     Output,
     StaticPartitionsDefinition,
     String,
-    build_op_context,
-    check,
 )
+from dagster import _check as check
+from dagster import build_op_context
 from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
 
 

@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import BinaryIO, Optional, TextIO, Union
 
-from dagster import check
+import dagster._check as check
 from dagster.config import Field
 from dagster.config.source import StringSource
 from dagster.core.definitions.resource_definition import resource

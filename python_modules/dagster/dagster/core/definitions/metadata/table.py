@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, cast
 
-import dagster.check as check
+import dagster._check as check
 from dagster.serdes.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster.utils.backcompat import experimental
 

@@ -8,7 +8,8 @@ import pytest
 from dagster_graphql import DagsterGraphQLClient
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from dagster import check, file_relative_path
+import dagster._check as check
+from dagster import file_relative_path
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator

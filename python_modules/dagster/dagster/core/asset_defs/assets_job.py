@@ -13,7 +13,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.asset_layer import AssetLayer
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.decorators.op_decorator import op

@@ -1,6 +1,6 @@
 import sqlalchemy as db
 
-from dagster import check
+import dagster._check as check
 from dagster.core.storage.runs import (
     DaemonHeartbeatsTable,
     InstanceInfo,

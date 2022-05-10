@@ -46,3 +46,7 @@ def test_aliased_module_finder_nested_import():
     assert importlib.import_module("dagster.foo.definitions") == importlib.import_module(
         "dagster.core.definitions"
     )
+
+
+def test_deprecated_top_level_submodule_import():
+    assert importlib.import_module("dagster.check") == importlib.import_module("dagster._check")

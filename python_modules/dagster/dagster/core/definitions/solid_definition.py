@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+import dagster._check as check
 from dagster.config.config_schema import ConfigSchemaType
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.policy import RetryPolicy

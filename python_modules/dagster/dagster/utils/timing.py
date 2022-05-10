@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 
-from dagster import check, seven
+import dagster._check as check
+import dagster.seven as seven
 
 
 def format_duration(milliseconds):

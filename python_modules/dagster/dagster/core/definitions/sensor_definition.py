@@ -16,7 +16,7 @@ from typing import (
 
 from typing_extensions import TypeGuard
 
-from dagster import check
+import dagster._check as check
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,

@@ -3,7 +3,7 @@ import subprocess
 import sys
 from contextlib import contextmanager
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.host_representation import InProcessRepositoryLocationOrigin
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin

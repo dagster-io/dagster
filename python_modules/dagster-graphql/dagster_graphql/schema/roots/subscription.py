@@ -1,7 +1,7 @@
 # pylint: disable=missing-graphene-docstring
 import graphene
 
-from dagster import check
+import dagster._check as check
 from dagster.core.storage.compute_log_manager import ComputeIOType
 
 from ...implementation.execution import get_compute_log_observable, get_pipeline_run_observable

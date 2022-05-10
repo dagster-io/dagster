@@ -1,6 +1,6 @@
 from typing import List, NamedTuple, Tuple
 
-from dagster import check
+import dagster._check as check
 
 
 class EvaluationStack(NamedTuple("_EvaluationStack", [("entries", List["EvaluationStackEntry"])])):

@@ -1,6 +1,7 @@
 import pytest
 
-from dagster import OpExecutionContext, check, execute_pipeline, job, op, pipeline, solid
+import dagster._check as check
+from dagster import OpExecutionContext, execute_pipeline, job, op, pipeline, solid
 from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.pipeline_definition import PipelineDefinition

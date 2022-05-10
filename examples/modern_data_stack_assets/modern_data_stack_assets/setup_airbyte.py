@@ -12,7 +12,7 @@ import pandas as pd
 from dagster_airbyte import AirbyteResource
 from dagster_postgres.utils import get_conn_string
 
-from dagster import check
+import dagster._check as check
 
 from .constants import PG_DESTINATION_CONFIG, PG_SOURCE_CONFIG
 

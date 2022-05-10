@@ -1,7 +1,7 @@
 import warnings
 from typing import AbstractSet, Dict, Iterable, Mapping, Optional, Sequence, Set, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions import GraphDefinition, NodeDefinition, NodeHandle, OpDefinition
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition

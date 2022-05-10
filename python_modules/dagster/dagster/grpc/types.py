@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Mapping, NamedTuple, Optional
 
-from dagster import check
+import dagster._check as check
 from dagster.core.code_pointer import CodePointer
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryMode

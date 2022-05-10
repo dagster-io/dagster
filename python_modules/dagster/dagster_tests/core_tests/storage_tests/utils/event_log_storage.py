@@ -22,15 +22,9 @@ from dagster import (
     Output,
     OutputDefinition,
     RetryRequested,
-    asset,
-    build_assets_job,
-    check,
-    op,
-    pipeline,
-    resource,
-    seven,
-    solid,
 )
+from dagster import _check as check
+from dagster import asset, build_assets_job, op, pipeline, resource, seven, solid
 from dagster.core.assets import AssetDetails
 from dagster.core.definitions import ExpectationResult
 from dagster.core.definitions.dependency import NodeHandle

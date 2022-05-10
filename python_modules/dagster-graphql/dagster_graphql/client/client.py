@@ -6,7 +6,7 @@ from gql import Client, gql
 from gql.transport import Transport
 from gql.transport.requests import RequestsHTTPTransport
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.utils.backcompat import experimental_class_warning

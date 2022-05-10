@@ -4,7 +4,8 @@ import time
 
 import pytest
 
-from dagster import check, seven
+import dagster._check as check
+import dagster.seven as seven
 from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
 from dagster.grpc.server import GrpcServerProcess, open_server_process

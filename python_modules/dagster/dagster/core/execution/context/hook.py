@@ -1,7 +1,7 @@
 import warnings
 from typing import AbstractSet, Any, Dict, Optional, Set, Union
 
-from dagster import check
+import dagster._check as check
 
 from ...definitions.composition import PendingNodeInvocation
 from ...definitions.decorators.graph_decorator import graph
