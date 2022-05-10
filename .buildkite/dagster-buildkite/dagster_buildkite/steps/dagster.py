@@ -298,6 +298,12 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         upload_coverage=False,
         supported_pythons=ExamplePythons,
     ),
+    ModuleBuildSpec(
+        "examples/ge_example",
+        buildkite_label="ge_example",
+        upload_coverage=False,
+        supported_pythons=[SupportedPython.V3_9],
+    ),
     ModuleBuildSpec("python_modules/dagit", extra_cmds_fn=dagit_extra_cmds_fn),
     ModuleBuildSpec("python_modules/automation"),
     ModuleBuildSpec(
@@ -528,6 +534,7 @@ def examples_tests():
         "deploy_docker",
         "hacker_news",
         "hacker_news_assets",
+        "ge_example",
     ]
 
     examples_root = os.path.join(GIT_REPO_ROOT, "examples")
