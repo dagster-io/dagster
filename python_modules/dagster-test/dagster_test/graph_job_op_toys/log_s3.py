@@ -24,4 +24,11 @@ def log_s3():
     read_s3_key()
 
 
-log_s3_job = log_s3.to_job(description="Demo job that spits out some file info, given a path")
+log_s3_job = log_s3.to_job(
+    description="Demo job that spits out some file info, given a path",
+    metadata={
+        "hello": "world",
+        "baz": MetadataValue.text("bbbb"),
+        "a_link": MetadataValue.url(url="https://dagster.io"),
+    },
+)

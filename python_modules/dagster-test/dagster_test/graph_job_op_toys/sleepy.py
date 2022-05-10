@@ -2,7 +2,7 @@
 from time import sleep
 from typing import List
 
-from dagster import Field, Out, Output, graph, op
+from dagster import Field, MetadataValue, Out, Output, graph, op
 
 
 @op
@@ -70,5 +70,11 @@ def sleepy():
 sleepy_job = sleepy.to_job(
     config={
         "ops": {"giver": {"config": [2, 2, 2, 2]}},
+    },
+    job_tags={"owner": "person_1", "team": "core", "other": "info"},
+    metadata={
+        "foo": "bar",
+        "baz": MetadataValue.text("zzzz"),
+        "a_link": MetadataValue.url(url="https://dagster.io"),
     },
 )

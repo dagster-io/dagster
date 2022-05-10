@@ -185,10 +185,17 @@ many_events_job = many_events.to_job(
     description=(
         "Demo job that yields AssetMaterializations and ExpectationResults, along with the "
         "various forms of metadata that can be attached to them."
-    )
+    ),
+    job_tags={"owner": "person_2", "team": "core", "other": "bye"},
 )
 
 
 many_events_subset_job = many_events.to_job(
-    name="many_events_subset_job", op_selection=["many_materializations_and_passing_expectations*"]
+    name="many_events_subset_job",
+    op_selection=["many_materializations_and_passing_expectations*"],
+    metadata={
+        "owner": "person_1",
+        "team": MetadataValue.text("cloud"),
+        "a_link": MetadataValue.url(url="https://dagster.io"),
+    },
 )

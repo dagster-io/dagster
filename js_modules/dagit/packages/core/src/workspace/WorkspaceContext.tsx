@@ -5,6 +5,7 @@ import * as React from 'react';
 import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {PipelineSelector} from '../types/globalTypes';
 
 import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
@@ -85,6 +86,13 @@ const ROOT_WORKSPACE_QUERY = gql`
                     id
                     name
                   }
+                  metadataEntries {
+                    ...MetadataEntryFragment
+                  }
+                  jobTags {
+                    key
+                    value
+                  }
                 }
                 schedules {
                   id
@@ -125,6 +133,7 @@ const ROOT_WORKSPACE_QUERY = gql`
   }
   ${PYTHON_ERROR_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
+  ${METADATA_ENTRY_FRAGMENT}
 `;
 
 /**

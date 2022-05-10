@@ -4,6 +4,7 @@ from dagster import (
     IOManager,
     In,
     Int,
+    MetadataValue,
     Out,
     ResourceDefinition,
     RetryRequested,
@@ -171,6 +172,11 @@ error_monster_passing_job = error_monster.to_job(
     tags={"monster": "error"},
     executor_def=in_process_executor,
     name="error_monster_passing_job",
+    metadata={
+        "status": "passing",
+        "baz": MetadataValue.text("aaaaa"),
+        "a_link": MetadataValue.url(url="https://dagster.io"),
+    },
 )
 
 error_monster_failing_job = error_monster.to_job(
@@ -189,6 +195,7 @@ error_monster_failing_job = error_monster.to_job(
     tags={"monster": "error"},
     executor_def=in_process_executor,
     name="error_monster_failing_job",
+    job_tags={"owner": "person_1", "team": "core"},
 )
 
 

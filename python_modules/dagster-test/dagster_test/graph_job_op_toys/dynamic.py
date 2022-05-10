@@ -41,4 +41,4 @@ def dynamic():
     multiply_by_two.alias("double_total")(sum_numbers(emit_ten(), result.collect()))
 
 
-dynamic_job = dynamic.to_job()
+dynamic_job = dynamic.to_job(job_tags={"owner": "person_1", "team": "cloud", "other": "goodbye"})

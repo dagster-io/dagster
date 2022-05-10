@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 from random import random
 
-from dagster import AssetMaterialization, In, Nothing, Out, fs_io_manager, graph, op
+from dagster import AssetMaterialization, In, MetadataValue, Nothing, Out, fs_io_manager, graph, op
 from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 
 TRAFFIC_CONSTANTS = {
@@ -138,4 +138,10 @@ longitudinal_job = longitudinal.to_job(
         "a sigmoidal curve."
     ),
     resource_defs={"io_manager": fs_io_manager},
+    job_tags={"owner": "person_1", "team": "core", "other": "info"},
+    metadata={
+        "owner": "person_1",
+        "team": MetadataValue.text("cloud"),
+        "a_link": MetadataValue.url(url="https://dagster.io"),
+    },
 )

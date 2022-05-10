@@ -12,7 +12,7 @@ from dagster_test.graph_job_op_toys.asset_lineage import (
 )
 from dagster_test.graph_job_op_toys.big_honkin_asset_graph import big_honkin_asset_group
 from dagster_test.graph_job_op_toys.branches import branch_failed_job, branch_job
-from dagster_test.graph_job_op_toys.composition import composition
+from dagster_test.graph_job_op_toys.composition import composition_job
 from dagster_test.graph_job_op_toys.cross_repo_assets import (
     downstream_asset_group1,
     downstream_asset_group2,
@@ -64,7 +64,7 @@ model_job = model.to_job()
 def toys_repository():
     return (
         [
-            composition,
+            composition_job,
             error_monster_failing_job,
             error_monster_passing_job,
             hammer_default_executor_job,

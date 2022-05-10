@@ -1,6 +1,6 @@
 from time import sleep
 
-from dagster import Field, Int, Out, Output, graph, op
+from dagster import Field, Int, MetadataValue, Out, Output, graph, op
 
 
 @op(
@@ -43,10 +43,17 @@ branch_failed_job = branch.to_job(
     config={
         "ops": {"root": {"config": {"sleep_secs": [-10, 30]}}},
     },
+    job_tags={"owner": "person_2", "team": "core", "other": "info"},
 )
 
 branch_job = branch.to_job(
     config={
         "ops": {"root": {"config": {"sleep_secs": [0, 10]}}},
+    },
+    job_tags={"owner": "person_1", "team": "core", "other": "info"},
+    metadata={
+        "world": "hello",
+        "baz": MetadataValue.text("bbbb"),
+        "a_link": MetadataValue.url(url="https://google.com"),
     },
 )

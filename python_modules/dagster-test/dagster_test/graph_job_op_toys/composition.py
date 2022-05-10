@@ -1,4 +1,4 @@
-from dagster import Float, In, Int, List, Out, graph, op
+from dagster import Float, In, Int, List, MetadataValue, Out, graph, op
 
 
 @op(out=Out(Int))
@@ -41,4 +41,12 @@ def composition():
     div_four(int_to_float(add_four()))
 
 
-composition_job = composition.to_job(description="Demo job that makes use of composite ops.")
+composition_job = composition.to_job(
+    description="Demo job that makes use of composite ops.",
+    job_tags={"owner": "person_1", "team": "core", "other": "info"},
+    metadata={
+        "foo": "bar",
+        "baz": MetadataValue.text("bbbb"),
+        "a_link": MetadataValue.url(url="https://dagster.io"),
+    },
+)
