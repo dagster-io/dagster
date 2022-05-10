@@ -18,6 +18,7 @@ from dagster_graphql.test.utils import (
 )
 
 from dagster import (
+    AssetGroup,
     Any,
     AssetKey,
     AssetMaterialization,
@@ -1555,6 +1556,34 @@ failure_assets_job = build_assets_job(
 )
 
 
+@asset
+def foo():
+    return 5
+
+
+@asset
+def bar():
+    return 10
+
+
+@asset
+def foo_bar(foo, bar):
+    return foo + bar
+
+
+@asset
+def baz(foo_bar):
+    return foo_bar
+
+
+@asset
+def unconnected():
+    pass
+
+
+asset_group_job = AssetGroup([foo, bar, foo_bar, baz, unconnected]).build_job("foo_job")
+
+
 @repository
 def empty_repo():
     return []
@@ -1615,6 +1644,7 @@ def define_pipelines():
         partition_materialization_job,
         observation_job,
         failure_assets_job,
+        asset_group_job,
     ]
 
 

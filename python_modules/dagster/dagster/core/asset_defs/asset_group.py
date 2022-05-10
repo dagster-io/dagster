@@ -211,10 +211,7 @@ class AssetGroup:
             executor_def, "executor_def", ExecutorDefinition, self.executor_def
         )
         description = check.opt_str_param(description, "description")
-        resource_defs = {
-            **self.resource_defs,
-            **{"root_manager": build_root_manager(build_source_assets_by_key(self.source_assets))},
-        }
+        resource_defs = build_resource_defs(self.resource_defs, self.source_assets)
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
@@ -266,6 +263,7 @@ class AssetGroup:
 
     def build_asset_selection_job(
         self,
+        job_to_subselect: JobDefinition,
         asset_selection: Optional[List[AssetKey]] = None,
     ) -> JobDefinition:
         included_assets: List[AssetsDefinition] = []
@@ -276,13 +274,16 @@ class AssetGroup:
             else:
                 excluded_assets.append(asset)
 
-        asset_job = build_assets_job(
-            name="foo",
+        return build_assets_job(
+            name=job_to_subselect.name,
             assets=included_assets,
             source_assets=excluded_assets,
+            resource_defs=build_resource_defs(job_to_subselect.resource_defs, excluded_assets),
+            executor_def=job_to_subselect.executor_def,
+            description=job_to_subselect.description,
+            tags=job_to_subselect.tags,
             _asset_group=self,
         )
-        return asset_job
 
     def _parse_asset_selection(self, selection: Union[str, List[str]], job_name: str) -> List[str]:
         """Convert selection over asset keys to selection over ops"""
@@ -718,6 +719,13 @@ class AssetGroup:
             and self.resource_defs == other.resource_defs
             and self.executor_def == other.executor_def
         )
+
+
+def build_resource_defs(resource_defs, source_assets):
+    return {
+        **resource_defs,
+        **{"root_manager": build_root_manager(build_source_assets_by_key(source_assets))},
+    }
 
 
 def _find_assets_in_module(

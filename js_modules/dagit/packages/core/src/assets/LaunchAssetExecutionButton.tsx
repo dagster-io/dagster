@@ -116,7 +116,9 @@ export const LaunchAssetExecutionButton: React.FC<{
                 repositoryLocationName: repoAddress.location,
                 repositoryName: repoAddress.name,
                 pipelineName: jobName,
-                assetSelection: assets.map((asset) => asset.assetKey.path),
+                assetSelection: assets.map((asset) => ({
+                  path: asset.assetKey.path,
+                })),
               },
             },
           })}

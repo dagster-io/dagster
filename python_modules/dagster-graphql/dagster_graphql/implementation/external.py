@@ -27,7 +27,6 @@ def get_external_pipeline_or_raise(graphene_info, selector):
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
 
-    print("hello")
     full_pipeline = get_full_external_pipeline_or_raise(graphene_info, selector)
 
     if selector.solid_selection is None and selector.asset_selection is None:

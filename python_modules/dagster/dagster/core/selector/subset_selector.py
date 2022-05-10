@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, AbstractSet, Dict, List, NamedTuple
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.utils import check
+from dagster.core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
     from dagster.core.definitions.job_definition import JobDefinition
@@ -41,6 +42,27 @@ class OpSelectionData(
             resolved_op_selection=check.set_param(
                 resolved_op_selection, "resolved_op_selection", str
             ),
+            parent_job_def=check.inst_param(parent_job_def, "parent_job_def", JobDefinition),
+        )
+
+
+class AssetSelectionData(
+    NamedTuple(
+        "_AssetSelectionData",
+        [
+            ("asset_selection", List[AssetKey]),
+            ("parent_job_def", "JobDefinition"),
+        ],
+    )
+):
+    # TODO add docstring
+
+    def __new__(cls, asset_selection, parent_job_def):
+        from dagster.core.definitions.job_definition import JobDefinition
+
+        return super(AssetSelectionData, cls).__new__(
+            cls,
+            asset_selection=check.list_param(asset_selection, "asset_selection", AssetKey),
             parent_job_def=check.inst_param(parent_job_def, "parent_job_def", JobDefinition),
         )
 

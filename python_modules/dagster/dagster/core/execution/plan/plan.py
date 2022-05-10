@@ -735,31 +735,6 @@ class ExecutionPlan(
 
         return {key: deps for key, deps in after.items() if key not in previous}
 
-    def build_subset_plan_for_assets(
-        self,
-        asset_keys_to_execute: List[str],
-        pipeline_def: PipelineDefinition,
-        resolved_run_config: ResolvedRunConfig,
-        step_output_versions=None,
-    ) -> "ExecutionPlan":
-
-        return ExecutionPlan(
-            self.step_dict,
-            executable_map,
-            resolvable_map,
-            step_handles_to_execute,
-            known_state,
-            _compute_artifacts_persisted(
-                self.step_dict,
-                self.step_dict_by_key,
-                step_handles_to_execute,
-                pipeline_def,
-                resolved_run_config,
-                executable_map,
-            ),
-            executor_name=self.executor_name,
-        )
-
     def build_subset_plan(
         self,
         step_keys_to_execute: List[str],

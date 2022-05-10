@@ -32,6 +32,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSub
 from dagster.core.selector.subset_selector import (
     LeafNodeSelection,
     OpSelectionData,
+    AssetSelectionData,
     parse_op_selection,
 )
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
@@ -74,6 +75,7 @@ class JobDefinition(PipelineDefinition):
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
+        _asset_selection_data: Optional[AssetSelectionData] = None,
         asset_layer: Optional[AssetLayer] = None,
     ):
 
@@ -89,6 +91,9 @@ class JobDefinition(PipelineDefinition):
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
         self._op_selection_data = check.opt_inst_param(
             _op_selection_data, "_op_selection_data", OpSelectionData
+        )
+        self._asset_selection_data = check.opt_inst_param(
+            _asset_selection_data, "_asset_selection_data", AssetSelectionData
         )
 
         super(JobDefinition, self).__init__(
@@ -142,7 +147,7 @@ class JobDefinition(PipelineDefinition):
         partition_key: Optional[str] = None,
         raise_on_error: bool = True,
         op_selection: Optional[List[str]] = None,
-        # asset_selection: Optional[List[AssetKey]] = None,
+        asset_selection: Optional[List[AssetKey]] = None,
         run_id: Optional[str] = None,
     ) -> "ExecuteInProcessResult":
         """
@@ -181,6 +186,13 @@ class JobDefinition(PipelineDefinition):
 
         run_config = check.opt_dict_param(run_config, "run_config")
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
+        asset_selection = check.opt_list_param(asset_selection, "asset_selection", AssetKey)
+
+        check.invariant(
+            not (op_selection and asset_selection),
+            "op_selection and asset_selection cannot both be provided as args to execute_in_process",
+        )
+
         partition_key = check.opt_str_param(partition_key, "partition_key")
 
         resource_defs = dict(self.resource_defs)
@@ -198,7 +210,12 @@ class JobDefinition(PipelineDefinition):
             op_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,
             asset_layer=self.asset_layer,
-        ).get_job_def_for_op_selection(op_selection)
+        )
+
+        if op_selection:
+            ephemeral_job = ephemeral_job.get_job_def_for_op_selection(op_selection)
+        elif asset_selection:
+            ephemeral_job = ephemeral_job.get_job_def_for_asset_selection(asset_selection)
 
         tags = None
         if partition_key:
@@ -235,13 +252,23 @@ class JobDefinition(PipelineDefinition):
     def op_selection_data(self) -> Optional[OpSelectionData]:
         return self._op_selection_data
 
+    @property
+    def asset_selection_data(self) -> Optional[AssetSelectionData]:
+        return self._asset_selection_data
+
     def get_job_def_for_asset_selection(
         self,
         asset_selection: Optional[List[AssetKey]] = None,
     ) -> "JobDefinition":
         asset_group = self.asset_layer.source_asset_group
-        new_job = asset_group.build_asset_selection_job(asset_selection=asset_selection)
-        return new_job
+        new_job = asset_group.build_asset_selection_job(
+            job_to_subselect=self, asset_selection=asset_selection
+        )
+        asset_selection_data = AssetSelectionData(
+            asset_selection=asset_selection,
+            parent_job_def=self,
+        )
+        return new_job.with_asset_selection_data(asset_selection_data)
 
     def get_job_def_for_op_selection(
         self,
@@ -340,26 +367,35 @@ class JobDefinition(PipelineDefinition):
 
         return job_def
 
-    def get_parent_pipeline_snapshot(self) -> Optional["PipelineSnapshot"]:
-        return (
-            self.op_selection_data.parent_job_def.get_pipeline_snapshot()
-            if self.op_selection_data
-            else None
+    def with_asset_selection_data(self, asset_selection_data: AssetSelectionData):
+        # check asset selection data
+        job_def = JobDefinition(
+            name=self.name,
+            graph_def=self._graph_def,
+            resource_defs=dict(self.resource_defs),
+            logger_defs=dict(self.loggers),
+            executor_def=self.executor_def,
+            partitioned_config=self.partitioned_config,
+            config_mapping=self.config_mapping,
+            preset_defs=self.preset_defs,
+            tags=self.tags,
+            hook_defs=self.hook_defs,
+            description=self._description,
+            op_retry_policy=self._solid_retry_policy,
+            asset_layer=self.asset_layer,
+            _op_selection_data=self._op_selection_data,
+            _asset_selection_data=asset_selection_data,
         )
 
+        return job_def
 
-def _get_op_selection_from_node_handle(node_handle):
-
-    op_name = ""
-    curr_node = node_handle
-    while curr_node:
-        if op_name == "":
-            op_name = curr_node.name
+    def get_parent_pipeline_snapshot(self) -> Optional["PipelineSnapshot"]:
+        if self.op_selection_data:
+            return self.op_selection_data.parent_job_def.get_pipeline_snapshot()
+        elif self.asset_selection_data:
+            return self.asset_selection_data.parent_job_def.get_pipeline_snapshot()
         else:
-            op_name = curr_node.name + "." + op_name
-        curr_node = curr_node.parent
-
-    return op_name
+            return None
 
 
 def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):

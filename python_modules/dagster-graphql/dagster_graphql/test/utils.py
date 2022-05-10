@@ -96,9 +96,17 @@ def infer_repository_selector(graphql_context):
     }
 
 
-def infer_pipeline_selector(graphql_context, pipeline_name, solid_selection=None):
+def infer_pipeline_selector(
+    graphql_context, pipeline_name, solid_selection=None, asset_selection=None
+):
     selector = infer_repository_selector(graphql_context)
-    selector.update({"pipelineName": pipeline_name, "solidSelection": solid_selection})
+    selector.update(
+        {
+            "pipelineName": pipeline_name,
+            "solidSelection": solid_selection,
+            "assetSelection": asset_selection,
+        }
+    )
     return selector
 
 

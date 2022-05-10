@@ -206,7 +206,6 @@ def get_external_pipeline_subset_result(
 ):
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
     check.opt_list_param(solid_selection, "solid_selection", str)
-
     if solid_selection:
         try:
             sub_pipeline = recon_pipeline.subset_for_execution(solid_selection)

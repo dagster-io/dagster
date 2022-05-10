@@ -67,13 +67,12 @@ class UserFacingGraphQLError(Exception):
 
 def pipeline_selector_from_graphql(data):
     asset_selection = data.get("assetSelection") or []
-    print(asset_selection)
     return PipelineSelector(
         location_name=data["repositoryLocationName"],
         repository_name=data["repositoryName"],
         pipeline_name=data.get("pipelineName") or data.get("jobName"),
         solid_selection=data.get("solidSelection"),
-        asset_selection=[AssetKey(path) for path in asset_selection],
+        asset_selection=[AssetKey.from_graphql_input(asset_key) for asset_key in asset_selection],
     )
 
 

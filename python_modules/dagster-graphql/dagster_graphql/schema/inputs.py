@@ -106,7 +106,7 @@ class GrapheneJobOrPipelineSelector(graphene.InputObjectType):
     repositoryName = graphene.NonNull(graphene.String)
     repositoryLocationName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
-    assetSelection = graphene.List(non_null_list(graphene.String))
+    assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
 
     class Meta:
         description = """This type represents the fields necessary to identify a job or pipeline"""

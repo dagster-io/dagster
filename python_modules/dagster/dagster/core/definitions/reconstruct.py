@@ -179,7 +179,7 @@ class ReconstructablePipeline(
                 return (
                     self.repository.get_definition()
                     .get_pipeline(self.pipeline_name)
-                    .get_job_def_for_asset_selection(self.asset_selection)
+                    .get_job_def_for_asset_selection(list(self.asset_selection))
                 )
             return (
                 self.repository.get_definition().get_pipeline(self.pipeline_name)

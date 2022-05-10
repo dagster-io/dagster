@@ -45,6 +45,7 @@ from .solid import (
     SolidDefinitionsSnapshot,
     build_solid_definitions_snapshot,
 )
+from dagster.core.definitions.events import AssetKey
 
 
 def create_pipeline_snapshot_id(snapshot: "PipelineSnapshot") -> str:
@@ -169,7 +170,6 @@ class PipelineSnapshot(
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
         lineage = None
         if isinstance(pipeline_def, PipelineSubsetDefinition):
-
             lineage = PipelineSnapshotLineage(
                 parent_snapshot_id=create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.parent_pipeline_def)
@@ -178,13 +178,19 @@ class PipelineSnapshot(
                 solids_to_execute=pipeline_def.solids_to_execute,
             )
         if isinstance(pipeline_def, JobDefinition) and pipeline_def.op_selection_data:
-
             lineage = PipelineSnapshotLineage(
                 parent_snapshot_id=create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.op_selection_data.parent_job_def)
                 ),
                 solid_selection=sorted(pipeline_def.op_selection_data.op_selection),
                 solids_to_execute=pipeline_def.op_selection_data.resolved_op_selection,
+            )
+        if isinstance(pipeline_def, JobDefinition) and pipeline_def.asset_selection_data:
+            lineage = PipelineSnapshotLineage(
+                parent_snapshot_id=create_pipeline_snapshot_id(
+                    cls.from_pipeline_def(pipeline_def.asset_selection_data.parent_job_def)
+                ),
+                asset_selection=sorted(pipeline_def.asset_selection_data.asset_selection),
             )
 
         return PipelineSnapshot(
@@ -422,8 +428,7 @@ class PipelineSnapshotLineage(
             ("parent_snapshot_id", str),
             ("solid_selection", Optional[List[str]]),
             ("solids_to_execute", Optional[AbstractSet[str]]),
-            # maybe?
-            # ("asset_selection", Optional[List[str]]),
+            ("asset_selection", Optional[List[AssetKey]]),
         ],
     )
 ):
@@ -432,6 +437,7 @@ class PipelineSnapshotLineage(
         parent_snapshot_id: str,
         solid_selection: Optional[List[str]] = None,
         solids_to_execute: Optional[AbstractSet[str]] = None,
+        asset_selection: Optional[List[AssetKey]] = None,
     ):
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         return super(PipelineSnapshotLineage, cls).__new__(
@@ -439,4 +445,5 @@ class PipelineSnapshotLineage(
             check.str_param(parent_snapshot_id, parent_snapshot_id),
             solid_selection,
             solids_to_execute,
+            asset_selection,
         )
