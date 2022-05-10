@@ -1,11 +1,11 @@
 ---
 title: IO Managers | Dagster
-description: IO Managers determine how to store op outputs and load op inputs.
+description: IO Managers determine how to store assets and op outputs and load asset and op inputs.
 ---
 
 # IO Managers
 
-IO Managers are user-provided objects that store op outputs and load them as inputs to downstream ops.
+IO Managers are user-provided objects that store op outputs and assets and load them as inputs to downstream ops and assets.
 
 <Image
 alt="IO Manager Diagram"
@@ -25,19 +25,15 @@ height={1040}
 
 ## Overview
 
-Dagster ops have [inputs and outputs](/concepts/ops-jobs-graphs/ops#inputs-and-outputs). When an op returns an output and a downstream op takes that output as an input, where does the data live in between? <PyObject module="dagster" object="IOManager" pluralize /> let the user decide.
+Dagster ops and software-defined assets often have parameters and return values. This allows coding in a "functional" style: the function decorated by `@op` or `@asset` is only responsible for business logic, and separate code handles the IO - loading the input values and storing the return values.
 
-The IO manager APIs make it easy to separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results. Ops can focus on business logic, while IO managers handle I/O. This separation makes it easier to test the business logic and run it in different environments.
+This separate code lives inside an <PyObject module="dagster" object="IOManager" />. <PyObject module="dagster" object="IOManager" pluralize /> are user-provided objects that are responsible for storing the output of an op or asset and loading it as input to downstream ops or assets. For example, an IO manager might store objects in files on a filesystem or tables in a database.
 
-Not all inputs depend on upstream outputs. The [Unconnected Inputs](/concepts/io-management/unconnected-inputs) overview covers <PyObject module="dagster" object="DagsterTypeLoader" pluralize /> and <PyObject module="dagster" object="RootInputManager" displayText="RootInputManagers (experimental)" />, which let you decide how inputs at the beginning of a job are loaded.
+Not all op inputs depend on upstream outputs. The [Unconnected Inputs](/concepts/io-management/unconnected-inputs) overview covers <PyObject module="dagster" object="DagsterTypeLoader" pluralize /> and <PyObject module="dagster" object="RootInputManager" displayText="RootInputManagers (experimental)" />, which let you decide how non-asset inputs at the beginning of a job are loaded.
 
 ### Outputs and downstream inputs
 
-<PyObject module="dagster" object="IOManager" pluralize /> are user-provided objects
-that are responsible for storing the output of an op and loading it as input to downstream
-ops. For example, an IO Manager might store and load objects from files on a filesystem.
-
-Each op output can have its own IOManager, or multiple op outputs can share an IOManager. The IOManager that's used for handling a particular op output is automatically used for loading it in downstream ops.
+Each op output and software-defined asset can have its own IO manager, or multiple op outputs and software-defined assets can share an IO manager. The IO manager that's used for handling a particular op output or software-defined asset is automatically used for loading it in downstream ops and software-defined assets.
 
 <Image
 alt="two-io-managers"
@@ -50,19 +46,99 @@ height={1040}
 
 This diagram shows a job with two IO managers, each of which is shared across a few inputs and outputs.
 
-The default IOManager, <PyObject module="dagster" object="fs_io_manager" />, stores and retrieves values in the filesystem while pickling. If a job is invoked via <PyObject object="JobDefinition" method="execute_in_process" />, the default IOManager is switched to <PyObject module="dagster" object="mem_io_manager"/>, which stores outputs in memory. Dagster provides out-of-the-box IOManagers that pickle objects and save them. These are <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/> , <PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager"/> , or <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager"/>.
+The default IO manager, <PyObject module="dagster" object="fs_io_manager" />, pickles values and stores them on the local filesystem. If a job is invoked via <PyObject object="JobDefinition" method="execute_in_process" />, the default IO manager is switched to <PyObject module="dagster" object="mem_io_manager"/>, which stores outputs in memory. Dagster provides out-of-the-box IOManagers that pickle objects and save them in the object stores from the major Cloud providers. These are <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/> , <PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager"/> , or <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager"/>.
 
-IOManagers are [resources](/concepts/resources), which means users can supply different IOManagers for the same op outputs in different situations. For example, you might use an in-memory IOManager for unit-testing a job and an S3IOManager in production.
+IOManagers are [resources](/concepts/resources), which means users can supply different IOManagers for the same op outputs in different situations. For example, you might use an in-memory IO manager for unit-testing a job and an S3IOManager in production.
 
 ---
 
-## Using an IO manager
+## Specifying IO managers for software-defined assets
 
-### Job-wide IO manager
+### The default IO manager
 
-By default, all the inputs and outputs in a job use the same IOManager. This IOManager is determined by the <PyObject module="dagster" object="ResourceDefinition" /> provided for the `"io_manager"` resource key. `"io_manager"` is a resource key that Dagster reserves specifically for this purpose.
+The default IO manager materializes assets by pickling them to local files with the name of the asset.
 
-Here’s how to specify that all op outputs are stored using the <PyObject module="dagster" object="fs_io_manager" />, which pickles outputs and stores them on the local filesystem. It stores files in a directory with the run ID in the path, so that outputs from prior runs will never be overwritten.
+### Asset IO manager
+
+You can override the default IO manager at the asset level by specifying an <PyObject object="IOManagerDefinition" /> when defining the asset. For example, this snippet instructs Dagster to store the asset in an object on [S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html), keyed by the name of the asset:
+
+```python
+from dagster import asset
+from dagster_aws.s3 import s3_pickle_io_manager
+
+
+@asset(io_manager_def=s3_pickle_io_manager)
+def my_asset():
+    return ...
+```
+
+### Late-binding IO managers
+
+Sometimes you want the same asset to be stored using different IO managers in different environments. For example, in a local dev environment, you might want to store objects on your local filesystem, while in production, you might want to instead store them on S3. _IO manager keys_ offer a layer of indirection that allows specifying the <PyObject object="IOManagerDefinition" /> after you've already constructed an asset op. The default `io_manager_key` for every asset is `"io_manager"`.
+
+```python
+from dagster import asset, fs_io_manager, repository
+from dagster_aws.s3 import s3_pickle_io_manager
+
+@asset
+def my_asset():
+    return ...
+
+@repository
+def dev():
+    return [my_asset, {"io_manager": fs_io_manager}]
+
+@repository
+def prod():
+    return [my_asset, {"io_manager": s3_pickle_io_manager}]
+```
+
+If you want the IO managers to depend on the environment and you also want different assets to use different IO managers, you can set different IO manager keys on different assets:
+
+```python
+from dagster import asset, fs_io_manager, repository
+from dagster_aws.s3 import s3_pickle_io_manager
+from my_lib import snowflake_io_manager, mock_snowflake_io_manager
+
+@asset(io_manager_key="warehouse")
+def my_table_asset():
+    return ...
+
+@asset(io_manager_key="object_store")
+def my_object_asset():
+    return ...
+
+assets = [my_table_asset, my_object_asset]
+
+@repository
+def dev():
+    return [*assets, {"warehouse": mock_snowflake_io_manager, "object_store": fs_io_manager}]
+
+@repository
+def prod():
+    return [*assets, {"warehouse": snowflake_io_manager, "object_store": s3_pickle_io_manager}]
+```
+
+
+## Specifying IO managers for op outputs
+
+### Op output IO manager
+
+You can override the default IO manager for an op output when defining the op. For example, this snippet instructs Dagster to store the op output in an object on [S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html), keyed by the name of the op and the name of the output (which defaults to "result"):
+
+```python
+from dagster import Out, op
+from dagster_aws.s3 import s3_pickle_io_manager
+
+
+@op(out=Out(io_manager_def=s3_pickle_io_manager))
+def my_op():
+    return ...
+```
+
+### Late-binding IO managers
+
+Sometimes you want the same op output to be stored using different IO managers in different environments. For example, in a local dev environment, you might want to store objects on your local filesystem, while in production, you might want to instead store them on S3. _IO manager keys_ offer a layer of indirection that allows specifying the <PyObject object="IOManagerDefinition" /> after you've already constructed an op. The default `io_manager_key` for every asset is `"io_manager"`.
 
 ```python file=/concepts/io_management/default_io_manager.py
 from dagster import fs_io_manager, job, op
@@ -83,11 +159,7 @@ def my_job():
     op_2(op_1())
 ```
 
-### Per-output IO manager
-
-Not all the outputs in a job should necessarily be stored the same way. Maybe some of the outputs should live on the filesystem so they can be inspected, and others can be transiently stored in memory.
-
-To select the IOManager for a particular output, you can set an `io_manager_key` on <PyObject module="dagster" object="Out" />, and then refer to that `io_manager_key` when setting IO managers in your job. In this example, the output of `op_1` will go to `fs_io_manager` and the output of `op_2` will go to `s3_pickle_io_manager`.
+If you want the IO managers to depend on the environment and you also want different assets to use different IO managers, you can set different IO manager keys on different op outputs:
 
 ```python file=/concepts/io_management/io_manager_per_output.py startafter=start_marker endbefore=end_marker
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
@@ -115,217 +187,3 @@ def op_2(a):
 def my_job():
     op_2(op_1())
 ```
-
-## Defining an IO manager
-
-If you have specific requirements for where and how your outputs should be stored and retrieved, you can define your own IOManager. This boils down to implementing two functions: one that stores outputs and one that loads inputs.
-
-To define an IO manager, use the <PyObject module="dagster" object="io_manager" displayText="@io_manager" /> decorator.
-
-```python
-class MyIOManager(IOManager):
-    def handle_output(self, context, obj):
-        write_csv("some/path")
-
-    def load_input(self, context):
-        return read_csv("some/path")
-
-@io_manager
-def my_io_manager(init_context):
-    return MyIOManager()
-```
-
-The <PyObject module="dagster" object="io_manager" /> decorator behaves nearly identically to the <PyObject module="dagster" object="resource" /> decorator. It yields an <PyObject module="dagster" object="IOManagerDefinition" />, which is a subclass of <PyObject module="dagster" object="ResourceDefinition" /> that will produce an <PyObject module="dagster" object="IOManager" />.
-
-The provided `context` argument for `handle_output` is an <PyObject module="dagster" object="OutputContext" />. The provided `context` argument for `load_input` is an <PyObject module="dagster" object="InputContext" />. The linked API documentation lists all the fields that are available on these objects.
-
-## Examples
-
-### A custom IO manager that stores Pandas DataFrames in tables
-
-If your ops produce Pandas DataFrames that populate tables in a data warehouse, you might write something like the following. This IO manager uses the name assigned to the output as the name of the table to write the output to.
-
-```python literalinclude file=/concepts/io_management/custom_io_manager.py startafter=start_marker endbefore=end_marker
-from dagster import IOManager, io_manager
-
-
-class DataframeTableIOManager(IOManager):
-    def handle_output(self, context, obj):
-        # name is the name given to the Out that we're storing for
-        table_name = context.name
-        write_dataframe_to_table(name=table_name, dataframe=obj)
-
-    def load_input(self, context):
-        # upstream_output.name is the name given to the Out that we're loading for
-        table_name = context.upstream_output.name
-        return read_dataframe_from_table(name=table_name)
-
-
-@io_manager
-def df_table_io_manager(_):
-    return DataframeTableIOManager()
-
-
-@job(resource_defs={"io_manager": df_table_io_manager})
-def my_job():
-    op_2(op_1())
-```
-
-### Providing per-output config to an IO manager
-
-When launching a run, you might want to parameterize how particular outputs are stored.
-
-For example, if your job produces DataFrames to populate tables in a data warehouse, you might want to specify the table that each output goes to at run launch time.
-
-To accomplish this, you can define an `output_config_schema` on the IO manager definition. The IOManager methods can access this config when storing or loading data, via the <PyObject module="dagster" object="OutputContext" />.
-
-```python file=/concepts/io_management/output_config.py startafter=io_manager_start_marker endbefore=io_manager_end_marker
-class MyIOManager(IOManager):
-    def handle_output(self, context, obj):
-        table_name = context.config["table"]
-        write_dataframe_to_table(name=table_name, dataframe=obj)
-
-    def load_input(self, context):
-        table_name = context.upstream_output.config["table"]
-        return read_dataframe_from_table(name=table_name)
-
-
-@io_manager(output_config_schema={"table": str})
-def my_io_manager(_):
-    return MyIOManager()
-```
-
-Then, when executing a job, you can pass in this per-output config.
-
-```python file=/concepts/io_management/output_config.py startafter=execute_start_marker endbefore=execute_end_marker
-def execute_my_job_with_config():
-    @job(resource_defs={"io_manager": my_io_manager})
-    def my_job():
-        op_2(op_1())
-
-    my_job.execute_in_process(
-        run_config={
-            "ops": {
-                "op_1": {"outputs": {"result": {"table": "table1"}}},
-                "op_2": {"outputs": {"result": {"table": "table2"}}},
-            }
-        },
-    )
-```
-
-### Providing per-output metadata to an IO manager
-
-You might want to provide static metadata that controls how particular outputs are stored. You don't plan to change the metadata at runtime, so it makes more sense to attach it to a definition rather than expose it as a configuration option.
-
-For example, if your job produces DataFrames to populate tables in a data warehouse, you might want to specify that each output always goes to a particular table. To accomplish this, you can define `metadata` on each <PyObject module="dagster" object="Out" />:
-
-```python file=/concepts/io_management/metadata.py startafter=ops_start_marker endbefore=ops_end_marker
-@op(out=Out(metadata={"schema": "some_schema", "table": "some_table"}))
-def op_1():
-    """Return a Pandas DataFrame"""
-
-
-@op(out=Out(metadata={"schema": "other_schema", "table": "other_table"}))
-def op_2(_input_dataframe):
-    """Return a Pandas DataFrame"""
-```
-
-The IOManager can then access this metadata when storing or retrieving data, via the <PyObject module="dagster" object="OutputContext" />.
-
-In this case, the table names are encoded in the job definition. If, instead, you want to be able to set them at run time, the next section describes how.
-
-```python file=/concepts/io_management/metadata.py startafter=io_manager_start_marker endbefore=io_manager_end_marker
-class MyIOManager(IOManager):
-    def handle_output(self, context, obj):
-        table_name = context.metadata["table"]
-        schema = context.metadata["schema"]
-        write_dataframe_to_table(name=table_name, schema=schema, dataframe=obj)
-
-    def load_input(self, context):
-        table_name = context.upstream_output.metadata["table"]
-        schema = context.upstream_output.metadata["schema"]
-        return read_dataframe_from_table(name=table_name, schema=schema)
-
-
-@io_manager
-def my_io_manager(_):
-    return MyIOManager()
-```
-
-## Testing an IO manager
-
-The easiest way to test an IO manager is to construct an <PyObject module="dagster" object="OutputContext" /> or <PyObject module="dagster" object="InputContext" /> and pass it to the `handle_output` or `load_input` method of the IO manager. The <PyObject object="build_output_context" /> and <PyObject object="build_input_context" /> functions allow for easy construction of these contexts.
-
-Here's an example for a simple IO manager that stores outputs in an in-memory dictionary that's keyed on the step and name of the output.
-
-```python file=/concepts/io_management/test_io_manager.py
-from dagster import IOManager, build_input_context, build_output_context, io_manager
-
-
-class MyIOManager(IOManager):
-    def __init__(self):
-        self.storage_dict = {}
-
-    def handle_output(self, context, obj):
-        self.storage_dict[(context.step_key, context.name)] = obj
-
-    def load_input(self, context):
-        return self.storage_dict[
-            (context.upstream_output.step_key, context.upstream_output.name)
-        ]
-
-
-@io_manager
-def my_io_manager(_):
-    return MyIOManager()
-
-
-def test_my_io_manager_handle_output():
-    manager = my_io_manager(None)
-    context = build_output_context(name="abc", step_key="123")
-    manager.handle_output(context, 5)
-    assert manager.storage_dict[("123", "abc")] == 5
-
-
-def test_my_io_manager_load_input():
-    manager = my_io_manager(None)
-    manager.storage_dict[("123", "abc")] = 5
-
-    context = build_input_context(
-        upstream_output=build_output_context(name="abc", step_key="123")
-    )
-    assert manager.load_input(context) == 5
-```
-
-## Yielding metadata from an IOManager <Experimental />
-
-Sometimes, you may want to record some metadata while handling an output in an IOManager. To do this, you can optionally yield <PyObject object="MetadataEntry"/> objects from within the body of the `handle_output` function. Using this, we can modify one of the [above examples](/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables) to now include some helpful metadata in the log:
-
-```python file=/concepts/io_management/custom_io_manager.py startafter=start_metadata_marker endbefore=end_metadata_marker
-class DataframeTableIOManagerWithMetadata(IOManager):
-    def handle_output(self, context, obj):
-        table_name = context.name
-        write_dataframe_to_table(name=table_name, dataframe=obj)
-
-        # attach these to the Handled Output event
-        yield MetadataEntry.int(len(obj), label="number of rows")
-        yield MetadataEntry.text(table_name, label="table name")
-
-    def load_input(self, context):
-        table_name = context.upstream_output.name
-        return read_dataframe_from_table(name=table_name)
-```
-
-Any entries yielded this way will be attached to the `Handled Output` event for this output.
-
-Additionally, if you have specified that this `handle_output` function will be writing to an asset by defining a `get_output_asset_key` function, these metadata entries will also be attached to the materialization event created for that asset. You can learn more about this functionality in the [Asset Docs](/concepts/assets/asset-materializations).
-
-## See it in action
-
-For more examples of IO Managers, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news):
-
-- [Snowflake IO Manager](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news/hacker_news/resources/snowflake_io_manager.py)
-- [Parquet IO Manager](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news/hacker_news/resources/parquet_io_manager.py)
-- [S3 IO Manager with custom bucket](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news/hacker_news/resources/common_bucket_s3\_pickle_io_manager.py)
-
-Our [Bollinger example](https://github.com/dagster-io/dagster/tree/master/examples/bollinger) and [New York Times example](https://github.com/dagster-io/dagster/tree/master/examples/nyt-feed) also cover writing custom IO Managers.
