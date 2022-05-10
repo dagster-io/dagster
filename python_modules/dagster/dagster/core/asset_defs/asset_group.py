@@ -121,9 +121,24 @@ class AssetGroup(
         source_assets = check.opt_sequence_param(
             source_assets, "source_assets", of_type=SourceAsset
         )
-        resource_defs = check.opt_mapping_param(
-            resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
-        )
+        if resource_defs is None:
+            print("Computing resource defs")
+            resource_defs = {}
+            for asset_def in assets:
+                for output_def in asset_def.node_def.output_defs:
+                    io_manager = output_def.io_manager
+                    if not io_manager:
+                        continue
+
+                    # check that it is the same object
+                    io_manager_key = output_def.io_manager_key
+                    if io_manager_key in resource_defs:
+                        check.invariant(resource_defs[io_manager_key] is io_manager)
+                    resource_defs[io_manager_key] = io_manager
+        else:
+            resource_defs = check.opt_mapping_param(
+                resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
+            )
         executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
 
         source_assets_by_key = build_source_assets_by_key(source_assets)

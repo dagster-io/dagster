@@ -74,7 +74,8 @@ class OutputDefinition:
         asset_partitions: Optional[
             Union[AbstractSet[str], Callable[["OutputContext"], AbstractSet[str]]]
         ] = None,
-        asset_partitions_def: Optional["PartitionsDefinition"] = None
+        asset_partitions_def: Optional["PartitionsDefinition"] = None,
+        io_manager=None
         # make sure new parameters are updated in combine_with_inferred below
     ):
         from dagster.core.definitions.partition import PartitionsDefinition
@@ -84,11 +85,20 @@ class OutputDefinition:
         self._dagster_type = resolve_dagster_type(dagster_type)
         self._description = check.opt_str_param(description, "description")
         self._is_required = check.bool_param(is_required, "is_required")
-        self._io_manager_key = check.opt_str_param(
-            io_manager_key,
-            "io_manager_key",
-            default="io_manager",
-        )
+        if io_manager:
+            self.io_manager = io_manager
+            self._io_manager_key = check.opt_str_param(
+                io_manager_key,
+                "io_manager_key",
+                default=io_manager.default_resource_key,
+            )
+        else:
+            self.io_manager = None
+            self._io_manager_key = check.opt_str_param(
+                io_manager_key,
+                "io_manager_key",
+                default="io_manager",
+            )
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         self._metadata_entries = check.is_list(
             normalize_metadata(self._metadata, [], allow_invalid=True), MetadataEntry
@@ -255,6 +265,7 @@ class OutputDefinition:
             asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
             asset_partitions_def=self.asset_partitions_def,
+            io_manager=self.io_manager,
         )
 
 
@@ -354,6 +365,7 @@ class Out(
                 Optional[Union[AbstractSet[str], Callable[["OutputContext"], AbstractSet[str]]]],
             ),
             ("asset_partitions_def", Optional["PartitionsDefinition"]),
+            ("io_manager", Any)
         ],
     )
 ):
@@ -398,6 +410,7 @@ class Out(
             Union[AbstractSet[str], Callable[["OutputContext"], AbstractSet[str]]]
         ] = None,
         asset_partitions_def: Optional["PartitionsDefinition"] = None,
+        io_manager = None,
         # make sure new parameters are updated in combine_with_inferred below
     ):
         if asset_partitions_def:
@@ -416,6 +429,7 @@ class Out(
             asset_key=asset_key,
             asset_partitions=asset_partitions,
             asset_partitions_def=asset_partitions_def,
+            io_manager=io_manager,
         )
 
     @staticmethod
@@ -446,6 +460,7 @@ class Out(
             asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,
             asset_partitions_def=self.asset_partitions_def,
+            io_manager=self.io_manager,
         )
 
 

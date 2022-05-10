@@ -1,3 +1,4 @@
+from re import S
 import warnings
 from typing import (
     AbstractSet,
@@ -74,6 +75,7 @@ def asset(
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     op_tags: Optional[Dict[str, Any]] = None,
+    io_manager = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -143,6 +145,7 @@ def asset(
             partitions_def=partitions_def,
             partition_mappings=partition_mappings,
             op_tags=op_tags,
+            io_manager=io_manager,
         )(fn)
 
     return inner
@@ -164,6 +167,7 @@ class _Asset:
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         op_tags: Optional[Dict[str, Any]] = None,
+        io_manager = None,
     ):
         self.name = name
         # if user inputs a single string, coerce to list
@@ -179,11 +183,23 @@ class _Asset:
         self.partitions_def = partitions_def
         self.partition_mappings = partition_mappings
         self.op_tags = op_tags
+        self.io_manager = io_manager
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
 
         asset_ins = build_asset_ins(fn, self.namespace, self.ins or {}, self.non_argument_deps)
+
+        if self.io_manager:
+            check.invariant(self.io_manager_key is None, "if io_manager is set io_manager_key ust be none")
+            check.invariant(self.required_resource_keys is None, "if io_manager is set required_resource_keys must be None")
+
+            if isinstance(self.io_manager, dict):
+                kv = list(self.io_manager.items())[0]
+                self.io_manager_key, self.io_manager = kv
+            else:
+                self.io_manager_key = self.io_manager.default_resource_key
+
 
         out_asset_key = AssetKey(list(filter(None, [*(self.namespace or []), asset_name])))
         with warnings.catch_warnings():
@@ -193,6 +209,7 @@ class _Asset:
                 metadata=self.metadata or {},
                 io_manager_key=self.io_manager_key,
                 dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
+                io_manager=self.io_manager,
             )
 
             op = _Op(

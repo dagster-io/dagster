@@ -35,6 +35,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         version=None,
         input_config_schema=None,
         output_config_schema=None,
+        default_resource_key=None,
     ):
         self._input_config_schema = convert_user_facing_definition_config_schema(
             input_config_schema
@@ -49,6 +50,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
             if output_config_schema is not None
             else None
         )
+        self.default_resource_key = default_resource_key
         super(IOManagerDefinition, self).__init__(
             resource_fn=resource_fn,
             config_schema=config_schema,
@@ -216,7 +218,9 @@ def io_manager(
 
     """
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
-        return _IOManagerDecoratorCallable()(config_schema)
+        return _IOManagerDecoratorCallable(
+            default_resource_key=config_schema.__name__
+        )(config_schema)
 
     def _wrap(resource_fn):
         return _IOManagerDecoratorCallable(
@@ -226,6 +230,7 @@ def io_manager(
             version=version,
             output_config_schema=output_config_schema,
             input_config_schema=input_config_schema,
+            default_resource_key=resource_fn.__name__
         )(resource_fn)
 
     return _wrap
@@ -240,6 +245,7 @@ class _IOManagerDecoratorCallable:
         version=None,
         output_config_schema=None,
         input_config_schema=None,
+        default_resource_key=None,
     ):
         # type validation happens in IOManagerDefinition
         self.config_schema = config_schema
@@ -248,6 +254,7 @@ class _IOManagerDecoratorCallable:
         self.version = version
         self.output_config_schema = output_config_schema
         self.input_config_schema = input_config_schema
+        self.default_resource_key = default_resource_key
 
     def __call__(self, fn):
         check.callable_param(fn, "fn")
@@ -260,6 +267,7 @@ class _IOManagerDecoratorCallable:
             version=self.version,
             output_config_schema=self.output_config_schema,
             input_config_schema=self.input_config_schema,
+            default_resource_key=self.default_resource_key
         )
 
         update_wrapper(io_manager_def, wrapped=fn)
