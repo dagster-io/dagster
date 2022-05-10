@@ -41,7 +41,9 @@ export function normalizeVersionPath(
 
   // sort release versions by latest - we assume `ALL_VERSIONS` starts with master, and then
   // the following versions are sorted from oldest to latest.
-  const sortedVersions = ALL_VERSIONS.slice(0, 1).concat(ALL_VERSIONS.slice(1).reverse())
+  const sortedVersions = ALL_VERSIONS.slice(0, 1).concat(
+    ALL_VERSIONS.slice(1).reverse()
+  );
 
   return {
     asPath,

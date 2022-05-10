@@ -72,9 +72,9 @@ export default function VersionDropdown() {
                   <div className="py-1">
                     {versions.map((version) => {
                       return (
-                        <Menu.Item key={version}>
-                          {({ active }) => (
-                            <Link href={asPath} version={version}>
+                        <Link key={version} href={asPath} version={version}>
+                          <Menu.Item>
+                            {({ active }) => (
                               <a
                                 className={`${
                                   active
@@ -84,9 +84,9 @@ export default function VersionDropdown() {
                               >
                                 {version}
                               </a>
-                            </Link>
-                          )}
-                        </Menu.Item>
+                            )}
+                          </Menu.Item>
+                        </Link>
                       );
                     })}
                   </div>
