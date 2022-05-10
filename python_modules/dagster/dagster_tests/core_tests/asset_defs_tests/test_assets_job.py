@@ -1018,20 +1018,6 @@ def test_internal_asset_deps_assets():
     }
 
 
-# 1. Executing subset via dagit
-# 2. Executing subset via execute_in_process
-
-# Handle graph-backed asset, specifying root manager key on inputs
-# Test graph-backed assets locally
-
-# Op-backed assets
-# @asset
-# def my_asset():
-#     return "foo"
-
-# # only one of an op's inputs are loaded
-
-
 @asset
 def foo():
     return 5
@@ -1059,25 +1045,6 @@ def unconnected():
 
 asset_group = AssetGroup([foo, bar, foo_bar, baz, unconnected])
 
-
-# def test_partial_input_subset():
-#     materialize_all_assets(asset_group)
-
-#     job = asset_group.build_job("foo")
-#     result = job.execute_in_process(asset_selection=[AssetKey("foo"), AssetKey("foo_bar")])
-#     print(result)
-#     assert False
-
-
-# def test_disconnected_dependent_inputs_subset():
-#     materialize_all_assets(asset_group)
-
-#     job = asset_group.build_job("foo")
-#     result = job.execute_in_process(asset_selection=[AssetKey("foo"), AssetKey("baz")])
-#     print(result)
-#     assert False
-
-
 def test_disconnected_subset():
     with instance_for_test() as instance:
         job = asset_group.build_job("foo")
@@ -1092,5 +1059,17 @@ def test_disconnected_subset():
         assert materialization_events[0].asset_key == AssetKey("bar")
         assert materialization_events[1].asset_key == AssetKey("unconnected")
 
-        run = instance.get_runs(limit=1)[0]
-        assert run.asset_selection == [AssetKey("unconnected"), AssetKey("bar")]
+def test_connected_subset():
+    with instance_for_test() as instance:
+        job = asset_group.build_job("foo")
+        result = job.execute_in_process(
+            instance=instance, asset_selection=[AssetKey("foo"), AssetKey("bar"), AssetKey("foo_bar")]
+        )
+        materialization_events = sorted([
+            event for event in result.all_events if event.is_step_materialization
+        ], key=lambda event: event.asset_key)
+
+        assert len(materialization_events) == 3
+        assert materialization_events[0].asset_key == AssetKey("bar")
+        assert materialization_events[1].asset_key == AssetKey("foo")
+        assert materialization_events[2].asset_key == AssetKey("foo_bar")

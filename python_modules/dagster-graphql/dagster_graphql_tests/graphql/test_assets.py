@@ -1,11 +1,15 @@
 import os
 import time
+import pytest
 
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_pipeline_selector,
     infer_repository_selector,
+)
+from dagster.core.errors import (
+    DagsterInvariantViolationError,
 )
 
 from dagster import AssetKey, DagsterEventType

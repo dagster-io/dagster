@@ -22,6 +22,7 @@ from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition
 
 if TYPE_CHECKING:
+    from dagster.core.asset_defs import AssetGroup
     from dagster.core.asset_defs import AssetsDefinition
     from dagster.core.execution.context.output import OutputContext
 
@@ -343,7 +344,7 @@ class AssetLayer:
         ] = None,
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
         dependency_node_handles_by_asset_key: Optional[Mapping[AssetKey, Set[NodeHandle]]] = None,
-        source_asset_group=None,
+        source_asset_group: Optional["AssetGroup"] = None,
     ):
         self._asset_keys_by_node_input_handle = check.opt_dict_param(
             asset_keys_by_node_input_handle,
@@ -383,7 +384,7 @@ class AssetLayer:
     def from_graph_and_assets_node_mapping(
         graph_def: GraphDefinition,
         assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
-        _asset_group=None,
+        _asset_group: Optional["AssetGroup"] = None,
     ) -> "AssetLayer":
         """
         Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the

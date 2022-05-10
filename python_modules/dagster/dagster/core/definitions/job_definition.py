@@ -182,8 +182,6 @@ class JobDefinition(PipelineDefinition):
         from dagster.core.definitions.executor_definition import execute_in_process_executor
         from dagster.core.execution.execute_in_process import core_execute_in_process
 
-        # TODO: Enable subset selection from asset selection
-
         run_config = check.opt_dict_param(run_config, "run_config")
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
         asset_selection = check.opt_list_param(asset_selection, "asset_selection", AssetKey)
@@ -268,7 +266,7 @@ class JobDefinition(PipelineDefinition):
             asset_selection=asset_selection,
             parent_job_def=self,
         )
-        return new_job.with_asset_selection_data(asset_selection_data)
+        return new_job._with_asset_selection_data(asset_selection_data)
 
     def get_job_def_for_op_selection(
         self,
@@ -367,8 +365,10 @@ class JobDefinition(PipelineDefinition):
 
         return job_def
 
-    def with_asset_selection_data(self, asset_selection_data: AssetSelectionData):
-        # check asset selection data
+    def _with_asset_selection_data(self, asset_selection_data: AssetSelectionData):
+
+        asset_selection_data = check.inst_param(asset_selection_data, "asset_selection_data", AssetSelectionData)
+
         job_def = JobDefinition(
             name=self.name,
             graph_def=self._graph_def,

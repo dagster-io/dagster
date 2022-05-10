@@ -55,7 +55,13 @@ class AssetSelectionData(
         ],
     )
 ):
-    # TODO add docstring
+    """The data about asset selection.
+
+    Attributes:
+        asset_selection (List[AssetKey]): The queries of asset selection.
+        parent_job_def (JobDefinition): The definition of the full job. This is used for constructing
+            pipeline snapshot lineage.
+    """
 
     def __new__(cls, asset_selection, parent_job_def):
         from dagster.core.definitions.job_definition import JobDefinition

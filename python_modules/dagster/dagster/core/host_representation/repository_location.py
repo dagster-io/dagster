@@ -336,7 +336,6 @@ class InProcessRepositoryLocation(RepositoryLocation):
     def get_subset_external_pipeline_result(
         self, selector: PipelineSelector
     ) -> ExternalPipelineSubsetResult:
-        print("in process version")
         check.inst_param(selector, "selector", PipelineSelector)
         check.invariant(
             selector.location_name == self.name,
@@ -688,7 +687,6 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
         check.opt_inst_param(instance, "instance", DagsterInstance)
 
-        # here
         execution_plan_snapshot_or_error = sync_get_external_execution_plan_grpc(
             api_client=self.client,
             pipeline_origin=external_pipeline.get_external_origin(),
@@ -707,7 +705,6 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
     def get_subset_external_pipeline_result(
         self, selector: PipelineSelector
     ) -> "ExternalPipelineSubsetResult":
-        print("grpc version")
         check.inst_param(selector, "selector", PipelineSelector)
         check.invariant(
             selector.location_name == self.name,

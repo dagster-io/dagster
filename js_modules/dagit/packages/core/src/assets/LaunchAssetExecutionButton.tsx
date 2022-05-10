@@ -111,7 +111,6 @@ export const LaunchAssetExecutionButton: React.FC<{
                 ],
               },
               runConfigData: {},
-              // stepKeys: assets.map((o) => o.opNames).flat(),
               selector: {
                 repositoryLocationName: repoAddress.location,
                 repositoryName: repoAddress.name,

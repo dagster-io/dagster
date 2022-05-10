@@ -186,7 +186,8 @@ class ReconstructablePipeline(
                 # jobs use pre-resolved selection
                 .get_job_def_for_op_selection(self.solid_selection)
             )
-        # TODO: error if you get here with PipelineDef and assets to execute
+
+        check.invariant(self.asset_selection, "Asset selection cannot be provided with a pipeline")
         return (
             self.repository.get_definition().get_pipeline(self.pipeline_name)
             # pipelines use post-resolved selection
