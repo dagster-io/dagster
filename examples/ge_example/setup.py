@@ -10,7 +10,7 @@ setup(
         "dagster",
         "dagit",
         "dagster-ge",
-        "great_expectations>=0.14.12",
+        "great_expectations",
     ],
     author="Elementl",
     license="Apache-2.0",
