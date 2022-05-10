@@ -1060,163 +1060,162 @@ def test_duplicate_job_repo():
     def the_graph():
         pass
 
-    @sensor(job=the_graph)
-    def the_sensor_graph_coerce():
+    return _the_job
+
+
+def _create_pipeline_with_name(name):
+    @pipeline(name=name)
+    def _the_pipeline():
         pass
 
-    @schedule(job=the_graph, cron_schedule="* * * * *")
-    def the_schedule_graph_coerce():
+    return _the_pipeline
+
+
+def _create_schedule_from_target(target):
+    @schedule(job=target, cron_schedule="* * * * *")
+    def _the_schedule():
         pass
+
+    return _the_schedule
+
+
+def _create_sensor_from_target(target):
+    @sensor(job=target)
+    def _the_sensor():
+        pass
+
+    return _the_sensor
+
+
+def test_duplicate_graph_valid():
+    the_graph = _create_graph_with_name("foo")
 
     # Providing the same graph to the repo and multiple schedules / sensors is valid
     @repository
     def the_repo_dupe_graph_valid():
-        return [the_graph, the_sensor_graph_coerce]
+        return [the_graph, _create_sensor_from_target(the_graph)]
 
     assert len(the_repo_dupe_graph_valid.get_all_jobs()) == 1
 
-    @graph(name="the_graph")
-    def the_other_graph():
-        pass
 
+def test_duplicate_graph_target_invalid():
+    the_graph = _create_graph_with_name("foo")
+    other_graph = _create_graph_with_name("foo")
     # Different reference-equal graph provided to repo with same name, ensure error is thrown.
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Error when building repository: sensor 'the_sensor_graph_coerce' targets a graph named 'the_graph', but a different graph was provided to the repository with the same name. Disambiguate between these by providing a separate name to one of the graphs.",
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError):
 
         @repository
         def the_repo_dupe_graph_invalid():
-            return [the_other_graph, the_sensor_graph_coerce, the_schedule_graph_coerce]
+            return [the_graph, _create_sensor_from_target(other_graph)]
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @repository
+        def the_repo_dupe_graph_invalid():
+            return [the_graph, _create_schedule_from_target(other_graph)]
+
+
+def test_duplicate_job_target_invalid():
+    the_graph = _create_graph_with_name("foo")
 
     # Providing a job using the same graph as is provided to schedules /
     # sensors is invalid (since when provided as a job, can add arbitrary info
     # that changes execution behavior).
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Error when building repository: sensor 'the_sensor_graph_coerce' "
-        "targets a graph named 'the_graph', but a job was provided to the "
-        "repository with the same name. Disambiguate between these by "
-        "providing a separate name to one of these.",
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError):
 
         @repository
         def the_repo_dupe_job_invalid():
-            return [the_graph.to_job(), the_sensor_graph_coerce]
+            return [the_graph.to_job(), _create_sensor_from_target(the_graph)]
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Error when building repository: schedule 'the_schedule_graph_coerce' targets a graph named 'the_graph', but a job with the same name was provided to the repository. Disambiguate between these by providing a separate name to one of these.",
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError):
 
         @repository
         def the_repo_dupe_job_invalid():
-            return [the_graph.to_job(), the_schedule_graph_coerce]
+            return [the_graph.to_job(), _create_schedule_from_target(the_graph)]
 
-    the_job = the_graph.to_job()
 
-    @sensor(job=the_job)
-    def the_sensor_job_coerce():
-        pass
-
-    @schedule(job=the_job, cron_schedule="* * * * *")
-    def the_schedule_job_coerce():
-        pass
+def test_duplicate_job_target_valid():
+    the_job = _create_job_with_name("foo")
 
     @repository
     def the_repo_dupe_job_valid():
-        return [the_job, the_schedule_job_coerce, the_sensor_job_coerce]
+        return [the_job, _create_schedule_from_target(the_job), _create_sensor_from_target(the_job)]
 
-    the_different_job = the_graph.to_job()
 
-    @sensor(job=the_different_job)
-    def other_sensor_job_coerce():
-        pass
+def test_duplicate_job_target_invalid():
+    the_job = _create_job_with_name("foo")
+    other_job = _create_job_with_name("foo")
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Error when building repository: sensor 'other_sensor_job_coerce' targets a job 'the_graph', but a different job was provided to the repository with the same name. Disambiguate between these by providing a separate name to one of them.",
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError):
 
         @repository
         def the_repo_dupe_job_invalid():
-            return [the_job, other_sensor_job_coerce]
+            return [the_job, _create_sensor_from_target(other_job)]
 
-    @schedule(job=the_different_job, cron_schedule="* * * * *")
-    def other_schedule_job_coerce():
-        pass
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Error when building repository: schedule 'other_schedule_job_coerce' targets job 'the_graph', but a different job with the same name was provided to the repository. Disambiguate between these by providing a separate name to one of them.",
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError):
 
         @repository
         def the_repo_dupe_job_invalid():
-            return [the_job, other_schedule_job_coerce]
+            return [the_job, _create_schedule_from_target(other_job)]
 
-    @pipeline
-    def the_pipeline():
-        pass
 
-    @schedule(job=the_pipeline, cron_schedule="* * * * *")
-    def schedule_pipeline():
-        pass
-
-    @sensor(job=the_pipeline)
-    def sensor_pipeline():
-        pass
+def test_dupe_pipelines_valid():
+    the_pipeline = _create_pipeline_with_name("foo")
 
     @repository
     def the_repo_dupe_pipelines_valid():
-        return [the_pipeline, schedule_pipeline, sensor_pipeline]
+        return [
+            the_pipeline,
+            _create_schedule_from_target(the_pipeline),
+            _create_sensor_from_target(the_pipeline),
+        ]
 
-    @pipeline(name="the_pipeline")
-    def other_pipeline():
-        pass
 
-    @schedule(job=other_pipeline, cron_schedule="* * * * *")
-    def other_schedule_pipeline():
-        pass
+def test_dupe_pipelines_invalid():
+    the_pipeline = _create_pipeline_with_name("foo")
+    other_pipeline = _create_pipeline_with_name("foo")
 
-    @sensor(job=other_pipeline)
-    def other_sensor_pipeline():
-        pass
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Error when building repository: schedule 'other_schedule_pipeline' targets pipeline 'the_pipeline', but a different pipeline with the same name was provided to the repository. Disambiguate between these by providing a separate name to one of them.",
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError):
 
         @repository
         def the_repo_dupe_pipelines_invalid():
-            return [the_pipeline, other_schedule_pipeline]
+            return [the_pipeline, _create_schedule_from_target(other_pipeline)]
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Error when building repository: sensor 'other_sensor_pipeline' targets a pipeline 'the_pipeline', but a different pipeline was provided to the repository with the same name. Disambiguate between these by providing a separate name to one of them.",
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError):
 
         @repository
         def the_repo_dupe_pipelines_invalid():
-            return [the_pipeline, other_sensor_pipeline]
+            return [the_pipeline, _create_sensor_from_target(other_pipeline)]
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Error when building repository: sensor 'sensor_pipeline' targets a pipeline 'the_pipeline', but a different job was provided to the repository with the same name. Disambiguate between these by providing a separate name to one of them.",
-    ):
 
-        @repository
-        def the_repo_dupe_job_pipeline_invalid():
-            return [the_graph.to_job(name="the_pipeline"), sensor_pipeline]
+def test_dupe_jobs_pipelines_invalid():
+    the_job = _create_job_with_name("foo")
+    the_pipeline = _create_pipeline_with_name("foo")
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Error when building repository: schedule 'schedule_pipeline' targets pipeline 'the_pipeline', but a different job with the same name was provided to the repository. Disambiguate between these by providing a separate name to one of them.",
-    ):
+    the_schedule = _create_schedule_from_target(the_pipeline)
+    the_sensor = _create_sensor_from_target(the_pipeline)
+    with pytest.raises(DagsterInvalidDefinitionError):
 
         @repository
         def the_repo_dupe_job_pipeline_invalid():
-            return [the_graph.to_job(name="the_pipeline"), schedule_pipeline]
+            return [the_job, the_schedule]
 
-    assert False
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @repository
+        def the_repo_dupe_job_pipeline_invalid():
+            return [the_job, the_sensor]
+
+    the_graph = _create_graph_with_name("foo")
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @repository
+        def the_repo_dupe_graph_pipeline_invalid():
+            return [the_graph, the_sensor]
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @repository
+        def the_repo_dupe_graph_pipeline_invalid():
+            return [the_graph, the_schedule]
