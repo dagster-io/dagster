@@ -748,13 +748,13 @@ def test_duplicate_job_target_invalid():
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @repository
-        def the_repo_dupe_job_invalid():
+        def the_repo_dupe_job_invalid_sensor():
             return [the_job, _create_sensor_from_target(other_job)]
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @repository
-        def the_repo_dupe_job_invalid():
+        def the_repo_dupe_job_invalid_schedule():
             return [the_job, _create_schedule_from_target(other_job)]
 
 
@@ -777,13 +777,13 @@ def test_dupe_pipelines_invalid():
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @repository
-        def the_repo_dupe_pipelines_invalid():
+        def the_repo_dupe_pipelines_invalid_schedule():
             return [the_pipeline, _create_schedule_from_target(other_pipeline)]
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @repository
-        def the_repo_dupe_pipelines_invalid():
+        def the_repo_dupe_pipelines_invalid_sensor():
             return [the_pipeline, _create_sensor_from_target(other_pipeline)]
 
 
@@ -796,13 +796,13 @@ def test_dupe_jobs_pipelines_invalid():
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @repository
-        def the_repo_dupe_job_pipeline_invalid():
+        def the_repo_dupe_job_pipeline_invalid_schedule_job():
             return [the_job, the_schedule]
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @repository
-        def the_repo_dupe_job_pipeline_invalid():
+        def the_repo_dupe_job_pipeline_invalid_sensor_job():
             return [the_job, the_sensor]
 
     the_graph = _create_graph_with_name("foo")
@@ -810,11 +810,11 @@ def test_dupe_jobs_pipelines_invalid():
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @repository
-        def the_repo_dupe_graph_pipeline_invalid():
+        def the_repo_dupe_graph_pipeline_invalid_sensor_graph():
             return [the_graph, the_sensor]
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @repository
-        def the_repo_dupe_graph_pipeline_invalid():
+        def the_repo_dupe_graph_pipeline_invalid_schedule_graph():
             return [the_graph, the_schedule]
