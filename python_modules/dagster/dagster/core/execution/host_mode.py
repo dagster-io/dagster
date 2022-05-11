@@ -2,7 +2,7 @@ import logging
 import sys
 from typing import List, Optional
 
-from dagster import check
+import dagster._check as check
 from dagster.config import Field
 from dagster.config.validate import process_config
 from dagster.core.definitions.executor_definition import (

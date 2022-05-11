@@ -1,6 +1,6 @@
 import threading
 
-from dagster import check
+import dagster._check as check
 from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.grpc.client import DagsterGrpcClient
 

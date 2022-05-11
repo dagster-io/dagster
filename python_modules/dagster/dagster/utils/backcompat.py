@@ -3,7 +3,7 @@ import warnings
 from functools import wraps
 from typing import Callable, Optional, Type, TypeVar, cast
 
-from dagster import check
+import dagster._check as check
 
 T = TypeVar("T")
 

@@ -384,6 +384,8 @@ export const QueryOverlay = styled.div`
   top: 10px;
   left: 20px;
   white-space: nowrap;
+  display: flex;
+  gap: 10px;
 `;
 
 export const BreadcrumbsOverlay = styled.div`

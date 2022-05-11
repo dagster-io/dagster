@@ -1,7 +1,9 @@
 import prometheus_client
 from prometheus_client.exposition import default_handler
 
-from dagster import Field, check, resource
+from dagster import Field
+from dagster import _check as check
+from dagster import resource
 
 
 class PrometheusResource:

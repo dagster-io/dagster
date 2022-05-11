@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from dagster import check
+import dagster._check as check
 
 if TYPE_CHECKING:
     from dagster.grpc.client import DagsterGrpcClient

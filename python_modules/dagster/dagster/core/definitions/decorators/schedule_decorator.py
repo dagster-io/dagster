@@ -4,7 +4,7 @@ import warnings
 from functools import update_wrapper
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.partition import (
     PartitionScheduleDefinition,
     PartitionSetDefinition,
@@ -69,11 +69,11 @@ def schedule(
     argument, and does one of the following:
 
     1. Return a `RunRequest` object.
-    2. Yield multiple of `RunRequest` objects.
-    3. Return or yield a `SkipReason` object, providing a descriptive message of why no runs were
-       requested.
-    4. Return or yield nothing (skipping without providing a reason)
+    2. Return a list of `RunRequest` objects.
+    3. Return a `SkipReason` object, providing a descriptive message of why no runs were requested.
+    4. Return nothing (skipping without providing a reason)
     5. Return a run config dictionary.
+    6. Yield a `SkipReason` or yield one ore more `RunRequest` objects.
 
     Returns a :py:class:`~dagster.ScheduleDefinition`.
 
@@ -160,6 +160,8 @@ def schedule(
                         run_config=evaluated_run_config,
                         tags=evaluated_tags,
                     )
+                elif isinstance(result, list):
+                    yield from cast(List[RunRequest], result)
                 else:
                     # this is a run-request based decorated function
                     yield from cast(RunRequestIterator, ensure_gen(result))

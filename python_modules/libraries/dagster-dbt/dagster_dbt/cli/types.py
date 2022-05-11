@@ -1,11 +1,10 @@
 from typing import Any, Dict, List
 
-from dagster import check, usable_as_dagster_type
+import dagster._check as check
 
 from ..types import DbtOutput
 
 
-@usable_as_dagster_type
 class DbtCliOutput(DbtOutput):
     """The results of executing a dbt command, along with additional metadata about the dbt CLI
     process that was run.

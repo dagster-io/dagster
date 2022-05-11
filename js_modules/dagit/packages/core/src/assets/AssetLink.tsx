@@ -24,9 +24,7 @@ export const AssetLink: React.FC<{
             .reduce(
               (accum, curr, ii) => [
                 ...accum,
-                ii > 0 ? (
-                  <React.Fragment key={`${ii}-space`}>&nbsp;{`>`}&nbsp;</React.Fragment>
-                ) : null,
+                ii > 0 ? <React.Fragment key={`${ii}-space`}>&nbsp;/&nbsp;</React.Fragment> : null,
                 curr,
               ],
               [] as React.ReactNode[],

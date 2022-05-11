@@ -20,9 +20,9 @@ from dagster import (
     Permissive,
     RetryRequested,
     String,
-    check,
-    solid,
 )
+from dagster import _check as check
+from dagster import solid
 from dagster.core.execution.context.compute import SolidExecutionContext
 
 from ..errors import DagsterDbtRpcUnexpectedPollOutputError

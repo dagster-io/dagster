@@ -1,7 +1,7 @@
 # pylint: disable=super-init-not-called
 from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Set, Union, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.config import Shape
 from dagster.core.definitions.composition import PendingNodeInvocation
 from dagster.core.definitions.dependency import Node, NodeHandle

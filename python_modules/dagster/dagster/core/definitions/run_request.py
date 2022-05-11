@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Mapping, NamedTuple, Optional
 
-from dagster import check
+import dagster._check as check
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes.serdes import register_serdes_enum_fallbacks, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo

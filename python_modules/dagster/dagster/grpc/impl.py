@@ -6,7 +6,7 @@ from typing import Generator, List, Optional
 
 import pendulum
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions import ScheduleEvaluationContext
 from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster.core.definitions.sensor_definition import SensorEvaluationContext

@@ -6,7 +6,7 @@ import kubernetes
 from dateutil.parser import parse
 from kubernetes.client import ApiClient
 
-from dagster import check
+import dagster._check as check
 from dagster.utils import frozendict
 
 

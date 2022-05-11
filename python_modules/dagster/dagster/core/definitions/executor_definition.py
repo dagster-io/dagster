@@ -2,7 +2,7 @@ from enum import Enum as PyEnum
 from functools import update_wrapper
 from typing import Any, Dict, Optional
 
-from dagster import check
+import dagster._check as check
 from dagster.builtins import Int
 from dagster.config import Field, Selector
 from dagster.core.definitions.configurable import (

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from hacker_news.jobs.hacker_news_api_download import download_prod_job, download_staging_job
 
-import dagster.check as check
+import dagster._check as check
 from dagster import Partition
 from dagster.core.definitions import JobDefinition
 from dagster.core.execution.api import create_execution_plan

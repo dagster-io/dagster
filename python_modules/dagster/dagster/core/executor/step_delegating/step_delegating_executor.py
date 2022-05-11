@@ -1,9 +1,10 @@
+import os
 import time
 from typing import Dict, List, Optional, cast
 
 import pendulum
 
-from dagster import check
+import dagster._check as check
 from dagster.core.events import (
     DagsterEvent,
     DagsterEventType,
@@ -20,6 +21,10 @@ from dagster.grpc.types import ExecuteStepArgs
 
 from ..base import Executor
 
+DEFAULT_SLEEP_SECONDS = float(
+    os.environ.get("DAGSTER_STEP_DELEGATING_EXECUTOR_SLEEP_SECONDS", "1.0")
+)
+
 
 class StepDelegatingExecutor(Executor):
     def __init__(
@@ -35,7 +40,8 @@ class StepDelegatingExecutor(Executor):
         self._retries = retries
         self._max_concurrent = max_concurrent
         self._sleep_seconds = cast(
-            float, check.opt_float_param(sleep_seconds, "sleep_seconds", default=0.1)
+            float,
+            check.opt_float_param(sleep_seconds, "sleep_seconds", default=DEFAULT_SLEEP_SECONDS),
         )
         self._check_step_health_interval_seconds = cast(
             int,

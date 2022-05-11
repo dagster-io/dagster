@@ -10,12 +10,9 @@ from dagster import (
     ModeDefinition,
     PipelineDefinition,
     PresetDefinition,
-    check,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-    solid,
 )
+from dagster import _check as check
+from dagster import execute_pipeline, lambda_solid, pipeline, solid
 from dagster.utils import file_relative_path
 
 

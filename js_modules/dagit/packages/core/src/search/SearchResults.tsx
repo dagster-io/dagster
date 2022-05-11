@@ -85,7 +85,7 @@ export const SearchResults = (props: Props) => {
     <List hasResults={!!results.length}>
       {results.map((result, ii) => (
         <SearchResultItem
-          key={result.item.key}
+          key={result.item.href}
           isHighlight={highlight === ii}
           result={result}
           onClickResult={onClickResult}

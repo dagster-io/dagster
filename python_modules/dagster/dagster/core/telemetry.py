@@ -25,7 +25,7 @@ from typing import Dict, NamedTuple, Optional
 import click
 import yaml
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.reconstruct import (
     ReconstructablePipeline,

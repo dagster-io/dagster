@@ -2,11 +2,9 @@ from os import path
 
 import pytest
 
+from dagster import ExecutorRequirement, ModeDefinition, PipelineDefinition
+from dagster import _check as check
 from dagster import (
-    ExecutorRequirement,
-    ModeDefinition,
-    PipelineDefinition,
-    check,
     execute_pipeline,
     fs_io_manager,
     in_process_executor,

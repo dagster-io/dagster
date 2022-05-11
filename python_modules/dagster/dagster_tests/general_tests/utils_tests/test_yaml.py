@@ -3,7 +3,7 @@ import os
 import pytest
 import yaml
 
-from dagster import check
+import dagster._check as check
 from dagster.utils import file_relative_path
 from dagster.utils.yaml_utils import (
     load_yaml_from_glob_list,

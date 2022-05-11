@@ -2,7 +2,8 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 import dateutil
 
-from dagster import AssetMaterialization, MetadataValue, check
+from dagster import AssetMaterialization, MetadataValue
+from dagster import _check as check
 from dagster.core.definitions.metadata import RawMetadataValue
 
 from .types import DbtOutput

@@ -2,6 +2,7 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   extends: [
     'plugin:react/recommended',
+    'plugin:jest/recommended',
     'plugin:@typescript-eslint/recommended',
     'plugin:prettier/recommended', // Prettier plugin must be last!
   ],

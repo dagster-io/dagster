@@ -15,7 +15,8 @@ from typing import (
     cast,
 )
 
-from dagster import check, seven
+import dagster._check as check
+import dagster.seven as seven
 from dagster.core.errors import DagsterInvalidMetadata
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.backcompat import (
@@ -453,7 +454,6 @@ class MetadataValue:
         return TableMetadataValue(records, schema)
 
     @staticmethod
-    @experimental
     def table_schema(
         schema: TableSchema,
     ) -> "TableSchemaMetadataValue":
@@ -780,7 +780,6 @@ class TableMetadataValue(
         )
 
 
-@experimental
 @whitelist_for_serdes(storage_name="TableSchemaMetadataEntryData")
 class TableSchemaMetadataValue(
     NamedTuple("_TableSchemaMetadataValue", [("schema", TableSchema)]), MetadataValue
@@ -1194,7 +1193,6 @@ class MetadataEntry(
 
     @staticmethod
     @deprecated_metadata_entry_constructor
-    @experimental
     def table_schema(
         schema: TableSchema, label: str, description: Optional[str] = None
     ) -> "MetadataEntry":

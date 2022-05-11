@@ -33,7 +33,6 @@ import {ConfigEditorRunConfigSchemaFragment} from './types/ConfigEditorRunConfig
 interface ConfigEditorProps {
   configCode: string;
   readOnly: boolean;
-  showWhitespace: boolean;
   runConfigSchema?: ConfigEditorRunConfigSchemaFragment;
 
   checkConfig: YamlModeValidateFunction;
@@ -52,24 +51,6 @@ const ConfigEditorStyle = createGlobalStyle`
     position: absolute;
     inset: 0;
   }
-`;
-
-const CodeMirrorWhitespaceStyle = createGlobalStyle`
-.cm-whitespace {
-  /*
-    Note: background is a 16x16px PNG containing a semi-transparent gray dot. 8.4px
-    is the exact width of a character in Codemirror's monospace font. It's consistent
-    in Firefox and Chrome and doesn't change on zoom in / out, but may need to be
-    modified if we change the Codemirror font.
-  */
-  background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAEKADAAQAAAABAAAAEAAAAAA0VXHyAAAAm0lEQVQ4Ee2RMQ7DIAxFMVIvBEvm7FXXniIXak4RhnTujMSBkKDfCgPCzg2whAzf9hN8jJlBmgUxxgf0DWvFykR0Ouc+yGXsFwAeRuOv1rr0zdACIC/k2uu2P7T9Ng6zDu2ZUnqP/RqAr61GKUXUNEBWpy9R1AQAbzzvAFpNAJrbQYHs3nuhi1/gQRhGbFh7c7bWfgE+FOiU4MAfhpIwd0LjE+wAAAAASUVORK5CYII=') center left / 8.0px 8.0px repeat-x;
-  opacity: 1;
-  background-position-x: 0px;
-  background-position-y: 5.5px;
-}
-.cm-whitespace.CodeMirror-lint-mark-error {
-  background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAEKADAAQAAAABAAAAEAAAAAA0VXHyAAAAm0lEQVQ4Ee2RMQ7DIAxFMVIvBEvm7FXXniIXak4RhnTujMSBkKDfCgPCzg2whAzf9hN8jJlBmgUxxgf0DWvFykR0Ouc+yGXsFwAeRuOv1rr0zdACIC/k2uu2P7T9Ng6zDu2ZUnqP/RqAr61GKUXUNEBWpy9R1AQAbzzvAFpNAJrbQYHs3nuhi1/gQRhGbFh7c7bWfgE+FOiU4MAfhpIwd0LjE+wAAAAASUVORK5CYII=') center left / 8.0px 8.0px repeat-x;
-}
 `;
 
 export class ConfigEditor extends React.Component<ConfigEditorProps> {
@@ -92,8 +73,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     return (
       prevProps.configCode !== this.props.configCode ||
       prevProps.readOnly !== this.props.readOnly ||
-      prevProps.runConfigSchema !== this.props.runConfigSchema ||
-      prevProps.showWhitespace !== this.props.showWhitespace
+      prevProps.runConfigSchema !== this.props.runConfigSchema
     );
   }
 
@@ -153,7 +133,6 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     return (
       <div style={{flex: 1, position: 'relative'}}>
         <ConfigEditorStyle />
-        {this.props.showWhitespace ? <CodeMirrorWhitespaceStyle /> : null}
         <DagitCodeMirror
           value={this.props.configCode}
           theme={['config-editor']}

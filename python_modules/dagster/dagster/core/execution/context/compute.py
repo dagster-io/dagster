@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterator, List, Mapping, Optional, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.definitions.events import (
     AssetMaterialization,
@@ -284,6 +284,15 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         Raises an error if the current run is not a partitioned run.
         """
         return self._step_execution_context.partition_key
+
+    @property
+    def partition_time_window(self) -> str:
+        """The partition time window for the current run.
+
+        Raises an error if the current run is not a partitioned run, or if the job's partition
+        definition is not a TimeWindowPartitionsDefinition.
+        """
+        return self._step_execution_context.partition_time_window
 
     def output_asset_partition_key(self, output_name: str = "result") -> str:
         """Returns the asset partition key for the given output. Defaults to "result", which is the

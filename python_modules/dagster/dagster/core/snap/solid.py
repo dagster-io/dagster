@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Set, Union
 
-from dagster import check
+import dagster._check as check
 from dagster.config.snap import ConfigFieldSnap, snap_from_field
 from dagster.core.definitions import (
     GraphDefinition,
