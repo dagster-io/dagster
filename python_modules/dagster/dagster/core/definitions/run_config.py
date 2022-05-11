@@ -14,11 +14,7 @@ from dagster.core.definitions.output import OutputDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.output_manager import IOutputManagerDefinition
 from dagster.core.storage.root_input_manager import IInputManagerDefinition
-from dagster.core.types.dagster_type import (
-    ALL_RUNTIME_BUILTINS,
-    DagsterTypeKind,
-    construct_dagster_type_dictionary,
-)
+from dagster.core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dagster_type_dictionary
 from dagster.utils import check
 
 from .configurable import ConfigurableDefinition
