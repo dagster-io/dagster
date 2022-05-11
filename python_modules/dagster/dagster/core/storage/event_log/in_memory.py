@@ -352,6 +352,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         )
         event_records = self.get_event_records(
             EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
                 asset_key=asset_key,
                 asset_partitions=partitions,
                 before_cursor=before_cursor,

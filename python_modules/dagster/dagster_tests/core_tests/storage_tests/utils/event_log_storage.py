@@ -899,10 +899,11 @@ class TestEventLogStorage:
                 event.dagster_event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION.value
             )
 
-            records = storage.get_event_records(EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=asset_key
-            ))
+            records = storage.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION, asset_key=asset_key
+                )
+            )
             assert len(records) == 1
             record = records[0]
             assert isinstance(record, EventLogRecord)
@@ -1173,19 +1174,24 @@ class TestEventLogStorage:
         def _solids():
             materialize_one()
 
-        events, _ = _synthesize_events(_solids, run_id=test_run_id)
+        def _store_run_events(run_id):
+            events, _ = _synthesize_events(_solids, run_id=run_id)
+            for event in events:
+                storage.store_event(event)
+                print(event)
 
-        for event in events:
-            storage.store_event(event)
+        # store events for three runs
+        [run_id_1, run_id_2, run_id_3] = [make_new_run_id(), make_new_run_id(), make_new_run_id()]
+        _store_run_events(run_id_1)
+        _store_run_events(run_id_2)
+        _store_run_events(run_id_3)
 
-        all_records = storage.get_event_records()
-        # all logs returned in descending order
-        assert all_records
-        min_record_num = all_records[-1].storage_id
-        max_record_num = min_record_num + len(all_records) - 1
-        assert [r[0] for r in all_records] == list(range(max_record_num, min_record_num - 1, -1))
-        assert _event_types([all_records[0].event_log_entry]) == [DagsterEventType.PIPELINE_SUCCESS]
-        assert _event_types([all_records[-1].event_log_entry]) == [DagsterEventType.PIPELINE_START]
+        all_success_events = storage.get_event_records(
+            EventRecordsFilter(event_type=DagsterEventType.RUN_SUCCESS)
+        )
+
+        assert len(all_success_events) == 3
+        min_success_record_id = all_success_events[-1].storage_id
 
         # after cursor
         def _build_cursor(record_id_cursor, run_cursor_dt):
@@ -1195,35 +1201,30 @@ class TestEventLogStorage:
 
         assert not list(
             filter(
-                lambda r: r.storage_id <= 2,
+                lambda r: r.storage_id <= min_success_record_id,
                 storage.get_event_records(
-                    EventRecordsFilter(after_cursor=_build_cursor(2, cursor_dt))
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.RUN_SUCCESS,
+                        after_cursor=_build_cursor(min_success_record_id, cursor_dt),
+                    )
                 ),
             )
         )
         assert [
             i.storage_id
             for i in storage.get_event_records(
-                EventRecordsFilter(after_cursor=_build_cursor(min_record_num + 2, cursor_dt)),
+                EventRecordsFilter(
+                    event_type=DagsterEventType.RUN_SUCCESS,
+                    after_cursor=_build_cursor(min_success_record_id, cursor_dt),
+                ),
                 ascending=True,
                 limit=2,
             )
-        ] == [min_record_num + 3, min_record_num + 4]
-        assert [
-            i.storage_id
-            for i in storage.get_event_records(
-                EventRecordsFilter(after_cursor=_build_cursor(min_record_num + 2, cursor_dt)),
-                ascending=False,
-                limit=2,
-            )
-        ] == [max_record_num, max_record_num - 1]
+        ] == [record.storage_id for record in all_success_events[:2][::-1]]
 
-        filtered_records = storage.get_event_records(
-            EventRecordsFilter(event_type=DagsterEventType.PIPELINE_SUCCESS)
-        )
-        assert _event_types([r.event_log_entry for r in filtered_records]) == [
-            DagsterEventType.PIPELINE_SUCCESS
-        ]
+        assert set(_event_types([r.event_log_entry for r in all_success_events])) == {
+            DagsterEventType.RUN_SUCCESS
+        }
 
     def test_get_event_records_sqlite(self, storage):
         if not isinstance(storage, SqliteEventLogStorage):
@@ -1273,6 +1274,7 @@ class TestEventLogStorage:
             assert len(run_records) == 1
 
             # second run
+            events = []
             execute_run(
                 InMemoryPipeline(a_pipe),
                 instance.create_run_for_pipeline(
@@ -1282,8 +1284,11 @@ class TestEventLogStorage:
             )
             run_records = instance.get_run_records()
             assert len(run_records) == 2
+            for event in events:
+                storage.store_event(event)
 
             # third run
+            events = []
             execute_run(
                 InMemoryPipeline(a_pipe),
                 instance.create_run_for_pipeline(
@@ -1293,6 +1298,8 @@ class TestEventLogStorage:
             )
             run_records = instance.get_run_records()
             assert len(run_records) == 3
+            for event in events:
+                storage.store_event(event)
 
             update_timestamp = run_records[-1].update_timestamp
             tzaware_dt = pendulum.from_timestamp(datetime_as_float(update_timestamp), tz="UTC")
