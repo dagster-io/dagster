@@ -1108,7 +1108,10 @@ def test_duplicate_graph_target_invalid():
         def the_repo_dupe_graph_invalid():
             return [the_graph, _create_sensor_from_target(other_graph)]
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.warns(
+        UserWarning,
+        match="schedule '_the_schedule' targets graph 'foo', but a different graph with the same name was provided.",
+    ):
 
         @repository
         def the_repo_dupe_graph_invalid():
@@ -1127,13 +1130,19 @@ def test_duplicate_job_target_invalid():
     the_job = _create_job_with_name("foo")
     other_job = _create_job_with_name("foo")
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.warns(
+        UserWarning,
+        match="sensor '_the_sensor' targets job 'foo', but a different job with the same name was provided.",
+    ):
 
         @repository
         def the_repo_dupe_job_invalid_sensor():
             return [the_job, _create_sensor_from_target(other_job)]
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.warns(
+        UserWarning,
+        match="schedule '_the_schedule' targets job 'foo', but a different job with the same name was provided.",
+    ):
 
         @repository
         def the_repo_dupe_job_invalid_schedule():
@@ -1156,13 +1165,19 @@ def test_dupe_pipelines_invalid():
     the_pipeline = _create_pipeline_with_name("foo")
     other_pipeline = _create_pipeline_with_name("foo")
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.warns(
+        UserWarning,
+        match="schedule '_the_schedule' targets pipeline 'foo', but a different pipeline with the same name was provided.",
+    ):
 
         @repository
         def the_repo_dupe_pipelines_invalid_schedule():
             return [the_pipeline, _create_schedule_from_target(other_pipeline)]
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.warns(
+        UserWarning,
+        match="sensor '_the_sensor' targets pipeline 'foo', but a different pipeline with the same name was provided.",
+    ):
 
         @repository
         def the_repo_dupe_pipelines_invalid_sensor():
@@ -1175,13 +1190,19 @@ def test_dupe_jobs_pipelines_invalid():
 
     the_schedule = _create_schedule_from_target(the_pipeline)
     the_sensor = _create_sensor_from_target(the_pipeline)
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.warns(
+        UserWarning,
+        match="schedule '_the_schedule' targets pipeline 'foo', but a different job with the same name was provided.",
+    ):
 
         @repository
         def the_repo_dupe_job_pipeline_invalid_schedule_job():
             return [the_job, the_schedule]
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.warns(
+        UserWarning,
+        match="sensor '_the_sensor' targets pipeline 'foo', but a different job with the same name was provided.",
+    ):
 
         @repository
         def the_repo_dupe_job_pipeline_invalid_sensor_job():
@@ -1189,13 +1210,19 @@ def test_dupe_jobs_pipelines_invalid():
 
     the_graph = _create_graph_with_name("foo")
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.warns(
+        UserWarning,
+        match="sensor '_the_sensor' targets pipeline 'foo', but a different job with the same name was provided.",
+    ):
 
         @repository
         def the_repo_dupe_graph_pipeline_invalid_sensor_graph():
             return [the_graph, the_sensor]
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.warns(
+        UserWarning,
+        match="sensor '_the_sensor' targets pipeline 'foo', but a different graph with the same name was provided.",
+    ):
 
         @repository
         def the_repo_dupe_graph_pipeline_invalid_schedule_graph():
