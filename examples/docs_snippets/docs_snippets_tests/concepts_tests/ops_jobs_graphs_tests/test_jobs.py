@@ -1,31 +1,29 @@
-from docs_snippets.concepts.solids_pipelines.branching_pipeline import branching
-from docs_snippets.concepts.solids_pipelines.dep_dsl import define_dep_dsl_graph
-from docs_snippets.concepts.solids_pipelines.dynamic import (
+from docs_snippets.concepts.ops_jobs_graphs.branching_job import branching
+from docs_snippets.concepts.ops_jobs_graphs.dep_dsl import define_dep_dsl_graph
+from docs_snippets.concepts.ops_jobs_graphs.dynamic import (
     chained,
     dynamic_graph,
     multiple,
     naive,
     other_arg,
 )
-from docs_snippets.concepts.solids_pipelines.dynamic_pipeline.dynamic_pipeline import (
+from docs_snippets.concepts.ops_jobs_graphs.dynamic_pipeline.dynamic_job import (
     process_directory,
 )
-from docs_snippets.concepts.solids_pipelines.fan_in_pipeline import fan_in
-from docs_snippets.concepts.solids_pipelines.jobs_from_graphs import local_job, prod_job
-from docs_snippets.concepts.solids_pipelines.linear_pipeline import linear
-from docs_snippets.concepts.solids_pipelines.multiple_io_pipeline import (
-    inputs_and_outputs,
-)
-from docs_snippets.concepts.solids_pipelines.order_based_dependency_pipeline import (
-    nothing_dependency,
-)
-from docs_snippets.concepts.solids_pipelines.pipelines import (
+from docs_snippets.concepts.ops_jobs_graphs.fan_in_job import fan_in
+from docs_snippets.concepts.ops_jobs_graphs.jobs import (
     alias,
     one_plus_one,
     one_plus_one_from_constructor,
     tagged_add_one,
 )
-from docs_snippets.concepts.solids_pipelines.retries import (
+from docs_snippets.concepts.ops_jobs_graphs.jobs_from_graphs import local_job, prod_job
+from docs_snippets.concepts.ops_jobs_graphs.linear_job import linear
+from docs_snippets.concepts.ops_jobs_graphs.multiple_io_job import inputs_and_outputs
+from docs_snippets.concepts.ops_jobs_graphs.order_based_dependency_job import (
+    nothing_dependency,
+)
+from docs_snippets.concepts.ops_jobs_graphs.retries import (
     default_and_override_job,
     retry_job,
 )

@@ -26,7 +26,7 @@ Dynamic outputs are the tool Dagster provides to allow resolving the pieces of d
 
 Here we start with a contrived example of a job containing a single expensive op:
 
-```python file=/concepts/solids_pipelines/dynamic.py startafter=non_dyn_start endbefore=non_dyn_end
+```python file=/concepts/ops_jobs_graphs/dynamic.py startafter=non_dyn_start endbefore=non_dyn_end
 @op
 def data_processing():
     large_data = load_big_data()
@@ -45,7 +45,7 @@ While, the implementation of `expensive_computation` can internally do something
 
 With this motivation we will break up the computation using Dynamic Outputs. First we will define our new op that will use dynamic outputs. First we use <PyObject module="dagster" object="DynamicOut" /> to declare that this op will return dynamic outputs. Then in the function we `yield` a number of <PyObject module="dagster" object="DynamicOutput" /> objects that each contain a value and a unique `mapping_key`.
 
-```python file=/concepts/solids_pipelines/dynamic.py startafter=dyn_out_start endbefore=dyn_out_end
+```python file=/concepts/ops_jobs_graphs/dynamic.py startafter=dyn_out_start endbefore=dyn_out_end
 @op(out=DynamicOut())
 def load_pieces():
     large_data = load_big_data()
@@ -55,7 +55,7 @@ def load_pieces():
 
 Then after creating ops for our downstream operations, we can put them all together in a job.
 
-```python file=/concepts/solids_pipelines/dynamic.py startafter=dyn_job_start endbefore=dyn_job_end
+```python file=/concepts/ops_jobs_graphs/dynamic.py startafter=dyn_job_start endbefore=dyn_job_end
 @job
 def dynamic_graph():
     pieces = load_pieces()
@@ -75,7 +75,7 @@ Within our `@job` decorated composition function, the object representing the dy
 
 The following two examples are equivalent ways to establish a sequence of ops that occur for each dynamic output.
 
-```python file=/concepts/solids_pipelines/dynamic.py startafter=dyn_chain_start endbefore=dyn_chain_end
+```python file=/concepts/ops_jobs_graphs/dynamic.py startafter=dyn_chain_start endbefore=dyn_chain_end
 @job
 def chained():
     results = dynamic_values().map(echo).map(echo).map(echo)
@@ -97,7 +97,7 @@ def chained_alt():
 
 A lambda or scoped function can be used to pass non-dynamic outputs along side dynamic ones in `map` downstream.
 
-```python file=/concepts/solids_pipelines/dynamic.py startafter=dyn_add_start endbefore=dyn_add_end
+```python file=/concepts/ops_jobs_graphs/dynamic.py startafter=dyn_add_start endbefore=dyn_add_end
 @job
 def other_arg():
     non_dynamic = one()
@@ -108,7 +108,7 @@ def other_arg():
 
 Multiple outputs are returned via a `namedtuple`, where each entry can be used via `map` or `collect`.
 
-```python file=/concepts/solids_pipelines/dynamic.py startafter=dyn_mult_start endbefore=dyn_mult_end
+```python file=/concepts/ops_jobs_graphs/dynamic.py startafter=dyn_mult_start endbefore=dyn_mult_end
 @job
 def multiple():
     # can unpack on assignment (order based)
