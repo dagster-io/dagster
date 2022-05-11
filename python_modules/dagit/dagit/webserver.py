@@ -25,8 +25,8 @@ from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from starlette.types import Message
 
+import dagster._check as check
 from dagster import __version__ as dagster_version
-from dagster import check
 from dagster.core.debug import DebugRunPayload
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext

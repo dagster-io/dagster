@@ -73,28 +73,31 @@ export function Search() {
         type="button"
         ref={searchButtonRef}
         onClick={onOpen}
-        className="group leading-6 font-medium flex items-center space-x-3 sm:space-x-4 text-gray-500 hover:text-gray-600 transition-colors duration-200 w-full py-2"
+        className="group leading-6 flex justify-between items-center space-x-3 sm:space-x-4 text-gray-400 hover:text-gray-600 transition-colors duration-200 w-full py-2 pr-2"
       >
-        <svg
-          width="24"
-          height="24"
-          fill="none"
-          className="text-gray-400 group-hover:text-gray-500 transition-colors duration-200 flex-shrink-0"
-        >
-          <path
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <span>
-          Quick search<span className="hidden sm:inline"> for anything</span>
-        </span>
+        <div className="flex justify-start">
+          <svg
+            width="24"
+            height="24"
+            fill="none"
+            className="text-gray-600 group-hover:text-gray-700 transition-colors duration-200 flex-shrink-0 mr-2"
+          >
+            <path
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span>
+            Search <span className="hidden sm:inline">the docs</span>
+          </span>
+        </div>
+
         <span
           style={{ opacity: browserDetected ? "1" : "0" }}
-          className="hidden sm:block text-gray-400 text-sm leading-5 py-0.5 px-1.5 border border-gray-300 rounded-md"
+          className="hidden sm:block text-sm leading-5 py-0.5 px-1.5 rounded-md"
         >
           <span className="sr-only">Press </span>
           <kbd className="font-sans">

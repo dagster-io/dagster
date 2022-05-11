@@ -3,7 +3,7 @@ import os
 import subprocess
 from typing import Any, Dict
 
-from dagster import check
+import dagster._check as check
 from dagster.core.utils import coerce_valid_log_level
 
 from ..errors import (
@@ -122,3 +122,13 @@ def parse_run_results(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> 
             return json.load(file)
     except FileNotFoundError:
         raise DagsterDbtCliOutputsNotFoundError(path=run_results_path)
+
+
+def parse_manifest(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> Dict[str, Any]:
+    """Parses the `target/manifest.json` artifact that is produced by a dbt process."""
+    manifest_path = os.path.join(path, target_path, "manifest.json")
+    try:
+        with open(manifest_path, encoding="utf8") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        raise DagsterDbtCliOutputsNotFoundError(path=manifest_path)

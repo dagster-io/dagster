@@ -1,3 +1,5 @@
+# type: ignore[return-value]
+from datetime import datetime
 from typing import List
 
 import pytest
@@ -642,3 +644,23 @@ def test_nested_op_selection_with_config_mapping():
     assert result_sub_3_2.success
     assert set(_success_step_keys(result_sub_3_2)) == {"my_graph.my_nested_graph.my_op"}
     assert result_sub_3_2.output_for_node("my_graph.my_nested_graph.my_op") == "hello"
+
+
+def test_op_selection_unsatisfied_input_failure():
+    @op
+    def basic() -> datetime:
+        return 5
+
+    @op
+    def ingest(x: datetime) -> str:
+        return str(x)
+
+    @graph
+    def the_graph():
+        ingest(basic())
+
+    with pytest.raises(DagsterInvalidSubsetError):
+        the_graph.execute_in_process(op_selection=["ingest"])
+
+    with pytest.raises(DagsterInvalidSubsetError):
+        the_graph.to_job(op_selection=["ingest"])

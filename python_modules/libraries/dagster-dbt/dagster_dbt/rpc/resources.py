@@ -8,7 +8,9 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-from dagster import Failure, Field, IntSource, RetryRequested, StringSource, check, resource
+from dagster import Failure, Field, IntSource, RetryRequested, StringSource
+from dagster import _check as check
+from dagster import resource
 from dagster.core.utils import coerce_valid_log_level
 
 from ..dbt_resource import DbtResource
@@ -454,6 +456,41 @@ class DbtRpcResource(DbtResource):
         data = self._default_request(method="run_sql", params=params)
 
         return self._get_result(data=json.dumps(data))
+
+    def build(self, select: Optional[List[str]] = None, **kwargs) -> DbtRpcOutput:
+        """
+        Run the ``build`` command on a dbt project. kwargs are passed in as additional parameters.
+
+        Args:
+            select (List[str], optional): the models/resources to include in the run.
+
+        Returns:
+            DbtOutput: object containing parsed output from dbt
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError()
+
+    def get_run_results_json(self, **kwargs) -> Optional[Dict[str, Any]]:
+        """
+        Get a parsed version of the run_results.json file for the relevant dbt project.
+
+        Returns:
+            Dict[str, Any]: dictionary containing the parsed contents of the run_results json file
+                for this dbt project.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError()
+
+    def get_manifest_json(self, **kwargs) -> Optional[Dict[str, Any]]:
+        """
+        Get a parsed version of the manifest.json file for the relevant dbt project.
+
+        Returns:
+            Dict[str, Any]: dictionary containing the parsed contents of the manifest json file
+                for this dbt project.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError()
 
 
 class DbtRpcSyncResource(DbtRpcResource):

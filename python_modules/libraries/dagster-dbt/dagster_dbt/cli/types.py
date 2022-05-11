@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-from dagster import check
+import dagster._check as check
 
 from ..types import DbtOutput
 

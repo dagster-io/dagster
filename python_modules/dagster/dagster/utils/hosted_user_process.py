@@ -11,7 +11,7 @@ to be the case.
 
 from typing import TYPE_CHECKING
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster.core.host_representation import ExternalPipeline, ExternalRepository
 from dagster.core.host_representation.external_data import (

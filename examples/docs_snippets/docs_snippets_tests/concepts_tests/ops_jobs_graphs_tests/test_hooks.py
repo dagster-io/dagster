@@ -1,7 +1,7 @@
 from unittest import mock
 
 from dagster import DagsterEventType, ResourceDefinition, job, op
-from docs_snippets.concepts.solids_pipelines.op_hooks import (
+from docs_snippets.concepts.ops_jobs_graphs.op_hooks import (
     a,
     notif_all,
     notif_all_dev,
@@ -11,7 +11,7 @@ from docs_snippets.concepts.solids_pipelines.op_hooks import (
     slack_message_on_success,
     test_my_success_hook,
 )
-from docs_snippets.concepts.solids_pipelines.op_hooks_context import my_failure_hook
+from docs_snippets.concepts.ops_jobs_graphs.op_hooks_context import my_failure_hook
 
 
 def test_notif_all():

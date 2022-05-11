@@ -3,7 +3,8 @@ from contextlib import contextmanager
 from packaging.version import parse
 from sqlalchemy.pool import NullPool
 
-from dagster import StringSource, check
+from dagster import StringSource
+from dagster import _check as check
 from dagster.core.storage.sql import (
     check_alembic_revision,
     create_engine,

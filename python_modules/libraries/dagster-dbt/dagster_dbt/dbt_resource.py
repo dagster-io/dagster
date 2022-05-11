@@ -160,6 +160,19 @@ class DbtResource:
         """
 
     @abstractmethod
+    def build(self, select: Optional[List[str]] = None, **kwargs) -> DbtOutput:
+        """
+        Run the ``build`` command on a dbt project. kwargs are passed in as additional parameters.
+
+        Args:
+            select (List[str], optional): the models/resources to include in the run.
+
+        Returns:
+            DbtOutput: object containing parsed output from dbt
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     def generate_docs(self, compile_project: bool = False, **kwargs) -> DbtOutput:
         """
         Run the ``docs generate`` command on a dbt project. kwargs are passed in as additional parameters.
@@ -184,4 +197,24 @@ class DbtResource:
 
         Returns:
             DbtOutput: object containing parsed output from dbt
+        """
+
+    @abstractmethod
+    def get_run_results_json(self, **kwargs) -> Optional[Dict[str, Any]]:
+        """
+        Get a parsed version of the run_results.json file for the relevant dbt project.
+
+        Returns:
+            Dict[str, Any]: dictionary containing the parsed contents of the run_results json file
+                for this dbt project.
+        """
+
+    @abstractmethod
+    def get_manifest_json(self, **kwargs) -> Optional[Dict[str, Any]]:
+        """
+        Get a parsed version of the manifest.json file for the relevant dbt project.
+
+        Returns:
+            Dict[str, Any]: dictionary containing the parsed contents of the manifest json file
+                for this dbt project.
         """

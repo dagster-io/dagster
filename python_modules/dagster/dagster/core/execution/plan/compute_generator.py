@@ -2,9 +2,10 @@ import inspect
 from functools import wraps
 from typing import Generator, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions import (
     AssetMaterialization,
+    DynamicOutput,
     ExpectationResult,
     Materialization,
     Output,
@@ -88,6 +89,14 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
             yield event
     elif isinstance(result, Output):
         yield result
+    elif len(output_defs) == 1 and output_defs[0].is_dynamic:
+        if isinstance(result, list) and all([isinstance(event, DynamicOutput) for event in result]):
+            for event in result:
+                yield event
+        elif result is not None:
+            check.failed(
+                f"{context.describe_op()} has a single dynamic output named '{output_defs[0].name}', which expects either a list of DynamicOutputs to be returned, or DynamicOutput objects to be yielded. Received instead an object of type {type(result)}"
+            )
     elif len(output_defs) == 1:
         if result is None and output_defs[0].is_required is False:
             context.log.warn(
@@ -131,6 +140,30 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
                     value=element.value,
                     metadata_entries=element.metadata_entries,
                 )
+            elif isinstance(element, list) and all(
+                [isinstance(event, DynamicOutput) for event in element]
+            ):
+                if not output_def.is_dynamic:
+                    raise DagsterInvariantViolationError(
+                        f"Received a list of DynamicOutputs for output named '{output_def.name}', but output is not dynamic."
+                    )
+                for dynamic_output in element:
+                    if (
+                        not dynamic_output.output_name == DEFAULT_OUTPUT
+                        and not dynamic_output.output_name == output_def.name
+                    ):
+                        raise DagsterInvariantViolationError(
+                            f"Bad state: Received a tuple of outputs. An output was "
+                            f"explicitly named '{dynamic_output.output_name}', which does "
+                            "not match the dynamic output definition specified for "
+                            f"position {position}: '{output_def.name}'."
+                        )
+                    yield DynamicOutput(
+                        output_name=output_def.name,
+                        value=dynamic_output.value,
+                        mapping_key=dynamic_output.mapping_key,
+                        metadata_entries=dynamic_output.metadata_entries,
+                    )
             else:
                 # If an output object was not returned, then construct one from any metadata that has been logged within the op's body.
                 metadata = context.get_output_metadata(output_def.name)

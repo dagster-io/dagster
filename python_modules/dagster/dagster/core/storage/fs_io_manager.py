@@ -1,7 +1,7 @@
 import os
 import pickle
 
-from dagster import check
+import dagster._check as check
 from dagster.config import Field
 from dagster.config.source import StringSource
 from dagster.core.definitions.events import AssetKey, AssetMaterialization

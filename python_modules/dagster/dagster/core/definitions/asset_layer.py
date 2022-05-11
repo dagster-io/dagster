@@ -14,7 +14,7 @@ from typing import (
     Union,
 )
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.events import AssetKey
 
 from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle

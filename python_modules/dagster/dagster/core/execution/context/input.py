@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.events import AssetKey, AssetObservation
 from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster.core.definitions.op_definition import OpDefinition

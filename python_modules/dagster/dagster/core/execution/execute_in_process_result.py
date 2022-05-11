@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Union, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions import NodeDefinition, NodeHandle
 from dagster.core.definitions.events import AssetMaterialization, AssetObservation, Materialization
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
@@ -238,5 +238,7 @@ def _filter_outputs_by_handle(
             mapped_outputs[step_output_handle.mapping_key] = value
 
     if not output_found:
-        raise DagsterInvariantViolationError(f"No outputs found for node '{node_handle}'.")
+        raise DagsterInvariantViolationError(
+            f"No outputs found for output '{output_name}' from node '{node_handle}'."
+        )
     return mapped_outputs

@@ -13,11 +13,15 @@ from typing import (
     cast,
 )
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.events import AssetKey, DynamicAssetKey
 from dagster.core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
-from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
+from dagster.core.types.dagster_type import (
+    DagsterType,
+    is_dynamic_output_annotation,
+    resolve_dagster_type,
+)
 from dagster.utils.backcompat import experimental_arg_warning
 
 from .inference import InferredOutputProps
@@ -231,10 +235,16 @@ class OutputDefinition:
 
     @staticmethod
     def create_from_inferred(inferred: InferredOutputProps) -> "OutputDefinition":
-        return OutputDefinition(
-            dagster_type=_checked_inferred_type(inferred.annotation),
-            description=inferred.description,
-        )
+        if is_dynamic_output_annotation(inferred.annotation):
+            return DynamicOutputDefinition(
+                dagster_type=_checked_inferred_type(inferred.annotation),
+                description=inferred.description,
+            )
+        else:
+            return OutputDefinition(
+                dagster_type=_checked_inferred_type(inferred.annotation),
+                description=inferred.description,
+            )
 
     def combine_with_inferred(self: TOut, inferred: InferredOutputProps) -> TOut:
         dagster_type = self.dagster_type
