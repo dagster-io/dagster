@@ -243,7 +243,7 @@ def my_pipeline_started_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
 
-config_job = config_graph.to_job(name="other_job")
+config_job = config_graph.to_job()
 
 
 @sensor(jobs=[the_job, config_job])
@@ -2198,7 +2198,7 @@ def test_bad_run_request_unspecified():
                 (
                     "Error in sensor bad_request_unspecified: Sensor returned a RunRequest that "
                     "did not specify job_name for the requested run. Expected one of: "
-                    "['the_graph', 'other_job']"
+                    "['the_graph', 'config_graph']"
                 ),
             )
 

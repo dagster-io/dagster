@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod
 from inspect import isfunction
 from types import FunctionType
@@ -1190,31 +1191,33 @@ def _process_and_validate_target(
             # Since this is a graph we have to coerce, is not possible to be
             # the same definition by reference equality
             if target.name in pipelines_or_jobs:
-                target_type = pipelines_or_jobs[target.name].target_type
-                raise DagsterInvalidDefinitionError(
-                    f"Error when building repository: {targeter} "
-                    f"targets a graph named '{target.name}', but a "
-                    f"{target_type} with the same name was provided. "
-                    "Disambiguate between these by providing a separate name to one of these."
+                dupe_target_type = pipelines_or_jobs[target.name].target_type
+                warnings.warn(
+                    _get_error_msg_for_target_conflict(
+                        targeter, "graph", target.name, dupe_target_type
+                    )
                 )
-            coerced_job = target.coerce_to_job()
-            coerced_graphs[target.name] = coerced_job
-            pipelines_or_jobs[target.name] = coerced_job
         elif coerced_graphs[target.name].graph != target:
-            raise DagsterInvalidDefinitionError(
-                f"Error when building repository: {targeter} "
-                f"targets a graph named '{target.name}', but a "
-                "different graph was provided with the same name. Disambiguate "
-                "between these by providing a separate name to one of the graphs."
+            warnings.warn(
+                _get_error_msg_for_target_conflict(targeter, "graph", target.name, "graph")
             )
+        coerced_job = target.coerce_to_job()
+        coerced_graphs[target.name] = coerced_job
+        pipelines_or_jobs[target.name] = coerced_job
     else:
         if target.name in pipelines_or_jobs and pipelines_or_jobs[target.name] != target:
-            dupe_target_type = pipelines_or_jobs[target.name].target_type
-            raise DagsterInvalidDefinitionError(
-                f"Error when building repository: {targeter} "
-                f"targets {target.target_type} '{target.name}', but a "
-                f"different {dupe_target_type} with the same name "
-                "was provided. Disambiguate between these by providing a "
-                "separate name to one of them."
+            dupe_target_type = (
+                pipelines_or_jobs[target.name].target_type
+                if target.name not in coerced_graphs
+                else "graph"
+            )
+            warnings.warn(
+                _get_error_msg_for_target_conflict(
+                    targeter, target.target_type, target.name, dupe_target_type
+                )
             )
         pipelines_or_jobs[target.name] = target
+
+
+def _get_error_msg_for_target_conflict(targeter, target_type, target_name, dupe_target_type):
+    return f"{targeter} targets {target_type} '{target_name}', but a different {dupe_target_type} with the same name was provided. The {target_type} provided to {targeter} will override the existing {dupe_target_type}, but in Dagster 0.15.0, this will result in an error. Disambiguate between these by providing a separate name to one of them."
