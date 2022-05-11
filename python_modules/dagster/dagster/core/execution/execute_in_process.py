@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, Optional, cast
+from typing import Any, Dict, Mapping, Optional, cast
 
 from dagster.core.definitions import (
     GraphDefinition,
@@ -7,7 +7,6 @@ from dagster.core.definitions import (
     NodeDefinition,
     NodeHandle,
     OpDefinition,
-    PipelineDefinition,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidInvocationError

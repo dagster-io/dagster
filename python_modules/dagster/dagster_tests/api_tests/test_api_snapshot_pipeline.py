@@ -3,7 +3,7 @@ import sys
 import pytest
 
 from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
-from dagster.core.errors import DagsterUserCodeProcessError, DagsterUserCodeUnreachableError
+from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster.core.host_representation.handle import PipelineHandle
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -68,7 +68,7 @@ def test_pipeline_with_invalid_definition_snapshot_api_grpc(instance):
 
         try:
             _test_pipeline_subset_grpc(pipeline_handle, api_client, ["fail_subset"])
-        except DagsterUserCodeUnreachableError:
+        except DagsterUserCodeProcessError:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             assert (
                 "Input 'some_input' of solid 'fail_subset' has no upstream output, no default value, and no dagster type loader."
