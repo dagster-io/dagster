@@ -713,6 +713,7 @@
     "title": "Changelog",
     "icon": "Change",
     "path": "/changelog",
+    "isUnversioned": true,
     "children": [
       {
         "title": "Changelog",
