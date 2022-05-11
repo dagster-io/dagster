@@ -7,7 +7,7 @@ from dagster.utils.merger import merge_dicts
 from ..dbt_resource import DbtResource
 from .constants import CLI_COMMON_FLAGS_CONFIG_SCHEMA, CLI_COMMON_OPTIONS_CONFIG_SCHEMA
 from .types import DbtCliOutput
-from .utils import execute_cli
+from .utils import execute_cli, parse_manifest, parse_run_results
 
 
 class DbtCliResource(DbtResource):
@@ -208,6 +208,19 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("ls", select=select, models=models, exclude=exclude, **kwargs)
 
+    def build(self, select: Optional[List[str]] = None, **kwargs) -> DbtCliOutput:
+        """
+        Run the ``build`` command on a dbt project. kwargs are passed in as additional parameters.
+
+        Args:
+            select (List[str], optional): the models/resources to include in the run.
+
+        Returns:
+            DbtCliOutput: An instance of :class:`DbtCliOutput<dagster_dbt.DbtCliOutput>` containing
+                parsed log output as well as the contents of run_results.json (if applicable).
+        """
+        return self.cli("build", select=select, **kwargs)
+
     def freshness(self, select: Optional[List[str]] = None, **kwargs) -> DbtCliOutput:
         """
         Run the ``source snapshot-freshness`` command on a dbt project. kwargs are passed in as additional parameters.
@@ -250,6 +263,30 @@ class DbtCliResource(DbtResource):
         """
 
         return self.cli(f"run-operation {macro}", args=args, **kwargs)
+
+    def get_run_results_json(self, **kwargs) -> Optional[Dict[str, Any]]:
+        """
+        Get a parsed version of the run_results.json file for the relevant dbt project.
+
+        Returns:
+            Dict[str, Any]: dictionary containing the parsed contents of the manifest json file
+                for this dbt project.
+        """
+        project_dir = kwargs.get("project_dir", self.default_flags["project-dir"])
+        target_path = kwargs.get("target_path", self._target_path)
+        return parse_run_results(project_dir, target_path)
+
+    def get_manifest_json(self, **kwargs) -> Optional[Dict[str, Any]]:
+        """
+        Get a parsed version of the manifest.json file for the relevant dbt project.
+
+        Returns:
+            Dict[str, Any]: dictionary containing the parsed contents of the manifest json file
+                for this dbt project.
+        """
+        project_dir = kwargs.get("project_dir", self.default_flags["project-dir"])
+        target_path = kwargs.get("target_path", self._target_path)
+        return parse_manifest(project_dir, target_path)
 
 
 @resource(
