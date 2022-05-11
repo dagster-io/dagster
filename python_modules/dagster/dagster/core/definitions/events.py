@@ -20,7 +20,6 @@ from typing import (
 
 import dagster._check as check
 import dagster.seven as seven
-from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster.utils.backcompat import experimental_class_param_warning
 
@@ -37,16 +36,8 @@ from .utils import DEFAULT_OUTPUT, check_valid_name
 if TYPE_CHECKING:
     from dagster.core.execution.context.output import OutputContext
 
-ASSET_KEY_REGEX = re.compile("^[a-zA-Z0-9_.-]+$")  # alphanumeric, _, -, .
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
 ASSET_KEY_STRUCTURED_DELIMITER = "."
-
-
-def validate_asset_key_string(s: Optional[str]) -> str:
-    if not s or not ASSET_KEY_REGEX.match(s):
-        raise DagsterInvalidAssetKey()
-
-    return s
 
 
 def parse_asset_key_string(s: str) -> List[str]:
@@ -236,7 +227,7 @@ class Output(Generic[T]):
         return self._output_name
 
 
-class DynamicOutput:
+class DynamicOutput(Generic[T]):
     """
     Variant of :py:class:`Output <dagster.Output>` used to support
     dynamic mapping & collect. Each ``DynamicOutput`` produced by an op represents
@@ -265,7 +256,7 @@ class DynamicOutput:
 
     def __init__(
         self,
-        value: Any,
+        value: T,
         mapping_key: str,
         output_name: Optional[str] = DEFAULT_OUTPUT,
         metadata_entries: Optional[List[Union[PartitionMetadataEntry, MetadataEntry]]] = None,
@@ -290,7 +281,7 @@ class DynamicOutput:
         return self._mapping_key
 
     @property
-    def value(self) -> Any:
+    def value(self) -> T:
         return self._value
 
     @property

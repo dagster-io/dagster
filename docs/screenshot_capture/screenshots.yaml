@@ -103,19 +103,19 @@
   vetted: false
 
 - path: concepts/solids-pipelines/pipeline-def.png
-  defs_file: examples/docs_snippets/docs_snippets/concepts/solids_pipelines/pipeline_execution.py
+  defs_file: examples/docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py
   url: http://127.0.0.1:3000/
   vetted: false
 
 - path: concepts/solids-pipelines/pipeline-run.png
-  defs_file: examples/docs_snippets/docs_snippets/concepts/solids_pipelines/pipeline_execution.py
+  defs_file: examples/docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py
   steps:
     - launch run
     - open run page
   vetted: false
 
 - path: concepts/solids-pipelines/solid-selection.png
-  defs_file: examples/docs_snippets/docs_snippets/concepts/solids_pipelines/pipeline_execution.py
+  defs_file: examples/docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py
   steps:
     - enter op selection into the op selection bar
   vetted: false

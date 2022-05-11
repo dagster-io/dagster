@@ -1,7 +1,7 @@
 import yaml
 
 from dagster import execute_pipeline
-from docs_snippets.concepts.solids_pipelines.pipeline_execution import (
+from docs_snippets.concepts.ops_jobs_graphs.job_execution import (
     execute_subset,
     forkserver_job,
     ip_yaml,

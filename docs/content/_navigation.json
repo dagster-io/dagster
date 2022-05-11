@@ -5,25 +5,20 @@
     "path": "/getting-started",
     "children": [
       {
-        "title": "Getting Started",
-        "children": [
-          {
-            "title": "Installation",
-            "path": "/getting-started/install"
-          },
-          {
-            "title": "Create a New Project",
-            "path": "/getting-started/create-new-project"
-          },
-          {
-            "title": "Telemetry",
-            "path": "/getting-started/telemetry"
-          },
-          {
-            "title": "Releases and Changes",
-            "path": "/getting-started/releases"
-          }
-        ]
+        "title": "Installation",
+        "path": "/getting-started/install"
+      },
+      {
+        "title": "Create a New Project",
+        "path": "/getting-started/create-new-project"
+      },
+      {
+        "title": "Telemetry",
+        "path": "/getting-started/telemetry"
+      },
+      {
+        "title": "Releases and Changes",
+        "path": "/getting-started/releases"
       }
     ]
   },
@@ -264,7 +259,7 @@
   },
   {
     "title": "Deployment",
-    "icon": "Cloud",
+    "icon": "CloudUpload",
     "path": "/deployment",
     "children": [
       {
@@ -398,55 +393,50 @@
     "path": "/guides",
     "children": [
       {
-        "title": "Dagster Guides",
+        "title": "Versioning and Memoization (Experimental)",
+        "path": "/guides/dagster/memoization"
+      },
+      {
+        "title": "Software-Defined Assets Tutorial (Experimental)",
+        "path": "/guides/dagster/asset-tutorial",
         "children": [
           {
-            "title": "Versioning and Memoization (Experimental)",
-            "path": "/guides/dagster/memoization"
+            "title": "Defining an Asset",
+            "path": "/guides/dagster/asset-tutorial/defining-an-asset"
           },
           {
-            "title": "Software-Defined Assets Tutorial (Experimental)",
-            "path": "/guides/dagster/asset-tutorial",
-            "children":  [
-              {
-                "title": "Defining an Asset",
-                "path": "/guides/dagster/asset-tutorial/defining-an-asset"
-              },
-              {
-                "title": "Building Graphs of Assets",
-                "path": "/guides/dagster/asset-tutorial/asset-graph"
-              },
-              {
-                "title": "Testing Assets",
-                "path": "/guides/dagster/asset-tutorial/testing-assets"
-              }
-            ]
+            "title": "Building Graphs of Assets",
+            "path": "/guides/dagster/asset-tutorial/asset-graph"
           },
           {
-            "title": "Software-Defined Assets with Pandas and PySpark (Experimental)",
-            "path": "/guides/dagster/software-defined-assets"
-          },
-          {
-            "title": "Run Attribution (Experimental)",
-            "path": "/guides/dagster/run-attribution"
-          },
-          {
-            "title": "Migrating to Graphs, Jobs, and Ops",
-            "path": "/guides/dagster/graph_job_op"
-          },
-          {
-            "title": "Re-execution",
-            "path": "/guides/dagster/re-execution"
-          },
-          {
-            "title": "Fully-Featured Example Project",
-            "path": "/guides/dagster/example_project"
-          },
-          {
-            "title": "Validating Data with Dagster Type Factories",
-            "path": "/guides/dagster/dagster_type_factories"
+            "title": "Testing Assets",
+            "path": "/guides/dagster/asset-tutorial/testing-assets"
           }
         ]
+      },
+      {
+        "title": "Software-Defined Assets with Pandas and PySpark (Experimental)",
+        "path": "/guides/dagster/software-defined-assets"
+      },
+      {
+        "title": "Run Attribution (Experimental)",
+        "path": "/guides/dagster/run-attribution"
+      },
+      {
+        "title": "Migrating to Graphs, Jobs, and Ops",
+        "path": "/guides/dagster/graph_job_op"
+      },
+      {
+        "title": "Re-execution",
+        "path": "/guides/dagster/re-execution"
+      },
+      {
+        "title": "Fully-Featured Example Project",
+        "path": "/guides/dagster/example_project"
+      },
+      {
+        "title": "Validating Data with Dagster Type Factories",
+        "path": "/guides/dagster/dagster_type_factories"
       }
     ]
   },
@@ -710,22 +700,41 @@
     "path": "/community",
     "children": [
       {
-        "title": "Community",
-        "children": [
-          {
-            "title": "Code of Conduct",
-            "path": "/community/code-of-conduct"
-          },
-          {
-            "title": "Contributing",
-            "path": "/community/contributing"
-          },
-          {
-            "title": "Changing Public APIs",
-            "path": "/community/public-apis"
-          }
-        ]
+        "title": "Code of Conduct",
+        "path": "/community/code-of-conduct"
+      },
+      {
+        "title": "Contributing",
+        "path": "/community/contributing"
+      },
+      {
+        "title": "Changing Public APIs",
+        "path": "/community/public-apis"
       }
     ]
+  },
+  {
+    "title": "Changelog",
+    "icon": "Change",
+    "path": "/changelog",
+    "isUnversioned": true,
+    "children": [
+      {
+        "title": "Changelog",
+        "path": "/changelog",
+        "isUnversioned": true
+      },
+      {
+        "title": "Migration Guides",
+        "path": "/migration",
+        "isUnversioned": true
+      }
+    ]
+  },
+  {
+    "title": "Dagster Cloud Docs",
+    "icon": "Cloud",
+    "path": "https://docs.dagster.cloud/",
+    "isExternalLink": true
   }
 ]

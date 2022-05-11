@@ -15,6 +15,7 @@ from dagster import (
     Out,
     Output,
     ResourceDefinition,
+    StaticPartitionsDefinition,
     graph,
     io_manager,
     multi_asset,
@@ -712,6 +713,22 @@ def test_graph_asset_decorator_no_args():
     assert assets_def.asset_keys_by_input_name["x"] == AssetKey("x")
     assert assets_def.asset_keys_by_input_name["y"] == AssetKey("y")
     assert assets_def.asset_keys_by_output_name["result"] == AssetKey("my_graph")
+
+
+def test_graph_asset_partitioned():
+    @op
+    def my_op(context):
+        assert context.partition_key == "a"
+
+    @graph
+    def my_graph():
+        return my_op()
+
+    assets_def = AssetsDefinition.from_graph(
+        graph_def=my_graph, partitions_def=StaticPartitionsDefinition(["a", "b", "c"])
+    )
+
+    AssetGroup([assets_def]).build_job("abc").execute_in_process(partition_key="a")
 
 
 def test_all_assets_job():

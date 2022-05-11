@@ -238,5 +238,7 @@ def _filter_outputs_by_handle(
             mapped_outputs[step_output_handle.mapping_key] = value
 
     if not output_found:
-        raise DagsterInvariantViolationError(f"No outputs found for node '{node_handle}'.")
+        raise DagsterInvariantViolationError(
+            f"No outputs found for output '{output_name}' from node '{node_handle}'."
+        )
     return mapped_outputs

@@ -41,7 +41,7 @@ So, unit tests should be viewed primarily as productivity and code quality tools
 
 The workhouse function for unit-testing a job is the <PyObject object="JobDefinition" method="execute_in_process"/> function. Using this function you can execute a job in process and then test execution properties using the <PyObject object="ExecuteInProcessResult" /> object that it returns.
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_job_marker endbefore=end_test_job_marker
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_job_marker endbefore=end_test_job_marker
 def test_job():
     result = do_math_job.execute_in_process()
 
@@ -135,7 +135,7 @@ While using the `@op` decorator on a function does change its signature, the inv
 
 Consider the following op.
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_invocation_op_marker endbefore=end_invocation_op_marker
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_invocation_op_marker endbefore=end_invocation_op_marker
 @op
 def my_op_to_test():
     return 5
@@ -143,14 +143,14 @@ def my_op_to_test():
 
 Since it has no arguments, we can invoke it directly.
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_op_marker endbefore=end_test_op_marker
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_op_marker endbefore=end_test_op_marker
 def test_op_with_invocation():
     assert my_op_to_test() == 5
 ```
 
 Consider the following op with inputs.
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_invocation_op_inputs_marker endbefore=end_invocation_op_inputs_marker
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_invocation_op_inputs_marker endbefore=end_invocation_op_inputs_marker
 @op
 def my_op_with_inputs(x, y):
     return x + y
@@ -158,7 +158,7 @@ def my_op_with_inputs(x, y):
 
 We can directly provide values for these inputs to the invocation.
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_op_with_inputs_marker endbefore=end_test_op_with_inputs_marker
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_op_with_inputs_marker endbefore=end_test_op_with_inputs_marker
 def test_inputs_op_with_invocation():
     assert my_op_with_inputs(5, 6) == 11
 ```
@@ -167,7 +167,7 @@ If your op requires contextual information such as resources or config, this can
 
 Consider the following op, which requires a resource `foo`.
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_op_requires_foo_marker endbefore=end_op_requires_foo_marker
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_op_requires_foo_marker endbefore=end_op_requires_foo_marker
 @op(required_resource_keys={"foo"})
 def op_requires_foo(context):
     return f"found {context.resources.foo}"
@@ -175,7 +175,7 @@ def op_requires_foo(context):
 
 We construct the context using <PyObject module="dagster" object="build_op_context"/>. Note how we can directly provide a resource instance, instead of having to create a mock resource definition.
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_op_context_marker endbefore=end_test_op_context_marker
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_op_context_marker endbefore=end_test_op_context_marker
 from dagster import build_op_context
 
 
@@ -186,7 +186,7 @@ def test_op_with_context():
 
 We can also provide a resource definition to <PyObject module="dagster" object="build_op_context"/>. It does not have a `resource_config` argument, so any config should be supplied to the resource via the <PyObject module="dagster" object="ResourceDefinition" method="configured"/> API.
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_resource_def_marker endbefore=end_test_resource_def_marker
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_resource_def_marker endbefore=end_test_resource_def_marker
 @resource(config_schema={"my_str": str})
 def my_foo_resource(context):
     return context.resource_config["my_str"]
@@ -203,7 +203,7 @@ def test_op_resource_def():
 
 Sometimes, you may want to test with different configuration. You can execute job with a specified run config via the `run_config`:
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_job_with_config endbefore=end_test_job_with_config
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_job_with_config endbefore=end_test_job_with_config
 def test_job_with_config():
     result = do_math_job.execute_in_process(
         run_config={
@@ -225,7 +225,7 @@ def test_job_with_config():
 
 The event stream is the most generic way that an op communicates what happened during its computation. Ops communicate events for starting, input/output type checking, and user-provided events such as expectations, materializations, and outputs.
 
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_event_stream endbefore=end_test_event_stream
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_event_stream endbefore=end_test_event_stream
 def test_event_stream():
     job_result = emit_events_job.execute_in_process(
         run_config={"ops": {"emit_events_op": {"inputs": {"input_num": 1}}}}
