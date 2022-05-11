@@ -59,6 +59,16 @@ def even_better():
 
 In addition to being able to set the policy directly on the op definition, it can also be set on specific invocations of an op, or a <PyObject module="dagster" object="job" decorator /> to apply to all ops contained within.
 
+```python file=/concepts/solids_pipelines/retries.py startafter=policy3_start endbefore=policy3_end
+default_policy = RetryPolicy(max_retries=1)
+flakey_op_policy = RetryPolicy(max_retries=10)
+
+
+@job(op_retry_policy=default_policy)
+def default_and_override_job():
+    problematic.with_retry_policy(flakey_op_policy)()
+```
+
 ### RetryRequested
 
 In certain more nuanced situations, we may need to evaluate code to determine if we want to retry or not. For this we can use a manual <PyObject module="dagster" object="RetryRequested" /> exception.

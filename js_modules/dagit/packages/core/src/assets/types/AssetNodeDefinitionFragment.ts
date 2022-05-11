@@ -89,6 +89,13 @@ export interface AssetNodeDefinitionFragment_metadataEntries_IntMetadataEntry {
   intRepr: string;
 }
 
+export interface AssetNodeDefinitionFragment_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
 export interface AssetNodeDefinitionFragment_metadataEntries_PipelineRunMetadataEntry {
   __typename: "PipelineRunMetadataEntry";
   label: string;
@@ -180,7 +187,7 @@ export interface AssetNodeDefinitionFragment_metadataEntries_TableSchemaMetadata
   schema: AssetNodeDefinitionFragment_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type AssetNodeDefinitionFragment_metadataEntries = AssetNodeDefinitionFragment_metadataEntries_PathMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_JsonMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_UrlMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_TextMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_MarkdownMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_PythonArtifactMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_FloatMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_IntMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_PipelineRunMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_AssetMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_TableMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_TableSchemaMetadataEntry;
+export type AssetNodeDefinitionFragment_metadataEntries = AssetNodeDefinitionFragment_metadataEntries_PathMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_JsonMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_UrlMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_TextMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_MarkdownMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_PythonArtifactMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_FloatMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_IntMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_BoolMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_PipelineRunMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_AssetMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_TableMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_PathMetadataEntry {
   __typename: "PathMetadataEntry";
@@ -238,6 +245,13 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataE
   description: string | null;
   intValue: number | null;
   intRepr: string;
+}
+
+export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_PipelineRunMetadataEntry {
@@ -331,7 +345,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataE
   schema: AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries = AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_PathMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_JsonMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_UrlMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TextMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_MarkdownMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_PythonArtifactMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_FloatMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_IntMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_PipelineRunMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry;
+export type AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries = AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_PathMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_JsonMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_UrlMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TextMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_MarkdownMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_PythonArtifactMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_FloatMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_IntMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_BoolMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_PipelineRunMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -365,6 +379,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -438,6 +453,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -512,6 +528,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -560,6 +577,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -594,6 +612,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -668,6 +687,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -743,6 +763,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -819,6 +840,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -892,6 +914,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -966,6 +989,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1014,6 +1038,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -1048,6 +1073,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1122,6 +1148,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1197,6 +1224,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1299,6 +1327,13 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   intRepr: string;
 }
 
+export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PipelineRunMetadataEntry {
   __typename: "PipelineRunMetadataEntry";
   label: string;
@@ -1390,7 +1425,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   schema: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PathMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_JsonMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_UrlMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TextMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_MarkdownMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PythonArtifactMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_FloatMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_IntMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PipelineRunMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry;
+export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PathMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_JsonMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_UrlMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TextMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_MarkdownMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PythonArtifactMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_FloatMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_IntMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_BoolMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PipelineRunMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -1424,6 +1459,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1497,6 +1533,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1571,6 +1608,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1619,6 +1657,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -1653,6 +1692,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1727,6 +1767,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1802,6 +1843,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1878,6 +1920,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1951,6 +1994,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2025,6 +2069,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2073,6 +2118,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -2107,6 +2153,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2181,6 +2228,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2256,6 +2304,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2371,6 +2420,7 @@ export interface AssetNodeDefinitionFragment_dependencies_asset {
   opName: string | null;
   opNames: string[];
   jobNames: string[];
+  graphName: string | null;
   description: string | null;
   partitionDefinition: string | null;
   computeKind: string | null;
@@ -2414,6 +2464,7 @@ export interface AssetNodeDefinitionFragment_dependedBy_asset {
   opName: string | null;
   opNames: string[];
   jobNames: string[];
+  graphName: string | null;
   description: string | null;
   partitionDefinition: string | null;
   computeKind: string | null;
@@ -2435,6 +2486,7 @@ export interface AssetNodeDefinitionFragment {
   opNames: string[];
   jobNames: string[];
   repository: AssetNodeDefinitionFragment_repository;
+  graphName: string | null;
   partitionDefinition: string | null;
   computeKind: string | null;
   assetKey: AssetNodeDefinitionFragment_assetKey;

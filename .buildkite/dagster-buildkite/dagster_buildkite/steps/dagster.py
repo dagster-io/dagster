@@ -263,13 +263,6 @@ def graphql_pg_extra_cmds_fn(_):
 # Some Dagster packages have more involved test configs or support only certain Python version;
 # special-case those here
 DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
-    # Examples: Airline Demo
-    ModuleBuildSpec(
-        "examples/airline_demo",
-        extra_cmds_fn=airline_demo_extra_cmds_fn,
-        buildkite_label="airline-demo",
-        supported_pythons=ExamplePythons,
-    ),
     ModuleBuildSpec(
         "examples/dbt_example",
         extra_cmds_fn=dbt_example_extra_cmds_fn,
@@ -470,6 +463,18 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         ),
     ),
     ModuleBuildSpec(
+        "python_modules/libraries/dagster-snowflake-pandas",
+        supported_pythons=(  # dropped python 3.6 support
+            [
+                SupportedPython.V3_7,
+                SupportedPython.V3_8,
+                SupportedPython.V3_9,
+            ]
+            if (branch_name == "master" or is_release_branch(branch_name))
+            else [SupportedPython.V3_9]
+        ),
+    ),
+    ModuleBuildSpec(
         "python_modules/libraries/dagster-postgres", extra_cmds_fn=postgres_extra_cmds_fn
     ),
     ModuleBuildSpec(
@@ -481,6 +486,18 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ModuleBuildSpec(
         "python_modules/libraries/dagstermill",
         tox_env_suffixes=["-papermill1", "-papermill2"],
+    ),
+    ModuleBuildSpec(
+        "python_modules/libraries/dagster-ge",
+        supported_pythons=(  # dropped python 3.6 support
+            [
+                SupportedPython.V3_7,
+                SupportedPython.V3_8,
+                SupportedPython.V3_9,
+            ]
+            if (branch_name == "master" or is_release_branch(branch_name))
+            else [SupportedPython.V3_9]
+        ),
     ),
 ]
 

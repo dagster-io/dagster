@@ -138,20 +138,73 @@ def test_load_grpc_server_python_env():
         process.terminate()
 
 
+def test_load_via_auto_env_var_prefix():
+    port = find_free_port()
+    python_file = file_relative_path(__file__, "grpc_repo.py")
+
+    subprocess_args = ["dagster", "api", "grpc"]
+
+    container_context = {
+        "k8s": {
+            "image_pull_policy": "Never",
+            "image_pull_secrets": [{"name": "your_secret"}],
+        }
+    }
+
+    container_image = "myregistry/my_image:latest"
+
+    with environ(
+        {
+            "DAGSTER_CLI_API_GRPC_HOST": "localhost",
+            "DAGSTER_CLI_API_GRPC_PORT": str(port),
+            "DAGSTER_CLI_API_GRPC_PYTHON_FILE": python_file,
+            "DAGSTER_CLI_API_GRPC_CONTAINER_IMAGE": container_image,
+            "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT": json.dumps(container_context),
+        }
+    ):
+        process = subprocess.Popen(
+            subprocess_args,
+            stdout=subprocess.PIPE,
+        )
+
+        try:
+            wait_for_grpc_server(
+                process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
+            )
+            client = DagsterGrpcClient(port=port)
+            assert client.ping("foobar") == "foobar"
+
+            list_repositories_response = sync_list_repositories_grpc(client)
+            assert list_repositories_response.container_image == container_image
+            assert list_repositories_response.container_context == container_context
+
+        finally:
+            process.terminate()
+
+
 def test_load_via_env_var():
     port = find_free_port()
     python_file = file_relative_path(__file__, "grpc_repo.py")
 
-    subprocess_args = [
-        "dagster",
-        "api",
-        "grpc",
-        "--python-file",
-        python_file,
-    ]
+    subprocess_args = ["dagster", "api", "grpc"]
+
+    container_context = {
+        "k8s": {
+            "image_pull_policy": "Never",
+            "image_pull_secrets": [{"name": "your_secret"}],
+        }
+    }
+
+    container_image = "myregistry/my_image:latest"
 
     with environ(
-        {"DAGSTER_CLI_API_GRPC_HOST": "localhost", "DAGSTER_CLI_API_GRPC_PORT": str(port)}
+        {
+            "DAGSTER_PYTHON_FILE": python_file,
+            "DAGSTER_GRPC_HOST": "localhost",
+            "DAGSTER_GRPC_PORT": str(port),
+            "DAGSTER_CONTAINER_IMAGE": container_image,
+            "DAGSTER_CONTAINER_CONTEXT": json.dumps(container_context),
+        }
     ):
         process = subprocess.Popen(
             subprocess_args,
@@ -231,7 +284,7 @@ def test_load_with_error(capfd):
         process.wait()
 
         _, err = capfd.readouterr()
-        assert "No module named" in err
+        assert "Dagster recognizes standard cron expressions" in err
     finally:
         if process.poll() is None:
             process.terminate()
@@ -416,7 +469,7 @@ def test_lazy_load_with_error():
             DagsterGrpcClient(port=port).list_repositories()
         )
         assert isinstance(list_repositories_response, SerializableErrorInfo)
-        assert "No module named" in list_repositories_response.message
+        assert "Dagster recognizes standard cron expressions" in list_repositories_response.message
     finally:
         process.terminate()
 
@@ -449,7 +502,9 @@ def test_lazy_load_via_env_var():
                 DagsterGrpcClient(port=port).list_repositories()
             )
             assert isinstance(list_repositories_response, SerializableErrorInfo)
-            assert "No module named" in list_repositories_response.message
+            assert (
+                "Dagster recognizes standard cron expressions" in list_repositories_response.message
+            )
         finally:
             process.terminate()
 

@@ -52,7 +52,12 @@ def _get_node_name(node_info: Mapping[str, Any]):
 
 
 def _get_node_asset_key(node_info):
-    return AssetKey(node_info["name"])
+    if node_info.get("schema") is not None:
+        components = [node_info["schema"], node_info["name"]]
+    else:
+        components = [node_info["name"]]
+
+    return AssetKey(components)
 
 
 def _dbt_nodes_to_assets(

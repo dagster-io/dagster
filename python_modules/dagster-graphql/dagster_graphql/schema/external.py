@@ -1,3 +1,4 @@
+# pylint: disable=missing-graphene-docstring
 import graphene
 from dagster_graphql.implementation.fetch_runs import (
     get_in_progress_runs_by_step,

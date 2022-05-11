@@ -25,7 +25,6 @@ from dagster.utils.partitions import (
     create_offset_partition_selector,
 )
 
-from ...storage.tags import check_tags
 from ..graph_definition import GraphDefinition
 from ..mode import DEFAULT_MODE_NAME
 from ..pipeline_definition import PipelineDefinition
@@ -39,6 +38,7 @@ from ..schedule_definition import (
     ScheduleEvaluationContext,
     is_context_provided,
 )
+from ..utils import validate_tags
 
 if TYPE_CHECKING:
     from dagster import Partition
@@ -69,11 +69,11 @@ def schedule(
     argument, and does one of the following:
 
     1. Return a `RunRequest` object.
-    2. Yield multiple of `RunRequest` objects.
-    3. Return or yield a `SkipReason` object, providing a descriptive message of why no runs were
-       requested.
-    4. Return or yield nothing (skipping without providing a reason)
+    2. Return a list of `RunRequest` objects.
+    3. Return a `SkipReason` object, providing a descriptive message of why no runs were requested.
+    4. Return nothing (skipping without providing a reason)
     5. Return a run config dictionary.
+    6. Yield a `SkipReason` or yield one ore more `RunRequest` objects.
 
     Returns a :py:class:`~dagster.ScheduleDefinition`.
 
@@ -114,6 +114,8 @@ def schedule(
 
         schedule_name = name or fn.__name__
 
+        validated_tags = None
+
         # perform upfront validation of schedule tags
         if tags_fn and tags:
             raise DagsterInvalidDefinitionError(
@@ -121,7 +123,7 @@ def schedule(
                 " to ScheduleDefinition. Must provide only one of the two."
             )
         elif tags:
-            check_tags(tags, "tags")
+            validated_tags = validate_tags(tags, allow_reserved_tags=False)
 
         def _wrapped_fn(context: ScheduleEvaluationContext) -> RunRequestIterator:
             if should_execute:
@@ -148,12 +150,18 @@ def schedule(
                     # this is the run-config based decorated function, wrap the evaluated run config
                     # and tags in a RunRequest
                     evaluated_run_config = copy.deepcopy(result)
-                    evaluated_tags = tags or (tags_fn and tags_fn(context)) or None
+                    evaluated_tags = (
+                        validated_tags
+                        or (tags_fn and validate_tags(tags_fn(context), allow_reserved_tags=False))
+                        or None
+                    )
                     yield RunRequest(
                         run_key=None,
                         run_config=evaluated_run_config,
                         tags=evaluated_tags,
                     )
+                elif isinstance(result, list):
+                    yield from cast(List[RunRequest], result)
                 else:
                     # this is a run-request based decorated function
                     yield from cast(RunRequestIterator, ensure_gen(result))

@@ -38,9 +38,9 @@ from dagster.utils.merger import deep_merge_dicts
 
 
 @pytest.mark.integration
-def test_k8s_run_launcher_no_celery_pods(helm_namespace_for_k8s_run_launcher):
+def test_k8s_run_launcher_no_celery_pods(system_namespace_for_k8s_run_launcher):
     pods = DagsterKubernetesClient.production_client().core_api.list_namespaced_pod(
-        namespace=helm_namespace_for_k8s_run_launcher
+        namespace=system_namespace_for_k8s_run_launcher
     )
     celery_pod_names = [p.metadata.name for p in pods.items if "celery-workers" in p.metadata.name]
     check.invariant(not celery_pod_names)
@@ -49,7 +49,7 @@ def test_k8s_run_launcher_no_celery_pods(helm_namespace_for_k8s_run_launcher):
 @pytest.mark.integration
 def test_k8s_run_launcher_default(
     dagster_instance_for_k8s_run_launcher,
-    helm_namespace_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
     dagster_docker_image,
     dagit_url_for_k8s_run_launcher,
 ):
@@ -60,7 +60,7 @@ def test_k8s_run_launcher_default(
             "execution": {
                 "k8s": {
                     "config": {
-                        "job_namespace": helm_namespace_for_k8s_run_launcher,
+                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
                         "job_image": dagster_docker_image,
                         "image_pull_policy": image_pull_policy(),
                     }
@@ -72,14 +72,14 @@ def test_k8s_run_launcher_default(
         dagit_url_for_k8s_run_launcher,
         run_config,
         dagster_instance_for_k8s_run_launcher,
-        helm_namespace_for_k8s_run_launcher,
+        user_code_namespace_for_k8s_run_launcher,
     )
 
 
 @pytest.mark.integration
 def test_k8s_run_launcher_volume_mounts(
     dagster_instance_for_k8s_run_launcher,
-    helm_namespace_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
     dagster_docker_image,
     dagit_url_for_k8s_run_launcher,
 ):
@@ -89,7 +89,7 @@ def test_k8s_run_launcher_volume_mounts(
             "execution": {
                 "k8s": {
                     "config": {
-                        "job_namespace": helm_namespace_for_k8s_run_launcher,
+                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
                         "job_image": dagster_docker_image,
                         "image_pull_policy": image_pull_policy(),
                     }
@@ -101,7 +101,7 @@ def test_k8s_run_launcher_volume_mounts(
         dagit_url_for_k8s_run_launcher,
         run_config,
         dagster_instance_for_k8s_run_launcher,
-        helm_namespace_for_k8s_run_launcher,
+        user_code_namespace_for_k8s_run_launcher,
         pipeline_name="volume_mount_pipeline",
         num_steps=1,
         mode="k8s",
@@ -111,7 +111,7 @@ def test_k8s_run_launcher_volume_mounts(
 @pytest.mark.integration
 def test_k8s_executor_get_config_from_run_launcher(
     dagster_instance_for_k8s_run_launcher,
-    helm_namespace_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
     dagster_docker_image,
     dagit_url_for_k8s_run_launcher,
 ):
@@ -127,14 +127,14 @@ def test_k8s_executor_get_config_from_run_launcher(
         dagit_url_for_k8s_run_launcher,
         run_config,
         dagster_instance_for_k8s_run_launcher,
-        helm_namespace_for_k8s_run_launcher,
+        user_code_namespace_for_k8s_run_launcher,
     )
 
 
 @pytest.mark.integration
 def test_k8s_executor_combine_configs(
     dagster_instance_for_k8s_run_launcher,
-    helm_namespace_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
     dagster_docker_image,
     dagit_url_for_k8s_run_launcher,
 ):
@@ -165,14 +165,14 @@ def test_k8s_executor_combine_configs(
         dagit_url_for_k8s_run_launcher,
         run_config,
         dagster_instance_for_k8s_run_launcher,
-        helm_namespace_for_k8s_run_launcher,
+        user_code_namespace_for_k8s_run_launcher,
     )
 
     step_job_key = get_k8s_job_name(run_id, "count_letters")
     step_job_name = f"dagster-step-{step_job_key}"
 
     step_pods = get_pods_in_job(
-        job_name=step_job_name, namespace=helm_namespace_for_k8s_run_launcher
+        job_name=step_job_name, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert len(step_pods) == 1
@@ -216,7 +216,7 @@ def _launch_executor_run(
     dagit_url,
     run_config,
     dagster_instance_for_k8s_run_launcher,
-    helm_namespace_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
     pipeline_name="demo_k8s_executor_pipeline",
     num_steps=2,
     mode="default",
@@ -226,7 +226,7 @@ def _launch_executor_run(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=helm_namespace_for_k8s_run_launcher
+        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
@@ -243,13 +243,13 @@ def _launch_executor_run(
 @pytest.mark.integration
 def test_k8s_run_launcher_image_from_origin(
     dagster_instance_for_k8s_run_launcher,
-    helm_namespace_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
     dagit_url_for_k8s_run_launcher,
 ):
     # Like the previous test, but the executor doesn't supply an image - it's pulled
     # from the origin on the run instead
     pods = DagsterKubernetesClient.production_client().core_api.list_namespaced_pod(
-        namespace=helm_namespace_for_k8s_run_launcher
+        namespace=user_code_namespace_for_k8s_run_launcher
     )
     celery_pod_names = [p.metadata.name for p in pods.items if "celery-workers" in p.metadata.name]
     check.invariant(not celery_pod_names)
@@ -261,7 +261,7 @@ def test_k8s_run_launcher_image_from_origin(
             "execution": {
                 "k8s": {
                     "config": {
-                        "job_namespace": helm_namespace_for_k8s_run_launcher,
+                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
                         "image_pull_policy": image_pull_policy(),
                     }
                 }
@@ -276,7 +276,7 @@ def test_k8s_run_launcher_image_from_origin(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=helm_namespace_for_k8s_run_launcher
+        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
@@ -288,7 +288,7 @@ def test_k8s_run_launcher_image_from_origin(
 @pytest.mark.integration
 def test_k8s_run_launcher_terminate(
     dagster_instance_for_k8s_run_launcher,
-    helm_namespace_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
     dagster_docker_image,
     dagit_url_for_k8s_run_launcher,
 ):
@@ -300,7 +300,7 @@ def test_k8s_run_launcher_terminate(
             "execution": {
                 "k8s": {
                     "config": {
-                        "job_namespace": helm_namespace_for_k8s_run_launcher,
+                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
                         "job_image": dagster_docker_image,
                         "image_pull_policy": image_pull_policy(),
                     }
@@ -316,7 +316,9 @@ def test_k8s_run_launcher_terminate(
         mode="k8s",
     )
 
-    wait_for_job(job_name="dagster-run-%s" % run_id, namespace=helm_namespace_for_k8s_run_launcher)
+    wait_for_job(
+        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+    )
     timeout = datetime.timedelta(0, 30)
     start_time = datetime.datetime.now()
     while True:
@@ -348,13 +350,13 @@ def test_k8s_run_launcher_terminate(
 @pytest.mark.integration
 def test_k8s_executor_resource_requirements(
     dagster_instance_for_k8s_run_launcher,
-    helm_namespace_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
     dagster_docker_image,
     dagit_url_for_k8s_run_launcher,
 ):
     # sanity check that we have a K8sRunLauncher
     pods = DagsterKubernetesClient.production_client().core_api.list_namespaced_pod(
-        namespace=helm_namespace_for_k8s_run_launcher
+        namespace=user_code_namespace_for_k8s_run_launcher
     )
     celery_pod_names = [p.metadata.name for p in pods.items if "celery-workers" in p.metadata.name]
     check.invariant(not celery_pod_names)
@@ -365,7 +367,7 @@ def test_k8s_executor_resource_requirements(
             "execution": {
                 "k8s": {
                     "config": {
-                        "job_namespace": helm_namespace_for_k8s_run_launcher,
+                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
                         "job_image": dagster_docker_image,
                         "image_pull_policy": image_pull_policy(),
                     }
@@ -384,7 +386,7 @@ def test_k8s_executor_resource_requirements(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=helm_namespace_for_k8s_run_launcher
+        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
@@ -396,7 +398,7 @@ def test_k8s_executor_resource_requirements(
 @pytest.mark.integration
 def test_execute_on_k8s_retry_pipeline(  # pylint: disable=redefined-outer-name
     dagster_instance_for_k8s_run_launcher,
-    helm_namespace_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
     dagster_docker_image,
     dagit_url_for_k8s_run_launcher,
 ):
@@ -406,7 +408,7 @@ def test_execute_on_k8s_retry_pipeline(  # pylint: disable=redefined-outer-name
             "execution": {
                 "k8s": {
                     "config": {
-                        "job_namespace": helm_namespace_for_k8s_run_launcher,
+                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
                         "job_image": dagster_docker_image,
                         "image_pull_policy": image_pull_policy(),
                     }
@@ -425,7 +427,7 @@ def test_execute_on_k8s_retry_pipeline(  # pylint: disable=redefined-outer-name
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=helm_namespace_for_k8s_run_launcher
+        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
@@ -455,7 +457,7 @@ def test_execute_on_k8s_retry_pipeline(  # pylint: disable=redefined-outer-name
 @pytest.mark.integration
 def test_memoization_k8s_executor(
     dagster_instance_for_k8s_run_launcher,
-    helm_namespace_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
     dagster_docker_image,
     dagit_url_for_k8s_run_launcher,
 ):
@@ -466,7 +468,7 @@ def test_memoization_k8s_executor(
             "execution": {
                 "k8s": {
                     "config": {
-                        "job_namespace": helm_namespace_for_k8s_run_launcher,
+                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
                         "job_image": dagster_docker_image,
                         "image_pull_policy": image_pull_policy(),
                     }
@@ -495,7 +497,7 @@ def test_memoization_k8s_executor(
 
             result = wait_for_job_and_get_raw_logs(
                 job_name="dagster-run-%s" % run_id,
-                namespace=helm_namespace_for_k8s_run_launcher,
+                namespace=user_code_namespace_for_k8s_run_launcher,
             )
 
             assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)

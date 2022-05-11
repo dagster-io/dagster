@@ -223,20 +223,18 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
                 />
               )}
               {explodeCompositesEnabled && (
-                <OptionsOverlay>
-                  <Checkbox
-                    format="switch"
-                    label="Explode graphs"
-                    checked={options.explodeComposites}
-                    onChange={() => {
-                      handleQueryChange('');
-                      setOptions({
-                        ...options,
-                        explodeComposites: !options.explodeComposites,
-                      });
-                    }}
-                  />
-                </OptionsOverlay>
+                <Checkbox
+                  format="switch"
+                  label="Explode graphs"
+                  checked={options.explodeComposites}
+                  onChange={() => {
+                    handleQueryChange('');
+                    setOptions({
+                      ...options,
+                      explodeComposites: !options.explodeComposites,
+                    });
+                  }}
+                />
               )}
             </OptionsOverlay>
           )}
@@ -386,6 +384,8 @@ export const QueryOverlay = styled.div`
   top: 10px;
   left: 20px;
   white-space: nowrap;
+  display: flex;
+  gap: 10px;
 `;
 
 export const BreadcrumbsOverlay = styled.div`

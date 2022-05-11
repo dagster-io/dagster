@@ -1,2 +1,3 @@
 include LICENSE
 include README.md
+include dagster_prometheus/py.typed

@@ -2,6 +2,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 from dagster import check
+from dagster.core.definitions.asset_layer import AssetOutputInfo
 from dagster.core.definitions.events import (
     AssetKey,
     AssetMaterialization,
@@ -53,6 +54,8 @@ class OutputContext:
         resources (Optional[Resources]): The resources required by the output manager, specified by the
             `required_resource_keys` parameter.
         op_def (Optional[OpDefinition]): The definition of the op that produced the output.
+        asset_info: Optional[AssetOutputInfo]: (Experimental) Asset info corresponding to the
+            output.
     """
 
     def __init__(
@@ -72,6 +75,7 @@ class OutputContext:
         resources: Optional[Union["Resources", Dict[str, Any]]] = None,
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
+        asset_info: Optional[AssetOutputInfo] = None,
     ):
         from dagster.core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster.core.execution.build_resources import build_resources
@@ -92,6 +96,7 @@ class OutputContext:
         self._version = version
         self._resource_config = resource_config
         self._step_context = step_context
+        self._asset_info = asset_info
 
         if isinstance(resources, Resources):
             self._resources_cm = None
@@ -238,14 +243,22 @@ class OutputContext:
         return self._resources
 
     @property
-    def asset_key(self) -> Optional[AssetKey]:
-        matching_output_defs = [
-            output_def
-            for output_def in cast(SolidDefinition, self._solid_def).output_defs
-            if output_def.name == self.name
-        ]
-        check.invariant(len(matching_output_defs) == 1)
-        return matching_output_defs[0].get_asset_key(self)
+    def asset_info(self) -> Optional[AssetOutputInfo]:
+        return self._asset_info
+
+    @property
+    def has_asset_key(self) -> bool:
+        return self._asset_info is not None
+
+    @property
+    def asset_key(self) -> AssetKey:
+        if self._asset_info is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access asset_key, "
+                "but it was not provided when constructing the OutputContext"
+            )
+
+        return self._asset_info.key
 
     @property
     def step_context(self) -> "StepExecutionContext":
@@ -544,6 +557,11 @@ def get_output_context(
     io_manager_key = output_def.io_manager_key
     resource_config = resolved_run_config.resources[io_manager_key].config
 
+    node_handle = execution_plan.get_step_by_key(step.key).solid_handle
+    asset_info = pipeline_def.asset_layer.asset_info_for_output(
+        node_handle=node_handle, output_name=step_output.name
+    )
+
     if step_context:
         check.invariant(
             not resources,
@@ -568,6 +586,7 @@ def get_output_context(
         step_context=step_context,
         resource_config=resource_config,
         resources=resources,
+        asset_info=asset_info,
     )
 
 
@@ -602,6 +621,7 @@ def build_output_context(
     resources: Optional[Dict[str, Any]] = None,
     solid_def: Optional[SolidDefinition] = None,
     op_def: Optional[OpDefinition] = None,
+    asset_key: Optional[Union[AssetKey, str]] = None,
 ) -> "OutputContext":
     """Builds output context from provided parameters.
 
@@ -625,7 +645,9 @@ def build_output_context(
             For a given key, you can provide either an actual instance of an object, or a resource
             definition.
         solid_def (Optional[SolidDefinition]): The definition of the solid that produced the output.
-        op_def (Optional[OpDefinition]): The definition of the solid that produced the output.
+        op_def (Optional[OpDefinition]): The definition of the op that produced the output.
+        asset_key: Optional[Union[AssetKey, Sequence[str], str]]: The asset key corresponding to the
+            output.
 
     Examples:
 
@@ -651,6 +673,7 @@ def build_output_context(
     resources = check.opt_dict_param(resources, "resources", key_type=str)
     solid_def = check.opt_inst_param(solid_def, "solid_def", SolidDefinition)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
+    asset_key = AssetKey.from_coerceable(asset_key) if asset_key else None
 
     return OutputContext(
         step_key=step_key,
@@ -668,4 +691,5 @@ def build_output_context(
         resources=resources,
         step_context=None,
         op_def=op_def,
+        asset_info=AssetOutputInfo(key=asset_key) if asset_key else None,
     )

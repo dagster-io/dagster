@@ -152,7 +152,7 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
     assert run_launcher_config["config"]["job_namespace"] == job_namespace
     assert run_launcher_config["config"]["load_incluster_config"] == load_incluster_config
     assert run_launcher_config["config"]["image_pull_policy"] == image_pull_policy
-    assert run_launcher_config["config"]["env_config_maps"][1:] == [
+    assert run_launcher_config["config"]["env_config_maps"] == [
         configmap["name"] for configmap in env_config_maps
     ]
     assert run_launcher_config["config"]["env_secrets"] == [
@@ -189,6 +189,36 @@ def test_k8s_run_launcher_fail_pod_on_run_failure(template: HelmTemplate):
     run_launcher_config = instance["run_launcher"]
 
     assert run_launcher_config["config"]["fail_pod_on_run_failure"]
+
+
+def test_k8s_run_launcher_resources(template: HelmTemplate):
+    resources = {
+        "requests": {"memory": "64Mi", "cpu": "250m"},
+        "limits": {"memory": "128Mi", "cpu": "500m"},
+    }
+
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.K8S,
+            config=RunLauncherConfig.construct(
+                k8sRunLauncher=K8sRunLauncherConfig.construct(
+                    imagePullPolicy="Always",
+                    loadInclusterConfig=True,
+                    envConfigMaps=[],
+                    envSecrets=[],
+                    envVars=[],
+                    volumeMounts=[],
+                    volumes=[],
+                    resources=resources,
+                )
+            ),
+        )
+    )
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+
+    assert run_launcher_config["config"]["resources"] == resources
 
 
 def test_celery_k8s_run_launcher_config(template: HelmTemplate):
@@ -310,8 +340,10 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
 
 
 @pytest.mark.parametrize("enabled", [True, False])
-def test_queued_run_coordinator_config(template: HelmTemplate, enabled: bool):
-    max_concurrent_runs = 50
+@pytest.mark.parametrize("max_concurrent_runs", [0, 50])
+def test_queued_run_coordinator_config(
+    template: HelmTemplate, enabled: bool, max_concurrent_runs: int
+):
     tag_concurrency_limits = [TagConcurrencyLimit(key="key", value="value", limit=10)]
     dequeue_interval_seconds = 50
     helm_values = DagsterHelmValues.construct(

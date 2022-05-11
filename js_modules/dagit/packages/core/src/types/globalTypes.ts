@@ -117,7 +117,7 @@ export enum ObjectStoreOperationType {
   SET_OBJECT = "SET_OBJECT",
 }
 
-export enum ReexecutionPolicy {
+export enum ReexecutionStrategy {
   ALL_STEPS = "ALL_STEPS",
   FROM_FAILURE = "FROM_FAILURE",
 }
@@ -226,7 +226,7 @@ export interface PipelineSelector {
 
 export interface ReexecutionParams {
   parentRunId: string;
-  policy: ReexecutionPolicy;
+  strategy: ReexecutionStrategy;
 }
 
 export interface RepositorySelector {

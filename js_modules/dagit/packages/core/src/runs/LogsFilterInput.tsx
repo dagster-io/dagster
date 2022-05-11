@@ -4,6 +4,8 @@ import {
   TextInput,
   SuggestionProvider,
   useSuggestionsForString,
+  Icon,
+  IconWrapper,
 } from '@dagster-io/ui';
 import Fuse from 'fuse.js';
 import * as React from 'react';
@@ -58,6 +60,7 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {shown, highlight} = state;
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   const {empty, perProvider} = React.useMemo(() => {
     const perProvider = suggestionProviders.reduce((accum, provider) => {
@@ -114,6 +117,12 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
     [onChange, onSelectSuggestion],
   );
 
+  const onClear = React.useCallback(() => {
+    dispatch({type: 'change-query'});
+    onChange('');
+    inputRef.current?.focus();
+  }, [onChange]);
+
   const onKeyDown = (e: React.KeyboardEvent) => {
     const {key} = e;
     if (key === 'Escape') {
@@ -165,10 +174,16 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
         spellCheck={false}
         autoCorrect="off"
         value={value}
+        ref={inputRef}
         onChange={onInputChange}
         onFocus={() => dispatch({type: 'show-popover'})}
         onBlur={() => dispatch({type: 'hide-popover'})}
         onKeyDown={onKeyDown}
+        rightElement={
+          <ClearButton onClick={onClear}>
+            <Icon name="cancel" />
+          </ClearButton>
+        }
       />
     </Popover>
   );
@@ -201,6 +216,31 @@ const ResultItem: React.FC<{
     </Item>
   );
 };
+
+const ClearButton = styled.button`
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  margin: 0 -2px 0 0;
+  padding: 2px;
+
+  ${IconWrapper} {
+    background-color: ${Colors.Gray400};
+    transition: background-color 100ms linear;
+  }
+
+  :hover ${IconWrapper}, :focus ${IconWrapper} {
+    background-color: ${Colors.Gray700};
+  }
+
+  :active ${IconWrapper} {
+    background-color: ${Colors.Dark};
+  }
+
+  :focus {
+    outline: none;
+  }
+`;
 
 const FilterInput = styled(TextInput)`
   width: 300px;

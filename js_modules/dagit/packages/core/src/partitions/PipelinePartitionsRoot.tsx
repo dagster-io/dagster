@@ -3,6 +3,7 @@ import {Box, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
+import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
@@ -13,6 +14,7 @@ import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {PartitionView} from './PartitionView';
+import {PartitionViewNew} from './PartitionViewNew';
 import {
   PipelinePartitionsRootQuery,
   PipelinePartitionsRootQueryVariables,
@@ -88,6 +90,9 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
             ? partitionSetsOrError.results.filter((x) => x.name === selected)[0]
             : partitionSetsOrError.results[0];
 
+        if (featureEnabled(FeatureFlag.flagNewPartitionsView)) {
+          return <PartitionViewNew partitionSet={partitionSet} repoAddress={repoAddress} />;
+        }
         return (
           <PartitionView
             partitionSet={partitionSet}

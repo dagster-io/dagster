@@ -1,4 +1,5 @@
 from collections import defaultdict
+from unittest import mock
 
 import pytest
 
@@ -22,7 +23,7 @@ from dagster.core.definitions import NodeHandle, PresetDefinition, failure_hook,
 from dagster.core.definitions.decorators.hook_decorator import event_list_hook
 from dagster.core.definitions.events import HookExecutionResult
 from dagster.core.definitions.policy import RetryPolicy
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvalidDefinitionError
 from dagster.core.test_utils import instance_for_test
 
 
@@ -269,6 +270,48 @@ def test_failure_hook():
     assert "failed_solid_with_hook" in called_hook_to_solids["failure_hook_resource"]
     assert "succeeded_solid_with_hook" not in called_hook_to_solids["a_failure_hook"]
     assert "succeeded_solid_with_hook" not in called_hook_to_solids["a_named_failure_hook"]
+
+
+def test_failure_hook_framework_exception():
+
+    called_hook_to_solids = defaultdict(list)
+
+    @failure_hook
+    def a_failure_hook(context):
+        called_hook_to_solids[context.hook_def.name].append(context.solid.name)
+
+    @op
+    def my_op(_):
+        # this solid shouldn't trigger failure hooks
+        pass
+
+    @job(hooks={a_failure_hook})
+    def my_job():
+        my_op()
+
+    with mock.patch(
+        "dagster.core.execution.plan.execute_plan.core_dagster_event_sequence_for_step"
+    ) as mocked_event_sequence:
+        mocked_event_sequence.side_effect = Exception("Framework exception during execution")
+
+        result = my_job.execute_in_process(raise_on_error=False)
+        assert not result.success
+
+        # Hook runs when a framework error
+        assert "my_op" in called_hook_to_solids["a_failure_hook"]
+
+        called_hook_to_solids = defaultdict(list)
+
+        # Does not run if the execution is interrupted
+        mocked_event_sequence.side_effect = DagsterExecutionInterruptedError(
+            "Execution interrupted during execution"
+        )
+
+        result = my_job.execute_in_process(raise_on_error=False)
+        assert not result.success
+
+        # test if hooks are run for the given solids
+        assert "my_op" not in called_hook_to_solids["a_failure_hook"]
 
 
 def test_success_hook_event():

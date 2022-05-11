@@ -217,7 +217,10 @@ def _filter_outputs_by_handle(
 
         # For the mapped output case, where step keys are in the format
         # "step_key[upstream_mapped_output_name]" within the step output handle.
-        if step_output_handle.step_key.startswith(f"{step_key}["):
+        if (
+            step_output_handle.step_key.startswith(f"{step_key}[")
+            and step_output_handle.output_name == output_name
+        ):
             output_found = True
             key_start = step_output_handle.step_key.find("[")
             key_end = step_output_handle.step_key.find("]")

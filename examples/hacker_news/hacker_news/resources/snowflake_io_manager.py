@@ -11,6 +11,7 @@ from snowflake.connector.pandas_tools import pd_writer
 from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
 from sqlalchemy import create_engine
 
+import dagster.check as check
 from dagster import AssetKey, IOManager, InputContext, MetadataEntry, OutputContext, io_manager
 
 
@@ -75,12 +76,11 @@ class SnowflakeIOManager(IOManager):
         self._config = config
 
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
-        schema, table = context.metadata["table"].split(".")
+        metadata = check.not_none(context.metadata)
+        schema, table = metadata["table"].split(".")
 
         partition_bounds = (
-            context.resources.partition_bounds
-            if context.metadata.get("partitioned") is True
-            else None
+            context.resources.partition_bounds if metadata.get("partitioned") is True else None
         )
         with connect_snowflake(config=self._config, schema=schema) as con:
             con.execute(self._get_cleanup_statement(table, schema, partition_bounds))
@@ -95,9 +95,7 @@ class SnowflakeIOManager(IOManager):
             )
 
         yield MetadataEntry.text(
-            self._get_select_statement(
-                table, schema, context.metadata.get("columns"), partition_bounds
-            ),
+            self._get_select_statement(table, schema, metadata.get("columns"), partition_bounds),
             "Query",
         )
 
@@ -147,10 +145,10 @@ class SnowflakeIOManager(IOManager):
     def load_input(self, context: InputContext) -> PandasDataFrame:
         if context.upstream_output is not None:
             # loading from an upstream output
-            metadata = context.upstream_output.metadata
+            metadata = check.not_none(context.upstream_output.metadata)
         else:
             # loading as a root input
-            metadata = context.metadata
+            metadata = check.not_none(context.metadata)
 
         schema, table = metadata["table"].split(".")
         with connect_snowflake(config=self._config) as con:
@@ -188,10 +186,12 @@ class SnowflakeIOManager(IOManager):
         return f"""WHERE TO_TIMESTAMP(time::INT) BETWEEN '{partition_bounds["start"]}' AND '{partition_bounds["end"]}'"""
 
     def get_output_asset_key(self, context: OutputContext) -> AssetKey:
-        return AssetKey(["snowflake", *context.metadata["table"].split(".")])
+        metadata = check.not_none(context.metadata)
+        return AssetKey(["snowflake", *metadata["table"].split(".")])
 
     def get_output_asset_partitions(self, context: OutputContext):
-        if context.metadata.get("partitioned") is True:
+        metadata = check.not_none(context.metadata)
+        if metadata.get("partitioned") is True:
             return [context.resources.partition_bounds["start"]]
         else:
             return None

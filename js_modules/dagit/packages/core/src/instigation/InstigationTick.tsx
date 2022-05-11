@@ -151,7 +151,7 @@ export const RunList: React.FC<{
   }
   return (
     <div>
-      <RunTable runs={data.pipelineRunsOrError.results} onSetFilter={() => {}} />
+      <RunTable runs={data.pipelineRunsOrError.results} />
     </div>
   );
 };

@@ -10,16 +10,19 @@ interface Props {
   refreshing: boolean;
   seconds: number;
   onRefresh: () => void;
+  dataDescription?: string;
 }
 
 export const RefreshableCountdown = (props: Props) => {
-  const {refreshing, seconds, onRefresh} = props;
+  const {refreshing, seconds, onRefresh, dataDescription = 'data'} = props;
   return (
     <Group direction="row" spacing={8} alignItems="center">
       <span
         style={{color: Colors.Gray400, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap'}}
       >
-        {refreshing ? 'Refreshing data…' : `0:${seconds < 10 ? `0${seconds}` : seconds}`}
+        {refreshing
+          ? `Refreshing ${dataDescription}…`
+          : `0:${seconds < 10 ? `0${seconds}` : seconds}`}
       </span>
       <Tooltip content={<span style={{whiteSpace: 'nowrap'}}>Refresh now</span>} position="bottom">
         <RefreshButton onClick={onRefresh}>

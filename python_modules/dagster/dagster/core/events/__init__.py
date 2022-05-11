@@ -27,6 +27,8 @@ from dagster.core.execution.context.system import (
     StepExecutionContext,
 )
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
+from dagster.core.execution.plan.inputs import StepInputData
+from dagster.core.execution.plan.objects import StepFailureData, StepRetryData, StepSuccessData
 from dagster.core.execution.plan.outputs import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -36,30 +38,28 @@ from dagster.utils.timing import format_duration
 
 if TYPE_CHECKING:
     from dagster.core.definitions.events import ObjectStoreOperation
-    from dagster.core.execution.plan.inputs import StepInputData
-    from dagster.core.execution.plan.objects import StepFailureData, StepRetryData, StepSuccessData
     from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.execution.plan.step import ExecutionStep, StepKind
 
-    EventSpecificData = Union[
-        StepOutputData,
-        StepFailureData,
-        StepSuccessData,
-        "StepMaterializationData",
-        "StepExpectationResultData",
-        StepInputData,
-        "EngineEventData",
-        "HookErroredData",
-        StepRetryData,
-        "PipelineFailureData",
-        "PipelineCanceledData",
-        "ObjectStoreOperationResultData",
-        "HandledOutputData",
-        "LoadedInputData",
-        "ComputeLogsCaptureData",
-        "AssetObservationData",
-        "AssetMaterializationPlannedData",
-    ]
+EventSpecificData = Union[
+    StepOutputData,
+    StepFailureData,
+    StepSuccessData,
+    "StepMaterializationData",
+    "StepExpectationResultData",
+    StepInputData,
+    "EngineEventData",
+    "HookErroredData",
+    StepRetryData,
+    "PipelineFailureData",
+    "PipelineCanceledData",
+    "ObjectStoreOperationResultData",
+    "HandledOutputData",
+    "LoadedInputData",
+    "ComputeLogsCaptureData",
+    "AssetObservationData",
+    "AssetMaterializationPlannedData",
+]
 
 
 class DagsterEventType(Enum):
@@ -213,8 +213,6 @@ def _assert_type(
 def _validate_event_specific_data(
     event_type: DagsterEventType, event_specific_data: Optional["EventSpecificData"]
 ) -> Optional["EventSpecificData"]:
-    from dagster.core.execution.plan.inputs import StepInputData
-    from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
 
     if event_type == DagsterEventType.STEP_OUTPUT:
         check.inst_param(event_specific_data, "event_specific_data", StepOutputData)
@@ -556,8 +554,6 @@ class DagsterEvent(
 
     @property
     def step_input_data(self) -> "StepInputData":
-        from dagster.core.execution.plan.inputs import StepInputData
-
         _assert_type("step_input_data", DagsterEventType.STEP_INPUT, self.event_type)
         return cast(StepInputData, self.event_specific_data)
 
@@ -568,22 +564,16 @@ class DagsterEvent(
 
     @property
     def step_success_data(self) -> "StepSuccessData":
-        from dagster.core.execution.plan.objects import StepSuccessData
-
         _assert_type("step_success_data", DagsterEventType.STEP_SUCCESS, self.event_type)
         return cast(StepSuccessData, self.event_specific_data)
 
     @property
     def step_failure_data(self) -> "StepFailureData":
-        from dagster.core.execution.plan.objects import StepFailureData
-
         _assert_type("step_failure_data", DagsterEventType.STEP_FAILURE, self.event_type)
         return cast(StepFailureData, self.event_specific_data)
 
     @property
     def step_retry_data(self) -> "StepRetryData":
-        from dagster.core.execution.plan.objects import StepRetryData
-
         _assert_type("step_retry_data", DagsterEventType.STEP_UP_FOR_RETRY, self.event_type)
         return cast(StepRetryData, self.event_specific_data)
 

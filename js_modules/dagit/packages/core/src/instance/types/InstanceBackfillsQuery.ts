@@ -57,7 +57,7 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   backfillId: string;
   status: BulkActionStatus;
   numRequested: number;
-  numTotal: number;
+  partitionNames: string[];
   runs: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs[];
   timestamp: number;
   partitionSetName: string;

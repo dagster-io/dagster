@@ -7,7 +7,7 @@ for that.
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union
 
 from dagster import StaticPartitionsDefinition, check
 from dagster.core.asset_defs import SourceAsset
@@ -33,7 +33,7 @@ from dagster.core.definitions.sensor_definition import (
     SensorDefinition,
 )
 from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
@@ -204,7 +204,7 @@ class ExternalPresetData(
         "_ExternalPresetData",
         [
             ("name", str),
-            ("run_config", Dict[str, Any]),
+            ("run_config", Mapping[str, object]),
             ("solid_selection", Optional[List[str]]),
             ("mode", str),
             ("tags", Dict[str, str]),
@@ -214,7 +214,7 @@ class ExternalPresetData(
     def __new__(
         cls,
         name: str,
-        run_config: Optional[Dict[str, Any]],
+        run_config: Optional[Mapping[str, object]],
         solid_selection: Optional[List[str]],
         mode: str,
         tags: Dict[str, str],
@@ -222,7 +222,7 @@ class ExternalPresetData(
         return super(ExternalPresetData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
+            run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
             solid_selection=check.opt_nullable_list_param(
                 solid_selection, "solid_selection", of_type=str
             ),
@@ -409,18 +409,18 @@ class ExternalSensorExecutionErrorData(
 class ExternalExecutionParamsData(
     NamedTuple(
         "_ExternalExecutionParamsData",
-        [("run_config", Dict[object, object]), ("tags", Dict[str, str])],
+        [("run_config", Mapping[str, object]), ("tags", Mapping[str, str])],
     )
 ):
     def __new__(
         cls,
-        run_config: Optional[Dict[object, object]] = None,
+        run_config: Optional[Mapping[str, object]] = None,
         tags: Optional[Dict[str, str]] = None,
     ):
         return super(ExternalExecutionParamsData, cls).__new__(
             cls,
-            run_config=check.opt_dict_param(run_config, "run_config"),
-            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
+            run_config=check.opt_mapping_param(run_config, "run_config"),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
         )
 
 
@@ -538,26 +538,26 @@ class ExternalPartitionNamesData(
 @whitelist_for_serdes
 class ExternalPartitionConfigData(
     NamedTuple(
-        "_ExternalPartitionConfigData", [("name", str), ("run_config", Dict[object, object])]
+        "_ExternalPartitionConfigData", [("name", str), ("run_config", Mapping[str, object])]
     )
 ):
-    def __new__(cls, name: str, run_config: Optional[Dict[object, object]] = None):
+    def __new__(cls, name: str, run_config: Optional[Mapping[str, object]] = None):
         return super(ExternalPartitionConfigData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            run_config=check.opt_dict_param(run_config, "run_config"),
+            run_config=check.opt_mapping_param(run_config, "run_config"),
         )
 
 
 @whitelist_for_serdes
 class ExternalPartitionTagsData(
-    NamedTuple("_ExternalPartitionTagsData", [("name", str), ("tags", Dict[object, object])])
+    NamedTuple("_ExternalPartitionTagsData", [("name", str), ("tags", Mapping[str, object])])
 ):
-    def __new__(cls, name: str, tags: Optional[Dict[object, object]] = None):
+    def __new__(cls, name: str, tags: Optional[Mapping[str, object]] = None):
         return super(ExternalPartitionTagsData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            tags=check.opt_dict_param(tags, "tags"),
+            tags=check.opt_mapping_param(tags, "tags"),
         )
 
 
@@ -565,15 +565,15 @@ class ExternalPartitionTagsData(
 class ExternalPartitionExecutionParamData(
     NamedTuple(
         "_ExternalPartitionExecutionParamData",
-        [("name", str), ("tags", Dict[object, object]), ("run_config", Dict[object, object])],
+        [("name", str), ("tags", Mapping[str, object]), ("run_config", Mapping[str, object])],
     )
 ):
-    def __new__(cls, name: str, tags: Dict[object, object], run_config: Dict[object, object]):
+    def __new__(cls, name: str, tags: Mapping[str, object], run_config: Mapping[str, object]):
         return super(ExternalPartitionExecutionParamData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            tags=check.dict_param(tags, "tags"),
-            run_config=check.opt_dict_param(run_config, "run_config"),
+            tags=check.mapping_param(tags, "tags"),
+            run_config=check.opt_mapping_param(run_config, "run_config"),
         )
 
 
@@ -676,6 +676,8 @@ class ExternalAssetNode(
             ("depended_by", Sequence[ExternalAssetDependedBy]),
             ("compute_kind", Optional[str]),
             ("op_name", Optional[str]),
+            ("op_names", Optional[Sequence[str]]),
+            ("graph_name", Optional[str]),
             ("op_description", Optional[str]),
             ("job_names", Sequence[str]),
             ("partitions_def_data", Optional[ExternalPartitionsDefinitionData]),
@@ -697,6 +699,8 @@ class ExternalAssetNode(
         depended_by: Sequence[ExternalAssetDependedBy],
         compute_kind: Optional[str] = None,
         op_name: Optional[str] = None,
+        op_names: Optional[Sequence[str]] = None,
+        graph_name: Optional[str] = None,
         op_description: Optional[str] = None,
         job_names: Optional[Sequence[str]] = None,
         partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
@@ -715,6 +719,8 @@ class ExternalAssetNode(
             ),
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             op_name=check.opt_str_param(op_name, "op_name"),
+            op_names=check.opt_list_param(op_names, "op_names"),
+            graph_name=check.opt_str_param(graph_name, "graph_name"),
             op_description=check.opt_str_param(
                 op_description or output_description, "op_description"
             ),
@@ -771,11 +777,19 @@ def external_asset_graph_from_defs(
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
     dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
     all_upstream_asset_keys: Set[AssetKey] = set()
+    op_names_by_asset_key: Dict[AssetKey, Sequence[str]] = {}
 
     for pipeline_def in pipelines:
         asset_info_by_node_output = pipeline_def.asset_layer.asset_info_by_node_output_handle
         for node_output_handle, asset_info in asset_info_by_node_output.items():
             output_key = asset_info.key
+            if output_key not in op_names_by_asset_key:
+                op_names_by_asset_key[output_key] = [
+                    str(handle)
+                    for handle in pipeline_def.asset_layer.dependency_node_handles_by_asset_key.get(
+                        output_key, []
+                    )
+                ]
             upstream_asset_keys = pipeline_def.asset_layer.upstream_assets_for_asset(output_key)
             all_upstream_asset_keys.update(upstream_asset_keys)
             node_defs_by_asset_key[output_key].append((node_output_handle, pipeline_def))
@@ -803,26 +817,21 @@ def external_asset_graph_from_defs(
     ]
 
     for source_asset in source_assets_by_key.values():
-        if source_asset.key in node_defs_by_asset_key:
-            raise DagsterInvariantViolationError(
-                f"Asset with key {source_asset.key.to_string()} is defined both as a source asset"
-                " and as a non-source asset"
+        if source_asset.key not in node_defs_by_asset_key:
+            # TODO: For now we are dropping partition metadata entries
+            metadata_entries = [
+                entry for entry in source_asset.metadata_entries if isinstance(entry, MetadataEntry)
+            ]
+            asset_nodes.append(
+                ExternalAssetNode(
+                    asset_key=source_asset.key,
+                    dependencies=list(deps[source_asset.key].values()),
+                    depended_by=list(dep_by[source_asset.key].values()),
+                    job_names=[],
+                    op_description=source_asset.description,
+                    metadata_entries=metadata_entries,
+                )
             )
-
-        # TODO: For now we are dropping partition metadata entries
-        metadata_entries = [
-            entry for entry in source_asset.metadata_entries if isinstance(entry, MetadataEntry)
-        ]
-        asset_nodes.append(
-            ExternalAssetNode(
-                asset_key=source_asset.key,
-                dependencies=list(deps[source_asset.key].values()),
-                depended_by=list(dep_by[source_asset.key].values()),
-                job_names=[],
-                op_description=source_asset.description,
-                metadata_entries=metadata_entries,
-            )
-        )
 
     for asset_key, node_tuple_list in node_defs_by_asset_key.items():
         node_output_handle, job_def = node_tuple_list[0]
@@ -855,13 +864,23 @@ def external_asset_graph_from_defs(
                     "Only static partition and time window partitions are currently supported."
                 )
 
+        # if the asset is produced by an op at the top level of the graph, graph_name should be None
+        graph_name = None
+        node_handle = node_output_handle.node_handle
+        while node_handle.parent:
+            node_handle = node_handle.parent
+            graph_name = node_handle.name
+
         asset_nodes.append(
             ExternalAssetNode(
                 asset_key=asset_key,
                 dependencies=list(deps[asset_key].values()),
                 depended_by=list(dep_by[asset_key].values()),
                 compute_kind=node_def.tags.get("kind"),
-                op_name=str(node_output_handle.node_handle),
+                # backcompat
+                op_name=graph_name or next(iter(op_names_by_asset_key[asset_key]), None),
+                graph_name=graph_name,
+                op_names=op_names_by_asset_key[asset_key],
                 op_description=node_def.description,
                 job_names=job_names,
                 partitions_def_data=partitions_def_data,

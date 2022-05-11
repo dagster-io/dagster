@@ -18,13 +18,13 @@ from dagster import HookContext, failure_hook, success_hook
 @success_hook(required_resource_keys={"slack"})
 def slack_message_on_success(context: HookContext):
     message = f"Op {context.op.name} finished successfully"
-    context.resources.slack.chat.post_message(channel="#foo", text=message)
+    context.resources.slack.chat_postMessage(channel="#foo", text=message)
 
 
 @failure_hook(required_resource_keys={"slack"})
 def slack_message_on_failure(context: HookContext):
     message = f"Op {context.op.name} failed"
-    context.resources.slack.chat.post_message(channel="#foo", text=message)
+    context.resources.slack.chat_postMessage(channel="#foo", text=message)
 
 
 # end_repo_marker_0
@@ -131,3 +131,20 @@ def test_my_success_hook():
 
 
 # end_testing_hooks
+
+# start_repo_marker_1_with_configured
+@job(
+    resource_defs={
+        "slack": slack_resource.configured(
+            {"token": "xoxp-1234123412341234-12341234-1234"}
+        )
+    },
+    hooks={slack_message_on_failure},
+)
+def notif_all_configured():
+    # the hook "slack_message_on_failure" is applied on every op instance within this graph
+    a()
+    b()
+
+
+# end_repo_marker_1_with_configured

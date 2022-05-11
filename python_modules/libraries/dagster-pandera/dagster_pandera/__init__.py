@@ -16,6 +16,7 @@ from dagster import (
     TypeCheck,
     TypeCheckContext,
 )
+from dagster.core.definitions.metadata import MetadataValue
 from dagster.core.utils import check_dagster_package_version
 
 from .version import __version__
@@ -108,7 +109,7 @@ def pandera_schema_to_dagster_type(
         name=name,
         description=norm_schema.description,
         metadata_entries=[
-            MetadataEntry("schema", value=tschema),
+            MetadataEntry("schema", value=MetadataValue.table_schema(tschema)),
         ],
     )
 
@@ -216,7 +217,7 @@ def _pandera_column_to_table_column(pa_column: pa.Column) -> TableColumn:
         unique=pa_column.unique,
         other=[_pandera_check_to_column_constraint(pa_check) for pa_check in pa_column.checks],
     )
-    name = check.not_none(pa_column.name, "name")
+    name: str = check.not_none(pa_column.name, "name")
     return TableColumn(
         name=name,
         type=str(pa_column.dtype),

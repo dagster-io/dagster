@@ -88,7 +88,14 @@ class GraphQLServer(ABC):
             content_type = request.headers.get("Content-Type", "")
 
             if "application/json" in content_type:
-                data = await request.json()
+                try:
+                    data = await request.json()
+                except json.JSONDecodeError:
+                    body = await request.body()
+                    return PlainTextResponse(
+                        f"GraphQL request is invalid JSON:\n{body.decode()}",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
             elif "application/graphql" in content_type:
                 body = await request.body()
                 text = body.decode()

@@ -46,7 +46,7 @@ def fs_io_manager(init_context):
 
         @job(
             resource_defs={
-                "io_manager": fs_io_manager.configured({"base_path": "/my/base/path"})
+                "io_manager": fs_io_manager.configured({"base_dir": "/my/base/path"})
             }
         )
         def job():

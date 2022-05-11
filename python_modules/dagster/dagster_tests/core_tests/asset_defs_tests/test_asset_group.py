@@ -10,6 +10,8 @@ from dagster import (
     HourlyPartitionsDefinition,
     IOManager,
     Out,
+    Output,
+    ResourceDefinition,
     fs_asset_io_manager,
     graph,
     in_process_executor,
@@ -137,7 +139,7 @@ def test_asset_group_missing_resources():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"SourceAsset with key AssetKey\(\['foo'\]\) requires io manager with key 'foo', which was not provided on AssetGroup. Provided keys: \['io_manager', 'root_manager'\]",
+        match=r"SourceAsset with key AssetKey\(\['foo'\]\) requires io manager with key 'foo', which was not provided on AssetGroup. Provided keys: \['io_manager'\]",
     ):
         AssetGroup([], source_assets=[source_asset_io_req])
 
@@ -167,7 +169,7 @@ def test_asset_group_requires_root_manager():
         DagsterInvalidDefinitionError,
         match=r"Output 'result' with AssetKey 'AssetKey\(\['asset_foo'\]\)' "
         r"requires io manager 'blah' but was not provided on asset group. "
-        r"Provided resources: \['io_manager', 'root_manager'\]",
+        r"Provided resources: \['io_manager'\]",
     ):
         AssetGroup([asset_foo])
 
@@ -315,7 +317,7 @@ def test_asset_group_build_subset_job():
         DagsterInvalidDefinitionError,
         match=r"When attempting to create job 'bad_subset', the clause "
         r"'doesnt_exist' within the asset key selection did not match any asset "
-        r"keys. Present asset keys: \['start_asset', 'o1', 'o2', 'follows_o1', 'follows_o2'\]",
+        r"keys. Present asset keys: ",
     ):
         group.build_job(name="bad_subset", selection="doesnt_exist")
 
@@ -337,6 +339,22 @@ def test_asset_group_build_subset_job():
         r"asset keys produced by a given asset when subsetting.",
     ):
         group.build_job(name="test_subselect_only_one_key", selection="o1")
+
+
+def test_asset_group_build_job_selection_multi_component():
+    source_asset = SourceAsset(["apple", "banana"])
+
+    @asset(namespace="abc")
+    def asset1():
+        ...
+
+    group = AssetGroup([asset1], source_assets=[source_asset])
+    assert group.build_job(name="something", selection="abc>asset1").asset_layer.asset_keys == {
+        AssetKey(["abc", "asset1"])
+    }
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="source asset"):
+        group.build_job(name="something", selection="apple>banana")
 
 
 def test_asset_group_from_package_name():
@@ -439,18 +457,6 @@ def test_default_io_manager():
         group.resource_defs["io_manager"]  # pylint: disable=comparison-with-callable
         == fs_asset_io_manager
     )
-
-
-def test_repo_with_multiple_asset_groups():
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="When constructing repository, attempted to pass multiple "
-        "AssetGroups. There can only be one AssetGroup per repository.",
-    ):
-
-        @repository
-        def the_repo():  # pylint: disable=unused-variable
-            return [AssetGroup(assets=[]), AssetGroup(assets=[])]
 
 
 def test_job_with_reserved_name():
@@ -570,3 +576,167 @@ def test_multiple_partitions_defs():
         frozenset(["hourly_asset", "unpartitioned_asset"]),
         frozenset(["daily_asset_different_start_date", "unpartitioned_asset"]),
     }
+
+
+def test_assets_prefixed_single_asset():
+    @asset
+    def asset1():
+        ...
+
+    result = AssetGroup([asset1]).prefixed("my_prefix").assets
+    assert result[0].asset_key == AssetKey(["my_prefix", "asset1"])
+
+
+def test_assets_prefixed_internal_dep():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2(asset1):
+        del asset1
+
+    result = AssetGroup([asset1, asset2]).prefixed("my_prefix").assets
+    assert result[0].asset_key == AssetKey(["my_prefix", "asset1"])
+    assert result[1].asset_key == AssetKey(["my_prefix", "asset2"])
+    assert set(result[1].dependency_asset_keys) == {AssetKey(["my_prefix", "asset1"])}
+
+
+def test_assets_prefixed_disambiguate():
+    asset1 = SourceAsset(AssetKey(["core", "apple"]))
+
+    @asset(name="apple")
+    def asset2():
+        ...
+
+    @asset(ins={"apple": AssetIn(namespace="core")})
+    def orange(apple):
+        del apple
+
+    @asset
+    def banana(apple):
+        del apple
+
+    result = (
+        AssetGroup([asset2, orange, banana], source_assets=[asset1]).prefixed("my_prefix").assets
+    )
+    assert len(result) == 3
+    assert result[0].asset_key == AssetKey(["my_prefix", "apple"])
+    assert result[1].asset_key == AssetKey(["my_prefix", "orange"])
+    assert set(result[1].dependency_asset_keys) == {AssetKey(["core", "apple"])}
+    assert result[2].asset_key == AssetKey(["my_prefix", "banana"])
+    assert set(result[2].dependency_asset_keys) == {AssetKey(["my_prefix", "apple"])}
+
+
+def test_assets_prefixed_source_asset():
+    asset1 = SourceAsset(key=AssetKey(["upstream_prefix", "asset1"]))
+
+    @asset(ins={"asset1": AssetIn(namespace="upstream_prefix")})
+    def asset2(asset1):
+        del asset1
+
+    result = AssetGroup([asset2], source_assets=[asset1]).prefixed("my_prefix").assets
+    assert len(result) == 1
+    assert result[0].asset_key == AssetKey(["my_prefix", "asset2"])
+    assert set(result[0].dependency_asset_keys) == {AssetKey(["upstream_prefix", "asset1"])}
+
+
+def test_assets_prefixed_no_matches():
+    @asset
+    def orange(apple):
+        del apple
+
+    result = AssetGroup([orange]).prefixed("my_prefix").assets
+    assert result[0].asset_key == AssetKey(["my_prefix", "orange"])
+    assert set(result[0].dependency_asset_keys) == {AssetKey("apple")}
+
+
+def test_add_asset_groups():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    source1 = SourceAsset(AssetKey(["source1"]))
+    source2 = SourceAsset(AssetKey(["source2"]))
+
+    group1 = AssetGroup(assets=[asset1], source_assets=[source1])
+    group2 = AssetGroup(assets=[asset2], source_assets=[source2])
+
+    assert (group1 + group2) == AssetGroup(
+        assets=[asset1, asset2], source_assets=[source1, source2]
+    )
+
+
+def test_add_asset_groups_different_resources():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    source1 = SourceAsset(AssetKey(["source1"]))
+    source2 = SourceAsset(AssetKey(["source2"]))
+
+    group1 = AssetGroup(
+        assets=[asset1],
+        source_assets=[source1],
+        resource_defs={"apple": ResourceDefinition.none_resource()},
+    )
+    group2 = AssetGroup(
+        assets=[asset2],
+        source_assets=[source2],
+        resource_defs={"banana": ResourceDefinition.none_resource()},
+    )
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        group1 + group2  # pylint: disable=pointless-statement
+
+
+def test_add_asset_groups_different_executors():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    source1 = SourceAsset(AssetKey(["source1"]))
+    source2 = SourceAsset(AssetKey(["source2"]))
+
+    group1 = AssetGroup(assets=[asset1], source_assets=[source1], executor_def=in_process_executor)
+    group2 = AssetGroup(
+        assets=[asset2],
+        source_assets=[source2],
+    )
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        group1 + group2  # pylint: disable=pointless-statement
+
+
+def test_to_source_assets():
+    @asset
+    def my_asset():
+        ...
+
+    @multi_asset(
+        outs={
+            "my_out_name": Out(asset_key=AssetKey("my_asset_name")),
+            "my_other_out_name": Out(asset_key=AssetKey("my_other_asset")),
+        }
+    )
+    def my_multi_asset():
+        yield Output(1, "my_out_name")
+        yield Output(2, "my_other_out_name")
+
+    assert AssetGroup([my_asset, my_multi_asset]).to_source_assets() == [
+        SourceAsset(AssetKey(["my_asset"])),
+        SourceAsset(AssetKey(["my_asset_name"])),
+        SourceAsset(AssetKey(["my_other_asset"])),
+    ]

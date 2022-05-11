@@ -1,7 +1,9 @@
 from uuid import uuid4
 
 import pytest
+from azure.storage.filedatalake import DataLakeLeaseClient
 from dagster_azure.adls2 import create_adls2_client
+from dagster_azure.adls2.fake_adls2_resource import fake_adls2_resource
 from dagster_azure.adls2.io_manager import (
     PickledObjectADLS2IOManager,
     adls2_pickle_asset_io_manager,
@@ -55,7 +57,7 @@ def get_step_output(step_events, step_key, output_name="result"):
     return None
 
 
-def define_inty_job():
+def define_inty_job(adls_io_resource=adls2_resource):
     @op(output_defs=[OutputDefinition(Int)])
     def return_one():
         return 1
@@ -73,7 +75,7 @@ def define_inty_job():
         add_one(return_one())
 
     return basic_external_plan_execution.to_job(
-        resource_defs={"io_manager": adls2_pickle_io_manager, "adls2": adls2_resource}
+        resource_defs={"io_manager": adls2_pickle_io_manager, "adls2": adls_io_resource}
     )
 
 
@@ -124,6 +126,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
         file_system=file_system,
         adls2_client=create_adls2_client(storage_account, credential),
         blob_client=create_blob_client(storage_account, credential),
+        lease_client_constructor=DataLakeLeaseClient,
     )
     assert io_manager.load_input(context) == 1
 
@@ -180,4 +183,18 @@ def test_asset_io_manager(storage_account, file_system, credential):
     }
 
     result = asset_job.execute_in_process(run_config=run_config)
+    assert result.success
+
+
+def test_with_fake_adls2_resource():
+    job = define_inty_job(adls_io_resource=fake_adls2_resource)
+
+    run_config = {
+        "resources": {
+            "io_manager": {"config": {"adls2_file_system": "fake_file_system"}},
+            "adls2": {"config": {"account_name": "my_account"}},
+        }
+    }
+
+    result = job.execute_in_process(run_config=run_config)
     assert result.success

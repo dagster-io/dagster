@@ -1,3 +1,7 @@
+## 1.0.3 (May 2, 2022)
+
+- Bump dependencies
+
 ## 1.0.2 (April 13, 2022)
 
 - Enable `object-shorthand`

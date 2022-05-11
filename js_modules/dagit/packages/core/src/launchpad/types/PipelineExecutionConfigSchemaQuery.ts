@@ -66,6 +66,7 @@ export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunCo
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_CompositeConfigType {

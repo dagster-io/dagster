@@ -86,6 +86,8 @@ function buildRun(
     id,
     runId: id,
     status: RunStatus.SUCCESS,
+    startTime,
+    endTime: startTime + 1,
     stats: {
       id,
       startTime,

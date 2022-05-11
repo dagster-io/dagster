@@ -6,9 +6,11 @@ import {getJSONForKey} from '../hooks/useStateWithStorage';
 const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
 
 export enum FeatureFlag {
+  flagExperimentalAssetDAG = 'flagExperimentalAssetDAG',
   flagDebugConsoleLogging = 'flagDebugConsoleLogging',
   flagAlwaysCollapseNavigation = 'flagAlwaysCollapseNavigation',
   flagDisableWebsockets = 'flagDisableWebsockets',
+  flagNewPartitionsView = 'flagNewPartitionsView',
 }
 
 export const getFeatureFlags: () => FeatureFlag[] = memoize(

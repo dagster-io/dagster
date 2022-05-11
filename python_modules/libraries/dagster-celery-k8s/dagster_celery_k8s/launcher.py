@@ -1,4 +1,5 @@
 import sys
+from typing import cast
 
 import kubernetes
 from dagster_k8s.job import (
@@ -16,6 +17,7 @@ from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import RetryMode
 from dagster.core.launcher import LaunchRunContext, RunLauncher
 from dagster.core.launcher.base import CheckRunHealthResult, WorkerStatus
+from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
@@ -158,7 +160,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job_image_from_executor_config = exc_config.get("job_image")
 
-        pipeline_origin = context.pipeline_code_origin
+        pipeline_origin = cast(PipelinePythonOrigin, context.pipeline_code_origin)
         repository_origin = pipeline_origin.repository_origin
 
         job_image = repository_origin.container_image

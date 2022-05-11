@@ -1063,3 +1063,15 @@ def test_kwargs_via_partial_functools():
     new_op = op(name="new_func")(new_func)
 
     assert new_op() == 3
+
+
+def test_get_mapping_key():
+    context = build_op_context(mapping_key="the_key")
+
+    assert context.get_mapping_key() == "the_key"  # Ensure unbound context has mapping key
+
+    @op
+    def basic_op(context):
+        assert context.get_mapping_key() == "the_key"  # Ensure bound context has mapping key
+
+    basic_op(context)

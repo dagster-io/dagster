@@ -96,7 +96,7 @@ describe('RunDetails', () => {
     global.Date.now = dateNow;
   });
 
-  it.only('renders QUEUED details', async () => {
+  it('renders QUEUED details', async () => {
     renderAll({status: RunStatus.QUEUED, startTime: null, endTime: null});
 
     await waitFor(() => {
@@ -148,7 +148,6 @@ describe('RunDetails', () => {
     });
 
     await waitFor(() => {
-      jest.runTimersToTime(5000);
       expect(screen.getByRole('row', {name: /started feb 17, 6:24:30 am/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /ended canceling/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /duration timer 0:01:01/i})).toBeVisible();

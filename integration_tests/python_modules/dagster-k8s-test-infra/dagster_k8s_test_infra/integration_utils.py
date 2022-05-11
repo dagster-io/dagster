@@ -38,9 +38,9 @@ def which_(exe):
     return spawn.find_executable(exe)
 
 
-def get_test_namespace():
+def get_test_namespace(prefix="dagster-test"):
     namespace_suffix = hex(random.randint(0, 16**6))[2:]
-    return "dagster-test-%s" % namespace_suffix
+    return f"{prefix}-{namespace_suffix}"
 
 
 def within_docker():

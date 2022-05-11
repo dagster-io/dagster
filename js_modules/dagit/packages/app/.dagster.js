@@ -65,6 +65,8 @@ module.exports = {
         'style-src': isEnvDevelopment
           ? [`'unsafe-inline'`, `'self'`, `'unsafe-eval'`]
           : [`'self'`, `'nonce-NONCE-PLACEHOLDER'`],
+        // `frame-ancestors` is not supported in `meta` tags.
+        ...(isEnvDevelopment ? {} : {'frame-ancestors': `'none'`}),
       },
       options: {
         hashEnabled: {
@@ -76,6 +78,7 @@ module.exports = {
           'style-src': false,
         },
       },
+      outputFilename: 'csp-header.conf',
     };
   },
 

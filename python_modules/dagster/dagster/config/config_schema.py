@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Type, Union
 
 from typing_extensions import TypeAlias
 
@@ -18,8 +18,8 @@ ConfigSchemaType: TypeAlias = Union[
     Type[Union[dict, list]],
     "ConfigType",
     "Field",
-    Dict[str, object],
-    List[object],
+    Dict[str, Any],
+    List[Any],
 ]
 
 

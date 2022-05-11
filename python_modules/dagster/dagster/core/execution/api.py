@@ -1,6 +1,6 @@
 import sys
 from contextlib import contextmanager
-from typing import Any, Dict, FrozenSet, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, FrozenSet, Iterator, List, Mapping, Optional, Tuple, Union
 
 from dagster import check
 from dagster.core.definitions import IPipeline, JobDefinition, PipelineDefinition
@@ -647,14 +647,14 @@ def execute_plan_iterator(
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
     retry_mode: Optional[RetryMode] = None,
-    run_config: Optional[dict] = None,
+    run_config: Optional[Mapping[str, object]] = None,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
     retry_mode = check.opt_inst_param(retry_mode, "retry_mode", RetryMode, RetryMode.DISABLED)
-    run_config = check.opt_dict_param(run_config, "run_config")
+    run_config = check.opt_mapping_param(run_config, "run_config")
 
     return iter(
         ExecuteRunWithPlanIterable(
@@ -738,7 +738,7 @@ def _get_execution_plan_from_run(
 
 def create_execution_plan(
     pipeline: Union[IPipeline, PipelineDefinition],
-    run_config: Optional[dict] = None,
+    run_config: Optional[Mapping[str, object]] = None,
     mode: Optional[str] = None,
     step_keys_to_execute: Optional[List[str]] = None,
     known_state: Optional[KnownExecutionState] = None,
@@ -748,7 +748,7 @@ def create_execution_plan(
     pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-    run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
+    run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
     mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())
     check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
     check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, cast
 
 import kubernetes
 
@@ -33,6 +33,7 @@ class K8sContainerContext(
             ("volumes", List[Dict[str, Any]]),
             ("labels", Dict[str, str]),
             ("namespace", Optional[str]),
+            ("resources", Dict[str, Any]),
         ],
     )
 ):
@@ -53,6 +54,7 @@ class K8sContainerContext(
         volumes: Optional[List[Dict[str, Any]]] = None,
         labels: Optional[Dict[str, str]] = None,
         namespace: Optional[str] = None,
+        resources: Optional[Dict[str, Any]] = None,
     ):
         return super(K8sContainerContext, cls).__new__(
             cls,
@@ -72,6 +74,7 @@ class K8sContainerContext(
             ],
             labels=check.opt_dict_param(labels, "labels"),
             namespace=check.opt_str_param(namespace, "namespace"),
+            resources=check.opt_dict_param(resources, "resources"),
         )
 
     def merge(self, other: "K8sContainerContext") -> "K8sContainerContext":
@@ -94,6 +97,7 @@ class K8sContainerContext(
             volumes=_dedupe_list(other.volumes + self.volumes),
             labels=merge_dicts(other.labels, self.labels),
             namespace=other.namespace if other.namespace else self.namespace,
+            resources=other.resources if other.resources else self.resources,
         )
 
     @staticmethod
@@ -115,6 +119,7 @@ class K8sContainerContext(
                     volumes=run_launcher.volumes,
                     labels=run_launcher.labels,
                     namespace=run_launcher.job_namespace,
+                    resources=run_launcher.resources,
                 )
             )
 
@@ -149,7 +154,7 @@ class K8sContainerContext(
                 run_k8s_container_context,
             )
 
-        processed_context_value = processed_container_context.value
+        processed_context_value = cast(Dict, processed_container_context.value)
 
         return K8sContainerContext(
             image_pull_policy=processed_context_value.get("image_pull_policy"),
@@ -162,6 +167,7 @@ class K8sContainerContext(
             volumes=processed_context_value.get("volumes"),
             labels=processed_context_value.get("labels"),
             namespace=processed_context_value.get("namespace"),
+            resources=processed_context_value.get("resources"),
         )
 
     def get_k8s_job_config(self, job_image, run_launcher) -> DagsterK8sJobConfig:
@@ -179,4 +185,5 @@ class K8sContainerContext(
             volume_mounts=self.volume_mounts,
             volumes=self.volumes,
             labels=self.labels,
+            resources=self.resources,
         )

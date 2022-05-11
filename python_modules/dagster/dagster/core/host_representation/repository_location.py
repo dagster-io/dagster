@@ -114,7 +114,7 @@ class RepositoryLocation(AbstractContextManager):
     def get_external_execution_plan(
         self,
         external_pipeline: ExternalPipeline,
-        run_config: Dict[str, Any],
+        run_config: Mapping[str, object],
         mode: str,
         step_keys_to_execute: Optional[List[str]],
         known_state: Optional[KnownExecutionState],
@@ -272,7 +272,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
 
         loadable_target_origin = self._origin.loadable_target_origin
         self._loaded_repositories = LoadedRepositories(
-            loadable_target_origin, self._origin.entry_point
+            loadable_target_origin,
+            self._origin.entry_point,
+            self._origin.container_image,
         )
 
         self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name
@@ -351,7 +353,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
     def get_external_execution_plan(
         self,
         external_pipeline: ExternalPipeline,
-        run_config: Dict[str, Any],
+        run_config: Mapping[str, object],
         mode: str,
         step_keys_to_execute: Optional[List[str]],
         known_state: Optional[KnownExecutionState],

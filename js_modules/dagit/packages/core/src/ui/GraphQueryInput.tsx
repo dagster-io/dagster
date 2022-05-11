@@ -49,6 +49,7 @@ interface GraphQueryInputProps {
   onKeyDown?: (e: React.KeyboardEvent<any>) => void;
   onFocus?: () => void;
   onBlur?: (value: string) => void;
+  autoApplyChanges?: boolean;
 }
 
 interface ActiveSuggestionInfo {
@@ -319,7 +320,10 @@ export const GraphQueryInput = React.memo(
               strokeColor={intentToStrokeColor(props.intent)}
               autoFocus={props.autoFocus}
               placeholder={placeholderTextForItems(props.placeholder, props.items)}
-              onChange={(e: React.ChangeEvent<any>) => setPendingValue(e.target.value)}
+              onChange={(e: React.ChangeEvent<any>) => {
+                setPendingValue(e.target.value);
+                props.autoApplyChanges && props.onChange(e.target.value);
+              }}
               onFocus={() => {
                 if (!flattenGraphsEnabled) {
                   // Defer focus to be manually managed

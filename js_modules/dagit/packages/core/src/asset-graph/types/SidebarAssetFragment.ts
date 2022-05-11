@@ -65,6 +65,13 @@ export interface SidebarAssetFragment_metadataEntries_IntMetadataEntry {
   intRepr: string;
 }
 
+export interface SidebarAssetFragment_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
 export interface SidebarAssetFragment_metadataEntries_PipelineRunMetadataEntry {
   __typename: "PipelineRunMetadataEntry";
   label: string;
@@ -156,7 +163,7 @@ export interface SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry {
   schema: SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type SidebarAssetFragment_metadataEntries = SidebarAssetFragment_metadataEntries_PathMetadataEntry | SidebarAssetFragment_metadataEntries_JsonMetadataEntry | SidebarAssetFragment_metadataEntries_UrlMetadataEntry | SidebarAssetFragment_metadataEntries_TextMetadataEntry | SidebarAssetFragment_metadataEntries_MarkdownMetadataEntry | SidebarAssetFragment_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetFragment_metadataEntries_FloatMetadataEntry | SidebarAssetFragment_metadataEntries_IntMetadataEntry | SidebarAssetFragment_metadataEntries_PipelineRunMetadataEntry | SidebarAssetFragment_metadataEntries_AssetMetadataEntry | SidebarAssetFragment_metadataEntries_TableMetadataEntry | SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry;
+export type SidebarAssetFragment_metadataEntries = SidebarAssetFragment_metadataEntries_PathMetadataEntry | SidebarAssetFragment_metadataEntries_JsonMetadataEntry | SidebarAssetFragment_metadataEntries_UrlMetadataEntry | SidebarAssetFragment_metadataEntries_TextMetadataEntry | SidebarAssetFragment_metadataEntries_MarkdownMetadataEntry | SidebarAssetFragment_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetFragment_metadataEntries_FloatMetadataEntry | SidebarAssetFragment_metadataEntries_IntMetadataEntry | SidebarAssetFragment_metadataEntries_BoolMetadataEntry | SidebarAssetFragment_metadataEntries_PipelineRunMetadataEntry | SidebarAssetFragment_metadataEntries_AssetMetadataEntry | SidebarAssetFragment_metadataEntries_TableMetadataEntry | SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry;
 
 export interface SidebarAssetFragment_assetKey {
   __typename: "AssetKey";
@@ -225,6 +232,13 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_
   description: string | null;
   intValue: number | null;
   intRepr: string;
+}
+
+export interface SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_PipelineRunMetadataEntry {
@@ -318,7 +332,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_
   schema: SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type SidebarAssetFragment_op_outputDefinitions_type_metadataEntries = SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_PathMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_JsonMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_UrlMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_TextMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_MarkdownMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_FloatMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_IntMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_PipelineRunMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_TableMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry;
+export type SidebarAssetFragment_op_outputDefinitions_type_metadataEntries = SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_PathMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_JsonMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_UrlMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_TextMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_MarkdownMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_FloatMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_IntMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_BoolMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_PipelineRunMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_TableMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry;
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -352,6 +366,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -425,6 +440,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -499,6 +515,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -547,6 +564,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -581,6 +599,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -655,6 +674,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -730,6 +750,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -806,6 +827,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -879,6 +901,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -953,6 +976,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1001,6 +1025,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -1035,6 +1060,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1109,6 +1135,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1184,6 +1211,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1286,6 +1314,13 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metad
   intRepr: string;
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PipelineRunMetadataEntry {
   __typename: "PipelineRunMetadataEntry";
   label: string;
@@ -1377,7 +1412,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metad
   schema: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries = SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PathMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_JsonMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_UrlMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TextMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_MarkdownMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_FloatMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_IntMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PipelineRunMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry;
+export type SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries = SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PathMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_JsonMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_UrlMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TextMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_MarkdownMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_FloatMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_IntMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_BoolMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PipelineRunMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry | SidebarAssetFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry;
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -1411,6 +1446,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1484,6 +1520,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1558,6 +1595,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1606,6 +1644,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -1640,6 +1679,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1714,6 +1754,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1789,6 +1830,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1865,6 +1907,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1938,6 +1981,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2012,6 +2056,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2060,6 +2105,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -2094,6 +2140,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2168,6 +2215,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -2243,6 +2291,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
