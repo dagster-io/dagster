@@ -92,11 +92,10 @@ def _id_range_for_time(start, end, hn_client):
 @op(
     required_resource_keys={"hn_client", "partition_bounds"},
     out=Out(
-        Tuple[int, int],
         description="The lower (inclusive) and upper (exclusive) ids that bound the range for the partition",
     ),
 )
-def id_range_for_time(context):
+def id_range_for_time(context) -> Output[Tuple[int, int]]:
     """
     For the configured time partition, searches for the range of ids that were created in that time.
     """
@@ -105,4 +104,4 @@ def id_range_for_time(context):
         context.resources.partition_bounds["end"],
         context.resources.hn_client,
     )
-    yield Output(id_range, metadata=metadata)
+    return Output(id_range, metadata=metadata)

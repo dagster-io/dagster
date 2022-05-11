@@ -12,17 +12,20 @@ from dagster.utils import file_relative_path
     config_schema={
         "path": Field(str, default_value=file_relative_path(__file__, "sample"))
     },
-    out=DynamicOut(str),
 )
-def files_in_directory(context):
+def files_in_directory(context) -> List[DynamicOutput[str]]:
     path = context.op_config["path"]
     dirname, _, filenames = next(os.walk(path))
+    outputs = []
     for file in filenames:
-        yield DynamicOutput(
-            value=os.path.join(dirname, file),
-            # create a mapping key from the file name
-            mapping_key=file.replace(".", "_").replace("-", "_"),
+        outputs.append(
+            DynamicOutput(
+                value=os.path.join(dirname, file),
+                # create a mapping key from the file name
+                mapping_key=file.replace(".", "_").replace("-", "_"),
+            )
         )
+    return outputs
 
 
 @op

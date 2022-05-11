@@ -45,8 +45,8 @@ from dagster import Output, op
 
 
 @op
-def my_simple_yield_op(context):
-    yield Output(1)
+def my_simple_return_output_op(context) -> Output[int]:
+    return Output(1)
 
 
 # end_op_output_0
@@ -56,7 +56,7 @@ from dagster import op
 
 
 @op
-def my_simple_return_op(context):
+def my_simple_return_op(context) -> int:
     return 1
 
 
@@ -67,8 +67,8 @@ from dagster import Output, op
 
 
 @op(out={"my_output": Out(int)})
-def my_named_yield_op(context):
-    yield Output(1, output_name="my_output")
+def my_named_return_output_op(context) -> Output[int]:
+    return Output(1)
 
 
 # end_op_output_2
@@ -78,9 +78,9 @@ from dagster import MetadataValue, Output, op
 
 
 @op
-def my_metadata_output(context):
+def my_metadata_output(context) -> Output:
     df = get_some_data()
-    yield Output(
+    return Output(
         df,
         metadata={
             "text_metadata": "Text-based metadata for this event",
@@ -197,24 +197,26 @@ def my_asset_op(context):
 
 # end_asset_op
 
-# start_asset_op_yield
+# start_asset_op_log
 from dagster import AssetMaterialization, Output, op
 
 
 @op
-def my_asset_op_yields():
+def my_asset_op_logs(context):
     df = get_some_data()
     store_to_s3(df)
-    yield AssetMaterialization(
-        asset_key="s3.my_asset",
-        description="A df I stored in s3",
+    context.log_event(
+        AssetMaterialization(
+            asset_key="s3.my_asset",
+            description="A df I stored in s3",
+        )
     )
 
     result = do_some_transform(df)
-    yield Output(result)
+    return result
 
 
-# end_asset_op_yield
+# end_asset_op_logs
 
 # start_expectation_op
 from dagster import ExpectationResult, op

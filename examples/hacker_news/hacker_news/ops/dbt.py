@@ -16,8 +16,8 @@ def hn_dbt_run(context):
 
     # if you don't use the Dagster Asset Catalog, this can be omitted.
     for materialization in context.resources.dbt_assets.get_asset_materializations(dbt_cli_output):
-        yield materialization
-    yield Output(dbt_cli_output)
+        context.log_event(materialization)
+    return dbt_cli_output
 
 
 @op(required_resource_keys={"dbt"}, tags={"kind": "dbt"})

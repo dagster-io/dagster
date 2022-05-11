@@ -36,16 +36,20 @@ do_math_job = do_math.to_job()
 
 
 @op(ins={"input_num": In(dagster_type=int)}, out={"a_num": Out(dagster_type=int)})
-def emit_events_op(input_num):
+def emit_events_op(context, input_num):
     a_num = input_num + 1
-    yield ExpectationResult(
-        success=a_num > 0, label="positive", description="A num must be positive"
+    context.log_event(
+        ExpectationResult(
+            success=a_num > 0, label="positive", description="A num must be positive"
+        )
     )
-    yield AssetMaterialization(
-        asset_key="persisted_string",
-        description="Let us pretend we persisted the string somewhere",
+    context.log_event(
+        AssetMaterialization(
+            asset_key="persisted_string",
+            description="Let us pretend we persisted the string somewhere",
+        )
     )
-    yield Output(value=a_num, output_name="a_num")
+    return a_num
 
 
 @graph

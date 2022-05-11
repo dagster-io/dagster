@@ -1,3 +1,5 @@
+from typing import List, Tuple
+
 from dagster import DynamicOut, DynamicOutput, job, op
 
 
@@ -21,10 +23,12 @@ def process(results):
     return sum(results)
 
 
-@op(out=DynamicOut())
-def dynamic_values():
+@op
+def dynamic_values() -> List[DynamicOutput[int]]:
+    outputs = []
     for i in range(2):
-        yield DynamicOutput(i, mapping_key=f"num_{i}")
+        outputs.append(DynamicOutput(i, mapping_key=f"num_{i}"))
+    return outputs
 
 
 @op(
@@ -34,9 +38,12 @@ def dynamic_values():
     },
 )
 def multiple_dynamic_values():
+    outputs = []
     for i in range(2):
-        yield DynamicOutput(i, output_name="values", mapping_key=f"num_{i}")
-        yield DynamicOutput(-i, output_name="negatives", mapping_key=f"neg_{i}")
+        outputs.append(DynamicOutput(i, output_name="values", mapping_key=f"num_{i}"))
+        outputs.append(
+            DynamicOutput(-i, output_name="negatives", mapping_key=f"neg_{i}")
+        )
 
 
 class BigData:

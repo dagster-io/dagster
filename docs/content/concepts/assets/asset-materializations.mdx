@@ -61,9 +61,7 @@ def my_materialization_op(context):
     df = read_df()
     remote_storage_path = persist_to_storage(df)
     context.log_event(
-        AssetMaterialization(
-            asset_key="my_dataset", description="Persisted result to storage"
-        )
+        AssetMaterialization(asset_key="my_dataset", description="Persisted result to storage")
     )
     return remote_storage_path
 ```
@@ -128,9 +126,7 @@ def my_metadata_materialization_op(context):
             metadata={
                 "text_metadata": "Text-based metadata for this event",
                 "path": MetadataValue.path(remote_storage_path),
-                "dashboard_url": MetadataValue.url(
-                    "http://mycoolsite.com/url_for_my_data"
-                ),
+                "dashboard_url": MetadataValue.url("http://mycoolsite.com/url_for_my_data"),
                 "size (bytes)": calculate_bytes(df),
             },
         )
@@ -181,9 +177,7 @@ def my_partitioned_asset_op(context):
     partition_date = context.op_config["date"]
     df = read_df_for_date(partition_date)
     remote_storage_path = persist_to_storage(df)
-    context.log_event(
-        AssetMaterialization(asset_key="my_dataset", partition=partition_date)
-    )
+    context.log_event(AssetMaterialization(asset_key="my_dataset", partition=partition_date))
     return remote_storage_path
 ```
 
@@ -207,7 +201,7 @@ In this case, the <PyObject object="AssetMaterialization" /> and the <PyObject o
 
 Just as there are two places in which you can log runtime <PyObject object="AssetMaterialization" /> events (within an op body and within an IOManager), we provide two different interfaces for linking an op output to to an asset. Regardless of which you choose, every time the op runs and logs that output, an <PyObject object="AssetMaterialization" /> event will automatically be created to record this information.
 
-If you use an <PyObject object="Output" /> event to yield your output, and specified any metadata entries on it, (see: [Op Event Docs](/concepts/ops-jobs-graphs/op-events#attaching-metadata-to-outputs)), these entries will automatically be attached to the materialization event for this asset.
+If you use an <PyObject object="Output" /> event to return or yield your output, and specified any metadata entries on it, (see: [Op Event Docs](/concepts/ops-jobs-graphs/op-events#attaching-metadata-to-outputs)), these entries will automatically be attached to the materialization event for this asset.
 
 ### Linking assets to an Output Definition <Experimental />
 

@@ -89,7 +89,7 @@ def get_asset_key(context: OutputContext):
 def my_variable_asset_op(context):
     df = read_df()
     persist_to_storage(df)
-    yield Output(df)
+    return df
 
 
 # end_output_def_mat_op_1
@@ -148,15 +148,17 @@ from dagster import op, AssetMaterialization, job
 def my_asset_key_materialization_op(context):
     df = read_df()
     remote_storage_path = persist_to_storage(df)
-    yield AssetMaterialization(
-        asset_key=AssetKey(["dashboard", "my_cool_site"]),
-        description="Persisted result to storage",
-        metadata={
-            "dashboard_url": MetadataValue.url("http://mycoolsite.com/dashboard"),
-            "size (bytes)": calculate_bytes(df),
-        },
+    context.log_event(
+        AssetMaterialization(
+            asset_key=AssetKey(["dashboard", "my_cool_site"]),
+            description="Persisted result to storage",
+            metadata={
+                "dashboard_url": MetadataValue.url("http://mycoolsite.com/dashboard"),
+                "size (bytes)": calculate_bytes(df),
+            },
+        )
     )
-    yield Output(remote_storage_path)
+    return remote_storage_path
 
 
 # end_materialization_ops_marker_3

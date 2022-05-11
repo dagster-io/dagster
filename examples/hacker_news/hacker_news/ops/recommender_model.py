@@ -9,8 +9,8 @@ from dagster import In, InputDefinition, MetadataValue, Out, Output, op
 from dagster.utils import file_relative_path
 
 
-@op(out=Out(dagster_type=TruncatedSVD, metadata={"key": "recommender_model"}))
-def build_recommender_model(user_story_matrix: IndexedCooMatrix):
+@op(out=Out(metadata={"key": "recommender_model"}))
+def build_recommender_model(user_story_matrix: IndexedCooMatrix) -> Output[TruncatedSVD]:
     """
     Trains an SVD model for collaborative filtering-based recommendation.
     """
@@ -20,7 +20,7 @@ def build_recommender_model(user_story_matrix: IndexedCooMatrix):
 
     total_explained_variance = svd.explained_variance_ratio_.sum()
 
-    yield Output(
+    return Output(
         svd,
         metadata={
             "Total explained variance ratio": total_explained_variance,
@@ -48,14 +48,13 @@ model_perf_notebook = define_dagstermill_solid(
         ),
     },
     out=Out(
-        dagster_type=DataFrame,
         io_manager_key="warehouse_io_manager",
         metadata={"table": "hackernews.component_top_stories"},
     ),
 )
 def build_component_top_stories(
     model: TruncatedSVD, user_story_matrix: IndexedCooMatrix, story_titles: DataFrame
-):
+) -> Output[DataFrame]:
     """
     For each component in the collaborative filtering model, finds the titles of the top stories
     it's associated with.
@@ -81,7 +80,7 @@ def build_component_top_stories(
         {"component_index": Series(components_column), "title": Series(titles_column)}
     )
 
-    yield Output(
+    return Output(
         component_top_stories,
         metadata={
             "Top component top stories": MetadataValue.md(
