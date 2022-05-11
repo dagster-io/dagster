@@ -317,10 +317,6 @@ class ExternalPipeline(RepresentedPipeline):
         return self._pipeline_index.pipeline_snapshot.tags
 
     @property
-    def job_tags(self):
-        return self._pipeline_index.pipeline_snapshot.job_tags
-
-    @property
     def metadata(self):
         return self._pipeline_index.pipeline_snapshot.metadata
 

@@ -26,9 +26,4 @@ def log_s3():
 
 log_s3_job = log_s3.to_job(
     description="Demo job that spits out some file info, given a path",
-    metadata={
-        "owner": "prha",
-        "baz": MetadataValue.text("bbbb"),
-        "a_link": MetadataValue.url(url="https://dagster.io"),
-    },
 )

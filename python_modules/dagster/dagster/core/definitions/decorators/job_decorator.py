@@ -25,8 +25,6 @@ class _Job:
         name: Optional[str] = None,
         description: Optional[str] = None,
         tags: Optional[Dict[str, Any]] = None,
-        default_run_tags: Optional[Dict[str, Any]] = None,
-        job_tags: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, RawMetadataValue]] = None,
         resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
         config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
@@ -39,9 +37,7 @@ class _Job:
     ):
         self.name = name
         self.description = description
-        self.default_run_tags = default_run_tags
         self.tags = tags
-        self.job_tags = job_tags
         self.metadata = metadata
         self.resource_defs = resource_defs
         self.config = config
@@ -77,7 +73,6 @@ class _Job:
             config_mapping=None,
         )
 
-        # TODO: maybe need to pass default_run_tags here?
         graph_def = GraphDefinition(
             name=self.name,
             dependencies=dependencies,
@@ -96,8 +91,6 @@ class _Job:
             resource_defs=self.resource_defs,
             config=self.config,
             tags=self.tags,
-            default_run_tags=self.default_run_tags,
-            job_tags=self.job_tags,
             metadata=self.metadata,
             logger_defs=self.logger_defs,
             executor_def=self.executor_def,
@@ -122,8 +115,6 @@ def job(
     resource_defs: Optional[Dict[str, ResourceDefinition]] = ...,
     config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = ...,
     tags: Optional[Dict[str, Any]] = ...,
-    default_run_tags: Optional[Dict[str, Any]] = ...,
-    job_tags: Optional[Dict[str, Any]] = ...,
     metadata: Optional[Dict[str, RawMetadataValue]] = ...,
     logger_defs: Optional[Dict[str, LoggerDefinition]] = ...,
     executor_def: Optional["ExecutorDefinition"] = ...,
@@ -140,8 +131,6 @@ def job(
     resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
     config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
     tags: Optional[Dict[str, Any]] = None,
-    default_run_tags: Optional[Dict[str, Any]] = None,
-    job_tags: Optional[Dict[str, Any]] = None,
     metadata: Optional[Dict[str, RawMetadataValue]] = None,
     logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
@@ -181,12 +170,6 @@ def job(
             values to the base config. The values provided will be viewable and editable in the
             Dagit playground, so be careful with secrets.
         tags (Optional[Dict[str, Any]]):
-            !! Will be deprecated in favor of default_run_tags !!
-            Arbitrary information that will be attached to the execution of the Job.
-            Values that are not strings will be json encoded and must meet the criteria that
-            `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
-            values provided at invocation time.
-        default_run_tags (Optional[Dict[str, Any]]):
             Arbitrary information that will be attached to the execution of the Job.
             Values that are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
@@ -215,8 +198,6 @@ def job(
         resource_defs=resource_defs,
         config=config,
         tags=tags,
-        default_run_tags=default_run_tags,
-        job_tags=job_tags,
         metadata=metadata,
         logger_defs=logger_defs,
         executor_def=executor_def,

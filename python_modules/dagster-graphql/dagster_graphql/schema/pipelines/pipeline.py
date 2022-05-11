@@ -434,7 +434,6 @@ class GrapheneIPipelineSnapshotMixin:
         handleID=graphene.Argument(graphene.NonNull(graphene.String)),
     )
     tags = non_null_list(GraphenePipelineTag)
-    job_tags = non_null_list(GraphenePipelineTag)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     runs = graphene.Field(
         non_null_list(GrapheneRun),
@@ -537,13 +536,6 @@ class GrapheneIPipelineSnapshotMixin:
             for key, value in represented_pipeline.pipeline_snapshot.tags.items()
         ]
 
-    def resolve_job_tags(self, _graphene_info):
-        represented_pipeline = self.get_represented_pipeline()
-        return [
-            GraphenePipelineTag(key=key, value=value)
-            for key, value in represented_pipeline.pipeline_snapshot.job_tags.items()
-        ]
-
     def resolve_metadata_entries(self, _graphene_info) -> List[GrapheneMetadataEntry]:
         represented_pipeline = self.get_represented_pipeline()
         return list(iterate_metadata_entries(represented_pipeline.pipeline_snapshot.metadata))
@@ -607,7 +599,6 @@ class GrapheneIPipelineSnapshot(graphene.Interface):
         handleID=graphene.Argument(graphene.NonNull(graphene.String)),
     )
     tags = non_null_list(GraphenePipelineTag)
-    job_tags = non_null_list(GraphenePipelineTag)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     runs = graphene.Field(
         non_null_list(GrapheneRun),

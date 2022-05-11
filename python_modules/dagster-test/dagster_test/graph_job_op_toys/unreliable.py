@@ -1,6 +1,6 @@
 from random import random
 
-from dagster import Field, MetadataValue, graph, op
+from dagster import Field, graph, op
 
 DEFAULT_EXCEPTION_RATE = 0.3
 
@@ -32,10 +32,4 @@ def unreliable():
 
 unreliable_job = unreliable.to_job(
     description="Demo graph of chained ops that fail with a configurable probability.",
-    job_tags={"owner": "person_1", "team": "cloud", "new_key": "hi!"},
-    metadata={
-        "owner": "person_1",
-        "team": MetadataValue.text("cloud"),
-        "a_link": MetadataValue.url(url="https://dagster.io"),
-    },
 )

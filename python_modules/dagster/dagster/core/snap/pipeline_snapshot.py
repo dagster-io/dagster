@@ -77,7 +77,6 @@ def _pipeline_snapshot_from_storage(
     name: str,
     description: Optional[str],
     tags: Optional[Dict[str, Any]],
-    job_tags: Optional[Dict[str, Any]],
     metadata: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]],
     config_schema_snapshot: ConfigSchemaSnapshot,
     dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
@@ -94,7 +93,7 @@ def _pipeline_snapshot_from_storage(
     v2:
         - graph_def_name
     """
-    # TODO - add job_tags and metadata with default None for backcompat
+    # TODO - add metadata with default None for backcompat
     if graph_def_name is None:
         graph_def_name = name
 
@@ -102,7 +101,6 @@ def _pipeline_snapshot_from_storage(
         name=name,
         description=description,
         tags=tags,
-        job_tags=job_tags,
         metadata=metadata,
         config_schema_snapshot=config_schema_snapshot,
         dagster_type_namespace_snapshot=dagster_type_namespace_snapshot,
@@ -122,7 +120,6 @@ class PipelineSnapshot(
             ("name", str),
             ("description", Optional[str]),
             ("tags", Dict[str, Any]),
-            ("job_tags", Dict[str, Any]),
             ("metadata", List[Union[MetadataEntry, PartitionMetadataEntry]]),
             ("config_schema_snapshot", ConfigSchemaSnapshot),
             ("dagster_type_namespace_snapshot", DagsterTypeNamespaceSnapshot),
@@ -139,7 +136,6 @@ class PipelineSnapshot(
         name: str,
         description: Optional[str],
         tags: Optional[Dict[str, Any]],
-        job_tags: Optional[Dict[str, Any]],
         metadata: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]],
         config_schema_snapshot: ConfigSchemaSnapshot,
         dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
@@ -154,7 +150,6 @@ class PipelineSnapshot(
             name=check.str_param(name, "name"),
             description=check.opt_str_param(description, "description"),
             tags=check.opt_dict_param(tags, "tags"),
-            job_tags=check.opt_dict_param(job_tags, "job_tags"),
             metadata=check.opt_list_param(metadata, "metadata"),
             config_schema_snapshot=check.inst_param(
                 config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
@@ -204,7 +199,6 @@ class PipelineSnapshot(
             name=pipeline_def.name,
             description=pipeline_def.description,
             tags=pipeline_def.tags,
-            job_tags=pipeline_def.job_tags,
             metadata=pipeline_def.metadata,
             config_schema_snapshot=build_config_schema_snapshot(pipeline_def),
             dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(pipeline_def),

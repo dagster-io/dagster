@@ -43,8 +43,6 @@ export const SidebarPipelineOrJobOverview: React.FC<{
         }
 
         const modes = pipelineSnapshotOrError.modes;
-        const jobTags = pipelineSnapshotOrError.jobTags;
-        // const metadata = pipelineSnapshotOrError.metadataEntries
 
         return (
           <>
@@ -59,13 +57,6 @@ export const SidebarPipelineOrJobOverview: React.FC<{
               <Box padding={{vertical: 16, horizontal: 24}}>
                 {modes.map((mode) => (
                   <SidebarModeSection mode={mode} key={mode.name} />
-                ))}
-              </Box>
-            </SidebarSection>
-            <SidebarSection title="Job Tags">
-              <Box padding={{vertical: 16, horizontal: 24}}>
-                {jobTags.map((tag, idx) => (
-                  <RunTag tag={tag} key={idx} />
                 ))}
               </Box>
             </SidebarSection>
@@ -91,10 +82,6 @@ const JOB_OVERVIEW_SIDEBAR_QUERY = gql`
         modes {
           id
           ...SidebarModeInfoFragment
-        }
-        jobTags {
-          key
-          value
         }
         metadataEntries {
           ...MetadataEntryFragment

@@ -1,6 +1,6 @@
 import time
 
-from dagster import In, MetadataValue, Out, Output, graph, op
+from dagster import In, Out, Output, graph, op
 
 
 def nonce_op(name, n_inputs, n_outputs):
@@ -54,10 +54,4 @@ def log_spew():
 
 log_spew_job = log_spew.to_job(
     description="Demo job that spits out different types of log messages to the event log.",
-    job_tags={"owner": "person_7", "team": "core", "other": "hi"},
-    metadata={
-        "owner": "prha",
-        "baz": MetadataValue.text("bbbb"),
-        "a_link": MetadataValue.url(url="https://dagster.io"),
-    },
 )

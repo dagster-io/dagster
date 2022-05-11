@@ -57,10 +57,6 @@ class PipelineIndex:
         return self.pipeline_snapshot.tags
 
     @property
-    def job_tags(self):
-        return self.pipeline_snapshot.job_tags
-
-    @property
     def metadata(self):
         return self.pipeline_snapshot.metadata
 

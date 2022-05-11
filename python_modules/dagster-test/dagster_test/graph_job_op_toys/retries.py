@@ -1,6 +1,6 @@
 import time
 
-from dagster import MetadataValue, RetryRequested, graph, op
+from dagster import RetryRequested, graph, op
 
 
 @op
@@ -36,11 +36,5 @@ retry_job = retry.to_job(
                 }
             }
         }
-    },
-    job_tags={"owner": "person_1", "team": "team_3", "other": "info"},
-    metadata={
-        "foo": "bar",
-        "baz": MetadataValue.text("bbbb"),
-        "a_link": MetadataValue.url(url="https://dagster.io"),
     },
 )

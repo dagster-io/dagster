@@ -42,7 +42,6 @@ def resource_ops():
 
 resource_job = resource_ops.to_job(
     resource_defs=lots_of_resources,
-    job_tags={"owner": "person_3", "team": "cloud", "other": "info"},
 )
 
 if __name__ == "__main__":

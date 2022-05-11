@@ -133,10 +133,6 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       ... on PipelineSnapshot {
         id
         name
-        jobTags {
-          key
-          value
-        }
         metadataEntries {
           ...MetadataEntryFragment
         }

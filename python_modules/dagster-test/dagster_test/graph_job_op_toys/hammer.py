@@ -1,7 +1,7 @@
 import random
 import time
 
-from dagster import Field, In, MetadataValue, Out, Output, graph, op
+from dagster import Field, In, Out, Output, graph, op
 
 
 @op(
@@ -65,11 +65,4 @@ def hammer():
     )
 
 
-hammer_default_executor_job = hammer.to_job(
-    job_tags={"owner": "person_2", "team": "core", "other": "hello"},
-    metadata={
-        "owner": "prha",
-        "baz": MetadataValue.text("bbbb"),
-        "a_link": MetadataValue.url(url="https://dagster.io"),
-    },
-)
+hammer_default_executor_job = hammer.to_job()

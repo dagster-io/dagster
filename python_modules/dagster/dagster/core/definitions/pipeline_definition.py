@@ -166,7 +166,6 @@ class PipelineDefinition:
         mode_defs: Optional[List[ModeDefinition]] = None,
         preset_defs: Optional[List[PresetDefinition]] = None,
         tags: Optional[Dict[str, Any]] = None,
-        job_tags: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         solid_retry_policy: Optional[RetryPolicy] = None,
@@ -203,7 +202,6 @@ class PipelineDefinition:
         # same graph may be in multiple pipelines/jobs, keep separate layer
         self._description = check.opt_str_param(description, "description")
         self._tags = validate_tags(tags)
-        self._job_tags = validate_tags(job_tags)
 
         self._metadata = []
         if metadata is not None:
@@ -302,10 +300,6 @@ class PipelineDefinition:
     @property
     def tags(self):
         return frozentags(**merge_dicts(self._graph_def.tags, self._tags))
-
-    @property
-    def job_tags(self):
-        return frozentags(self._job_tags)
 
     @property
     def metadata(self) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
