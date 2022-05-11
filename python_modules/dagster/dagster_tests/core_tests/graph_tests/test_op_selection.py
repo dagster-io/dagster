@@ -1,3 +1,4 @@
+# type: ignore[return-value]
 from typing import List
 
 import pytest
@@ -16,6 +17,7 @@ from dagster import (
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+from datetime import datetime
 
 
 @op
@@ -645,8 +647,6 @@ def test_nested_op_selection_with_config_mapping():
 
 
 def test_op_selection_unsatisfied_input_failure():
-    from datetime import datetime
-
     @op
     def basic() -> datetime:
         return 5
