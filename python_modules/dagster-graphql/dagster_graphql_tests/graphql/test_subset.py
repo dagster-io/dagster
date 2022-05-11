@@ -70,10 +70,10 @@ class TestSolidSelections(NonLaunchableGraphQLContextTestMatrix):
         assert result.data
         assert result.data["runConfigSchemaOrError"]["__typename"] == "InvalidSubsetError"
 
-        assert re.match(
-            (
-                r".*DagsterInvalidSubsetError[\s\S]*"
-                r"add a dagster_type_loader for the type 'InputTypeWithoutHydration'"
-            ),
-            result.data["runConfigSchemaOrError"]["message"],
+        error_msg = result.data["runConfigSchemaOrError"]["message"]
+
+        assert "DagsterInvalidSubsetError" in error_msg
+        assert (
+            "Input 'some_input' of solid 'fail_subset' has no upstream output, no default value, and no dagster type loader."
+            in error_msg
         )

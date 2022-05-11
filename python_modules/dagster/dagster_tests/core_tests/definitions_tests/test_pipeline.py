@@ -177,10 +177,6 @@ def test_unconfigurable_inputs_pipeline():
     def noop(_):
         pass
 
-    @pipeline
-    def _bad_inputs():
-        noop()
-
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Input '_' of solid 'noop' has no upstream output, no default "
@@ -189,7 +185,10 @@ def test_unconfigurable_inputs_pipeline():
         "root input manager key. To learn more, see the docs for unconnected "
         "inputs: https://docs.dagster.io/concepts/io-management/unconnected-inputs#unconnected-inputs.",
     ):
-        execute_pipeline(_bad_inputs)
+
+        @pipeline
+        def _bad_inputs():
+            noop()
 
 
 def test_dupe_defs_fail():

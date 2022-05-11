@@ -1,15 +1,16 @@
-from typing import Any, Dict, Mapping, Optional, cast, List
+from typing import Any, Dict, List, Mapping, Optional, cast
 
 from dagster.core.definitions import (
-    NodeDefinition,
-    NodeHandle,
-    PipelineDefinition,
-    OpDefinition,
+    GraphDefinition,
     JobDefinition,
     Node,
-    GraphDefinition,
+    NodeDefinition,
+    NodeHandle,
+    OpDefinition,
+    PipelineDefinition,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
+from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.dagster_type import DagsterTypeKind
@@ -25,7 +26,6 @@ from .context_creation_pipeline import (
     orchestration_context_event_generator,
 )
 from .execute_in_process_result import ExecuteInProcessResult
-from dagster.core.errors import DagsterInvalidInvocationError
 
 
 def core_execute_in_process(
