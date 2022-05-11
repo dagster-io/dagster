@@ -4,11 +4,9 @@ from typing import NamedTuple
 import objgraph
 import pytest
 
+from dagster import DynamicOut, DynamicOutput, DynamicOutputDefinition, Out
+from dagster import _check as check
 from dagster import (
-    DynamicOut,
-    DynamicOutput,
-    DynamicOutputDefinition,
-    Out,
     build_solid_context,
     execute_pipeline,
     execute_solid,
@@ -76,7 +74,10 @@ def test_fails_with_wrong_output():
     def should_also_fail(_):
         return 1
 
-    with pytest.raises(DagsterInvariantViolationError, match="must yield DynamicOutput"):
+    with pytest.raises(
+        check.CheckError,
+        match="expects either a list of DynamicOutputs to be returned, or DynamicOutput objects to be yielded. Received instead an object of type <class 'int'>",
+    ):
         execute_solid(should_also_fail)
 
 
