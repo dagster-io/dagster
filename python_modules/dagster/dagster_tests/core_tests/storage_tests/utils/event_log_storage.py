@@ -1151,7 +1151,7 @@ class TestEventLogStorage:
     @pytest.mark.parametrize(
         "cursor_dt", cursor_datetime_args()
     )  # test both tz-aware and naive datetimes
-    def test_get_event_records(self, storage, cursor_dt, test_run_id):
+    def test_get_event_records(self, storage, cursor_dt):
         if isinstance(storage, SqliteEventLogStorage):
             # test sqlite in test_get_event_records_sqlite
             pytest.skip()
@@ -1178,7 +1178,6 @@ class TestEventLogStorage:
             events, _ = _synthesize_events(_solids, run_id=run_id)
             for event in events:
                 storage.store_event(event)
-                print(event)
 
         # store events for three runs
         [run_id_1, run_id_2, run_id_3] = [make_new_run_id(), make_new_run_id(), make_new_run_id()]
