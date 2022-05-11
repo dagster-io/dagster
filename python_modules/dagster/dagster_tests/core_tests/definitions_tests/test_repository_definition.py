@@ -1114,7 +1114,7 @@ def test_duplicate_graph_target_invalid():
     ):
 
         @repository
-        def the_repo_dupe_graph_invalid():
+        def the_repo_dupe_graph_invalid_schedule():
             return [the_graph, _create_schedule_from_target(other_graph)]
 
 
@@ -1212,7 +1212,7 @@ def test_dupe_jobs_pipelines_invalid():
 
     with pytest.warns(
         UserWarning,
-        match="sensor '_the_sensor' targets pipeline 'foo', but a different job with the same name was provided.",
+        match="sensor '_the_sensor' targets pipeline 'foo', but a different graph with the same name was provided.",
     ):
 
         @repository
@@ -1221,7 +1221,7 @@ def test_dupe_jobs_pipelines_invalid():
 
     with pytest.warns(
         UserWarning,
-        match="sensor '_the_sensor' targets pipeline 'foo', but a different graph with the same name was provided.",
+        match="schedule '_the_schedule' targets pipeline 'foo', but a different graph with the same name was provided.",
     ):
 
         @repository
