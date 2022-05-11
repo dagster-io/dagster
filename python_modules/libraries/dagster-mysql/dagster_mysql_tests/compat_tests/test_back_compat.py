@@ -79,11 +79,6 @@ def test_instigators_table_backcompat(hostname, conn_string):
 
 
 def test_asset_observation_backcompat(hostname, conn_string):
-    import sqlalchemy as db
-
-    from dagster.core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
-    from dagster.core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
-
     _reconstruct_from_file(
         hostname,
         conn_string,
