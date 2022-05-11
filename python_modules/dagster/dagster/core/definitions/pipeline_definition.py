@@ -981,7 +981,13 @@ def _checked_input_resource_reqs_for_mode(
                 # mapped from a top-level output.
                 if not _is_input_resolvable(top_level_graph_def, input_def, node, outer_solids):
                     raise DagsterInvalidDefinitionError(
-                        f"Input '{input_def.name}' of {node.describe_node()} has no upstream output, no default value, and no dagster type loader. Must provide a value to this input via either a direct input value mapped from the top-level graph, or a root input manager key. To learn more, see the docs for unconnected inputs: https://docs.dagster.io/concepts/io-management/unconnected-inputs#unconnected-inputs."
+                        f"Input '{input_def.name}' of {node.describe_node()} "
+                        "has no upstream output, no default value, and no "
+                        "dagster type loader. Must provide a value to this "
+                        "input via either a direct input value mapped from the "
+                        "top-level graph, or a root input manager key. To "
+                        "learn more, see the docs for unconnected inputs: "
+                        "https://docs.dagster.io/concepts/io-management/unconnected-inputs#unconnected-inputs."
                     )
 
                 # If a root manager is provided, it's always used. I.e. it has priority over
