@@ -310,6 +310,17 @@ def _create_run(
     return result.data["launchPipelineExecution"]["run"]["runId"]
 
 
+def _get_sorted_materialization_events(graphql_context, run_id):
+    return sorted(
+        [
+            event
+            for event in graphql_context.instance.all_logs(run_id=run_id)
+            if event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ],
+        key=lambda event: event.get_dagster_event().asset_key,
+    )
+
+
 class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
     def test_all_asset_keys(self, graphql_context, snapshot):
         _create_run(graphql_context, "multi_asset_pipeline")
@@ -809,13 +820,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         run_id = _create_run(graphql_context, "foo_job", asset_selection=[{"path": ["bar"]}])
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run.is_finished
-        materialization_events = [
-            event
-            for event in graphql_context.instance.all_logs(run_id=run_id)
-            if event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
-        ]
-        assert len(materialization_events) == 1
-        assert materialization_events[0].get_dagster_event().asset_key == AssetKey("bar")
+        events = _get_sorted_materialization_events(graphql_context, run_id)
+        assert len(events) == 1
+        assert events[0].get_dagster_event().asset_key == AssetKey("bar")
 
         # Execute subselection with assets foo and foo_bar
         run_id = _create_run(
@@ -823,14 +830,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         )
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run.is_finished
-        materialization_events = [
-            event
-            for event in graphql_context.instance.all_logs(run_id=run_id)
-            if event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
-        ]
-        assert len(materialization_events) == 2
-        assert materialization_events[0].get_dagster_event().asset_key == AssetKey("foo")
-        assert materialization_events[1].get_dagster_event().asset_key == AssetKey("foo_bar")
+        events = _get_sorted_materialization_events(graphql_context, run_id)
+        assert len(events) == 2
+        assert events[0].get_dagster_event().asset_key == AssetKey("foo")
+        assert events[1].get_dagster_event().asset_key == AssetKey("foo_bar")
 
     def test_execute_dependent_subset(self, graphql_context):
         # Asset foo is upstream of baz but not directly connected
@@ -846,14 +849,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         )
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run.is_finished
-        materialization_events = [
-            event
-            for event in graphql_context.instance.all_logs(run_id=run_id)
-            if event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
-        ]
-        assert len(materialization_events) == 2
-        assert materialization_events[0].get_dagster_event().asset_key == AssetKey("foo")
-        assert materialization_events[1].get_dagster_event().asset_key == AssetKey("baz")
+        events = _get_sorted_materialization_events(graphql_context, run_id)
+        assert len(events) == 2
+        assert events[0].get_dagster_event().asset_key == AssetKey("baz")
+        assert events[1].get_dagster_event().asset_key == AssetKey("foo")
 
     def test_execute_unconnected_subset(self, graphql_context):
         # Assets "foo" and "unconnected" are disconnected assets
@@ -864,17 +863,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         )
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run.is_finished
-        materialization_events = sorted(
-            [
-                event
-                for event in graphql_context.instance.all_logs(run_id=run_id)
-                if event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
-            ],
-            key=lambda event: event.get_dagster_event().asset_key,
-        )
-        assert len(materialization_events) == 2
-        assert materialization_events[0].get_dagster_event().asset_key == AssetKey("foo")
-        assert materialization_events[1].get_dagster_event().asset_key == AssetKey("unconnected")
+        events = _get_sorted_materialization_events(graphql_context, run_id)
+        assert len(events) == 2
+        assert events[0].get_dagster_event().asset_key == AssetKey("foo")
+        assert events[1].get_dagster_event().asset_key == AssetKey("unconnected")
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):

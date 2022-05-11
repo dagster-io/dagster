@@ -430,7 +430,9 @@ class PipelineSubsetSnapshotArgs(
             solid_selection=check.list_param(solid_selection, "solid_selection", of_type=str)
             if solid_selection
             else None,
-            asset_selection=asset_selection,
+            asset_selection=check.list_param(asset_selection, "asset_selection", of_type=AssetKey)
+            if asset_selection
+            else None,
         )
 
 
