@@ -1,4 +1,5 @@
 # type: ignore[return-value]
+from datetime import datetime
 from typing import List
 
 import pytest
@@ -17,7 +18,6 @@ from dagster import (
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
-from datetime import datetime
 
 
 @op
