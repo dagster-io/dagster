@@ -95,7 +95,7 @@ const runMinimalDagreLayout = (
 
   // Note: This is important for other algorithms we run later, but we want to
   // do it in the layer that is cached.
-  boxes.sort((a, b) => a.layout.top - b.layout.top || a.layout.left - b.layout.left);
+  boxes.sort((a, b) => a.id.localeCompare(b.id));
 
   return {boxes};
 };
