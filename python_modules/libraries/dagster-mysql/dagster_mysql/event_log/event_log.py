@@ -123,18 +123,24 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         values = self._get_asset_entry_values(event, self.has_secondary_index(ASSET_KEY_INDEX_COLS))
         with self.index_connection() as conn:
             if values:
-                conn.execute(db.dialects.mysql.insert(AssetKeyTable).values(
-                    asset_key=event.dagster_event.asset_key.to_string(),
-                    **values,
-                ).on_duplicate_key_update(
-                    **values,
-                ))
+                conn.execute(
+                    db.dialects.mysql.insert(AssetKeyTable)
+                    .values(
+                        asset_key=event.dagster_event.asset_key.to_string(),
+                        **values,
+                    )
+                    .on_duplicate_key_update(
+                        **values,
+                    )
+                )
             else:
                 try:
-                    conn.execute(db.dialects.mysql.insert(AssetKeyTable).values(
-                        asset_key=event.dagster_event.asset_key.to_string(),
-                    ))
-                except db.exc.IntegrityError as e:
+                    conn.execute(
+                        db.dialects.mysql.insert(AssetKeyTable).values(
+                            asset_key=event.dagster_event.asset_key.to_string(),
+                        )
+                    )
+                except db.exc.IntegrityError:
                     pass
 
     def _connect(self):
