@@ -39,7 +39,7 @@ from .utils import delete_job
                 IntSource,
                 is_required=False,
                 description="Maximum number of concurrent containers launched for one job",
-            )
+            ),
         },
     ),
     requirements=multiple_process_executor_requirements(),
