@@ -33,7 +33,8 @@ test("No dead navs", async () => {
     if (
       elem.path &&
       !fileExists(path.join(DOCS_DIR, elem.path) + ".mdx") &&
-      !elem.isExternalLink
+      !elem.isExternalLink &&
+      !elem.isUnversioned
     ) {
       deadNavLinks.push({
         title: elem.title,
