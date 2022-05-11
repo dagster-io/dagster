@@ -243,7 +243,7 @@ def my_pipeline_started_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
 
-config_job = config_graph.to_job()
+config_job = config_graph.to_job(name="other_job")
 
 
 @sensor(jobs=[the_job, config_job])
