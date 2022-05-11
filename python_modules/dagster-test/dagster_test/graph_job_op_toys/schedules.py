@@ -24,7 +24,7 @@ def unreliable_job_test_schedule():
     def unreliable_config(_start, _end):
         return {}
 
-    unreliable_weekly_job = unreliable.to_job(config=unreliable_config)
+    unreliable_weekly_job = unreliable.to_job(name="unreliable_weekly", config=unreliable_config)
     unreliable_weekly_schedule = build_schedule_from_partitioned_job(unreliable_weekly_job)
 
     return unreliable_weekly_schedule
@@ -82,7 +82,9 @@ def longitudinal_schedule():
             }
         }
 
-    longitudinal_job = longitudinal.to_job(config=longitudinal_config)
+    longitudinal_job = longitudinal.to_job(
+        name="scheduled_longitudinal_job", config=longitudinal_config
+    )
     return build_schedule_from_partitioned_job(longitudinal_job)
 
 

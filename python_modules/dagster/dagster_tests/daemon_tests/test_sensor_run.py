@@ -2198,7 +2198,7 @@ def test_bad_run_request_unspecified():
                 (
                     "Error in sensor bad_request_unspecified: Sensor returned a RunRequest that "
                     "did not specify job_name for the requested run. Expected one of: "
-                    "['the_graph', 'config_graph']"
+                    "['the_graph', 'other_job']"
                 ),
             )
 
