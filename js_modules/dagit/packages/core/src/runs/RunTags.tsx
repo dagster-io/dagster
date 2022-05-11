@@ -4,8 +4,15 @@ import * as React from 'react';
 import {SharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 
-import {RunTag, TagType} from './RunTag';
+import {DagsterTag, RunTag, TagType} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
+
+// Sort these tags to the start of the list.
+export const priorityTagSet = new Set([
+  DagsterTag.ScheduleName as string,
+  DagsterTag.SensorName as string,
+  DagsterTag.Backfill as string,
+]);
 
 export const RunTags: React.FC<{
   tags: TagType[];
@@ -37,6 +44,19 @@ export const RunTags: React.FC<{
     return list;
   }, [copy, onSetFilter]);
 
+  const sortedTags = React.useMemo(() => {
+    const priority = [];
+    const others = [];
+    for (const tag of tags) {
+      if (priorityTagSet.has(tag.key)) {
+        priority.push(tag);
+      } else {
+        others.push(tag);
+      }
+    }
+    return [...priority, ...others];
+  }, [tags]);
+
   if (!tags.length) {
     return null;
   }
@@ -44,7 +64,7 @@ export const RunTags: React.FC<{
   return (
     <Box flex={{direction: 'row', wrap: 'wrap', gap: 4}}>
       {mode ? <RunTag tag={{key: 'mode', value: mode}} /> : null}
-      {tags.map((tag, idx) => (
+      {sortedTags.map((tag, idx) => (
         <RunTag tag={tag} key={idx} actions={actions} />
       ))}
     </Box>
