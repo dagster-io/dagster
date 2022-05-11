@@ -269,9 +269,9 @@ class JobDefinition(PipelineDefinition):
                 asset_selection=asset_selection,
                 parent_job_def=self,
             )
-            return new_job._with_asset_selection_data(
+            return new_job._with_asset_selection_data(  # pylint: disable=protected-access
                 asset_selection_data
-            )  # pylint: disable=protected-access
+            )
         else:
             raise DagsterInvalidDefinitionError(
                 "source asset group must exist in order to subselect assets"

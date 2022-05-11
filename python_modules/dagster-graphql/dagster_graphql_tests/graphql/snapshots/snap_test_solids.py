@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['test_query_all_solids 1'] = {
@@ -364,6 +365,38 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'bar'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'foo_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'bar'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'baz'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'foo_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'baz'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'can_fail'
                 },
                 'invocations': [
@@ -637,6 +670,38 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'first_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'foo'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'foo_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'foo'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'foo_bar'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'foo_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'foo_bar'
                         }
                     }
                 ]
@@ -1605,6 +1670,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'throw_a_thing'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'unconnected'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'foo_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'unconnected'
                         }
                     }
                 ]

@@ -864,11 +864,14 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         )
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run.is_finished
-        materialization_events = [
-            event
-            for event in graphql_context.instance.all_logs(run_id=run_id)
-            if event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
-        ]
+        materialization_events = sorted(
+            [
+                event
+                for event in graphql_context.instance.all_logs(run_id=run_id)
+                if event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
+            ],
+            key=lambda event: event.get_dagster_event().asset_key,
+        )
         assert len(materialization_events) == 2
         assert materialization_events[0].get_dagster_event().asset_key == AssetKey("foo")
         assert materialization_events[1].get_dagster_event().asset_key == AssetKey("unconnected")
