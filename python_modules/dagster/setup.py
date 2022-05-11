@@ -84,7 +84,7 @@ if __name__ == "__main__":
             "typing_compat",
             "typing_extensions>=3.10",
             "sqlalchemy>=1.0",
-            "toposort>=1.0",
+            "toposort>=1.7",
             "watchdog>=0.8.3",
             'psutil >= 1.0; platform_system=="Windows"',
             # https://github.com/mhammond/pywin32/issues/1439
