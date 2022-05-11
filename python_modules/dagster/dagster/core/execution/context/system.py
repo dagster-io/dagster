@@ -23,6 +23,7 @@ from typing import (
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey, AssetLineageInfo
 from dagster.core.definitions.hook_definition import HookDefinition
+from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
@@ -317,6 +318,24 @@ class PlanExecutionContext(IPlanContext):
             PARTITION_NAME_TAG in tags, "Tried to access partition_key for a non-partitioned run"
         )
         return tags[PARTITION_NAME_TAG]
+
+    @property
+    def partition_time_window(self) -> str:
+        pipeline_def = self._execution_data.pipeline_def
+        if not isinstance(pipeline_def, JobDefinition):
+            check.failed(
+                # isinstance(pipeline_def, JobDefinition),
+                "Can only call 'partition_time_window', when using jobs, not legacy pipelines",
+            )
+        partitions_def = pipeline_def.partitions_def
+
+        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            check.failed(
+                f"Expected a TimeWindowPartitionsDefinition, but instead found {type(partitions_def)}",
+            )
+
+        # mypy thinks partitions_def is <nothing> here because ????
+        return partitions_def.time_window_for_partition_key(self.partition_key)  # type: ignore
 
     @property
     def has_partition_key(self) -> bool:
