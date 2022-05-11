@@ -227,7 +227,7 @@ class Output(Generic[T]):
         return self._output_name
 
 
-class DynamicOutput:
+class DynamicOutput(Generic[T]):
     """
     Variant of :py:class:`Output <dagster.Output>` used to support
     dynamic mapping & collect. Each ``DynamicOutput`` produced by an op represents
@@ -256,7 +256,7 @@ class DynamicOutput:
 
     def __init__(
         self,
-        value: Any,
+        value: T,
         mapping_key: str,
         output_name: Optional[str] = DEFAULT_OUTPUT,
         metadata_entries: Optional[List[Union[PartitionMetadataEntry, MetadataEntry]]] = None,
@@ -281,7 +281,7 @@ class DynamicOutput:
         return self._mapping_key
 
     @property
-    def value(self) -> Any:
+    def value(self) -> T:
         return self._value
 
     @property
