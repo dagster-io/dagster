@@ -5,6 +5,7 @@ import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 import {AssetEntryRoot} from '../assets/AssetEntryRoot';
 import {AssetsCatalogRoot} from '../assets/AssetsCatalogRoot';
 import {InstanceAssetGraphExplorer} from '../assets/InstanceAssetGraphExplorer';
+import {InstanceAssetGrid} from '../assets/InstanceAssetGrid';
 import {RunRoot} from '../runs/RunRoot';
 import {RunsRoot} from '../runs/RunsRoot';
 import {SnapshotRoot} from '../snapshots/SnapshotRoot';
@@ -24,6 +25,9 @@ export const InstanceRoot = () => {
       <Switch>
         <Route path="/instance/assets" exact>
           <AssetsCatalogRoot />
+        </Route>
+        <Route path="/instance/asset-grid(/?.*)">
+          <InstanceAssetGrid />
         </Route>
         <Route path="/instance/asset-graph(/?.*)">
           <InstanceAssetGraphExplorer />

@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
-import {Redirect, useHistory} from 'react-router-dom';
+import {Redirect} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Box, CursorPaginationControls, CursorPaginationProps, TextInput} from '../../../ui/src';
@@ -33,26 +33,10 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
   const [cursor, setCursor] = useQueryPersistedState<string | undefined>({queryKey: 'cursor'});
   const [search, setSearch] = useQueryPersistedState<string | undefined>({queryKey: 'q'});
   const [view, _setView] = useAssetView();
-  const history = useHistory();
 
   useDocumentTitle(
     prefixPath && prefixPath.length ? `Assets: ${prefixPath.join(' \u203A ')}` : 'Assets',
   );
-
-  const setView = (view: 'flat' | 'graph' | 'directory') => {
-    _setView(view);
-    if (view === 'flat' && prefixPath.length) {
-      history.push('/instance/assets');
-    } else if (cursor) {
-      setCursor(undefined);
-    }
-  };
-
-  React.useEffect(() => {
-    if (view === 'flat' && prefixPath.length) {
-      _setView('directory');
-    }
-  }, [view, _setView, prefixPath]);
 
   const assetsQuery = useQuery<AssetCatalogTableQuery>(ASSET_CATALOG_TABLE_QUERY, {
     notifyOnNetworkStatusChange: true,
@@ -61,7 +45,13 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
 
   const refreshState = useQueryRefreshAtInterval(assetsQuery, FIFTEEN_SECONDS);
 
-  if (view === 'graph') {
+  React.useEffect(() => {
+    if (view !== 'directory' && prefixPath.length) {
+      _setView('directory');
+    }
+  }, [view, _setView, prefixPath]);
+
+  if (view === 'graph' && !prefixPath.length) {
     return <Redirect to="/instance/asset-graph" />;
   }
 
@@ -98,6 +88,7 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
               ? buildFlatProps(filtered, prefixPath, cursor)
               : buildNamespaceProps(filtered, prefixPath, cursor);
 
+          console.log(view);
           const paginationProps: CursorPaginationProps = {
             hasPrevCursor: !!prevCursor,
             hasNextCursor: !!nextCursor,
@@ -115,7 +106,7 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
                   assets={displayed}
                   actionBarComponents={
                     <>
-                      <AssetViewModeSwitch view={view} setView={setView} />
+                      <AssetViewModeSwitch />
                       <TextInput
                         value={search || ''}
                         style={{width: '30vw', minWidth: 150, maxWidth: 400}}
