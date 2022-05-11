@@ -28,9 +28,9 @@ export const AssetNode: React.FC<{
   definition: AssetNodeFragment;
   liveData?: LiveDataForNode;
   selected: boolean;
-  unpadded?: boolean;
+  padded?: boolean;
   inAssetCatalog?: boolean;
-}> = React.memo(({definition, selected, unpadded, liveData, inAssetCatalog}) => {
+}> = React.memo(({definition, selected, liveData, inAssetCatalog, padded = true}) => {
   const stepKey = definition.opName || '';
 
   const displayName = withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {
@@ -41,7 +41,7 @@ export const AssetNode: React.FC<{
     liveData || MISSING_LIVE_DATA;
 
   return (
-    <AssetNodeContainer $selected={selected} $unpadded={unpadded}>
+    <AssetNodeContainer $selected={selected} $padded={padded}>
       <AssetNodeBox>
         <Name>
           <span style={{marginTop: 1}}>
@@ -245,12 +245,12 @@ const BoxColors = {
   Stats: 'rgba(236, 236, 248, 1)',
 };
 
-export const AssetNodeContainer = styled.div<{$selected: boolean; $unpadded?: boolean}>`
+export const AssetNodeContainer = styled.div<{$selected: boolean; $padded?: boolean}>`
   outline: ${(p) => (p.$selected ? `2px dashed ${NodeHighlightColors.Border}` : 'none')};
   border-radius: 6px;
   outline-offset: -1px;
   ${(p) =>
-    !p.$unpadded
+    p.$padded
       ? `
   padding: 4px;
   margin-top: 10px;

@@ -357,7 +357,7 @@ const AssetGrid: React.FC<{
               <AssetNode
                 definition={assetGraphData.nodes[box.id].definition}
                 selected={false}
-                unpadded
+                padded={false}
                 liveData={liveDataByNode[box.id]}
               />
             </div>
@@ -561,7 +561,7 @@ const AssetGridItem = ({
   return (
     <AssetNodeContainer
       $selected={false}
-      $unpadded
+      $padded={false}
       style={{
         margin: 0,
         position: 'absolute',

@@ -6,7 +6,7 @@ import {useFeatureFlags} from '../app/Flags';
 
 import {AssetViewType, useAssetView} from './useAssetView';
 
-export const AssetViewModeSwitch: React.FC = () => {
+export const AssetViewModeSwitch = () => {
   const history = useHistory();
   const [view, _setView] = useAssetView();
   const {flagExperimentalAssetDAG} = useFeatureFlags();
