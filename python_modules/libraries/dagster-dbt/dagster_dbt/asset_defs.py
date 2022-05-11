@@ -6,7 +6,6 @@ from typing import AbstractSet, Any, Callable, Dict, Mapping, Optional, Sequence
 
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
-from dagster_dbt.errors import DagsterDbtCliHandledRuntimeError
 from dagster_dbt.types import DbtOutput
 from dagster_dbt.utils import generate_events
 
@@ -72,7 +71,7 @@ def _dbt_nodes_to_assets(
     ] = None,
     io_manager_key: Optional[str] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
-    use_build: bool = False,
+    use_build_command: bool = False,
 ) -> AssetsDefinition:
     outs: Dict[str, Out] = {}
     sources: Set[AssetKey] = set()
@@ -129,7 +128,7 @@ def _dbt_nodes_to_assets(
     def _dbt_project_multi_assset(context):
         dbt_output = None
         try:
-            if use_build:
+            if use_build_command:
                 dbt_output = context.resources.dbt.build(select=select)
             else:
                 dbt_output = context.resources.dbt.run(select=select)
@@ -200,7 +199,7 @@ def load_assets_from_dbt_project(
     ] = None,
     io_manager_key: Optional[str] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
-    use_build: bool = False,
+    use_build_command: bool = False,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of DBT models from a DBT project into Dagster assets.
@@ -225,7 +224,7 @@ def load_assets_from_dbt_project(
         node_info_to_asset_key: (Mapping[str, Any] -> AssetKey): A function that takes a dictionary
             of dbt node info and returns the AssetKey that you want to represent that node. By
             default, the asset key will simply be the name of the dbt model.
-        use_build: (bool): Flag indicating if you want to use `dbt build` as the core computation
+        use_build_command: (bool): Flag indicating if you want to use `dbt build` as the core computation
             for this asset, rather than `dbt run`.
 
     """
@@ -251,7 +250,7 @@ def load_assets_from_dbt_project(
             runtime_metadata_fn=runtime_metadata_fn,
             io_manager_key=io_manager_key,
             node_info_to_asset_key=node_info_to_asset_key,
-            use_build=use_build,
+            use_build_command=use_build_command,
         ),
     ]
 
@@ -264,7 +263,7 @@ def load_assets_from_dbt_manifest(
     io_manager_key: Optional[str] = None,
     selected_unique_ids: Optional[AbstractSet[str]] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
-    use_build: bool = False,
+    use_build_command: bool = False,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models, described in a manifest.json, into Dagster assets.
@@ -286,7 +285,7 @@ def load_assets_from_dbt_manifest(
         node_info_to_asset_key: (Mapping[str, Any] -> AssetKey): A function that takes a dictionary
             of dbt node info and returns the AssetKey that you want to represent that node. By
             default, the asset key will simply be the name of the dbt model.
-        use_build: (bool): Flag indicating if you want to use `dbt build` as the core computation
+        use_build_command: (bool): Flag indicating if you want to use `dbt build` as the core computation
             for this asset, rather than `dbt run`.
     """
     check.dict_param(manifest_json, "manifest_json", key_type=str)
@@ -314,6 +313,6 @@ def load_assets_from_dbt_manifest(
             select=select,
             selected_unique_ids=selected_unique_ids,
             node_info_to_asset_key=node_info_to_asset_key,
-            use_build=use_build,
+            use_build_command=use_build_command,
         )
     ]

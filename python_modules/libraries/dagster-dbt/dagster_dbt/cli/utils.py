@@ -131,4 +131,4 @@ def parse_manifest(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> Dic
         with open(manifest_path, encoding="utf8") as file:
             return json.load(file)
     except FileNotFoundError:
-        raise DagsterDbtCliOutputsNotFoundError(path=run_results_path)
+        raise DagsterDbtCliOutputsNotFoundError(path=manifest_path)

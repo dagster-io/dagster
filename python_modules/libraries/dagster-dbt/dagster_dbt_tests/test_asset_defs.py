@@ -109,7 +109,9 @@ def test_basic(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build, fail_test
 ):  # pylint: disable=unused-argument
 
-    dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir, use_build=use_build)
+    dbt_assets = load_assets_from_dbt_project(
+        test_project_dir, dbt_config_dir, use_build_command=use_build
+    )
 
     assert dbt_assets[0].op.name == "run_dbt_dagster_dbt_test_project"
 
@@ -159,7 +161,7 @@ def test_select_from_project(
         test_project_dir,
         dbt_config_dir,
         select="sort_by_calories subdir.least_caloric",
-        use_build=use_build,
+        use_build_command=use_build,
     )
 
     assert dbt_assets[0].op.name == "run_dbt_dagster_dbt_test_project_e4753"
@@ -233,7 +235,7 @@ def test_select_from_manifest(
             "model.dagster_dbt_test_project.sort_by_calories",
             "model.dagster_dbt_test_project.least_caloric",
         },
-        use_build=use_build,
+        use_build_command=use_build,
     )
 
     result = build_assets_job(
@@ -272,7 +274,7 @@ def test_node_info_to_asset_key(
         test_project_dir,
         dbt_config_dir,
         node_info_to_asset_key=lambda node_info: AssetKey(["foo", node_info["name"]]),
-        use_build=use_build,
+        use_build_command=use_build,
     )
 
     result = build_assets_job(

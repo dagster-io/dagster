@@ -170,6 +170,7 @@ class DbtResource:
         Returns:
             DbtOutput: object containing parsed output from dbt
         """
+        raise NotImplementedError()
 
     @abstractmethod
     def generate_docs(self, compile_project: bool = False, **kwargs) -> DbtOutput:
@@ -198,6 +199,7 @@ class DbtResource:
             DbtOutput: object containing parsed output from dbt
         """
 
+    @abstractmethod
     def get_run_results_json(self, **kwargs) -> Optional[Dict[str, Any]]:
         """
         Get a parsed version of the run_results.json file for the relevant dbt project.
@@ -206,8 +208,8 @@ class DbtResource:
             Dict[str, Any]: dictionary containing the parsed contents of the run_results json file
                 for this dbt project.
         """
-        return None
 
+    @abstractmethod
     def get_manifest_json(self, **kwargs) -> Optional[Dict[str, Any]]:
         """
         Get a parsed version of the manifest.json file for the relevant dbt project.
@@ -216,4 +218,3 @@ class DbtResource:
             Dict[str, Any]: dictionary containing the parsed contents of the manifest json file
                 for this dbt project.
         """
-        return None
