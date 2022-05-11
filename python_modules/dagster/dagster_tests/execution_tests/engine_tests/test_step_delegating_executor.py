@@ -1,4 +1,5 @@
 import subprocess
+import time
 from typing import List
 
 from dagster import executor, pipeline, reconstructable, solid
@@ -70,12 +71,7 @@ class TestStepHandler(StepHandler):
 )
 def test_step_delegating_executor(exc_init):
     return StepDelegatingExecutor(
-        TestStepHandler(),
-        retries=RetryMode.DISABLED,
-        sleep_seconds=exc_init.executor_config.get("sleep_seconds"),
-        check_step_health_interval_seconds=exc_init.executor_config.get(
-            "check_step_health_interval_seconds"
-        ),
+        TestStepHandler(), retries=RetryMode.DISABLED, **exc_init.executor_config
     )
 
 
@@ -218,6 +214,50 @@ def test_execute_intervals():
     assert TestStepHandler.terminate_step_count == 0
     # every step should get checked at least once
     assert TestStepHandler.check_step_health_count >= 3
+
+
+@solid
+def slow_solid(_):
+    time.sleep(2)
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            executor_defs=[test_step_delegating_executor],
+            resource_defs={"io_manager": fs_io_manager},
+        )
+    ]
+)
+def five_solid_pipeline():
+    for i in range(3):
+        slow_solid.alias(f"slow_solid_{i}")()
+
+
+def test_max_concurrent():
+    TestStepHandler.reset()
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(five_solid_pipeline),
+            instance=instance,
+            run_config={
+                "execution": {"test_step_delegating_executor": {"config": {"max_concurrent": 1}}}
+            },
+        )
+        TestStepHandler.wait_for_processes()
+    assert result.success
+
+    # test that all the steps run serially, since max_concurrent is 1
+    active_step = None
+    for event in result.event_list:
+        if event.event_type_value == DagsterEventType.STEP_START.value:
+            assert active_step is None, "A second step started before the first finished!"
+            active_step = event.step_key
+        elif event.event_type_value == DagsterEventType.STEP_SUCCESS.value:
+            assert (
+                active_step == event.step_key
+            ), "A step finished that wasn't supposed to be active!"
+            active_step = None
 
 
 @executor(
