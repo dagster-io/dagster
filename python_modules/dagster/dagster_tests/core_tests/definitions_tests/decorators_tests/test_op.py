@@ -1029,6 +1029,9 @@ def test_generic_dynamic_output_empty():
     ):
         result.output_for_node("basic")
 
+    # This behavior isn't exactly correct - we should be erroring when a
+    # required dynamic output yields no outputs.
+    # https://github.com/dagster-io/dagster/issues/5948#issuecomment-997037163
     @op(out=DynamicOut())
     def basic_yield():
         pass
@@ -1045,7 +1048,9 @@ def test_generic_dynamic_output_empty_with_type():
     result = execute_op_in_graph(basic)
     assert result.success
 
-    # Equivalent behavior in the dynamic yield case
+    # Equivalent behavior in the dynamic yield case. is_required doesn't
+    # actually do anything on a DynamicOut right now:
+    # https://github.com/dagster-io/dagster/issues/5948#issuecomment-997037163
     @op(out=DynamicOut(dagster_type=str, is_required=False))
     def basic_yield():
         pass
