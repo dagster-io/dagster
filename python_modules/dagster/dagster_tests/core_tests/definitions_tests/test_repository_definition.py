@@ -1115,25 +1115,6 @@ def test_duplicate_graph_target_invalid():
             return [the_graph, _create_schedule_from_target(other_graph)]
 
 
-def test_duplicate_job_target_invalid():
-    the_graph = _create_graph_with_name("foo")
-
-    # Providing a job using the same graph as is provided to schedules /
-    # sensors is invalid (since when provided as a job, can add arbitrary info
-    # that changes execution behavior).
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @repository
-        def the_repo_dupe_job_invalid():
-            return [the_graph.to_job(), _create_sensor_from_target(the_graph)]
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @repository
-        def the_repo_dupe_job_invalid():
-            return [the_graph.to_job(), _create_schedule_from_target(the_graph)]
-
-
 def test_duplicate_job_target_valid():
     the_job = _create_job_with_name("foo")
 

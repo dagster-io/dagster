@@ -79,7 +79,6 @@ def toys_repository():
             retry_job,
             branch_job,
             branch_failed_job,
-            unreliable_job,
             dynamic_job,
             asset_lineage_job,
             asset_lineage_partition_set,
