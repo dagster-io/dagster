@@ -1,16 +1,15 @@
 import os
 import time
 
-import pytest
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
+    infer_job_or_pipeline_selector,
     infer_pipeline_selector,
     infer_repository_selector,
 )
 
 from dagster import AssetKey, DagsterEventType
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils import safe_tempfile_path
 
 # from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
@@ -292,15 +291,20 @@ GET_RUN_MATERIALIZATIONS = """
 def _create_run(
     graphql_context, pipeline_name, mode="default", step_keys=None, asset_selection=None
 ):
-    selector = infer_pipeline_selector(
-        graphql_context, pipeline_name, asset_selection=asset_selection
-    )
+    if asset_selection:
+        selector = infer_job_or_pipeline_selector(
+            graphql_context, pipeline_name, asset_selection=asset_selection
+        )
+    else:
+        selector = infer_pipeline_selector(
+            graphql_context,
+            pipeline_name,
+        )
     result = execute_dagster_graphql(
         graphql_context,
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
         variables={"executionParams": {"selector": selector, "mode": mode, "stepKeys": step_keys}},
     )
-    print(result)
     assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
     graphql_context.instance.run_launcher.join()
     return result.data["launchPipelineExecution"]["run"]["runId"]

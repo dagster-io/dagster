@@ -23,6 +23,7 @@ def sync_get_external_pipeline_subset_grpc(
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
     pipeline_origin = check.inst_param(pipeline_origin, "pipeline_origin", ExternalPipelineOrigin)
     solid_selection = check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+    asset_selection = check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey)
 
     result = deserialize_as(
         api_client.external_pipeline_subset(

@@ -35,7 +35,9 @@ class PipelineSelector(
             repository_name=check.str_param(repository_name, "repository_name"),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
-            asset_selection=asset_selection,
+            asset_selection=check.opt_nullable_list_param(
+                asset_selection, "asset_selection", AssetKey
+            ),
         )
 
     def to_graphql_input(self):

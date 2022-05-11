@@ -189,7 +189,9 @@ class ReconstructablePipeline(
                 .get_job_def_for_op_selection(self.solid_selection)
             )
 
-        check.invariant(self.asset_selection == None, "Asset selection cannot be provided with a pipeline")
+        check.invariant(
+            self.asset_selection == None, "Asset selection cannot be provided with a pipeline"
+        )
         return (
             self.repository.get_definition().get_pipeline(self.pipeline_name)
             # pipelines use post-resolved selection
@@ -245,7 +247,8 @@ class ReconstructablePipeline(
         else:
             raise Exception(f"Unexpected pipeline/job type {pipeline_def.__class__.__name__}")
 
-    def asset_subset_for_execution(self, asset_selection):  # TODO add typecheck
+    def asset_subset_for_execution(self, asset_selection: Optional[List[AssetKey]]):
+        asset_selection = check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey)
         return ReconstructablePipeline(
             repository=self.repository,
             pipeline_name=self.pipeline_name,

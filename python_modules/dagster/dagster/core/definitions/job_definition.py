@@ -258,15 +258,24 @@ class JobDefinition(PipelineDefinition):
         self,
         asset_selection: Optional[List[AssetKey]] = None,
     ) -> "JobDefinition":
+        asset_selection = check.opt_list_param(asset_selection, "asset_selection", AssetKey)
         asset_group = self.asset_layer.source_asset_group
-        new_job = asset_group.build_asset_selection_job(
-            job_to_subselect=self, asset_selection=asset_selection
-        )
-        asset_selection_data = AssetSelectionData(
-            asset_selection=asset_selection,
-            parent_job_def=self,
-        )
-        return new_job._with_asset_selection_data(asset_selection_data)
+
+        if asset_group:
+            new_job = asset_group.build_asset_selection_job(
+                job_to_subselect=self, asset_selection=asset_selection
+            )
+            asset_selection_data = AssetSelectionData(
+                asset_selection=asset_selection,
+                parent_job_def=self,
+            )
+            return new_job._with_asset_selection_data(
+                asset_selection_data
+            )  # pylint: disable=protected-access
+        else:
+            raise DagsterInvalidDefinitionError(
+                "source asset group must exist in order to subselect assets"
+            )
 
     def get_job_def_for_op_selection(
         self,
@@ -367,7 +376,9 @@ class JobDefinition(PipelineDefinition):
 
     def _with_asset_selection_data(self, asset_selection_data: AssetSelectionData):
 
-        asset_selection_data = check.inst_param(asset_selection_data, "asset_selection_data", AssetSelectionData)
+        asset_selection_data = check.inst_param(
+            asset_selection_data, "asset_selection_data", AssetSelectionData
+        )
 
         job_def = JobDefinition(
             name=self.name,

@@ -264,7 +264,7 @@ class AssetGroup:
     def build_asset_selection_job(
         self,
         job_to_subselect: JobDefinition,
-        asset_selection: Optional[List[AssetKey]] = None,
+        asset_selection: List[AssetKey],
     ) -> JobDefinition:
         included_assets: List[AssetsDefinition] = []
         excluded_assets: List[AssetsDefinition] = []

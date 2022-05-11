@@ -1045,6 +1045,7 @@ def unconnected():
 
 asset_group = AssetGroup([foo, bar, foo_bar, baz, unconnected])
 
+
 def test_disconnected_subset():
     with instance_for_test() as instance:
         job = asset_group.build_job("foo")
@@ -1059,15 +1060,18 @@ def test_disconnected_subset():
         assert materialization_events[0].asset_key == AssetKey("bar")
         assert materialization_events[1].asset_key == AssetKey("unconnected")
 
+
 def test_connected_subset():
     with instance_for_test() as instance:
         job = asset_group.build_job("foo")
         result = job.execute_in_process(
-            instance=instance, asset_selection=[AssetKey("foo"), AssetKey("bar"), AssetKey("foo_bar")]
+            instance=instance,
+            asset_selection=[AssetKey("foo"), AssetKey("bar"), AssetKey("foo_bar")],
         )
-        materialization_events = sorted([
-            event for event in result.all_events if event.is_step_materialization
-        ], key=lambda event: event.asset_key)
+        materialization_events = sorted(
+            [event for event in result.all_events if event.is_step_materialization],
+            key=lambda event: event.asset_key,
+        )
 
         assert len(materialization_events) == 3
         assert materialization_events[0].asset_key == AssetKey("bar")

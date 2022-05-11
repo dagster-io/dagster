@@ -51,7 +51,9 @@ class ExecutionPlanSnapshotArgs(
             pipeline_origin=check.inst_param(
                 pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
             ),
-            asset_selection=check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey),
+            asset_selection=check.opt_list_param(
+                asset_selection, "asset_selection", of_type=AssetKey
+            ),
             solid_selection=check.opt_list_param(solid_selection, "solid_selection", of_type=str),
             run_config=check.dict_param(run_config, "run_config", key_type=str),
             mode=check.str_param(mode, "mode"),
