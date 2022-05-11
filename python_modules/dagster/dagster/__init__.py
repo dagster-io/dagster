@@ -396,6 +396,7 @@ __all__ = [
     "JsonMetadataValue",
     "LoggerDefinition",
     "build_init_logger_context",
+    "BoolMetadataValue",
     "MarkdownMetadataValue",
     "IntMetadataValue",
     "FloatMetadataValue",

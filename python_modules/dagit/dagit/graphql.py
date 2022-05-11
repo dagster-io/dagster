@@ -295,7 +295,12 @@ async def _send_message(
     if payload is not None:
         data["payload"] = payload
 
-    return await websocket.send_json(data)
+    # guard against async code still flushing messages post disconnect
+    if (
+        websocket.client_state != WebSocketState.DISCONNECTED
+        and websocket.application_state != WebSocketState.DISCONNECTED
+    ):
+        await websocket.send_json(data)
 
 
 def _disposable_and_async_gen_from_obs(obs: Observable, loop):

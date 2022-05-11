@@ -58,7 +58,6 @@ def main(quiet):
         "-e python_modules/libraries/dagster-azure",
         "-e python_modules/libraries/dagster-msteams",
         "-e helm/dagster/schema[test]",
-        '-e "examples/airline_demo[full]"',
     ]
 
     # dagster-ge depends on a great_expectations version that does not install on Windows

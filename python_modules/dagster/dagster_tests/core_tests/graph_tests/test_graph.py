@@ -1,6 +1,7 @@
 import enum
 import json
 
+import pendulum
 import pytest
 
 from dagster import (
@@ -29,7 +30,7 @@ from dagster.core.definitions.partition import (
     StaticPartitionsDefinition,
 )
 from dagster.core.definitions.pipeline_definition import PipelineSubsetDefinition
-from dagster.core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster.core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
@@ -965,6 +966,9 @@ def test_job_partitions_def():
     def my_op(context):
         assert context.has_partition_key
         assert context.partition_key == "2020-01-01"
+        assert context.partition_time_window == TimeWindow(
+            pendulum.parse("2020-01-01"), pendulum.parse("2020-01-02")
+        )
 
     @graph
     def my_graph():
