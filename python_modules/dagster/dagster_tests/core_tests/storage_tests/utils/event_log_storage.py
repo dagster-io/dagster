@@ -899,7 +899,10 @@ class TestEventLogStorage:
                 event.dagster_event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION.value
             )
 
-            records = storage.get_event_records(EventRecordsFilter(asset_key=asset_key))
+            records = storage.get_event_records(EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=asset_key
+            ))
             assert len(records) == 1
             record = records[0]
             assert isinstance(record, EventLogRecord)
