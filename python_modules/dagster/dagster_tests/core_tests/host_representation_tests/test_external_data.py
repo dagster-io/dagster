@@ -2,11 +2,11 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     GraphOut,
-    Out,
     In,
+    Out,
     graph,
-    op,
     job,
+    op,
 )
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
 from dagster.core.host_representation.external_data import (
