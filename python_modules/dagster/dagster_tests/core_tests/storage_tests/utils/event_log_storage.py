@@ -1272,17 +1272,7 @@ class TestEventLogStorage:
             run_records = instance.get_run_records()
             assert len(run_records) == 1
 
-            # all logs returned in descending order
-            all_event_records = storage.get_event_records()
-            assert _event_types([all_event_records[0].event_log_entry]) == [
-                DagsterEventType.PIPELINE_SUCCESS
-            ]
-            assert _event_types([all_event_records[-1].event_log_entry]) == [
-                DagsterEventType.PIPELINE_START
-            ]
-
             # second run
-            events = []
             execute_run(
                 InMemoryPipeline(a_pipe),
                 instance.create_run_for_pipeline(
@@ -1292,11 +1282,8 @@ class TestEventLogStorage:
             )
             run_records = instance.get_run_records()
             assert len(run_records) == 2
-            for event in events:
-                storage.store_event(event)
 
             # third run
-            events = []
             execute_run(
                 InMemoryPipeline(a_pipe),
                 instance.create_run_for_pipeline(
@@ -1306,8 +1293,6 @@ class TestEventLogStorage:
             )
             run_records = instance.get_run_records()
             assert len(run_records) == 3
-            for event in events:
-                storage.store_event(event)
 
             update_timestamp = run_records[-1].update_timestamp
             tzaware_dt = pendulum.from_timestamp(datetime_as_float(update_timestamp), tz="UTC")
