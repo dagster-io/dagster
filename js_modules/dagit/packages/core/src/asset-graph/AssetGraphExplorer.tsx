@@ -587,7 +587,7 @@ const AssetGraphExplorerWithData: React.FC<
                       ...explorerPath,
                       opsQuery: [
                         explorerPath.opsQuery,
-                        `${displayNameForAssetKey({path: JSON.parse(item)})}>`,
+                        `${displayNameForAssetKey({path: JSON.parse(item)})}/`,
                       ]
                         .filter(Boolean)
                         .join(','),

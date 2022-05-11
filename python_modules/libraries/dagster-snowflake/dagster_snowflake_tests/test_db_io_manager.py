@@ -53,7 +53,7 @@ class StringHandler(DbTypeHandler[str]):
 
 def test_asset_out():
     handler = IntHandler()
-    db_client = MagicMock(spec=DbClient)
+    db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
     manager = DbIOManager(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
     output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
@@ -79,7 +79,7 @@ def test_asset_out():
 
 def test_asset_out_columns():
     handler = IntHandler()
-    db_client = MagicMock(spec=DbClient)
+    db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
     manager = DbIOManager(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
     output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
@@ -107,7 +107,7 @@ def test_asset_out_columns():
 
 def test_asset_out_partitioned():
     handler = IntHandler()
-    db_client = MagicMock(spec=DbClient)
+    db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
     manager = DbIOManager(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
     output_context = MagicMock(
@@ -148,7 +148,7 @@ def test_asset_out_partitioned():
 def test_different_output_and_input_types():
     int_handler = IntHandler()
     str_handler = StringHandler()
-    db_client = MagicMock(spec=DbClient)
+    db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
     manager = DbIOManager(type_handlers=[int_handler, str_handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
     output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
@@ -176,7 +176,7 @@ def test_different_output_and_input_types():
 
 def test_non_asset_out():
     handler = IntHandler()
-    db_client = MagicMock(spec=DbClient)
+    db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
     manager = DbIOManager(type_handlers=[handler], db_client=db_client)
     output_context = build_output_context(
         name="table1", metadata={"schema": "schema1"}, resource_config=resource_config

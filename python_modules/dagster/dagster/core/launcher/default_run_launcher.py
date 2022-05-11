@@ -1,6 +1,8 @@
 import time
 
-from dagster import Bool, Field, check, seven
+import dagster.seven as seven
+from dagster import Bool, Field
+from dagster import _check as check
 from dagster.core.errors import (
     DagsterInvariantViolationError,
     DagsterLaunchFailedError,

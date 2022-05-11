@@ -14,11 +14,9 @@ from dagster import (
     Output,
     OutputDefinition,
     StringSource,
-    check,
-    op,
-    resource,
-    solid,
 )
+from dagster import _check as check
+from dagster import op, resource, solid
 
 try:
     # ge < v0.13.0

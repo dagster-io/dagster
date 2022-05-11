@@ -11,7 +11,7 @@ from snowflake.connector.pandas_tools import pd_writer
 from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
 from sqlalchemy import create_engine
 
-import dagster.check as check
+import dagster._check as check
 from dagster import AssetKey, IOManager, InputContext, MetadataEntry, OutputContext, io_manager
 
 

@@ -12,7 +12,8 @@ from typing import (
     cast,
 )
 
-from dagster import IOManager, InputContext, OutputContext, check
+import dagster._check as check
+from dagster import IOManager, InputContext, OutputContext
 from dagster.core.definitions.metadata import RawMetadataValue
 from dagster.core.definitions.time_window_partitions import TimeWindow
 

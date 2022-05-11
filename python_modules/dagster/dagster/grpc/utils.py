@@ -1,7 +1,7 @@
 import os
 from typing import TYPE_CHECKING, Sequence
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.reconstruct import (
     load_def_in_module,
     load_def_in_package,

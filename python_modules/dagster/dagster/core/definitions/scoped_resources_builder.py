@@ -10,7 +10,7 @@
 from collections import namedtuple
 from typing import AbstractSet, Mapping, NamedTuple, Optional
 
-import dagster.check as check
+import dagster._check as check
 from dagster.core.errors import DagsterUnknownResourceError
 
 

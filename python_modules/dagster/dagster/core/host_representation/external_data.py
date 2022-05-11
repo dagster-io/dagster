@@ -9,7 +9,8 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union
 
-from dagster import StaticPartitionsDefinition, check
+from dagster import StaticPartitionsDefinition
+from dagster import _check as check
 from dagster.core.asset_defs import SourceAsset
 from dagster.core.definitions import (
     JobDefinition,
@@ -708,6 +709,11 @@ class ExternalAssetNode(
         output_description: Optional[str] = None,
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     ):
+        # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
+        if not op_names:
+            op_names = list(filter(None, [op_name]))
+        if not graph_name:
+            graph_name = op_name
         return super(ExternalAssetNode, cls).__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
@@ -878,7 +884,9 @@ def external_asset_graph_from_defs(
                 depended_by=list(dep_by[asset_key].values()),
                 compute_kind=node_def.tags.get("kind"),
                 # backcompat
-                op_name=graph_name or next(iter(op_names_by_asset_key[asset_key]), None),
+                op_name=graph_name
+                or next(iter(op_names_by_asset_key[asset_key]), None)
+                or node_def.name,
                 graph_name=graph_name,
                 op_names=op_names_by_asset_key[asset_key],
                 op_description=node_def.description,

@@ -34,7 +34,7 @@ The simplest way to create a job is to use the <PyObject object="job"/> decorato
 
 Within the decorated function body, you can use function calls to indicate the dependency structure between the ops/graphs. In this example, the `add_one` op depends on the `return_five` op's output. Because this data dependency exists, the `add_one` op executes after `return_five` runs successfully and emits the required output.
 
-```python file=/concepts/solids_pipelines/simple_job.py
+```python file=/concepts/ops_jobs_graphs/simple_job.py
 from dagster import job, op
 
 
@@ -63,7 +63,7 @@ You can model this by building multiple jobs that use the same underlying graph 
 
 To do this, you first define a graph with the <PyObject object="graph" decorator /> decorator.
 
-```python file=/concepts/solids_pipelines/jobs_from_graphs.py startafter=start_define_graph endbefore=end_define_graph
+```python file=/concepts/ops_jobs_graphs/jobs_from_graphs.py startafter=start_define_graph endbefore=end_define_graph
 from dagster import graph, op
 
 
@@ -79,7 +79,7 @@ def do_stuff():
 
 Then you build jobs from it using the <PyObject object="GraphDefinition" method="to_job" /> method:
 
-```python file=/concepts/solids_pipelines/jobs_from_graphs.py startafter=start_define_jobs endbefore=end_define_jobs
+```python file=/concepts/ops_jobs_graphs/jobs_from_graphs.py startafter=start_define_jobs endbefore=end_define_jobs
 from dagster import ResourceDefinition
 
 prod_server = ResourceDefinition.mock_resource()
@@ -97,10 +97,13 @@ local_job = do_stuff.to_job(
 
 You make jobs available to Dagit, GraphQLs, and the command line by including them inside [repositories](/concepts/repositories-workspaces/repositories). If you include schedules or sensors in a repository, the repository will automatically include jobs that those schedules or sensors target.
 
-```python file=/concepts/solids_pipelines/repo_with_job.py
-from dagster import repository
+```python file=/concepts/ops_jobs_graphs/repo_with_job.py
+from dagster import job, repository
 
-from .jobs import do_it_all
+
+@job
+def do_it_all():
+    ...
 
 
 @repository
@@ -118,7 +121,7 @@ When constructing a job, you can customize how that configuration will be satisf
 
 You can supply a config dictionary. The supplied dictionary will be used to configure the job whenever the job is launched. It will show up in the Dagit Launchpad and can be overridden.
 
-```python file=/concepts/solids_pipelines/jobs_with_default_config.py
+```python file=/concepts/ops_jobs_graphs/jobs_with_default_config.py
 from dagster import job, op
 
 
@@ -150,7 +153,7 @@ For more information on how this works, take a look at the [Partitions concept p
 
 You can supply a <PyObject object="ConfigMapping" />. This allows you to expose a narrower config interface to your job. Instead of needing to configure every op and resource individually when launching the job, you can supply a smaller number of values to the outer config, and the <PyObject object="ConfigMapping" /> can translate it into config for all the job's ops and resources.
 
-```python file=/concepts/solids_pipelines/jobs_with_config_mapping.py
+```python file=/concepts/ops_jobs_graphs/jobs_with_config_mapping.py
 from dagster import config_mapping, job, op
 
 
@@ -193,7 +196,7 @@ width={1000}
 height={250}
 />
 
-```python file=/concepts/solids_pipelines/linear_pipeline.py startafter=start_marker endbefore=end_marker
+```python file=/concepts/ops_jobs_graphs/linear_job.py startafter=start_marker endbefore=end_marker
 from dagster import job, op
 
 
@@ -223,7 +226,7 @@ height={250}
 
 A single output can be passed to multiple inputs on downstream ops. In this example, the output from the first op is passed to two different ops. The outputs of those ops are combined and passed to the final op.
 
-```python file=/concepts/solids_pipelines/multiple_io_pipeline.py startafter=start_marker endbefore=end_marker
+```python file=/concepts/ops_jobs_graphs/multiple_io_job.py startafter=start_marker endbefore=end_marker
 from dagster import job, op
 
 
@@ -265,7 +268,7 @@ An op only starts to execute once all of its inputs have been resolved. We can u
 
 In this example, the `branching_op` outputs either the `branch_1` result or `branch_2` result. Since op execution is skipped for ops that have unresolved inputs, only one of the downstream ops will execute.
 
-```python file=/concepts/solids_pipelines/branching_pipeline.py startafter=start_marker endbefore=end_marker
+```python file=/concepts/ops_jobs_graphs/branching_job.py startafter=start_marker endbefore=end_marker
 import random
 
 from dagster import Out, Output, job, op
@@ -310,7 +313,7 @@ If you have a fixed set of op that all return the same output type, you can coll
 
 The downstream op executes only if all of the outputs were successfully created by the upstream op.
 
-```python file=/concepts/solids_pipelines/fan_in_pipeline.py startafter=start_marker endbefore=end_marker
+```python file=/concepts/ops_jobs_graphs/fan_in_job.py startafter=start_marker endbefore=end_marker
 from typing import List
 
 from dagster import job, op
@@ -342,7 +345,7 @@ In most cases, the structure of a graph is pre-determined before execution. Dags
 
 In this example, we have an op `files_in_directory` that defines a <PyObject object="DynamicOut" />. We `map` over the dynamic output which will cause the downstream dependencies to be cloned for each <PyObject object="DynamicOutput" /> that is yielded. The downstream copies can be identified by the `mapping_key` supplied to <PyObject object="DynamicOutput"/>. Once that's all complete, we `collect` over the results of `process_file` and pass that in to `summarize_directory`.
 
-```python file=/concepts/solids_pipelines/dynamic_pipeline/dynamic_pipeline.py startafter=start_marker endbefore=end_marker
+```python file=/concepts/ops_jobs_graphs/dynamic_pipeline/dynamic_job.py startafter=start_marker endbefore=end_marker
 import os
 from typing import List
 
@@ -393,7 +396,7 @@ If you have an op, say `Op A`, that does not depend on any outputs of another op
 
 If you need to model an explicit ordering dependency, you can use the <PyObject object="Nothing"/> Dagster type on the input definition of the downstream op. This type specifies that you are passing "nothing" via Dagster between the ops, while still uses inputs and outputs to model the dependency between the two ops.
 
-```python file=/concepts/solids_pipelines/order_based_dependency_pipeline.py startafter=start_marker endbefore=end_marker
+```python file=/concepts/ops_jobs_graphs/order_based_dependency_job.py startafter=start_marker endbefore=end_marker
 from dagster import In, Nothing, job, op
 
 
@@ -426,7 +429,7 @@ Dagster also provides more advanced abstractions to handle dependencies and IO. 
 
 You can use the same op definition multiple times in the same graph/job.
 
-```python file=/concepts/solids_pipelines/pipelines.py startafter=start_multiple_usage_pipeline endbefore=end_multiple_usage_pipeline
+```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_multiple_usage_pipeline endbefore=end_multiple_usage_pipeline
 @job
 def multiple_usage():
     add_one(add_one(return_one()))
@@ -436,7 +439,7 @@ To differentiate between the two invocations of `add_one`, Dagster automatically
 
 You can also manually define the alias by using the `.alias` method on the op invocation.
 
-```python file=/concepts/solids_pipelines/pipelines.py startafter=start_alias_pipeline endbefore=end_alias_pipeline
+```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_alias_pipeline endbefore=end_alias_pipeline
 @job
 def alias():
     add_one.alias("second_addition")(add_one(return_one()))
@@ -450,7 +453,7 @@ You may run into a situation where you need to programmatically construct the de
 
 To construct a GraphDefinition, you need to pass the constructor a graph name, a list of op or graph definitions, and a dictionary defining the dependency structure. The dependency structure declares the dependencies of each op’s inputs on the outputs of other ops in the graph. The top-level keys of the dependency dictionary are the string names of ops or graphs. If you are using op aliases, be sure to use the aliased name. Values of the top-level keys are also dictionary, which maps input names to a <PyObject object="DependencyDefinition"/>.
 
-```python file=/concepts/solids_pipelines/pipelines.py startafter=start_pipeline_definition_marker endbefore=end_pipeline_definition_marker
+```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_pipeline_definition_marker endbefore=end_pipeline_definition_marker
 one_plus_one_from_constructor = GraphDefinition(
     name="one_plus_one",
     node_defs=[return_one, add_one],
@@ -464,7 +467,7 @@ Sometimes you may want to construct the dependencies of a graph definition from 
 
 For example, you can have a YAML like this:
 
-```YAML file=/concepts/solids_pipelines/my_graph.yaml
+```YAML file=/concepts/ops_jobs_graphs/my_graph.yaml
 name: some_example
 description: blah blah blah
 ops:
@@ -490,7 +493,7 @@ ops:
 
 You can programmatically generate a GraphDefinition from this YAML:
 
-```python file=/concepts/solids_pipelines/dep_dsl.py
+```python file=/concepts/ops_jobs_graphs/dep_dsl.py
 import os
 
 from dagster import DependencyDefinition, GraphDefinition, NodeInvocation, op
@@ -539,3 +542,15 @@ def define_dep_dsl_graph() -> GraphDefinition:
     path = os.path.join(os.path.dirname(__file__), "my_graph.yaml")
     return construct_graph_with_yaml(path, [add_one, add_two, subtract])
 ```
+
+## See it in action
+
+For more examples of jobs, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news):
+
+- [Creating multiple jobs from a graph](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news/hacker_news/jobs/dbt_metrics.py)
+- [Specifying config on a job](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news/hacker_news/jobs/hacker_news_api_download.py)
+
+Our [New York Times example](https://github.com/dagster-io/dagster/tree/master/examples/nyt-feed) covers:
+
+- [Conditional branching](https://github.com/dagster-io/dagster/blob/master/examples/nyt-feed/nyt_feed/nyt_feed_job.py)
+- [Using the same op twice](https://github.com/dagster-io/dagster/blob/master/examples/nyt-feed/nyt_feed/nyt_feed_job.py)

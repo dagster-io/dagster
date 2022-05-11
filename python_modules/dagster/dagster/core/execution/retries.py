@@ -2,7 +2,8 @@ from collections import defaultdict
 from enum import Enum
 from typing import Dict, Optional
 
-from dagster import Field, Selector, check
+from dagster import Field, Selector
+from dagster import _check as check
 from dagster.serdes.serdes import whitelist_for_serdes
 
 

@@ -12,7 +12,9 @@ from snowflake.connector.pandas_tools import pd_writer
 from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
 from sqlalchemy import create_engine
 
-from dagster import IOManager, InputContext, MetadataEntry, OutputContext, check, io_manager
+from dagster import IOManager, InputContext, MetadataEntry, OutputContext
+from dagster import _check as check
+from dagster import io_manager
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 

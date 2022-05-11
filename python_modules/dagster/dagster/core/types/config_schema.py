@@ -2,7 +2,7 @@ import hashlib
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, AbstractSet, Callable, Iterator, Optional, Union
 
-from dagster import check
+import dagster._check as check
 from dagster.config.config_type import ConfigType
 from dagster.core.decorator_utils import get_function_params, validate_expected_params
 from dagster.core.definitions.events import AssetMaterialization, Materialization

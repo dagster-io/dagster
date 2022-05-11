@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from dagster import check
+import dagster._check as check
 from dagster.core.host_representation import RepositoryLocation
 from dagster.core.host_representation.external import ExternalPipeline
 from dagster.core.host_representation.origin import ExternalPipelineOrigin

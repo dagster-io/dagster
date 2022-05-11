@@ -3,7 +3,7 @@ from enum import Enum
 from threading import Event, Thread
 from time import sleep
 
-from dagster import check
+import dagster._check as check
 
 
 class State(Enum):

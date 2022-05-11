@@ -3,7 +3,7 @@ from io import StringIO
 from textwrap import TextWrapper
 from typing import Any, Callable
 
-from dagster import check
+import dagster._check as check
 
 LINE_LENGTH = 100
 

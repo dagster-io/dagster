@@ -1,6 +1,6 @@
 import re
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.version_strategy import OpVersionContext, ResourceVersionContext
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle

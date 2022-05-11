@@ -13,7 +13,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.composition import MappedInputPlaceholder
 from dagster.core.definitions.dependency import (
     DependencyDefinition,
@@ -44,7 +44,7 @@ from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
 from .metadata import RawMetadataValue
 from .mode import ModeDefinition
-from .partition import PartitionSetDefinition, PartitionedConfig
+from .partition import PartitionSetDefinition, PartitionedConfig, PartitionsDefinition
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
@@ -254,33 +254,42 @@ class JobDefinition(PipelineDefinition):
 
         resolved_op_selection_dict = parse_op_selection(self, op_selection)
 
-        sub_graph = get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
+        try:
+            sub_graph = get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
 
-        return JobDefinition(
-            name=self.name,
-            description=self.description,
-            resource_defs=dict(self.resource_defs),
-            logger_defs=dict(self.loggers),
-            executor_def=self.executor_def,
-            config_mapping=self.config_mapping,
-            partitioned_config=self.partitioned_config,
-            preset_defs=self.preset_defs,
-            tags=self.tags,
-            hook_defs=self.hook_defs,
-            op_retry_policy=self._solid_retry_policy,
-            graph_def=sub_graph,
-            version_strategy=self.version_strategy,
-            _op_selection_data=OpSelectionData(
-                op_selection=op_selection,
-                resolved_op_selection=set(
-                    resolved_op_selection_dict.keys()
-                ),  # equivalent to solids_to_execute. currently only gets top level nodes.
-                parent_job_def=self,  # used by pipeline snapshot lineage
-            ),
-            # TODO: subset this structure.
-            # https://github.com/dagster-io/dagster/issues/7541
-            asset_layer=self.asset_layer,
-        )
+            return JobDefinition(
+                name=self.name,
+                description=self.description,
+                resource_defs=dict(self.resource_defs),
+                logger_defs=dict(self.loggers),
+                executor_def=self.executor_def,
+                config_mapping=self.config_mapping,
+                partitioned_config=self.partitioned_config,
+                preset_defs=self.preset_defs,
+                tags=self.tags,
+                hook_defs=self.hook_defs,
+                op_retry_policy=self._solid_retry_policy,
+                graph_def=sub_graph,
+                version_strategy=self.version_strategy,
+                _op_selection_data=OpSelectionData(
+                    op_selection=op_selection,
+                    resolved_op_selection=set(
+                        resolved_op_selection_dict.keys()
+                    ),  # equivalent to solids_to_execute. currently only gets top level nodes.
+                    parent_job_def=self,  # used by pipeline snapshot lineage
+                ),
+                # TODO: subset this structure.
+                # https://github.com/dagster-io/dagster/issues/7541
+                asset_layer=self.asset_layer,
+            )
+        except DagsterInvalidDefinitionError as exc:
+            # This handles the case when you construct a subset such that an unsatisfied
+            # input cannot be loaded from config. Instead of throwing a DagsterInvalidDefinitionError,
+            # we re-raise a DagsterInvalidSubsetError.
+            raise DagsterInvalidSubsetError(
+                f"The attempted subset {str_format_set(resolved_op_selection_dict)} for graph "
+                f"{self.graph.name} results in an invalid graph."
+            ) from exc
 
     def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
 
@@ -303,6 +312,14 @@ class JobDefinition(PipelineDefinition):
             )
 
         return self._cached_partition_set
+
+    @property
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        mode = self.get_mode_definition()
+        if not mode.partitioned_config:
+            return None
+
+        return mode.partitioned_config.partitions_def
 
     def run_request_for_partition(self, partition_key: str, run_key: Optional[str]) -> RunRequest:
         partition_set = self.get_partition_set_def()
@@ -464,19 +481,10 @@ def get_subselected_graph_definition(
         )
     )
 
-    try:
-        return SubselectedGraphDefinition(
-            parent_graph_def=graph,
-            dependencies=deps,
-            node_defs=[definition for _, definition in selected_nodes],
-            input_mappings=new_input_mappings,
-            output_mappings=new_output_mappings,
-        )
-    except DagsterInvalidDefinitionError as exc:
-        # This handles the case when you construct a subset such that an unsatisfied
-        # input cannot be loaded from config. Instead of throwing a DagsterInvalidDefinitionError,
-        # we re-raise a DagsterInvalidSubsetError.
-        raise DagsterInvalidSubsetError(
-            f"The attempted subset {str_format_set(resolved_op_selection_dict)} for graph "
-            f"{graph.name} results in an invalid graph."
-        ) from exc
+    return SubselectedGraphDefinition(
+        parent_graph_def=graph,
+        dependencies=deps,
+        node_defs=[definition for _, definition in selected_nodes],
+        input_mappings=new_input_mappings,
+        output_mappings=new_output_mappings,
+    )

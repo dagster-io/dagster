@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import Dict, List, NamedTuple
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions import GraphDefinition
 from dagster.core.definitions.dependency import DependencyType, Node, SolidInputHandle
 from dagster.serdes import whitelist_for_serdes

@@ -30,7 +30,12 @@ test("No dead navs", async () => {
       // TODO: Validate links to API Docs
       return;
     }
-    if (elem.path && !fileExists(path.join(DOCS_DIR, elem.path) + ".mdx")) {
+    if (
+      elem.path &&
+      !fileExists(path.join(DOCS_DIR, elem.path) + ".mdx") &&
+      !elem.isExternalLink &&
+      !elem.isUnversioned
+    ) {
       deadNavLinks.push({
         title: elem.title,
         deadLink: elem.path,

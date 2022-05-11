@@ -65,8 +65,5 @@ def test_load_input():
                 partition=None,
             ),
         )
-        assert (
-            mock_read_sql.call_args_list[0].kwargs["sql"]
-            == "SELECT * FROM my_db.my_schema.my_table"
-        )
+        assert mock_read_sql.call_args_list[0][1]["sql"] == "SELECT * FROM my_db.my_schema.my_table"
         assert df.equals(DataFrame([{"col1": "a", "col2": 1}]))

@@ -65,7 +65,7 @@ export const AssetTable = ({
           selected={Array.from(checkedAssets)}
           clearSelection={() => onToggleAll(false)}
         />
-        <ReloadAllButton />
+        <ReloadAllButton label="Reload definitions" />
       </Box>
       <Table>
         <thead>
@@ -224,7 +224,7 @@ const AssetEntryRow: React.FC<{
         ) : representsAtLeastOneSDA ? (
           <Link
             to={instanceAssetsExplorerPathToURL({
-              opsQuery: `${tokenForAssetKey({path})}>`,
+              opsQuery: `${tokenForAssetKey({path})}/`,
               opNames: [],
             })}
           >

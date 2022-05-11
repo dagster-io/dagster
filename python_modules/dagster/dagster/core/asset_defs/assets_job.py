@@ -13,7 +13,8 @@ from typing import (
     cast,
 )
 
-from dagster import check
+import dagster._check as check
+from dagster.config import Shape
 from dagster.core.definitions.asset_layer import AssetLayer
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.decorators.op_decorator import op
@@ -189,14 +190,20 @@ def build_job_partitions_from_assets(
                         "end": upstream_partition_key_range.end,
                     }
 
-            ops_config[assets_def.op.name] = {
-                "config": {
-                    "assets": {
-                        "input_partitions": inputs_dict,
-                        "output_partitions": outputs_dict,
+            config_schema = assets_def.node_def.config_schema
+            if (
+                config_schema
+                and isinstance(config_schema.config_type, Shape)
+                and "assets" in config_schema.config_type.fields
+            ):
+                ops_config[assets_def.node_def.name] = {
+                    "config": {
+                        "assets": {
+                            "input_partitions": inputs_dict,
+                            "output_partitions": outputs_dict,
+                        }
                     }
                 }
-            }
 
         return {"ops": ops_config}
 

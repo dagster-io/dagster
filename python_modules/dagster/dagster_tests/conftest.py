@@ -11,7 +11,8 @@ from dagster_test.dagster_core_docker_buildkite import (
     get_test_project_docker_image,
 )
 
-from dagster import check, seven
+import dagster._check as check
+import dagster.seven as seven
 from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.seven import nullcontext

@@ -36,32 +36,55 @@ export const RunTag = ({tag, actions}: IRunTagProps) => {
   const {key, value} = tag;
   const isDagsterTag = key.startsWith(DagsterTag.Namespace);
 
-  const displayedTag = React.useMemo(
-    () => (isDagsterTag ? {key: key.slice(DagsterTag.Namespace.length), value} : {key, value}),
-    [isDagsterTag, key, value],
-  );
+  const displayedKey = React.useMemo(() => {
+    if (isDagsterTag) {
+      switch (key) {
+        case DagsterTag.Backfill:
+          return 'Backfill';
+        case DagsterTag.ScheduleName:
+        case DagsterTag.SensorName:
+          return null;
+        default:
+          return key.slice(DagsterTag.Namespace.length);
+      }
+    }
+    return key;
+  }, [isDagsterTag, key]);
 
-  const button = (
-    <Tag intent={isDagsterTag ? 'none' : 'primary'} interactive>
-      {`${displayedTag.key}: ${displayedTag.value}`}
+  const icon = React.useMemo(() => {
+    switch (key) {
+      case DagsterTag.ScheduleName:
+        return 'schedule';
+      case DagsterTag.SensorName:
+        return 'sensors';
+      case DagsterTag.Backfill:
+        return 'settings_backup_restore';
+      default:
+        return null;
+    }
+  }, [key]);
+
+  const tagElement = (
+    <Tag intent={isDagsterTag ? 'none' : 'primary'} interactive icon={icon || undefined}>
+      {displayedKey ? `${displayedKey}: ${value}` : value}
     </Tag>
   );
 
   if (actions?.length) {
     return (
       <Popover
-        content={<TagActions actions={actions} tag={displayedTag} />}
+        content={<TagActions actions={actions} tag={tag} />}
         hoverOpenDelay={100}
         hoverCloseDelay={100}
         placement="top"
         interactionKind="hover"
       >
-        {button}
+        {tagElement}
       </Popover>
     );
   }
 
-  return button;
+  return tagElement;
 };
 
 const TagActions = ({tag, actions}: {tag: TagType; actions: TagAction[]}) => (
@@ -82,7 +105,7 @@ const ActionContainer = styled(Box)`
 const TagButton = styled.button`
   border: none;
   background: ${Colors.Dark};
-  color: ${Colors.Gray200};
+  color: ${Colors.Gray100};
   cursor: pointer;
   padding: 8px 12px;
   text-align: left;
