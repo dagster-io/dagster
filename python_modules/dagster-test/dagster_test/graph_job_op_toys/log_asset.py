@@ -18,7 +18,7 @@ log_asset_job = log_asset.to_job(
     description="Demo job that logs asset materializations from graphs",
     job_tags={"owner": "person_2", "team": "cloud", "other": "goodbye"},
     metadata={
-        "hello": "world",
+        "owner": "prha",
         "baz": MetadataValue.text("aaaa"),
         "a_link": MetadataValue.url(url="https://google.com"),
     },

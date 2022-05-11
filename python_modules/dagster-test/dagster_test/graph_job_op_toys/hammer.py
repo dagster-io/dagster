@@ -68,7 +68,7 @@ def hammer():
 hammer_default_executor_job = hammer.to_job(
     job_tags={"owner": "person_2", "team": "core", "other": "hello"},
     metadata={
-        "foo": "bar",
+        "owner": "prha",
         "baz": MetadataValue.text("bbbb"),
         "a_link": MetadataValue.url(url="https://dagster.io"),
     },

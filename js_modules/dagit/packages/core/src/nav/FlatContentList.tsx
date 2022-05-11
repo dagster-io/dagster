@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, Tooltip} from '@dagster-io/ui';
+import {Box, Colors, Icon, Tooltip, FontFamily, TextInput} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -32,11 +32,12 @@ type JobItem = {
   repoAddress: RepoAddress;
   schedule: WorkspaceRepositorySchedule | null;
   sensor: WorkspaceRepositorySensor | null;
+  owner: string | null;
 };
 
 export const FlatContentList: React.FC<Props> = (props) => {
   const {repoPath, repos, selector} = props;
-
+  const [foo, setFoo] = React.useState<string>("");
   const activeRepoAddresses = React.useMemo(() => {
     const addresses = repos.map((repo) =>
       buildRepoAddress(repo.repository.name, repo.repositoryLocation.name),
@@ -44,7 +45,7 @@ export const FlatContentList: React.FC<Props> = (props) => {
     return new Set(addresses);
   }, [repos]);
 
-  const jobs = React.useMemo(() => {
+  let jobs = React.useMemo(() => {
     const items: JobItem[] = [];
 
     for (const {repository, repositoryLocation} of repos) {
@@ -59,12 +60,19 @@ export const FlatContentList: React.FC<Props> = (props) => {
           continue;
         }
 
-        const {isJob, name} = pipeline;
+        const {isJob, name, metadataEntries} = pipeline;
         const schedule = schedules.find((schedule) => schedule.pipelineName === name) || null;
         const sensor =
           sensors.find((sensor) =>
             sensor.targets?.map((target) => target.pipelineName).includes(name),
           ) || null;
+
+        let owner = null
+        for (const md of metadataEntries) {
+          if (md.__typename === 'TextMetadataEntry' && md.label === 'owner') {
+            owner = md.text
+          }
+        }
         items.push({
           name,
           isJob,
@@ -73,6 +81,7 @@ export const FlatContentList: React.FC<Props> = (props) => {
               <TruncatingName data-tooltip={name} data-tooltip-style={LabelTooltipStyles}>
                 {name}
               </TruncatingName>
+              {isJob && owner ? <OwnerTag>{owner}</OwnerTag> : null}
               <div style={{flex: 1}} />
               {isJob ? null : <LegacyPipelineTag />}
             </Label>
@@ -80,6 +89,7 @@ export const FlatContentList: React.FC<Props> = (props) => {
           repoAddress: address,
           schedule,
           sensor,
+          owner,
         });
       }
     }
@@ -91,6 +101,10 @@ export const FlatContentList: React.FC<Props> = (props) => {
 
   const title = jobs.some((j) => !j.isJob) ? 'Jobs and pipelines' : 'Jobs';
 
+  jobs = jobs.filter((job) => {return !foo || (job.owner && job.owner.includes(foo))})
+
+  console.log(jobs)
+
   return (
     <>
       <Box
@@ -100,6 +114,12 @@ export const FlatContentList: React.FC<Props> = (props) => {
         <Icon name="job" />
         <span style={{fontSize: '16px', fontWeight: 600}}>{title}</span>
       </Box>
+      <Box
+        padding={{horizontal: 24, bottom: 12}}
+      >
+        <TextInput value={foo} onChange={(e) => {setFoo(e.target.value)}}></TextInput>
+      </Box>
+
       <Items style={{height: 'calc(100% - 226px)'}}>
         {jobs.map((job) => (
           <JobItem
@@ -211,4 +231,18 @@ const IconWithTooltip = styled(Tooltip)`
 
 const ItemContainer = styled.div`
   position: relative;
+`;
+
+const OwnerTag = styled.div`
+  background: ${Colors.Yellow50};
+  color: ${Colors.Gray600};
+  font-family: ${FontFamily.default};
+  font-size: 14px;
+  border-radius: 7px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  padding: 5px;
+  user-select: none;
+  margin: -3px 0;
+  font-size: 11px;
 `;

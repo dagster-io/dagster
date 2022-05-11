@@ -176,7 +176,7 @@ asset_lineage_job = asset_lineage.to_job(
     resource_defs={"my_db_io_manager": my_db_io_manager},
     job_tags={"owner": "person_3", "team": "cloud", "other": "hello"},
     metadata={
-        "foo": "bar",
+        "owner": "jamie",
         "baz": MetadataValue.text("bbbb"),
         "a_link": MetadataValue.url(url="https://dagster.io"),
     },

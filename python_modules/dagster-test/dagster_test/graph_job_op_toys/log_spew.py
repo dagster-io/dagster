@@ -56,7 +56,7 @@ log_spew_job = log_spew.to_job(
     description="Demo job that spits out different types of log messages to the event log.",
     job_tags={"owner": "person_7", "team": "core", "other": "hi"},
     metadata={
-        "hi": "there",
+        "owner": "prha",
         "baz": MetadataValue.text("bbbb"),
         "a_link": MetadataValue.url(url="https://dagster.io"),
     },

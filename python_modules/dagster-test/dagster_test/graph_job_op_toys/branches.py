@@ -52,7 +52,7 @@ branch_job = branch.to_job(
     },
     job_tags={"owner": "person_1", "team": "core", "other": "info"},
     metadata={
-        "world": "hello",
+        "owner": "jamie",
         "baz": MetadataValue.text("bbbb"),
         "a_link": MetadataValue.url(url="https://google.com"),
     },

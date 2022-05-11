@@ -140,7 +140,7 @@ longitudinal_job = longitudinal.to_job(
     resource_defs={"io_manager": fs_io_manager},
     job_tags={"owner": "person_1", "team": "core", "other": "info"},
     metadata={
-        "owner": "person_1",
+        "owner": "jamie",
         "team": MetadataValue.text("cloud"),
         "a_link": MetadataValue.url(url="https://dagster.io"),
     },

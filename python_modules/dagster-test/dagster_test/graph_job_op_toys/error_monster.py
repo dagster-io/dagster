@@ -173,7 +173,7 @@ error_monster_passing_job = error_monster.to_job(
     executor_def=in_process_executor,
     name="error_monster_passing_job",
     metadata={
-        "status": "passing",
+        "owner": "prha",
         "baz": MetadataValue.text("aaaaa"),
         "a_link": MetadataValue.url(url="https://dagster.io"),
     },
