@@ -3,7 +3,7 @@ from typing import List, Optional, cast
 import kubernetes
 from dagster_k8s.launcher import K8sRunLauncher
 
-from dagster import Field, StringSource
+from dagster import Field, IntSource, StringSource
 from dagster import _check as check
 from dagster import executor
 from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
@@ -35,6 +35,12 @@ from .utils import delete_job
         {
             "job_namespace": Field(StringSource, is_required=False),
             "retries": get_retries_config(),
+            "max_concurrency": Field(
+                IntSource,
+                is_required=False,
+                description="Limit on the number of pods that will run concurrently within the scope "
+                "of a Dagster run. Note that this limit is per run, not global.",
+            ),
         },
     ),
     requirements=multiple_process_executor_requirements(),
@@ -64,6 +70,11 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             env_secrets: ...
             env_vars: ...
             job_image: ... # leave out if using userDeployments
+            max_concurrent: ...
+
+    `max_concurrent` limits the number of pods that will execute concurrently for one run. By default
+    there is no limit- it will maximally parallel as allowed by the DAG. Note that this is not a
+    global limit.
 
     Configuration set on the Kubernetes Jobs and Pods created by the `K8sRunLauncher` will also be
     set on Kubernetes Jobs and Pods created by the `k8s_job_executor`.
@@ -100,6 +111,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             kubeconfig_file=run_launcher.kubeconfig_file,
         ),
         retries=RetryMode.from_config(init_context.executor_config["retries"]),  # type: ignore
+        max_concurrent=exc_cfg.get("max_concurrent"),
         should_verify_step=True,
     )
 
