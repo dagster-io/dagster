@@ -2,16 +2,15 @@ from dagster import MetadataValue, job, op
 
 
 @op
-def wow():
+def my_op():
     return "so cool!"
 
 
 @job(
     metadata={
-        "owner": "core",
-        "foo": MetadataValue.text("bar"),
+        "owner": "data team",
         "link": MetadataValue.url(url="https://dagster.io"),
     },
 )
 def with_metadata():
-    wow()
+    my_op()
