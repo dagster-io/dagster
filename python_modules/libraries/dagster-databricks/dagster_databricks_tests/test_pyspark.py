@@ -175,13 +175,13 @@ def test_pyspark_databricks(
     mock_get_run_state.side_effect = [running_state] * 5 + [final_state]
 
     with instance_for_test() as instance:
-        execute_pipeline(
+        result = execute_pipeline(
             pipeline=reconstructable(define_do_nothing_pipe), mode="local", instance=instance
         )
         mock_get_step_events.return_value = [
-            record.event_log_entry
-            for record in instance.get_event_records()
-            if record.event_log_entry.step_key == "do_nothing_solid"
+            event
+            for event in instance.all_logs(result.run_id)
+            if event.step_key == "do_nothing_solid"
         ]
     config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
     config.pop("local_pipeline_package_path")
