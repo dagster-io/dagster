@@ -11,7 +11,6 @@ export enum SearchResultType {
 }
 
 export type SearchResult = {
-  key: string;
   label: string;
   description: string;
   href: string;
