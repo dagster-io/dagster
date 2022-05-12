@@ -38,7 +38,8 @@ from .utils import delete_job
             "max_concurrency": Field(
                 IntSource,
                 is_required=False,
-                description="Limit on number of concurrent pods launched per run",
+                description="Limit on number of concurrent pods launched per run. Note that this is "
+                "not a global limit.",
             ),
         },
     ),
@@ -72,7 +73,8 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             max_concurrent: ...
 
     `max_concurrent` limits the number of pods that will execute concurrently for one run. By default
-    there is no limit- it will maximally parallel as allowed by the DAG.
+    there is no limit- it will maximally parallel as allowed by the DAG. Note that this is not a
+    global limit.
 
     Configuration set on the Kubernetes Jobs and Pods created by the `K8sRunLauncher` will also be
     set on Kubernetes Jobs and Pods created by the `k8s_job_executor`.
