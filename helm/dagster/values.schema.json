@@ -207,6 +207,17 @@
                     "items": {
                         "$ref": "#/definitions/Server"
                     }
+                },
+                "externalConfigmap": {
+                    "title": "Externalconfigmap",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
