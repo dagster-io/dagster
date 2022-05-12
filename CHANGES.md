@@ -8,6 +8,7 @@
 * Repositories can now contain asset definitions and source assets for the same asset key.
 * `OpExecutionContext` (provided as the `context` argument to Ops) now has fields for, `run`, `job_def`, `job_name`, `op_def`, and `op_config`. These replace `pipeline_run`, `pipeline_def`, etc. (though they are still available).
 * When a job is partitioned using an hourly, daily, weekly, or monthly partitions definition, `OpExecutionContext` now offers a `partition_time_window` attribute, which returns a tuple of datetime objects that mark the bounds of the partition’s time window.
+* `AssetsDefinition.from_graph` now accepts a `partitions_def` argument.
 * [dagster-k8s] Removed an unnecessary `dagster-test-connection` pod from the Dagster Helm chart.
 * [dagster-k8s] The `k8s_job_executor` now polls the event log on a ~1 second interval (previously 0.1). Performance testing showed that this reduced DB load while not significantly impacting run time.
 * [dagit] Removed package pins for `Jinja2` and `nbconvert`.
@@ -36,6 +37,10 @@
 ### Community Contributions
 
 * [dagster-aws] `PickledObjectS3IOManager` now uses `list_objects` to check the access permission. Thanks @trevenrawr!
+
+### Breaking Changes
+
+* [dagster-dbt] The asset definitions produced by the experimental `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` functions now include the schemas of the dbt models in their asset keys.
 
 ### Experimental
 
