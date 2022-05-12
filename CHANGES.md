@@ -21,7 +21,6 @@
 - [dagit] The Asset graph now includes a “Reload definitions” button which reloads your repositories.
 - [dagit] On all DAGs, you can hold shift on the keyboard to switch from mouse wheel / touch pad zooming to panning. This makes it much easier to scroll horizontally at high speed without click-drag-click-drag-click-drag.
 - [dagit] a `--log-level` flag is now available in the dagit cli for controlling the uvicorn log level.
-- [dagster-dbt] Software-defined assets from dbt models now include the schema in the asset key.
 - [dagster-dbt] The `load_assets_from_dbt_project()` and `load_assets_from_dbt_manifest()` utilities now have a `use_build_command` parameter. If this flag is set, when materializing your dbt assets, Dagster will use the `dbt build` command instead of `dbt run`. Any tests run during this process will be represented with AssetObservation events attached to the relevant assets. For more information on `dbt build`, see the [dbt docs](https://docs.getdbt.com/reference/commands/build).
 - [dagster-dbt] If a dbt project successfully runs some models and then fails, AssetMaterializations will now be generated for the successful models.
 - [dagster-snowflake] The new Snowflake IO manager, which you can create using `build_snowflake_io_manager` offers a way to store assets and op outputs in Snowflake. The `PandasSnowflakeTypeHandler` stores Pandas `DataFrame`s in Snowflake.
@@ -41,7 +40,7 @@
 
 ### Breaking Changes
 
-- [dagster-dbt] The asset definitions produced by the experimental `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` functions now include the schemas of the dbt models in their asset keys.
+- [dagster-dbt] The asset definitions produced by the experimental `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` functions now include the schemas of the dbt models in their asset keys. To revert to the old behavior: `dbt_assets = load_assets_from_dbt_project(..., node_info_to_asset_key=lambda node_info: AssetKey(node_info["name"])`.
 
 ### Experimental
 
