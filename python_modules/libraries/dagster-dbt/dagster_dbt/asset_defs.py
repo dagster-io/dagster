@@ -62,6 +62,10 @@ def _get_node_asset_key(node_info):
     return AssetKey(components)
 
 
+def legacy_get_node_asset_key(node_info):
+    return AssetKey([node_info["name"]])
+
+
 def _dbt_nodes_to_assets(
     dbt_nodes: Mapping[str, Any],
     select: str,
