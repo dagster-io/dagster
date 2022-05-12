@@ -12,7 +12,9 @@ from .constants import *  # pylint: disable=wildcard-import,unused-wildcard-impo
 from .pandas_io_manager import pandas_io_manager
 
 airbyte_assets = build_airbyte_assets(
-    connection_id=AIRBYTE_CONNECTION_ID, destination_tables=["orders", "users"]
+    connection_id=AIRBYTE_CONNECTION_ID,
+    destination_tables=["orders", "users"],
+    asset_key_prefix=["public"],
 )
 
 dbt_assets = load_assets_from_dbt_project(
@@ -20,7 +22,7 @@ dbt_assets = load_assets_from_dbt_project(
 )
 
 
-@asset(compute_kind="python")
+@asset(compute_kind="python", namespace="public")
 def order_forecast_model(daily_order_summary: pd.DataFrame) -> Any:
     """Model parameters that best fit the observed data"""
     df = daily_order_summary
@@ -31,7 +33,7 @@ def order_forecast_model(daily_order_summary: pd.DataFrame) -> Any:
     )
 
 
-@asset(compute_kind="python", io_manager_key="pandas_io_manager")
+@asset(compute_kind="python", io_manager_key="pandas_io_manager", namespace="public")
 def predicted_orders(
     daily_order_summary: pd.DataFrame, order_forecast_model: Tuple[float, float]
 ) -> pd.DataFrame:
