@@ -1,4 +1,3 @@
-import warnings
 from abc import ABC, abstractmethod
 from inspect import isfunction
 from types import FunctionType
@@ -1266,13 +1265,13 @@ def _process_and_validate_target(
             # the same definition by reference equality
             if target.name in pipelines_or_jobs:
                 dupe_target_type = pipelines_or_jobs[target.name].target_type
-                warnings.warn(
+                raise DagsterInvalidDefinitionError(
                     _get_error_msg_for_target_conflict(
                         targeter, "graph", target.name, dupe_target_type
                     )
                 )
         elif coerced_graphs[target.name].graph != target:
-            warnings.warn(
+            raise DagsterInvalidDefinitionError(
                 _get_error_msg_for_target_conflict(targeter, "graph", target.name, "graph")
             )
         coerced_job = target.coerce_to_job()
@@ -1305,7 +1304,7 @@ def _process_and_validate_target(
                 if target.name in unresolved_jobs
                 else pipelines_or_jobs[target.name].target_type
             )
-            warnings.warn(
+            raise DagsterInvalidDefinitionError(
                 _get_error_msg_for_target_conflict(
                     targeter, target.target_type, target.name, dupe_target_type
                 )
@@ -1314,4 +1313,4 @@ def _process_and_validate_target(
 
 
 def _get_error_msg_for_target_conflict(targeter, target_type, target_name, dupe_target_type):
-    return f"{targeter} targets {target_type} '{target_name}', but a different {dupe_target_type} with the same name was provided. The {target_type} provided to {targeter} will override the existing {dupe_target_type}, but in Dagster 0.15.0, this will result in an error. Disambiguate between these by providing a separate name to one of them."
+    return f"{targeter} targets {target_type} '{target_name}', but a different {dupe_target_type} with the same name was provided. Disambiguate between these by providing a separate name to one of them."
