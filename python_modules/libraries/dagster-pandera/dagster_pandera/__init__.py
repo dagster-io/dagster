@@ -208,7 +208,7 @@ def _pandera_schema_wide_checks_to_table_constraints(
 
 
 def _pandera_check_to_table_constraint(pa_check: Union[pa.Check, pa.Hypothesis]) -> str:
-    return pa_check.description or pa_check.error
+    return _get_pandera_check_identifier(pa_check)
 
 
 def _pandera_column_to_table_column(pa_column: pa.Column) -> TableColumn:
@@ -245,9 +245,16 @@ def _pandera_check_to_column_constraint(pa_check: pa.Check) -> str:
     if pa_check.description:
         return pa_check.description
     elif pa_check.name in CHECK_OPERATORS:
+        assert isinstance(
+            pa_check.error, str
+        ), "Expected pandera check to have string `error` attr."
         return f"{CHECK_OPERATORS[pa_check.name]} {_extract_operand(pa_check.error)}"
     else:
-        return pa_check.error
+        return _get_pandera_check_identifier(pa_check)
+
+
+def _get_pandera_check_identifier(pa_check: Union[pa.Check, pa.Hypothesis]) -> str:
+    return pa_check.description or pa_check.error or pa_check.name or str(pa_check)
 
 
 __all__ = [
