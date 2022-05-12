@@ -1151,7 +1151,7 @@ class TestEventLogStorage:
     @pytest.mark.parametrize(
         "cursor_dt", cursor_datetime_args()
     )  # test both tz-aware and naive datetimes
-    def test_get_event_records(self, storage, cursor_dt):
+    def test_get_event_records(self, storage, instance, cursor_dt):
         if isinstance(storage, SqliteEventLogStorage):
             # test sqlite in test_get_event_records_sqlite
             pytest.skip()
@@ -1181,49 +1181,51 @@ class TestEventLogStorage:
 
         # store events for three runs
         [run_id_1, run_id_2, run_id_3] = [make_new_run_id(), make_new_run_id(), make_new_run_id()]
-        _store_run_events(run_id_1)
-        _store_run_events(run_id_2)
-        _store_run_events(run_id_3)
 
-        all_success_events = storage.get_event_records(
-            EventRecordsFilter(event_type=DagsterEventType.RUN_SUCCESS)
-        )
+        with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3]):
+            _store_run_events(run_id_1)
+            _store_run_events(run_id_2)
+            _store_run_events(run_id_3)
 
-        assert len(all_success_events) == 3
-        min_success_record_id = all_success_events[-1].storage_id
+            all_success_events = storage.get_event_records(
+                EventRecordsFilter(event_type=DagsterEventType.RUN_SUCCESS)
+            )
 
-        # after cursor
-        def _build_cursor(record_id_cursor, run_cursor_dt):
-            if not run_cursor_dt:
-                return record_id_cursor
-            return RunShardedEventsCursor(id=record_id_cursor, run_updated_after=run_cursor_dt)
+            assert len(all_success_events) == 3
+            min_success_record_id = all_success_events[-1].storage_id
 
-        assert not list(
-            filter(
-                lambda r: r.storage_id <= min_success_record_id,
-                storage.get_event_records(
+            # after cursor
+            def _build_cursor(record_id_cursor, run_cursor_dt):
+                if not run_cursor_dt:
+                    return record_id_cursor
+                return RunShardedEventsCursor(id=record_id_cursor, run_updated_after=run_cursor_dt)
+
+            assert not list(
+                filter(
+                    lambda r: r.storage_id <= min_success_record_id,
+                    storage.get_event_records(
+                        EventRecordsFilter(
+                            event_type=DagsterEventType.RUN_SUCCESS,
+                            after_cursor=_build_cursor(min_success_record_id, cursor_dt),
+                        )
+                    ),
+                )
+            )
+            assert [
+                i.storage_id
+                for i in storage.get_event_records(
                     EventRecordsFilter(
                         event_type=DagsterEventType.RUN_SUCCESS,
                         after_cursor=_build_cursor(min_success_record_id, cursor_dt),
-                    )
-                ),
-            )
-        )
-        assert [
-            i.storage_id
-            for i in storage.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.RUN_SUCCESS,
-                    after_cursor=_build_cursor(min_success_record_id, cursor_dt),
-                ),
-                ascending=True,
-                limit=2,
-            )
-        ] == [record.storage_id for record in all_success_events[:2][::-1]]
+                    ),
+                    ascending=True,
+                    limit=2,
+                )
+            ] == [record.storage_id for record in all_success_events[:2][::-1]]
 
-        assert set(_event_types([r.event_log_entry for r in all_success_events])) == {
-            DagsterEventType.RUN_SUCCESS
-        }
+            assert set(_event_types([r.event_log_entry for r in all_success_events])) == {
+                DagsterEventType.RUN_SUCCESS
+            }
 
     def test_get_event_records_sqlite(self, storage):
         if not isinstance(storage, SqliteEventLogStorage):
