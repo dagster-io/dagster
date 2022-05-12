@@ -1,5 +1,51 @@
 # Changelog
 
+# 0.14.15
+
+### New
+
+* Sensors / schedules can now return a list of `RunRequest` objects instead of yielding them.
+* Repositories can now contain asset definitions and source assets for the same asset key.
+* `OpExecutionContext` (provided as the `context` argument to Ops) now has fields for, `run`, `job_def`, `job_name`, `op_def`, and `op_config`. These replace `pipeline_run`, `pipeline_def`, etc. (though they are still available).
+* When a job is partitioned using an hourly, daily, weekly, or monthly partitions definition, `OpExecutionContext` now offers a `partition_time_window` attribute, which returns a tuple of datetime objects that mark the bounds of the partition’s time window.
+* [dagster-k8s] Removed an unnecessary `dagster-test-connection` pod from the Dagster Helm chart.
+* [dagster-k8s] The `k8s_job_executor` now polls the event log on a ~1 second interval (previously 0.1). Performance testing showed that this reduced DB load while not significantly impacting run time.
+* [dagit] Removed package pins for `Jinja2` and `nbconvert`.
+* [dagit] When viewing a list of Runs, tags with information about schedules, sensors, and backfills are now more visually prominent and are sorted to the front of the list.
+* [dagit] The log view on Run pages now includes a button to clear the filter input.
+* [dagit] When viewing a list of Runs, you can now hover over a tag to see a menu with an option to copy the tag, and in filtered Run views, an option to add the tag to the filter.
+* [dagit] Configuration editors throughout Dagit now display clear indentation guides, and our previous whitespace indicators have been removed.
+* [dagit] The Dagit Content-Security-Policy has been moved from a `<meta>` tag to a response header, and several more security and privacy related headers have been added as well.
+* [dagit] Assets with multi-component key paths are always shown as `foo/bar` in dagit, rather than appearing as `foo > bar` in some contexts.
+* [dagit] The Asset graph now includes a “Reload definitions” button which reloads your repositories.
+* [dagit] On all DAGs, you can hold shift on the keyboard to switch from mouse wheel / touch pad zooming to panning. This makes it much easier to scroll horizontally at high speed without click-drag-click-drag-click-drag.
+* [dagster-dbt] Software-defined assets from dbt models now include the schema in the asset key.
+* [dagster-dbt] The `load_assets_from_dbt_project()` and `load_assets_from_dbt_manifest()` utilities now have a `use_build_command` parameter. If this flag is set, when materializing your dbt assets, Dagster will use the `dbt build` command instead of `dbt run`. Any tests run during this process will be represented with AssetObservation events attached to the relevant assets. For more information on `dbt build`, see the [dbt docs](https://docs.getdbt.com/reference/commands/build).
+* [dagster-dbt] If a dbt project successfully runs some models and then fails, AssetMaterializations will now be generated for the successful models.
+* [dagster-snowflake] The new Snowflake IO manager, which you can create using `build_snowflake_io_manager` offers a way to store assets and op outputs in Snowflake. The `PandasSnowflakeTypeHandler` stores Pandas `DataFrame`s in Snowflake.
+
+### Bugfixes
+
+* Fixed incorrect text in the error message that’s triggered when building a job and an asset can’t be found that corresponds to one of the asset dependencies.
+* An error is no longer raised when an op/job/graph/other definition has an empty docstring.
+* Fixed a bug where pipelines could not be executed if  `toposort<=1.6` was installed.
+* [dagit] Fixed an issue in global search where rendering and navigation broke when results included objects of different types but with identical names.
+* [dagit] server errors regarding websocket send after close no longer occur.
+* [dagit] Fixed an issue where software-defined assets could be rendered improperly when the dagster and dagit versions were out of sync.
+
+### Community Contributions
+
+* [dagster-aws] `PickledObjectS3IOManager` now uses `list_objects` to check the access permission. Thanks @trevenrawr!
+
+### Experimental
+
+* The `TableSchema` API is no longer experimental.
+
+### Documentation
+
+* Docs site now has a new design!
+* Concepts pages now have links to code snippets in our examples that use those concepts.
+
 # 0.14.14
 
 ### New
