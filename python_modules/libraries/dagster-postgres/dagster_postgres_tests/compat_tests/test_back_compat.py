@@ -11,15 +11,18 @@ from sqlalchemy import create_engine
 from dagster import (
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     Output,
     execute_pipeline,
     job,
+    op,
     pipeline,
     reconstructable,
     solid,
 )
 from dagster.core.errors import DagsterInstanceSchemaOutdated
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster.utils import file_relative_path
@@ -340,6 +343,40 @@ def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
             # make sure that wiping still works
             storage.wipe_asset(AssetKey(["a"]))
             assert not storage.has_asset_key(AssetKey(["a"]))
+
+
+def test_0_12_0_asset_observation_backcompat(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/postgres/pg_dump.txt"),
+    )
+
+    @op
+    def asset_op(_):
+        yield AssetObservation(asset_key=AssetKey(["a"]))
+        yield Output(1)
+
+    @job
+    def asset_job():
+        asset_op()
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            storage = instance._event_storage
+
+            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
+
+            # make sure that executing the pipeline works
+            asset_job.execute_in_process(instance=instance)
+            assert storage.has_asset_key(AssetKey(["a"]))
 
 
 def _reconstruct_from_file(hostname, conn_string, path, username="test", password="test"):

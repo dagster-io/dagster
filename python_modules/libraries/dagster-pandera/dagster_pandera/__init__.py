@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Callable, List, Type, Union
 import pandas as pd
 import pandera as pa
 
-import dagster.check as check
+import dagster._check as check
 from dagster import (
     DagsterType,
     MetadataEntry,

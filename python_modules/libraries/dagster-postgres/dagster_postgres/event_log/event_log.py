@@ -2,7 +2,7 @@ from typing import Optional
 
 import sqlalchemy as db
 
-from dagster import check
+import dagster._check as check
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log import (
     AssetKeyTable,
@@ -194,17 +194,18 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         values = self._get_asset_entry_values(event, self.has_secondary_index(ASSET_KEY_INDEX_COLS))
         with self.index_connection() as conn:
-            conn.execute(
-                db.dialects.postgresql.insert(AssetKeyTable)
-                .values(
-                    asset_key=event.dagster_event.asset_key.to_string(),
-                    **values,
-                )
-                .on_conflict_do_update(
+            query = db.dialects.postgresql.insert(AssetKeyTable).values(
+                asset_key=event.dagster_event.asset_key.to_string(),
+                **values,
+            )
+            if values:
+                query = query.on_conflict_do_update(
                     index_elements=[AssetKeyTable.c.asset_key],
                     set_=dict(**values),
                 )
-            )
+            else:
+                query = query.on_conflict_do_nothing()
+            conn.execute(query)
 
     def _connect(self):
         return create_pg_connection(self._engine, pg_alembic_config(__file__), "event log")

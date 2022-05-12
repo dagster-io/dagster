@@ -1,6 +1,6 @@
 import os
 
-from dagster import check
+import dagster._check as check
 
 from .config_type import ScalarUnion
 from .errors import PostProcessingError

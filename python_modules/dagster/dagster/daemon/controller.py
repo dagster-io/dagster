@@ -7,7 +7,7 @@ from contextlib import ExitStack, contextmanager
 
 import pendulum
 
-from dagster import check
+import dagster._check as check
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.core.workspace.load_target import WorkspaceLoadTarget

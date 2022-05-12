@@ -2,7 +2,7 @@ import abc
 import os
 from typing import List, NamedTuple, Optional
 
-from dagster import check
+import dagster._check as check
 from dagster.config import Field
 from dagster.config.source import IntSource
 from dagster.core.definitions.run_request import InstigatorType

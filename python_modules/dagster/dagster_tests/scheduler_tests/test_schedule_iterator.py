@@ -1,6 +1,6 @@
 import pytest
 
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster.seven.compat.pendulum import create_pendulum_time
 from dagster.utils.schedules import schedule_execution_time_iterator
 

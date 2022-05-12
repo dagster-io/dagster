@@ -3,7 +3,7 @@ from typing import Dict, cast
 
 from click import UsageError
 
-from dagster import check
+import dagster._check as check
 from dagster.cli.workspace.cli_target import get_working_directory_from_kwargs
 from dagster.core.definitions.reconstruct import ReconstructableRepository
 

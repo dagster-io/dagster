@@ -6,19 +6,21 @@ from typing import AbstractSet, Any, Callable, Dict, Mapping, Optional, Sequence
 
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
-from dagster_dbt.utils import generate_materializations
+from dagster_dbt.types import DbtOutput
+from dagster_dbt.utils import generate_events
 
 from dagster import (
     AssetKey,
+    AssetMaterialization,
     MetadataValue,
     Out,
     Output,
     SolidExecutionContext,
     TableColumn,
     TableSchema,
-    check,
-    get_dagster_logger,
 )
+from dagster import _check as check
+from dagster import get_dagster_logger
 from dagster.core.asset_defs import AssetsDefinition, multi_asset
 
 
@@ -69,6 +71,7 @@ def _dbt_nodes_to_assets(
     ] = None,
     io_manager_key: Optional[str] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
+    use_build_command: bool = False,
 ) -> AssetsDefinition:
     outs: Dict[str, Out] = {}
     sources: Set[AssetKey] = set()
@@ -123,22 +126,44 @@ def _dbt_nodes_to_assets(
         internal_asset_deps=internal_asset_deps,
     )
     def _dbt_project_multi_assset(context):
-        dbt_output = context.resources.dbt.run(select=select)
-        # yield an Output for each materialization generated in the run
-        for materialization in generate_materializations(dbt_output):
-            output_name = materialization.asset_key.path[-1]
-            if runtime_metadata_fn:
-                yield Output(
-                    value=None,
-                    output_name=output_name,
-                    metadata=runtime_metadata_fn(context, out_name_to_node_info[output_name]),
-                )
+        dbt_output = None
+        try:
+            if use_build_command:
+                dbt_output = context.resources.dbt.build(select=select)
             else:
-                yield Output(
-                    value=None,
-                    output_name=output_name,
-                    metadata_entries=materialization.metadata_entries,
-                )
+                dbt_output = context.resources.dbt.run(select=select)
+        finally:
+            # in the case that the project only partially runs successfully, still attempt to generate
+            # events for the parts that were successful
+            if dbt_output is None:
+                dbt_output = DbtOutput(result=context.resources.dbt.get_run_results_json())
+
+            # yield an Output for each materialization generated in the run
+            for event in generate_events(
+                dbt_output,
+                node_info_to_asset_key=node_info_to_asset_key,
+                manifest_json=context.resources.dbt.get_manifest_json(),
+            ):
+                # convert AssetMaterializations to outputs
+                if isinstance(event, AssetMaterialization):
+                    output_name = event.asset_key.path[-1]
+                    if runtime_metadata_fn:
+                        yield Output(
+                            value=None,
+                            output_name=output_name,
+                            metadata=runtime_metadata_fn(
+                                context, out_name_to_node_info[output_name]
+                            ),
+                        )
+                    else:
+                        yield Output(
+                            value=None,
+                            output_name=output_name,
+                            metadata_entries=event.metadata_entries,
+                        )
+                # yield AssetObservations normally
+                else:
+                    yield event
 
     return _dbt_project_multi_assset
 
@@ -174,6 +199,7 @@ def load_assets_from_dbt_project(
     ] = None,
     io_manager_key: Optional[str] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
+    use_build_command: bool = False,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of DBT models from a DBT project into Dagster assets.
@@ -198,6 +224,9 @@ def load_assets_from_dbt_project(
         node_info_to_asset_key: (Mapping[str, Any] -> AssetKey): A function that takes a dictionary
             of dbt node info and returns the AssetKey that you want to represent that node. By
             default, the asset key will simply be the name of the dbt model.
+        use_build_command: (bool): Flag indicating if you want to use `dbt build` as the core computation
+            for this asset, rather than `dbt run`.
+
     """
     check.str_param(project_dir, "project_dir")
     profiles_dir = check.opt_str_param(
@@ -221,6 +250,7 @@ def load_assets_from_dbt_project(
             runtime_metadata_fn=runtime_metadata_fn,
             io_manager_key=io_manager_key,
             node_info_to_asset_key=node_info_to_asset_key,
+            use_build_command=use_build_command,
         ),
     ]
 
@@ -233,6 +263,7 @@ def load_assets_from_dbt_manifest(
     io_manager_key: Optional[str] = None,
     selected_unique_ids: Optional[AbstractSet[str]] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
+    use_build_command: bool = False,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models, described in a manifest.json, into Dagster assets.
@@ -254,6 +285,8 @@ def load_assets_from_dbt_manifest(
         node_info_to_asset_key: (Mapping[str, Any] -> AssetKey): A function that takes a dictionary
             of dbt node info and returns the AssetKey that you want to represent that node. By
             default, the asset key will simply be the name of the dbt model.
+        use_build_command: (bool): Flag indicating if you want to use `dbt build` as the core computation
+            for this asset, rather than `dbt run`.
     """
     check.dict_param(manifest_json, "manifest_json", key_type=str)
     dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"]}
@@ -280,5 +313,6 @@ def load_assets_from_dbt_manifest(
             select=select,
             selected_unique_ids=selected_unique_ids,
             node_info_to_asset_key=node_info_to_asset_key,
+            use_build_command=use_build_command,
         )
     ]

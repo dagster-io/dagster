@@ -1,6 +1,6 @@
 from json import JSONDecodeError
 
-from dagster import check
+import dagster._check as check
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 

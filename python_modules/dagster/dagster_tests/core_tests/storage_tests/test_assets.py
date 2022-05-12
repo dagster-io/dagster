@@ -1,19 +1,10 @@
-import pytest
-
 from dagster import AssetKey, AssetMaterialization, Output, job, op
-from dagster.core.definitions.events import parse_asset_key_string, validate_asset_key_string
-from dagster.core.errors import DagsterInvalidAssetKey
+from dagster.core.definitions.events import parse_asset_key_string
 from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.utils import file_relative_path
 from dagster.utils.test import copy_directory
-
-
-def test_validate_asset_key_string():
-    assert validate_asset_key_string("H3_lL0.h-1") == "H3_lL0.h-1"
-    with pytest.raises(DagsterInvalidAssetKey):
-        validate_asset_key_string("(Hello)")
 
 
 def test_structured_asset_key():

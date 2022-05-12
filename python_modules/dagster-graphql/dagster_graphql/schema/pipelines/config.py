@@ -4,7 +4,7 @@ from collections import namedtuple
 import graphene
 from graphene.types.generic import GenericScalar
 
-from dagster import check
+import dagster._check as check
 from dagster.config.errors import EvaluationError as DagsterEvaluationError
 from dagster.config.errors import (
     FieldNotDefinedErrorData,

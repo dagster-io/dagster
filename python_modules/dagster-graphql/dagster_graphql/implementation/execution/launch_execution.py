@@ -1,6 +1,6 @@
 from graphql.execution.base import ResolveInfo
 
-from dagster import check
+import dagster._check as check
 from dagster.core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance

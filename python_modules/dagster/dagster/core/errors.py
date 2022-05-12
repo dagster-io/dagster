@@ -18,7 +18,7 @@ Dagster runtime.
 import sys
 from contextlib import contextmanager
 
-from dagster import check
+import dagster._check as check
 from dagster.utils.interrupts import raise_interrupts_as
 
 

@@ -3,7 +3,7 @@ import time
 from collections import OrderedDict, defaultdict
 from typing import Dict, Iterable, Mapping, Optional, Sequence
 
-from dagster import check
+import dagster._check as check
 from dagster.core.assets import AssetDetails
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events import DagsterEventType

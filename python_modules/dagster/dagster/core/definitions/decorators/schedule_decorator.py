@@ -4,7 +4,7 @@ import warnings
 from functools import update_wrapper
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.partition import (
     PartitionScheduleDefinition,
     PartitionSetDefinition,

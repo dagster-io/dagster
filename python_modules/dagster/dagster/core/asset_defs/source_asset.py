@@ -1,6 +1,6 @@
 from typing import NamedTuple, Optional, Sequence, Union
 
-import dagster.check as check
+import dagster._check as check
 from dagster.core.definitions.events import AssetKey, CoerceableToAssetKey
 from dagster.core.definitions.metadata import (
     MetadataEntry,

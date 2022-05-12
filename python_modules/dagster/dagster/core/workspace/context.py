@@ -7,7 +7,7 @@ from collections import OrderedDict
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.errors import DagsterInvariantViolationError, DagsterRepositoryLocationLoadError
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation import (

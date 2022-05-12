@@ -1,7 +1,7 @@
 from functools import update_wrapper
 from typing import Any, Callable, Dict, List, Optional, Set, Union, overload
 
-from dagster import check
+import dagster._check as check
 from dagster.config.config_schema import ConfigSchemaType
 from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.core.definitions.policy import RetryPolicy

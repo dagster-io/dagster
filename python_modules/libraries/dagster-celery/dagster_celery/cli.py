@@ -5,7 +5,7 @@ import uuid
 import click
 from celery.utils.nodenames import default_nodename, host_format
 
-from dagster import check
+import dagster._check as check
 from dagster.config.post_process import post_process_config
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError

@@ -2,7 +2,7 @@ import json
 
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
-from dagster import check
+import dagster._check as check
 from dagster.config.config_type import ALL_CONFIG_BUILTINS
 from dagster.utils import file_relative_path
 

@@ -1,6 +1,9 @@
 from datetime import datetime, timezone
+from typing import Tuple
 
-from dagster import Out, Output, Tuple, check, op
+from dagster import Output
+from dagster import _check as check
+from dagster import op
 
 
 def binary_search_nearest_left(get_value, start, end, min_target):
@@ -87,20 +90,16 @@ def _id_range_for_time(start, end, hn_client):
     return id_range, metadata
 
 
-@op(
-    required_resource_keys={"hn_client", "partition_bounds"},
-    out=Out(
-        Tuple[int, int],
-        description="The lower (inclusive) and upper (exclusive) ids that bound the range for the partition",
-    ),
-)
-def id_range_for_time(context):
+@op(required_resource_keys={"hn_client", "partition_bounds"})
+def id_range_for_time(context) -> Output[Tuple[int, int]]:
     """
     For the configured time partition, searches for the range of ids that were created in that time.
+
+    Returns the lower (inclusive) and upper (exclusive) ids that bound the range for the partition"
     """
     id_range, metadata = _id_range_for_time(
         context.resources.partition_bounds["start"],
         context.resources.partition_bounds["end"],
         context.resources.hn_client,
     )
-    yield Output(id_range, metadata=metadata)
+    return Output(id_range, metadata=metadata)

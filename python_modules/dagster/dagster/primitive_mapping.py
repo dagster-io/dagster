@@ -1,4 +1,4 @@
-from dagster import check
+import dagster._check as check
 from dagster.config.config_type import Array
 from dagster.config.config_type import ConfigAnyInstance as ConfigAny
 from dagster.config.field_utils import Permissive

@@ -1,8 +1,11 @@
 from datetime import datetime, timezone
+from typing import Tuple
 
 from hacker_news_assets.partitions import hourly_partitions
 
-from dagster import Output, asset, check
+from dagster import Output
+from dagster import _check as check
+from dagster import asset
 
 
 def binary_search_nearest_left(get_value, start, end, min_target):
@@ -89,7 +92,7 @@ def _id_range_for_time(start: int, end: int, hn_client):
     description="The lower (inclusive) and upper (exclusive) ids that bound the range for the partition",
     partitions_def=hourly_partitions,
 )
-def id_range_for_time(context):
+def id_range_for_time(context) -> Output[Tuple[int, int]]:
     """
     For the configured time partition, searches for the range of ids that were created in that time.
     """
@@ -97,4 +100,4 @@ def id_range_for_time(context):
     id_range, metadata = _id_range_for_time(
         start.timestamp(), end.timestamp(), context.resources.hn_client
     )
-    yield Output(id_range, metadata=metadata)
+    return Output(id_range, metadata=metadata)

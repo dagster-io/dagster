@@ -4,11 +4,11 @@ from enum import Enum as PythonEnum
 from functools import partial
 from typing import cast
 
-from dagster import check
+import dagster._check as check
 from dagster.builtins import BuiltinEnum
 from dagster.config.config_type import Array, ConfigType
 from dagster.config.config_type import Noneable as ConfigNoneable
-from dagster.core.definitions.events import Output, TypeCheck
+from dagster.core.definitions.events import DynamicOutput, Output, TypeCheck
 from dagster.core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.serdes import whitelist_for_serdes
@@ -827,6 +827,10 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         type_args = get_args(dagster_type)
         # If no inner type was provided, forward Any type.
         dagster_type = type_args[0] if len(type_args) == 1 else Any
+    elif is_dynamic_output_annotation(dagster_type):
+        dynamic_out_annotation = get_args(dagster_type)[0]
+        type_args = get_args(dynamic_out_annotation)
+        dagster_type = type_args[0] if len(type_args) == 1 else Any
 
     # Then, check to see if it is part of python's typing library
     if is_typing_type(dagster_type):
@@ -875,6 +879,30 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
             dagster_type=str(dagster_type), additional_msg="."
         )
     )
+
+
+def is_dynamic_output_annotation(dagster_type: object) -> bool:
+    from dagster.seven.typing import get_args, get_origin
+
+    check.invariant(
+        not (isinstance(dagster_type, type) and issubclass(dagster_type, ConfigType)),
+        "Cannot resolve a config type to a runtime type",
+    )
+
+    check.invariant(
+        not (isinstance(dagster_type, type) and issubclass(dagster_type, DagsterType)),
+        "Do not pass runtime type classes. Got {}".format(dagster_type),
+    )
+
+    if dagster_type == DynamicOutput or get_origin(dagster_type) == DynamicOutput:
+        raise DagsterInvariantViolationError(
+            "Op annotated with return type DynamicOutput. DynamicOutputs can only be returned in the context of a List. If only one output is needed, use the Output API."
+        )
+
+    if get_origin(dagster_type) == list and len(get_args(dagster_type)) == 1:
+        list_inner_type = get_args(dagster_type)[0]
+        return list_inner_type == DynamicOutput or get_origin(list_inner_type) == DynamicOutput
+    return False
 
 
 def _is_generic_output_annotation(dagster_type: object) -> bool:

@@ -1,4 +1,4 @@
-from docs_snippets.concepts.solids_pipelines.unit_tests import (
+from docs_snippets.concepts.ops_jobs_graphs.unit_tests import (
     test_event_stream,
     test_inputs_op_with_invocation,
     test_job,

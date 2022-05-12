@@ -3,7 +3,7 @@ from typing import Callable, Dict, Generator, List, Optional, Tuple, TypeVar
 
 T = TypeVar("T")
 
-from dagster import check
+import dagster._check as check
 
 
 def backoff_delay_generator():

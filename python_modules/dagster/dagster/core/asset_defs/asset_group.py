@@ -20,7 +20,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.executor_definition import in_process_executor
