@@ -382,6 +382,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "logLevel": {
+                    "title": "Loglevel",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
