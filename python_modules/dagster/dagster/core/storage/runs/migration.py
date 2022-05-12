@@ -153,13 +153,15 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn=None):
     if print_fn:
         print_fn("Querying run storage.")
 
-    subquery = db.select([RunTagsTable.c.run_id]).where(RunTagsTable.c.key == REPOSITORY_LABEL_TAG)
+    subquery = db.select([RunTagsTable.c.run_id.label("tags_run_id")]).where(
+        RunTagsTable.c.key == REPOSITORY_LABEL_TAG
+    )
     base_query = (
         db.select([RunsTable.c.run_body, RunsTable.c.id])
         .select_from(
-            RunsTable.join(subquery, RunsTable.c.run_id == subquery.c.run_id, isouter=True)
+            RunsTable.join(subquery, RunsTable.c.run_id == subquery.c.tags_run_id, isouter=True)
         )
-        .where(subquery.c.run_id == None)
+        .where(subquery.c.tags_run_id == None)
         .order_by(db.asc(RunsTable.c.id))
         .limit(RUN_CHUNK_SIZE)
     )
