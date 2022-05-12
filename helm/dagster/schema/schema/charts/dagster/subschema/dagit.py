@@ -39,6 +39,7 @@ class Dagit(BaseModel):
     annotations: kubernetes.Annotations
     enableReadOnly: bool
     dbStatementTimeout: Optional[int]
+    logLevel: Optional[str]
 
     class Config:
         extra = Extra.forbid

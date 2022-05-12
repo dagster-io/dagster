@@ -61,6 +61,9 @@ dagit:
   # The timeout in milliseconds to set on database statements sent to the Dagster instance.
   dbStatementTimeout: ~
 
+  # The log level of the uvicorn web server, defaults to warning if not set
+  logLevel: ~
+
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:
   # https://kubernetes.io/docs/concepts/configuration/configmap/
