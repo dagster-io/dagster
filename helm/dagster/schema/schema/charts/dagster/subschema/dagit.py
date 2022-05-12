@@ -15,6 +15,7 @@ class Server(BaseModel):
 class Workspace(BaseModel):
     enabled: bool
     servers: List[Server]
+    externalConfigmap: Optional[str]
 
 
 class Dagit(BaseModel):

@@ -179,3 +179,52 @@ def test_workspace_renders_empty(template: HelmTemplate):
     grpc_servers = workspace["load_from"]
 
     assert len(grpc_servers) == len(servers)
+
+
+def test_workspace_external_configmap_fail(template: HelmTemplate, capfd):
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(
+            workspace=Workspace(
+                enabled=True,
+                servers=[
+                    Server(host="another-deployment-one", port=4000),
+                ],
+                externalConfigmap="test",
+            )
+        ),
+        dagsterUserDeployments=UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[create_simple_user_deployment("deployment-one")],
+        ),
+    )
+
+    with pytest.raises(subprocess.CalledProcessError):
+        template.render(helm_values)
+
+    _, err = capfd.readouterr()
+    assert "workspace.servers and workspace.externalConfigmap cannot both be set." in err
+
+
+def test_workspace_external_configmap_not_present(template: HelmTemplate, capfd):
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(
+            workspace=Workspace(
+                enabled=True,
+                servers=[],
+                externalConfigmap="test",
+            )
+        ),
+        dagsterUserDeployments=UserDeployments(
+            enabled=True,
+            enableSubchart=False,
+            deployments=[],
+        ),
+    )
+
+    with pytest.raises(subprocess.CalledProcessError):
+        template.render(helm_values)
+
+    _, err = capfd.readouterr()
+    # workspace.yaml isn't rendered if using an externalConfigmap
+    assert "Error: could not find template" in err

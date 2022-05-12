@@ -11,7 +11,7 @@
 {{- $workspaceUseExternalConfigmap := and $dagitWorkspace.enabled $dagitWorkspace.externalConfigmap }}
 
 {{- if and $workspaceUseFixedServers $workspaceUseExternalConfigmap }}
-{{ fail "workspace.servers and workspace.externalConfigmap cannot both be set" }}
+{{ fail "workspace.servers and workspace.externalConfigmap cannot both be set." }}
 {{- end }}
 
 {{- if not $workspaceUseExternalConfigmap }}
