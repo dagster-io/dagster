@@ -38,8 +38,8 @@ from .utils import delete_job
             "max_concurrency": Field(
                 IntSource,
                 is_required=False,
-                description="Limit on number of concurrent pods launched per run. Note that this is "
-                "not a global limit.",
+                description="Limit on the number of pods that will run concurrently within the scope "
+                "of a Dagster run. Note that this limit is per run, not global.",
             ),
         },
     ),
