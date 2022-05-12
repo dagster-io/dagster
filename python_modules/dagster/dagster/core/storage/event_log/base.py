@@ -87,7 +87,7 @@ class EventRecordsFilter(
     NamedTuple(
         "_EventRecordsFilter",
         [
-            ("event_type", DagsterEventType),
+            ("event_type", Optional[DagsterEventType]),
             ("asset_key", Optional[AssetKey]),
             ("asset_partitions", Optional[List[str]]),
             ("after_cursor", Optional[Union[int, RunShardedEventsCursor]]),
@@ -122,7 +122,7 @@ class EventRecordsFilter(
 
     def __new__(
         cls,
-        event_type: DagsterEventType,
+        event_type: Optional[DagsterEventType] = None,
         asset_key: Optional[AssetKey] = None,
         asset_partitions: Optional[List[str]] = None,
         after_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
@@ -131,9 +131,16 @@ class EventRecordsFilter(
         before_timestamp: Optional[float] = None,
     ):
         check.opt_list_param(asset_partitions, "asset_partitions", of_type=str)
+        event_type = check.opt_inst_param(event_type, "event_type", DagsterEventType)
+        if not event_type:
+            warnings.warn(
+                "The use of `EventRecordsFilter` without an event type is deprecated and will "
+                "begin erroring starting in 0.15.0"
+            )
+
         return super(EventRecordsFilter, cls).__new__(
             cls,
-            event_type=check.inst_param(event_type, "event_type", DagsterEventType),
+            event_type=event_type,
             asset_key=check.opt_inst_param(asset_key, "asset_key", AssetKey),
             asset_partitions=asset_partitions,
             after_cursor=check.opt_inst_param(
@@ -244,7 +251,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     @abstractmethod
     def get_event_records(
         self,
-        event_records_filter: EventRecordsFilter,
+        event_records_filter: Optional[EventRecordsFilter] = None,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Iterable[EventLogRecord]:

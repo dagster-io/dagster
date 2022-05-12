@@ -1317,7 +1317,7 @@ class DagsterInstance:
     @traced
     def get_event_records(
         self,
-        event_records_filter: "EventRecordsFilter",
+        event_records_filter: Optional["EventRecordsFilter"] = None,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Iterable["EventLogRecord"]:
