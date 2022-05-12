@@ -45,6 +45,7 @@ def dagster():
                     "DAGSTER_BRANCH": branch_name,
                     "DAGSTER_COMMIT_HASH": os.getenv("BUILDKITE_COMMIT"),
                     "DAGIT_ONLY_OSS_CHANGE": "1" if dagit_only else "",
+                    "OSS_TRIGGERED_BUILD": "true",
                 },
             ),
         ]
