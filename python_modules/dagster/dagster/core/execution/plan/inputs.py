@@ -488,11 +488,11 @@ class FromConfig(
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
-        solid_config = resolved_run_config.solids.get(str(self.solid_handle))
-        config_data = solid_config.inputs.get(self.input_name) if solid_config else None
 
-        solid_def = pipeline_def.get_solid(self.solid_handle)
-        dagster_type = solid_def.input_def_named(self.input_name).dagster_type
+        config_data = self.get_associated_config(resolved_run_config)
+        input_def = self.get_associated_input_def(pipeline_def)
+        dagster_type = input_def.dagster_type
+
         return dagster_type.loader.compute_loaded_input_version(config_data)
 
 
@@ -512,9 +512,6 @@ class FromDirectInputValue(
             input_name=input_name,
         )
 
-    def get_associated_input_def(self, pipeline_def: PipelineDefinition) -> InputDefinition:
-        return pipeline_def.graph.input_def_named(self.input_name)
-
     def load_input_object(
         self, step_context: "StepExecutionContext", _input_def: InputDefinition
     ) -> Any:
@@ -530,12 +527,6 @@ class FromDirectInputValue(
 
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
-
-    @property
-    def solid_handle(self):
-        raise DagsterInvariantViolationError(
-            "Solid handle is not set on the root input value source."
-        )
 
     def compute_version(
         self,

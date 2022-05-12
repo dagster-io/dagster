@@ -1027,6 +1027,8 @@ def _is_input_resolved_from_top_level(graph_def, input_def, node, upstream_nodes
     input_name = input_def.name
     node_name = node.name
 
+    # Upstream nodes are in order of composition, with the top-level graph
+    # being first.
     upstream_nodes = upstream_nodes[::-1]
     for upstream_node in upstream_nodes:
         input_mapping = upstream_node.definition.input_mapping_for_pointer(
