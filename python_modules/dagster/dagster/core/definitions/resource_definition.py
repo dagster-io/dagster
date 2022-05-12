@@ -355,3 +355,7 @@ def make_values_resource(**kwargs: Any) -> ResourceDefinition:
         resource_fn=lambda init_context: init_context.resource_config,
         config_schema=kwargs or Any,
     )
+
+
+def with_resources(def_list, resource_defs):
+    pass
