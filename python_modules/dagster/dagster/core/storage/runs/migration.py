@@ -4,6 +4,7 @@ import sqlalchemy as db
 from tqdm import tqdm
 
 import dagster._check as check
+from dagster.serdes import deserialize_as
 
 from ..pipeline_run import PipelineRun, PipelineRunStatus
 from ..runs.base import RunStorage
@@ -154,12 +155,12 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn=None):
 
     subquery = db.select([RunTagsTable.c.run_id]).where(RunTagsTable.c.key == REPOSITORY_LABEL_TAG)
     base_query = (
-        db.select([RunsTable.c.run_body])
+        db.select([RunsTable.c.run_body, RunsTable.c.id])
         .select_from(
             RunsTable.join(subquery, RunsTable.c.run_id == subquery.c.run_id, isouter=True)
         )
         .where(subquery.c.run_id == None)
-        .order_by(db.asc(RunsTable.c.run_id))
+        .order_by(db.asc(RunsTable.c.id))
         .limit(RUN_CHUNK_SIZE)
     )
 
@@ -167,7 +168,7 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn=None):
     has_more = True
     while has_more:
         if cursor:
-            query = base_query.where(RunsTable.c.run_id > cursor)
+            query = base_query.where(RunsTable.c.id > cursor)
         else:
             query = base_query
 
@@ -178,8 +179,8 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn=None):
 
             has_more = len(rows) >= RUN_CHUNK_SIZE
             for row in rows:
-                run = run_storage._row_to_run(row)
-                cursor = run.run_id
+                run = deserialize_as(row[0], PipelineRun)
+                cursor = row[1]
                 write_repo_tag(conn, run)
 
 
