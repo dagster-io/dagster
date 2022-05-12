@@ -247,6 +247,7 @@ class PipelineDefinition:
 
         self._resource_requirements = {
             mode_def.name: _checked_resource_reqs_for_mode(
+                self._graph_def,
                 mode_def,
                 self._current_level_node_defs,
                 self._graph_def._dagster_type_dict,
@@ -725,6 +726,7 @@ def _iterate_all_nodes(root_node_dict: Dict[str, Node]) -> Iterator[Node]:
 
 
 def _checked_resource_reqs_for_mode(
+    top_level_graph_def: GraphDefinition,
     mode_def: ModeDefinition,
     node_defs: List[NodeDefinition],
     dagster_type_dict: Dict[str, DagsterType],
@@ -781,7 +783,9 @@ def _checked_resource_reqs_for_mode(
 
     # Validate unsatisfied inputs can be materialized from config
     resource_reqs.update(
-        _checked_input_resource_reqs_for_mode(dependency_structure, root_node_dict, mode_def)
+        _checked_input_resource_reqs_for_mode(
+            top_level_graph_def, dependency_structure, root_node_dict, mode_def
+        )
     )
 
     for node in _iterate_all_nodes(root_node_dict):
@@ -890,6 +894,7 @@ def _checked_type_resource_reqs_for_mode(
 
 
 def _checked_input_resource_reqs_for_mode(
+    top_level_graph_def: GraphDefinition,
     dependency_structure: DependencyStructure,
     node_dict: Dict[str, Node],
     mode_def: ModeDefinition,
@@ -914,6 +919,7 @@ def _checked_input_resource_reqs_for_mode(
             # check inner solids
             resource_reqs.update(
                 _checked_input_resource_reqs_for_mode(
+                    top_level_graph_def=top_level_graph_def,
                     dependency_structure=graph_def.dependency_structure,
                     node_dict=graph_def.node_dict,
                     mode_def=mode_def,
@@ -968,25 +974,20 @@ def _checked_input_resource_reqs_for_mode(
                             f"the upstream output."
                         )
             else:
-                # input is unconnected
+                # input is not connected to upstream output
                 input_def = handle.input_def
-                if (
-                    not input_def.dagster_type.loader
-                    and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-                    and not input_def.root_manager_key
-                    and not input_def.has_default_value
-                ):
+
+                # Input is not nothing, not resolvable by config, and isn't
+                # mapped from a top-level output.
+                if not _is_input_resolvable(top_level_graph_def, input_def, node, outer_solids):
                     raise DagsterInvalidDefinitionError(
-                        "Input '{input_name}' in {described_node} is not connected to "
-                        "the output of a previous node and can not be loaded from configuration, "
-                        "making it impossible to execute. "
-                        "Possible solutions are:\n"
-                        "  * add a dagster_type_loader for the type '{dagster_type}'\n"
-                        "  * connect '{input_name}' to the output of another node\n".format(
-                            described_node=node.describe_node(),
-                            input_name=input_def.name,
-                            dagster_type=input_def.dagster_type.display_name,
-                        )
+                        f"Input '{input_def.name}' of {node.describe_node()} "
+                        "has no upstream output, no default value, and no "
+                        "dagster type loader. Must provide a value to this "
+                        "input via either a direct input value mapped from the "
+                        "top-level graph, or a root input manager key. To "
+                        "learn more, see the docs for unconnected inputs: "
+                        "https://docs.dagster.io/concepts/io-management/unconnected-inputs#unconnected-inputs."
                     )
 
                 # If a root manager is provided, it's always used. I.e. it has priority over
@@ -1005,6 +1006,44 @@ def _checked_input_resource_reqs_for_mode(
                         raise DagsterInvalidDefinitionError(error_msg)
 
     return resource_reqs
+
+
+def _is_input_resolvable(graph_def, input_def, node, upstream_nodes):
+    # If input is not loadable via config, check if loadable via top-level input (meaning it is mapped all the way up the graph composition).
+    if (
+        not input_def.dagster_type.loader
+        and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
+        and not input_def.root_manager_key
+        and not input_def.has_default_value
+    ):
+        return _is_input_resolved_from_top_level(graph_def, input_def, node, upstream_nodes)
+    else:
+        return True
+
+
+def _is_input_resolved_from_top_level(graph_def, input_def, node, upstream_nodes):
+    from dagster.core.definitions.input import InputPointer
+
+    input_name = input_def.name
+    node_name = node.name
+
+    # Upstream nodes are in order of composition, with the top-level graph
+    # being first.
+    upstream_nodes = upstream_nodes[::-1]
+    for upstream_node in upstream_nodes:
+        input_mapping = upstream_node.definition.input_mapping_for_pointer(
+            InputPointer(solid_name=node_name, input_name=input_name)
+        )
+        if not input_mapping:
+            return False
+        else:
+            input_name = input_mapping.definition.name
+            node_name = upstream_node.name
+
+    top_level_mapping = graph_def.input_mapping_for_pointer(
+        InputPointer(solid_name=node_name, input_name=input_name)
+    )
+    return bool(top_level_mapping)
 
 
 def _get_missing_resource_error_msg(
@@ -1048,6 +1087,7 @@ def _create_run_config_schema(
     mode_definition: ModeDefinition,
     required_resources: Set[str],
 ) -> "RunConfigSchema":
+    from .job_definition import get_direct_input_values_from_job
     from .run_config import (
         RunConfigSchemaCreationData,
         construct_config_type_dictionary,
@@ -1083,6 +1123,7 @@ def _create_run_config_schema(
             ignored_solids=ignored_solids,
             required_resources=required_resources,
             is_using_graph_job_op_apis=pipeline_def.is_job,
+            direct_inputs=get_direct_input_values_from_job(pipeline_def),
         )
     )
 

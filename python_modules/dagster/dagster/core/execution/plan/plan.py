@@ -50,6 +50,7 @@ from .compute import create_step_outputs
 from .inputs import (
     FromConfig,
     FromDefaultValue,
+    FromDirectInputValue,
     FromDynamicCollect,
     FromMultipleSources,
     FromPendingDynamicStepOutput,
@@ -173,6 +174,7 @@ class _PlanBuilder:
 
             input_source = get_root_graph_input_source(
                 plan_builder=self,
+                pipeline_def=pipeline_def,
                 input_name=input_name,
                 input_def=input_def,
             )
@@ -305,7 +307,11 @@ class _PlanBuilder:
                         )
                     )
                 else:
-                    check.inst_param(step_input_source, "step_input_source", StepInputSource)
+                    check.inst_param(
+                        step_input_source,
+                        "step_input_source",
+                        StepInputSource,
+                    )
                     step_inputs.append(
                         StepInput(
                             name=input_name,
@@ -405,12 +411,18 @@ def get_root_graph_input_source(
     plan_builder: _PlanBuilder,
     input_name: str,
     input_def: InputDefinition,
-) -> Optional[FromConfig]:
+    pipeline_def: PipelineDefinition,
+) -> Optional[Union[FromConfig, FromDirectInputValue]]:
+    from dagster.core.definitions.job_definition import get_direct_input_values_from_job
+
+    input_values = get_direct_input_values_from_job(pipeline_def)
+    if input_values and input_name in input_values:
+        return FromDirectInputValue(input_name=input_name)
 
     input_config = plan_builder.resolved_run_config.inputs
 
     if input_config and input_name in input_config:
-        return FromConfig(solid_handle=None, input_name=input_name)
+        return FromConfig(input_name=input_name, solid_handle=None)
 
     if input_def.dagster_type.is_nothing:
         return None
