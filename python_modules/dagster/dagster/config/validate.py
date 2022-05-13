@@ -1,6 +1,6 @@
-from typing import Dict, List, Optional, Set, TypeVar, cast
+from typing import Dict, List, Mapping, Optional, Set, TypeVar, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.utils import ensure_single_item, frozendict
 
 from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
@@ -421,7 +421,7 @@ def validate_enum_config(
     return EvaluateValueResult.for_value(config_value)
 
 
-def process_config(config_type: object, config_dict: Dict) -> EvaluateValueResult[Dict]:
+def process_config(config_type: object, config_dict: Mapping) -> EvaluateValueResult[Dict]:
     config_type = resolve_to_config_type(config_type)
     config_type = check.inst(cast(ConfigType, config_type), ConfigType)
     validate_evr = validate_config(config_type, config_dict)

@@ -1,5 +1,6 @@
 import {gql} from '@apollo/client';
 import {pathVerticalDiagonal} from '@vx/shape';
+import uniq from 'lodash/uniq';
 
 import {AssetNodeDefinitionFragment} from '../assets/types/AssetNodeDefinitionFragment';
 
@@ -47,6 +48,62 @@ export interface GraphData {
 export const isSourceAsset = (node: {jobNames: string[]; opName: string | null}) => {
   return node.jobNames.length === 0 && !node.opName;
 };
+
+export function identifyBundles(assetIds: string[]) {
+  const pathPrefixes: {[prefixId: string]: string[]} = {};
+
+  for (const assetId of assetIds) {
+    const assetKeyPath = JSON.parse(assetId);
+
+    for (let ii = 1; ii < assetKeyPath.length; ii++) {
+      const prefix = assetKeyPath.slice(0, ii);
+      const key = JSON.stringify(prefix);
+      pathPrefixes[key] = pathPrefixes[key] || [];
+      pathPrefixes[key].push(assetId);
+    }
+  }
+
+  for (const key of Object.keys(pathPrefixes)) {
+    if (pathPrefixes[key].length <= 1) {
+      delete pathPrefixes[key];
+    }
+  }
+
+  const finalBundlePrefixes: {[prefixId: string]: string[]} = {};
+  const finalBundleIdForNodeId: {[id: string]: string} = {};
+
+  // Sort the prefix keys by length descending and iterate from the deepest folders first.
+  // Dedupe asset keys and replace asset keys we've already seen with the (deeper) folder
+  // they are within. This gets us "multi layer folders" of nodes.
+
+  // Turn this:
+  // {
+  //  "s3": [["s3", "collect"], ["s3", "prod", "a"], ["s3", "prod", "b"]],
+  //  "s3/prod": ["s3", "prod", "a"], ["s3", "prod", "b"]
+  // }
+
+  // Into this:
+  // {
+  //  "s3/prod": ["s3", "prod", "a"], ["s3", "prod", "b"]
+  //  "s3": [["s3", "collect"], ["s3", "prod"]],
+  // }
+
+  for (const prefixId of Object.keys(pathPrefixes).sort((a, b) => b.length - a.length)) {
+    const contents = uniq(
+      pathPrefixes[prefixId].map((p) =>
+        finalBundleIdForNodeId[p] ? finalBundleIdForNodeId[p] : p,
+      ),
+    );
+    if (contents.length === 1 && finalBundlePrefixes[contents[0]]) {
+      // If this bundle contains exactly one bundle, no need to show both outlines.
+      // Just show the inner one. eg: a > b > asset1, a > b > asset2, just show a > b.
+      continue;
+    }
+    finalBundlePrefixes[prefixId] = contents;
+    finalBundlePrefixes[prefixId].forEach((id) => (finalBundleIdForNodeId[id] = prefixId));
+  }
+  return finalBundlePrefixes;
+}
 
 export const buildGraphData = (assetNodes: AssetNode[]) => {
   const data: GraphData = {
@@ -247,11 +304,11 @@ function findComputeStatusForId(
 }
 
 export function tokenForAssetKey(key: {path: string[]}) {
-  return key.path.join('>');
+  return key.path.join('/');
 }
 
 export function displayNameForAssetKey(key: {path: string[]}) {
-  return key.path.join(' > ');
+  return key.path.join(' / ');
 }
 
 export const IN_PROGRESS_RUNS_FRAGMENT = gql`

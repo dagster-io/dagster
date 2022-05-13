@@ -14,7 +14,7 @@ from dagster_k8s.utils import wait_for_pod
 from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage, PostgresScheduleStorage
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
-from dagster import check
+import dagster._check as check
 from dagster.cli.debug import export_run
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.instance.ref import InstanceRef

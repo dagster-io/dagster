@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-from dagster import check
+import dagster._check as check
 
 
 def create_db_conn_string(base_dir, db_name):

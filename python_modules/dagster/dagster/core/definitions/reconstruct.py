@@ -4,7 +4,8 @@ import sys
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, NamedTuple, Optional, Union, overload
 
-from dagster import check, seven
+import dagster._check as check
+import dagster.seven as seven
 from dagster.core.code_pointer import (
     CodePointer,
     CustomPointer,
@@ -582,7 +583,7 @@ def def_from_pointer(
     # if its a function invoke it - otherwise we are pointing to a
     # artifact in module scope, likely decorator output
 
-    if seven.get_args(target):
+    if seven.get_arg_names(target):
         raise DagsterInvariantViolationError(
             "Error invoking function at {target} with no arguments. "
             "Reconstructable target must be callable with no arguments".format(

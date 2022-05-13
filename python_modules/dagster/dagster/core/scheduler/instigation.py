@@ -2,7 +2,7 @@ from enum import Enum
 from inspect import Parameter
 from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Type, Union
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation.origin import ExternalInstigatorOrigin
 from dagster.core.host_representation.selector import InstigatorSelector, RepositorySelector

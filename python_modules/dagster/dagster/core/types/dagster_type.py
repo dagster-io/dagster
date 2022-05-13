@@ -4,11 +4,11 @@ from enum import Enum as PythonEnum
 from functools import partial
 from typing import cast
 
-from dagster import check
+import dagster._check as check
 from dagster.builtins import BuiltinEnum
 from dagster.config.config_type import Array, ConfigType
 from dagster.config.config_type import Noneable as ConfigNoneable
-from dagster.core.definitions.events import TypeCheck
+from dagster.core.definitions.events import DynamicOutput, Output, TypeCheck
 from dagster.core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.serdes import whitelist_for_serdes
@@ -227,9 +227,9 @@ class DagsterType:
 
 
 def _validate_type_check_fn(fn: t.Callable, name: t.Optional[str]) -> bool:
-    from dagster.seven import get_args
+    from dagster.seven import get_arg_names
 
-    args = get_args(fn)
+    args = get_arg_names(fn)
 
     # py2 doesn't filter out self
     if len(args) >= 1 and args[0] == "self":
@@ -804,6 +804,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
     )
+    from dagster.seven.typing import get_args
     from dagster.utils.typing_api import is_typing_type
 
     from .python_dict import Dict, PythonDict
@@ -821,10 +822,19 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         "Do not pass runtime type classes. Got {}".format(dagster_type),
     )
 
-    # First check to see if it is part of python's typing library
+    # First, check to see if we're using Dagster's generic output type to do the type catching.
+    if _is_generic_output_annotation(dagster_type):
+        type_args = get_args(dagster_type)
+        # If no inner type was provided, forward Any type.
+        dagster_type = type_args[0] if len(type_args) == 1 else Any
+    elif is_dynamic_output_annotation(dagster_type):
+        dynamic_out_annotation = get_args(dagster_type)[0]
+        type_args = get_args(dynamic_out_annotation)
+        dagster_type = type_args[0] if len(type_args) == 1 else Any
+
+    # Then, check to see if it is part of python's typing library
     if is_typing_type(dagster_type):
         dagster_type = transform_typing_type(dagster_type)
-
     if isinstance(dagster_type, DagsterType):
         return dagster_type
 
@@ -869,6 +879,36 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
             dagster_type=str(dagster_type), additional_msg="."
         )
     )
+
+
+def is_dynamic_output_annotation(dagster_type: object) -> bool:
+    from dagster.seven.typing import get_args, get_origin
+
+    check.invariant(
+        not (isinstance(dagster_type, type) and issubclass(dagster_type, ConfigType)),
+        "Cannot resolve a config type to a runtime type",
+    )
+
+    check.invariant(
+        not (isinstance(dagster_type, type) and issubclass(dagster_type, DagsterType)),
+        "Do not pass runtime type classes. Got {}".format(dagster_type),
+    )
+
+    if dagster_type == DynamicOutput or get_origin(dagster_type) == DynamicOutput:
+        raise DagsterInvariantViolationError(
+            "Op annotated with return type DynamicOutput. DynamicOutputs can only be returned in the context of a List. If only one output is needed, use the Output API."
+        )
+
+    if get_origin(dagster_type) == list and len(get_args(dagster_type)) == 1:
+        list_inner_type = get_args(dagster_type)[0]
+        return list_inner_type == DynamicOutput or get_origin(list_inner_type) == DynamicOutput
+    return False
+
+
+def _is_generic_output_annotation(dagster_type: object) -> bool:
+    from dagster.seven.typing import get_origin
+
+    return dagster_type == Output or get_origin(dagster_type) == Output
 
 
 def resolve_python_type_to_dagster_type(python_type: t.Type) -> DagsterType:

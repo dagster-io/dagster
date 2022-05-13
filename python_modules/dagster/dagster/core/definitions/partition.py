@@ -8,9 +8,10 @@ from typing import Any, Callable, Dict, Generic, List, NamedTuple, Optional, Typ
 import pendulum
 from dateutil.relativedelta import relativedelta
 
-from dagster import check
+import dagster._check as check
 from dagster.serdes import whitelist_for_serdes
 
+from ...core.definitions.utils import validate_tags
 from ...seven.compat.pendulum import PendulumDateTime, to_timezone
 from ...utils import frozenlist, merge_dicts
 from ...utils.schedules import schedule_execution_time_iterator
@@ -24,7 +25,6 @@ from ..errors import (
     user_code_error_boundary,
 )
 from ..storage.pipeline_run import PipelineRun
-from ..storage.tags import check_tags
 from .mode import DEFAULT_MODE_NAME
 from .run_request import RunRequest, SkipReason
 from .schedule_definition import (
@@ -495,11 +495,9 @@ class PartitionSetDefinition(Generic[T]):
         return copy.deepcopy(self._user_defined_run_config_fn_for_partition(partition))
 
     def tags_for_partition(self, partition: Partition[T]) -> Dict[str, str]:
-        user_tags = copy.deepcopy(
-            validate_tags(self._user_defined_tags_fn_for_partition(partition))
+        user_tags = validate_tags(
+            self._user_defined_tags_fn_for_partition(partition), allow_reserved_tags=False
         )
-        check_tags(user_tags, "user_tags")
-
         tags = merge_dicts(user_tags, PipelineRun.tags_for_partition_set(self, partition))
 
         return tags

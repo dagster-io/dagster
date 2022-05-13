@@ -49,6 +49,7 @@ def main(quiet):
         "-e python_modules/libraries/dagster-shell",
         "-e python_modules/libraries/dagster-slack",
         "-e python_modules/libraries/dagster-snowflake",
+        "-e python_modules/libraries/dagster-snowflake-pandas",
         "-e python_modules/libraries/dagster-spark",
         "-e python_modules/libraries/dagster-ssh",
         "-e python_modules/libraries/dagster-twilio",
@@ -57,7 +58,6 @@ def main(quiet):
         "-e python_modules/libraries/dagster-azure",
         "-e python_modules/libraries/dagster-msteams",
         "-e helm/dagster/schema[test]",
-        '-e "examples/airline_demo[full]"',
     ]
 
     # dagster-ge depends on a great_expectations version that does not install on Windows

@@ -1,7 +1,7 @@
 import warnings
 from typing import AbstractSet, Dict, Iterable, Mapping, Optional, Sequence, Set, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions import GraphDefinition, NodeDefinition, NodeHandle, OpDefinition
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
@@ -63,6 +63,7 @@ class AssetsDefinition:
         asset_keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         asset_keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from a GraphDefinition.
@@ -80,6 +81,8 @@ class AssetsDefinition:
                 graph. If this default is not correct, you pass in a map of output names to a
                 corrected set of AssetKeys that they depend on. Any AssetKeys in this list must be
                 either used as input to the asset or produced within the graph.
+            partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+                compose the assets.
         """
         asset_keys_by_input_name = check.opt_dict_param(
             asset_keys_by_input_name, "asset_keys_by_input_name", key_type=str, value_type=AssetKey
@@ -113,6 +116,9 @@ class AssetsDefinition:
             ),
             node_def=graph_def,
             asset_deps=transformed_internal_asset_deps or None,
+            partitions_def=check.opt_inst_param(
+                partitions_def, "partitions_def", PartitionsDefinition
+            ),
         )
 
     @property

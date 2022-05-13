@@ -4,6 +4,7 @@ import tempfile
 import uuid
 from collections import defaultdict
 from contextlib import contextmanager
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Generator, Optional, Union
 
 # top-level include is dangerous in terms of incurring circular deps
 from dagster import (
@@ -15,10 +16,9 @@ from dagster import (
     PipelineDefinition,
     RepositoryDefinition,
     TypeCheck,
-    check,
-    execute_pipeline,
-    lambda_solid,
 )
+from dagster import _check as check
+from dagster import execute_pipeline, lambda_solid
 from dagster.core.definitions.logger_definition import LoggerDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
@@ -54,8 +54,13 @@ from ..temp_file import (
 )
 from ..typing_api import is_typing_type
 
+if TYPE_CHECKING:
+    from dagster._core.execution.results import CompositeSolidExecutionResult, SolidExecutionResult
 
-def create_test_pipeline_execution_context(logger_defs=None):
+
+def create_test_pipeline_execution_context(
+    logger_defs: Optional[Dict[str, LoggerDefinition]] = None
+) -> PlanExecutionContext:
     loggers = check.opt_dict_param(
         logger_defs, "logger_defs", key_type=str, value_type=LoggerDefinition
     )
@@ -63,7 +68,7 @@ def create_test_pipeline_execution_context(logger_defs=None):
     pipeline_def = PipelineDefinition(
         name="test_legacy_context", solid_defs=[], mode_defs=[mode_def]
     )
-    run_config = {"loggers": {key: {} for key in loggers}}
+    run_config: Dict[str, Dict[str, Dict]] = {"loggers": {key: {} for key in loggers}}
     pipeline_run = PipelineRun(pipeline_name="test_legacy_context", run_config=run_config)
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline=pipeline_def, run_config=run_config)
@@ -89,14 +94,16 @@ def _dep_key_of(solid):
     return NodeInvocation(solid.definition.name, solid.name)
 
 
-def build_pipeline_with_input_stubs(pipeline_def, inputs):
+def build_pipeline_with_input_stubs(
+    pipeline_def: PipelineDefinition, inputs: Dict[str, dict]
+) -> PipelineDefinition:
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.dict_param(inputs, "inputs", key_type=str, value_type=dict)
 
-    deps = defaultdict(dict)
+    deps: Dict[str, Dict[str, object]] = defaultdict(dict)
     for solid_name, dep_dict in pipeline_def.dependencies.items():
         for input_name, dep in dep_dict.items():
-            deps[solid_name][input_name] = dep
+            deps[solid_name][input_name] = dep  # type: ignore
 
     stub_solid_defs = []
 
@@ -118,26 +125,26 @@ def build_pipeline_with_input_stubs(pipeline_def, inputs):
                 input_value,
             )
             stub_solid_defs.append(stub_solid_def)
-            deps[_dep_key_of(solid)][input_name] = DependencyDefinition(stub_solid_def.name)
+            deps[_dep_key_of(solid)][input_name] = DependencyDefinition(stub_solid_def.name)  # type: ignore
 
     return PipelineDefinition(
         name=pipeline_def.name + "_stubbed",
         solid_defs=pipeline_def.top_level_solid_defs + stub_solid_defs,
         mode_defs=pipeline_def.mode_definitions,
-        dependencies=deps,
+        dependencies=deps,  # type: ignore
     )
 
 
 def execute_solids_within_pipeline(
-    pipeline_def,
-    solid_names,
-    inputs=None,
-    run_config=None,
-    mode=None,
-    preset=None,
-    tags=None,
-    instance=None,
-):
+    pipeline_def: PipelineDefinition,
+    solid_names: AbstractSet[str],
+    inputs: Optional[Dict[str, dict]] = None,
+    run_config: Optional[Dict[str, object]] = None,
+    mode: Optional[str] = None,
+    preset: Optional[str] = None,
+    tags: Optional[Dict[str, str]] = None,
+    instance: Optional[DagsterInstance] = None,
+) -> Dict[str, Union["CompositeSolidExecutionResult", "SolidExecutionResult"]]:
     """Execute a set of solids within an existing pipeline.
 
     Intended to support tests. Input values may be passed directly.
@@ -230,7 +237,9 @@ def execute_solid_within_pipeline(
 
 
 @contextmanager
-def yield_empty_pipeline_context(run_id=None, instance=None):
+def yield_empty_pipeline_context(
+    run_id: Optional[str] = None, instance: Optional[DagsterInstance] = None
+) -> Generator[PlanExecutionContext, None, None]:
     pipeline = InMemoryPipeline(PipelineDefinition([], "empty"))
     pipeline_def = pipeline.get_definition()
     instance = check.opt_inst_param(
@@ -261,13 +270,13 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
 
 
 def execute_solid(
-    solid_def,
-    mode_def=None,
-    input_values=None,
-    tags=None,
-    run_config=None,
-    raise_on_error=True,
-):
+    solid_def: NodeDefinition,
+    mode_def: Optional[ModeDefinition] = None,
+    input_values: Optional[Dict[str, object]] = None,
+    tags: Optional[Dict[str, Any]] = None,
+    run_config: Optional[Dict[str, object]] = None,
+    raise_on_error: bool = True,
+) -> Union["CompositeSolidExecutionResult", "SolidExecutionResult"]:
     """Execute a single solid in an ephemeral pipeline.
 
     Intended to support unit tests. Input values may be passed directly, and no pipeline need be
@@ -303,7 +312,7 @@ def execute_solid(
 
         return input_solid
 
-    dependencies = defaultdict(dict)
+    dependencies: Dict[str, Dict] = defaultdict(dict)
 
     for input_name, input_value in input_values.items():
         dependencies[solid_def.name][input_name] = DependencyDefinition(input_name)
@@ -313,7 +322,7 @@ def execute_solid(
         PipelineDefinition(
             name="ephemeral_{}_solid_pipeline".format(solid_def.name),
             solid_defs=solid_defs,
-            dependencies=dependencies,
+            dependencies=dependencies,  # type: ignore
             mode_defs=[mode_def] if mode_def else None,
         ),
         run_config=run_config,
@@ -385,13 +394,13 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
     on a cron tab) are left unimplemented.
     """
 
-    def __init__(self, artifacts_dir, inst_data=None):
+    def __init__(self, artifacts_dir: str, inst_data: object = None):
         check.str_param(artifacts_dir, "artifacts_dir")
         self._artifacts_dir = artifacts_dir
         self._inst_data = inst_data
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> object:
         return self._inst_data
 
     @classmethod
@@ -399,15 +408,15 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
         return {"base_dir": str}
 
     @staticmethod
-    def from_config_value(inst_data, config_value):
+    def from_config_value(inst_data: object, config_value):
         return FilesystemTestScheduler(artifacts_dir=config_value["base_dir"], inst_data=inst_data)
 
-    def debug_info(self):
+    def debug_info(self) -> str:
         return ""
 
-    def get_logs_path(self, _instance, schedule_origin_id):
+    def get_logs_path(self, _instance: DagsterInstance, schedule_origin_id: str) -> str:
         check.str_param(schedule_origin_id, "schedule_origin_id")
         return os.path.join(self._artifacts_dir, "logs", schedule_origin_id, "scheduler.log")
 
-    def wipe(self, instance):
+    def wipe(self, instance: DagsterInstance) -> None:
         pass

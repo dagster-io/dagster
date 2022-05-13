@@ -4,7 +4,7 @@ import sqlalchemy as db
 from alembic import op
 from sqlalchemy.engine import reflection
 
-from dagster import check
+import dagster._check as check
 from dagster.core.storage.sql import get_current_timestamp
 
 

@@ -1,3 +1,4 @@
+# type: ignore[return-value]
 import time
 from typing import Dict, Generator, List, Tuple
 
@@ -382,8 +383,10 @@ def test_type_annotations_with_output():
     def my_op_returns_output() -> Output:
         return Output(5)
 
-    with pytest.raises(DagsterTypeCheckDidNotPass):
-        my_op_returns_output()
+    output = my_op_returns_output()
+    assert output.value == 5
+    result = execute_op_in_graph(my_op_returns_output)
+    assert result.output_for_node("my_op_returns_output") == 5
 
 
 # Document what happens when someone tries to use type annotations with generator
@@ -795,3 +798,277 @@ def test_args_kwargs_op():
 
     result = the_graph_provides_inputs.execute_in_process()
     assert result.success
+
+
+def test_generic_output_op():
+    @op
+    def the_op() -> Output[str]:
+        return Output("foo")
+
+    assert the_op.output_def_named("result").dagster_type.key == "String"
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+    assert result.output_for_node("the_op") == "foo"
+
+    @op
+    def the_op_bad_type_match() -> Output[int]:
+        return Output("foo")
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step output "result" - expected type '
+        '"Int". Description: Value "foo" of python type "str" must be a int.',
+    ):
+        execute_op_in_graph(the_op_bad_type_match)
+
+
+def test_output_generic_correct_inner_type():
+    @op
+    def the_op_not_using_output() -> Output[int]:
+        return 42
+
+    result = execute_op_in_graph(the_op_not_using_output)
+    assert result.success
+
+    @op
+    def the_op_annotation_not_using_output() -> int:
+        return Output(42)
+
+    result = execute_op_in_graph(the_op_annotation_not_using_output)
+    assert result.success
+
+
+def test_output_generic_type_mismatches():
+    @op
+    def the_op_annotation_type_mismatch() -> int:
+        return Output("foo")
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step output "result" - expected type "Int". Description: Value "foo" of python type "str" must be a int.',
+    ):
+        execute_op_in_graph(the_op_annotation_type_mismatch)
+
+    @op
+    def the_op_output_annotation_type_mismatch() -> Output[int]:
+        return "foo"
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step output "result" - expected type "Int". Description: Value "foo" of python type "str" must be a int.',
+    ):
+        execute_op_in_graph(the_op_output_annotation_type_mismatch)
+
+
+def test_generic_output_tuple_op():
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op() -> Tuple[Output[str], Output[int]]:
+        return (Output("foo"), Output(5))
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op_bad_type_match() -> Tuple[Output[str], Output[int]]:
+        return (Output("foo"), Output("foo"))
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step output "out2" - expected type "Int". '
+        'Description: Value "foo" of python type "str" must be a int.',
+    ):
+        execute_op_in_graph(the_op_bad_type_match)
+
+
+def test_generic_output_tuple_complex_types():
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op() -> Tuple[Output[List[str]], Output[Dict[str, str]]]:
+        return (Output(["foo"]), Output({"foo": "bar"}))
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+
+
+def test_generic_output_name_mismatch():
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op() -> Tuple[Output[int], Output[str]]:
+        return (Output("foo", output_name="out2"), Output(42, output_name="out1"))
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Bad state: Received a tuple of outputs. An output was explicitly named 'out2', which does not match the output definition specified for position 0: 'out1'.",
+    ):
+        execute_op_in_graph(the_op)
+
+
+def test_generic_dynamic_output():
+    @op
+    def basic() -> List[DynamicOutput[int]]:
+        return [DynamicOutput(mapping_key="1", value=1), DynamicOutput(mapping_key="2", value=2)]
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+    assert result.output_for_node("basic") == {"1": 1, "2": 2}
+
+
+def test_generic_dynamic_output_type_mismatch():
+    @op
+    def basic() -> List[DynamicOutput[int]]:
+        return [DynamicOutput(mapping_key="1", value=1), DynamicOutput(mapping_key="2", value="2")]
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step output "result" - expected type "Int". Description: Value "2" of python type "str" must be a int.',
+    ):
+        execute_op_in_graph(basic)
+
+
+def test_generic_dynamic_output_mix_with_regular():
+    @op(out={"regular": Out(), "dynamic": DynamicOut()})
+    def basic() -> Tuple[Output[int], List[DynamicOutput[str]]]:
+        return (
+            Output(5),
+            [
+                DynamicOutput(mapping_key="1", value="foo"),
+                DynamicOutput(mapping_key="2", value="bar"),
+            ],
+        )
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+
+    assert result.output_for_node("basic", "regular") == 5
+    assert result.output_for_node("basic", "dynamic") == {"1": "foo", "2": "bar"}
+
+
+def test_generic_dynamic_output_mix_with_regular_type_mismatch():
+    @op(out={"regular": Out(), "dynamic": DynamicOut()})
+    def basic() -> Tuple[Output[int], List[DynamicOutput[str]]]:
+        return (
+            Output(5),
+            [
+                DynamicOutput(mapping_key="1", value="foo"),
+                DynamicOutput(mapping_key="2", value=5),
+            ],
+        )
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step output "dynamic" - expected type "String". Description: Value "5" of python type "int" must be a string.',
+    ):
+        execute_op_in_graph(basic)
+
+
+def test_generic_dynamic_output_name_not_provided():
+    @op
+    def basic() -> List[DynamicOutput[int]]:
+        return [DynamicOutput(value=5, mapping_key="blah", output_name="blah")]
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='Core compute for op "basic" returned an output "blah" that does not exist.',
+    ):
+        execute_op_in_graph(basic)
+
+
+def test_generic_dynamic_output_name_mismatch():
+    @op(out={"the_name": DynamicOut()})
+    def basic() -> List[DynamicOutput[int]]:
+        return [DynamicOutput(value=5, mapping_key="blah", output_name="bad_name")]
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='Core compute for op "basic" returned an output "bad_name" that does not exist.',
+    ):
+        execute_op_in_graph(basic)
+
+
+def test_generic_dynamic_output_bare_list():
+    @op
+    def basic() -> List[DynamicOutput]:
+        return [DynamicOutput(4, mapping_key="1")]
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+    assert result.output_for_node("basic") == {"1": 4}
+
+
+def test_generic_dynamic_output_bare():
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Op annotated with return type DynamicOutput. DynamicOutputs can only be returned in the context of a List. If only one output is needed, use the Output API.",
+    ):
+
+        @op
+        def basic() -> DynamicOutput:
+            pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Op annotated with return type DynamicOutput. DynamicOutputs can only be returned in the context of a List. If only one output is needed, use the Output API.",
+    ):
+
+        @op
+        def basic() -> DynamicOutput[int]:
+            pass
+
+
+def test_generic_dynamic_output_empty():
+    @op
+    def basic() -> List[DynamicOutput]:
+        return []
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="No outputs found for output 'result' from node 'basic'.",
+    ):
+        result.output_for_node("basic")
+
+    # This behavior isn't exactly correct - we should be erroring when a
+    # required dynamic output yields no outputs.
+    # https://github.com/dagster-io/dagster/issues/5948#issuecomment-997037163
+    @op(out=DynamicOut())
+    def basic_yield():
+        pass
+
+    result = execute_op_in_graph(basic_yield)
+    assert result.success
+
+
+def test_generic_dynamic_output_empty_with_type():
+    @op
+    def basic() -> List[DynamicOutput[str]]:
+        return []
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+
+    # Equivalent behavior in the dynamic yield case. is_required doesn't
+    # actually do anything on a DynamicOut right now:
+    # https://github.com/dagster-io/dagster/issues/5948#issuecomment-997037163
+    @op(out=DynamicOut(dagster_type=str, is_required=False))
+    def basic_yield():
+        pass
+
+    result = execute_op_in_graph(basic_yield)
+    assert result.success
+
+
+def test_generic_dynamic_multiple_outputs_empty():
+    @op(out={"out1": Out(), "out2": DynamicOut()})
+    def basic() -> Tuple[Output, List[DynamicOutput]]:
+        return (Output(5), [])
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="No outputs found for output 'out2' from node 'basic'.",
+    ):
+        result.output_for_node("basic", "out2")

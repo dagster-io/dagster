@@ -3,7 +3,9 @@ from typing import List, Optional, cast
 import kubernetes
 from dagster_k8s.launcher import K8sRunLauncher
 
-from dagster import Field, StringSource, check, executor
+from dagster import Field, StringSource
+from dagster import _check as check
+from dagster import executor
 from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
@@ -30,8 +32,10 @@ from .utils import delete_job
     name="k8s",
     config_schema=merge_dicts(
         DagsterK8sJobConfig.config_type_job(),
-        {"job_namespace": Field(StringSource, is_required=False)},
-        {"retries": get_retries_config()},
+        {
+            "job_namespace": Field(StringSource, is_required=False),
+            "retries": get_retries_config(),
+        },
     ),
     requirements=multiple_process_executor_requirements(),
 )

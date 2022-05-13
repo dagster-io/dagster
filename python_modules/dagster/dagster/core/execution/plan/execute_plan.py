@@ -2,7 +2,7 @@ import sys
 from contextlib import ExitStack
 from typing import Iterator, List, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions import Failure, HookExecutionResult, RetryRequested
 from dagster.core.errors import (
     DagsterError,
@@ -191,17 +191,15 @@ def dagster_event_sequence_for_step(
             The run was interrupted in the middle of execution (typically by a
             termination request).
 
-        (5) User error:
+        (5) Dagster framework error:
             The framework raised a DagsterError that indicates a usage error
             or some other error not communicated by a user-thrown exception. For example,
             if the user yields an object out of a compute function that is not a
             proper event (not an Output, ExpectationResult, etc).
 
-        (6) Framework failure:
-            An unexpected error occurred. This is a framework error. Either there
-            has been an internal error in the framework OR we have forgotten to put a
-            user code error boundary around invoked user-space code. These terminate
-            the computation immediately (by re-raising).
+        (6) All other errors:
+            An unexpected error occurred. Either there has been an internal error in the framework
+            OR we have forgotten to put a user code error boundary around invoked user-space code.
 
 
     The "raised_dagster_errors" context manager can be used to force these errors to be
@@ -313,24 +311,16 @@ def dagster_event_sequence_for_step(
         )
         raise interrupt_error
 
-    # case (5) in top comment
-    except DagsterError as dagster_error:
-        step_context.capture_step_exception(dagster_error)
+    # cases (5) and (6) in top comment
+    except BaseException as error:
+        step_context.capture_step_exception(error)
         yield step_failure_event_from_exc_info(
             step_context,
             sys.exc_info(),
-            error_source=ErrorSource.FRAMEWORK_ERROR,
+            error_source=ErrorSource.FRAMEWORK_ERROR
+            if isinstance(error, DagsterError)
+            else ErrorSource.UNEXPECTED_ERROR,
         )
 
         if step_context.raise_on_error:
-            raise dagster_error
-
-    # case (6) in top comment
-    except BaseException as unexpected_exception:
-        step_context.capture_step_exception(unexpected_exception)
-        yield step_failure_event_from_exc_info(
-            step_context,
-            sys.exc_info(),
-            error_source=ErrorSource.UNEXPECTED_ERROR,
-        )
-        raise unexpected_exception
+            raise error

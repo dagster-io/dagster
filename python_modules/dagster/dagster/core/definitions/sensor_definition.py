@@ -5,7 +5,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Generator,
     Iterator,
     List,
     NamedTuple,
@@ -17,7 +16,7 @@ from typing import (
 
 from typing_extensions import TypeGuard
 
-from dagster import check
+import dagster._check as check
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -141,7 +140,7 @@ class SensorEvaluationContext:
 SensorExecutionContext = SensorEvaluationContext
 
 RawSensorEvaluationFunctionReturn = Union[
-    Iterator[Union[SkipReason, RunRequest]], SkipReason, RunRequest
+    Iterator[Union[SkipReason, RunRequest]], List[RunRequest], SkipReason, RunRequest
 ]
 RawSensorEvaluationFunction = Union[
     Callable[[], RawSensorEvaluationFunctionReturn],
@@ -500,7 +499,7 @@ def wrap_sensor_evaluation(
         else:
             result = fn()  # type: ignore
 
-        if inspect.isgenerator(result):
+        if inspect.isgenerator(result) or isinstance(result, list):
             for item in result:
                 yield item
         elif isinstance(result, (SkipReason, RunRequest)):
@@ -557,7 +556,7 @@ def build_sensor_context(
 
 
 AssetMaterializationFunctionReturn = Union[
-    Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason
+    Iterator[Union[RunRequest, SkipReason]], List[RunRequest], RunRequest, SkipReason
 ]
 AssetMaterializationFunction = Callable[
     ["SensorExecutionContext", "EventLogEntry"],
@@ -574,7 +573,7 @@ class AssetSensorDefinition(SensorDefinition):
         asset_key (AssetKey): The asset_key this sensor monitors.
         pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the sensor
             fires. Cannot be used in conjunction with `job` or `jobs` parameters.
-        asset_materialization_fn (Callable[[SensorEvaluationContext, EventLogEntry], Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason]]): The core
+        asset_materialization_fn (Callable[[SensorEvaluationContext, EventLogEntry], Union[Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason]]): The core
             evaluation function for the sensor, which is run at an interval to determine whether a
             run should be launched or not. Takes a :py:class:`~dagster.SensorEvaluationContext` and
             an EventLogEntry corresponding to an AssetMaterialization event.
@@ -603,7 +602,7 @@ class AssetSensorDefinition(SensorDefinition):
         pipeline_name: Optional[str],
         asset_materialization_fn: Callable[
             ["SensorExecutionContext", "EventLogEntry"],
-            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+            RawSensorEvaluationFunctionReturn,
         ],
         solid_selection: Optional[List[str]] = None,
         mode: Optional[str] = None,
@@ -641,7 +640,12 @@ class AssetSensorDefinition(SensorDefinition):
                     return
 
                 event_record = event_records[0]
-                yield from materialization_fn(context, event_record.event_log_entry)
+                result = materialization_fn(context, event_record.event_log_entry)
+                if inspect.isgenerator(result) or isinstance(result, list):
+                    for item in result:
+                        yield item
+                elif isinstance(result, (SkipReason, RunRequest)):
+                    yield result
                 context.update_cursor(str(event_record.storage_id))
 
             return _fn

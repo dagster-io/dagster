@@ -1,9 +1,8 @@
 import * as dagre from 'dagre';
-import uniq from 'lodash/uniq';
 
 import {IBounds, IPoint} from '../graph/common';
 
-import {GraphData, GraphNode, GraphId, displayNameForAssetKey} from './Utils';
+import {GraphData, GraphNode, GraphId, displayNameForAssetKey, identifyBundles} from './Utils';
 
 export interface AssetLayout {
   id: GraphId;
@@ -34,54 +33,6 @@ const opts: {margin: number; mini: boolean} = {
   mini: false,
 };
 
-function identifyBundles(nodes: GraphNode[]) {
-  const pathPrefixes: {[prefixId: string]: string[]} = {};
-
-  for (const node of nodes) {
-    for (let ii = 1; ii < node.assetKey.path.length; ii++) {
-      const prefix = node.assetKey.path.slice(0, ii);
-      const key = JSON.stringify(prefix);
-      pathPrefixes[key] = pathPrefixes[key] || [];
-      pathPrefixes[key].push(node.id);
-    }
-  }
-
-  for (const key of Object.keys(pathPrefixes)) {
-    if (pathPrefixes[key].length <= 1) {
-      delete pathPrefixes[key];
-    }
-  }
-
-  const finalBundlePrefixes: {[prefixId: string]: string[]} = {};
-  const finalBundleIdForNodeId: {[id: string]: string} = {};
-
-  // Sort the prefix keys by length descending and iterate from the deepest folders first.
-  // Dedupe asset keys and replace asset keys we've already seen with the (deeper) folder
-  // they are within. This gets us "multi layer folders" of nodes.
-
-  // Turn this:
-  // {
-  //  "s3": [["s3", "collect"], ["s3", "prod", "a"], ["s3", "prod", "b"]],
-  //  "s3/prod": ["s3", "prod", "a"], ["s3", "prod", "b"]
-  // }
-
-  // Into this:
-  // {
-  //  "s3/prod": ["s3", "prod", "a"], ["s3", "prod", "b"]
-  //  "s3": [["s3", "collect"], ["s3", "prod"]],
-  // }
-
-  for (const prefixId of Object.keys(pathPrefixes).sort((a, b) => b.length - a.length)) {
-    finalBundlePrefixes[prefixId] = uniq(
-      pathPrefixes[prefixId].map((p) =>
-        finalBundleIdForNodeId[p] ? finalBundleIdForNodeId[p] : p,
-      ),
-    );
-    finalBundlePrefixes[prefixId].forEach((id) => (finalBundleIdForNodeId[id] = prefixId));
-  }
-  return finalBundlePrefixes;
-}
-
 export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
   const g = new dagre.graphlib.Graph({compound: true});
 
@@ -97,6 +48,7 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
 
   const shouldRender = (node?: GraphNode) => node && node.definition.opName;
 
+  // Add all the nodes to the graph
   Object.values(graphData.nodes)
     .filter(shouldRender)
     .forEach((node) => {
@@ -104,16 +56,10 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
       g.setNode(node.id, {width: opts.mini ? 230 : width, height});
     });
 
-  const bundleMapping = identifyBundles(Object.values(graphData.nodes));
-  for (const [parentId, nodeIds] of Object.entries(bundleMapping)) {
-    g.setNode(parentId, {});
-    for (const nodeId of nodeIds) {
-      g.setParent(nodeId, parentId);
-    }
-  }
-
   const foreignNodes = {};
 
+  // Add the edges to the graph, and accumulate a set of "foreign nodes" (for which
+  // we have an inbound/outbound edge, but we don't have the `node` in the graphData).
   Object.keys(graphData.downstream).forEach((upstreamId) => {
     const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
     downstreamIds.forEach((downstreamId) => {
@@ -134,9 +80,23 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
     });
   });
 
+  // Add all the foreign nodes to the graph
   Object.keys(foreignNodes).forEach((id) => {
     g.setNode(id, getForeignNodeDimensions(id));
   });
+
+  // Create "parent" nodes for nodes with a shared ID (path) prefix (eg: s3>a, s3>b),
+  // and then place the children inside. Note that the bundles are identified in order
+  // and bundleMapping can reference bundles as children - this code can create multiple
+  // layers of parents!
+  const bundleMapping = identifyBundles(g.nodes());
+
+  for (const [parentId, nodeIds] of Object.entries(bundleMapping)) {
+    g.setNode(parentId, {});
+    for (const nodeId of nodeIds) {
+      g.setParent(nodeId, parentId);
+    }
+  }
 
   dagre.layout(g);
 
@@ -164,9 +124,24 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
       height: dagreNode.height,
     };
     if (bundleMapping[id]) {
-      bundles[id] = {id, bounds};
-    } else {
-      nodes[id] = {id, bounds};
+      return;
+    }
+    nodes[id] = {id, bounds};
+
+    // If this node was inside one or more parent nodes, upsert the parent box
+    // into the bundles result set and expand it to include the child. Note:
+    // dagre does give us "parent" node dimensions, but sometimes they're randomly
+    // much larger than the contents.
+    let bundleId = g.parent(id);
+    while (bundleId) {
+      bundles[bundleId] = bundles[bundleId] || {id: bundleId, bounds};
+      bundles[bundleId].bounds = extendBounds(bundles[bundleId].bounds, {
+        x: bounds.x - opts.margin / 4,
+        y: bounds.y - opts.margin / 4,
+        width: bounds.width + opts.margin / 2,
+        height: bounds.height + opts.margin / 2,
+      });
+      bundleId = g.parent(bundleId);
     }
     maxWidth = Math.max(maxWidth, dagreNode.x + dagreNode.width / 2);
     maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height / 2);
@@ -209,6 +184,15 @@ export const getForeignNodeDimensions = (id: string) => {
   return {width: displayNameForAssetKey({path}).length * 8 + 30, height: 30};
 };
 
+export const extendBounds = (a: IBounds, b: IBounds) => {
+  const xmin = Math.min(a.x, b.x);
+  const ymin = Math.min(a.y, b.y);
+  const xmax = Math.max(a.x + a.width, b.x + b.width);
+  const ymax = Math.max(a.y + a.height, b.y + b.height);
+  return {x: xmin, y: ymin, width: xmax - xmin, height: ymax - ymin};
+};
+
+export const ASSET_NODE_ICON_WIDTH = 20;
 export const ASSET_NODE_ANNOTATIONS_MAX_WIDTH = 65;
 export const ASSET_NODE_NAME_MAX_LENGTH = 32;
 const DISPLAY_NAME_PX_PER_CHAR = 8.0;
@@ -231,7 +215,9 @@ export const getAssetNodeDimensions = (def: {
       Math.max(
         200,
         Math.min(ASSET_NODE_NAME_MAX_LENGTH, displayName.length) * DISPLAY_NAME_PX_PER_CHAR,
-      ) + ASSET_NODE_ANNOTATIONS_MAX_WIDTH,
+      ) +
+      ASSET_NODE_ICON_WIDTH +
+      ASSET_NODE_ANNOTATIONS_MAX_WIDTH,
     height,
   };
 };

@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional, Ty
 import pendulum
 from typing_extensions import TypeGuard
 
-from dagster import check
+import dagster._check as check
 
 from ...serdes import whitelist_for_serdes
 from ...utils import ensure_gen, merge_dicts
@@ -23,13 +23,12 @@ from ..errors import (
 from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
 from ..storage.pipeline_run import PipelineRun
-from ..storage.tags import check_tags
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
 from .run_request import RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
-from .utils import check_valid_name
+from .utils import check_valid_name, validate_tags
 
 T = TypeVar("T")
 
@@ -100,7 +99,9 @@ ScheduleExecutionContext = ScheduleEvaluationContext
 RunConfig = Dict[str, Any]
 RunRequestIterator = Iterator[Union[RunRequest, SkipReason]]
 
-ScheduleEvaluationFunctionReturn = Union[RunRequest, SkipReason, RunConfig, RunRequestIterator]
+ScheduleEvaluationFunctionReturn = Union[
+    RunRequest, SkipReason, RunConfig, RunRequestIterator, List[RunRequest]
+]
 RawScheduleEvaluationFunction = Union[
     Callable[[ScheduleEvaluationContext], ScheduleEvaluationFunctionReturn],
     Callable[[], ScheduleEvaluationFunctionReturn],
@@ -302,7 +303,7 @@ class ScheduleDefinition:
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
             elif tags:
-                check_tags(tags, "tags")
+                tags = validate_tags(tags, allow_reserved_tags=False)
                 tags_fn = lambda _context: tags
             else:
                 tags_fn = check.opt_callable_param(
@@ -341,7 +342,7 @@ class ScheduleDefinition:
                     ScheduleExecutionError,
                     lambda: f"Error occurred during the execution of tags_fn for schedule {name}",
                 ):
-                    evaluated_tags = tags_fn(context)
+                    evaluated_tags = validate_tags(tags_fn(context), allow_reserved_tags=False)
 
                 yield RunRequest(
                     run_key=None,

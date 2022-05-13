@@ -1,16 +1,9 @@
 import dask
 import dask.distributed
 
-from dagster import (
-    Executor,
-    Field,
-    Permissive,
-    Selector,
-    StringSource,
-    check,
-    multiple_process_executor_requirements,
-    seven,
-)
+from dagster import Executor, Field, Permissive, Selector, StringSource
+from dagster import _check as check
+from dagster import multiple_process_executor_requirements, seven
 from dagster.core.definitions.executor_definition import executor
 from dagster.core.errors import raise_execution_interrupts
 from dagster.core.events import DagsterEvent

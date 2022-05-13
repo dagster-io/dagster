@@ -26,7 +26,7 @@ from dagster import (
     sensor,
     solid,
 )
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 
 

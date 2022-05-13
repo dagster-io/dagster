@@ -19,7 +19,7 @@ import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
-import {ReexecutionPolicy} from '../types/globalTypes';
+import {ReexecutionStrategy} from '../types/globalTypes';
 import {DagitReadOnlyCodeMirror} from '../ui/DagitCodeMirror';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
@@ -361,14 +361,14 @@ export const RunBulkActionsMenu: React.FC<{
         onClose={closeDialogs}
         onComplete={onComplete}
         selectedRuns={failedMap}
-        reexecutionPolicy={ReexecutionPolicy.FROM_FAILURE}
+        reexecutionStrategy={ReexecutionStrategy.FROM_FAILURE}
       />
       <ReexecutionDialog
         isOpen={visibleDialog === 'reexecute'}
         onClose={closeDialogs}
         onComplete={onComplete}
         selectedRuns={reexecutableMap}
-        reexecutionPolicy={ReexecutionPolicy.ALL_STEPS}
+        reexecutionStrategy={ReexecutionStrategy.ALL_STEPS}
       />
     </>
   );

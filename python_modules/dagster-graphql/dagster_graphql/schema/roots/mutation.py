@@ -1,6 +1,6 @@
 import graphene
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.workspace.permissions import Permissions
 
@@ -346,7 +346,7 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
             return launch_reexecution_from_parent_run(
                 graphene_info,
                 reexecution_params["parentRunId"],
-                reexecution_params["policy"],
+                reexecution_params["strategy"],
             )
 
 

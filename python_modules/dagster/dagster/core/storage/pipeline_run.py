@@ -1,9 +1,9 @@
 import warnings
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, NamedTuple, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional, Type
 
-from dagster import check
+import dagster._check as check
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
@@ -22,6 +22,7 @@ from .tags import (
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
+    REPOSITORY_LABEL_TAG,
     RESUME_RETRY_TAG,
     SCHEDULE_NAME_TAG,
     SENSOR_NAME_TAG,
@@ -273,10 +274,10 @@ class PipelineRun(
         [
             ("pipeline_name", str),
             ("run_id", str),
-            ("run_config", Dict[str, object]),
+            ("run_config", Mapping[str, object]),
             ("mode", Optional[str]),
             ("solid_selection", Optional[List[str]]),
-            ("solids_to_execute", Optional[AbstractSet[str]]),
+            ("solids_to_execute", Optional[FrozenSet[str]]),
             ("step_keys_to_execute", Optional[List[str]]),
             ("status", PipelineRunStatus),
             ("tags", Dict[str, str]),
@@ -297,10 +298,10 @@ class PipelineRun(
         cls,
         pipeline_name: str,
         run_id: Optional[str] = None,
-        run_config: Optional[Dict[str, object]] = None,
+        run_config: Optional[Mapping[str, object]] = None,
         mode: Optional[str] = None,
         solid_selection: Optional[List[str]] = None,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
+        solids_to_execute: Optional[FrozenSet[str]] = None,
         step_keys_to_execute: Optional[List[str]] = None,
         status: Optional[PipelineRunStatus] = None,
         tags: Optional[Dict[str, str]] = None,
@@ -349,7 +350,7 @@ class PipelineRun(
             cls,
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             run_id=check.str_param(run_id, "run_id"),
-            run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
+            run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
             mode=check.opt_str_param(mode, "mode"),
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
@@ -397,6 +398,20 @@ class PipelineRun(
 
     def get_parent_run_id(self):
         return self.tags.get(PARENT_RUN_ID_TAG)
+
+    def tags_for_storage(self):
+        repository_tags = {}
+        if self.external_pipeline_origin:
+            # tag the run with a label containing the repository name / location name, to allow for
+            # per-repository filtering of runs from dagit.
+            repository_tags[
+                REPOSITORY_LABEL_TAG
+            ] = self.external_pipeline_origin.external_repository_origin.get_label()
+
+        if not self.tags:
+            return repository_tags
+
+        return {**repository_tags, **self.tags}
 
     @property
     def is_finished(self):

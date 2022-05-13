@@ -4,7 +4,7 @@ from abc import abstractmethod
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.api.get_server_id import sync_get_server_id
 from dagster.api.list_repositories import sync_list_repositories_grpc
 from dagster.api.notebook_data import sync_get_streaming_external_notebook_data_grpc
@@ -114,7 +114,7 @@ class RepositoryLocation(AbstractContextManager):
     def get_external_execution_plan(
         self,
         external_pipeline: ExternalPipeline,
-        run_config: Dict[str, Any],
+        run_config: Mapping[str, object],
         mode: str,
         step_keys_to_execute: Optional[List[str]],
         known_state: Optional[KnownExecutionState],
@@ -353,7 +353,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
     def get_external_execution_plan(
         self,
         external_pipeline: ExternalPipeline,
-        run_config: Dict[str, Any],
+        run_config: Mapping[str, object],
         mode: str,
         step_keys_to_execute: Optional[List[str]],
         known_state: Optional[KnownExecutionState],

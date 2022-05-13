@@ -33,7 +33,6 @@ import {
   responseToYamlValidationResult,
 } from '../configeditor/ConfigEditorUtils';
 import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {DagsterTag} from '../runs/RunTag';
 import {RepositorySelector} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -145,11 +144,6 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
   const editor = React.useRef<ConfigEditor | null>(null);
   const editorSplitPanelContainer = React.useRef<SplitPanelContainer | null>(null);
   const previewCounter = React.useRef(0);
-
-  const [showWhitespace, setShowWhitespace] = useStateWithStorage(
-    'launchpad-whitespace',
-    (json: any) => (typeof json === 'boolean' ? json : true),
-  );
 
   const {isJob, presets} = pipeline;
 
@@ -601,16 +595,6 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
                   <SessionSettingsSpacer />
                 </>
               )}
-              <Button
-                title="Toggle whitespace"
-                icon={<Icon name="toggle_whitespace" />}
-                active={showWhitespace}
-                onClick={() =>
-                  setShowWhitespace((current: boolean | undefined) =>
-                    current === undefined ? true : !current,
-                  )
-                }
-              />
               <SessionSettingsSpacer />
               <SecondPanelToggle axis="horizontal" container={editorSplitPanelContainer} />
             </SessionSettingsBar>
@@ -666,7 +650,6 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
                       dispatch({type: 'set-editor-help-context', payload: next});
                     }
                   }}
-                  showWhitespace={showWhitespace}
                   checkConfig={checkConfig}
                 />
               }

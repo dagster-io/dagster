@@ -10,7 +10,7 @@ import { DagsterEventType, LogLevel, ErrorSource, ObjectStoreOperationType } fro
 // ====================================================
 
 export interface LogsRowStructuredFragment_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent" | "AlertFailureEvent" | "AssetMaterializationPlannedEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent" | "AlertFailureEvent" | "AssetMaterializationPlannedEvent";
   message: string;
   eventType: DagsterEventType | null;
   timestamp: string;
@@ -579,6 +579,29 @@ export interface LogsRowStructuredFragment_ExecutionStepFailureEvent {
   error: LogsRowStructuredFragment_ExecutionStepFailureEvent_error | null;
   errorSource: ErrorSource | null;
   failureMetadata: LogsRowStructuredFragment_ExecutionStepFailureEvent_failureMetadata | null;
+}
+
+export interface LogsRowStructuredFragment_ExecutionStepUpForRetryEvent_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface LogsRowStructuredFragment_ExecutionStepUpForRetryEvent_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: LogsRowStructuredFragment_ExecutionStepUpForRetryEvent_error_cause | null;
+}
+
+export interface LogsRowStructuredFragment_ExecutionStepUpForRetryEvent {
+  __typename: "ExecutionStepUpForRetryEvent";
+  message: string;
+  eventType: DagsterEventType | null;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  error: LogsRowStructuredFragment_ExecutionStepUpForRetryEvent_error | null;
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_PathMetadataEntry {
@@ -2002,4 +2025,4 @@ export interface LogsRowStructuredFragment_LogsCapturedEvent {
   stepKeys: string[] | null;
 }
 
-export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_MaterializationEvent | LogsRowStructuredFragment_ObservationEvent | LogsRowStructuredFragment_RunFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_HandledOutputEvent | LogsRowStructuredFragment_LoadedInputEvent | LogsRowStructuredFragment_EngineEvent | LogsRowStructuredFragment_HookErroredEvent | LogsRowStructuredFragment_LogsCapturedEvent;
+export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_MaterializationEvent | LogsRowStructuredFragment_ObservationEvent | LogsRowStructuredFragment_RunFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepUpForRetryEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_HandledOutputEvent | LogsRowStructuredFragment_LoadedInputEvent | LogsRowStructuredFragment_EngineEvent | LogsRowStructuredFragment_HookErroredEvent | LogsRowStructuredFragment_LogsCapturedEvent;

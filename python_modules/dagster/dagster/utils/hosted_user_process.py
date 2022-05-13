@@ -9,8 +9,10 @@ These should only be invoked from contexts where we know this
 to be the case.
 """
 
-from dagster import check
-from dagster.core.definitions.reconstruct import ReconstructableRepository
+from typing import TYPE_CHECKING
+
+import dagster._check as check
+from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster.core.host_representation import ExternalPipeline, ExternalRepository
 from dagster.core.host_representation.external_data import (
     external_pipeline_data_from_def,
@@ -18,14 +20,18 @@ from dagster.core.host_representation.external_data import (
 )
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 
+if TYPE_CHECKING:
+    from dagster.core.definitions.repository_definition import RepositoryDefinition
+    from dagster.core.host_representation.handle import RepositoryHandle
 
-def recon_pipeline_from_origin(origin):
+
+def recon_pipeline_from_origin(origin: PipelinePythonOrigin) -> ReconstructablePipeline:
     check.inst_param(origin, "origin", PipelinePythonOrigin)
     recon_repo = recon_repository_from_origin(origin.repository_origin)
     return recon_repo.get_reconstructable_pipeline(origin.pipeline_name)
 
 
-def recon_repository_from_origin(origin):
+def recon_repository_from_origin(origin: RepositoryPythonOrigin) -> "ReconstructableRepository":
     check.inst_param(origin, "origin", RepositoryPythonOrigin)
     return ReconstructableRepository(
         origin.code_pointer,
@@ -36,7 +42,9 @@ def recon_repository_from_origin(origin):
     )
 
 
-def external_repo_from_def(repository_def, repository_handle):
+def external_repo_from_def(
+    repository_def: "RepositoryDefinition", repository_handle: "RepositoryHandle"
+):
     return ExternalRepository(external_repository_data_from_def(repository_def), repository_handle)
 
 

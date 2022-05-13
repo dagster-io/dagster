@@ -9,9 +9,10 @@ import pendulum
 import yaml
 from tabulate import tabulate
 
+import dagster._check as check
 from dagster import PipelineDefinition
 from dagster import __version__ as dagster_version
-from dagster import check, execute_pipeline
+from dagster import execute_pipeline
 from dagster.cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     get_external_pipeline_or_job_from_external_repo,
@@ -405,7 +406,7 @@ def get_run_config_from_file_list(file_list: Optional[List[str]]):
 
 def _check_execute_external_pipeline_args(
     external_pipeline: ExternalPipeline,
-    run_config: Dict[str, object],
+    run_config: Mapping[str, object],
     mode: Optional[str],
     preset: Optional[str],
     tags: Optional[Mapping[str, object]],
@@ -498,7 +499,7 @@ def _create_external_pipeline_run(
     repo_location: RepositoryLocation,
     external_repo: ExternalRepository,
     external_pipeline: ExternalPipeline,
-    run_config: Dict[str, object],
+    run_config: Mapping[str, object],
     mode: Optional[str],
     preset: Optional[str],
     tags: Optional[Mapping[str, object]],

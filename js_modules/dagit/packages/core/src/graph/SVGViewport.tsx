@@ -102,9 +102,13 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
       return;
     }
 
-    const targetScale = viewport.state.scale * (1 - event.deltaY * 0.0025);
-    const scale = Math.max(MIN_ZOOM, Math.min(viewport.getMaxZoom(), targetScale));
-    viewport.adjustZoomRelativeToScreenPoint(scale, cursorPosition);
+    if (event.altKey || event.shiftKey) {
+      viewport.shiftXY(-event.deltaX, -event.deltaY);
+    } else {
+      const targetScale = viewport.state.scale * (1 - event.deltaY * 0.0025);
+      const scale = Math.max(MIN_ZOOM, Math.min(viewport.getMaxZoom(), targetScale));
+      viewport.adjustZoomRelativeToScreenPoint(scale, cursorPosition);
+    }
   },
 
   render(viewport: SVGViewport) {
@@ -320,6 +324,11 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     }
     const ownerRect = el.getBoundingClientRect();
     return {x: e.clientX - ownerRect.left, y: e.clientY - ownerRect.top};
+  }
+
+  public shiftXY(dx: number, dy: number) {
+    const {x, y, scale} = this.state;
+    this.setState({x: x + dx, y: y + dy, scale});
   }
 
   public adjustZoomRelativeToScreenPoint(nextScale: number, point: Point) {

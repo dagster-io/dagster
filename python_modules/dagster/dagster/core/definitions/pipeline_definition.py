@@ -12,7 +12,7 @@ from typing import (
     Union,
 )
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.solid_definition import NodeDefinition

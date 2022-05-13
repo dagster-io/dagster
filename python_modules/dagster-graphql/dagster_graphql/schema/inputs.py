@@ -210,17 +210,17 @@ class GrapheneExecutionParams(graphene.InputObjectType):
         name = "ExecutionParams"
 
 
-class GrapheneReexecutionPolicy(graphene.Enum):
+class GrapheneReexecutionStrategy(graphene.Enum):
     FROM_FAILURE = "FROM_FAILURE"
     ALL_STEPS = "ALL_STEPS"
 
     class Meta:
-        name = "ReexecutionPolicy"
+        name = "ReexecutionStrategy"
 
 
 class GrapheneReexecutionParams(graphene.InputObjectType):
     parentRunId = graphene.NonNull(graphene.String)
-    policy = graphene.NonNull(GrapheneReexecutionPolicy)
+    strategy = graphene.NonNull(GrapheneReexecutionStrategy)
 
     class Meta:
         name = "ReexecutionParams"

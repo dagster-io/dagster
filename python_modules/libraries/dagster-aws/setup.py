@@ -42,7 +42,11 @@ if __name__ == "__main__":
         extras_require={
             "redshift": ["psycopg2-binary"],
             "pyspark": ["dagster-pyspark"],
-            "test": ["moto>=2.2.8", "requests-mock"],
+            "test": [
+                "moto>=2.2.8",
+                "requests-mock",
+                "xmltodict==0.12.0",  # pinned until moto>=3.1.9 (https://github.com/spulec/moto/issues/5112)
+            ],
         },
         zip_safe=False,
     )

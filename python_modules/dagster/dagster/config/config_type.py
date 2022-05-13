@@ -2,7 +2,7 @@ import typing
 from enum import Enum as PythonEnum
 from typing import Dict, List, Optional, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.builtins import BuiltinEnum
 from dagster.config.config_schema import ConfigSchemaType
 from dagster.serdes import whitelist_for_serdes

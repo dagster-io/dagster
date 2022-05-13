@@ -11,8 +11,8 @@ from dagster import (
     PipelineDefinition,
     SolidDefinition,
     TypeCheck,
-    check,
 )
+from dagster import _check as check
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.events import RetryRequested
 from dagster.core.definitions.pipeline_base import InMemoryPipeline

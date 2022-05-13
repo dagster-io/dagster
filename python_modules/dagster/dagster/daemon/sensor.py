@@ -5,9 +5,11 @@ from typing import Dict, NamedTuple, Optional
 
 import pendulum
 
-from dagster import check, seven
+import dagster._check as check
+import dagster.seven as seven
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
+from dagster.core.definitions.utils import validate_tags
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import PipelineSelector
 from dagster.core.instance import DagsterInstance
@@ -19,7 +21,7 @@ from dagster.core.scheduler.instigation import (
     TickStatus,
 )
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter, TagBucket
-from dagster.core.storage.tags import RUN_KEY_TAG, check_tags
+from dagster.core.storage.tags import RUN_KEY_TAG
 from dagster.core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster.core.workspace import IWorkspace
 from dagster.utils import merge_dicts
@@ -41,11 +43,10 @@ class SkippedSensorRun(
 
 
 class SensorLaunchContext:
-    def __init__(self, external_sensor, state, tick, instance, logger):
+    def __init__(self, external_sensor, tick, instance, logger):
         self._external_sensor = external_sensor
         self._instance = instance
         self._logger = logger
-        self._state = state
         self._tick = tick
 
         self._should_update_cursor_on_failure = False
@@ -105,18 +106,22 @@ class SensorLaunchContext:
             self._tick.status != TickStatus.FAILURE
         ) or self._should_update_cursor_on_failure
 
-        last_run_key = (
-            self._state.instigator_data.last_run_key if self._state.instigator_data else None
+        # fetch the most recent state.  we do this as opposed to during context initialization time
+        # because we want to minimize the window of clobbering the sensor state upon updating the
+        # sensor state data.
+        state = self._instance.get_instigator_state(
+            self._external_sensor.get_external_origin_id(), self._external_sensor.selector_id
         )
+        last_run_key = state.instigator_data.last_run_key if state.instigator_data else None
         if self._tick.run_keys and should_update_cursor_and_last_run_key:
             last_run_key = self._tick.run_keys[-1]
 
-        cursor = self._state.instigator_data.cursor if self._state.instigator_data else None
+        cursor = state.instigator_data.cursor if state.instigator_data else None
         if should_update_cursor_and_last_run_key:
             cursor = self._tick.cursor
 
         self._instance.update_instigator_state(
-            self._state.with_data(
+            state.with_data(
                 SensorInstigatorData(
                     last_tick_timestamp=self._tick.timestamp,
                     last_run_key=last_run_key,
@@ -141,8 +146,8 @@ class SensorLaunchContext:
         self._write()
 
         self._instance.purge_ticks(
-            self._state.instigator_origin_id,
-            selector_id=self._state.selector_id,
+            self._external_sensor.get_external_origin_id(),
+            selector_id=self._external_sensor.selector_id,
             tick_status=TickStatus.SKIPPED,
             before=pendulum.now("UTC").subtract(days=7).timestamp(),  #  keep the last 7 days
         )
@@ -307,9 +312,7 @@ def execute_sensor_iteration(
 
             _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
 
-            with SensorLaunchContext(
-                external_sensor, sensor_state, tick, instance, logger
-            ) as tick_context:
+            with SensorLaunchContext(external_sensor, tick, instance, logger) as tick_context:
                 _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
                 yield from _evaluate_sensor(
                     tick_context,
@@ -596,8 +599,7 @@ def _create_sensor_run(
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
-    pipeline_tags = external_pipeline.tags or {}
-    check_tags(pipeline_tags, "pipeline_tags")
+    pipeline_tags = validate_tags(external_pipeline.tags or {}, allow_reserved_tags=False)
     tags = merge_dicts(
         merge_dicts(pipeline_tags, run_request.tags),
         PipelineRun.tags_for_sensor(external_sensor),

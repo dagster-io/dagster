@@ -227,7 +227,7 @@ def test_specify_pg_params(hostname):
 
 def test_conn_str():
     username = "has@init"
-    password = "full:of:junk!@?"
+    password = ":full: of junk!@?"
     db_name = "dagster"
     hostname = "database-city.com"
 
@@ -239,7 +239,7 @@ def test_conn_str():
     )
     assert (
         conn_str
-        == r"postgresql://has%40init:full%3Aof%3Ajunk%21%40%3F@database-city.com:5432/dagster"
+        == r"postgresql://has%40init:%3Afull%3A%20of%20junk%21%40%3F@database-city.com:5432/dagster"
     )
     parsed = urlparse(conn_str)
     assert unquote(parsed.username) == username

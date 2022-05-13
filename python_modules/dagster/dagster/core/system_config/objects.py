@@ -1,7 +1,7 @@
 """System-provided config objects and constructors."""
-from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Type, Union, cast
+from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Type, Union, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.configurable import ConfigurableDefinition
 from dagster.core.definitions.executor_definition import (
     ExecutorDefinition,
@@ -130,7 +130,7 @@ class ResolvedRunConfig(
     @staticmethod
     def build(
         pipeline_def: PipelineDefinition,
-        run_config: Optional[Dict[str, Any]] = None,
+        run_config: Optional[Mapping[str, object]] = None,
         mode: Optional[str] = None,
     ) -> "ResolvedRunConfig":
         """This method validates a given run config against the pipeline config schema. If
@@ -143,7 +143,7 @@ class ResolvedRunConfig(
         from .composite_descent import composite_descent
 
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-        run_config = check.opt_dict_param(run_config, "run_config")
+        run_config = check.opt_mapping_param(run_config, "run_config")
         check.opt_str_param(mode, "mode")
 
         mode = mode or pipeline_def.get_default_mode_name()

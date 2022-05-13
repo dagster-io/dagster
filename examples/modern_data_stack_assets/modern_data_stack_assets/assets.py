@@ -44,7 +44,7 @@ def predicted_orders(
 
 
 analytics_assets = AssetGroup(
-    airbyte_assets + dbt_assets + [order_forecast_model, predicted_orders],
+    [*airbyte_assets, *dbt_assets, order_forecast_model, predicted_orders],
     resource_defs={
         "airbyte": airbyte_resource.configured(AIRBYTE_CONFIG),
         "dbt": dbt_cli_resource.configured(DBT_CONFIG),

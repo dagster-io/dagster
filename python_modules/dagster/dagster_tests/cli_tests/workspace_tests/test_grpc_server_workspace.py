@@ -4,7 +4,7 @@ import pytest
 import yaml
 
 from dagster import seven
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.host_representation import GrpcServerRepositoryLocationOrigin
 from dagster.core.test_utils import environ
