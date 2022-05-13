@@ -5,7 +5,7 @@ from typing import AbstractSet, Dict, NamedTuple, Tuple, cast
 import dagster_graphql_tests
 from dagster_graphql.client import client_queries
 
-import dagster.check as check
+import dagster._check as check
 
 
 class LegacyQueryHistoryInfo(NamedTuple):
