@@ -399,7 +399,7 @@ def _check_intra_process_pipeline(pipeline: IPipeline) -> None:
         )
 
 
-def _check_non_ephemeral_instance(instance: DagsterInstance) -> None:
+def _check_non_ephemeral_instance(instance: "DagsterInstance") -> None:
     if instance.is_ephemeral:
         raise DagsterUnmetExecutorRequirementsError(
             "You have attempted to use an executor that uses multiple processes with an "
@@ -427,7 +427,7 @@ def _get_default_executor_requirements(
     ),
     requirements=_get_default_executor_requirements,
 )
-def multi_or_in_process_executor(init_context: "InitExecutorContext") -> Executor:
+def multi_or_in_process_executor(init_context: "InitExecutorContext") -> "Executor":
     """The default executor for a job.
 
     This is the executor available by default on a :py:class:`JobDefinition`
