@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod
 from inspect import isfunction
 from types import FunctionType
@@ -624,6 +625,7 @@ class CachingRepositoryData(RepositoryData):
         from dagster.core.asset_defs import AssetGroup
 
         pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
+        coerced_graphs: Dict[str, JobDefinition] = {}
         partition_sets: Dict[str, PartitionSetDefinition] = {}
         schedules: Dict[str, ScheduleDefinition] = {}
         sensors: Dict[str, SensorDefinition] = {}
@@ -659,19 +661,12 @@ class CachingRepositoryData(RepositoryData):
                         f"Duplicate definition found for {definition.name}"
                     )
                 sensors[definition.name] = definition
-                if definition.has_loadable_targets():
-                    targets = definition.load_targets()
-                    for target in targets:
-                        pipelines_or_jobs[target.name] = target
             elif isinstance(definition, ScheduleDefinition):
                 if definition.name in sensors or definition.name in schedules:
                     raise DagsterInvalidDefinitionError(
                         f"Duplicate definition found for {definition.name}"
                     )
                 schedules[definition.name] = definition
-                if definition.has_loadable_target():
-                    target = definition.load_target()
-                    pipelines_or_jobs[target.name] = target
                 if isinstance(definition, PartitionScheduleDefinition):
                     partition_set_def = definition.get_partition_set()
                     if (
@@ -692,6 +687,7 @@ class CachingRepositoryData(RepositoryData):
                         )
                     )
                 pipelines_or_jobs[coerced.name] = coerced
+                coerced_graphs[coerced.name] = coerced
 
             elif isinstance(definition, AssetGroup):
                 if combined_asset_group:
@@ -709,6 +705,21 @@ class CachingRepositoryData(RepositoryData):
                 source_asset.key: source_asset
                 for source_asset in combined_asset_group.source_assets
             }
+
+        for name, sensor_def in sensors.items():
+            if sensor_def.has_loadable_targets():
+                targets = sensor_def.load_targets()
+                for target in targets:
+                    _process_and_validate_target(
+                        sensor_def, coerced_graphs, pipelines_or_jobs, target
+                    )
+
+        for name, schedule_def in schedules.items():
+            if schedule_def.has_loadable_target():
+                target = schedule_def.load_target()
+                _process_and_validate_target(
+                    schedule_def, coerced_graphs, pipelines_or_jobs, target
+                )
 
         pipelines: Dict[str, PipelineDefinition] = {}
         jobs: Dict[str, JobDefinition] = {}
@@ -1161,3 +1172,52 @@ class RepositoryDefinition:
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.
     def __call__(self, *args, **kwargs):
         return self
+
+
+def _process_and_validate_target(
+    schedule_or_sensor_def: Union[SensorDefinition, ScheduleDefinition],
+    coerced_graphs: Dict[str, JobDefinition],
+    pipelines_or_jobs: Dict[str, PipelineDefinition],
+    target: Union[GraphDefinition, PipelineDefinition],
+):
+    # This function modifies the state of coerced_graphs.
+    targeter = (
+        f"schedule '{schedule_or_sensor_def.name}'"
+        if isinstance(schedule_or_sensor_def, ScheduleDefinition)
+        else f"sensor '{schedule_or_sensor_def.name}'"
+    )
+    if isinstance(target, GraphDefinition):
+        if target.name not in coerced_graphs:
+            # Since this is a graph we have to coerce, is not possible to be
+            # the same definition by reference equality
+            if target.name in pipelines_or_jobs:
+                dupe_target_type = pipelines_or_jobs[target.name].target_type
+                warnings.warn(
+                    _get_error_msg_for_target_conflict(
+                        targeter, "graph", target.name, dupe_target_type
+                    )
+                )
+        elif coerced_graphs[target.name].graph != target:
+            warnings.warn(
+                _get_error_msg_for_target_conflict(targeter, "graph", target.name, "graph")
+            )
+        coerced_job = target.coerce_to_job()
+        coerced_graphs[target.name] = coerced_job
+        pipelines_or_jobs[target.name] = coerced_job
+    else:
+        if target.name in pipelines_or_jobs and pipelines_or_jobs[target.name] != target:
+            dupe_target_type = (
+                pipelines_or_jobs[target.name].target_type
+                if target.name not in coerced_graphs
+                else "graph"
+            )
+            warnings.warn(
+                _get_error_msg_for_target_conflict(
+                    targeter, target.target_type, target.name, dupe_target_type
+                )
+            )
+        pipelines_or_jobs[target.name] = target
+
+
+def _get_error_msg_for_target_conflict(targeter, target_type, target_name, dupe_target_type):
+    return f"{targeter} targets {target_type} '{target_name}', but a different {dupe_target_type} with the same name was provided. The {target_type} provided to {targeter} will override the existing {dupe_target_type}, but in Dagster 0.15.0, this will result in an error. Disambiguate between these by providing a separate name to one of them."

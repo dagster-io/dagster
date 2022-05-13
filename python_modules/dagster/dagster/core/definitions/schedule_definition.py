@@ -449,9 +449,9 @@ class ScheduleDefinition:
         return self._execution_timezone
 
     @property
-    def job(self) -> PipelineDefinition:
+    def job(self) -> Union[GraphDefinition, PipelineDefinition]:
         if isinstance(self._target, DirectTarget):
-            return self._target.pipeline
+            return self._target.target
         raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
 
     def evaluate_tick(self, context: "ScheduleEvaluationContext") -> ScheduleExecutionData:
@@ -518,7 +518,7 @@ class ScheduleDefinition:
     def has_loadable_target(self):
         return isinstance(self._target, DirectTarget)
 
-    def load_target(self):
+    def load_target(self) -> Union[GraphDefinition, PipelineDefinition]:
         if isinstance(self._target, DirectTarget):
             return self._target.load()
 
