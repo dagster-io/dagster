@@ -73,7 +73,7 @@ def dbt_build_op(context):
     yield Output(dbt_output)
 
 
-@op(
+@op(   # type: ignore
     **_DEFAULT_OP_PROPS,
     config_schema={
         "yield_materializations": Field(

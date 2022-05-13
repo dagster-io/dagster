@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Iterator, List, Mapping, Optional, Union
+from typing import Any, Callable, Dict, Iterator, List, Mapping, Optional, Union, cast
 
 import dateutil
 
@@ -132,12 +132,12 @@ def generate_events(
     """
 
     for result in dbt_output.result["results"]:
-        yield from result_to_events(
+        yield from check.not_none(result_to_events(
             result,
             docs_url=dbt_output.docs_url,
             node_info_to_asset_key=node_info_to_asset_key,
             manifest_json=manifest_json,
-        )
+        ))
 
 
 def generate_materializations(
@@ -186,4 +186,4 @@ def generate_materializations(
             asset_key_prefix + info["unique_id"].split(".")
         ),
     ):
-        yield check.inst(event, AssetMaterialization)
+        yield check.inst(cast(AssetMaterialization, event), AssetMaterialization)
