@@ -712,5 +712,29 @@
         "path": "/community/public-apis"
       }
     ]
+  },
+  {
+    "title": "Changelog",
+    "icon": "Change",
+    "path": "/changelog",
+    "isUnversioned": true,
+    "children": [
+      {
+        "title": "Changelog",
+        "path": "/changelog",
+        "isUnversioned": true
+      },
+      {
+        "title": "Migration Guides",
+        "path": "/migration",
+        "isUnversioned": true
+      }
+    ]
+  },
+  {
+    "title": "Dagster Cloud Docs",
+    "icon": "Cloud",
+    "path": "https://docs.dagster.cloud/",
+    "isExternalLink": true
   }
 ]

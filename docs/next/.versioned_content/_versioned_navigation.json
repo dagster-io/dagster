@@ -29586,6 +29586,30 @@
       "icon": "Users",
       "path": "/community",
       "title": "Community"
+    },
+    {
+      "children": [
+        {
+          "isUnversioned": true,
+          "path": "/changelog",
+          "title": "Changelog"
+        },
+        {
+          "isUnversioned": true,
+          "path": "/migration",
+          "title": "Migration Guides"
+        }
+      ],
+      "icon": "Change",
+      "isUnversioned": true,
+      "path": "/changelog",
+      "title": "Changelog"
+    },
+    {
+      "icon": "Cloud",
+      "isExternalLink": true,
+      "path": "https://docs.dagster.cloud/",
+      "title": "Dagster Cloud Docs"
     }
   ],
   "0.14.2": [
