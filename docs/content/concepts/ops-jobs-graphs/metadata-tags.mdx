@@ -24,10 +24,11 @@ When you attach metadata to a job, you do it as a dictionary of key value pairs.
 def my_op():
     return "Hello World!"
 
+
 @job(
     metadata={
-        "owner": "data team", # will be converted to MetadataValue.text
-        "docs": MetadataValue.url("https://docs.dagster.io")
+        "owner": "data team",  # will be converted to MetadataValue.text
+        "docs": MetadataValue.url("https://docs.dagster.io"),
     }
 )
 def my_job_with_metadata():
@@ -41,7 +42,10 @@ In addition to adding metadata on the `@job` decorator, you can also add metadat
 def my_graph():
     my_op()
 
-my_second_job_with_metadata = my_graph.to_job(metadata={"owner": "api team", "docs": MetadataValue.url("https://docs.dagster.io")})
+
+my_second_job_with_metadata = my_graph.to_job(
+    metadata={"owner": "api team", "docs": MetadataValue.url("https://docs.dagster.io")}
+)
 ```
 
 ### Viewing Metadata
@@ -62,11 +66,7 @@ Tags allow you to attach information to the run created when you execute a job. 
 You can specify tags you want attached to every run by adding them to a job. Tags are specified as a dictionary of key value pairs where the key must be a string and the value must be a string or json that is serializable to a string.
 
 ```python file=/concepts/ops_jobs_graphs/metadata_tags.py startafter=start_tags_on_job endbefore=end_tags_on_job
-@job(
-    tags={
-        "foo": "bar"
-    }
-)
+@job(tags={"foo": "bar"})
 def my_job_with_tags():
     my_op()
 ```

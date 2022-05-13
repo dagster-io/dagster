@@ -1,10 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box} from '@dagster-io/ui';
+import {Box, MetadataTable} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {METADATA_ENTRY_FRAGMENT, MetadataEntries} from '../metadata/MetadataEntry';
-import {RunTag} from '../runs/RunTag';
+import {METADATA_ENTRY_FRAGMENT, MetadataEntry} from '../metadata/MetadataEntry';
+
 import {PipelineSelector} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -44,6 +44,13 @@ export const SidebarPipelineOrJobOverview: React.FC<{
 
         const modes = pipelineSnapshotOrError.modes;
 
+        const metadataRows = pipelineSnapshotOrError.metadataEntries.map((entry) => {
+          return {
+            key: entry.label,
+            value: <MetadataEntry entry={entry} />,
+          };
+        });
+
         return (
           <>
             <SidebarSection title="Description">
@@ -62,7 +69,7 @@ export const SidebarPipelineOrJobOverview: React.FC<{
             </SidebarSection>
             <SidebarSection title="Metadata">
               <Box padding={{vertical: 16, horizontal: 24}}>
-                <MetadataEntries entries={pipelineSnapshotOrError.metadataEntries} />
+              <MetadataTable rows={metadataRows} />
               </Box>
             </SidebarSection>
           </>
