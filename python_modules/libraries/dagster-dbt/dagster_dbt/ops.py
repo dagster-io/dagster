@@ -1,6 +1,4 @@
-from typing import List, Tuple
-
-from dagster import Array, Bool, Field, In, Nothing, OpDefinition, Out, Output, op
+from dagster import Array, Bool, Field, In, Nothing, Out, Output, op
 
 from .types import DbtOutput
 from .utils import generate_events, generate_materializations
@@ -73,7 +71,7 @@ def dbt_build_op(context):
     yield Output(dbt_output)
 
 
-@op(   # type: ignore
+@op(  # type: ignore
     **_DEFAULT_OP_PROPS,
     config_schema={
         "yield_materializations": Field(
