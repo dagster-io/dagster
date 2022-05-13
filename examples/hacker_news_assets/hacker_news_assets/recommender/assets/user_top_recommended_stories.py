@@ -8,7 +8,7 @@ from dagster import asset
 from .user_story_matrix import IndexedCooMatrix
 
 
-@asset(io_manager_key="warehouse_io_manager")
+@asset(io_manager_key="warehouse_io_manager", key_prefix=["snowflake", "recommender"])
 def user_top_recommended_stories(
     context, recommender_model: TruncatedSVD, user_story_matrix: IndexedCooMatrix
 ) -> DataFrame:

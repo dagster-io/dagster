@@ -22,7 +22,7 @@ class IndexedCooMatrix:
     matrix and whose values are the corresponding values in this index."""
 
 
-@asset
+@asset(key_prefix=["s3", "recommender"])
 def user_story_matrix(comment_stories: DataFrame) -> Output[IndexedCooMatrix]:
     """
     A sparse matrix where the rows are users, the columns are stories, and the values
