@@ -11,15 +11,9 @@ import papermill
 from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
 
-from dagster import (
-    InputDefinition,
-    OpDefinition,
-    Output,
-    OutputDefinition,
-    SolidDefinition,
-    check,
-    seven,
-)
+from dagster import InputDefinition, OpDefinition, Output, OutputDefinition, SolidDefinition
+from dagster import _check as check
+from dagster import seven
 from dagster.core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster.core.definitions.metadata import MetadataValue
 from dagster.core.definitions.reconstruct import ReconstructablePipeline
@@ -356,8 +350,8 @@ def define_dagstermill_solid(
     check.str_param(notebook_path, "notebook_path")
     input_defs = check.opt_list_param(input_defs, "input_defs", of_type=InputDefinition)
     output_defs = check.opt_list_param(output_defs, "output_defs", of_type=OutputDefinition)
-    required_resource_keys = check.opt_set_param(
-        required_resource_keys, "required_resource_keys", of_type=str
+    required_resource_keys = set(
+        check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
     )
 
     extra_output_defs = []
@@ -453,8 +447,8 @@ def define_dagstermill_op(
     check.str_param(notebook_path, "notebook_path")
     input_defs = check.opt_list_param(input_defs, "input_defs", of_type=InputDefinition)
     output_defs = check.opt_list_param(output_defs, "output_defs", of_type=OutputDefinition)
-    required_resource_keys = check.opt_set_param(
-        required_resource_keys, "required_resource_keys", of_type=str
+    required_resource_keys = set(
+        check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
     )
 
     extra_output_defs = []

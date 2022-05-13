@@ -2,7 +2,7 @@ from enum import Enum
 from random import random
 from typing import NamedTuple, Optional
 
-from dagster import check
+import dagster._check as check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 

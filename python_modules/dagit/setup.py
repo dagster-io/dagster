@@ -47,14 +47,11 @@ if __name__ == "__main__":
             "click>=7.0,<9.0",
             f"dagster{pin}",
             f"dagster-graphql{pin}",
-            # 5.2+ stops pulling in `ipython_genutils`, on which the old version of `nbconvert` we use
-            # implicitly depends. Can remove nbformat dependency entirely when/if cap on nbconvert is lifted.
-            "nbformat<=5.1.3",
             "requests",
             # watchdog
             "watchdog>=0.8.3",
             # notebooks support
-            "nbconvert>=5.4.0,<6.0.0",
+            "nbconvert",
             "starlette",
             "uvicorn[standard]",
         ],

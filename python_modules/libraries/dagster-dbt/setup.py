@@ -42,8 +42,7 @@ if __name__ == "__main__":
         ],
         extras_require={
             "test": [
-                # https://github.com/dagster-io/dagster/issues/4167
-                "Jinja2<3.0",
+                "Jinja2",
                 "dbt-core",
                 "dbt-rpc",
                 "dbt-postgres",

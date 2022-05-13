@@ -1,8 +1,9 @@
+# pylint: disable=missing-graphene-docstring
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 
-from dagster import check
+import dagster._check as check
 from dagster.core.snap import PipelineSnapshot
 from dagster.core.types.dagster_type import DagsterTypeKind
 

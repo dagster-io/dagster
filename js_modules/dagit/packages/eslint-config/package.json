@@ -1,6 +1,6 @@
 {
   "name": "@dagster-io/eslint-config",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Shared eslint configuration for @dagster-io",
   "license": "Apache-2.0",
   "main": "index.js",
@@ -12,14 +12,15 @@
     "prettier": "2.2.1"
   },
   "dependencies": {
-    "@typescript-eslint/eslint-plugin": "5.8.0",
-    "@typescript-eslint/parser": "5.8.0",
-    "eslint-config-prettier": "8.3.0",
+    "@typescript-eslint/eslint-plugin": "5.21.0",
+    "@typescript-eslint/parser": "5.21.0",
+    "eslint-config-prettier": "8.5.0",
     "eslint-plugin-import": "2.26.0",
+    "eslint-plugin-jest": "^26.1.5",
     "eslint-plugin-jsx-a11y": "6.5.1",
     "eslint-plugin-prettier": "^4.0.0",
-    "eslint-plugin-react": "7.27.1",
-    "eslint-plugin-react-hooks": "4.3.0"
+    "eslint-plugin-react": "7.29.4",
+    "eslint-plugin-react-hooks": "4.5.0"
   },
   "devDependencies": {
     "eslint": "^8.6.0",

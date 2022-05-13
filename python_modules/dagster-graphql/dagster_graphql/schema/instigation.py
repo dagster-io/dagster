@@ -1,3 +1,4 @@
+# pylint: disable=missing-graphene-docstring
 import sys
 import warnings
 
@@ -5,7 +6,7 @@ import graphene
 import pendulum
 import yaml
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.schedule_definition import ScheduleExecutionData
 from dagster.core.definitions.sensor_definition import RunRequest
 from dagster.core.scheduler.instigation import (

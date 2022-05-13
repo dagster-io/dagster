@@ -7,17 +7,19 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generic,
     List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
+    TypeVar,
     Union,
     cast,
 )
 
-from dagster import check, seven
-from dagster.core.errors import DagsterInvalidAssetKey
+import dagster._check as check
+import dagster.seven as seven
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster.utils.backcompat import experimental_class_param_warning
 
@@ -34,16 +36,8 @@ from .utils import DEFAULT_OUTPUT, check_valid_name
 if TYPE_CHECKING:
     from dagster.core.execution.context.output import OutputContext
 
-ASSET_KEY_REGEX = re.compile("^[a-zA-Z0-9_.-]+$")  # alphanumeric, _, -, .
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
 ASSET_KEY_STRUCTURED_DELIMITER = "."
-
-
-def validate_asset_key_string(s: Optional[str]) -> str:
-    if not s or not ASSET_KEY_REGEX.match(s):
-        raise DagsterInvalidAssetKey()
-
-    return s
 
 
 def parse_asset_key_string(s: str) -> List[str]:
@@ -176,16 +170,10 @@ class AssetLineageInfo(
         return super(AssetLineageInfo, cls).__new__(cls, asset_key=asset_key, partitions=partitions)
 
 
-class Output(
-    NamedTuple(
-        "_Output",
-        [
-            ("value", Any),
-            ("output_name", str),
-            ("metadata_entries", List[Union[PartitionMetadataEntry, MetadataEntry]]),
-        ],
-    )
-):
+T = TypeVar("T")
+
+
+class Output(Generic[T]):
     """Event corresponding to one of a op's outputs.
 
     Op compute functions must explicitly yield events of this type when they have more than
@@ -208,11 +196,11 @@ class Output(
             list, and one of the data classes returned by a MetadataValue static method.
     """
 
-    def __new__(
-        cls,
-        value: Any,
+    def __init__(
+        self,
+        value: T,
         output_name: Optional[str] = DEFAULT_OUTPUT,
-        metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
 
@@ -222,26 +210,24 @@ class Output(
             "metadata_entries",
             of_type=(MetadataEntry, PartitionMetadataEntry),
         )
+        self._value = value
+        self._output_name = check.str_param(output_name, "output_name")
+        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
 
-        return super(Output, cls).__new__(
-            cls,
-            value,
-            check.str_param(output_name, "output_name"),
-            normalize_metadata(metadata, metadata_entries),
-        )
+    @property
+    def metadata_entries(self) -> List[Union[PartitionMetadataEntry, MetadataEntry]]:
+        return self._metadata_entries
+
+    @property
+    def value(self) -> Any:
+        return self._value
+
+    @property
+    def output_name(self) -> str:
+        return self._output_name
 
 
-class DynamicOutput(
-    NamedTuple(
-        "_DynamicOutput",
-        [
-            ("value", Any),
-            ("mapping_key", str),
-            ("output_name", str),
-            ("metadata_entries", List[Union[PartitionMetadataEntry, MetadataEntry]]),
-        ],
-    )
-):
+class DynamicOutput(Generic[T]):
     """
     Variant of :py:class:`Output <dagster.Output>` used to support
     dynamic mapping & collect. Each ``DynamicOutput`` produced by an op represents
@@ -268,9 +254,9 @@ class DynamicOutput(
             list, and one of the data classes returned by a MetadataValue static method.
     """
 
-    def __new__(
-        cls,
-        value: Any,
+    def __init__(
+        self,
+        value: T,
         mapping_key: str,
         output_name: Optional[str] = DEFAULT_OUTPUT,
         metadata_entries: Optional[List[Union[PartitionMetadataEntry, MetadataEntry]]] = None,
@@ -281,14 +267,26 @@ class DynamicOutput(
         metadata_entries = check.opt_list_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
+        self._mapping_key = check_valid_name(check.str_param(mapping_key, "mapping_key"))
+        self._output_name = check.str_param(output_name, "output_name")
+        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
+        self._value = value
 
-        return super(DynamicOutput, cls).__new__(
-            cls,
-            value=value,
-            mapping_key=check_valid_name(check.str_param(mapping_key, "mapping_key")),
-            output_name=check.str_param(output_name, "output_name"),
-            metadata_entries=normalize_metadata(metadata, metadata_entries),
-        )
+    @property
+    def metadata_entries(self) -> List[Union[PartitionMetadataEntry, MetadataEntry]]:
+        return self._metadata_entries
+
+    @property
+    def mapping_key(self) -> str:
+        return self._mapping_key
+
+    @property
+    def value(self) -> T:
+        return self._value
+
+    @property
+    def output_name(self) -> str:
+        return self._output_name
 
 
 @whitelist_for_serdes
@@ -399,17 +397,17 @@ class AssetMaterialization(
         cls,
         asset_key: CoerceableToAssetKey,
         description: Optional[str] = None,
-        metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         partition: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
         elif isinstance(asset_key, list):
-            check.list_param(asset_key, "asset_key", of_type=str)
+            check.sequence_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
         else:
             check.tuple_param(asset_key, "asset_key", of_type=str)
@@ -418,9 +416,9 @@ class AssetMaterialization(
         if tags:
             experimental_class_param_warning("tags", "AssetMaterialization")
 
-        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        metadata_entries = check.opt_sequence_param(
+            metadata_entries, "metadata_entries", of_type=(MetadataEntry, PartitionMetadataEntry)
         )
 
         return super(AssetMaterialization, cls).__new__(

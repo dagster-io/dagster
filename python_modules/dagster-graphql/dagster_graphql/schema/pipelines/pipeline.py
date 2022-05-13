@@ -1,7 +1,8 @@
+# pylint: disable=missing-graphene-docstring
 import graphene
 import yaml
 
-from dagster import check
+import dagster._check as check
 from dagster.core.events import DagsterEventType
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData

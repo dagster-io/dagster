@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Sequence
 
 import boto3
 
-from dagster import check
+import dagster._check as check
 
 from ..utils import construct_boto_client_retry_config
 

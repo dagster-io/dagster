@@ -1,3 +1,4 @@
+# pylint: disable=missing-graphene-docstring
 import graphene
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_by_name,
@@ -9,7 +10,7 @@ from dagster_graphql.implementation.fetch_partition_sets import (
 )
 from dagster_graphql.implementation.fetch_runs import get_runs
 
-from dagster import check
+import dagster._check as check
 from dagster.core.host_representation import ExternalPartitionSet, RepositoryHandle
 from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
@@ -53,6 +54,7 @@ class GraphenePartitionStatus(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     partitionName = graphene.NonNull(graphene.String)
     runStatus = graphene.Field(GrapheneRunStatus)
+    runDuration = graphene.Field(graphene.Float)
 
     class Meta:
         name = "PartitionStatus"
@@ -237,7 +239,10 @@ class GraphenePartitionSet(graphene.ObjectType):
 
     def resolve_partitionStatusesOrError(self, graphene_info):
         return get_partition_set_partition_statuses(
-            graphene_info, self._external_repository_handle, self._external_partition_set.name
+            graphene_info,
+            self._external_repository_handle,
+            self._external_partition_set.name,
+            self._external_partition_set.pipeline_name,
         )
 
     def resolve_repositoryOrigin(self, _):

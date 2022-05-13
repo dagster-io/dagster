@@ -1,8 +1,9 @@
+# pylint: disable=missing-graphene-docstring
 import sys
 
 import graphene
 
-from dagster import check
+import dagster._check as check
 from dagster.core.instance import DagsterInstance, is_dagit_telemetry_enabled
 from dagster.core.launcher.base import RunLauncher
 from dagster.daemon.controller import get_daemon_statuses

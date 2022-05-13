@@ -3,6 +3,18 @@ import typing
 
 from pep562 import pep562
 
+import dagster._module_alias_map as _module_alias_map
+
+# Imports of a key will return the module named by the corresponding value.
+sys.meta_path.insert(
+    _module_alias_map.get_meta_path_insertion_index(),
+    _module_alias_map.AliasedModuleFinder(
+        {
+            "dagster.check": "dagster._check",
+        }
+    ),
+)
+
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
 from dagster.config.config_schema import ConfigSchema
@@ -21,6 +33,7 @@ from dagster.core.definitions import (
     AssetMaterialization,
     AssetObservation,
     AssetSensorDefinition,
+    BoolMetadataValue,
     CompositeSolidDefinition,
     ConfigMapping,
     DagsterAssetMetadataValue,
@@ -323,7 +336,7 @@ _DEPRECATED = {
 }
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> typing.Any:
     if name in _DEPRECATED:
         value, breaking_version = _DEPRECATED[name]
         stacklevel = 3 if sys.version_info >= (3, 7) else 4
@@ -333,7 +346,7 @@ def __getattr__(name):
         raise AttributeError("module '{}' has no attribute '{}'".format(__name__, name))
 
 
-def __dir__():
+def __dir__() -> typing.List[str]:
     return sorted(list(__all__) + list(_DEPRECATED.keys()))
 
 
@@ -383,6 +396,7 @@ __all__ = [
     "JsonMetadataValue",
     "LoggerDefinition",
     "build_init_logger_context",
+    "BoolMetadataValue",
     "MarkdownMetadataValue",
     "IntMetadataValue",
     "FloatMetadataValue",

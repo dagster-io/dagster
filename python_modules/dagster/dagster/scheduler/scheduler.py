@@ -6,8 +6,9 @@ from typing import cast
 
 import pendulum
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.schedule_definition import DefaultScheduleStatus
+from dagster.core.definitions.utils import validate_tags
 from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.host_representation import ExternalSchedule, PipelineSelector
 from dagster.core.instance import DagsterInstance
@@ -21,7 +22,7 @@ from dagster.core.scheduler.instigation import (
 )
 from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
-from dagster.core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG, check_tags
+from dagster.core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster.core.workspace import IWorkspace
 from dagster.seven.compat.pendulum import to_timezone
@@ -536,8 +537,7 @@ def _create_scheduler_run(
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
-    pipeline_tags = external_pipeline.tags or {}
-    check_tags(pipeline_tags, "pipeline_tags")
+    pipeline_tags = validate_tags(external_pipeline.tags, allow_reserved_tags=False) or {}
     tags = merge_dicts(pipeline_tags, schedule_tags)
 
     tags[SCHEDULED_EXECUTION_TIME_TAG] = to_timezone(schedule_time, "UTC").isoformat()

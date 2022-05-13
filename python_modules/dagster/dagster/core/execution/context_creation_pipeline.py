@@ -12,6 +12,7 @@ from typing import (
     Generic,
     Iterable,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Type,
@@ -20,7 +21,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions import ExecutorDefinition, ModeDefinition, PipelineDefinition
 from dagster.core.definitions.executor_definition import check_cross_process_constraints
 from dagster.core.definitions.pipeline_base import IPipeline
@@ -119,7 +120,7 @@ class ContextCreationData(NamedTuple):
 def create_context_creation_data(
     pipeline: IPipeline,
     execution_plan: ExecutionPlan,
-    run_config: Dict[str, Any],
+    run_config: Mapping[str, object],
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
 ) -> "ContextCreationData":
@@ -204,7 +205,7 @@ class ExecutionContextManager(Generic[TContextType], ABC):
 def execution_context_event_generator(
     pipeline: IPipeline,
     execution_plan: ExecutionPlan,
-    run_config: Dict[str, Any],
+    run_config: Mapping[str, object],
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
     retry_mode: RetryMode,
@@ -280,7 +281,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
         ],
         pipeline: IPipeline,
         execution_plan: ExecutionPlan,
-        run_config: Dict[str, Any],
+        run_config: Mapping[str, object],
         pipeline_run: PipelineRun,
         instance: DagsterInstance,
         raise_on_error: Optional[bool] = False,
@@ -309,7 +310,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
 def orchestration_context_event_generator(
     pipeline: IPipeline,
     execution_plan: ExecutionPlan,
-    run_config: Dict[str, Any],
+    run_config: Mapping[str, object],
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
     raise_on_error: bool,
@@ -375,7 +376,7 @@ class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext])
         self,
         pipeline: IPipeline,
         execution_plan: ExecutionPlan,
-        run_config: Dict[str, Any],
+        run_config: Mapping[str, object],
         pipeline_run: PipelineRun,
         instance: DagsterInstance,
         retry_mode: RetryMode,
@@ -427,7 +428,7 @@ def create_executor(context_creation_data: ContextCreationData) -> "Executor":
 def scoped_pipeline_context(
     execution_plan: ExecutionPlan,
     pipeline: IPipeline,
-    run_config: Dict[str, Any],
+    run_config: Mapping[str, object],
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
     scoped_resources_builder_cm: Callable[

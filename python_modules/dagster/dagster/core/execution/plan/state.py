@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import Dict, List, NamedTuple, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.retries import RetryState

@@ -574,12 +574,14 @@ from dagster_aws.s3.sensor import get_s3_keys
 
 @sensor(job=my_job)
 def my_s3_sensor(context):
-    new_s3_keys = get_s3_keys("my_s3_bucket", since_key=context.last_run_key)
+    since_key = context.cursor or None
+    new_s3_keys = get_s3_keys("my_s3_bucket", since_key=since_key)
     if not new_s3_keys:
-        yield SkipReason("No new s3 files found for bucket my_s3_bucket.")
-        return
-    for s3_key in new_s3_keys:
-        yield RunRequest(run_key=s3_key, run_config={})
+        return SkipReason("No new s3 files found for bucket my_s3_bucket.")
+    last_key = new_s3_keys[-1]
+    run_requests = [RunRequest(run_key=s3_key, run_config={}) for s3_key in new_s3_keys]
+    context.update_cursor(last_key)
+    return run_requests
 ```
 
 ### Using resources in sensors
@@ -610,3 +612,9 @@ def uses_db_connection():
 ```
 
 If a resource you want to initialize has dependencies on other resources, those can be included in the dictionary passed to <PyObject object="build_resources"/>. For more in-depth usage, check out the [Initializing Resources Outside of Execution](/concepts/resources#initializing-resources-outside-of-execution) section.
+
+## See it in action
+
+For more examples of sensors, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news):
+
+- [Sensor factory](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news/hacker_news/sensors/hn_tables_updated_sensor.py)

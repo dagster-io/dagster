@@ -5,7 +5,8 @@ from contextlib import suppress
 import boto3
 from botocore.exceptions import ClientError
 
-from dagster import Array, Field, Noneable, ScalarUnion, StringSource, check
+from dagster import Array, Field, Noneable, ScalarUnion, StringSource
+from dagster import _check as check
 from dagster.core.events import EngineEventData, MetadataEntry
 from dagster.core.launcher.base import (
     CheckRunHealthResult,
@@ -173,13 +174,13 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         """
         run = context.pipeline_run
         family = sanitize_family(
-            run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
+            run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name  # type: ignore
         )
 
         container_context = EcsContainerContext.create_for_run(run, self)
 
         metadata = self._task_metadata()
-        pipeline_origin = context.pipeline_code_origin
+        pipeline_origin = check.not_none(context.pipeline_code_origin)
         image = pipeline_origin.repository_origin.container_image
         task_definition = self._task_definition(family, metadata, image, container_context)[
             "family"

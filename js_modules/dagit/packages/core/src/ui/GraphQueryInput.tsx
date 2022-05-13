@@ -163,7 +163,7 @@ export const GraphQueryInput = React.memo(
       setPendingValue(props.value);
     }, [props.value]);
 
-    const lastClause = /(\*?\+*)([\w\d\[\]>_-]+)(\+*\*?)$/.exec(pendingValue);
+    const lastClause = /(\*?\+*)([\w\d\[\]>_\/-]+)(\+*\*?)$/.exec(pendingValue);
 
     const [, prefix, lastElementName, suffix] = lastClause || [];
     const suggestions = React.useMemo(
@@ -187,6 +187,9 @@ export const GraphQueryInput = React.memo(
       // is now at it's location if it's gone, bounded to the array.
       let nextIdx = pos !== -1 ? pos : active.idx;
       nextIdx = Math.max(0, Math.min(suggestions.length - 1, nextIdx));
+      if (!suggestions[nextIdx]) {
+        return;
+      }
       const nextText = suggestions[nextIdx].name;
 
       if (nextIdx !== active.idx || nextText !== active.text) {

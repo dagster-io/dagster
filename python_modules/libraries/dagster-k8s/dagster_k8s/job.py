@@ -9,9 +9,9 @@ from typing import Any, Dict, List, Optional
 
 import kubernetes
 
+import dagster._check as check
 from dagster import Array, BoolSource, Field, Noneable, StringSource
 from dagster import __version__ as dagster_version
-from dagster import check
 from dagster.config.field_utils import Permissive, Shape
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError
@@ -624,19 +624,7 @@ def construct_dagster_k8s_job(
 
     user_defined_resources = container_config.pop("resources", {})
 
-    volume_mounts = (
-        [
-            {
-                "name": "dagster-instance",
-                "mount_path": "{dagster_home}/dagster.yaml".format(
-                    dagster_home=job_config.dagster_home
-                ),
-                "sub_path": "dagster.yaml",
-            }
-        ]
-        + job_config.volume_mounts
-        + user_defined_k8s_volume_mounts
-    )
+    volume_mounts = job_config.volume_mounts + user_defined_k8s_volume_mounts
 
     resources = user_defined_resources if user_defined_resources else job_config.resources
 
@@ -658,11 +646,7 @@ def construct_dagster_k8s_job(
 
     user_defined_volumes = pod_spec_config.pop("volumes", [])
 
-    volumes = (
-        [{"name": "dagster-instance", "config_map": {"name": job_config.instance_config_map}}]
-        + job_config.volumes
-        + user_defined_volumes
-    )
+    volumes = job_config.volumes + user_defined_volumes
 
     # If the user has defined custom labels, remove them from the pod_template_spec_metadata
     # key and merge them with the dagster labels

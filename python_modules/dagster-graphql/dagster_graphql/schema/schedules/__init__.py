@@ -1,6 +1,7 @@
+# pylint: disable=missing-graphene-docstring
 import graphene
 
-from dagster import check
+import dagster._check as check
 from dagster.core.host_representation import ExternalSchedule, ScheduleSelector
 from dagster.core.host_representation.selector import RepositorySelector
 from dagster.core.workspace.permissions import Permissions

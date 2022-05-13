@@ -3,7 +3,7 @@ import glob
 
 import yaml
 
-from dagster import check
+import dagster._check as check
 
 from .merger import deep_merge_dicts
 

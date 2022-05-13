@@ -1,4 +1,6 @@
-from dagster import InputDefinition, Nothing, check, op, solid
+from dagster import InputDefinition, Nothing
+from dagster import _check as check
+from dagster import op, solid
 
 
 def _core_create_snowflake_command(dagster_decorator, decorator_name, sql, parameters=None):

@@ -12,6 +12,9 @@ import {
   Tab,
   Tabs,
   Tag,
+  IconWrapper,
+  Colors,
+  Tooltip,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -186,7 +189,7 @@ const ComputeLogToolbar = ({
         ) : null}
       </Group>
       {isValidStepSelection ? (
-        <Group direction="row" spacing={12} alignItems="center">
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
           {computeLogKey && logCaptureSteps[computeLogKey] ? (
             resolveState(metadata, logCaptureSteps[computeLogKey]) === IStepState.RUNNING ? (
               <Spinner purpose="body-text" />
@@ -195,23 +198,46 @@ const ComputeLogToolbar = ({
             )
           ) : null}
           {computeLogUrl ? (
-            <a
-              aria-label="Download link"
-              className="bp3-button bp3-minimal bp3-icon-download"
-              href={computeLogUrl}
-              title={
+            <Tooltip
+              placement="top-end"
+              content={
                 computeLogKey && logCaptureSteps[computeLogKey]?.stepKeys.length === 1
                   ? `Download ${logCaptureSteps[computeLogKey]?.stepKeys[0]} compute logs`
                   : `Download compute logs`
               }
-              download
-            ></a>
+            >
+              <DownloadLink aria-label="Download link" href={computeLogUrl} download>
+                <Icon name="download_for_offline" color={Colors.Gray600} />
+              </DownloadLink>
+            </Tooltip>
           ) : null}
-        </Group>
+        </Box>
       ) : null}
     </Box>
   );
 };
+
+const DownloadLink = styled.a`
+  border-radius: 4px;
+  display: block;
+  text-decoration: none;
+
+  ${IconWrapper} {
+    transition: background-color 100ms linear;
+  }
+
+  :hover ${IconWrapper} {
+    background-color: ${Colors.Gray800};
+  }
+
+  :active ${IconWrapper}, :focus ${IconWrapper} {
+    background-color: ${Colors.Dark};
+  }
+
+  :focus {
+    outline: none;
+  }
+`;
 
 const StructuredLogToolbar = ({
   filter,

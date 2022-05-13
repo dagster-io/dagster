@@ -9,7 +9,8 @@ import grpc
 from grpc_health.v1 import health_pb2
 from grpc_health.v1.health_pb2_grpc import HealthStub
 
-from dagster import check, seven
+import dagster._check as check
+import dagster.seven as seven
 from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.events import EngineEventData
 from dagster.core.host_representation.origin import ExternalRepositoryOrigin
@@ -77,6 +78,10 @@ class DagsterGrpcClient:
             self._server_address = host + ":" + str(port)
         else:
             self._server_address = "unix:" + os.path.abspath(socket)
+
+    @property
+    def use_ssl(self) -> bool:
+        return self._use_ssl
 
     @contextmanager
     def _channel(self):

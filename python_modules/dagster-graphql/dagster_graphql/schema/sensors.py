@@ -1,8 +1,9 @@
+# pylint: disable=missing-graphene-docstring
 import graphene
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import capture_error, check_permission
 
-from dagster import check
+import dagster._check as check
 from dagster.core.host_representation import ExternalSensor, ExternalTargetData, SensorSelector
 from dagster.core.scheduler.instigation import InstigatorState
 from dagster.core.workspace.permissions import Permissions

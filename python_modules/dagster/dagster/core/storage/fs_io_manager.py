@@ -1,7 +1,7 @@
 import os
 import pickle
 
-from dagster import check
+import dagster._check as check
 from dagster.config import Field
 from dagster.config.source import StringSource
 from dagster.core.definitions.events import AssetKey, AssetMaterialization
@@ -46,7 +46,7 @@ def fs_io_manager(init_context):
 
         @job(
             resource_defs={
-                "io_manager": fs_io_manager.configured({"base_path": "/my/base/path"})
+                "io_manager": fs_io_manager.configured({"base_dir": "/my/base/path"})
             }
         )
         def job():

@@ -2,7 +2,7 @@ from enum import Enum as PyEnum
 from functools import update_wrapper
 from typing import Any, Dict, Optional
 
-from dagster import check
+import dagster._check as check
 from dagster.builtins import Int
 from dagster.config import Field, Selector
 from dagster.core.definitions.configurable import (
@@ -311,13 +311,13 @@ def multiprocess_executor(init_context):
 
     Any job that does not specify custom executors will use the multiprocess_executor by default.
     For jobs or legacy pipelines, to configure the multiprocess executor, include a fragment such
-    as the following in your config:
+    as the following in your run config:
 
     .. code-block:: yaml
 
         execution:
-          multiprocess:
-            config:
+          config:
+            multiprocess:
               max_concurrent: 4
 
     The ``max_concurrent`` arg is optional and tells the execution engine how many processes may run

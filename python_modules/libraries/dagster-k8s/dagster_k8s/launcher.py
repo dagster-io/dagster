@@ -1,8 +1,10 @@
 import sys
+from typing import Dict, List, Optional
 
 import kubernetes
 
-from dagster import Field, MetadataEntry, StringSource, check
+from dagster import Field, MetadataEntry, StringSource
+from dagster import _check as check
 from dagster.cli.api import ExecuteRunArgs
 from dagster.core.events import EngineEventData
 from dagster.core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
@@ -119,47 +121,47 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._job_image
 
     @property
-    def image_pull_policy(self):
+    def image_pull_policy(self) -> str:
         return self._image_pull_policy
 
     @property
-    def image_pull_secrets(self):
+    def image_pull_secrets(self) -> List[Dict]:
         return self._image_pull_secrets
 
     @property
-    def service_account_name(self):
+    def service_account_name(self) -> str:
         return self._service_account_name
 
     @property
-    def env_config_maps(self):
+    def env_config_maps(self) -> List[str]:
         return self._env_config_maps
 
     @property
-    def env_secrets(self):
+    def env_secrets(self) -> List[str]:
         return self._env_secrets
 
     @property
-    def volume_mounts(self):
+    def volume_mounts(self) -> List:
         return self._volume_mounts
 
     @property
-    def volumes(self):
+    def volumes(self) -> List:
         return self._volumes
 
     @property
-    def resources(self):
+    def resources(self) -> Dict:
         return self._resources
 
     @property
-    def env_vars(self):
+    def env_vars(self) -> List[str]:
         return self._env_vars
 
     @property
-    def labels(self):
+    def labels(self) -> Dict[str, str]:
         return self._labels
 
     @property
-    def fail_pod_on_run_failure(self):
+    def fail_pod_on_run_failure(self) -> Optional[bool]:
         return self._fail_pod_on_run_failure
 
     @property
@@ -243,7 +245,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def launch_run(self, context: LaunchRunContext) -> None:
         run = context.pipeline_run
         job_name = get_job_name_from_run_id(run.run_id)
-        pipeline_origin = run.pipeline_code_origin
+        pipeline_origin = check.not_none(run.pipeline_code_origin)
 
         args = ExecuteRunArgs(
             pipeline_origin=pipeline_origin,
@@ -263,7 +265,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_name = get_job_name_from_run_id(
             run.run_id, resume_attempt_number=context.resume_attempt_number
         )
-        pipeline_origin = run.pipeline_code_origin
+        pipeline_origin = check.not_none(run.pipeline_code_origin)
 
         args = ResumeRunArgs(
             pipeline_origin=pipeline_origin,

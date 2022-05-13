@@ -2,8 +2,10 @@ from math import isnan
 
 from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
 
-from dagster import check, seven
+import dagster._check as check
+import dagster.seven as seven
 from dagster.core.definitions.metadata import (
+    BoolMetadataValue,
     DagsterAssetMetadataValue,
     DagsterPipelineRunMetadataValue,
     FloatMetadataValue,
@@ -29,6 +31,7 @@ MIN_INT = -2147483648
 def iterate_metadata_entries(metadata_entries):
     from ..schema.metadata import (
         GrapheneAssetMetadataEntry,
+        GrapheneBoolMetadataEntry,
         GrapheneFloatMetadataEntry,
         GrapheneIntMetadataEntry,
         GrapheneJsonMetadataEntry,
@@ -105,6 +108,12 @@ def iterate_metadata_entries(metadata_entries):
                 intValue=int_val,
                 # make string representation available to allow for > 32bit int
                 intRepr=str(metadata_entry.entry_data.value),
+            )
+        elif isinstance(metadata_entry.entry_data, BoolMetadataValue):
+            yield GrapheneBoolMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                boolValue=metadata_entry.entry_data.value,
             )
         elif isinstance(metadata_entry.entry_data, DagsterPipelineRunMetadataValue):
             yield GraphenePipelineRunMetadataEntry(

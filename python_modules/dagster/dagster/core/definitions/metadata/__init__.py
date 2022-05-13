@@ -15,7 +15,8 @@ from typing import (
     cast,
 )
 
-from dagster import check, seven
+import dagster._check as check
+import dagster.seven as seven
 from dagster.core.errors import DagsterInvalidMetadata
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.backcompat import (
@@ -110,6 +111,8 @@ def normalize_metadata_value(raw_value: RawMetadataValue):
         return MetadataValue.text(raw_value)
     elif isinstance(raw_value, float):
         return MetadataValue.float(raw_value)
+    elif isinstance(raw_value, bool):
+        return MetadataValue.bool(raw_value)
     elif isinstance(raw_value, int):
         return MetadataValue.int(raw_value)
     elif isinstance(raw_value, dict):
@@ -350,6 +353,29 @@ class MetadataValue:
         return IntMetadataValue(value)
 
     @staticmethod
+    def bool(value: bool) -> "BoolMetadataValue":
+        """Static constructor for a metadata value wrapping a bool as
+        :py:class:`BoolMetadataValuye`. Can be used as the value type for the `metadata`
+        parameter for supported events. For example:
+
+        .. code-block:: python
+
+            @op
+            def emit_metadata(context, df):
+                yield AssetMaterialization(
+                    asset_key="my_dataset",
+                    metadata={
+                        "num rows > 1000": MetadataValue.bool(len(df) > 1000),
+                    },
+                )
+
+        Args:
+            value (bool): The bool value for a metadata entry.
+        """
+
+        return BoolMetadataValue(value)
+
+    @staticmethod
     def pipeline_run(run_id: str) -> "DagsterPipelineRunMetadataValue":
         check.str_param(run_id, "run_id")
         return DagsterPipelineRunMetadataValue(run_id)
@@ -428,7 +454,6 @@ class MetadataValue:
         return TableMetadataValue(records, schema)
 
     @staticmethod
-    @experimental
     def table_schema(
         schema: TableSchema,
     ) -> "TableSchemaMetadataValue":
@@ -643,6 +668,21 @@ class IntMetadataValue(
         return super(IntMetadataValue, cls).__new__(cls, check.opt_int_param(value, "value"))
 
 
+@whitelist_for_serdes(storage_name="BoolMetadataEntryData")
+class BoolMetadataValue(
+    NamedTuple("_BoolMetadataValue", [("value", Optional[bool])]),
+    MetadataValue,
+):
+    """Container class for bool metadata entry data.
+
+    Args:
+        value (Optional[bool]): The bool value.
+    """
+
+    def __new__(cls, value: Optional[bool]):
+        return super(BoolMetadataValue, cls).__new__(cls, check.opt_bool_param(value, "value"))
+
+
 @whitelist_for_serdes(storage_name="DagsterPipelineRunMetadataEntryData")
 class DagsterPipelineRunMetadataValue(
     NamedTuple(
@@ -740,7 +780,6 @@ class TableMetadataValue(
         )
 
 
-@experimental
 @whitelist_for_serdes(storage_name="TableSchemaMetadataEntryData")
 class TableSchemaMetadataValue(
     NamedTuple("_TableSchemaMetadataValue", [("schema", TableSchema)]), MetadataValue
@@ -1154,7 +1193,6 @@ class MetadataEntry(
 
     @staticmethod
     @deprecated_metadata_entry_constructor
-    @experimental
     def table_schema(
         schema: TableSchema, label: str, description: Optional[str] = None
     ) -> "MetadataEntry":

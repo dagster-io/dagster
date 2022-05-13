@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Mapping, Sequence
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.configurable import NamedConfigurableDefinition
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.utils import frozendict, frozenlist

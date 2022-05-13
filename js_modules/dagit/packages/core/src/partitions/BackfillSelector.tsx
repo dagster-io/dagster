@@ -33,6 +33,8 @@ import {
 } from '../instance/types/LaunchPartitionBackfill';
 import {LaunchButton} from '../launchpad/LaunchButton';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
+import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
+import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {RunStatus} from '../types/globalTypes';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -128,7 +130,9 @@ export const BackfillPartitionSelector: React.FC<{
   }
 
   const {pipelineSnapshotOrError: pipelineSnapshot, instance} = data;
-  const solids = pipelineSnapshot.solidHandles.map((h: any) => h.solid);
+  const solids = explodeCompositesInHandleGraph(pipelineSnapshot.solidHandles).map(
+    (h: any) => h.solid,
+  );
   const solidsFiltered = filterByQuery(solids, query);
   const layout = buildLayout({nodes: solidsFiltered.all, mode: GanttChartMode.FLAT});
   const stepRows = layout.boxes.map((box) => ({
@@ -456,6 +460,7 @@ const BACKFILL_SELECTOR_QUERY = gql`
         name
         solidHandles {
           handleID
+          ...GraphExplorerSolidHandleFragment
           solid {
             name
             definition {
@@ -493,6 +498,7 @@ const BACKFILL_SELECTOR_QUERY = gql`
       runQueuingSupported
     }
   }
+  ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
 `;
 
 function messageForLaunchBackfillError(data: LaunchPartitionBackfill | null | undefined) {

@@ -1,9 +1,10 @@
 from collections import defaultdict
 from enum import Enum
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
-from dagster import DagsterInstance, check
+from dagster import DagsterInstance
+from dagster import _check as check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation import ExternalRepository
@@ -278,13 +279,16 @@ class BatchMaterializationLoader:
         self._instance = instance
         self._asset_keys: List[AssetKey] = list(asset_keys)
         self._fetched = False
-        self._materializations: Dict[AssetKey, EventLogEntry] = {}
+        self._materializations: Mapping[AssetKey, Optional[EventLogEntry]] = {}
 
-    def get_latest_materialization_for_asset_key(self, asset_key: AssetKey) -> EventLogEntry:
+    def get_latest_materialization_for_asset_key(
+        self, asset_key: AssetKey
+    ) -> Optional[EventLogEntry]:
         if asset_key not in self._asset_keys:
             check.failed(
                 f"Asset key {asset_key} not recognized for this loader.  Expected one of: {self._asset_keys}"
             )
+
         if self._materializations.get(asset_key) is None:
             self._fetch()
         return self._materializations.get(asset_key)
@@ -394,7 +398,7 @@ class CrossRepoAssetDependedByLoader:
 
     def get_sink_asset(self, asset_key: AssetKey) -> ExternalAssetNode:
         sink_assets, _ = self._build_cross_repo_deps()
-        return sink_assets.get(asset_key)
+        return sink_assets[asset_key]
 
     def get_cross_repo_dependent_assets(
         self, repository_location_name: str, repository_name: str, asset_key: AssetKey

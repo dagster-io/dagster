@@ -20,7 +20,7 @@ from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from starlette.routing import BaseRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
-from dagster import check
+import dagster._check as check
 from dagster.seven import json
 
 
@@ -88,7 +88,14 @@ class GraphQLServer(ABC):
             content_type = request.headers.get("Content-Type", "")
 
             if "application/json" in content_type:
-                data = await request.json()
+                try:
+                    data = await request.json()
+                except json.JSONDecodeError:
+                    body = await request.body()
+                    return PlainTextResponse(
+                        f"GraphQL request is invalid JSON:\n{body.decode()}",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
             elif "application/graphql" in content_type:
                 body = await request.body()
                 text = body.decode()
@@ -288,7 +295,12 @@ async def _send_message(
     if payload is not None:
         data["payload"] = payload
 
-    return await websocket.send_json(data)
+    # guard against async code still flushing messages post disconnect
+    if (
+        websocket.client_state != WebSocketState.DISCONNECTED
+        and websocket.application_state != WebSocketState.DISCONNECTED
+    ):
+        await websocket.send_json(data)
 
 
 def _disposable_and_async_gen_from_obs(obs: Observable, loop):

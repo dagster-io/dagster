@@ -1,6 +1,6 @@
 from typing import Dict, Generator, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.config.field import Field
 
 from .config_type import ConfigType, ConfigTypeKind

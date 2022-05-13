@@ -1,7 +1,7 @@
 from graphql.execution.base import ResolveInfo
 
-from dagster import check
-from dagster.core.execution.plan.resume_retry import ReexecutionPolicy
+import dagster._check as check
+from dagster.core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import RunsFilter
@@ -59,7 +59,7 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
 
 
 @capture_error
-def launch_reexecution_from_parent_run(graphene_info, parent_run_id: str, policy):
+def launch_reexecution_from_parent_run(graphene_info, parent_run_id: str, strategy):
     """
     Launch a re-execution by referencing the parent run id
     """
@@ -68,7 +68,7 @@ def launch_reexecution_from_parent_run(graphene_info, parent_run_id: str, policy
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(parent_run_id, "parent_run_id")
-    check.str_param(policy, "policy")
+    check.str_param(strategy, "strategy")
 
     instance: DagsterInstance = graphene_info.context.instance
     parent_run = instance.get_run_by_id(parent_run_id)
@@ -88,7 +88,7 @@ def launch_reexecution_from_parent_run(graphene_info, parent_run_id: str, policy
         parent_run,
         repo_location,
         external_pipeline,
-        ReexecutionPolicy[policy],
+        ReexecutionStrategy[strategy],
         use_parent_run_tags=True,  # inherit whatever tags were set on the parent run at launch time
     )
     graphene_info.context.instance.submit_run(

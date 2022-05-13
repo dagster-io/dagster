@@ -60,8 +60,7 @@ if __name__ == "__main__":
             "click>=5.0",
             "coloredlogs>=6.1, <=14.0",
             "contextvars; python_version < '3.7'",
-            # https://github.com/dagster-io/dagster/issues/4167
-            "Jinja2<3.0",
+            "Jinja2",
             "markupsafe<=2.0.1",
             "PyYAML>=5.1",
             # core (not explicitly expressed atm)
@@ -126,15 +125,24 @@ if __name__ == "__main__":
             ],
             "mypy": [
                 "mypy==0.950",
+                "types-backports",  # version will be resolved against backports
+                "types-certifi",  # version will be resolved against certifi
+                "types-chardet",  # chardet is a 2+-order dependency of some Dagster libs
                 "types-croniter",  # version will be resolved against croniter
+                "types-cryptography",  # version will be resolved against cryptography
                 "types-mock",  # version will be resolved against mock
+                "types-paramiko",  # version will be resolved against paramiko
                 "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)
                 "types-protobuf",  # version will be resolved against protobuf
+                "types-pyOpenSSL",  # version will be resolved against pyOpenSSL
                 "types-python-dateutil",  # version will be resolved against python-dateutil
                 "types-PyYAML",  # version will be resolved against PyYAML
                 "types-pytz",  # version will be resolved against pytz
                 "types-requests",  # version will be resolved against requests
+                "types-simplejson",  # version will be resolved against simplejson
+                "types-six",  # needed but not specified by grpcio
                 "types-tabulate",  # version will be resolved against tabulate
+                "types-tzlocal",  # version will be resolved against tzlocal
                 "types-toml",  # version will be resolved against toml
             ],
         },

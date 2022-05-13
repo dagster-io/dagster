@@ -1,15 +1,14 @@
 import logging
 import time
 from contextlib import contextmanager
-from urllib.parse import quote
-from urllib.parse import quote_plus as urlquote
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 import psycopg2
 import psycopg2.errorcodes
 import sqlalchemy
 
-from dagster import Field, IntSource, Permissive, StringSource, check
+from dagster import Field, IntSource, Permissive, StringSource
+from dagster import _check as check
 from dagster.core.definitions.policy import Backoff, Jitter, calculate_delay
 from dagster.core.storage.sql import get_alembic_config, handle_schema_errors
 
@@ -60,7 +59,7 @@ def pg_url_from_config(config_value):
 
 
 def get_conn_string(username, password, hostname, db_name, port="5432", params=None):
-    uri = f"postgresql://{urlquote(username)}:{urlquote(password)}@{hostname}:{port}/{db_name}"
+    uri = f"postgresql://{quote(username)}:{quote(password)}@{hostname}:{port}/{db_name}"
 
     if params:
         query_string = f"{urlencode(params, quote_via=quote)}"

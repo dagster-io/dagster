@@ -4,7 +4,7 @@ import {ProgressBar} from '@blueprintjs/core';
 import {Button, Colors, DialogBody, DialogFooter, Dialog, Group, Icon, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {ReexecutionPolicy} from '../types/globalTypes';
+import {ReexecutionStrategy} from '../types/globalTypes';
 
 import {NavigationBlock} from './NavitationBlock';
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION} from './RunUtils';
@@ -22,7 +22,7 @@ export interface Props {
   onClose: () => void;
   onComplete: (reexecutionState: ReexecutionState) => void;
   selectedRuns: {[id: string]: string};
-  reexecutionPolicy: ReexecutionPolicy;
+  reexecutionStrategy: ReexecutionStrategy;
 }
 
 type Error =
@@ -122,7 +122,7 @@ const reexecutionDialogReducer = (
 };
 
 export const ReexecutionDialog = (props: Props) => {
-  const {isOpen, onClose, onComplete, reexecutionPolicy, selectedRuns} = props;
+  const {isOpen, onClose, onComplete, reexecutionStrategy, selectedRuns} = props;
 
   // Freeze the selected IDs, since the list may change as runs continue processing and
   // re-executing. We want to preserve the list we're given.
@@ -165,7 +165,7 @@ export const ReexecutionDialog = (props: Props) => {
         variables: {
           reexecutionParams: {
             parentRunId: runId,
-            policy: reexecutionPolicy,
+            strategy: reexecutionStrategy,
           },
         },
       });
@@ -194,7 +194,7 @@ export const ReexecutionDialog = (props: Props) => {
         }
 
         const message = () => {
-          if (reexecutionPolicy === ReexecutionPolicy.ALL_STEPS) {
+          if (reexecutionStrategy === ReexecutionStrategy.ALL_STEPS) {
             return (
               <span>
                 {`${count} ${count === 1 ? 'run' : 'runs'} will be re-executed `}
@@ -324,7 +324,7 @@ export const ReexecutionDialog = (props: Props) => {
     <Dialog
       isOpen={isOpen}
       title={
-        reexecutionPolicy === ReexecutionPolicy.ALL_STEPS
+        reexecutionStrategy === ReexecutionStrategy.ALL_STEPS
           ? 'Re-execute runs'
           : 'Re-execute runs from failure'
       }

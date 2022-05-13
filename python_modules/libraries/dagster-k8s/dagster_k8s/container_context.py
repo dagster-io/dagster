@@ -1,8 +1,8 @@
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, cast
 
 import kubernetes
 
-from dagster import check
+import dagster._check as check
 from dagster.config.validate import process_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -154,7 +154,7 @@ class K8sContainerContext(
                 run_k8s_container_context,
             )
 
-        processed_context_value = processed_container_context.value
+        processed_context_value = cast(Dict, processed_container_context.value)
 
         return K8sContainerContext(
             image_pull_policy=processed_context_value.get("image_pull_policy"),

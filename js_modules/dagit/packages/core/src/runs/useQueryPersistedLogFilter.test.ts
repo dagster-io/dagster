@@ -5,7 +5,7 @@ import {
 } from './useQueryPersistedLogFilter';
 
 describe('encodeRunPageFilters', () => {
-  it('serializes log levels, ', () => {
+  it('serializes log levels,', () => {
     expect(
       encodeRunPageFilters({
         hideNonMatches: true,

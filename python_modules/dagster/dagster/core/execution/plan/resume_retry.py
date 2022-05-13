@@ -2,7 +2,7 @@ import enum
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
-from dagster import check
+import dagster._check as check
 from dagster.core.errors import DagsterExecutionPlanSnapshotNotFoundError
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.plan.handle import StepHandle, UnresolvedStepHandle
@@ -31,7 +31,7 @@ def _in_tracking_dict(handle, tracking):
         return handle.to_key() in tracking
 
 
-class ReexecutionPolicy(enum.Enum):
+class ReexecutionStrategy(enum.Enum):
     ALL_STEPS = "ALL_STEPS"
     FROM_FAILURE = "FROM_FAILURE"
 

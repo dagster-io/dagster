@@ -7,19 +7,12 @@ from dagster_celery.core_execution_loop import DELEGATE_MARKER, core_celery_exec
 from dagster_celery.defaults import broker_url, result_backend
 from dagster_celery.executor import CELERY_CONFIG
 
-from dagster import (
-    DagsterInstance,
-    Executor,
-    Field,
-    MetadataEntry,
-    Permissive,
-    StringSource,
-    check,
-    executor,
-    multiple_process_executor_requirements,
-)
+from dagster import DagsterInstance, Executor, Field, MetadataEntry, Permissive, StringSource
+from dagster import _check as check
+from dagster import executor, multiple_process_executor_requirements
 from dagster.cli.api import ExecuteStepArgs
 from dagster.core.events import EngineEventData
+from dagster.core.events.utils import filter_dagster_events_from_cli_logs
 from dagster.core.execution.retries import RetryMode
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.serdes import pack_value, serialize_dagster_namedtuple, unpack_value
@@ -328,7 +321,8 @@ def create_docker_task(celery_app, **task_kwargs):
             if res is None:
                 raise Exception("No response from execute_step in CeleryDockerExecutor")
 
-            serialized_events += [event for event in res.split("\n") if event]
+            events = filter_dagster_events_from_cli_logs(res.split("\n"))
+            serialized_events += [serialize_dagster_namedtuple(event) for event in events]
 
         return serialized_events
 

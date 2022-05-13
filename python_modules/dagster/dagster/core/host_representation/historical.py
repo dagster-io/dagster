@@ -1,4 +1,4 @@
-from dagster import check
+import dagster._check as check
 from dagster.core.snap import PipelineSnapshot
 
 from .pipeline_index import PipelineIndex

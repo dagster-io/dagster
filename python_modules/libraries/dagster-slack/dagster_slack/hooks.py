@@ -5,8 +5,8 @@ from dagster.core.execution.context.hook import HookContext
 
 
 def _default_status_message(context: HookContext, status: str) -> str:
-    return "Solid {solid_name} on pipeline {pipeline_name} {status}!\nRun ID: {run_id}".format(
-        solid_name=context.solid.name,
+    return "Op {op_name} on job {pipeline_name} {status}!\nRun ID: {run_id}".format(
+        op_name=context.op.name,
         pipeline_name=context.pipeline_name,
         run_id=context.run_id,
         status=status,
@@ -66,7 +66,7 @@ def slack_on_failure(
                 base_url=dagit_base_url, run_id=context.run_id
             )
 
-        context.resources.slack.chat_postMessage(channel=channel, text=text)
+        context.resources.slack.chat_postMessage(channel=channel, text=text)  # type: ignore
 
     return _hook
 
@@ -96,7 +96,7 @@ def slack_on_success(
         .. code-block:: python
 
             def my_message_fn(context: HookContext) -> str:
-                return f"Op {context.solid} worked!"
+                return f"Op {context.op} worked!"
 
             @op
             def an_op(context):
@@ -116,6 +116,6 @@ def slack_on_success(
                 base_url=dagit_base_url, run_id=context.run_id
             )
 
-        context.resources.slack.chat_postMessage(channel=channel, text=text)
+        context.resources.slack.chat_postMessage(channel=channel, text=text)  # type: ignore
 
     return _hook

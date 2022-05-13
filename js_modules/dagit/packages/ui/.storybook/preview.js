@@ -51,21 +51,6 @@ const GlobalStyle = createGlobalStyle`
     font-family: ${FontFamily.monospace};
     font-size: 16px;
   }
-
-  .material-icons {
-    display: block;
-  }
-
-  /* todo dish: Remove these when we have buttons updated. */
-
-  .bp3-button .material-icons {
-    position: relative;
-    top: 1px;
-  }
-
-  .bp3-button:disabled .material-icons {
-    color: ${Colors.Gray300}
-  }
 `;
 
 // Global decorator to apply the styles to all stories

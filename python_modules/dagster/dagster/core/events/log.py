@@ -1,6 +1,6 @@
 from typing import Any, Dict, NamedTuple, Optional, Union
 
-from dagster import check
+import dagster._check as check
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
 from dagster.core.utils import coerce_valid_log_level
@@ -148,7 +148,7 @@ class EventLogEntry(
         return self.user_message
 
 
-def construct_event_record(logger_message):
+def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogEntry:
     check.inst_param(logger_message, "logger_message", StructuredLoggerMessage)
 
     return EventLogEntry(

@@ -1,6 +1,6 @@
 import sqlalchemy as db
 
-from dagster import check
+import dagster._check as check
 from dagster.core.storage.event_log import (
     AssetKeyTable,
     SqlEventLogStorage,
@@ -21,8 +21,6 @@ from ..utils import (
     retry_mysql_connection_fn,
     retry_mysql_creation_fn,
 )
-
-CHANNEL_NAME = "run_events"
 
 
 class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):

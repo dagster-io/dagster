@@ -1,3 +1,4 @@
+# pylint: disable=missing-graphene-docstring
 import graphene
 
 from .asset_key import GrapheneAssetKey
@@ -108,6 +109,14 @@ class GrapheneIntMetadataEntry(graphene.ObjectType):
         name = "IntMetadataEntry"
 
 
+class GrapheneBoolMetadataEntry(graphene.ObjectType):
+    boolValue = graphene.Field(graphene.Boolean)
+
+    class Meta:
+        interfaces = (GrapheneMetadataEntry,)
+        name = "BoolMetadataEntry"
+
+
 class GraphenePipelineRunMetadataEntry(graphene.ObjectType):
     runId = graphene.NonNull(graphene.String)
 
@@ -132,6 +141,7 @@ def types():
         GrapheneFloatMetadataEntry,
         GrapheneIntMetadataEntry,
         GrapheneJsonMetadataEntry,
+        GrapheneBoolMetadataEntry,
         GrapheneMarkdownMetadataEntry,
         GrapheneMetadataItemDefinition,
         GraphenePathMetadataEntry,

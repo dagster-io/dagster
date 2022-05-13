@@ -18,7 +18,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+import dagster._check as check
 from dagster.core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
 from dagster.core.origin import DEFAULT_DAGSTER_ENTRY_POINT
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -384,6 +384,9 @@ class ExternalRepositoryOrigin(
         return create_snapshot_id(
             RepositorySelector(self.repository_location_origin.location_name, self.repository_name)
         )
+
+    def get_label(self) -> str:
+        return f"{self.repository_name}@{self.repository_location_origin.location_name}"
 
     def get_pipeline_origin(self, pipeline_name: str) -> "ExternalPipelineOrigin":
         return ExternalPipelineOrigin(self, pipeline_name)

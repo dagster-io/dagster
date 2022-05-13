@@ -4,7 +4,9 @@ from typing import Union
 import pandas
 import pyspark
 
-from dagster import Field, IOManager, MetadataEntry, OutputContext, check, io_manager
+from dagster import Field, IOManager, MetadataEntry, OutputContext
+from dagster import _check as check
+from dagster import io_manager
 from dagster.seven.temp_dir import get_system_temp_directory
 
 
@@ -53,7 +55,7 @@ class PartitionedParquetIOManager(IOManager):
         )
 
     def _get_path(self, context: OutputContext):
-        key = context.asset_key.path[-1]
+        key = context.asset_key.path[-1]  # type: ignore
 
         if context.has_asset_partitions:
             start, end = context.asset_partitions_time_window

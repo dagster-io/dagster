@@ -3,7 +3,7 @@ import os
 import subprocess
 from typing import Any, Dict
 
-from dagster import check
+import dagster._check as check
 from dagster.core.utils import coerce_valid_log_level
 
 from ..errors import (
@@ -33,7 +33,14 @@ def execute_cli(
 
     # Format the dbt CLI flags in the command..
     warn_error = ["--warn-error"] if warn_error else []
-    command_list = [executable, "--log-format", "json", *warn_error, *command.split(" ")]
+    command_list = [
+        executable,
+        "--no-use-color",
+        "--log-format",
+        "json",
+        *warn_error,
+        *command.split(" "),
+    ]
 
     for flag, value in flags_dict.items():
         if not value:

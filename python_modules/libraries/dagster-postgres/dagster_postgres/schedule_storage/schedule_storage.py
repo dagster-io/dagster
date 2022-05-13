@@ -1,7 +1,7 @@
 import pendulum
 import sqlalchemy as db
 
-from dagster import check
+import dagster._check as check
 from dagster.core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
 from dagster.core.storage.schedules.schema import InstigatorsTable
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev

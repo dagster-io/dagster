@@ -13,7 +13,7 @@ import requests
 import yaml
 from dagster_k8s.utils import wait_for_pod
 
-from dagster import check
+import dagster._check as check
 from dagster.utils import find_free_port, git_repository_root, merge_dicts
 
 from .integration_utils import IS_BUILDKITE, check_output, get_test_namespace, image_pull_policy
@@ -388,33 +388,6 @@ def create_postgres_secret(namespace, should_cleanup):
             kube_api.delete_namespaced_secret(name="dagster-postgresql-secret", namespace=namespace)
 
 
-@contextmanager
-def copy_configmaps(system_namespace, user_code_namespace, should_cleanup, configmap_names):
-    kube_api = kubernetes.client.CoreV1Api()
-
-    for configmap_name in configmap_names:
-        system_configmap = kube_api.read_namespaced_config_map(
-            name=configmap_name, namespace=system_namespace
-        )
-
-        new_configmap = kubernetes.client.V1ConfigMap(
-            api_version="v1",
-            kind="ConfigMap",
-            data=system_configmap.data,
-            metadata=kubernetes.client.V1ObjectMeta(name=configmap_name),
-        )
-        kube_api.create_namespaced_config_map(namespace=user_code_namespace, body=new_configmap)
-
-    try:
-        yield
-    finally:
-        if should_cleanup:
-            for configmap_name in configmap_names:
-                kube_api.create_namespaced_config_map(
-                    name=configmap_name, namespace=user_code_namespace
-                )
-
-
 @pytest.fixture(
     scope="session",
     params=[
@@ -472,14 +445,6 @@ def helm_namespaces_for_k8s_run_launcher(
                     enable_subchart=False,
                     should_cleanup=should_cleanup,
                     run_monitoring=True,
-                )
-            )
-            stack.enter_context(
-                copy_configmaps(
-                    system_namespace,
-                    namespace,
-                    should_cleanup,
-                    configmap_names=["dagster-instance", "dagster-pipeline-env"],
                 )
             )
             yield (namespace, system_namespace)

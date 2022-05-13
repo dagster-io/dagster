@@ -1,6 +1,7 @@
 from typing import Callable, Optional
 
 from dagster.core.definitions import OpDefinition, failure_hook
+from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.execution.context.hook import HookContext
 
 
@@ -15,7 +16,7 @@ def _dedup_key_fn(context: HookContext) -> str:
     return f"{context.job_name}|{context.op.name}"
 
 
-def _source_fn(context: HookContext):
+def _source_fn(context: HookContext) -> str:
     return f"{context.job_name}"
 
 
@@ -23,7 +24,7 @@ def pagerduty_on_failure(
     severity: str,
     summary_fn: Callable[[HookContext], str] = _default_summary_fn,
     dagit_base_url: Optional[str] = None,
-):
+) -> HookDefinition:
     """Create a hook on step failure events that will trigger a PagerDuty alert.
 
     Args:
@@ -71,7 +72,7 @@ def pagerduty_on_failure(
                     base_url=dagit_base_url, run_id=context.run_id
                 )
             }
-        context.resources.pagerduty.EventV2_create(
+        context.resources.pagerduty.EventV2_create(  # type: ignore
             summary=summary_fn(context),
             source=_source_fn(context),
             severity=severity,

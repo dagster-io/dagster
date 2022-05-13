@@ -1,7 +1,7 @@
 import yaml
 from graphql.execution.base import ResolveInfo
 
-from dagster import check
+import dagster._check as check
 from dagster.core.host_representation import (
     ExternalPartitionSet,
     RepositoryHandle,
@@ -171,36 +171,25 @@ def _apply_cursor_limit_reverse(items, cursor, limit, reverse):
 
 
 @capture_error
-def get_partition_set_partition_statuses(graphene_info, repository_handle, partition_set_name):
+def get_partition_set_partition_statuses(
+    graphene_info, repository_handle, partition_set_name, job_name
+):
     from ..schema.partition_sets import GraphenePartitionStatus, GraphenePartitionStatuses
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(partition_set_name, "partition_set_name")
-    result = graphene_info.context.get_external_partition_names(
-        repository_handle, partition_set_name
+    run_partition_data = graphene_info.context.instance.run_storage.get_run_partition_data(
+        partition_set_name, job_name, repository_handle.get_external_origin().get_id()
     )
-    all_partition_set_runs = graphene_info.context.instance.get_runs(
-        RunsFilter(tags={PARTITION_SET_TAG: partition_set_name})
-    )
-    runs_by_partition = {}
-    for run in all_partition_set_runs:
-        partition_name = run.tags.get(PARTITION_NAME_TAG)
-        if not partition_name or partition_name in runs_by_partition:
-            # all_partition_set_runs is in descending order by creation time, we should ignore
-            # runs for the same partition if we've already considered the partition
-            continue
-        runs_by_partition[partition_name] = run
-
     return GraphenePartitionStatuses(
         results=[
             GraphenePartitionStatus(
-                id=f"{partition_set_name}:{partition_name}",
-                partitionName=partition_name,
-                runStatus=runs_by_partition[partition_name].status
-                if runs_by_partition.get(partition_name)
-                else None,
+                id=f"{partition_set_name}:{p.partition}",
+                partitionName=p.partition,
+                runStatus=p.status,
+                runDuration=p.end_time - p.start_time if p.end_time and p.start_time else None,
             )
-            for partition_name in result.partition_names
+            for p in run_partition_data
         ]
     )
 

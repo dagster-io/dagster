@@ -271,7 +271,7 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
         partitionStatuses = result.data["partitionSetOrError"]["partitionStatusesOrError"][
             "results"
         ]
-        assert len(partitionStatuses) == 10
+        assert len(partitionStatuses) == 2
         for partitionStatus in partitionStatuses:
             if partitionStatus["partitionName"] in ("2", "3"):
                 assert partitionStatus["runStatus"] == "SUCCESS"

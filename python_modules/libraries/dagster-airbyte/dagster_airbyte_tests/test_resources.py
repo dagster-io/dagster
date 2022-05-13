@@ -3,7 +3,9 @@ import responses
 from dagster_airbyte import AirbyteOutput, AirbyteState, airbyte_resource
 from dagster_airbyte.utils import generate_materializations
 
-from dagster import Failure, MetadataEntry, build_init_resource_context, check
+from dagster import Failure, MetadataEntry
+from dagster import _check as check
+from dagster import build_init_resource_context
 
 from .utils import get_sample_connection_json, get_sample_job_json
 
@@ -68,6 +70,7 @@ def test_sync_and_poll(state):
         json={"job": {"id": 1, "status": state}},
         status=200,
     )
+    responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
 
     if state == AirbyteState.ERROR:
         with pytest.raises(Failure, match="Job failed"):
@@ -220,6 +223,7 @@ def test_logging_multi_attempts(capsys):
         },
         status=200,
     )
+    responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
     ab_resource.sync_and_poll("some_connection", 0, None)
     captured = capsys.readouterr()
     assert captured.out == "\n".join(["log1a", "log1b", "log1c", "log2a", "log2b"]) + "\n"
@@ -254,6 +258,7 @@ def test_assets():
         json=get_sample_job_json(),
         status=200,
     )
+    responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
 
     airbyte_output = ab_resource.sync_and_poll("some_connection", 0, None)
 
@@ -304,6 +309,7 @@ def test_sync_and_poll_timeout():
         json={"job": {"id": 1, "status": "running"}},
         status=200,
     )
+    responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
     poll_wait_second = 2
     timeout = 1
     with pytest.raises(Failure, match="Timeout: Airbyte job"):
