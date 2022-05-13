@@ -381,8 +381,9 @@ class DbtCloudResourceV2:
                 See: https://docs.getdbt.com/dbt-cloud/api-v2#operation/getRunById for schema.
         """
 
-        if not href:
+        if href is None:
             href = self.get_run(run_id).get("href")
+        assert isinstance(href, str), "Run must have an href"
 
         poll_start = datetime.datetime.now()
         while True:
