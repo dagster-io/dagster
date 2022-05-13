@@ -466,6 +466,10 @@ def multi_or_in_process_executor(init_context: "InitExecutorContext") -> "Execut
     and negative numbers can be used.
     """
     if "multiprocess" in init_context.executor_config:
-        return _core_multiprocess_executor_creation(check.dict_elem(init_context.executor_config, "multiprocess"))
+        return _core_multiprocess_executor_creation(
+            check.dict_elem(init_context.executor_config, "multiprocess")
+        )
     else:
-        return _core_in_process_executor_creation(check.dict_elem(init_context.executor_config, "in_process"))
+        return _core_in_process_executor_creation(
+            check.dict_elem(init_context.executor_config, "in_process")
+        )

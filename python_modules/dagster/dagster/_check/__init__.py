@@ -393,6 +393,7 @@ def opt_dict_elem(
     else:
         return _check_mapping_entries(value, key_type, value_type, mapping_type=dict)
 
+
 def opt_nullable_dict_elem(
     obj: Dict[str, Any],
     key: str,
@@ -413,7 +414,6 @@ def opt_nullable_dict_elem(
         raise _element_check_error(key, value, obj, dict, additional_message)
     else:
         return _check_mapping_entries(value, key_type, value_type, mapping_type=dict)
-
 
 
 def is_dict(

@@ -192,10 +192,10 @@ class DockerStepHandler(StepHandler):
                 network = client.networks.get(network_name)
                 network.connect(step_container)
 
-        step_keys_to_execute = check.not_none(step_handler_context.execute_step_args.step_keys_to_execute)
-        assert (
-            len(step_keys_to_execute) == 1
-        ), "Launching multiple steps is not currently supported"
+        step_keys_to_execute = check.not_none(
+            step_handler_context.execute_step_args.step_keys_to_execute
+        )
+        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         step_key = step_keys_to_execute[0]
 
         events = [
@@ -218,7 +218,9 @@ class DockerStepHandler(StepHandler):
         return events
 
     def check_step_health(self, step_handler_context: StepHandlerContext) -> List[DagsterEvent]:
-        step_keys_to_execute = check.not_none(step_handler_context.execute_step_args.step_keys_to_execute)
+        step_keys_to_execute = check.not_none(
+            step_handler_context.execute_step_args.step_keys_to_execute
+        )
         step_key = step_keys_to_execute[0]
         container_context = self._get_docker_container_context(step_handler_context)
 
@@ -285,10 +287,10 @@ class DockerStepHandler(StepHandler):
     def terminate_step(self, step_handler_context: StepHandlerContext) -> List[DagsterEvent]:
         container_context = self._get_docker_container_context(step_handler_context)
 
-        step_keys_to_execute = check.not_none(step_handler_context.execute_step_args.step_keys_to_execute)
-        assert (
-            len(step_keys_to_execute) == 1
-        ), "Launching multiple steps is not currently supported"
+        step_keys_to_execute = check.not_none(
+            step_handler_context.execute_step_args.step_keys_to_execute
+        )
+        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         step_key = step_keys_to_execute[0]
 
         events = [
