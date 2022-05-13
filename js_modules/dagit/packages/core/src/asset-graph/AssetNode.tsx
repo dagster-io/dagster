@@ -15,6 +15,7 @@ import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 import {ComputeStatus, displayNameForAssetKey, LiveDataForNode} from './Utils';
 import {ASSET_NODE_ANNOTATIONS_MAX_WIDTH, ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
+import { ASSET_NODE_CONFIG_FRAGMENT } from '../assets/AssetConfig';
 
 const MISSING_LIVE_DATA = {
   unstartedRunIds: [],
@@ -188,6 +189,7 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
 export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeFragment on AssetNode {
     id
+    ...AssetNodeConfigFragment
     graphName
     opNames
     description
@@ -205,6 +207,7 @@ export const ASSET_NODE_FRAGMENT = gql`
       }
     }
   }
+  ${ASSET_NODE_CONFIG_FRAGMENT}
 `;
 
 const BoxColors = {
