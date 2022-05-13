@@ -6,6 +6,7 @@ import dagster_aws
 import pytest
 from botocore.exceptions import ClientError
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
+from dagster_aws.ecs.launcher import RUNNING_STATUSES, STOPPED_STATUSES
 from dagster_aws.ecs.tasks import TaskMetadata
 
 from dagster._check import CheckError
@@ -399,21 +400,11 @@ def test_status(ecs, instance, workspace, run):
     task_arn = instance.get_run_by_id(run.run_id).tags["ecs/task_arn"]
     task = [task for task in ecs.tasks["default"] if task["taskArn"] == task_arn][0]
 
-    running_statuses = [
-        "PROVISIONING",
-        "PENDING",
-        "ACTIVATING",
-        "RUNNING",
-        "DEACTIVATING",
-        "STOPPING",
-        "DEPROVISIONING",
-    ]
-    for status in running_statuses:
+    for status in RUNNING_STATUSES:
         task["lastStatus"] = status
         assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
 
-    stopped_statuses = ["STOPPED"]
-    for status in stopped_statuses:
+    for status in STOPPED_STATUSES:
         task["lastStatus"] = status
 
         task["containers"][0]["exitCode"] = 0
@@ -421,3 +412,6 @@ def test_status(ecs, instance, workspace, run):
 
         task["containers"][0]["exitCode"] = 1
         assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.FAILED
+
+    task["lastStatus"] = "foo"
+    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.UNKNOWN

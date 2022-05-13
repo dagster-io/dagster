@@ -25,6 +25,17 @@ from .utils import sanitize_family
 
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 
+RUNNING_STATUSES = [
+    "PROVISIONING",
+    "PENDING",
+    "ACTIVATING",
+    "RUNNING",
+    "DEACTIVATING",
+    "STOPPING",
+    "DEPROVISIONING",
+]
+STOPPED_STATUSES = ["STOPPED"]
+
 
 class EcsRunLauncher(RunLauncher, ConfigurableClass):
     """RunLauncher that starts a task in ECS for each Dagster job run."""
@@ -370,20 +381,9 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         t = tasks[0]
 
-        running_statuses = [
-            "PROVISIONING",
-            "PENDING",
-            "ACTIVATING",
-            "RUNNING",
-            "DEACTIVATING",
-            "STOPPING",
-            "DEPROVISIONING",
-        ]
-        stopped_statuses = ["STOPPED"]
-
-        if t.get("lastStatus") in running_statuses:
+        if t.get("lastStatus") in RUNNING_STATUSES:
             return CheckRunHealthResult(WorkerStatus.RUNNING)
-        elif t.get("lastStatus") in stopped_statuses:
+        elif t.get("lastStatus") in STOPPED_STATUSES:
 
             failed_containers = []
             for c in t.get("containers"):
