@@ -37,6 +37,11 @@ export const RunFragments = {
       parentRunId
       pipelineName
       solidSelection
+      assetSelection {
+        ... on AssetKey {
+          path
+        }
+      }
       pipelineSnapshotId
       executionPlan {
         artifactsPersisted

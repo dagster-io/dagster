@@ -224,7 +224,6 @@ def execute_run(
             )
 
     execution_plan = _get_execution_plan_from_run(pipeline, pipeline_run, instance)
-
     output_capture: Optional[Dict[StepOutputHandle, Any]] = {}
 
     _execute_run_iterable = ExecuteRunWithPlanIterable(
@@ -533,6 +532,11 @@ def reexecute_pipeline(
                 step_selection,
             )
 
+        if parent_pipeline_run.asset_selection:
+            pipeline = pipeline.subset_for_execution(
+                solid_selection=None, asset_selection=parent_pipeline_run.asset_selection
+            )
+
         pipeline_run = execute_instance.create_run_for_pipeline(
             pipeline_def=pipeline.get_definition(),
             execution_plan=execution_plan,
@@ -540,6 +544,7 @@ def reexecute_pipeline(
             mode=mode,
             tags=tags,
             solid_selection=parent_pipeline_run.solid_selection,
+            asset_selection=parent_pipeline_run.asset_selection,
             solids_to_execute=parent_pipeline_run.solids_to_execute,
             root_run_id=parent_pipeline_run.root_run_id or parent_pipeline_run.run_id,
             parent_run_id=parent_pipeline_run.run_id,
@@ -1018,10 +1023,8 @@ def _resolve_reexecute_step_selection(
     parent_pipeline_run: PipelineRun,
     step_selection: List[str],
 ) -> ExecutionPlan:
-    if parent_pipeline_run.solid_selection or parent_pipeline_run.asset_selection:
-        pipeline = pipeline.subset_for_execution(
-            parent_pipeline_run.solid_selection, parent_pipeline_run.asset_selection
-        )
+    if parent_pipeline_run.solid_selection:
+        pipeline = pipeline.subset_for_execution(parent_pipeline_run.solid_selection, None)
 
     parent_logs = instance.all_logs(parent_pipeline_run.run_id)
     parent_plan = create_execution_plan(

@@ -164,6 +164,11 @@ export function getReexecutionVariables(input: {
       repositoryName,
       pipelineName: run.pipelineName,
       solidSelection: run.solidSelection,
+      assetSelection: run.assetSelection
+        ? run.assetSelection.map((asset_key) => ({
+            path: asset_key.path,
+          }))
+        : null,
     },
   };
 
@@ -180,7 +185,6 @@ export function getReexecutionVariables(input: {
       value: style.selection.query,
     });
   }
-
   return {executionParams};
 }
 

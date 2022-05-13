@@ -24,7 +24,9 @@ class IPipeline(ABC):
 
     @abstractmethod
     def subset_for_execution(
-        self, solid_selection: Optional[List[str]], asset_selection: Optional[List[AssetKey]]
+        self,
+        solid_selection: Optional[List[str]] = None,
+        asset_selection: Optional[List[AssetKey]] = None,
     ) -> "IPipeline":
         pass
 
@@ -35,7 +37,9 @@ class IPipeline(ABC):
 
     @abstractmethod
     def subset_for_execution_from_existing_pipeline(
-        self, solids_to_execute: Optional[FrozenSet[str]], asset_selection: Optional[List[AssetKey]]
+        self,
+        solids_to_execute: Optional[FrozenSet[str]] = None,
+        asset_selection: Optional[List[AssetKey]] = None,
     ) -> "IPipeline":
         pass
 
@@ -87,7 +91,9 @@ class InMemoryPipeline(IPipeline, object):
         )
 
     def subset_for_execution(
-        self, solid_selection: Optional[List[str]], asset_selection: Optional[List[AssetKey]]
+        self,
+        solid_selection: Optional[List[str]] = None,
+        asset_selection: Optional[List[AssetKey]] = None,
     ):
         # take a list of solid queries and resolve the queries to names of solids to execute
         solid_selection = check.opt_list_param(solid_selection, "solid_selection", of_type=str)
@@ -103,7 +109,11 @@ class InMemoryPipeline(IPipeline, object):
         )
         return self._subset_for_execution(solids_to_execute, solid_selection, asset_selection)
 
-    def subset_for_execution_from_existing_pipeline(self, solids_to_execute, asset_selection):
+    def subset_for_execution_from_existing_pipeline(
+        self,
+        solids_to_execute: Optional[FrozenSet[str]] = None,
+        asset_selection: Optional[List[AssetKey]] = None,
+    ):
         # take a frozenset of resolved solid names from an existing pipeline run
         # so there's no need to parse the selection
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)

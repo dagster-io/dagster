@@ -1559,27 +1559,32 @@ failure_assets_job = build_assets_job(
 
 
 @asset
-def foo():
+def foo(context):
+    assert context.pipeline_def.asset_selection_data != None
     return 5
 
 
 @asset
-def bar():
+def bar(context):
+    assert context.pipeline_def.asset_selection_data != None
     return 10
 
 
 @asset
-def foo_bar(foo, bar):
+def foo_bar(context, foo, bar):
+    assert context.pipeline_def.asset_selection_data != None
     return foo + bar
 
 
 @asset
-def baz(foo_bar):
+def baz(context, foo_bar):
+    assert context.pipeline_def.asset_selection_data != None
     return foo_bar
 
 
 @asset
-def unconnected():
+def unconnected(context):
+    assert context.pipeline_def.asset_selection_data != None
     pass
 
 

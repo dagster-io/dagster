@@ -1111,6 +1111,7 @@ class DagsterInstance:
             execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
             parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
             solid_selection=parent_run.solid_selection,
+            asset_selection=parent_run.asset_selection,
             external_pipeline_origin=external_pipeline.get_external_origin(),
             pipeline_code_origin=external_pipeline.get_python_origin(),
         )

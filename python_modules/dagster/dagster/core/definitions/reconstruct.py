@@ -256,7 +256,9 @@ class ReconstructablePipeline(
             raise Exception(f"Unexpected pipeline/job type {pipeline_def.__class__.__name__}")
 
     def subset_for_execution(
-        self, solid_selection: Optional[List[str]], asset_selection: Optional[List[AssetKey]]
+        self,
+        solid_selection: Optional[List[str]] = None,
+        asset_selection: Optional[List[AssetKey]] = None,
     ) -> "ReconstructablePipeline":
         # take a list of unresolved selection queries
         check.opt_list_param(solid_selection, "solid_selection", of_type=str)
@@ -271,7 +273,9 @@ class ReconstructablePipeline(
         )
 
     def subset_for_execution_from_existing_pipeline(
-        self, solids_to_execute: Optional[FrozenSet[str]], asset_selection: Optional[List[AssetKey]]
+        self,
+        solids_to_execute: Optional[FrozenSet[str]] = None,
+        asset_selection: Optional[List[AssetKey]] = None,
     ) -> "ReconstructablePipeline":
         # take a frozenset of resolved solid names from an existing pipeline
         # so there's no need to parse the selection

@@ -1,9 +1,10 @@
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional, List
 
 from dagster.core.definitions import NodeDefinition, PipelineDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
+from dagster.core.definitions.events import AssetKey
 
 from .api import (
     ExecuteRunWithPlanIterable,
@@ -27,6 +28,7 @@ def core_execute_in_process(
     raise_on_error: bool,
     run_tags: Optional[Dict[str, Any]] = None,
     run_id: Optional[str] = None,
+    asset_selection: Optional[List[AssetKey]] = None,
 ) -> ExecuteInProcessResult:
     pipeline_def = ephemeral_pipeline
     mode_def = pipeline_def.get_mode_definition()
@@ -48,6 +50,7 @@ def core_execute_in_process(
             mode=mode_def.name,
             tags={**pipeline_def.tags, **(run_tags or {})},
             run_id=run_id,
+            asset_selection=asset_selection,
         )
         run_id = pipeline_run.run_id
 

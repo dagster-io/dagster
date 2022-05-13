@@ -244,6 +244,7 @@ class JobDefinition(PipelineDefinition):
             raise_on_error=raise_on_error,
             run_tags=tags,
             run_id=run_id,
+            asset_selection=asset_selection,
         )
 
     @property

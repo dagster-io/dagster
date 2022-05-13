@@ -58,6 +58,34 @@ def test_asset_subset_for_execution():
         assert materializations[0].asset_key == AssetKey("my_asset")
 
 
+def test_reexecute_asset_subset():
+    with instance_for_test() as instance:
+        result = asset_selection_job.execute_in_process(
+            instance=instance, asset_selection=[AssetKey("my_asset")]
+        )
+        assert result.success
+        materializations = [event for event in result.all_events if event.is_step_materialization]
+        assert len(materializations) == 1
+        assert materializations[0].asset_key == AssetKey("my_asset")
+
+        run = instance.get_run_by_id(result.run_id)
+        assert run.asset_selection == [AssetKey("my_asset")]
+
+        reexecution_result = reexecute_pipeline(
+            asset_selection_job,
+            parent_run_id=result.run_id,
+            instance=instance,
+        )
+        assert reexecution_result.success
+        materializations = [
+            event for event in reexecution_result.step_event_list if event.is_step_materialization
+        ]
+        assert len(materializations) == 1
+        assert materializations[0].asset_key == AssetKey("my_asset")
+        run = instance.get_run_by_id(reexecution_result.run_id)
+        assert run.asset_selection == [AssetKey("my_asset")]
+
+
 def test_execute_pipeline_with_solid_selection_single_clause():
     pipeline_result_full = execute_pipeline(foo_pipeline)
     assert pipeline_result_full.success
