@@ -885,3 +885,27 @@ def test_tick_selector_index_migration():
             assert "idx_tick_selector_timestamp" not in get_sqlite3_indexes(db_path, "job_ticks")
             instance.upgrade()
             assert "idx_tick_selector_timestamp" in get_sqlite3_indexes(db_path, "job_ticks")
+
+
+def test_unknown_alembic_hash():
+    import sqlalchemy as db
+
+    # first use a known, historic revision id
+    src_dir = file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "schedules", "schedules.db")
+        assert get_current_alembic_version(db_path) == "c892b3fe0a9f"
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            with pytest.raises(DagsterInstanceSchemaOutdated):
+                with instance.schedule_storage.connect():
+                    raise db.exc.StatementError("whoopsies", None, None, None)
+
+    # next, use an unknown revision id
+    src_dir = file_relative_path(__file__, "snapshot_0_14_15_alembic_snapshot/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "schedules", "schedules.db")
+        assert get_current_alembic_version(db_path) == "futurehash"
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            with pytest.raises(db.exc.StatementError):
+                with instance.schedule_storage.connect():
+                    raise db.exc.StatementError("whoopsies", None, None, None)

@@ -66,6 +66,7 @@ def known_alembic_revisions(alembic_config):
     script = ScriptDirectory.from_config(alembic_config)
     return [revision.revision for revision in script.walk_revisions()]
 
+
 @contextmanager
 def handle_schema_errors(conn, alembic_config):
     try:
@@ -84,7 +85,9 @@ def handle_schema_errors(conn, alembic_config):
         # if the db_revision is not known, it's probably because we pre-migrated before the code
         # was rolled out (e.g. ran a migration over the db before the code containing the alembic
         # script)
-        if db_revision != head_revision and db_revision in known_alembic_revisions(alembic_config):
+        if db_revision != head_revision and (
+            not db_revision or db_revision in known_alembic_revisions(alembic_config)
+        ):
             raise DagsterInstanceSchemaOutdated(
                 db_revision=db_revision,
                 head_revision=head_revision,
