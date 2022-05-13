@@ -208,7 +208,9 @@ def get_external_pipeline_subset_result(
     check.opt_list_param(solid_selection, "solid_selection", str)
     if solid_selection:
         try:
-            sub_pipeline = recon_pipeline.subset_for_execution(solid_selection)
+            sub_pipeline = recon_pipeline.subset_for_execution(
+                solid_selection=solid_selection, asset_selection=None
+            )
             definition = sub_pipeline.get_definition()
         except Exception:
             return ExternalPipelineSubsetResult(
@@ -216,7 +218,9 @@ def get_external_pipeline_subset_result(
             )
     elif asset_selection:
         try:
-            sub_pipeline = recon_pipeline.asset_subset_for_execution(asset_selection)
+            sub_pipeline = recon_pipeline.subset_for_execution(
+                solid_selection=None, asset_selection=asset_selection
+            )
             definition = sub_pipeline.get_definition()
         except Exception:
             return ExternalPipelineSubsetResult(
@@ -365,14 +369,12 @@ def get_external_execution_plan_snapshot(recon_pipeline, args):
     check.inst_param(args, "args", ExecutionPlanSnapshotArgs)
 
     try:
-        pipeline = (
-            recon_pipeline.subset_for_execution(args.solid_selection)
-            if args.solid_selection
-            else recon_pipeline
-        )
+        pipeline = recon_pipeline
 
-        if args.asset_selection:
-            pipeline = recon_pipeline.asset_subset_for_execution(args.asset_selection)
+        if args.solid_selection or args.asset_selection:
+            pipeline = pipeline.subset_for_execution(
+                solid_selection=args.solid_selection, asset_selection=args.asset_selection
+            )
 
         return snapshot_from_execution_plan(
             create_execution_plan(

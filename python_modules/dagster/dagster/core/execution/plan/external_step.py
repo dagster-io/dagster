@@ -238,9 +238,15 @@ def step_run_ref_to_step_context(
     step_run_ref: StepRunRef, instance: DagsterInstance
 ) -> StepExecutionContext:
     check.inst_param(instance, "instance", DagsterInstance)
-    pipeline = step_run_ref.recon_pipeline.subset_for_execution_from_existing_pipeline(
-        frozenset(step_run_ref.pipeline_run.solids_to_execute or set())
-    )
+
+    pipeline = step_run_ref.recon_pipeline
+
+    solids_to_execute = step_run_ref.pipeline_run.solids_to_execute
+    if solids_to_execute or step_run_ref.pipeline_run.asset_selection:
+        pipeline = step_run_ref.recon_pipeline.subset_for_execution_from_existing_pipeline(
+            frozenset(solids_to_execute) if solids_to_execute else None,
+            asset_selection=step_run_ref.pipeline_run.asset_selection,
+        )
 
     execution_plan = create_execution_plan(
         pipeline,

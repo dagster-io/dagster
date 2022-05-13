@@ -205,9 +205,10 @@ class ReconstructablePipeline(
         self,
         solids_to_execute: Optional[Optional[FrozenSet[str]]],
         solid_selection: Optional[List[str]],
+        asset_selection: Optional[List[AssetKey]],
     ) -> "ReconstructablePipeline":
         # no selection
-        if solid_selection is None and solids_to_execute is None:
+        if solid_selection is None and solids_to_execute is None and asset_selection is None:
             return ReconstructablePipeline(
                 repository=self.repository,
                 pipeline_name=self.pipeline_name,
@@ -215,12 +216,19 @@ class ReconstructablePipeline(
 
         from dagster.core.definitions import JobDefinition, PipelineDefinition
 
+        # TODO raise error when asset selection and op selection provided
         pipeline_def = self.get_definition()
         if isinstance(pipeline_def, JobDefinition):
+            if asset_selection:
+                return ReconstructablePipeline(
+                    repository=self.repository,
+                    pipeline_name=self.pipeline_name,
+                    asset_selection=frozenset(asset_selection),
+                )
             # when subselecting a job
             # * job subselection depend on solid_selection rather than solids_to_execute
             # * we'll resolve the op selection later in the stack
-            if solid_selection is None:
+            elif solid_selection is None:
                 # when the pre-resolution info is unavailable (e.g. subset from existing run),
                 # we need to fill the solid_selection in order to pass the value down to deeper stack.
                 solid_selection = list(solids_to_execute) if solids_to_execute else None
@@ -247,30 +255,40 @@ class ReconstructablePipeline(
         else:
             raise Exception(f"Unexpected pipeline/job type {pipeline_def.__class__.__name__}")
 
-    def asset_subset_for_execution(self, asset_selection: Optional[List[AssetKey]]):
-        asset_selection = check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey)
-        return ReconstructablePipeline(
-            repository=self.repository,
-            pipeline_name=self.pipeline_name,
-            asset_selection=frozenset(asset_selection),
-        )
-
     def subset_for_execution(
-        self, solid_selection: Optional[List[str]]
+        self, solid_selection: Optional[List[str]], asset_selection: Optional[List[AssetKey]]
     ) -> "ReconstructablePipeline":
         # take a list of unresolved selection queries
         check.opt_list_param(solid_selection, "solid_selection", of_type=str)
 
-        return self._subset_for_execution(solids_to_execute=None, solid_selection=solid_selection)
+        check.invariant(
+            not (solid_selection and asset_selection),
+            "solid_selection and asset_selection cannot both be provided as arguments",
+        )
+
+        return self._subset_for_execution(
+            solids_to_execute=None, solid_selection=solid_selection, asset_selection=asset_selection
+        )
 
     def subset_for_execution_from_existing_pipeline(
-        self, solids_to_execute: Optional[FrozenSet[str]]
+        self, solids_to_execute: Optional[FrozenSet[str]], asset_selection: Optional[List[AssetKey]]
     ) -> "ReconstructablePipeline":
         # take a frozenset of resolved solid names from an existing pipeline
         # so there's no need to parse the selection
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
 
-        return self._subset_for_execution(solids_to_execute=solids_to_execute, solid_selection=None)
+        check.invariant(
+            not (solids_to_execute and asset_selection),
+            "solids_to_execute and asset_selection cannot both be provided as arguments",
+        )
+
+        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+        # TODO typecheck
+
+        return self._subset_for_execution(
+            solids_to_execute=solids_to_execute,
+            solid_selection=None,
+            asset_selection=asset_selection,
+        )
 
     def describe(self):
         return '"{name}" in repository ({repo})'.format(

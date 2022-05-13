@@ -371,7 +371,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
         execution_plan = create_execution_plan(
             pipeline=self.get_reconstructable_pipeline(
                 external_pipeline.name
-            ).subset_for_execution_from_existing_pipeline(external_pipeline.solids_to_execute),
+            ).subset_for_execution_from_existing_pipeline(
+                external_pipeline.solids_to_execute, external_pipeline.asset_selection
+            ),
             run_config=run_config,
             mode=mode,
             step_keys_to_execute=step_keys_to_execute,

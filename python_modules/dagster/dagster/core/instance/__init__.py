@@ -755,6 +755,7 @@ class DagsterInstance:
         root_run_id=None,
         parent_run_id=None,
         solid_selection=None,
+        asset_selection=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
     ):
@@ -772,6 +773,7 @@ class DagsterInstance:
         # solid_selection is only used to pass the user queries further down.
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+        check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         if solids_to_execute:
             if isinstance(pipeline_def, PipelineSubsetDefinition):
@@ -810,6 +812,7 @@ class DagsterInstance:
             run_config=run_config,
             mode=check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name()),
             solid_selection=solid_selection,
+            asset_selection=asset_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=status,

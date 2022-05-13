@@ -327,6 +327,7 @@ def build_root_manager(
                 metadata=cast(Dict[str, Any], source_asset.metadata),
                 resource_config=resource_config,
                 resources=cast(NamedTuple, resources)._asdict(),
+                asset_key=source_asset_key,
             )
             input_context_with_upstream = build_input_context(
                 name=input_context.name,
