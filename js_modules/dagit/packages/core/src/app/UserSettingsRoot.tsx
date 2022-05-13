@@ -3,9 +3,9 @@ import {
   ButtonLink,
   Checkbox,
   Colors,
+  Heading,
   MetadataTable,
   PageHeader,
-  Heading,
   Subheading,
 } from '@dagster-io/ui';
 import * as React from 'react';
@@ -18,7 +18,10 @@ import {SHORTCUTS_STORAGE_KEY} from './ShortcutHandler';
 import {TimezoneSelect} from './time/TimezoneSelect';
 import {automaticLabel} from './time/browserTimezone';
 
-const SettingsRoot = () => {
+export interface SettingsRootProps {
+  tabs?: React.ReactNode;
+}
+const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
   useDocumentTitle('User settings');
 
   const [flags, setFlags] = React.useState<FeatureFlag[]>(() => getFeatureFlags());
@@ -54,7 +57,7 @@ const SettingsRoot = () => {
 
   return (
     <div style={{height: '100vh', overflowY: 'auto'}}>
-      <PageHeader title={<Heading>User settings</Heading>} />
+      <PageHeader title={<Heading>User settings</Heading>} tabs={tabs} />
       <Box padding={{vertical: 16, horizontal: 24}}>
         <Box padding={{bottom: 8}}>
           <Subheading>Preferences</Subheading>
@@ -150,4 +153,4 @@ const SettingsRoot = () => {
 
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export
-export default SettingsRoot;
+export default UserSettingsRoot;
