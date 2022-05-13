@@ -111,7 +111,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             kubeconfig_file=run_launcher.kubeconfig_file,
         ),
         retries=RetryMode.from_config(init_context.executor_config["retries"]),  # type: ignore
-        max_concurrent=exc_cfg.get("max_concurrent"),
+        max_concurrent=check.opt_int_elem(exc_cfg, "max_concurrent"),
         should_verify_step=True,
     )
 
