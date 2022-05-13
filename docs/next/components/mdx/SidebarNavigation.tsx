@@ -106,7 +106,7 @@ const MARGINS = ["ml-0", "ml-2", "ml-4", "ml-8"];
 
 const renderItems = (items, activeId, depth) => {
   return (
-    <ol>
+    <ol key={null}>
       {items.map((item) => {
         return item.url ? (
           <li key={item.url} className={cx(MARGINS[depth], "mt-3 list-inside")}>
