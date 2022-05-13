@@ -6,10 +6,12 @@ import dagster_aws
 import pytest
 from botocore.exceptions import ClientError
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
+from dagster_aws.ecs.launcher import RUNNING_STATUSES, STOPPED_STATUSES
 from dagster_aws.ecs.tasks import TaskMetadata
 
 from dagster._check import CheckError
 from dagster.core.events import MetadataEntry
+from dagster.core.launcher.base import WorkerStatus
 
 
 @pytest.mark.parametrize("task_long_arn_format", ["enabled", "disabled"])
@@ -37,6 +39,8 @@ def test_default_launcher(
     task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
     task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
     task_definition = task_definition["taskDefinition"]
+
+    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
 
     # It has a new family, name, and image
     # We get the family name from the location name. With the InProcessExecutor that we use in tests,
@@ -88,6 +92,10 @@ def test_default_launcher(
     assert MetadataEntry("ECS Task ARN", value=task_arn) in event_metadata
     assert MetadataEntry("ECS Cluster", value=cluster_arn) in event_metadata
     assert MetadataEntry("Run ID", value=run.run_id) in event_metadata
+
+    # check status and stop task
+    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
+    ecs.stop_task(task=task_arn)
 
 
 def test_task_definition_registration(
@@ -379,3 +387,31 @@ def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
     instance.add_run_tags(run.run_id, {"ecs/memory": "999"})
     with pytest.raises(ClientError):
         instance.launch_run(run.run_id, workspace)
+
+
+def test_status(ecs, instance, workspace, run):
+    instance.launch_run(run.run_id, workspace)
+
+    # Reach into StubbedEcs and grab the task
+    # so we can modify its status. This is kind of complicated
+    # right now so it might point toward a potential refactor of
+    # our internal task data structure - maybe a dict of dicts
+    # using cluster and arn as keys - instead of a dict of lists?
+    task_arn = instance.get_run_by_id(run.run_id).tags["ecs/task_arn"]
+    task = [task for task in ecs.tasks["default"] if task["taskArn"] == task_arn][0]
+
+    for status in RUNNING_STATUSES:
+        task["lastStatus"] = status
+        assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
+
+    for status in STOPPED_STATUSES:
+        task["lastStatus"] = status
+
+        task["containers"][0]["exitCode"] = 0
+        assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.SUCCESS
+
+        task["containers"][0]["exitCode"] = 1
+        assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.FAILED
+
+    task["lastStatus"] = "foo"
+    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.UNKNOWN
