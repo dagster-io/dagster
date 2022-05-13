@@ -64,4 +64,4 @@ def parse_env_var(env_var_str: str) -> Tuple[str, str]:
         split = env_var_str.split("=")
         return (split[0], split[1])
     else:
-        return (env_var_str, os.getenv(env_var_str))
+        return (env_var_str, os.environ[env_var_str])
