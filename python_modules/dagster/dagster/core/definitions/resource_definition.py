@@ -271,7 +271,7 @@ def resource(config_schema=Callable[["InitResourceContext"], Any]) -> ResourceDe
 
 @overload
 def resource(
-    config_schema: Optional[ConfigSchemaType],
+    config_schema: Optional[ConfigSchemaType] = ...,
     description: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
     version: Optional[str] = ...,
