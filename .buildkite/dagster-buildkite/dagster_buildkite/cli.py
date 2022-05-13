@@ -7,7 +7,7 @@ from .steps.dagit import dagit_steps
 from .steps.dagster import build_dagster_steps
 from .steps.integration import build_integration_steps
 from .steps.trigger import build_trigger_step
-from .steps.wait import wait_step
+from .steps.wait import build_wait_step
 from .utils import BuildkiteStep, buildkite_yaml_for_steps, is_pr_and_dagit_only, is_release_branch, safe_getenv
 
 CLI_HELP = """This CLI is used for generating Buildkite YAML.
@@ -57,7 +57,7 @@ def dagster() -> None:
     if not dagit_only:
         all_steps += build_dagster_steps()
 
-        all_steps.append(wait_step())
+        all_steps.append(build_wait_step())
 
         if DO_COVERAGE:
             all_steps += [build_coverage_step()]
