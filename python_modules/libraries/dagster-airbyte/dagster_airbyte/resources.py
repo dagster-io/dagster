@@ -138,6 +138,7 @@ class AirbyteResource:
         start = time.monotonic()
         logged_attempts = 0
         logged_lines = 0
+        state = None
 
         try:
             while True:
@@ -177,9 +178,10 @@ class AirbyteResource:
                 else:
                     raise Failure(f"Encountered unexpected state `{state}` for job_id {job_id}")
         finally:
-            # make sure that the Airbyte job does not outlive the python process
-            # cancelling a successfully completed job has no effect
-            self.cancel_job(job_id)
+            # if Airbyte sync has not completed, make sure to cancel it so that it doesn't outlive
+            # the python process
+            if state not in (AirbyteState.SUCCEEDED, AirbyteState.ERROR, AirbyteState.CANCELLED):
+                self.cancel_job(job_id)
 
         return AirbyteOutput(job_details=job_details, connection_details=connection_details)
 
