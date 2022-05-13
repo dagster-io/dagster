@@ -1,5 +1,6 @@
 # pylint: disable=missing-graphene-docstring
 from typing import TYPE_CHECKING, List, Optional, Sequence, Union
+from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -98,6 +99,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         limit=graphene.Int(),
     )
     computeKind = graphene.String()
+    configField = graphene.Field(GrapheneConfigTypeField)
     dependedBy = non_null_list(GrapheneAssetDependency)
     dependedByKeys = non_null_list(GrapheneAssetKey)
     dependencies = non_null_list(GrapheneAssetDependency)
@@ -225,6 +227,14 @@ class GrapheneAssetNode(graphene.ObjectType):
                 limit=limit,
             )
         ]
+
+    # TODO: Prob want a more efficient way of resolving this
+    def resolve_configField(self, _graphene_info) -> Optional[GrapheneConfigTypeField]:
+        op = self.resolve_op(_graphene_info)
+        if op:
+            return op.resolve_config_field(_graphene_info)
+        else:
+            return None
 
     def resolve_computeKind(self, _graphene_info) -> Optional[str]:
         return self._external_asset_node.compute_kind
