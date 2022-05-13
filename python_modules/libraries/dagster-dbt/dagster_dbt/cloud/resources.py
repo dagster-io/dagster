@@ -61,7 +61,7 @@ class DbtCloudResourceV2:
         endpoint: str,
         data: Optional[Dict[str, Any]] = None,
         return_text: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> Any:
         """
         Creates and sends a request to the desired dbt Cloud API endpoint.
 
@@ -181,7 +181,7 @@ class DbtCloudResourceV2:
         order_by: Optional[str] = "-id",
         offset: int = 0,
         limit: int = 100,
-    ) -> List[Dict[str, any]]:
+    ) -> List[Dict[str, object]]:
         """
         Returns a list of runs from dbt Cloud. This can be optionally filtered to a specific job
         using the job_definition_id. It supports pagination using offset and limit as well and
@@ -381,8 +381,9 @@ class DbtCloudResourceV2:
                 See: https://docs.getdbt.com/dbt-cloud/api-v2#operation/getRunById for schema.
         """
 
-        if not href:
+        if href is None:
             href = self.get_run(run_id).get("href")
+        assert isinstance(href, str), "Run must have an href"
 
         poll_start = datetime.datetime.now()
         while True:

@@ -120,8 +120,8 @@ class StepBuilder:
 
     def on_queue(self, queue):
         assert BuildkiteQueue.contains(queue)
-
-        self._step["agents"]["queue"] = queue.value
+        agents = self._step["agents"]  # type: ignore
+        agents["queue"] = queue.value
         return self
 
     def depends_on(self, step_keys):
