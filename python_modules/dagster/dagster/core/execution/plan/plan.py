@@ -466,14 +466,18 @@ def get_step_input_source(
     solid_config = plan_builder.resolved_run_config.solids.get(str(handle))
 
     input_def = solid.definition.input_def_named(input_name)
+    asset_layer = plan_builder.pipeline.get_definition().asset_layer
 
     if (
-        input_def.root_manager_key
         # input is unconnected inside the current dependency structure
-        and not dependency_structure.has_deps(input_handle)
-    ):
+        not dependency_structure.has_deps(input_handle)
+        and
         #  make sure input is unconnected in the outer dependency structure too
-        if not solid.container_maps_input(input_handle.input_name):
+        not solid.container_maps_input(input_handle.input_name)
+    ):
+        if input_def.root_manager_key or asset_layer.asset_key_for_input(
+            handle, input_handle.input_name
+        ):
             return FromRootInputManager(solid_handle=handle, input_name=input_name)
 
     if dependency_structure.has_direct_dep(input_handle):

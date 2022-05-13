@@ -154,6 +154,57 @@ class FromRootInputManager(
     Load input value via a RootInputManager.
     """
 
+    def load_from_source_asset(
+        self,
+        step_context: "StepExecutionContext",
+        input_def: InputDefinition,
+    ) -> Iterator["DagsterEvent"]:
+
+        source_asset_key = cast(AssetKey, input_context.asset_key)
+        source_asset = source_assets_by_key[source_asset_key]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+            @op(out={source_asset_key.path[-1]: Out(asset_key=source_asset_key)})
+            def _op():
+                pass
+
+        step_context = input_context.step_context
+        resource_config = step_context.resolved_run_config.resources[
+            source_asset.io_manager_key
+        ].config
+        io_manager_def = (
+            step_context.pipeline.get_definition()
+            .mode_definitions[0]
+            .resource_defs[source_asset.io_manager_key]
+        )
+        resources = step_context.scoped_resources_builder.build(
+            io_manager_def.required_resource_keys
+        )
+
+        output_context = build_output_context(
+            name=source_asset_key.path[-1],
+            step_key="none",
+            solid_def=_op,
+            metadata=cast(Dict[str, Any], source_asset.metadata),
+            resource_config=resource_config,
+            resources=cast(NamedTuple, resources)._asdict(),
+        )
+        input_context_with_upstream = build_input_context(
+            name=input_context.name,
+            metadata=input_context.metadata,
+            config=input_context.config,
+            dagster_type=input_context.dagster_type,
+            upstream_output=output_context,
+            op_def=input_context.op_def,
+            step_context=input_context.step_context,
+            resource_config=resource_config,
+            resources=cast(NamedTuple, resources)._asdict(),
+        )
+
+        io_manager = getattr(cast(Any, input_context.resources), source_asset.io_manager_key)
+        yield from io_manager.load_input(input_context_with_upstream)
+
     def load_input_object(
         self,
         step_context: "StepExecutionContext",

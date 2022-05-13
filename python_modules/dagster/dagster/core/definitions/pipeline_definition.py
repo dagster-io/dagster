@@ -1124,6 +1124,7 @@ def _create_run_config_schema(
             required_resources=required_resources,
             is_using_graph_job_op_apis=pipeline_def.is_job,
             direct_inputs=get_direct_input_values_from_job(pipeline_def),
+            asset_layer=pipeline_def.asset_layer,
         )
     )
 
