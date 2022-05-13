@@ -21,7 +21,7 @@ import {automaticLabel} from './time/browserTimezone';
 export interface SettingsRootProps {
   tabs?: React.ReactNode;
 }
-const UserSettingsRoot: React.FC<SettingsRootProps> = React.memo(({tabs}) => {
+const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
   useDocumentTitle('User settings');
 
   const [flags, setFlags] = React.useState<FeatureFlag[]>(() => getFeatureFlags());
@@ -149,7 +149,7 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = React.memo(({tabs}) => {
       </Box>
     </div>
   );
-});
+};
 
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export
