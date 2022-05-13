@@ -1,3 +1,4 @@
+from typing import Dict
 import os
 from unittest import mock
 
@@ -33,7 +34,7 @@ ADLS2_STORAGE_ACCOUNT = "dagsterdatabrickstests"
 ADLS2_CONTAINER = "dagster-databricks-tests"
 
 
-BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG = {
+BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: Dict[str, object] = {
     "databricks_host": os.environ.get("DATABRICKS_HOST"),
     "databricks_token": os.environ.get("DATABRICKS_TOKEN"),
     "local_pipeline_package_path": os.path.abspath(os.path.dirname(__file__)),
