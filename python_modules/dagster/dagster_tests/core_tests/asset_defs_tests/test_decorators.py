@@ -345,3 +345,14 @@ def test_op_tags():
         ...
 
     assert my_asset.op.tags == tags_stringified
+
+
+def test_kwargs():
+    @asset(ins={"upstream": AssetIn()})
+    def my_asset(**kwargs):
+        del kwargs
+
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.output_defs) == 1
+    assert len(my_asset.op.input_defs) == 1
+    assert AssetKey("upstream") in my_asset.asset_keys_by_input_name.values()
