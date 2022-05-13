@@ -13,6 +13,7 @@ Metadata allows you to attach information to a job. This information can be what
 
 - keeping track of the team responsible for maintaining a job
 - linking to documentation or other resources
+- displaying the git hash corresponding to the current job definition
 
 ### Specifying Metadata
 
@@ -95,8 +96,9 @@ Dagster will automatically add tags to your runs in some cases including:
 - The solid selection for the run, if applicable
 - The partition set and partition of the run, if applicable
 - The schedule that triggered the run, if applicable
+- The backfill ID, if applicable
 - The parent run of a re-executed run
-- OTHER THINGS
+- The docker image tag
 
 ### Using tags to affect run execution
 
