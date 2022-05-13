@@ -1,3 +1,4 @@
+import importlib.util
 import os
 import pickle
 import tempfile
@@ -17,26 +18,9 @@ from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path, safe_tempfile_path
 
-try:
-    import dagster_pandas as _
-
-    DAGSTER_PANDAS_PRESENT = True
-except ImportError:
-    DAGSTER_PANDAS_PRESENT = False
-
-try:
-    import sklearn as _
-
-    SKLEARN_PRESENT = True
-except ImportError:
-    SKLEARN_PRESENT = False
-
-try:
-    import matplotlib as _
-
-    MATPLOTLIB_PRESENT = True
-except ImportError:
-    MATPLOTLIB_PRESENT = False
+DAGSTER_PANDAS_PRESENT = importlib.util.find_spec("dagster_pandas") is not None
+SKLEARN_PRESENT = importlib.util.find_spec("sklearn") is not None
+MATPLOTLIB_PRESENT = importlib.util.find_spec("matplotlib") is not None
 
 
 def get_path(materialization_event):
