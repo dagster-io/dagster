@@ -311,7 +311,7 @@ def resource(
     # This case is for when decorator is used bare, without arguments.
     # E.g. @resource versus @resource()
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
-        return _ResourceDecoratorCallable()(config_schema)   # type: ignore
+        return _ResourceDecoratorCallable()(config_schema)  # type: ignore
 
     def _wrap(resource_fn: Callable[["InitResourceContext"], Any]) -> "ResourceDefinition":
         return _ResourceDecoratorCallable(

@@ -1,4 +1,5 @@
 from typing import List, Tuple
+
 from dagster import Array, Bool, Field, In, Nothing, OpDefinition, Out, Output, op
 
 from .types import DbtOutput
@@ -132,7 +133,7 @@ def dbt_docs_generate_op(context):
     return context.resources.dbt.generate_docs()
 
 
-for _op, cmd in [
+for dbt_op, cmd in [
     (dbt_build_op, "build"),
     (dbt_run_op, "run"),
     (dbt_compile_op, "compile"),
@@ -142,4 +143,4 @@ for _op, cmd in [
     (dbt_seed_op, "seed"),
     (dbt_docs_generate_op, "docs generate"),
 ]:
-    _op.__doc__ = _get_doc(_op.name, cmd)
+    dbt_op.__doc__ = _get_doc(dbt_op.name, cmd)

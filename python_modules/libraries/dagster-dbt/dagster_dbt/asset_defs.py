@@ -3,7 +3,6 @@ import json
 import os
 import textwrap
 from typing import AbstractSet, Any, Callable, Dict, Mapping, Optional, Sequence, Set, Tuple
-from dagster.core.definitions.metadata import RawMetadataValue
 
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
@@ -23,6 +22,7 @@ from dagster import (
 from dagster import _check as check
 from dagster import get_dagster_logger
 from dagster.core.asset_defs import AssetsDefinition, multi_asset
+from dagster.core.definitions.metadata import RawMetadataValue
 
 
 def _load_manifest_for_project(
