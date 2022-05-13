@@ -10,10 +10,10 @@ from dagster import Failure, RetryRequested
 from dagster.core.execution.context.compute import SolidExecutionContext
 
 
-def fmt_rpc_logs(logs: List[Dict]) -> Dict[int, str]:
+def fmt_rpc_logs(logs: List[Dict[str, str]]) -> Dict[int, str]:
     d = defaultdict(list)
     for log in logs:
-        levelname = log.get("levelname")
+        levelname = log["levelname"]
         d[getattr(logging, levelname)].append(
             f"{log.get('timestamp')} - {levelname} - {log.get('message')}"
         )

@@ -26,6 +26,7 @@ from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.utils import NoValueSentinel
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType
+from dagster.seven import funcsigs
 from dagster.utils.backcompat import ExperimentalWarning, experimental_decorator
 
 from .asset_in import AssetIn
@@ -342,18 +343,23 @@ def build_asset_ins(
     is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
         "context"
     )
-    input_param_names = [
-        input_param.name for input_param in (params[1:] if is_context_provided else params)
+    input_params = params[1:] if is_context_provided else params
+    non_var_input_param_names = [
+        param.name
+        for param in input_params
+        if param.kind == funcsigs.Parameter.POSITIONAL_OR_KEYWORD
     ]
+    has_kwargs = any(param.kind == funcsigs.Parameter.VAR_KEYWORD for param in input_params)
 
-    all_input_names = set(input_param_names) | asset_ins.keys()
+    all_input_names = set(non_var_input_param_names) | asset_ins.keys()
 
-    for in_key in asset_ins.keys():
-        if in_key not in input_param_names:
-            raise DagsterInvalidDefinitionError(
-                f"Key '{in_key}' in provided ins dict does not correspond to any of the names "
-                "of the arguments to the decorated function"
-            )
+    if not has_kwargs:
+        for in_key in asset_ins.keys():
+            if in_key not in non_var_input_param_names:
+                raise DagsterInvalidDefinitionError(
+                    f"Key '{in_key}' in provided ins dict does not correspond to any of the names "
+                    "of the arguments to the decorated function"
+                )
 
     ins_by_asset_key: Dict[AssetKey, Tuple[str, In]] = {}
     for input_name in all_input_names:

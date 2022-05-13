@@ -33,10 +33,16 @@ class StepDelegatingExecutor(Executor):
         retries: RetryMode,
         sleep_seconds: Optional[float] = None,
         check_step_health_interval_seconds: Optional[int] = None,
+        max_concurrent: Optional[int] = None,
         should_verify_step: bool = False,
     ):
         self._step_handler = step_handler
         self._retries = retries
+
+        self._max_concurrent = check.opt_int_param(max_concurrent, "max_concurrent")
+        if self._max_concurrent is not None:
+            check.invariant(self._max_concurrent > 0, "max_concurrent must be > 0")
+
         self._sleep_seconds = cast(
             float,
             check.opt_float_param(sleep_seconds, "sleep_seconds", default=DEFAULT_SLEEP_SECONDS),
@@ -227,7 +233,15 @@ class StepDelegatingExecutor(Executor):
                             running_steps,
                         )
 
-                for step in active_execution.get_steps_to_execute():
+                if self._max_concurrent is not None:
+                    max_steps_to_run = self._max_concurrent - len(running_steps)
+                    check.invariant(
+                        max_steps_to_run >= 0, "More steps are active than max_concurrent"
+                    )
+                else:
+                    max_steps_to_run = None  # disables limit
+
+                for step in active_execution.get_steps_to_execute(max_steps_to_run):
                     running_steps[step.key] = step
                     self._log_new_events(
                         self._step_handler.launch_step(

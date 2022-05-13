@@ -97,7 +97,7 @@ class AirbyteResource:
         self.make_request(endpoint="/jobs/cancel", data={"id": job_id})
 
     def get_job_status(self, job_id: int) -> dict:
-        return check.is_dict(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
+        return check.not_none(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
 
     def start_sync(self, connection_id: str) -> Dict[str, object]:
         return check.not_none(

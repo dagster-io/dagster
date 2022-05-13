@@ -142,43 +142,55 @@ def assert_user_deployment_template(
             assert template_resources == resource_values
 
 
-@pytest.mark.parametrize(
-    "helm_values",
-    [
-        DagsterHelmValues.construct(
-            dagsterUserDeployments=UserDeployments(
-                enabled=False,
-                enableSubchart=False,
-                deployments=[create_simple_user_deployment("simple-deployment-one")],
-            )
-        ),
-        DagsterHelmValues.construct(
-            dagsterUserDeployments=UserDeployments(
-                enabled=False,
-                enableSubchart=True,
-                deployments=[create_simple_user_deployment("simple-deployment-one")],
-            )
-        ),
-        DagsterHelmValues.construct(
-            dagsterUserDeployments=UserDeployments(
-                enabled=True,
-                enableSubchart=False,
-                deployments=[create_simple_user_deployment("simple-deployment-one")],
-            )
-        ),
-    ],
-    ids=[
-        "user deployments disabled, subchart disabled",
-        "user deployments disabled, subchart enabled",
-        "user deployments enabled, subchart disabled",
-    ],
-)
-def test_deployments_do_not_render(helm_values: DagsterHelmValues, template: HelmTemplate, capsys):
+def test_deployments_enabled_subchart_disabled(template: HelmTemplate, capfd):
     with pytest.raises(subprocess.CalledProcessError):
-        template.render(helm_values)
+        template.render(
+            DagsterHelmValues.construct(
+                dagsterUserDeployments=UserDeployments(
+                    enabled=True,
+                    enableSubchart=False,
+                    deployments=[create_simple_user_deployment("simple-deployment-one")],
+                )
+            ),
+        )
 
-        _, err = capsys.readouterr()
-        assert "Error: could not find template" in err
+    _, err = capfd.readouterr()
+    assert "Error: could not find template" in err
+
+
+def test_deployments_disabled_subchart_enabled(template: HelmTemplate, capfd):
+    with pytest.raises(subprocess.CalledProcessError):
+        template.render(
+            DagsterHelmValues.construct(
+                dagsterUserDeployments=UserDeployments(
+                    enabled=False,
+                    enableSubchart=True,
+                    deployments=[create_simple_user_deployment("simple-deployment-one")],
+                )
+            ),
+        )
+
+    _, err = capfd.readouterr()
+    assert (
+        "dagster-user-deployments subchart cannot be enabled if workspace.yaml is not created"
+        in err
+    )
+
+
+def test_deployments_disabled_subchart_disabled(template: HelmTemplate, capfd):
+    with pytest.raises(subprocess.CalledProcessError):
+        template.render(
+            DagsterHelmValues.construct(
+                dagsterUserDeployments=UserDeployments(
+                    enabled=False,
+                    enableSubchart=False,
+                    deployments=[create_simple_user_deployment("simple-deployment-one")],
+                )
+            )
+        )
+
+    _, err = capfd.readouterr()
+    assert "Error: could not find template" in err
 
 
 @pytest.mark.parametrize(
@@ -233,7 +245,7 @@ def test_deployments_render(helm_values: DagsterHelmValues, template: HelmTempla
     assert_user_deployment_template(template, user_deployments, helm_values)
 
 
-def test_chart_does_not_render(full_template: HelmTemplate, capsys):
+def test_chart_does_not_render(full_template: HelmTemplate, capfd):
     helm_values = DagsterHelmValues.construct(
         dagsterUserDeployments=UserDeployments(
             enabled=False,
@@ -245,11 +257,11 @@ def test_chart_does_not_render(full_template: HelmTemplate, capsys):
     with pytest.raises(subprocess.CalledProcessError):
         full_template.render(helm_values)
 
-        _, err = capsys.readouterr()
-        assert (
-            "dagster-user-deployments subchart cannot be enabled if workspace.yaml is not created."
-            in err
-        )
+    _, err = capfd.readouterr()
+    assert (
+        "dagster-user-deployments subchart cannot be enabled if workspace.yaml is not created."
+        in err
+    )
 
 
 @pytest.mark.parametrize(

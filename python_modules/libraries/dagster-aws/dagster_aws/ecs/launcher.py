@@ -8,7 +8,13 @@ from botocore.exceptions import ClientError
 from dagster import Array, Field, Noneable, ScalarUnion, StringSource
 from dagster import _check as check
 from dagster.core.events import EngineEventData, MetadataEntry
-from dagster.core.launcher.base import LaunchRunContext, RunLauncher
+from dagster.core.launcher.base import (
+    CheckRunHealthResult,
+    LaunchRunContext,
+    RunLauncher,
+    WorkerStatus,
+)
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass
 
@@ -18,6 +24,17 @@ from .tasks import default_ecs_task_definition, default_ecs_task_metadata
 from .utils import sanitize_family
 
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
+
+RUNNING_STATUSES = [
+    "PROVISIONING",
+    "PENDING",
+    "ACTIVATING",
+    "RUNNING",
+    "DEACTIVATING",
+    "STOPPING",
+    "DEPROVISIONING",
+]
+STOPPED_STATUSES = ["STOPPED"]
 
 
 class EcsRunLauncher(RunLauncher, ConfigurableClass):
@@ -36,6 +53,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.ecs = boto3.client("ecs")
         self.ec2 = boto3.resource("ec2")
         self.secrets_manager = boto3.client("secretsmanager")
+        self.logs = boto3.client("logs")
 
         self.task_definition = task_definition
         self.container_name = container_name
@@ -106,7 +124,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 is_required=False,
                 description=(
                     "An array of AWS Secrets Manager secrets. These secrets will "
-                    "be mounted as environment variabls in the container. See "
+                    "be mounted as environment variables in the container. See "
                     "https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html."
                 ),
             ),
@@ -345,3 +363,44 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
     def _task_metadata(self):
         return default_ecs_task_metadata(self.ec2, self.ecs)
+
+    @property
+    def supports_check_run_worker_health(self):
+        return True
+
+    def check_run_worker_health(self, run: PipelineRun):
+
+        tags = self._get_run_tags(run.run_id)
+
+        if not (tags.arn and tags.cluster):
+            return CheckRunHealthResult(WorkerStatus.UNKNOWN, "")
+
+        tasks = self.ecs.describe_tasks(tasks=[tags.arn], cluster=tags.cluster).get("tasks")
+        if not tasks:
+            return CheckRunHealthResult(WorkerStatus.UNKNOWN, "")
+
+        t = tasks[0]
+
+        if t.get("lastStatus") in RUNNING_STATUSES:
+            return CheckRunHealthResult(WorkerStatus.RUNNING)
+        elif t.get("lastStatus") in STOPPED_STATUSES:
+
+            failed_containers = []
+            for c in t.get("containers"):
+                if c.get("exitCode") != 0:
+                    failed_containers.append(c)
+            if len(failed_containers) > 0:
+                if len(failed_containers) > 1:
+                    container_str = "Containers"
+                else:
+                    container_str = "Container"
+                return CheckRunHealthResult(
+                    WorkerStatus.FAILED,
+                    f"ECS task failed. Stop code: {t.get('stopCode')}. Stop reason {t.get('stopReason')}. "
+                    f"{container_str} {c.get('name') for c in failed_containers} failed."
+                    f"Check the logs for task {t.get('taskArn')} for details.",
+                )
+
+            return CheckRunHealthResult(WorkerStatus.SUCCESS)
+
+        return CheckRunHealthResult(WorkerStatus.UNKNOWN, "ECS task health status is unknown.")

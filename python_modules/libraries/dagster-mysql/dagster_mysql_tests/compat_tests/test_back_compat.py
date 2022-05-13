@@ -6,7 +6,9 @@ import tempfile
 
 from sqlalchemy import create_engine
 
+from dagster import AssetKey, AssetObservation, Output, job, op
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.utils import file_relative_path
 
 
@@ -74,6 +76,39 @@ def test_instigators_table_backcompat(hostname, conn_string):
         instance.upgrade()
 
         assert instance.schedule_storage.has_instigators_table()
+
+
+def test_asset_observation_backcompat(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(__file__, "snapshot_0_11_16_pre_add_asset_key_index_cols.sql"),
+    )
+
+    @op
+    def asset_op(_):
+        yield AssetObservation(asset_key=AssetKey(["a"]))
+        yield Output(1)
+
+    @job
+    def asset_job():
+        asset_op()
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            storage = instance._event_storage
+
+            assert not instance.event_log_storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
+
+            asset_job.execute_in_process(instance=instance)
+            assert storage.has_asset_key(AssetKey(["a"]))
 
 
 def test_jobs_selector_id_migration(hostname, conn_string):

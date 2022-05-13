@@ -116,10 +116,10 @@ def test_local():
 @mock.patch("dagster_aws.emr.emr.EmrJobRunner.is_emr_step_complete")
 def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events, mock_s3_bucket):
     with instance_for_test() as instance:
-        execute_pipeline(reconstructable(define_do_nothing_pipe), mode="local", instance=instance)
-        mock_read_events.return_value = [
-            record.event_log_entry for record in instance.get_event_records()
-        ]
+        result = execute_pipeline(
+            reconstructable(define_do_nothing_pipe), mode="local", instance=instance
+        )
+        mock_read_events.return_value = instance.all_logs(result.run_id)
 
     run_job_flow_args = dict(
         Instances={

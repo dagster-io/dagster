@@ -21,7 +21,7 @@ def stubbed(function):
     def method(self, **kwargs):
         self.stubber.add_response(
             method="method", # Name of the method being stubbed
-            service_response={}, # Stubber validates the resposne shape
+            service_response={}, # Stubber validates the response shape
             expected_params(**kwargs), # Stubber validates the params
         )
         self.client.method(**kwargs) # "super" (except we're not actually
@@ -74,7 +74,7 @@ class StubbedEcs:
     first created a task definition.
 
     We can't extend botocore.client.ECS directly. Eventually, we might want to
-    register these methods as events instead of maintaing our own StubbedEcs
+    register these methods as events instead of maintaining our own StubbedEcs
     class:
     https://boto3.amazonaws.com/v1/documentation/api/latest/guide/events.html
     """

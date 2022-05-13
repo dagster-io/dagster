@@ -27,7 +27,11 @@ from dagster.core.definitions.dependency import (
 )
 from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.policy import RetryPolicy
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
+from dagster.core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvalidSubsetError,
+)
 from dagster.core.selector.subset_selector import (
     LeafNodeSelection,
     OpSelectionData,
@@ -35,6 +39,7 @@ from dagster.core.selector.subset_selector import (
 )
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.utils import str_format_set
+from dagster.utils import merge_dicts
 
 from .asset_layer import AssetLayer
 from .config import ConfigMapping
@@ -76,6 +81,7 @@ class JobDefinition(PipelineDefinition):
         version_strategy: Optional[VersionStrategy] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
         asset_layer: Optional[AssetLayer] = None,
+        _input_values: Optional[Mapping[str, object]] = None,
     ):
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
@@ -91,6 +97,15 @@ class JobDefinition(PipelineDefinition):
         self._op_selection_data = check.opt_inst_param(
             _op_selection_data, "_op_selection_data", OpSelectionData
         )
+        self._input_values: Mapping[str, object] = check.opt_mapping_param(
+            _input_values, "_input_values"
+        )
+        for input_name in sorted(list(self._input_values.keys())):
+            if not graph_def.has_input(input_name):
+                job_name = name or graph_def.name
+                raise DagsterInvalidDefinitionError(
+                    f"Error when constructing JobDefinition '{job_name}': Input value provided for key '{input_name}', but job has no top-level input with that name."
+                )
 
         super(JobDefinition, self).__init__(
             name=name,
@@ -145,6 +160,7 @@ class JobDefinition(PipelineDefinition):
         raise_on_error: bool = True,
         op_selection: Optional[List[str]] = None,
         run_id: Optional[str] = None,
+        input_values: Optional[Mapping[str, object]] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute the Job in-process, gathering results in-memory.
@@ -171,6 +187,8 @@ class JobDefinition(PipelineDefinition):
                 (downstream dependencies) within 3 levels down.
                 * ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
+            input_values (Optional[Mapping[str, Any]]):
+                A dictionary that maps python objects to the top-level inputs of the job. Input values provided here will override input values that have been provided to the job directly.
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
 
@@ -181,6 +199,12 @@ class JobDefinition(PipelineDefinition):
         run_config = check.opt_dict_param(run_config, "run_config")
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
         partition_key = check.opt_str_param(partition_key, "partition_key")
+        input_values = check.opt_mapping_param(input_values, "input_values")
+
+        # Combine provided input values at execute_in_process with input values
+        # provided to the definition. Input values provided at
+        # execute_in_process will override those provided on the definition.
+        input_values = merge_dicts(self._input_values, input_values)
 
         resource_defs = dict(self.resource_defs)
         logger_defs = dict(self.loggers)
@@ -197,6 +221,7 @@ class JobDefinition(PipelineDefinition):
             op_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,
             asset_layer=self.asset_layer,
+            _input_values=input_values,
         ).get_job_def_for_op_selection(op_selection)
 
         tags = None
@@ -355,6 +380,16 @@ class JobDefinition(PipelineDefinition):
             else None
         )
 
+    def has_direct_input_value(self, input_name: str) -> bool:
+        return input_name in self._input_values
+
+    def get_direct_input_value(self, input_name: str) -> object:
+        if input_name not in self._input_values:
+            raise DagsterInvalidInvocationError(
+                f"On job '{self.name}', attempted to retrieve input value for input named '{input_name}', but no value was provided. Provided input values: {sorted(list(self._input_values.keys()))}"
+            )
+        return self._input_values[input_name]
+
 
 def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):
     """
@@ -479,3 +514,10 @@ def get_subselected_graph_definition(
         input_mappings=new_input_mappings,
         output_mappings=new_output_mappings,
     )
+
+
+def get_direct_input_values_from_job(target: PipelineDefinition) -> Mapping[str, Any]:
+    if target.is_job:
+        return cast(JobDefinition, target)._input_values  # pylint: disable=protected-access
+    else:
+        return {}

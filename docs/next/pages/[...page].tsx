@@ -15,7 +15,7 @@ import { versionFromPage } from "../util/useVersion";
 import axios from "axios";
 import { GetStaticProps } from "next";
 import { MdxRemote } from "next-mdx-remote/types";
-import { latestAllPaths } from "util/useNavigation";
+import { latestAllVersionedPaths } from "util/useNavigation";
 import { promises as fs } from "fs";
 import generateToc from "mdast-util-toc";
 import matter from "gray-matter";
@@ -251,7 +251,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
 export function getStaticPaths({}) {
   return {
-    paths: latestAllPaths(), // only generate pages of latest version at build time
+    paths: latestAllVersionedPaths(), // only generate pages of latest version at build time
     fallback: true,
   };
 }

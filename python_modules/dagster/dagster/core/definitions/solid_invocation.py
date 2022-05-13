@@ -8,7 +8,14 @@ from dagster.core.errors import (
     DagsterTypeCheckDidNotPass,
 )
 
-from .events import AssetMaterialization, DynamicOutput, ExpectationResult, Materialization, Output
+from .events import (
+    AssetMaterialization,
+    AssetObservation,
+    DynamicOutput,
+    ExpectationResult,
+    Materialization,
+    Output,
+)
 from .output import DynamicOutputDefinition
 
 if TYPE_CHECKING:
@@ -198,7 +205,10 @@ def _type_check_output_wrapper(
             outputs_seen = set()
 
             async for event in async_gen:
-                if isinstance(event, (AssetMaterialization, Materialization, ExpectationResult)):
+                if isinstance(
+                    event,
+                    (AssetMaterialization, AssetObservation, Materialization, ExpectationResult),
+                ):
                     yield event
                 else:
                     if not isinstance(event, (Output, DynamicOutput)):
@@ -239,7 +249,10 @@ def _type_check_output_wrapper(
         def type_check_gen(gen):
             outputs_seen = set()
             for event in gen:
-                if isinstance(event, (AssetMaterialization, Materialization, ExpectationResult)):
+                if isinstance(
+                    event,
+                    (AssetMaterialization, AssetObservation, Materialization, ExpectationResult),
+                ):
                     yield event
                 else:
                     if not isinstance(event, (Output, DynamicOutput)):
@@ -274,7 +287,9 @@ def _type_check_function_output(
 ) -> Any:
     """Unpacks valid outputs from solid function."""
 
-    if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
+    if isinstance(
+        result, (AssetMaterialization, AssetObservation, Materialization, ExpectationResult)
+    ):
         raise DagsterInvariantViolationError(
             (
                 f"Error in {solid_def.node_type_str} '{solid_def.name}'': If you are returning an AssetMaterialization "

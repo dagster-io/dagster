@@ -33,7 +33,7 @@ ITEM_FIELD_NAMES = [field.name for field in HN_ITEMS_SCHEMA.fields]
     required_resource_keys={"hn_client"},
     partitions_def=hourly_partitions,
 )
-def items(context, id_range_for_time: Tuple[int, int]):
+def items(context, id_range_for_time: Tuple[int, int]) -> Output[DataFrame]:
     """Items from the Hacker News API: each is a story or a comment on a story."""
     start_id, end_id = id_range_for_time
 
