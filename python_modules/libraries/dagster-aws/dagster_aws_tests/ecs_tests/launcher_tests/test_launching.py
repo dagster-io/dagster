@@ -92,19 +92,9 @@ def test_default_launcher(
     assert MetadataEntry("ECS Cluster", value=cluster_arn) in event_metadata
     assert MetadataEntry("Run ID", value=run.run_id) in event_metadata
 
-    # stop task and check status
+    # check status and stop task
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
     ecs.stop_task(task=task_arn)
-    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.SUCCESS
-
-    # start another task to stop and check for failure
-    instance.launch_run(run.run_id, workspace)
-    tasks = ecs.list_tasks()["taskArns"]
-    task_arn = list(set(tasks).difference(initial_tasks))[0]
-    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
-    ecs.stop_task(task=task_arn, reason="FAILED")
-    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.FAILED
-    assert instance.run_launcher.check_run_worker_health(run).msg
 
 
 def test_task_definition_registration(
@@ -396,3 +386,38 @@ def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
     instance.add_run_tags(run.run_id, {"ecs/memory": "999"})
     with pytest.raises(ClientError):
         instance.launch_run(run.run_id, workspace)
+
+
+def test_status(ecs, instance, workspace, run):
+    instance.launch_run(run.run_id, workspace)
+
+    # Reach into StubbedEcs and grab the task
+    # so we can modify its status. This is kind of complicated
+    # right now so it might point toward a potential refactor of
+    # our internal task data structure - maybe a dict of dicts
+    # using cluster and arn as keys - instead of a dict of lists?
+    task_arn = instance.get_run_by_id(run.run_id).tags["ecs/task_arn"]
+    task = [task for task in ecs.tasks["default"] if task["taskArn"] == task_arn][0]
+
+    running_statuses = [
+        "PROVISIONING",
+        "PENDING",
+        "ACTIVATING",
+        "RUNNING",
+        "DEACTIVATING",
+        "STOPPING",
+        "DEPROVISIONING",
+    ]
+    for status in running_statuses:
+        task["lastStatus"] = status
+        assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
+
+    stopped_statuses = ["STOPPED"]
+    for status in stopped_statuses:
+        task["lastStatus"] = status
+
+        task["containers"][0]["exitCode"] = 0
+        assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.SUCCESS
+
+        task["containers"][0]["exitCode"] = 1
+        assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.FAILED

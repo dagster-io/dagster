@@ -415,17 +415,10 @@ class StubbedEcs:
         task = kwargs.get("task")
         tasks = self.describe_tasks(tasks=[task], cluster=cluster)["tasks"]
 
-        reason = kwargs.get("reason")
-
         if tasks:
             stopped_task = tasks[0]
             self.tasks[cluster].remove(tasks[0])
             stopped_task["lastStatus"] = "STOPPED"
-            # breakpoint()
-            for c in stopped_task["containers"]:
-                c["exitCode"] = 0
-                if reason == "FAILED":
-                    c["exitCode"] = 1
             self.tasks[cluster].append(stopped_task)
             self.stubber.add_response(
                 method="stop_task",

@@ -369,8 +369,16 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         t = tasks[0]
 
-        running_statuses = ["PROVISIONING", "PENDING", "ACTIVATING", "RUNNING"]
-        stopped_statuses = ["DEACTIVATING", "STOPPING", "DEPROVISIONING", "STOPPED"]
+        running_statuses = [
+            "PROVISIONING",
+            "PENDING",
+            "ACTIVATING",
+            "RUNNING",
+            "DEACTIVATING",
+            "STOPPING",
+            "DEPROVISIONING",
+        ]
+        stopped_statuses = ["STOPPED"]
 
         if t.get("lastStatus") in running_statuses:
             return CheckRunHealthResult(WorkerStatus.RUNNING)
