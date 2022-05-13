@@ -64,10 +64,23 @@ class EcsContainerContext(
         )
 
     def merge(self, other: "EcsContainerContext") -> "EcsContainerContext":
+
+        new_secrets_keys = [s["name"] for s in other.secrets]
+        merged_secrets = list(other.secrets)
+        for s in self.secrets:
+            if s["name"] not in new_secrets_keys:
+                merged_secrets.append(s)
+
+        new_env_keys = [e["name"] for e in other.environment]
+        merged_env = list(other.environment)
+        for e in self.environment:
+            if e["name"] not in new_env_keys:
+                merged_env.append(e)
+
         return EcsContainerContext(
-            secrets=other.secrets + self.secrets,
-            secrets_tags=other.secrets_tags + self.secrets_tags,
-            environment=other.environment + self.environment,
+            secrets=merged_secrets,
+            secrets_tags=list(set(other.secrets_tags + self.secrets_tags)),
+            environment=merged_env,
         )
 
     def get_secrets_dict(self, secrets_manager) -> Mapping[str, str]:

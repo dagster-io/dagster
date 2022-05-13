@@ -287,7 +287,7 @@ def other_container_context_config(other_configured_secret):
                 {
                     "name": "GOODBYE",
                     "valueFrom": other_configured_secret.arn + "/goodbye",
-                }
+                },
             ],
             "secrets_tags": ["other_secret_tag"],
         }

@@ -87,7 +87,11 @@ def test_merge(
         {"name": "GOODBYE", "valueFrom": other_configured_secret.arn + "/goodbye"},
     ]
 
-    assert merged.secrets_tags == ["dagster", "other_secret_tag"]
+    expected_tags = ["dagster", "other_secret_tag"]
+    assert len(merged.secrets_tags) == len(expected_tags)
+    assert len(set(merged.secrets_tags)) == len(merged.secrets_tags)  # no duplicates
+    for t in merged.secrets_tags:
+        assert t in expected_tags
 
     assert (
         empty_container_context.merge(secrets_container_context).secrets
@@ -107,10 +111,9 @@ def test_merge(
 
     merged = merged.merge(other_environment_container_context)
 
-    assert len(merged.environment) == 4
+    assert len(merged.environment) == 3
     assert merged.environment == [
         {"name": "Hello", "value": "Goodbye"},
         {"name": "FOO", "value": "BAZ"},
-        {"name": "FOO", "value": "BAR"},
         {"name": "foo", "value": "bar"},
     ]
