@@ -118,7 +118,7 @@ def test_executor_init_container_context(
         InitExecutorContext(
             job=InMemoryPipeline(bar),
             executor_def=k8s_job_executor,
-            executor_config={"env_vars": ["FOO_TEST"], "retries": {}},
+            executor_config={"env_vars": ["FOO_TEST"], "retries": {}, "max_concurrent": 4},
             instance=k8s_run_launcher_instance,
         )
     )
@@ -146,7 +146,7 @@ def test_executor_init_container_context(
             "BAZ_TEST",
         ]
     )
-
+    assert executor._max_concurrent == 4
     assert sorted(
         executor._step_handler._get_container_context(step_handler_context).resources
     ) == sorted(

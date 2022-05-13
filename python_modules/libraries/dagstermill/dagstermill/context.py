@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Set, cast
+from typing import Any, Dict, Mapping, Optional, Set, cast
 
 from dagster import PipelineDefinition, PipelineRun, SolidDefinition
 from dagster import _check as check
@@ -65,7 +65,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         return self._pipeline_context.run_id
 
     @property
-    def run_config(self) -> Dict[str, Any]:
+    def run_config(self) -> Mapping[str, Any]:
         """dict: The run_config for the context."""
         return self._pipeline_context.run_config
 

@@ -1,4 +1,5 @@
 import json
+import logging
 import platform
 import sys
 import time
@@ -140,8 +141,8 @@ class DbtRpcResource(DbtResource):
         return self._jsonrpc_version
 
     @property
-    def logger(self) -> Optional[Any]:
-        """Optional[Any]: A property for injecting a logger dependency."""
+    def logger(self) -> logging.Logger:
+        """logging.Logger: A property for injecting a logger dependency."""
         return self._logger
 
     @property
@@ -457,6 +458,41 @@ class DbtRpcResource(DbtResource):
 
         return self._get_result(data=json.dumps(data))
 
+    def build(self, select: Optional[List[str]] = None, **kwargs) -> DbtRpcOutput:
+        """
+        Run the ``build`` command on a dbt project. kwargs are passed in as additional parameters.
+
+        Args:
+            select (List[str], optional): the models/resources to include in the run.
+
+        Returns:
+            DbtOutput: object containing parsed output from dbt
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError()
+
+    def get_run_results_json(self, **kwargs) -> Optional[Dict[str, Any]]:
+        """
+        Get a parsed version of the run_results.json file for the relevant dbt project.
+
+        Returns:
+            Dict[str, Any]: dictionary containing the parsed contents of the run_results json file
+                for this dbt project.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError()
+
+    def get_manifest_json(self, **kwargs) -> Optional[Dict[str, Any]]:
+        """
+        Get a parsed version of the manifest.json file for the relevant dbt project.
+
+        Returns:
+            Dict[str, Any]: dictionary containing the parsed contents of the manifest json file
+                for this dbt project.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError()
+
 
 class DbtRpcSyncResource(DbtRpcResource):
     def __init__(
@@ -483,10 +519,11 @@ class DbtRpcSyncResource(DbtRpcResource):
         self.poll_interval = poll_interval
 
     def _get_result(self, data: Optional[str] = None) -> DbtRpcOutput:
-        """Sends a request to the dbt RPC server and continuously polls for the status of a request until the state is ``success``."""
+        """Sends a request to the dbt RPC server and continuously polls for the status of a request
+        until the state is ``success``."""
 
         out = super()._get_result(data)
-        request_token = out.result.get("request_token")
+        request_token: str = check.not_none(out.result.get("request_token"))
 
         logs_start = 0
 

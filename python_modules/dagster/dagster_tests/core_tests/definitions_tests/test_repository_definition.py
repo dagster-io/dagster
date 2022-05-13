@@ -644,3 +644,188 @@ def test_multiple_asset_groups_one_repo():
         AssetKey(["asset1"]),
         AssetKey(["asset2"]),
     }
+
+
+def _create_graph_with_name(name):
+    @graph(name=name)
+    def _the_graph():
+        pass
+
+    return _the_graph
+
+
+def _create_job_with_name(name):
+    @job(name=name)
+    def _the_job():
+        pass
+
+    return _the_job
+
+
+def _create_pipeline_with_name(name):
+    @pipeline(name=name)
+    def _the_pipeline():
+        pass
+
+    return _the_pipeline
+
+
+def _create_schedule_from_target(target):
+    @schedule(job=target, cron_schedule="* * * * *")
+    def _the_schedule():
+        pass
+
+    return _the_schedule
+
+
+def _create_sensor_from_target(target):
+    @sensor(job=target)
+    def _the_sensor():
+        pass
+
+    return _the_sensor
+
+
+def test_duplicate_graph_valid():
+    the_graph = _create_graph_with_name("foo")
+
+    # Providing the same graph to the repo and multiple schedules / sensors is valid
+    @repository
+    def the_repo_dupe_graph_valid():
+        return [the_graph, _create_sensor_from_target(the_graph)]
+
+    assert len(the_repo_dupe_graph_valid.get_all_jobs()) == 1
+
+
+def test_duplicate_graph_target_invalid():
+    the_graph = _create_graph_with_name("foo")
+    other_graph = _create_graph_with_name("foo")
+    # Different reference-equal graph provided to repo with same name, ensure error is thrown.
+    with pytest.warns(
+        UserWarning,
+        match="sensor '_the_sensor' targets graph 'foo', but a different graph with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_graph_invalid_sensor():
+            return [the_graph, _create_sensor_from_target(other_graph)]
+
+    with pytest.warns(
+        UserWarning,
+        match="schedule '_the_schedule' targets graph 'foo', but a different graph with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_graph_invalid_schedule():
+            return [the_graph, _create_schedule_from_target(other_graph)]
+
+
+def test_duplicate_job_target_valid():
+    the_job = _create_job_with_name("foo")
+
+    @repository
+    def the_repo_dupe_job_valid():
+        return [the_job, _create_schedule_from_target(the_job), _create_sensor_from_target(the_job)]
+
+
+def test_duplicate_job_target_invalid():
+    the_job = _create_job_with_name("foo")
+    other_job = _create_job_with_name("foo")
+
+    with pytest.warns(
+        UserWarning,
+        match="sensor '_the_sensor' targets job 'foo', but a different job with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_job_invalid_sensor():
+            return [the_job, _create_sensor_from_target(other_job)]
+
+    with pytest.warns(
+        UserWarning,
+        match="schedule '_the_schedule' targets job 'foo', but a different job with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_job_invalid_schedule():
+            return [the_job, _create_schedule_from_target(other_job)]
+
+
+def test_dupe_pipelines_valid():
+    the_pipeline = _create_pipeline_with_name("foo")
+
+    @repository
+    def the_repo_dupe_pipelines_valid():
+        return [
+            the_pipeline,
+            _create_schedule_from_target(the_pipeline),
+            _create_sensor_from_target(the_pipeline),
+        ]
+
+
+def test_dupe_pipelines_invalid():
+    the_pipeline = _create_pipeline_with_name("foo")
+    other_pipeline = _create_pipeline_with_name("foo")
+
+    with pytest.warns(
+        UserWarning,
+        match="schedule '_the_schedule' targets pipeline 'foo', but a different pipeline with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_pipelines_invalid_schedule():
+            return [the_pipeline, _create_schedule_from_target(other_pipeline)]
+
+    with pytest.warns(
+        UserWarning,
+        match="sensor '_the_sensor' targets pipeline 'foo', but a different pipeline with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_pipelines_invalid_sensor():
+            return [the_pipeline, _create_sensor_from_target(other_pipeline)]
+
+
+def test_dupe_jobs_pipelines_invalid():
+    the_job = _create_job_with_name("foo")
+    the_pipeline = _create_pipeline_with_name("foo")
+
+    the_schedule = _create_schedule_from_target(the_pipeline)
+    the_sensor = _create_sensor_from_target(the_pipeline)
+    with pytest.warns(
+        UserWarning,
+        match="schedule '_the_schedule' targets pipeline 'foo', but a different job with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_job_pipeline_invalid_schedule_job():
+            return [the_job, the_schedule]
+
+    with pytest.warns(
+        UserWarning,
+        match="sensor '_the_sensor' targets pipeline 'foo', but a different job with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_job_pipeline_invalid_sensor_job():
+            return [the_job, the_sensor]
+
+    the_graph = _create_graph_with_name("foo")
+
+    with pytest.warns(
+        UserWarning,
+        match="sensor '_the_sensor' targets pipeline 'foo', but a different graph with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_graph_pipeline_invalid_sensor_graph():
+            return [the_graph, the_sensor]
+
+    with pytest.warns(
+        UserWarning,
+        match="schedule '_the_schedule' targets pipeline 'foo', but a different graph with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_graph_pipeline_invalid_schedule_graph():
+            return [the_graph, the_schedule]

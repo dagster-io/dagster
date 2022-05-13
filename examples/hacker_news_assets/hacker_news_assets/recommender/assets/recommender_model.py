@@ -10,7 +10,7 @@ from .user_story_matrix import IndexedCooMatrix
 
 
 @asset
-def recommender_model(user_story_matrix: IndexedCooMatrix):
+def recommender_model(user_story_matrix: IndexedCooMatrix) -> Output[TruncatedSVD]:
     """
     An SVD model for collaborative filtering-based recommendation.
     """
@@ -35,7 +35,7 @@ def recommender_model(user_story_matrix: IndexedCooMatrix):
 )
 def component_top_stories(
     recommender_model: TruncatedSVD, user_story_matrix: IndexedCooMatrix, stories: DataFrame
-):
+) -> Output[DataFrame]:
     """
     For each component in the collaborative filtering model, the titles of the top stories
     it's associated with.

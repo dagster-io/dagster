@@ -26,6 +26,8 @@ def test_load_from_manifest_json():
 
     dbt = MagicMock()
     dbt.run.return_value = DbtOutput(run_results_json)
+    dbt.build.return_value = DbtOutput(run_results_json)
+    dbt.get_manifest_json.return_value = manifest_json
     assets_job = build_assets_job(
         "assets_job",
         dbt_assets,
@@ -53,6 +55,8 @@ def test_runtime_metadata_fn():
 
     dbt = MagicMock()
     dbt.run.return_value = DbtOutput(run_results_json)
+    dbt.build.return_value = DbtOutput(run_results_json)
+    dbt.get_manifest_json.return_value = manifest_json
     assets_job = build_assets_job(
         "assets_job",
         dbt_assets,
@@ -100,11 +104,14 @@ def assert_assets_match_project(dbt_assets):
     assert not dbt_assets[0].asset_deps[AssetKey(["test-schema", "sort_by_calories"])]
 
 
+@pytest.mark.parametrize("use_build, fail_test", [(True, False), (True, True), (False, False)])
 def test_basic(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build, fail_test
 ):  # pylint: disable=unused-argument
 
-    dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
+    dbt_assets = load_assets_from_dbt_project(
+        test_project_dir, dbt_config_dir, use_build_command=use_build
+    )
 
     assert dbt_assets[0].op.name == "run_dbt_dagster_dbt_test_project"
 
@@ -113,26 +120,48 @@ def test_basic(
         dbt_assets,
         resource_defs={
             "dbt": dbt_cli_resource.configured(
-                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+                {
+                    "project_dir": test_project_dir,
+                    "profiles_dir": dbt_config_dir,
+                    "vars": {"fail_test": fail_test},
+                }
             )
         },
-    ).execute_in_process()
+    ).execute_in_process(raise_on_error=False)
 
-    assert result.success
+    assert result.success == (not fail_test)
     materializations = [
         event.event_specific_data.materialization
         for event in result.events_for_node(dbt_assets[0].op.name)
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
-    assert len(materializations) == 4
+    if fail_test:
+        # the test will fail after the first model is completed, so others will not be emitted
+        assert len(materializations) == 1
+        assert materializations[0].asset_key == AssetKey(["test-schema", "sort_by_calories"])
+    else:
+        assert len(materializations) == 4
+    observations = [
+        event.event_specific_data.asset_observation
+        for event in result.events_for_node(dbt_assets[0].op.name)
+        if event.event_type_value == "ASSET_OBSERVATION"
+    ]
+    if use_build:
+        assert len(observations) == 17
+    else:
+        assert len(observations) == 0
 
 
+@pytest.mark.parametrize("use_build", [True, False])
 def test_select_from_project(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build
 ):  # pylint: disable=unused-argument
 
     dbt_assets = load_assets_from_dbt_project(
-        test_project_dir, dbt_config_dir, select="sort_by_calories subdir.least_caloric"
+        test_project_dir,
+        dbt_config_dir,
+        select="sort_by_calories subdir.least_caloric",
+        use_build_command=use_build,
     )
 
     assert dbt_assets[0].op.name == "run_dbt_dagster_dbt_test_project_e4753"
@@ -154,6 +183,15 @@ def test_select_from_project(
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 2
+    observations = [
+        event.event_specific_data.asset_observation
+        for event in result.events_for_node(dbt_assets[0].op.name)
+        if event.event_type_value == "ASSET_OBSERVATION"
+    ]
+    if use_build:
+        assert len(observations) == 16
+    else:
+        assert len(observations) == 0
 
 
 def test_multiple_select_from_project(
@@ -183,8 +221,9 @@ def test_dbt_ls_fail_fast():
         load_assets_from_dbt_project("bad_project_dir", "bad_config_dir")
 
 
+@pytest.mark.parametrize("use_build", [True, False])
 def test_select_from_manifest(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build
 ):  # pylint: disable=unused-argument
 
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
@@ -196,6 +235,7 @@ def test_select_from_manifest(
             "model.dagster_dbt_test_project.sort_by_calories",
             "model.dagster_dbt_test_project.least_caloric",
         },
+        use_build_command=use_build,
     )
 
     result = build_assets_job(
@@ -215,15 +255,26 @@ def test_select_from_manifest(
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 2
+    observations = [
+        event.event_specific_data.asset_observation
+        for event in result.events_for_node(dbt_assets[0].op.name)
+        if event.event_type_value == "ASSET_OBSERVATION"
+    ]
+    if use_build:
+        assert len(observations) == 16
+    else:
+        assert len(observations) == 0
 
 
+@pytest.mark.parametrize("use_build", [True, False])
 def test_node_info_to_asset_key(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build
 ):  # pylint: disable=unused-argument
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir,
         dbt_config_dir,
         node_info_to_asset_key=lambda node_info: AssetKey(["foo", node_info["name"]]),
+        use_build_command=use_build,
     )
 
     result = build_assets_job(
@@ -244,3 +295,12 @@ def test_node_info_to_asset_key(
     ]
     assert len(materializations) == 4
     assert materializations[0].asset_key == AssetKey(["foo", "sort_by_calories"])
+    observations = [
+        event.event_specific_data.asset_observation
+        for event in result.events_for_node(dbt_assets[0].op.name)
+        if event.event_type_value == "ASSET_OBSERVATION"
+    ]
+    if use_build:
+        assert len(observations) == 17
+    else:
+        assert len(observations) == 0

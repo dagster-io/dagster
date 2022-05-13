@@ -190,6 +190,23 @@ def test_dagit_db_statement_timeout(deployment_template: HelmTemplate):
     assert f"--db-statement-timeout {db_statement_timeout_ms}" in command
 
 
+def test_dagit_log_level(deployment_template: HelmTemplate):
+    log_level = "trace"
+    helm_values = DagsterHelmValues.construct(dagit=Dagit.construct(logLevel=log_level))
+
+    dagit_deployments = deployment_template.render(helm_values)
+    command = " ".join(dagit_deployments[0].spec.template.spec.containers[0].command)
+
+    assert f"--log-level {log_level}" in command
+
+    helm_values = DagsterHelmValues.construct(dagit=Dagit.construct())
+
+    dagit_deployments = deployment_template.render(helm_values)
+    command = " ".join(dagit_deployments[0].spec.template.spec.containers[0].command)
+
+    assert "--log-level" not in command
+
+
 def test_dagit_labels(deployment_template: HelmTemplate):
     deployment_labels = {"deployment_label": "label"}
     pod_labels = {"pod_label": "label"}

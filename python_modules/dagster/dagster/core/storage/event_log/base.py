@@ -131,9 +131,16 @@ class EventRecordsFilter(
         before_timestamp: Optional[float] = None,
     ):
         check.opt_list_param(asset_partitions, "asset_partitions", of_type=str)
+        event_type = check.opt_inst_param(event_type, "event_type", DagsterEventType)
+        if not event_type:
+            warnings.warn(
+                "The use of `EventRecordsFilter` without an event type is deprecated and will "
+                "begin erroring starting in 0.15.0"
+            )
+
         return super(EventRecordsFilter, cls).__new__(
             cls,
-            event_type=check.opt_inst_param(event_type, "event_type", DagsterEventType),
+            event_type=event_type,
             asset_key=check.opt_inst_param(asset_key, "asset_key", AssetKey),
             asset_partitions=asset_partitions,
             after_cursor=check.opt_inst_param(

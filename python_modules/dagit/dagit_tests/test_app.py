@@ -139,6 +139,7 @@ def test_successful_host_dagit_ui_from_workspace():
                 host=None,
                 port=2343,
                 path_prefix="",
+                log_level="warning",
             )
 
 
@@ -158,6 +159,7 @@ def test_successful_host_dagit_ui_from_multiple_workspace_files():
                 host=None,
                 port=2343,
                 path_prefix="",
+                log_level="warning",
             )
 
 
@@ -172,6 +174,7 @@ def test_successful_host_dagit_ui_from_legacy_repository():
                 host=None,
                 port=2343,
                 path_prefix="",
+                log_level="warning",
             )
 
 
@@ -188,6 +191,7 @@ def test_invalid_path_prefix():
                     host=None,
                     port=2343,
                     path_prefix="no-leading-slash",
+                    log_level="warning",
                 )
             assert "path prefix should begin with a leading" in str(exc_info.value)
 
@@ -197,6 +201,7 @@ def test_invalid_path_prefix():
                     host=None,
                     port=2343,
                     path_prefix="/extra-trailing-slash/",
+                    log_level="warning",
                 )
             assert "path prefix should not include a trailing" in str(exc_info.value)
 
@@ -213,6 +218,7 @@ def test_valid_path_prefix():
                 host=None,
                 port=2343,
                 path_prefix="/dagster-path",
+                log_level="warning",
             )
 
 

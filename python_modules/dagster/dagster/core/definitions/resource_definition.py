@@ -13,6 +13,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster.config.config_schema import ConfigSchemaType
 from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
@@ -80,7 +81,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
     def __init__(
         self,
         resource_fn: Callable[["InitResourceContext"], Any],
-        config_schema: Optional[Union[Any, IDefinitionConfigSchema]] = None,
+        config_schema: Optional[Union[Any, ConfigSchemaType]] = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[AbstractSet[str]] = None,
         version: Optional[str] = None,
@@ -270,7 +271,7 @@ def resource(config_schema=Callable[["InitResourceContext"], Any]) -> ResourceDe
 
 @overload
 def resource(
-    config_schema: Optional[Union[IDefinitionConfigSchema, Dict[str, Any]]] = ...,
+    config_schema: Optional[ConfigSchemaType] = ...,
     description: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
     version: Optional[str] = ...,
@@ -279,9 +280,7 @@ def resource(
 
 
 def resource(
-    config_schema: Optional[
-        Union[Callable[["InitResourceContext"], Any], IDefinitionConfigSchema, Dict[str, Any]]
-    ] = None,
+    config_schema: Union[Callable[["InitResourceContext"], Any], Optional[ConfigSchemaType]] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     version: Optional[str] = None,
@@ -312,7 +311,7 @@ def resource(
     # This case is for when decorator is used bare, without arguments.
     # E.g. @resource versus @resource()
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
-        return _ResourceDecoratorCallable()(config_schema)
+        return _ResourceDecoratorCallable()(config_schema)  # type: ignore
 
     def _wrap(resource_fn: Callable[["InitResourceContext"], Any]) -> "ResourceDefinition":
         return _ResourceDecoratorCallable(
