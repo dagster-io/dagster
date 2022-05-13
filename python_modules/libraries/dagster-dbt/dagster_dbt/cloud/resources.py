@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 import time
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Union, cast
 from urllib.parse import urlencode, urljoin
 
 import requests
@@ -61,7 +61,7 @@ class DbtCloudResourceV2:
         endpoint: str,
         data: Optional[Dict[str, Any]] = None,
         return_text: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> Any:
         """
         Creates and sends a request to the desired dbt Cloud API endpoint.
 

@@ -523,7 +523,7 @@ class DbtRpcSyncResource(DbtRpcResource):
         until the state is ``success``."""
 
         out = super()._get_result(data)
-        request_token = check.not_none(out.result.get("request_token"))
+        request_token: str = check.not_none(out.result.get("request_token"))
 
         logs_start = 0
 
