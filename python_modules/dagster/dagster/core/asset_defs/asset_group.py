@@ -664,10 +664,13 @@ def _validate_resource_reqs_for_asset_group(
 ):
     present_resource_keys = set(resource_defs.keys())
     for asset_def in asset_list:
-        resource_keys: Set[str] = set()
+        provided_resource_keys = set(asset_def.resource_defs.keys())
+        present_resource_keys = present_resource_keys.union(provided_resource_keys)
+
+        required_resource_keys: Set[str] = set()
         for op_def in asset_def.node_def.iterate_solid_defs():
-            resource_keys.update(set(op_def.required_resource_keys or {}))
-        missing_resource_keys = list(set(resource_keys) - present_resource_keys)
+            required_resource_keys.update(set(op_def.required_resource_keys or {}))
+        missing_resource_keys = list(set(required_resource_keys) - present_resource_keys)
         if missing_resource_keys:
             raise DagsterInvalidDefinitionError(
                 f"AssetGroup is missing required resource keys for asset '{asset_def.node_def.name}'. "
