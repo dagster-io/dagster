@@ -97,7 +97,7 @@ class InMemoryPipeline(IPipeline, object):
     ):
         # take a list of solid queries and resolve the queries to names of solids to execute
         solid_selection = check.opt_list_param(solid_selection, "solid_selection", of_type=str)
-        # TODO add typecheck
+        check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         check.invariant(
             not (solid_selection and asset_selection),
@@ -117,6 +117,7 @@ class InMemoryPipeline(IPipeline, object):
         # take a frozenset of resolved solid names from an existing pipeline run
         # so there's no need to parse the selection
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+        check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         check.invariant(
             not (solids_to_execute and asset_selection),

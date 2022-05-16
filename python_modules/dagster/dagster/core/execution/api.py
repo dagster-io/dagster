@@ -115,7 +115,6 @@ def execute_run_iterator(
                 ),
             )
         else:
-            # TODO CHECK IF THIS IS EVEN POSSIBLE FOR ASSET SELECTION??
             # when `execute_run_iterator` is directly called, the sub pipeline hasn't been created
             # note that when we receive the solids to execute via PipelineRun, it won't support
             # solid selection query syntax
@@ -212,7 +211,6 @@ def execute_run(
                 ),
             )
         else:
-            # TODO CHECK IF THIS IS EVEN POSSIBLE?
             # when `execute_run` is directly called, the sub pipeline hasn't been created
             # note that when we receive the solids to execute via PipelineRun, it won't support
             # solid selection query syntax

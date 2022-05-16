@@ -206,20 +206,12 @@ def get_external_pipeline_subset_result(
 ):
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
     check.opt_list_param(solid_selection, "solid_selection", str)
-    if solid_selection:
+    check.opt_list_param(asset_selection, "asset_selection", AssetKey)
+    if solid_selection or asset_selection:
         try:
             sub_pipeline = recon_pipeline.subset_for_execution(
-                solid_selection=solid_selection, asset_selection=None
-            )
-            definition = sub_pipeline.get_definition()
-        except Exception:
-            return ExternalPipelineSubsetResult(
-                success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
-            )
-    elif asset_selection:
-        try:
-            sub_pipeline = recon_pipeline.subset_for_execution(
-                solid_selection=None, asset_selection=asset_selection
+                solid_selection=solid_selection,
+                asset_selection=asset_selection,
             )
             definition = sub_pipeline.get_definition()
         except Exception:

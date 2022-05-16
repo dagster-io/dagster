@@ -216,7 +216,6 @@ class ReconstructablePipeline(
 
         from dagster.core.definitions import JobDefinition, PipelineDefinition
 
-        # TODO raise error when asset selection and op selection provided
         pipeline_def = self.get_definition()
         if isinstance(pipeline_def, JobDefinition):
             if asset_selection:
@@ -262,6 +261,7 @@ class ReconstructablePipeline(
     ) -> "ReconstructablePipeline":
         # take a list of unresolved selection queries
         check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+        check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         check.invariant(
             not (solid_selection and asset_selection),
@@ -286,7 +286,7 @@ class ReconstructablePipeline(
         )
 
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
-        # TODO typecheck
+        check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         return self._subset_for_execution(
             solids_to_execute=solids_to_execute,
