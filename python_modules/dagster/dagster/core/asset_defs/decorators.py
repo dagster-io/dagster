@@ -244,6 +244,7 @@ def multi_asset(
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
+    op_tags: Optional[Dict[str, Any]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -277,6 +278,10 @@ def multi_asset(
             If no entry is provided for a particular asset dependency, the partition mapping defaults
             to the default partition mapping for the partitions definition, which is typically maps
             partition keys to the same partition keys in upstream assets.
+        op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
+            Frameworks may expect and require certain metadata to be attached to a op. Values that
+            are not strings will be json encoded and must meet the criteria that
+            `json.loads(json.dumps(value)) == value`.
     """
 
     check.invariant(
@@ -319,7 +324,10 @@ def multi_asset(
                 ins=dict(asset_ins.values()),
                 out=outs,
                 required_resource_keys=required_resource_keys,
-                tags={"kind": compute_kind} if compute_kind else None,
+                tags={
+                    **({"kind": compute_kind} if compute_kind else {}),
+                    **(op_tags or {}),
+                },
                 config_schema={
                     "assets": {
                         "input_partitions": Field(dict, is_required=False),
