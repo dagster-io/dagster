@@ -161,3 +161,10 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         with self.connect() as conn:
             conn.execute(remove_tags)
             conn.execute(remove_run)
+
+    def alembic_version(self):
+        alembic_config = get_alembic_config(__file__)
+        with self.connect() as conn:
+            db_revision, _head_revision = check_alembic_revision(alembic_config, conn)
+            return db_revision
+        return None

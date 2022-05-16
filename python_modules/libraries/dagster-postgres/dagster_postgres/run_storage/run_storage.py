@@ -7,7 +7,12 @@ from dagster.core.storage.runs import (
     RunStorageSqlMetadata,
     SqlRunStorage,
 )
-from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
+from dagster.core.storage.sql import (
+    check_alembic_revision,
+    create_engine,
+    run_alembic_upgrade,
+    stamp_alembic_rev,
+)
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
 
@@ -157,3 +162,10 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                     },
                 )
             )
+
+    def alembic_version(self):
+        alembic_config = pg_alembic_config(__file__)
+        with self.connect() as conn:
+            db_revision, _head_revision = check_alembic_revision(alembic_config, conn)
+            return db_revision
+        return None

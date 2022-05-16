@@ -4,7 +4,12 @@ import sqlalchemy as db
 import dagster._check as check
 from dagster.core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
 from dagster.core.storage.schedules.schema import InstigatorsTable
-from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
+from dagster.core.storage.sql import (
+    check_alembic_revision,
+    create_engine,
+    run_alembic_upgrade,
+    stamp_alembic_rev,
+)
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 
 from ..utils import (
@@ -134,3 +139,10 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
                 },
             )
         )
+
+    def alembic_version(self):
+        alembic_config = pg_alembic_config(__file__)
+        with self.connect() as conn:
+            db_revision, _head_revision = check_alembic_revision(alembic_config, conn)
+            return db_revision
+        return None

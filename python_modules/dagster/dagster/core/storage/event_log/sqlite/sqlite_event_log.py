@@ -406,6 +406,13 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self._obs.stop()
             self._obs.join(timeout=15)
 
+    def alembic_version(self):
+        alembic_config = get_alembic_config(__file__)
+        with self.index_connection() as conn:
+            db_revision, _head_revision = check_alembic_revision(alembic_config, conn)
+            return db_revision
+        return None
+
 
 class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
     def __init__(self, event_log_storage, run_id, callback, start_cursor, **kwargs):

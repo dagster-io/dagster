@@ -35,6 +35,12 @@ def info_command():
         click.echo(instance.info_str())
 
 
+@instance_cli.command(name="schema", help="List the status of the storage schema.")
+def schema_command():
+    with DagsterInstance.get() as instance:
+        click.echo(instance.schema_str())
+
+
 @instance_cli.command(name="migrate", help="Automatically migrate an out of date instance.")
 def migrate_command():
     home = os.environ.get("DAGSTER_HOME")

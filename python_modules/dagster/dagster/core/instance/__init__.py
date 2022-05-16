@@ -530,6 +530,19 @@ class DagsterInstance:
     def info_str(self) -> str:
         return yaml.dump(self.info_dict(), default_flow_style=False, sort_keys=False)
 
+    def schema_str(self) -> str:
+        return yaml.dump(
+            {
+                "event_log_storage": self._event_storage.alembic_version(),
+                "run_storage": self._run_storage.alembic_version(),
+                "schedule_storage": self._schedule_storage.alembic_version()
+                if self._schedule_storage
+                else None,
+            },
+            default_flow_style=False,
+            sort_keys=False,
+        )
+
     @property
     def run_storage(self) -> "RunStorage":
         return self._run_storage

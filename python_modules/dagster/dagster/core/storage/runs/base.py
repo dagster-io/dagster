@@ -384,3 +384,6 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     @abstractmethod
     def update_backfill(self, partition_backfill: PartitionBackfill):
         """Update a partition backfill in run storage"""
+
+    def alembic_version(self):
+        return None

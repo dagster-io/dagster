@@ -95,3 +95,10 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         alembic_config = get_alembic_config(__file__)
         with self.connect() as conn:
             run_alembic_upgrade(alembic_config, conn)
+
+    def alembic_version(self):
+        alembic_config = get_alembic_config(__file__)
+        with self.connect() as conn:
+            db_revision, _head_revision = check_alembic_revision(alembic_config, conn)
+            return db_revision
+        return None
