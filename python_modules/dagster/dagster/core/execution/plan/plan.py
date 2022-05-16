@@ -758,18 +758,31 @@ class ExecutionPlan(
         step_output_versions = check.opt_dict_param(
             step_output_versions, "step_output_versions", key_type=StepOutputHandle, value_type=str
         )
-        step_handles_to_execute = [StepHandle.parse_from_key(key) for key in step_keys_to_execute]
-
+        step_handles_to_execute_set = set()
         bad_keys = []
-        for handle in step_handles_to_execute:
+
+        for key in step_keys_to_execute:
+            handle = StepHandle.parse_from_key(key)
+
             if handle not in self.step_dict:
+                if isinstance(handle, ResolvedFromDynamicStepHandle):
+                    unresolved_handle = UnresolvedStepHandle(solid_handle=handle.solid_handle)
+                    if unresolved_handle in self.step_dict: # ok if the unresolved version is present
+                        step_handles_to_execute_set.add(unresolved_handle)
+                        continue
+
                 bad_keys.append(handle.to_key())
+
+            step_handles_to_execute_set.add(handle)
+
 
         if bad_keys:
             raise DagsterExecutionStepNotFoundError(
                 f"Can not build subset plan from unknown step{'s' if len(bad_keys)> 1 else ''}: {', '.join(bad_keys)}",
                 step_keys=bad_keys,
             )
+
+        step_handles_to_execute = list(step_handles_to_execute_set) if step_handles_to_execute_set else []
 
         executable_map, resolvable_map = _compute_step_maps(
             self.step_dict,
