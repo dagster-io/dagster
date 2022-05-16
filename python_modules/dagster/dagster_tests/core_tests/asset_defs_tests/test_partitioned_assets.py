@@ -11,8 +11,10 @@ from dagster import (
     PartitionsDefinition,
     SourceAsset,
     StaticPartitionsDefinition,
+    Out,
+    Output,
 )
-from dagster.core.asset_defs import asset, build_assets_job
+from dagster.core.asset_defs import asset, build_assets_job, multi_asset
 from dagster.core.asset_defs.asset_partitions import (
     get_downstream_partitions_for_partition_range,
     get_upstream_partitions_for_partition_range,
@@ -439,3 +441,125 @@ def test_source_asset_partitions():
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
     )
     assert daily_job.execute_in_process(partition_key="2021-06-06").success
+
+
+def test_multi_assets_with_same_partitioning():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+    @multi_asset(
+        outs={
+            "out1": Out(asset_key=AssetKey("upstream_asset_1")),
+            "out2": Out(asset_key=AssetKey("upstream_asset_2")),
+        },
+        partitions_def=partitions_def,
+    )
+    def upstream_asset():
+        pass
+
+    @asset(partitions_def=partitions_def)
+    def downstream_asset_1(upstream_asset_1: int):
+        pass
+
+    @asset(partitions_def=partitions_def)
+    def downstream_asset_2(upstream_asset_2: int):
+        pass
+
+    assert get_upstream_partitions_for_partition_range(
+        downstream_asset_1,
+        upstream_asset,
+        AssetKey("upstream_asset_1"),
+        PartitionKeyRange("a", "c"),
+    ) == PartitionKeyRange("a", "c")
+
+    assert get_upstream_partitions_for_partition_range(
+        downstream_asset_2,
+        upstream_asset,
+        AssetKey("upstream_asset_2"),
+        PartitionKeyRange("a", "c"),
+    ) == PartitionKeyRange("a", "c")
+
+    assert get_downstream_partitions_for_partition_range(
+        downstream_asset_1,
+        upstream_asset,
+        AssetKey("upstream_asset_1"),
+        PartitionKeyRange("a", "c"),
+    ) == PartitionKeyRange("a", "c")
+
+    assert get_downstream_partitions_for_partition_range(
+        downstream_asset_2,
+        upstream_asset,
+        AssetKey("upstream_asset_2"),
+        PartitionKeyRange("a", "c"),
+    ) == PartitionKeyRange("a", "c")
+
+
+def test_single_partitioned_multi_asset_job():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert context.asset_partition_key == "b"
+
+        def load_input(self, context):
+            assert False, "shouldn't get here"
+
+    @multi_asset(
+        outs={
+            "out1": Out(asset_key=AssetKey("my_asset_1")),
+            "out2": Out(asset_key=AssetKey("my_asset_2")),
+        },
+        partitions_def=partitions_def,
+    )
+    def my_asset():
+        return (Output(1, output_name="out1"), Output(2, output_name="out2"))
+
+    my_job = build_assets_job(
+        "my_job",
+        assets=[my_asset],
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+    result = my_job.execute_in_process(partition_key="b")
+    assert result.asset_materializations_for_node("my_asset") == [
+        AssetMaterialization(asset_key=AssetKey(["my_asset_1"]), partition="b"),
+        AssetMaterialization(asset_key=AssetKey(["my_asset_2"]), partition="b"),
+    ]
+
+
+def test_two_partitioned_multi_assets_job():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+    @multi_asset(
+        outs={
+            "out1": Out(asset_key=AssetKey("upstream_asset_1")),
+            "out2": Out(asset_key=AssetKey("upstream_asset_2")),
+        },
+        partitions_def=partitions_def,
+    )
+    def upstream_asset():
+        return (Output(1, output_name="out1"), Output(2, output_name="out2"))
+
+    @asset(partitions_def=partitions_def)
+    def downstream_asset_1(upstream_asset_1: int):
+        pass
+
+    @asset(partitions_def=partitions_def)
+    def downstream_asset_2(upstream_asset_2: int):
+        pass
+
+    my_job = build_assets_job(
+        "my_job", assets=[upstream_asset, downstream_asset_1, downstream_asset_2]
+    )
+    result = my_job.execute_in_process(partition_key="b")
+
+    assert result.asset_materializations_for_node("upstream_asset") == [
+        AssetMaterialization(AssetKey(["upstream_asset_1"]), partition="b"),
+        AssetMaterialization(AssetKey(["upstream_asset_2"]), partition="b"),
+    ]
+
+    assert result.asset_materializations_for_node("downstream_asset_1") == [
+        AssetMaterialization(AssetKey(["downstream_asset_1"]), partition="b")
+    ]
+
+    assert result.asset_materializations_for_node("downstream_asset_2") == [
+        AssetMaterialization(AssetKey(["downstream_asset_2"]), partition="b")
+    ]
