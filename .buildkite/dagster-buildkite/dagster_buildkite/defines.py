@@ -1,3 +1,6 @@
+from typing import Dict, List
+
+
 class SupportedPython:
     V3_9 = "3.9.10"
     V3_8 = "3.8.12"
@@ -21,7 +24,7 @@ TOX_MAP = {
     SupportedPython.V3_6: "py36",
 }
 
-VERSION_TEST_DIRECTIVES = {
+VERSION_TEST_DIRECTIVES: Dict[str, List[str]] = {
     "test-py36": [SupportedPython.V3_6],
     "test-py37": [SupportedPython.V3_7],
     "test-py38": [SupportedPython.V3_8],

@@ -1,7 +1,7 @@
-from collections import namedtuple
+from typing import Callable, List, NamedTuple, Optional
 
 from .defines import TOX_MAP, SupportedPython
-from .step_builder import StepBuilder
+from .step_builder import BuildkiteQueue, StepBuilder
 from .utils import get_python_versions_for_branch
 
 MYPY_EXCLUDES = [
@@ -10,10 +10,22 @@ MYPY_EXCLUDES = [
 
 
 class ModuleBuildSpec(
-    namedtuple(
+    NamedTuple(
         "_ModuleBuildSpec",
-        "directory env_vars supported_pythons extra_cmds_fn depends_on_fn tox_file "
-        "tox_env_suffixes buildkite_label retries upload_coverage timeout_in_minutes queue",
+        [
+            ("directory", str),
+            ("env_vars", Optional[List[str]]),
+            ("supported_pythons", List[str]),
+            ("extra_cmds_fn", Optional[Callable[[str], List[str]]]),
+            ("depends_on_fn", Optional[Callable[[str], List[str]]]),
+            ("tox_file", Optional[str]),
+            ("tox_env_suffixes", Optional[List[str]]),
+            ("buildkite_label", Optional[str]),
+            ("retries", Optional[int]),
+            ("upload_coverage", bool),
+            ("timeout_in_minutes", Optional[int]),
+            ("queue", Optional[BuildkiteQueue]),
+        ],
     )
 ):
     """Main spec for testing Dagster Python modules using tox.
@@ -50,25 +62,22 @@ class ModuleBuildSpec(
         upload_coverage (bool, optional): Whether to copy coverage artifacts. Enabled by default.
         timeout_in_minutes (int, optional): Fail after this many minutes
         queue (BuildkiteQueue, optional): Which queue to run on
-
-    Returns:
-        List[dict]: List of test steps
     """
 
     def __new__(
         cls,
-        directory,
-        env_vars=None,
-        supported_pythons=None,
-        extra_cmds_fn=None,
-        depends_on_fn=None,
-        tox_file=None,
-        tox_env_suffixes=None,
-        buildkite_label=None,
-        retries=None,
-        upload_coverage=True,
-        timeout_in_minutes=None,
-        queue=None,
+        directory: str,
+        env_vars: Optional[List[str]] = None,
+        supported_pythons: Optional[List[str]] = None,
+        extra_cmds_fn: Optional[Callable[[str], List[str]]] = None,
+        depends_on_fn: Optional[Callable[[str], List[str]]] = None,
+        tox_file: Optional[str] = None,
+        tox_env_suffixes: Optional[List[str]] = None,
+        buildkite_label: Optional[str] = None,
+        retries: Optional[int] = None,
+        upload_coverage: bool = True,
+        timeout_in_minutes: Optional[int] = None,
+        queue: Optional[BuildkiteQueue] = None,
     ):
         return super(ModuleBuildSpec, cls).__new__(
             cls,

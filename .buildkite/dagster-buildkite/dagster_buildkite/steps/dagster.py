@@ -10,6 +10,7 @@ from ..utils import (
     get_python_versions_for_branch,
     is_release_branch,
     network_buildkite_container,
+    safe_getenv,
 )
 from .docs import docs_steps
 from .helm import helm_steps
@@ -17,7 +18,7 @@ from .test_images import core_test_image_depends_fn, publish_test_images, test_i
 
 GIT_REPO_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "..")
 
-branch_name = os.getenv("BUILDKITE_BRANCH")
+branch_name = safe_getenv("BUILDKITE_BRANCH")
 
 
 def airflow_extra_cmds_fn(version):

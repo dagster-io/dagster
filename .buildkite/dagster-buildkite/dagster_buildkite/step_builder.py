@@ -1,8 +1,10 @@
 import os
 from enum import Enum
+from typing import Dict, List, Optional
 
 from .defines import SupportedPythons
 from .images.versions import INTEGRATION_IMAGE_VERSION, UNIT_IMAGE_VERSION
+from .utils import CommandStep
 
 TIMEOUT_IN_MIN = 20
 
@@ -13,19 +15,23 @@ ECR_PLUGIN = "ecr#v2.2.0"
 AWS_ACCOUNT_ID = os.environ.get("AWS_ACCOUNT_ID")
 AWS_ECR_REGION = "us-west-2"
 
-
 class BuildkiteQueue(Enum):
     DOCKER = "docker-p"
     MEDIUM = "buildkite-medium-v5-0-1"
     WINDOWS = "windows-medium"
 
     @classmethod
-    def contains(cls, value):
+    def contains(cls, value: object) -> bool:
         return isinstance(value, cls)
 
 
 class StepBuilder:
-    def __init__(self, label, key=None, timeout_in_minutes=None):
+
+    _step: CommandStep
+
+    def __init__(
+        self, label: str, key: Optional[str] = None, timeout_in_minutes: Optional[int] = None
+    ):
         self._step = {
             "agents": {"queue": BuildkiteQueue.MEDIUM.value},
             "label": label,
@@ -41,29 +47,20 @@ class StepBuilder:
         if key is not None:
             self._step["key"] = key
 
-    def run(self, *argc):
-        commands = []
-        for entry in argc:
-            if isinstance(entry, list):
-                commands.extend(entry)
-            else:
-                commands.append(entry)
-
+    def run(self, *commands: str) -> "StepBuilder":
         self._step["commands"] = ["time " + cmd for cmd in commands]
         return self
 
-    def _base_docker_settings(self):
+    def _base_docker_settings(self) -> Dict[str, object]:
         return {
             "shell": ["/bin/bash", "-xeuc"],
             "always-pull": True,
             "mount-ssh-agent": True,
         }
 
-    def on_python_image(self, image, env=None):
+    def on_python_image(self, image: str, env: Optional[List[str]] = None) -> "StepBuilder":
         settings = self._base_docker_settings()
-        settings["image"] = "{account_id}.dkr.ecr.us-west-2.amazonaws.com/{image}".format(
-            account_id=AWS_ACCOUNT_ID, image=image
-        )
+        settings["image"] = f"{AWS_ACCOUNT_ID}.dkr.ecr.{AWS_ECR_REGION}.amazonaws.com/{image}"
         # Mount the Docker socket so we can run Docker inside of our container
         # Mount /tmp from the host machine to /tmp in our container. This is
         # useful if you need to mount a volume when running a Docker container;
@@ -86,7 +83,7 @@ class StepBuilder:
         self._step["plugins"] = [{ECR_PLUGIN: ecr_settings}, {DOCKER_PLUGIN: settings}]
         return self
 
-    def on_unit_image(self, ver, env=None):
+    def on_unit_image(self, ver: str, env: Optional[List[str]] = None) -> "StepBuilder":
         if ver not in SupportedPythons:
             raise Exception("Unsupported python version for unit image {ver}".format(ver=ver))
 
@@ -97,7 +94,7 @@ class StepBuilder:
             env=env,
         )
 
-    def on_integration_image(self, ver, env=None):
+    def on_integration_image(self, ver: str, env: Optional[List[str]] = None) -> "StepBuilder":
         if ver not in SupportedPythons:
             raise Exception(
                 "Unsupported python version for integration image {ver}".format(ver=ver)
@@ -110,23 +107,23 @@ class StepBuilder:
             env=env,
         )
 
-    def with_timeout(self, num_minutes):
+    def with_timeout(self, num_minutes: int) -> "StepBuilder":
         self._step["timeout_in_minutes"] = num_minutes
         return self
 
-    def with_retry(self, num_retries):
+    def with_retry(self, num_retries: int) -> "StepBuilder":
         self._step["retry"] = {"automatic": {"limit": num_retries}}
         return self
 
-    def on_queue(self, queue):
+    def on_queue(self, queue: BuildkiteQueue) -> "StepBuilder":
         assert BuildkiteQueue.contains(queue)
         agents = self._step["agents"]  # type: ignore
         agents["queue"] = queue.value
         return self
 
-    def depends_on(self, step_keys):
+    def depends_on(self, step_keys: List[str]) -> "StepBuilder":
         self._step["depends_on"] = step_keys
         return self
 
-    def build(self):
+    def build(self) -> CommandStep:
         return self._step

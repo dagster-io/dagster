@@ -1,10 +1,11 @@
 from typing import List
 
 from ..defines import SupportedPython
+from ..utils import CommandStep
 from ..step_builder import StepBuilder
 
 
-def dagit_steps() -> List[dict]:
+def dagit_steps() -> List[CommandStep]:
     return [
         StepBuilder("dagit webapp tests")
         .run(

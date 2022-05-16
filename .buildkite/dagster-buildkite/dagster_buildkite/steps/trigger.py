@@ -1,15 +1,17 @@
 import os
 from typing import Dict, List, Optional
 
+from ..utils import TriggerStep
+
 
 def trigger_step(
     pipeline: str,
     trigger_branch: str,
     branches: Optional[List[str]] = None,
     async_step: bool = False,
-    if_condition: str = None,
-    env: Dict[str, str] = None,
-) -> Dict:
+    if_condition: Optional[str] = None,
+    env: Optional[Dict[str, str]] = None,
+) -> TriggerStep:
     """trigger_step: Trigger a build of another pipeline. See:
 
         https://buildkite.com/docs/pipelines/trigger-step
@@ -24,7 +26,7 @@ def trigger_step(
             "branches" also set.
     """
     dagster_commit_hash = os.getenv("BUILDKITE_COMMIT")
-    step = {
+    step: TriggerStep = {
         "trigger": pipeline,
         "label": f":link: {pipeline} from dagster@{dagster_commit_hash}",
         "async": async_step,

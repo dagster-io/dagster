@@ -1,3 +1,4 @@
+from typing import List
 from ..defines import TOX_MAP, SupportedPython
 from ..images.versions import TEST_IMAGE_BUILDER_VERSION, UNIT_IMAGE_VERSION
 from ..step_builder import StepBuilder
@@ -90,17 +91,17 @@ def publish_test_images():
     return tests
 
 
-def _test_image_step(version):
-    return "dagster-test-images-{version}".format(version=TOX_MAP[version])
+def _test_image_step(version: str) -> str:
+    return f"dagster-test-images-{TOX_MAP[version]}"
 
 
-def test_image_depends_fn(version):
+def test_image_depends_fn(version: str) -> List[str]:
     return [_test_image_step(version)]
 
 
-def _core_test_image_step(version):
-    return "dagster-core-test-images-{version}".format(version=TOX_MAP[version])
+def _core_test_image_step(version: str) -> str:
+    return f"dagster-core-test-images-{TOX_MAP[version]}"
 
 
-def core_test_image_depends_fn(version):
+def core_test_image_depends_fn(version: str) -> List[str]:
     return [_core_test_image_step(version)]
