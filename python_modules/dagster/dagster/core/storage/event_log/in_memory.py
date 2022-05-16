@@ -1,5 +1,6 @@
 import logging
 import time
+import warnings
 from collections import OrderedDict, defaultdict
 from typing import Dict, Iterable, Mapping, Optional, Sequence
 
@@ -173,6 +174,12 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Iterable[EventLogRecord]:
+        if not event_records_filter:
+            warnings.warn(
+                "The use of `get_event_records` without an `EventRecordsFilter` is deprecated and "
+                "will begin erroring starting in 0.15.0"
+            )
+
         after_id = (
             (
                 event_records_filter.after_cursor.id
@@ -352,6 +359,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         )
         event_records = self.get_event_records(
             EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
                 asset_key=asset_key,
                 asset_partitions=partitions,
                 before_cursor=before_cursor,

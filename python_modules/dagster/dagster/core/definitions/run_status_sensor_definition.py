@@ -373,6 +373,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         self._run_status_sensor_fn = check.callable_param(
             run_status_sensor_fn, "run_status_sensor_fn"
         )
+        event_type = PIPELINE_RUN_STATUS_TO_EVENT_TYPE[pipeline_run_status]
 
         def _wrapped_fn(context: SensorEvaluationContext):
             # initiate the cursor to (most recent event id, current timestamp) when:
@@ -380,7 +381,9 @@ class RunStatusSensorDefinition(SensorDefinition):
             # * or, the cursor isn't in valid format (backcompt)
             if context.cursor is None or not RunStatusSensorCursor.is_valid(context.cursor):
                 most_recent_event_records = list(
-                    context.instance.get_event_records(ascending=False, limit=1)
+                    context.instance.get_event_records(
+                        EventRecordsFilter(event_type=event_type), ascending=False, limit=1
+                    )
                 )
                 most_recent_event_id = (
                     most_recent_event_records[0].storage_id
@@ -409,7 +412,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                         id=record_id,
                         run_updated_after=cast(datetime, pendulum.parse(update_timestamp)),
                     ),
-                    event_type=PIPELINE_RUN_STATUS_TO_EVENT_TYPE[pipeline_run_status],
+                    event_type=event_type,
                 ),
                 ascending=True,
                 limit=5,

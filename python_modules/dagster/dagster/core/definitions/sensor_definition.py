@@ -319,10 +319,10 @@ class SensorDefinition:
         return self._targets
 
     @property
-    def job(self) -> PipelineDefinition:
+    def job(self) -> Union[PipelineDefinition, GraphDefinition]:
         if self._targets:
             if len(self._targets) == 1 and isinstance(self._targets[0], DirectTarget):
-                return self._targets[0].pipeline
+                return self._targets[0].target
             elif len(self._targets) > 1:
                 raise DagsterInvalidDefinitionError(
                     "Job property not available when SensorDefinition has multiple jobs."
@@ -402,7 +402,7 @@ class SensorDefinition:
                 return True
         return False
 
-    def load_targets(self) -> List[PipelineDefinition]:
+    def load_targets(self) -> List[Union[PipelineDefinition, GraphDefinition]]:
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):

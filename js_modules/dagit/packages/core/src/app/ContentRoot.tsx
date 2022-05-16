@@ -2,7 +2,7 @@ import * as React from 'react';
 import {Route, Switch} from 'react-router-dom';
 
 const InstanceRoot = React.lazy(() => import('../instance/InstanceRoot'));
-const SettingsRoot = React.lazy(() => import('../app/SettingsRoot'));
+const UserSettingsRoot = React.lazy(() => import('./UserSettingsRoot'));
 const WorkspaceRoot = React.lazy(() => import('../workspace/WorkspaceRoot'));
 const FallthroughRoot = React.lazy(() => import('./FallthroughRoot'));
 
@@ -20,7 +20,7 @@ export const ContentRoot = React.memo(() => (
     </Route>
     <Route path="/settings">
       <React.Suspense fallback={<div />}>
-        <SettingsRoot />
+        <UserSettingsRoot />
       </React.Suspense>
     </Route>
     <Route path="*">

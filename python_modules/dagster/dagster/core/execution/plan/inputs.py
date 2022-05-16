@@ -17,6 +17,7 @@ from typing import (
 import dagster._check as check
 from dagster.core.definitions import InputDefinition, NodeHandle, PipelineDefinition
 from dagster.core.definitions.events import AssetLineageInfo
+from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.metadata import MetadataEntry
 from dagster.core.definitions.version_strategy import ResourceVersionContext
 from dagster.core.errors import (
@@ -470,6 +471,7 @@ class FromConfig(
         ):
             dagster_type = self.get_associated_input_def(step_context.pipeline_def).dagster_type
             config_data = self.get_associated_config(step_context.resolved_run_config)
+
             return dagster_type.loader.construct_from_config_value(step_context, config_data)
 
     def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
@@ -490,7 +492,49 @@ class FromConfig(
         config_data = self.get_associated_config(resolved_run_config)
         input_def = self.get_associated_input_def(pipeline_def)
         dagster_type = input_def.dagster_type
+
         return dagster_type.loader.compute_loaded_input_version(config_data)
+
+
+@whitelist_for_serdes
+class FromDirectInputValue(
+    NamedTuple(
+        "_FromDirectInputValue",
+        [("input_name", str)],
+    ),
+    StepInputSource,
+):
+    """This input source is for direct python values to be passed as inputs to ops."""
+
+    def __new__(cls, input_name: str):
+        return super(FromDirectInputValue, cls).__new__(
+            cls,
+            input_name=input_name,
+        )
+
+    def load_input_object(
+        self, step_context: "StepExecutionContext", _input_def: InputDefinition
+    ) -> Any:
+
+        pipeline_def = step_context.pipeline_def
+        if not pipeline_def.is_job:
+            raise DagsterInvariantViolationError(
+                "Using input values with pipeline API, which is unsupported."
+            )
+
+        job_def = cast(JobDefinition, pipeline_def)
+        return job_def.get_direct_input_value(self.input_name)
+
+    def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
+        return set()
+
+    def compute_version(
+        self,
+        step_versions: Dict[str, Optional[str]],
+        pipeline_def: PipelineDefinition,
+        resolved_run_config: ResolvedRunConfig,
+    ) -> Optional[str]:
+        return str(self.input_name)
 
 
 @whitelist_for_serdes

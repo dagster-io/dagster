@@ -34,7 +34,11 @@ Examples:
     """
 
 
-@op(
+# NOTE: mypy fails to properly track the type of `_DEFAULT_OP_PROPS` items when they are
+# double-splatted, so we type-ignore the below op declarations.
+
+
+@op(  # type: ignore
     **_DEFAULT_OP_PROPS,
     config_schema={
         "yield_asset_events": Field(
@@ -67,7 +71,7 @@ def dbt_build_op(context):
     yield Output(dbt_output)
 
 
-@op(
+@op(  # type: ignore
     **_DEFAULT_OP_PROPS,
     config_schema={
         "yield_materializations": Field(
@@ -97,37 +101,37 @@ def dbt_run_op(context):
     yield Output(dbt_output)
 
 
-@op(**_DEFAULT_OP_PROPS)
+@op(**_DEFAULT_OP_PROPS)  # type: ignore
 def dbt_compile_op(context):
     return context.resources.dbt.compile()
 
 
-@op(**_DEFAULT_OP_PROPS)
+@op(**_DEFAULT_OP_PROPS)  # type: ignore
 def dbt_ls_op(context):
     return context.resources.dbt.ls()
 
 
-@op(**_DEFAULT_OP_PROPS)
+@op(**_DEFAULT_OP_PROPS)  # type: ignore
 def dbt_test_op(context):
     return context.resources.dbt.test()
 
 
-@op(**_DEFAULT_OP_PROPS)
+@op(**_DEFAULT_OP_PROPS)  # type: ignore
 def dbt_snapshot_op(context):
     return context.resources.dbt.snapshot()
 
 
-@op(**_DEFAULT_OP_PROPS)
+@op(**_DEFAULT_OP_PROPS)  # type: ignore
 def dbt_seed_op(context):
     return context.resources.dbt.seed()
 
 
-@op(**_DEFAULT_OP_PROPS)
+@op(**_DEFAULT_OP_PROPS)  # type: ignore
 def dbt_docs_generate_op(context):
     return context.resources.dbt.generate_docs()
 
 
-for op, cmd in [
+for dbt_op, cmd in [
     (dbt_build_op, "build"),
     (dbt_run_op, "run"),
     (dbt_compile_op, "compile"),
@@ -137,4 +141,4 @@ for op, cmd in [
     (dbt_seed_op, "seed"),
     (dbt_docs_generate_op, "docs generate"),
 ]:
-    op.__doc__ = _get_doc(op.name, cmd)
+    dbt_op.__doc__ = _get_doc(dbt_op.name, cmd)

@@ -1,6 +1,6 @@
 import pytest
 from kubernetes.client import models
-from schema.charts.dagster.subschema.dagit import Dagit
+from schema.charts.dagster.subschema.dagit import Dagit, Workspace
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
@@ -190,6 +190,23 @@ def test_dagit_db_statement_timeout(deployment_template: HelmTemplate):
     assert f"--db-statement-timeout {db_statement_timeout_ms}" in command
 
 
+def test_dagit_log_level(deployment_template: HelmTemplate):
+    log_level = "trace"
+    helm_values = DagsterHelmValues.construct(dagit=Dagit.construct(logLevel=log_level))
+
+    dagit_deployments = deployment_template.render(helm_values)
+    command = " ".join(dagit_deployments[0].spec.template.spec.containers[0].command)
+
+    assert f"--log-level {log_level}" in command
+
+    helm_values = DagsterHelmValues.construct(dagit=Dagit.construct())
+
+    dagit_deployments = deployment_template.render(helm_values)
+    command = " ".join(dagit_deployments[0].spec.template.spec.containers[0].command)
+
+    assert "--log-level" not in command
+
+
 def test_dagit_labels(deployment_template: HelmTemplate):
     deployment_labels = {"deployment_label": "label"}
     pod_labels = {"pod_label": "label"}
@@ -204,3 +221,20 @@ def test_dagit_labels(deployment_template: HelmTemplate):
 
     assert set(deployment_labels.items()).issubset(dagit_deployment.metadata.labels.items())
     assert set(pod_labels.items()).issubset(dagit_deployment.spec.template.metadata.labels.items())
+
+
+def test_dagit_workspace_external_configmap(deployment_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(
+            workspace=Workspace(
+                enabled=True,
+                servers=[],
+                externalConfigmap="test-external-workspace",
+            )
+        ),
+    )
+
+    [dagit_deployment] = deployment_template.render(helm_values)
+    assert (
+        dagit_deployment.spec.template.spec.volumes[1].config_map.name == "test-external-workspace"
+    )

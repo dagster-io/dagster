@@ -15,6 +15,7 @@ class Server(BaseModel):
 class Workspace(BaseModel):
     enabled: bool
     servers: List[Server]
+    externalConfigmap: Optional[str]
 
 
 class Dagit(BaseModel):
@@ -39,6 +40,7 @@ class Dagit(BaseModel):
     annotations: kubernetes.Annotations
     enableReadOnly: bool
     dbStatementTimeout: Optional[int]
+    logLevel: Optional[str]
 
     class Config:
         extra = Extra.forbid

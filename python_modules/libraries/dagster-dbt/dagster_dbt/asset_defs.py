@@ -22,6 +22,7 @@ from dagster import (
 from dagster import _check as check
 from dagster import get_dagster_logger
 from dagster.core.asset_defs import AssetsDefinition, multi_asset
+from dagster.core.definitions.metadata import RawMetadataValue
 
 
 def _load_manifest_for_project(
@@ -67,7 +68,7 @@ def _dbt_nodes_to_assets(
     select: str,
     selected_unique_ids: AbstractSet[str],
     runtime_metadata_fn: Optional[
-        Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
+        Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ] = None,
     io_manager_key: Optional[str] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
@@ -103,7 +104,6 @@ def _dbt_nodes_to_assets(
 
         node_name = node_info["name"]
         outs[node_name] = Out(
-            dagster_type=None,
             asset_key=node_info_to_asset_key(node_info),
             description=description,
             io_manager_key=io_manager_key,

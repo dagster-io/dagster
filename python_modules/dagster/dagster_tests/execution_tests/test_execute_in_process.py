@@ -335,3 +335,20 @@ def test_dynamic_output_for_node():
     # assertions
     assert result.output_for_node("return_as_tuple", "output1") == {"0": 0, "1": 1, "2": 2}
     assert result.output_for_node("return_as_tuple", "output2") == {"0": 5, "1": 5, "2": 5}
+
+
+def test_execute_in_process_input_values():
+    @op
+    def requires_input_op(x: int):
+        return x + 1
+
+    @graph
+    def requires_input_graph(x):
+        return requires_input_op(x)
+
+    result = requires_input_graph.alias("named_graph").execute_in_process(input_values={"x": 5})
+    assert result.success
+    assert result.output_value() == 6
+    result = requires_input_graph.to_job().execute_in_process(input_values={"x": 5})
+    assert result.success
+    assert result.output_value() == 6

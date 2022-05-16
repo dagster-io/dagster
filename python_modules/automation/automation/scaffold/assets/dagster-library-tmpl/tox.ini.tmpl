@@ -1,12 +1,12 @@
 [tox]
-envlist = py{38,37,36,27}-{unix,windows},pylint
+envlist = py{38,37,36,27}-{unix,windows},mypy,pylint
 
 [testenv]
 setenv =
   VIRTUALENV_PIP=21.3.1
 passenv = CI_* COVERALLS_REPO_TOKEN BUILDKITE
 deps =
-  -e ../../dagster[test]
+  -e ../../dagster[mypy,test]
   -e .[test]
 usedevelop = true
 allowlist_externals =
@@ -21,10 +21,10 @@ commands =
   coverage html --omit='.tox/*,**/test_*.py'
   coverage xml --omit='.tox/*,**/test_*.py'
 
+[testenv:mypy]
+commands =
+  mypy --config=../../../pyproject.toml --non-interactive --install-types {posargs} .
+
 [testenv:pylint]
 commands =
   pylint -j0 --rcfile=../../../pyproject.toml {posargs} dagster_{{LIBRARY_NAME}} dagster_{{LIBRARY_NAME}}_tests
-
-[testenv:mypy]
-commands =
-  mypy --config=../../../pyproject.toml --non-interactive {posargs} .

@@ -1,4 +1,5 @@
 import logging
+import warnings
 from abc import abstractmethod
 from collections import OrderedDict
 from datetime import datetime
@@ -673,6 +674,12 @@ class SqlEventLogStorage(EventLogStorage):
         check.opt_inst_param(event_records_filter, "event_records_filter", EventRecordsFilter)
         check.opt_int_param(limit, "limit")
         check.bool_param(ascending, "ascending")
+
+        if not event_records_filter:
+            warnings.warn(
+                "The use of `get_event_records` without an `EventRecordsFilter` is deprecated and "
+                "will begin erroring starting in 0.15.0"
+            )
 
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
         if event_records_filter and event_records_filter.asset_key:

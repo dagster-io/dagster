@@ -266,12 +266,13 @@ export const LogsProvider: React.FC<LogsProviderProps> = (props) => {
   const {children, runId} = props;
   const {availability, disabled} = React.useContext(WebSocketContext);
 
-  if (availability === 'attempting-to-connect') {
-    return <>{children({allNodes: [], loading: true})}</>;
-  }
-
+  // if disabled, drop to query variant immediately
   if (availability === 'unavailable' || disabled) {
     return <LogsProviderWithQuery runId={runId}>{children}</LogsProviderWithQuery>;
+  }
+
+  if (availability === 'attempting-to-connect') {
+    return <>{children({allNodes: [], loading: true})}</>;
   }
 
   return <LogsProviderWithSubscription runId={runId}>{children}</LogsProviderWithSubscription>;

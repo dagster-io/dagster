@@ -97,8 +97,26 @@ DEFAULT_DB_STATEMENT_TIMEOUT = 15000  # 15 sec
     help="Filter all warnings when hosting Dagit.",
     is_flag=True,
 )
+@click.option(
+    "--log-level",
+    help="Set the log level for the uvicorn web server.",
+    show_default=True,
+    default="warning",
+    type=click.Choice(
+        ["critical", "error", "warning", "info", "debug", "trace"], case_sensitive=False
+    ),
+)
 @click.version_option(version=__version__, prog_name="dagit")
-def dagit(host, port, path_prefix, db_statement_timeout, read_only, suppress_warnings, **kwargs):
+def dagit(
+    host,
+    port,
+    path_prefix,
+    db_statement_timeout,
+    read_only,
+    suppress_warnings,
+    log_level,
+    **kwargs,
+):
     if suppress_warnings:
         os.environ["PYTHONWARNINGS"] = "ignore"
 
@@ -117,6 +135,7 @@ def dagit(host, port, path_prefix, db_statement_timeout, read_only, suppress_war
                 host,
                 port,
                 path_prefix,
+                log_level,
             )
 
 
@@ -125,6 +144,7 @@ def host_dagit_ui_with_workspace_process_context(
     host: Optional[str],
     port: int,
     path_prefix: str,
+    log_level: str,
 ):
     check.inst_param(
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
@@ -149,8 +169,7 @@ def host_dagit_ui_with_workspace_process_context(
             app,
             host=host,
             port=port,
-            access_log=False,
-            log_level="warning",
+            log_level=log_level,
         )
 
 

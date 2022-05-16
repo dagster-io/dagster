@@ -258,7 +258,7 @@ class ActiveExecution:
             key=self._sort_key_fn,
         )
 
-        if limit:
+        if limit is not None:
             steps = steps[:limit]
 
         for step in steps:
