@@ -563,3 +563,87 @@ def test_two_partitioned_multi_assets_job():
     assert result.asset_materializations_for_node("downstream_asset_2") == [
         AssetMaterialization(AssetKey(["downstream_asset_2"]), partition="b")
     ]
+
+
+def test_multi_asset_non_identity_partition_mapping():
+    upstream_partitions_def = StaticPartitionsDefinition(["1", "2", "3"])
+    downstream_partitions_def = StaticPartitionsDefinition(["1", "2", "3"])
+
+    class TrailingWindowPartitionMapping(PartitionMapping):
+        """
+        Maps each downstream partition to two partitions in the upstream asset: itself and the
+        preceding partition.
+        """
+
+        def get_upstream_partitions_for_partition_range(
+            self,
+            downstream_partition_key_range: PartitionKeyRange,
+            downstream_partitions_def: PartitionsDefinition,
+            upstream_partitions_def: PartitionsDefinition,
+        ) -> PartitionKeyRange:
+            assert downstream_partitions_def
+            assert upstream_partitions_def
+
+            start, end = downstream_partition_key_range
+            return PartitionKeyRange(str(max(1, int(start) - 1)), end)
+
+        def get_downstream_partitions_for_partition_range(
+            self,
+            upstream_partition_key_range: PartitionKeyRange,
+            downstream_partitions_def: PartitionsDefinition,
+            upstream_partitions_def: PartitionsDefinition,
+        ) -> PartitionKeyRange:
+            raise NotImplementedError()
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert context.asset_partition_key == "2"
+
+        def load_input(self, context):
+            start, end = context.asset_partition_key_range
+            assert start, end == ("1", "2")
+
+    @multi_asset(
+        outs={
+            "out1": Out(asset_key=AssetKey("upstream_asset_1")),
+            "out2": Out(asset_key=AssetKey("upstream_asset_2")),
+        },
+        partitions_def=upstream_partitions_def,
+    )
+    def upstream_asset(context):
+        assert context.output_asset_partition_key("out1") == "2"
+        assert context.output_asset_partition_key("out2") == "2"
+        return (Output(1, output_name="out1"), Output(2, output_name="out2"))
+
+    @asset(
+        partitions_def=downstream_partitions_def,
+        partition_mappings={"upstream_asset_1": TrailingWindowPartitionMapping()},
+    )
+    def downstream_asset_1(context, upstream_asset_1):
+        assert context.output_asset_partition_key() == "2"
+        assert upstream_asset_1 is None
+
+    @asset(
+        partitions_def=downstream_partitions_def,
+        partition_mappings={"upstream_asset_2": TrailingWindowPartitionMapping()},
+    )
+    def downstream_asset_2(context, upstream_asset_2):
+        assert context.output_asset_partition_key() == "2"
+        assert upstream_asset_2 is None
+
+    my_job = build_assets_job(
+        "my_job",
+        assets=[upstream_asset, downstream_asset_1, downstream_asset_2],
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+    result = my_job.execute_in_process(partition_key="2")
+    assert result.asset_materializations_for_node("upstream_asset") == [
+        AssetMaterialization(AssetKey(["upstream_asset_1"]), partition="2"),
+        AssetMaterialization(AssetKey(["upstream_asset_2"]), partition="2"),
+    ]
+    assert result.asset_materializations_for_node("downstream_asset_1") == [
+        AssetMaterialization(AssetKey(["downstream_asset_1"]), partition="2")
+    ]
+    assert result.asset_materializations_for_node("downstream_asset_2") == [
+        AssetMaterialization(AssetKey(["downstream_asset_2"]), partition="2")
+    ]
