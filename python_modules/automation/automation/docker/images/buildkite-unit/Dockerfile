@@ -6,7 +6,7 @@
 #
 ####################################################################################################
 ARG BASE_IMAGE
-FROM "${BASE_IMAGE}" AS snapshot_builder
+FROM "${BASE_IMAGE}" AS apt_base
 
 RUN apt-get update -yqq \
     && apt-get install -yqq \
@@ -17,35 +17,19 @@ RUN apt-get update -yqq \
         git \
         make
 
-RUN git clone https://github.com/dagster-io/dagster.git \
-    && cd dagster \
-    && pip install \
-        -e python_modules/dagster \
-        -e python_modules/dagster-graphql \
-        -e python_modules/dagit \
-        -e python_modules/libraries/dagster-celery[flower,redis,kubernetes] \
-        -e python_modules/libraries/dagster-postgres \
-        -e python_modules/libraries/dagster-pandas \
-        -e python_modules/libraries/dagster-aws \
-        -e python_modules/libraries/dagster-gcp \
-        -e python_modules/libraries/dagster-k8s \
-        -e python_modules/libraries/dagster-celery-k8s \
+RUN git clone https://github.com/dagster-io/dagster.git
+
+WORKDIR dagster
+
+FROM apt_base AS snapshot_builder
+
+# Build a requirements file with all non-Dagster packages
+RUN make install_dev_python_modules \
     && pip freeze --exclude-editable > /snapshot-reqs.txt
 
-
-FROM "${BASE_IMAGE}"
+FROM apt_base
 
 COPY --from=snapshot_builder /snapshot-reqs.txt .
-
-# gcc etc needed for building gevent
-RUN apt-get update -yqq \
-    && apt-get install -yqq \
-        build-essential \
-        cron \
-        g++ \
-        gcc \
-        git \
-        make
 
 RUN pip install -r /snapshot-reqs.txt \
     && rm /snapshot-reqs.txt
