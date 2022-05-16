@@ -1,7 +1,6 @@
 import itertools
 import warnings
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Dict,
@@ -46,9 +45,6 @@ from .asset_partitions import get_upstream_partitions_for_partition_range
 from .assets import AssetsDefinition
 from .source_asset import SourceAsset
 
-if TYPE_CHECKING:
-    from dagster.core.asset_defs import AssetGroup
-
 
 @experimental
 def build_assets_job(
@@ -60,7 +56,6 @@ def build_assets_job(
     config: Optional[Union[ConfigMapping, Dict[str, Any], PartitionedConfig]] = None,
     tags: Optional[Dict[str, Any]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
-    _asset_group: Optional["AssetGroup"] = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
 
@@ -125,7 +120,8 @@ def build_assets_job(
         tags=tags,
         executor_def=executor_def,
         asset_layer=AssetLayer.from_graph_and_assets_node_mapping(
-            graph, assets_defs_by_node_handle, _asset_group
+            graph,
+            assets_defs_by_node_handle,
         ),
     )
 

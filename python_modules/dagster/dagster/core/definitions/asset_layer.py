@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from dagster.core.asset_defs import AssetGroup, AssetsDefinition
     from dagster.core.execution.context.output import OutputContext
 
+    from .job_definition import JobDefinition
     from .partition import PartitionsDefinition
 
 
@@ -343,7 +344,7 @@ class AssetLayer:
         ] = None,
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
         dependency_node_handles_by_asset_key: Optional[Mapping[AssetKey, Set[NodeHandle]]] = None,
-        source_asset_group: Optional["AssetGroup"] = None,
+        assets_defs: Optional[List["AssetsDefinition"]] = None,
     ):
         self._asset_keys_by_node_input_handle = check.opt_dict_param(
             asset_keys_by_node_input_handle,
@@ -366,7 +367,7 @@ class AssetLayer:
             key_type=AssetKey,
             value_type=Set,
         )
-        self.source_asset_group = source_asset_group
+        self._assets_defs = check.opt_list_param(assets_defs, "assets_defs")
 
     @staticmethod
     def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
@@ -383,7 +384,6 @@ class AssetLayer:
     def from_graph_and_assets_node_mapping(
         graph_def: GraphDefinition,
         assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
-        _asset_group: Optional["AssetGroup"] = None,
     ) -> "AssetLayer":
         """
         Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
@@ -433,7 +433,7 @@ class AssetLayer:
             dependency_node_handles_by_asset_key=_asset_key_to_dep_node_handles(
                 graph_def, assets_defs_by_node_handle
             ),
-            source_asset_group=_asset_group,
+            assets_defs=[assets_def for assets_def in assets_defs_by_node_handle.values()],
         )
 
     @property
@@ -464,3 +464,35 @@ class AssetLayer:
         return self._asset_info_by_node_output_handle.get(
             NodeOutputHandle(node_handle, output_name)
         )
+
+
+def _build_asset_selection_job(
+    job_to_subselect: "JobDefinition",
+    asset_selection: List[AssetKey],
+    asset_layer: AssetLayer,
+) -> "JobDefinition":
+    from ..asset_defs.asset_group import build_resource_defs
+    from ..asset_defs.assets_job import build_assets_job
+
+    check.invariant(
+        asset_layer._assets_defs != None,  # pylint:disable=protected-access
+        "Asset layer must have _asset_defs argument defined",
+    )
+
+    included_assets: List["AssetsDefinition"] = []
+    excluded_assets: List["AssetsDefinition"] = []
+    for assets_def in asset_layer._assets_defs:  # pylint:disable=protected-access
+        if any([asset_key in asset_selection for asset_key in assets_def.asset_keys]):
+            included_assets.append(assets_def)
+        else:
+            excluded_assets.append(assets_def)
+
+    return build_assets_job(
+        name=job_to_subselect.name,
+        assets=included_assets,
+        source_assets=excluded_assets,
+        resource_defs=build_resource_defs(job_to_subselect.resource_defs, excluded_assets),
+        executor_def=job_to_subselect.executor_def,
+        description=job_to_subselect.description,
+        tags=job_to_subselect.tags,
+    )

@@ -38,7 +38,7 @@ from dagster.core.selector.subset_selector import (
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.utils import str_format_set
 
-from .asset_layer import AssetLayer
+from .asset_layer import AssetLayer, _build_asset_selection_job
 from .config import ConfigMapping
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
@@ -260,23 +260,26 @@ class JobDefinition(PipelineDefinition):
         asset_selection: Optional[List[AssetKey]] = None,
     ) -> "JobDefinition":
         asset_selection = check.opt_list_param(asset_selection, "asset_selection", AssetKey)
-        asset_group = self.asset_layer.source_asset_group
 
-        if asset_group:
-            new_job = asset_group.build_asset_selection_job(
-                job_to_subselect=self, asset_selection=asset_selection
-            )
-            asset_selection_data = AssetSelectionData(
-                asset_selection=asset_selection,
-                parent_job_def=self,
-            )
-            return new_job._with_asset_selection_data(  # pylint: disable=protected-access
-                asset_selection_data
-            )
-        else:
-            raise DagsterInvalidDefinitionError(
-                "source asset group must exist in order to subselect assets"
-            )
+        for asset in asset_selection:
+            nonexistent_assets = [
+                asset for asset in asset_selection if asset not in self.asset_layer.asset_keys
+            ]
+            if nonexistent_assets:
+                raise DagsterInvalidSubsetError(
+                    "Assets provided in asset_selection argument "
+                    f"{', '.join([asset.to_string() for asset in nonexistent_assets])} do not exist in parent asset group or job."
+                )
+        new_job = _build_asset_selection_job(
+            job_to_subselect=self, asset_selection=asset_selection, asset_layer=self.asset_layer
+        )
+        asset_selection_data = AssetSelectionData(
+            asset_selection=asset_selection,
+            parent_job_def=self,
+        )
+        return new_job._with_asset_selection_data(  # pylint: disable=protected-access
+            asset_selection_data
+        )
 
     def get_job_def_for_op_selection(
         self,

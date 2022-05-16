@@ -1585,7 +1585,6 @@ def baz(context, foo_bar):
 @asset
 def unconnected(context):
     assert context.pipeline_def.asset_selection_data != None
-    pass
 
 
 asset_group_job = AssetGroup([foo, bar, foo_bar, baz, unconnected]).build_job("foo_job")

@@ -1,10 +1,10 @@
-from typing import Any, Dict, Mapping, Optional, List
+from typing import Any, Dict, List, Mapping, Optional
 
 from dagster.core.definitions import NodeDefinition, PipelineDefinition
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
-from dagster.core.definitions.events import AssetKey
 
 from .api import (
     ExecuteRunWithPlanIterable,

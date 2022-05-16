@@ -257,33 +257,8 @@ class AssetGroup:
                 executor_def=executor_def,
                 description=description,
                 tags=tags,
-                _asset_group=self,
             )
         return asset_job
-
-    def build_asset_selection_job(
-        self,
-        job_to_subselect: JobDefinition,
-        asset_selection: List[AssetKey],
-    ) -> JobDefinition:
-        included_assets: List[AssetsDefinition] = []
-        excluded_assets: List[AssetsDefinition] = []
-        for asset in self.assets:
-            if any([asset_key in asset_selection for asset_key in asset.asset_keys]):
-                included_assets.append(asset)
-            else:
-                excluded_assets.append(asset)
-
-        return build_assets_job(
-            name=job_to_subselect.name,
-            assets=included_assets,
-            source_assets=excluded_assets,
-            resource_defs=build_resource_defs(job_to_subselect.resource_defs, excluded_assets),
-            executor_def=job_to_subselect.executor_def,
-            description=job_to_subselect.description,
-            tags=job_to_subselect.tags,
-            _asset_group=self,
-        )
 
     def _parse_asset_selection(self, selection: Union[str, List[str]], job_name: str) -> List[str]:
         """Convert selection over asset keys to selection over ops"""
