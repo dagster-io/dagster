@@ -458,11 +458,11 @@ def test_multi_assets_with_same_partitioning():
 
     @asset(partitions_def=partitions_def)
     def downstream_asset_1(upstream_asset_1: int):
-        pass
+        del upstream_asset_1
 
     @asset(partitions_def=partitions_def)
     def downstream_asset_2(upstream_asset_2: int):
-        pass
+        del upstream_asset_1
 
     assert get_upstream_partitions_for_partition_range(
         downstream_asset_1,
@@ -540,11 +540,11 @@ def test_two_partitioned_multi_assets_job():
 
     @asset(partitions_def=partitions_def)
     def downstream_asset_1(upstream_asset_1: int):
-        pass
+        del upstream_asset_1
 
     @asset(partitions_def=partitions_def)
     def downstream_asset_2(upstream_asset_2: int):
-        pass
+        del upstream_asset_2
 
     my_job = build_assets_job(
         "my_job", assets=[upstream_asset, downstream_asset_1, downstream_asset_2]
