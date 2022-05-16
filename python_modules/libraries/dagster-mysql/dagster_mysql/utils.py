@@ -9,7 +9,7 @@ import sqlalchemy as db
 
 from dagster import Field, IntSource, Selector, StringSource
 from dagster import _check as check
-from dagster.core.storage.sql import get_alembic_config, handle_schema_errors
+from dagster.core.storage.sql import get_alembic_config
 
 # 1 hr - anything less than 8 hrs (MySQL's default `wait_timeout` should work)
 MYSQL_POOL_RECYCLE = 3600
@@ -161,8 +161,7 @@ def create_mysql_connection(engine, dunder_file, storage_type_desc=None):
     try:
         # Retry connection to gracefully handle transient connection issues
         conn = retry_mysql_connection_fn(engine.connect)
-        with handle_schema_errors(conn, mysql_alembic_config(dunder_file)):
-            yield conn
+        yield conn
     finally:
         if conn:
             conn.close()
