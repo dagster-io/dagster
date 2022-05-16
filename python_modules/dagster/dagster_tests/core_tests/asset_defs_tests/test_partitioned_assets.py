@@ -462,7 +462,7 @@ def test_multi_assets_with_same_partitioning():
 
     @asset(partitions_def=partitions_def)
     def downstream_asset_2(upstream_asset_2: int):
-        del upstream_asset_1
+        del upstream_asset_2
 
     assert get_upstream_partitions_for_partition_range(
         downstream_asset_1,
