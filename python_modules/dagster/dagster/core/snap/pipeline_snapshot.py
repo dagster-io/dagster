@@ -77,7 +77,6 @@ def _pipeline_snapshot_from_storage(
     name: str,
     description: Optional[str],
     tags: Optional[Dict[str, Any]],
-    metadata: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]],
     config_schema_snapshot: ConfigSchemaSnapshot,
     dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
     solid_definitions_snapshot: SolidDefinitionsSnapshot,
@@ -85,6 +84,7 @@ def _pipeline_snapshot_from_storage(
     mode_def_snaps: List[ModeDefSnap],
     lineage_snapshot: Optional["PipelineSnapshotLineage"] = None,
     graph_def_name: Optional[str] = None,
+    metadata: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
 ) -> "PipelineSnapshot":
     """
     v0
@@ -92,10 +92,14 @@ def _pipeline_snapshot_from_storage(
         - lineage added
     v2:
         - graph_def_name
+    v3:
+        - metadata added
     """
-    # TODO - add metadata with default None for backcompat
     if graph_def_name is None:
         graph_def_name = name
+
+    if metadata is None:
+        metadata = []
 
     return PipelineSnapshot(
         name=name,
