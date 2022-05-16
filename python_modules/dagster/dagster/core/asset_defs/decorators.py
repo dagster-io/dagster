@@ -26,6 +26,7 @@ from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.utils import NoValueSentinel
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.storage.io_manager import IOManagerDefinition
 from dagster.core.types.dagster_type import DagsterType
 from dagster.seven import funcsigs
 from dagster.utils.backcompat import ExperimentalWarning, experimental_decorator
@@ -52,6 +53,7 @@ def asset(
     description: Optional[str] = ...,
     required_resource_keys: Optional[Set[str]] = ...,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
+    io_manager: Optional[Union[Mapping[str, IOManagerDefinition], str, IOManagerDefinition]] = ...,
     io_manager_key: Optional[str] = ...,
     compute_kind: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
@@ -72,6 +74,7 @@ def asset(
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    io_manager: Optional[Union[Mapping[str, IOManagerDefinition], str, IOManagerDefinition]] = None,
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
@@ -101,7 +104,8 @@ def asset(
             but do not pass an input to the asset.
         metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
-        io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
+        io_manager (Optional[Union[Mapping[str, IOManagerDefinition], str, IOManagerDefinition]]): The key, definition, or definition and key of
+            the IOManager used for storing the
             output of the op as an asset, and for loading it in downstream ops
             (default: "io_manager").
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
@@ -142,7 +146,7 @@ def asset(
             description=description,
             required_resource_keys=required_resource_keys,
             resource_defs=resource_defs,
-            io_manager_key=io_manager_key,
+            io_manager=io_manager or io_manager_key,
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             dagster_type=dagster_type,
             partitions_def=partitions_def,
@@ -164,7 +168,9 @@ class _Asset:
         description: Optional[str] = None,
         required_resource_keys: Optional[Set[str]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        io_manager_key: Optional[str] = None,
+        io_manager: Optional[
+            Union[Mapping[str, IOManagerDefinition], str, IOManagerDefinition]
+        ] = None,
         compute_kind: Optional[str] = None,
         dagster_type: Optional[DagsterType] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
@@ -181,13 +187,13 @@ class _Asset:
         self.required_resource_keys = check.opt_set_param(
             required_resource_keys, "required_resource_keys"
         )
-        self.io_manager_key = io_manager_key
+        self.io_manager = io_manager
         self.compute_kind = compute_kind
         self.dagster_type = dagster_type
         self.partitions_def = partitions_def
         self.partition_mappings = partition_mappings
         self.op_tags = op_tags
-        self.resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
+        self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -198,9 +204,30 @@ class _Asset:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
+            if check.is_mapping_param(self.io_manager):
+                io_manager = cast(Mapping[str, IOManagerDefinition], self.io_manager)
+                io_manager = dict(io_manager)
+                check.invariant(
+                    len(io_manager) == 1,
+                    "Attempted to provide multiple io manager keys to asset.",
+                )
+                io_manager_key = list(io_manager.keys())[0]
+                self.resource_defs[io_manager_key] = io_manager[io_manager_key]
+            elif isinstance(self.io_manager, str):
+                io_manager_key = cast(str, self.io_manager)
+            elif self.io_manager is not None:
+                io_manager_def = check.inst_param(
+                    self.io_manager, "io_manager", IOManagerDefinition
+                )
+                out_asset_resource_key = "__".join(out_asset_key.path)
+                io_manager_key = f"{out_asset_resource_key}__io_manager"
+                self.resource_defs[io_manager_key] = cast(ResourceDefinition, io_manager_def)
+            else:
+                io_manager_key = "io_manager"
+
             out = Out(
                 metadata=self.metadata or {},
-                io_manager_key=self.io_manager_key,
+                io_manager_key=io_manager_key,
                 dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
                 description=self.description,
             )
