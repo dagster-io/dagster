@@ -8,11 +8,11 @@ from dagster import (
     HourlyPartitionsDefinition,
     IOManager,
     IOManagerDefinition,
+    Out,
+    Output,
     PartitionsDefinition,
     SourceAsset,
     StaticPartitionsDefinition,
-    Out,
-    Output,
 )
 from dagster.core.asset_defs import asset, build_assets_job, multi_asset
 from dagster.core.asset_defs.asset_partitions import (
