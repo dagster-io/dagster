@@ -242,6 +242,8 @@ def multi_asset(
     required_resource_keys: Optional[Set[str]] = None,
     compute_kind: Optional[str] = None,
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
+    partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -267,6 +269,14 @@ def multi_asset(
             multi asset. If this default is not correct, you pass in a map of output names to a
             corrected set of AssetKeys that they depend on. Any AssetKeys in this list must be either
             used as input to the asset or produced within the op.
+        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+            compose the assets.
+        partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
+            keys for this asset to partition keys of upstream assets. Each key in the dictionary
+            correponds to one of the input assets, and each value is a PartitionMapping.
+            If no entry is provided for a particular asset dependency, the partition mapping defaults
+            to the default partition mapping for the partitions definition, which is typically maps
+            partition keys to the same partition keys in upstream assets.
     """
 
     check.invariant(
@@ -310,6 +320,12 @@ def multi_asset(
                 out=outs,
                 required_resource_keys=required_resource_keys,
                 tags={"kind": compute_kind} if compute_kind else None,
+                config_schema={
+                    "assets": {
+                        "input_partitions": Field(dict, is_required=False),
+                        "output_partitions": Field(dict, is_required=False),
+                    }
+                },
             )(fn)
 
         asset_keys_by_output_name = {
@@ -322,6 +338,13 @@ def multi_asset(
             asset_keys_by_output_name=asset_keys_by_output_name,
             node_def=op,
             asset_deps={asset_keys_by_output_name[name]: asset_deps[name] for name in asset_deps},
+            partitions_def=partitions_def,
+            partition_mappings={
+                asset_keys_by_input_name[input_name]: partition_mapping
+                for input_name, partition_mapping in partition_mappings.items()
+            }
+            if partition_mappings
+            else None,
         )
 
     return inner
