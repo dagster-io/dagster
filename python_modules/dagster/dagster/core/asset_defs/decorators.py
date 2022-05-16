@@ -336,13 +336,14 @@ def multi_asset(
                 },
             )(fn)
 
+        asset_keys_by_input_name = {
+            input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
+        }
         asset_keys_by_output_name = {
             name: cast(AssetKey, out.asset_key or AssetKey([name])) for name, out in outs.items()
         }
         return AssetsDefinition(
-            asset_keys_by_input_name={
-                input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
-            },
+            asset_keys_by_input_name=asset_keys_by_input_name,
             asset_keys_by_output_name=asset_keys_by_output_name,
             node_def=op,
             asset_deps={asset_keys_by_output_name[name]: asset_deps[name] for name in asset_deps},
