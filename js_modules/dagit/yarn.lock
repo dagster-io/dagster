@@ -5528,7 +5528,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@dagster-io/eslint-config@1.0.3, @dagster-io/eslint-config@^1.0.1, @dagster-io/eslint-config@workspace:*, @dagster-io/eslint-config@workspace:packages/eslint-config":
+"@dagster-io/eslint-config@^1.0.1, @dagster-io/eslint-config@workspace:*, @dagster-io/eslint-config@workspace:packages/eslint-config":
   version: 0.0.0-use.local
   resolution: "@dagster-io/eslint-config@workspace:packages/eslint-config"
   dependencies:
@@ -5548,6 +5548,25 @@ __metadata:
     prettier: 2.2.1
   languageName: unknown
   linkType: soft
+
+"@dagster-io/eslint-config@npm:1.0.3":
+  version: 1.0.3
+  resolution: "@dagster-io/eslint-config@npm:1.0.3"
+  dependencies:
+    "@typescript-eslint/eslint-plugin": 5.21.0
+    "@typescript-eslint/parser": 5.21.0
+    eslint-config-prettier: 8.5.0
+    eslint-plugin-import: 2.26.0
+    eslint-plugin-jsx-a11y: 6.5.1
+    eslint-plugin-prettier: ^4.0.0
+    eslint-plugin-react: 7.29.4
+    eslint-plugin-react-hooks: 4.5.0
+  peerDependencies:
+    eslint: ^8.6.0
+    prettier: 2.2.1
+  checksum: 01cd0600467b459bc4c83c2a3637e90c0ac7e6e09a2313f83274216301a008a5c472f520c03486a9d3cdd6d429c3a258a3bb7dae12f1a1f61a4b5a8ca1930fec
+  languageName: node
+  linkType: hard
 
 "@dagster-io/react-scripts@npm:5.0.3":
   version: 5.0.3
