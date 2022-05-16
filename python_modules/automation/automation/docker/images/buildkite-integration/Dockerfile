@@ -8,7 +8,6 @@
 ####################################################################################################
 
 ARG BASE_IMAGE
-ARG PYTHON_VERSION
 FROM "${BASE_IMAGE}" AS snapshot_builder
 
 RUN apt-get update \

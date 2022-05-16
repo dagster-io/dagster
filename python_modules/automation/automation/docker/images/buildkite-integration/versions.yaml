@@ -2,29 +2,19 @@
   base_image:
     name: buildkite-integration-base
     source: aws
-  docker_args:
-    PYTHON_VERSION: 3.6.15
 3.7.13:
   base_image:
     name: buildkite-integration-base
     source: aws
-  docker_args:
-    PYTHON_VERSION: 3.7.13
 3.8.13:
   base_image:
     name: buildkite-integration-base
     source: aws
-  docker_args:
-    PYTHON_VERSION: 3.8.12
 3.9.12:
   base_image:
     name: buildkite-integration-base
     source: aws
-  docker_args:
-    PYTHON_VERSION: 3.9.12
 3.10.4:
   base_image:
     name: buildkite-integration-base
     source: aws
-  docker_args:
-    PYTHON_VERSION: 3.10.4
