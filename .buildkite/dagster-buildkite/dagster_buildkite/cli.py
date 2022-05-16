@@ -3,7 +3,7 @@ from typing import List
 
 from .defines import DO_COVERAGE
 from .steps.coverage import build_coverage_step
-from .steps.dagit import dagit_steps
+from .steps.dagit import build_dagit_steps
 from .steps.dagster import build_dagster_steps
 from .steps.integration import build_integration_steps
 from .steps.trigger import build_trigger_step
@@ -15,7 +15,8 @@ CLI_HELP = """This CLI is used for generating Buildkite YAML.
 
 
 def dagster() -> None:
-    all_steps: List[BuildkiteStep] = dagit_steps()
+    all_steps: List[BuildkiteStep] = []
+    all_steps += build_dagit_steps()
     dagit_only: bool = is_pr_and_dagit_only()
 
     branch_name = safe_getenv("BUILDKITE_BRANCH")
