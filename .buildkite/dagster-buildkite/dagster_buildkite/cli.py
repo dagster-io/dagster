@@ -6,7 +6,7 @@ from .steps.coverage import build_coverage_step
 from .steps.dagit import dagit_steps
 from .steps.dagster import build_dagster_steps
 from .steps.integration import build_integration_steps
-from .steps.trigger import trigger_step
+from .steps.trigger import build_trigger_step
 from .steps.wait import wait_step
 from .utils import BuildkiteStep, buildkite_yaml_for_steps, is_pr_and_dagit_only, is_release_branch, safe_getenv
 
@@ -40,7 +40,7 @@ def dagster() -> None:
 
         # Trigger builds of the internal pipeline for builds on master
         all_steps.append(
-            trigger_step(
+            build_trigger_step(
                 pipeline=pipeline_name,
                 trigger_branch=trigger_branch,
                 async_step=async_step,
