@@ -1117,6 +1117,7 @@ snapshots['test_all_snapshot_ids 1'] = '''{
   "description": null,
   "graph_def_name": "asset_lineage_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -1262,9 +1263,9 @@ snapshots['test_all_snapshot_ids 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 10'] = '8903c7110574b90a7b398cf7d41961ff7387c5e7'
+snapshots['test_all_snapshot_ids 10'] = '7f4327751d8d143bf6cbc6aba781ed3a8bc18e25'
 
-snapshots['test_all_snapshot_ids 100'] = '5f6f62bc4b119095df230745aff54208db0cbeea'
+snapshots['test_all_snapshot_ids 100'] = '9c98ab9a1fe26dbc1453828c2493c60c4c72433a'
 
 snapshots['test_all_snapshot_ids 101'] = '''{
   "__class__": "PipelineSnapshot",
@@ -2486,6 +2487,7 @@ snapshots['test_all_snapshot_ids 101'] = '''{
   "description": null,
   "graph_def_name": "time_partitioned_assets_job",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -2611,7 +2613,7 @@ snapshots['test_all_snapshot_ids 101'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 102'] = '21b7eeff286ec2fbc108e1489df620a6d468200a'
+snapshots['test_all_snapshot_ids 102'] = 'a52e12b58dbe8245ce055e3c5e356f9aec1a3442'
 
 snapshots['test_all_snapshot_ids 103'] = '''{
   "__class__": "PipelineSnapshot",
@@ -3833,6 +3835,7 @@ snapshots['test_all_snapshot_ids 103'] = '''{
   "description": null,
   "graph_def_name": "two_assets_job",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -3958,7 +3961,7 @@ snapshots['test_all_snapshot_ids 103'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 104'] = '4cc87cf8edc7623dbbb535a0555f689c302b456b'
+snapshots['test_all_snapshot_ids 104'] = '4fa2de032f38bf90676c4234f7fa7c31cae46848'
 
 snapshots['test_all_snapshot_ids 105'] = '''{
   "__class__": "PipelineSnapshot",
@@ -5047,6 +5050,7 @@ snapshots['test_all_snapshot_ids 105'] = '''{
   "description": null,
   "graph_def_name": "two_ins_job",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -5191,7 +5195,7 @@ snapshots['test_all_snapshot_ids 105'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 106'] = '5ab475d7ff92d1c2525b0fe010b567d5cdee783f'
+snapshots['test_all_snapshot_ids 106'] = 'ad484e692df16c576556f5503a5f4036f7aa45e1'
 
 snapshots['test_all_snapshot_ids 11'] = '''{
   "__class__": "PipelineSnapshot",
@@ -6523,6 +6527,7 @@ snapshots['test_all_snapshot_ids 11'] = '''{
   "description": null,
   "graph_def_name": "composites_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -6888,7 +6893,7 @@ snapshots['test_all_snapshot_ids 11'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 12'] = 'f4b6f14fe4bdbf5d9078b3ad659da22ae7ebc8ee'
+snapshots['test_all_snapshot_ids 12'] = '1bce9c69c8ec7525165adea42d61811b23325a80'
 
 snapshots['test_all_snapshot_ids 13'] = '''{
   "__class__": "PipelineSnapshot",
@@ -8135,6 +8140,7 @@ snapshots['test_all_snapshot_ids 13'] = '''{
   "description": null,
   "graph_def_name": "config_with_map",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -8239,7 +8245,7 @@ snapshots['test_all_snapshot_ids 13'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 14'] = '742d8762869d4e3e02e97e576a1f5c72192d210b'
+snapshots['test_all_snapshot_ids 14'] = '73a67534d82df2f2c608297b9ce733cf11a53449'
 
 snapshots['test_all_snapshot_ids 15'] = '''{
   "__class__": "PipelineSnapshot",
@@ -9472,6 +9478,7 @@ snapshots['test_all_snapshot_ids 15'] = '''{
   "description": null,
   "graph_def_name": "csv_hello_world",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -9590,7 +9597,7 @@ snapshots['test_all_snapshot_ids 15'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 16'] = '49f7e87ba417c7b1511056aaecf9255df9844a81'
+snapshots['test_all_snapshot_ids 16'] = 'a3e6a53fd8fbe982ecf8951d861da93db27cc311'
 
 snapshots['test_all_snapshot_ids 17'] = '''{
   "__class__": "PipelineSnapshot",
@@ -10823,6 +10830,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
   "description": null,
   "graph_def_name": "csv_hello_world_df_input",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -10941,7 +10949,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 18'] = '85fc3987e7b4710817a06edd1ff9d7904f0fbfa3'
+snapshots['test_all_snapshot_ids 18'] = '254ca730658fa5256781e19ba0038f1237b6d531'
 
 snapshots['test_all_snapshot_ids 19'] = '''{
   "__class__": "PipelineSnapshot",
@@ -12109,6 +12117,7 @@ snapshots['test_all_snapshot_ids 19'] = '''{
   "description": null,
   "graph_def_name": "csv_hello_world_two",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -12193,9 +12202,9 @@ snapshots['test_all_snapshot_ids 19'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 2'] = '618482e15b87df3642af4637aef6e266f63d319f'
+snapshots['test_all_snapshot_ids 2'] = '774144e2f03fbdfd015ff5ec8f36dc769e4e3d4a'
 
-snapshots['test_all_snapshot_ids 20'] = '7701108dfbf164232a5decf1feb1d3e8050ed817'
+snapshots['test_all_snapshot_ids 20'] = '52a02418eeeb818ce4737841f98eb2fc7c3aef78'
 
 snapshots['test_all_snapshot_ids 21'] = '''{
   "__class__": "PipelineSnapshot",
@@ -13458,6 +13467,7 @@ snapshots['test_all_snapshot_ids 21'] = '''{
   "description": null,
   "graph_def_name": "csv_hello_world_with_expectations",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -13610,7 +13620,7 @@ snapshots['test_all_snapshot_ids 21'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 22'] = 'fc437a1f1c356ef72729f0ff17fbaaad9ea74913'
+snapshots['test_all_snapshot_ids 22'] = 'e3b7519c51142291d313911e47d8c6cad557468d'
 
 snapshots['test_all_snapshot_ids 23'] = '''{
   "__class__": "PipelineSnapshot",
@@ -14947,6 +14957,7 @@ snapshots['test_all_snapshot_ids 23'] = '''{
   "description": null,
   "graph_def_name": "dynamic_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -15165,7 +15176,7 @@ snapshots['test_all_snapshot_ids 23'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 24'] = '733135566b77db0473b6015debb50aae0c7e8ca5'
+snapshots['test_all_snapshot_ids 24'] = '874b18759ef526bff5b3c1957bf154c6c7999ad7'
 
 snapshots['test_all_snapshot_ids 25'] = '''{
   "__class__": "PipelineSnapshot",
@@ -16526,6 +16537,7 @@ snapshots['test_all_snapshot_ids 25'] = '''{
   "description": null,
   "graph_def_name": "eventually_successful",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -16721,7 +16733,7 @@ snapshots['test_all_snapshot_ids 25'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 26'] = '7ee72041854ebbeffe1e8e379a608b1277989b25'
+snapshots['test_all_snapshot_ids 26'] = '89aac24962838fb9e64e8085549bb95332f64276'
 
 snapshots['test_all_snapshot_ids 27'] = '''{
   "__class__": "PipelineSnapshot",
@@ -17830,6 +17842,7 @@ snapshots['test_all_snapshot_ids 27'] = '''{
   "description": null,
   "graph_def_name": "failure_assets_job",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -17989,7 +18002,7 @@ snapshots['test_all_snapshot_ids 27'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 28'] = '2cbe2e4e9201eb023d8755236bbf931547199ab7'
+snapshots['test_all_snapshot_ids 28'] = '350b8781363233b839c03312dcb080903b69f7a4'
 
 snapshots['test_all_snapshot_ids 29'] = '''{
   "__class__": "PipelineSnapshot",
@@ -19285,6 +19298,7 @@ snapshots['test_all_snapshot_ids 29'] = '''{
   "description": null,
   "graph_def_name": "hanging_job",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -20518,6 +20532,7 @@ snapshots['test_all_snapshot_ids 3'] = '''{
   "description": null,
   "graph_def_name": "asset_tag_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -20595,7 +20610,7 @@ snapshots['test_all_snapshot_ids 3'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 30'] = '6ffee67d7c593d49a8df9f3f63009593085596fe'
+snapshots['test_all_snapshot_ids 30'] = '823de0c87d55911ac02c0f81073ca81982fdc9cb'
 
 snapshots['test_all_snapshot_ids 31'] = '''{
   "__class__": "PipelineSnapshot",
@@ -21736,6 +21751,7 @@ snapshots['test_all_snapshot_ids 31'] = '''{
   "description": null,
   "graph_def_name": "hard_failer",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -21847,7 +21863,7 @@ snapshots['test_all_snapshot_ids 31'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 32'] = '8659736ba62af555f092f1f50fe98443a441bfd6'
+snapshots['test_all_snapshot_ids 32'] = 'e06b1c19c1a1bdb916cb0caf00af326fbd2e5256'
 
 snapshots['test_all_snapshot_ids 33'] = '''{
   "__class__": "PipelineSnapshot",
@@ -22962,6 +22978,7 @@ snapshots['test_all_snapshot_ids 33'] = '''{
   "description": null,
   "graph_def_name": "hello_world_with_tags",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -23041,7 +23058,7 @@ snapshots['test_all_snapshot_ids 33'] = '''{
   }
 }'''
 
-snapshots['test_all_snapshot_ids 34'] = 'a7f56bcbca508eeab8fff1e1f071d66e77ac8182'
+snapshots['test_all_snapshot_ids 34'] = '44d102af7a544f94deb43f8e6a3915cd2b5101f6'
 
 snapshots['test_all_snapshot_ids 35'] = '''{
   "__class__": "PipelineSnapshot",
@@ -24117,6 +24134,7 @@ snapshots['test_all_snapshot_ids 35'] = '''{
   "description": null,
   "graph_def_name": "infinite_loop_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -24194,7 +24212,7 @@ snapshots['test_all_snapshot_ids 35'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 36'] = '399a58b2ffd94b463150165286be9cba35bb36f1'
+snapshots['test_all_snapshot_ids 36'] = '3c6de58e99cb18a175aec639ba7c8598b392cb71'
 
 snapshots['test_all_snapshot_ids 37'] = '''{
   "__class__": "PipelineSnapshot",
@@ -25247,6 +25265,7 @@ snapshots['test_all_snapshot_ids 37'] = '''{
   "description": null,
   "graph_def_name": "job_with_default_config",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -25324,7 +25343,7 @@ snapshots['test_all_snapshot_ids 37'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 38'] = '2cb4d7760e55cc36f1401cd3ae68c13e72691f6d'
+snapshots['test_all_snapshot_ids 38'] = '2238b9540269eda33cb9e3a5feed078deb7a36d9'
 
 snapshots['test_all_snapshot_ids 39'] = '''{
   "__class__": "PipelineSnapshot",
@@ -26377,6 +26396,7 @@ snapshots['test_all_snapshot_ids 39'] = '''{
   "description": null,
   "graph_def_name": "materialization_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -26454,9 +26474,9 @@ snapshots['test_all_snapshot_ids 39'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 4'] = '1a693d19862a7d9b174562886fc25b2e323a7821'
+snapshots['test_all_snapshot_ids 4'] = '9665bf6e828cf55bdf3910f1567e02cb5b13fd01'
 
-snapshots['test_all_snapshot_ids 40'] = 'bce175ff0a6a7308e554b08b907434645b06f386'
+snapshots['test_all_snapshot_ids 40'] = '608441bc8cd34ab3273966e7f54533be6d2afef4'
 
 snapshots['test_all_snapshot_ids 41'] = '''{
   "__class__": "PipelineSnapshot",
@@ -27602,6 +27622,7 @@ snapshots['test_all_snapshot_ids 41'] = '''{
   "description": null,
   "graph_def_name": "more_complicated_config",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -27706,7 +27727,7 @@ snapshots['test_all_snapshot_ids 41'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 42'] = '20d9cbcf9d6578f3273c51f78a13650304282f55'
+snapshots['test_all_snapshot_ids 42'] = 'ccc81082d482eec6621b24fb50f089520f0f06df'
 
 snapshots['test_all_snapshot_ids 43'] = '''{
   "__class__": "PipelineSnapshot",
@@ -28842,6 +28863,7 @@ snapshots['test_all_snapshot_ids 43'] = '''{
   "description": null,
   "graph_def_name": "more_complicated_nested_config",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -28910,7 +28932,7 @@ snapshots['test_all_snapshot_ids 43'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 44'] = 'dcf789ffe133eb7ff6ab45058188f207243db7f5'
+snapshots['test_all_snapshot_ids 44'] = '37de6bd7948504fc335953c1664f655af643018d'
 
 snapshots['test_all_snapshot_ids 45'] = '''{
   "__class__": "PipelineSnapshot",
@@ -29993,6 +30015,7 @@ snapshots['test_all_snapshot_ids 45'] = '''{
   "description": null,
   "graph_def_name": "multi_asset_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -30104,7 +30127,7 @@ snapshots['test_all_snapshot_ids 45'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 46'] = 'c68ee264baeeb7e0962d11d7680f39cc6e9305b9'
+snapshots['test_all_snapshot_ids 46'] = 'd113d140af14b7fda1f69368e024e19431de8cf8'
 
 snapshots['test_all_snapshot_ids 47'] = '''{
   "__class__": "PipelineSnapshot",
@@ -31403,6 +31426,7 @@ snapshots['test_all_snapshot_ids 47'] = '''{
   "description": null,
   "graph_def_name": "multi_mode_with_loggers",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -31570,7 +31594,7 @@ snapshots['test_all_snapshot_ids 47'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 48'] = '34f2b685a073703f0173303d0645f6a794e8cc09'
+snapshots['test_all_snapshot_ids 48'] = 'b805d448c1c5215c2ff2b8d009b8304f19aa4e13'
 
 snapshots['test_all_snapshot_ids 49'] = '''{
   "__class__": "PipelineSnapshot",
@@ -32795,6 +32819,7 @@ snapshots['test_all_snapshot_ids 49'] = '''{
   "description": null,
   "graph_def_name": "multi_mode_with_resources",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -34043,6 +34068,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
   "description": null,
   "graph_def_name": "backcompat_materialization_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -34120,7 +34146,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 50'] = 'a4292e135d796426584819daa4d346cc5b6cbb1a'
+snapshots['test_all_snapshot_ids 50'] = 'fbb3731df64610b47acf744456775c34a84dc092'
 
 snapshots['test_all_snapshot_ids 51'] = '''{
   "__class__": "PipelineSnapshot",
@@ -35173,6 +35199,7 @@ snapshots['test_all_snapshot_ids 51'] = '''{
   "description": null,
   "graph_def_name": "naughty_programmer_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -35250,7 +35277,7 @@ snapshots['test_all_snapshot_ids 51'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 52'] = 'dff095cd6315ee5048295900fc712afc511bdcc1'
+snapshots['test_all_snapshot_ids 52'] = 'a93daca78b826f18cfd811aca5e8936ea1ab6212'
 
 snapshots['test_all_snapshot_ids 53'] = '''{
   "__class__": "PipelineSnapshot",
@@ -36398,6 +36425,7 @@ snapshots['test_all_snapshot_ids 53'] = '''{
   "description": null,
   "graph_def_name": "nested_job",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -36679,7 +36707,7 @@ snapshots['test_all_snapshot_ids 53'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 54'] = '56d7159ba13dd69ffe9fe6f3c591170b31026366'
+snapshots['test_all_snapshot_ids 54'] = '14875d6cd4e92da7439b1f0d82ecdfe8b414585a'
 
 snapshots['test_all_snapshot_ids 55'] = '''{
   "__class__": "PipelineSnapshot",
@@ -37762,6 +37790,7 @@ snapshots['test_all_snapshot_ids 55'] = '''{
   "description": null,
   "graph_def_name": "no_config_chain_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -37873,7 +37902,7 @@ snapshots['test_all_snapshot_ids 55'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 56'] = 'af1622a30d500057dea15bce4e8fe85cdadc9ce8'
+snapshots['test_all_snapshot_ids 56'] = '4a02e91c03e9b75087dfe41ce75872ad93b5c402'
 
 snapshots['test_all_snapshot_ids 57'] = '''{
   "__class__": "PipelineSnapshot",
@@ -38988,6 +39017,7 @@ snapshots['test_all_snapshot_ids 57'] = '''{
   "description": null,
   "graph_def_name": "no_config_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -39065,7 +39095,7 @@ snapshots['test_all_snapshot_ids 57'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 58'] = '714f13a293737d62b910f0ff9c43f670c502c2ca'
+snapshots['test_all_snapshot_ids 58'] = '69ca7859f9b77fcfd4429766a48af0cca4831bfb'
 
 snapshots['test_all_snapshot_ids 59'] = '''{
   "__class__": "PipelineSnapshot",
@@ -40118,6 +40148,7 @@ snapshots['test_all_snapshot_ids 59'] = '''{
   "description": null,
   "graph_def_name": "noop_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -40195,9 +40226,9 @@ snapshots['test_all_snapshot_ids 59'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 6'] = 'f48190b5df84639f52bebac931ee9696e312dfc0'
+snapshots['test_all_snapshot_ids 6'] = 'c13ab48c6eb632a1f9d17fc42e7289eb16f84a71'
 
-snapshots['test_all_snapshot_ids 60'] = '7ffd65ba8633d4c172a7b15dfee5927bed301724'
+snapshots['test_all_snapshot_ids 60'] = 'ee2cf33949005892bccaf73a40525daf95d22e28'
 
 snapshots['test_all_snapshot_ids 61'] = '''{
   "__class__": "PipelineSnapshot",
@@ -41246,6 +41277,7 @@ snapshots['test_all_snapshot_ids 61'] = '''{
   "description": null,
   "graph_def_name": "observation_job",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -41337,7 +41369,7 @@ snapshots['test_all_snapshot_ids 61'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 62'] = 'd291d9ffc358edb755f7cc4d3ccefbf6c30b6992'
+snapshots['test_all_snapshot_ids 62'] = 'dad58c4f3f4f6a10c14a66f897b643858f359c40'
 
 snapshots['test_all_snapshot_ids 63'] = '''{
   "__class__": "PipelineSnapshot",
@@ -42386,6 +42418,7 @@ snapshots['test_all_snapshot_ids 63'] = '''{
   "description": null,
   "graph_def_name": "partition_materialization_job",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -42477,7 +42510,7 @@ snapshots['test_all_snapshot_ids 63'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 64'] = '7a41124ec59dcc24a118951642eb5df49f0c4c16'
+snapshots['test_all_snapshot_ids 64'] = '08739f98323a8f28e7d699b2f23a540fc592c433'
 
 snapshots['test_all_snapshot_ids 65'] = '''{
   "__class__": "PipelineSnapshot",
@@ -43590,6 +43623,7 @@ snapshots['test_all_snapshot_ids 65'] = '''{
   "description": null,
   "graph_def_name": "partitioned_asset_lineage_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -43735,7 +43769,7 @@ snapshots['test_all_snapshot_ids 65'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 66'] = '2b93a84831c17b0e2a81d20aa74126950813a9ac'
+snapshots['test_all_snapshot_ids 66'] = '49f640350ff82c5826e8eeeb8f9a50e9051343e3'
 
 snapshots['test_all_snapshot_ids 67'] = '''{
   "__class__": "PipelineSnapshot",
@@ -44788,6 +44822,7 @@ snapshots['test_all_snapshot_ids 67'] = '''{
   "description": null,
   "graph_def_name": "partitioned_asset_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -44865,7 +44900,7 @@ snapshots['test_all_snapshot_ids 67'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 68'] = '67320cfa7114761c18111589434bf4b9481cbb10'
+snapshots['test_all_snapshot_ids 68'] = '0a25f6c446d67e5bbb1bfd248f9715867c62ddce'
 
 snapshots['test_all_snapshot_ids 69'] = '''{
   "__class__": "PipelineSnapshot",
@@ -45947,6 +45982,7 @@ snapshots['test_all_snapshot_ids 69'] = '''{
   "description": null,
   "graph_def_name": "pipeline_with_enum_config",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -47197,6 +47233,7 @@ snapshots['test_all_snapshot_ids 7'] = '''{
   "description": null,
   "graph_def_name": "chained_failure_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -47342,7 +47379,7 @@ snapshots['test_all_snapshot_ids 7'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 70'] = '0697bffcee4b6aeddd017547d053825056bfe037'
+snapshots['test_all_snapshot_ids 70'] = 'd8d16b2f1a4a03fbd8e9e10b46d272945ca0a40b'
 
 snapshots['test_all_snapshot_ids 71'] = '''{
   "__class__": "PipelineSnapshot",
@@ -48382,6 +48419,7 @@ snapshots['test_all_snapshot_ids 71'] = '''{
   "description": null,
   "graph_def_name": "pipeline_with_expectations",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -48486,7 +48524,7 @@ snapshots['test_all_snapshot_ids 71'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 72'] = '62484dea05c7bedb6c78d42dda1c2a48d1cac317'
+snapshots['test_all_snapshot_ids 72'] = 'b22f8f00377fb38f3456533d6df45f8b5e5ffa75'
 
 snapshots['test_all_snapshot_ids 73'] = '''{
   "__class__": "PipelineSnapshot",
@@ -49578,6 +49616,7 @@ snapshots['test_all_snapshot_ids 73'] = '''{
   "description": null,
   "graph_def_name": "pipeline_with_input_output_metadata",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -49684,7 +49723,7 @@ snapshots['test_all_snapshot_ids 73'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 74'] = '8034f94b04f8f29583bda8a0d535c944992ca355'
+snapshots['test_all_snapshot_ids 74'] = 'a82f17de055003207c1fd23f3d0267af29e892d5'
 
 snapshots['test_all_snapshot_ids 75'] = '''{
   "__class__": "PipelineSnapshot",
@@ -50807,6 +50846,7 @@ snapshots['test_all_snapshot_ids 75'] = '''{
   "description": null,
   "graph_def_name": "pipeline_with_invalid_definition_error",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -50918,7 +50958,7 @@ snapshots['test_all_snapshot_ids 75'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 76'] = 'ac8dd3a8157213ab0aa9a4235ed20b62c1c4fe9a'
+snapshots['test_all_snapshot_ids 76'] = '0659f1e8458d0bccb41255fc7a0c57070ce9a7e5'
 
 snapshots['test_all_snapshot_ids 77'] = '''{
   "__class__": "PipelineSnapshot",
@@ -51939,6 +51979,7 @@ snapshots['test_all_snapshot_ids 77'] = '''{
   "description": null,
   "graph_def_name": "pipeline_with_list",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -52007,7 +52048,7 @@ snapshots['test_all_snapshot_ids 77'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 78'] = 'd94ebfc5a92a124c708dae347a27eb7b60732c91'
+snapshots['test_all_snapshot_ids 78'] = 'f7d16e012610e891ea09b33d09b63ba4fd17e4ac'
 
 snapshots['test_all_snapshot_ids 79'] = '''{
   "__class__": "PipelineSnapshot",
@@ -53092,6 +53133,7 @@ snapshots['test_all_snapshot_ids 79'] = '''{
   "description": null,
   "graph_def_name": "required_resource_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -53185,9 +53227,9 @@ snapshots['test_all_snapshot_ids 79'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 8'] = 'cf3ca46e430bf50be932f6d4c6bc69f8b940f595'
+snapshots['test_all_snapshot_ids 8'] = '8cb71144e6676722f6dc22da0b0608e5d5bdea2c'
 
-snapshots['test_all_snapshot_ids 80'] = '6aaa658c850390ce078203114231853dd44d24f5'
+snapshots['test_all_snapshot_ids 80'] = '87fb6ad74ac7db6f9834532d8337effdec7e90dc'
 
 snapshots['test_all_snapshot_ids 81'] = '''{
   "__class__": "PipelineSnapshot",
@@ -54494,6 +54536,7 @@ snapshots['test_all_snapshot_ids 81'] = '''{
   "description": null,
   "graph_def_name": "retry_multi_input_early_terminate_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -54697,7 +54740,7 @@ snapshots['test_all_snapshot_ids 81'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 82'] = '4ac1665c16e3f30337a0ac123fafb51e6811b9c9'
+snapshots['test_all_snapshot_ids 82'] = 'c4e1bca1010c0fc0f43e4ed0cd113b922edd62d9'
 
 snapshots['test_all_snapshot_ids 83'] = '''{
   "__class__": "PipelineSnapshot",
@@ -56175,6 +56218,7 @@ snapshots['test_all_snapshot_ids 83'] = '''{
   "description": null,
   "graph_def_name": "retry_multi_output_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -56361,7 +56405,7 @@ snapshots['test_all_snapshot_ids 83'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 84'] = '84a490c9065a2e785d65cc71f94992701a660b92'
+snapshots['test_all_snapshot_ids 84'] = '0b19ea85ed9d1e4f6c3d83cfc7148b34f3660cef'
 
 snapshots['test_all_snapshot_ids 85'] = '''{
   "__class__": "PipelineSnapshot",
@@ -57547,6 +57591,7 @@ snapshots['test_all_snapshot_ids 85'] = '''{
   "description": null,
   "graph_def_name": "retry_resource_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -57690,7 +57735,7 @@ snapshots['test_all_snapshot_ids 85'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 86'] = 'cfcbb5937f50f787b8250428ff9276ff64672a0a'
+snapshots['test_all_snapshot_ids 86'] = 'ccd2ad5d03cb1f1eb59ae2316162b06c1181b90a'
 
 snapshots['test_all_snapshot_ids 87'] = '''{
   "__class__": "PipelineSnapshot",
@@ -58794,6 +58839,7 @@ snapshots['test_all_snapshot_ids 87'] = '''{
   "description": null,
   "graph_def_name": "scalar_output_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -58952,7 +58998,7 @@ snapshots['test_all_snapshot_ids 87'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 88'] = 'abda4f3130ca7c8db1ab48884e441697f0f046b6'
+snapshots['test_all_snapshot_ids 88'] = '383d07851a9994e673de302206d77652b1fdd10d'
 
 snapshots['test_all_snapshot_ids 89'] = '''{
   "__class__": "PipelineSnapshot",
@@ -59982,6 +60028,7 @@ snapshots['test_all_snapshot_ids 89'] = '''{
   "description": null,
   "graph_def_name": "simple_graph",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -61139,6 +61186,7 @@ snapshots['test_all_snapshot_ids 9'] = '''{
   "description": null,
   "graph_def_name": "composed_graph",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -61241,7 +61289,7 @@ snapshots['test_all_snapshot_ids 9'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 90'] = 'f16ab1a143c4bee565c6ce846c586f966e9b45e9'
+snapshots['test_all_snapshot_ids 90'] = 'c35f626cfb7918931afca3a4ead3892d43525ac9'
 
 snapshots['test_all_snapshot_ids 91'] = '''{
   "__class__": "PipelineSnapshot",
@@ -62271,6 +62319,7 @@ snapshots['test_all_snapshot_ids 91'] = '''{
   "description": null,
   "graph_def_name": "simple_graph",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -62348,7 +62397,7 @@ snapshots['test_all_snapshot_ids 91'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 92'] = 'b4be449ede16dc5189cf29c1c96da3b94d04902c'
+snapshots['test_all_snapshot_ids 92'] = 'd4ad76480c4298623336dcb56c5165995dc389c3'
 
 snapshots['test_all_snapshot_ids 93'] = '''{
   "__class__": "PipelineSnapshot",
@@ -63401,6 +63450,7 @@ snapshots['test_all_snapshot_ids 93'] = '''{
   "description": null,
   "graph_def_name": "single_asset_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -63478,7 +63528,7 @@ snapshots['test_all_snapshot_ids 93'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 94'] = '36b71cabad16262a9e4e80b9f894b8d513473a23'
+snapshots['test_all_snapshot_ids 94'] = '4fbc5af1b6ceba216470d981199b60a59d03ba2d'
 
 snapshots['test_all_snapshot_ids 95'] = '''{
   "__class__": "PipelineSnapshot",
@@ -64531,6 +64581,7 @@ snapshots['test_all_snapshot_ids 95'] = '''{
   "description": null,
   "graph_def_name": "spew_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -64608,7 +64659,7 @@ snapshots['test_all_snapshot_ids 95'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 96'] = 'e13fdf7aa503f8fec341258a23cfeb111ca4143e'
+snapshots['test_all_snapshot_ids 96'] = '43df602c40ac607368a56c39e9f3ba282f55466c'
 
 snapshots['test_all_snapshot_ids 97'] = '''{
   "__class__": "PipelineSnapshot",
@@ -65830,6 +65881,7 @@ snapshots['test_all_snapshot_ids 97'] = '''{
   "description": null,
   "graph_def_name": "static_partitioned_assets_job",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -65955,7 +66007,7 @@ snapshots['test_all_snapshot_ids 97'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 98'] = 'b7a4f97f4e8cc47e4c1145f33597d9bd6d2e7b96'
+snapshots['test_all_snapshot_ids 98'] = '65457c3a0309b9485f1fd999bd9acd72721cd0c9'
 
 snapshots['test_all_snapshot_ids 99'] = '''{
   "__class__": "PipelineSnapshot",
@@ -67070,6 +67122,7 @@ snapshots['test_all_snapshot_ids 99'] = '''{
   "description": null,
   "graph_def_name": "tagged_pipeline",
   "lineage_snapshot": null,
+  "metadata": [],
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
