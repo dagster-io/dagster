@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from pydantic import Extra  # pylint: disable=no-name-in-module
+from pydantic import Extra
 
 from ...utils import kubernetes
 from ...utils.utils import BaseModel
