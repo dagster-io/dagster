@@ -34,12 +34,12 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
         assert len(storage.get_logs_for_run(run_id)) == 1
         assert len(watched_1) == 0
 
-        storage.watch(run_id, 0, watched_1.append)
+        storage.watch(run_id, str(1), watched_1.append)
 
         storage.store_event(create_test_event_log_record(str(2), run_id=run_id))
         storage.store_event(create_test_event_log_record(str(3), run_id=run_id))
 
-        storage.watch(run_id, 2, watched_2.append)
+        storage.watch(run_id, str(3), watched_2.append)
         storage.store_event(create_test_event_log_record(str(4), run_id=run_id))
 
         attempts = 10

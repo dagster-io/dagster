@@ -233,7 +233,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]
 
-    def watch(self, run_id, start_cursor, callback):
+    def watch(self, run_id, cursor, callback):
+        # the API accepts opaque string cursor, but the postgres implementation uses the integer
+        # primary key `id` as the cursor, so coerce to an int for the sake of watching
         if self._event_watcher is None:
             self._event_watcher = PostgresEventWatcher(
                 self.postgres_url,
@@ -241,7 +243,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 self._gen_event_log_entry_from_cursor,
             )
 
-        self._event_watcher.watch_run(run_id, start_cursor, callback)
+        self._event_watcher.watch_run(run_id, cursor, callback)
 
     def _gen_event_log_entry_from_cursor(self, cursor) -> EventLogEntry:
         with self._engine.connect() as conn:

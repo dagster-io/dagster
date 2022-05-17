@@ -168,8 +168,8 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]
 
-    def watch(self, run_id, start_cursor, callback):
-        self._event_watcher.watch_run(run_id, start_cursor, callback)
+    def watch(self, run_id, cursor, callback):
+        self._event_watcher.watch_run(run_id, cursor, callback)
 
     def end_watch(self, run_id, handler):
         self._event_watcher.unwatch_run(run_id, handler)
