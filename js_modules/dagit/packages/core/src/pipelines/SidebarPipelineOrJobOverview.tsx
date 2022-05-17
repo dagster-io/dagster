@@ -4,7 +4,6 @@ import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {METADATA_ENTRY_FRAGMENT, MetadataEntry} from '../metadata/MetadataEntry';
-
 import {PipelineSelector} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -69,7 +68,7 @@ export const SidebarPipelineOrJobOverview: React.FC<{
             </SidebarSection>
             <SidebarSection title="Metadata">
               <Box padding={{vertical: 16, horizontal: 24}}>
-              <MetadataTable rows={metadataRows} />
+                <MetadataTable rows={metadataRows} />
               </Box>
             </SidebarSection>
           </>
