@@ -162,6 +162,7 @@ from dagster.core.definitions.policy import Backoff, Jitter, RetryPolicy
 from dagster.core.definitions.run_status_sensor_definition import build_run_status_sensor_context
 from dagster.core.definitions.schedule_definition import build_schedule_context
 from dagster.core.definitions.sensor_definition import build_sensor_context
+from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.definitions.utils import (
     config_from_files,
     config_from_pkg_resources,
@@ -206,6 +207,12 @@ from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.context.output import OutputContext, build_output_context
 from dagster.core.execution.context.system import TypeCheckContext
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster.core.execution.plan.external_step import (
+    step_context_to_step_run_ref,
+    external_instance_from_step_run_ref,
+    step_run_ref_to_step_context,
+    run_step_from_ref,
+)
 from dagster.core.execution.results import (
     CompositeSolidExecutionResult,
     PipelineExecutionResult,
@@ -465,6 +472,10 @@ __all__ = [
     "InitLoggerContext",
     "InitResourceContext",
     "ExecuteInProcessResult",
+    "step_context_to_step_run_ref",
+    "external_instance_from_step_run_ref",
+    "step_run_ref_to_step_context",
+    "run_step_from_ref",
     "build_init_resource_context",
     "OpExecutionContext",
     "PipelineExecutionResult",
@@ -610,6 +621,7 @@ __all__ = [
     "RunStatusSensorContext",
     "build_sensor_context",
     "build_run_status_sensor_context",
+    "StepLauncher",
     "SkipReason",
     "daily_schedule",
     "hourly_schedule",
