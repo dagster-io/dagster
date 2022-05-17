@@ -24,6 +24,7 @@ from ..pipeline_run import PipelineRunStatsSnapshot
 from .base import (
     AssetEntry,
     AssetRecord,
+    EventLogConnection,
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
@@ -226,26 +227,35 @@ class SqlEventLogStorage(EventLogStorage):
         ):
             self.store_asset_event(event)
 
-    def get_logs_for_run_by_log_id(
+    def get_records_for_run(
         self,
         run_id,
-        cursor=-1,
-        dagster_event_type=None,
+        cursor=None,
+        of_type=None,
         limit=None,
-    ):
+    ) -> EventLogConnection:
+        """Get all of the logs corresponding to a run.
+
+        Args:
+            run_id (str): The id of the run for which to fetch logs.
+            cursor (Optional[int]): Zero-indexed logs will be returned starting from cursor + 1,
+                i.e., if cursor is -1, all logs will be returned. (default: -1)
+            of_type (Optional[DagsterEventType]): the dagster event type to filter the logs.
+            limit (Optional[int]): the maximum number of events to fetch
+        """
         check.str_param(run_id, "run_id")
-        check.int_param(cursor, "cursor")
+        check.opt_inst_param(cursor, "cursor", (int, str))
+
         check.invariant(
-            cursor >= -1,
-            "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
+            not of_type
+            or isinstance(of_type, DagsterEventType)
+            or isinstance(of_type, (frozenset, set))
         )
 
         dagster_event_types = (
-            {dagster_event_type}
-            if isinstance(dagster_event_type, DagsterEventType)
-            else check.opt_set_param(
-                dagster_event_type, "dagster_event_type", of_type=DagsterEventType
-            )
+            {of_type}
+            if isinstance(of_type, DagsterEventType)
+            else check.opt_set_param(of_type, "dagster_event_type", of_type=DagsterEventType)
         )
 
         query = (
@@ -261,7 +271,14 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
         # adjust 0 based index cursor to SQL offset
-        query = query.offset(cursor + 1)
+        if isinstance(cursor, int):
+            query = query.offset(cursor + 1)
+        elif cursor:
+            try:
+                last_known_id = int(cursor)
+                query = query.where(SqlEventLogStorageTable.c.id > last_known_id)
+            except ValueError:
+                pass
 
         if limit:
             query = query.limit(limit)
@@ -269,51 +286,30 @@ class SqlEventLogStorage(EventLogStorage):
         with self.run_connection(run_id) as conn:
             results = conn.execute(query).fetchall()
 
-        events = {}
+        last_record_id = None
         try:
+            records = []
             for (
                 record_id,
                 json_str,
             ) in results:
-                events[record_id] = check.inst_param(
-                    deserialize_json_to_dagster_namedtuple(json_str), "event", EventLogEntry
+                records.append(
+                    EventLogRecord(
+                        storage_id=record_id,
+                        event_log_entry=cast(
+                            EventLogEntry, deserialize_json_to_dagster_namedtuple(json_str)
+                        ),
+                    )
                 )
+                last_record_id = record_id
         except (seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
-        return events
-
-    def get_logs_for_run(
-        self,
-        run_id,
-        cursor=-1,
-        of_type=None,
-        limit=None,
-    ):
-        """Get all of the logs corresponding to a run.
-
-        Args:
-            run_id (str): The id of the run for which to fetch logs.
-            cursor (Optional[int]): Zero-indexed logs will be returned starting from cursor + 1,
-                i.e., if cursor is -1, all logs will be returned. (default: -1)
-            of_type (Optional[DagsterEventType]): the dagster event type to filter the logs.
-            limit (Optional[int]): the maximum number of events to fetch
-        """
-        check.str_param(run_id, "run_id")
-        check.int_param(cursor, "cursor")
-        check.invariant(
-            cursor >= -1,
-            "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
+        return EventLogConnection(
+            records=records,
+            cursor=str(last_record_id) if last_record_id else None,
+            has_more=bool(limit and len(results) == limit),
         )
-
-        check.invariant(
-            not of_type
-            or isinstance(of_type, DagsterEventType)
-            or isinstance(of_type, (frozenset, set))
-        )
-
-        events_by_id = self.get_logs_for_run_by_log_id(run_id, cursor, of_type, limit)
-        return [event for id, event in sorted(events_by_id.items(), key=lambda x: x[0])]
 
     def get_stats_for_run(self, run_id):
         check.str_param(run_id, "run_id")

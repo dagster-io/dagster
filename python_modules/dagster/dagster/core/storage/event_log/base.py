@@ -48,6 +48,12 @@ class EventLogRecord(NamedTuple):
     event_log_entry: EventLogEntry
 
 
+class EventLogConnection(NamedTuple):
+    records: List[EventLogRecord]
+    cursor: Optional[str]
+    has_more: bool
+
+
 class AssetEntry(
     NamedTuple(
         "_AssetEntry",
@@ -166,11 +172,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     should be done by setting values in that file.
     """
 
-    @abstractmethod
     def get_logs_for_run(
         self,
         run_id: str,
-        cursor: Optional[int] = -1,
+        cursor: Optional[Union[str, int]] = None,
         of_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
     ) -> Iterable[EventLogEntry]:
@@ -178,9 +183,30 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
         Args:
             run_id (str): The id of the run for which to fetch logs.
-            cursor (Optional[int]): Zero-indexed logs will be returned starting from cursor + 1,
-                i.e., if cursor is -1, all logs will be returned. (default: -1)
+            cursor (Optional[Union[str, int]]): Cursor value to track paginated queries.  Legacy
+                support for integer offset cursors.
             of_type (Optional[DagsterEventType]): the dagster event type to filter the logs.
+            limit (Optional[int]): Max number of records to return.
+        """
+        records = self.get_records_for_run(run_id, cursor, of_type, limit).records
+        return [record.event_log_entry for record in records]
+
+    @abstractmethod
+    def get_records_for_run(
+        self,
+        run_id: str,
+        cursor: Optional[Union[str, int]] = None,
+        of_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
+        limit: Optional[int] = None,
+    ) -> EventLogConnection:
+        """Get all of the event log records corresponding to a run.
+
+        Args:
+            run_id (str): The id of the run for which to fetch logs.
+            cursor (Optional[Union[str, int]]): Cursor value to track paginated queries.  Legacy
+                support for integer offset cursors.
+            of_type (Optional[DagsterEventType]): the dagster event type to filter the logs.
+            limit (Optional[int]): Max number of records to return.
         """
 
     def get_stats_for_run(self, run_id: str) -> PipelineRunStatsSnapshot:

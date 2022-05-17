@@ -30,9 +30,8 @@ def migrate_event_log_data(instance=None):
         return
 
     for run in instance.get_runs():
-        event_records_by_id = event_log_storage.get_logs_for_run_by_log_id(run.run_id)
-        for record_id, event in event_records_by_id.items():
-            event_log_storage.update_event_log_record(record_id, event)
+        for record in event_log_storage.get_records_for_run(run.run_id).records:
+            event_log_storage.update_event_log_record(record.storage_id, record.event_log_entry)
 
 
 def migrate_asset_key_data(event_log_storage, print_fn=None):

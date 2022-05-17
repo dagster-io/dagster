@@ -27,7 +27,7 @@ class PipelineRunObservableSubscribe:
         self.state = State.NULL
         self.stopping = None
         self.stopped = None
-        self.after_cursor = after_cursor if after_cursor is not None else -1
+        self.after_cursor = after_cursor
 
     def __call__(self, observer):
         self.observer = observer
