@@ -56,6 +56,7 @@ from .inputs import (
     FromPendingDynamicStepOutput,
     FromRootInputManager,
     FromStepOutput,
+    FromSourceAsset,
     FromUnresolvedStepOutput,
     StepInput,
     StepInputSource,
@@ -475,10 +476,10 @@ def get_step_input_source(
         #  make sure input is unconnected in the outer dependency structure too
         not solid.container_maps_input(input_handle.input_name)
     ):
-        if input_def.root_manager_key or asset_layer.asset_key_for_input(
-            handle, input_handle.input_name
-        ):
+        if input_def.root_manager_key:
             return FromRootInputManager(solid_handle=handle, input_name=input_name)
+        elif asset_layer.source_asset_for_input(handle, input_handle.input_name):
+            return FromSourceAsset(solid_handle=handle, input_name=input_name)
 
     if dependency_structure.has_direct_dep(input_handle):
         solid_output_handle = dependency_structure.get_direct_dep(input_handle)

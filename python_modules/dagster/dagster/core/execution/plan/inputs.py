@@ -140,6 +140,113 @@ class StepInputSource(ABC):
 
 
 @whitelist_for_serdes
+class FromSourceAsset(
+    NamedTuple(
+        "_FromSourceAsset",
+        [
+            ("solid_handle", NodeHandle),
+            ("input_name", str),
+        ],
+    ),
+    StepInputSource,
+):
+    """
+    Load input value via a SourceAsset.
+    """
+
+    def load_input_object(
+        self,
+        step_context: "StepExecutionContext",
+        input_def: InputDefinition,
+    ) -> Iterator["DagsterEvent"]:
+        from dagster.core.events import DagsterEvent
+
+        check.invariant(
+            step_context.solid_handle == self.solid_handle and input_def.name == self.input_name,
+            "RootInputManager source must be op input and not one along compostion mapping. "
+            f"Loading for op {step_context.solid_handle}.{input_def.name} "
+            f"but source is {self.solid_handle}.{self.input_name}.",
+        )
+
+        input_def = step_context.solid_def.input_def_named(input_def.name)
+        source_asset = step_context.pipeline_def.asset_layer.source_asset_for_input(
+            self.solid_handle, input_name=input_def.name
+        )
+
+        op_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
+        config_data = op_config.inputs.get(self.input_name) if op_config else None
+
+        loader = getattr(step_context.resources, source_asset.io_manager_key)
+        load_input_context = step_context.for_input_manager(
+            input_def.name,
+            config_data,
+            metadata=input_def.metadata,
+            dagster_type=input_def.dagster_type,
+            resource_config=step_context.resolved_run_config.resources[
+                source_asset.io_manager_key
+            ].config,
+            resources=build_resources_for_manager(source_asset.io_manager_key, step_context),
+        )
+
+        yield from _load_input_with_input_manager(loader, load_input_context)
+
+        metadata_entries = load_input_context.consume_metadata_entries()
+
+        yield DagsterEvent.loaded_input(
+            step_context,
+            input_name=input_def.name,
+            manager_key=source_asset.io_manager_key,
+            metadata_entries=[
+                entry for entry in metadata_entries if isinstance(entry, MetadataEntry)
+            ],
+        )
+
+    def compute_version(self, step_versions, pipeline_def, resolved_run_config) -> Optional[str]:
+        from ..resolve_versions import check_valid_version, resolve_config_version
+
+        op = pipeline_def.get_solid(self.solid_handle)
+        io_manager_key = op.input_def_named(self.input_name).io_manager_key
+        io_manager_def = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs[
+            io_manager_key
+        ]
+
+        op_config = resolved_run_config.solids.get(op.name)
+        input_config = solid_config.inputs.get(self.input_name)
+        resource_config = resolved_run_config.resources.get(io_manager_key).config
+
+        version_context = ResourceVersionContext(
+            resource_def=io_manager_def,
+            resource_config=resource_config,
+        )
+
+        if pipeline_def.version_strategy is not None:
+            io_manager_def_version = pipeline_def.version_strategy.get_resource_version(
+                version_context
+            )
+        else:
+            root_manager_def_version = root_manager_def.version
+
+        if io_manager_def_version is None:
+            raise DagsterInvariantViolationError(
+                f"While using memoization, version for io manager '{io_manager_def}' was "
+                "None. Please either provide a versioning strategy for your job, or provide a "
+                "version using the io_manager decorator."
+            )
+
+        check_valid_version(io_manager_def_version)
+        return join_and_hash(
+            resolve_config_version(input_config),
+            resolve_config_version(resource_config),
+            io_manager_def_version,
+        )
+
+    def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
+        input_def = pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
+
+        return {input_def.root_manager_key}
+
+
+@whitelist_for_serdes
 class FromRootInputManager(
     NamedTuple(
         "_FromRootInputManager",
@@ -153,57 +260,6 @@ class FromRootInputManager(
     """
     Load input value via a RootInputManager.
     """
-
-    def load_from_source_asset(
-        self,
-        step_context: "StepExecutionContext",
-        input_def: InputDefinition,
-    ) -> Iterator["DagsterEvent"]:
-
-        source_asset_key = cast(AssetKey, input_context.asset_key)
-        source_asset = source_assets_by_key[source_asset_key]
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
-            @op(out={source_asset_key.path[-1]: Out(asset_key=source_asset_key)})
-            def _op():
-                pass
-
-        step_context = input_context.step_context
-        resource_config = step_context.resolved_run_config.resources[
-            source_asset.io_manager_key
-        ].config
-        io_manager_def = (
-            step_context.pipeline.get_definition()
-            .mode_definitions[0]
-            .resource_defs[source_asset.io_manager_key]
-        )
-        resources = step_context.scoped_resources_builder.build(
-            io_manager_def.required_resource_keys
-        )
-
-        output_context = build_output_context(
-            name=source_asset_key.path[-1],
-            step_key="none",
-            solid_def=_op,
-            metadata=cast(Dict[str, Any], source_asset.metadata),
-            resource_config=resource_config,
-            resources=cast(NamedTuple, resources)._asdict(),
-        )
-        input_context_with_upstream = build_input_context(
-            name=input_context.name,
-            metadata=input_context.metadata,
-            config=input_context.config,
-            dagster_type=input_context.dagster_type,
-            upstream_output=output_context,
-            op_def=input_context.op_def,
-            step_context=input_context.step_context,
-            resource_config=resource_config,
-            resources=cast(NamedTuple, resources)._asdict(),
-        )
-
-        io_manager = getattr(cast(Any, input_context.resources), source_asset.io_manager_key)
-        yield from io_manager.load_input(input_context_with_upstream)
 
     def load_input_object(
         self,
@@ -235,6 +291,7 @@ class FromRootInputManager(
             ].config,
             resources=build_resources_for_manager(input_def.root_manager_key, step_context),
         )
+
         yield from _load_input_with_input_manager(loader, load_input_context)
 
         metadata_entries = load_input_context.consume_metadata_entries()
