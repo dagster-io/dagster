@@ -25,10 +25,11 @@ interface Props {
   repoPath?: string;
 }
 
-type JobItem = {
+export type JobItem = {
   name: string;
   isJob: boolean;
   label: React.ReactNode;
+  path: string;
   repoAddress: RepoAddress;
   schedule: WorkspaceRepositorySchedule | null;
   sensor: WorkspaceRepositorySensor | null;
@@ -47,41 +48,13 @@ export const FlatContentList: React.FC<Props> = (props) => {
   const jobs = React.useMemo(() => {
     const items: JobItem[] = [];
 
-    for (const {repository, repositoryLocation} of repos) {
+    for (const option of repos) {
+      const {repository, repositoryLocation} = option;
       const address = buildRepoAddress(repository.name, repositoryLocation.name);
       if (!activeRepoAddresses.has(address)) {
         continue;
       }
-
-      const {schedules, sensors} = repository;
-      for (const pipeline of repository.pipelines) {
-        if (isAssetGroup(pipeline.name)) {
-          continue;
-        }
-
-        const {isJob, name} = pipeline;
-        const schedule = schedules.find((schedule) => schedule.pipelineName === name) || null;
-        const sensor =
-          sensors.find((sensor) =>
-            sensor.targets?.map((target) => target.pipelineName).includes(name),
-          ) || null;
-        items.push({
-          name,
-          isJob,
-          label: (
-            <Label $hasIcon={!!(schedule || sensor) || !isJob}>
-              <TruncatingName data-tooltip={name} data-tooltip-style={LabelTooltipStyles}>
-                {name}
-              </TruncatingName>
-              <div style={{flex: 1}} />
-              {isJob ? null : <LegacyPipelineTag />}
-            </Label>
-          ),
-          repoAddress: address,
-          schedule,
-          sensor,
-        });
-      }
+      items.push(...getJobItemsForOption(option));
     }
 
     return items.sort((a, b) =>
@@ -114,15 +87,55 @@ export const FlatContentList: React.FC<Props> = (props) => {
   );
 };
 
+export const getJobItemsForOption = (option: DagsterRepoOption) => {
+  const items: JobItem[] = [];
+
+  const {repository, repositoryLocation} = option;
+  const address = buildRepoAddress(repository.name, repositoryLocation.name);
+
+  const {schedules, sensors} = repository;
+  for (const pipeline of repository.pipelines) {
+    if (isAssetGroup(pipeline.name)) {
+      continue;
+    }
+
+    const {isJob, name} = pipeline;
+    const schedule = schedules.find((schedule) => schedule.pipelineName === name) || null;
+    const sensor =
+      sensors.find((sensor) =>
+        sensor.targets?.map((target) => target.pipelineName).includes(name),
+      ) || null;
+    items.push({
+      name,
+      isJob,
+      label: (
+        <Label $hasIcon={!!(schedule || sensor) || !isJob}>
+          <TruncatingName data-tooltip={name} data-tooltip-style={LabelTooltipStyles}>
+            {name}
+          </TruncatingName>
+          <div style={{flex: 1}} />
+          {isJob ? null : <LegacyPipelineTag />}
+        </Label>
+      ),
+      path: workspacePathFromAddress(address, `/${isJob ? 'jobs' : 'pipelines'}/${name}`),
+      repoAddress: address,
+      schedule,
+      sensor,
+    });
+  }
+
+  return items;
+};
+
 interface JobItemProps {
   job: JobItem;
   repoPath?: string;
   selector?: string;
 }
 
-const JobItem: React.FC<JobItemProps> = (props) => {
+export const JobItem: React.FC<JobItemProps> = (props) => {
   const {job: jobItem, repoPath, selector} = props;
-  const {name, isJob, label, repoAddress, schedule, sensor} = jobItem;
+  const {name, label, path, repoAddress, schedule, sensor} = jobItem;
 
   const jobRepoPath = repoAddressAsString(repoAddress);
 
@@ -159,9 +172,8 @@ const JobItem: React.FC<JobItemProps> = (props) => {
   return (
     <ItemContainer>
       <Item
-        key={name}
         className={`${name === selector && repoPath === jobRepoPath ? 'selected' : ''}`}
-        to={workspacePathFromAddress(repoAddress, `/${isJob ? 'jobs' : 'pipelines'}/${name}`)}
+        to={path}
       >
         <div>{label}</div>
       </Item>
