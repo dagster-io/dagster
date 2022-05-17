@@ -1168,12 +1168,11 @@ def test_ounsatisfied_input_nested():
     def the_graph(x):
         ingest(x)
 
-    @graph
-    def the_top_level_graph():
-        the_graph()
-
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Input 'x' of op 'ingest' has no upstream output, no default value, and no dagster type loader.",
+        match="Input 'x' of graph 'the_graph' has no way of being resolved.",
     ):
-        the_top_level_graph.to_job()
+
+        @graph
+        def the_top_level_graph():
+            the_graph()

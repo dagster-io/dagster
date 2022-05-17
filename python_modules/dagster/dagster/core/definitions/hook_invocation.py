@@ -1,8 +1,7 @@
-from typing import TYPE_CHECKING, List, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, List, Optional
 
 import dagster._check as check
 
-from ..errors import DagsterInvariantViolationError
 from ..execution.context.hook import BoundHookContext, UnboundHookContext
 
 if TYPE_CHECKING:
@@ -21,15 +20,9 @@ def hook_invocation_result(
         )
 
     # Validate that all required resources are provided in the context
-    for key in hook_def.required_resource_keys:
-        resources = cast(NamedTuple, hook_context.resources)
-        if key not in resources._asdict():
-            raise DagsterInvariantViolationError(
-                f"The hook '{hook_def.name}' requires resource '{key}', which was not provided by "
-                "the context."
-            )
-
     # pylint: disable=protected-access
+    for requirement in hook_def.get_resource_requirements():
+        requirement.requirement_satisfied(hook_context._resource_defs)
 
     bound_context = BoundHookContext(
         hook_def=hook_def,

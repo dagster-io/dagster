@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Mapping, Sequence
+from typing import TYPE_CHECKING, List, Mapping, Sequence
 
 import dagster._check as check
 from dagster.core.definitions.configurable import NamedConfigurableDefinition
@@ -145,6 +145,10 @@ class NodeDefinition(NamedConfigurableDefinition):
 
     @abstractmethod
     def input_supports_dynamic_output_dep(self, input_name):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_inputs_must_be_resolved_top_level(self) -> List["InputDefinition"]:
         raise NotImplementedError()
 
     def all_input_output_types(self):

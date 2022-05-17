@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 def resource_invocation_result(
-    resource_def: "ResourceDefinition", init_context: Optional["InitResourceContext"]
+    resource_def: "ResourceDefinition", init_context: Optional["UnboundInitResourceContext"]
 ) -> Any:
     from .resource_definition import is_context_provided
 
@@ -43,7 +43,7 @@ def resource_invocation_result(
 
 
 def _check_invocation_requirements(
-    resource_def: "ResourceDefinition", init_context: Optional["InitResourceContext"]
+    resource_def: "ResourceDefinition", init_context: Optional["UnboundInitResourceContext"]
 ) -> "InitResourceContext":
     from dagster.core.execution.context.init import InitResourceContext, build_init_resource_context
 
@@ -55,17 +55,10 @@ def _check_invocation_requirements(
         )
 
     if init_context is not None and resource_def.required_resource_keys:
-        resources_dict = cast(
-            "InitResourceContext",
-            init_context,
-        ).resources._asdict()  # type: ignore[attr-defined]
-
-        for resource_key in resource_def.required_resource_keys:
-            if resource_key not in resources_dict:
-                raise DagsterInvalidInvocationError(
-                    f'Resource requires resource "{resource_key}", but no resource '
-                    "with that key was found on the context."
-                )
+        for requirement in resource_def.get_resource_requirements():
+            requirement.requirement_satisfied(
+                init_context._resource_defs  # pylint: disable=protected-access
+            )
 
     # Check config requirements
     if not init_context and resource_def.config_schema.as_field().is_required:

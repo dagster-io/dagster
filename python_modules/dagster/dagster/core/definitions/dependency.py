@@ -6,6 +6,7 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
+    Iterator,
     List,
     NamedTuple,
     Optional,
@@ -35,6 +36,7 @@ if TYPE_CHECKING:
     from .composition import MappedInputPlaceholder
     from .graph_definition import GraphDefinition
     from .node_definition import NodeDefinition
+    from .resource_requirement import ResourceRequirement
 
 
 class NodeInvocation(
@@ -240,6 +242,35 @@ class Node:
     @property
     def retry_policy(self) -> Optional[RetryPolicy]:
         return self._retry_policy
+
+    def get_resource_requirements(
+        self,
+        parent_handle: Optional["NodeHandle"] = None,
+        outer_container: Optional["GraphDefinition"] = None,
+    ) -> Iterator["ResourceRequirement"]:
+        from .resource_requirement import InputManagerRequirement
+
+        cur_node_handle = NodeHandle(self.name, parent_handle)
+
+        if not self.is_graph:
+            solid_def = self.definition.ensure_solid_def()
+            for requirement in solid_def.get_resource_requirements(cur_node_handle):
+                # If requirement is a root input manager requirement, but the corresponding node has an upstream output, then ignore the requirement.
+                if (
+                    isinstance(requirement, InputManagerRequirement)
+                    and outer_container
+                    and outer_container.dependency_structure.has_deps(
+                        SolidInputHandle(self, solid_def.input_def_named(requirement.input_name))
+                    )
+                ):
+                    continue
+                yield requirement
+            for hook_def in self.hook_defs:
+                yield from hook_def.get_resource_requirements(self.describe_node())
+        else:
+            graph_def = self.definition.ensure_graph_def()
+            for node in graph_def.node_dict.values():
+                yield from node.get_resource_requirements(cur_node_handle, graph_def)
 
 
 class NodeHandleSerializer(DefaultNamedTupleSerializer):

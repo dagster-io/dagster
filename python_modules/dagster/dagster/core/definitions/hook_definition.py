@@ -1,9 +1,10 @@
-from typing import AbstractSet, Any, Callable, NamedTuple, Optional
+from typing import AbstractSet, Any, Callable, Iterator, NamedTuple, Optional, cast
 
 import dagster._check as check
 
 from ..decorator_utils import get_function_params
 from ..errors import DagsterInvalidInvocationError
+from .resource_requirement import HookResourceRequirement, RequiresResources, ResourceRequirement
 from .utils import check_valid_name
 
 
@@ -16,7 +17,8 @@ class HookDefinition(
             ("required_resource_keys", AbstractSet[str]),
             ("decorated_fn", Optional[Callable]),
         ],
-    )
+    ),
+    RequiresResources,
 ):
     """Define a hook which can be triggered during a op execution (e.g. a callback on the step
     execution failure event during a op execution).
@@ -134,3 +136,13 @@ class HookDefinition(
                         kwargs[context_arg_name], context_arg_name, HookContext
                     )
                 return hook_invocation_result(self, context)
+
+    def get_resource_requirements(
+        self, outer_context: Optional[object] = None
+    ) -> Iterator[ResourceRequirement]:
+        # outer_context in this case is a string of (pipeline/job, pipeline/job name) or (node, node name)
+        attached_to = cast(Optional[str], outer_context)
+        for resource_key in sorted(list(self.required_resource_keys)):
+            yield HookResourceRequirement(
+                key=resource_key, attached_to=attached_to, hook_name=self.name
+            )
