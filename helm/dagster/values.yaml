@@ -160,7 +160,6 @@ dagit:
 computeLogManager:
   # Type can be one of [
   #   NoOpComputeLogManager,
-  #   LocalComputeLogManager (deprecated - if set, NoOpComputeLogManager will be used instead),
   #   AzureBlobComputeLogManager,
   #   GCSComputeLogManager,
   #   S3ComputeLogManager,
