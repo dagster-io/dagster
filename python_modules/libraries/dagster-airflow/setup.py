@@ -54,6 +54,9 @@ if __name__ == "__main__":
                 "kubernetes==10.0.1",
                 # New WTForms release breaks the version of airflow used by tests
                 "WTForms<3.0.0",
+                # pinned based on certain incompatible versions of Jinja2, which is itself pinned
+                # by apache-airflow==1.10.10
+                "markupsafe<=2.0.1",
             ],
         },
         entry_points={"console_scripts": ["dagster-airflow = dagster_airflow.cli:main"]},
