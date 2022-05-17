@@ -414,16 +414,9 @@ def test_custom_run_coordinator_config(template: HelmTemplate):
     assert instance["run_coordinator"]["config"] == config
 
 
-@pytest.mark.parametrize(
-    "compute_log_manager_type",
-    [ComputeLogManagerType.NOOP, ComputeLogManagerType.LOCAL],
-    ids=["noop", "local compute log manager becomes noop"],
-)
-def test_noop_compute_log_manager(
-    template: HelmTemplate, compute_log_manager_type: ComputeLogManagerType
-):
+def test_noop_compute_log_manager(template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(
-        computeLogManager=ComputeLogManager.construct(type=compute_log_manager_type)
+        computeLogManager=ComputeLogManager.construct(type=ComputeLogManagerType.NOOP)
     )
 
     configmaps = template.render(helm_values)
