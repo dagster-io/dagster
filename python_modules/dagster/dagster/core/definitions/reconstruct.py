@@ -146,6 +146,10 @@ class ReconstructablePipeline(
             be run.
         solids_to_execute (Optional[FrozenSet[str]]): A set of solid/op names to execute. None if no selection
             is specified, i.e. the entire pipeline/job will be run.
+        solids_to_execute (Optional[FrozenSet[str]]): A set of solid/op names to execute. None if no selection
+            is specified, i.e. the entire pipeline/job will be run.
+        asset_selection (Optional[FrozenSet[AssetKey]]) A set of assets to execute. None if no selection
+            is specified, i.e. the entire job will be run.
     """
 
     def __new__(
@@ -157,6 +161,7 @@ class ReconstructablePipeline(
         asset_selection=None,
     ):
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+        check.opt_set_param(asset_selection, "asset_selection", AssetKey)
         return super(ReconstructablePipeline, cls).__new__(
             cls,
             repository=check.inst_param(repository, "repository", ReconstructableRepository),
@@ -181,7 +186,7 @@ class ReconstructablePipeline(
                 return (
                     self.repository.get_definition()
                     .get_pipeline(self.pipeline_name)
-                    .get_job_def_for_asset_selection(list(self.asset_selection))
+                    .get_job_def_for_asset_selection(self.asset_selection)
                 )
             return (
                 self.repository.get_definition().get_pipeline(self.pipeline_name)
@@ -205,7 +210,7 @@ class ReconstructablePipeline(
         self,
         solids_to_execute: Optional[Optional[FrozenSet[str]]],
         solid_selection: Optional[List[str]],
-        asset_selection: Optional[List[AssetKey]],
+        asset_selection: Optional[FrozenSet[AssetKey]],
     ) -> "ReconstructablePipeline":
         # no selection
         if solid_selection is None and solids_to_execute is None and asset_selection is None:
@@ -222,7 +227,7 @@ class ReconstructablePipeline(
                 return ReconstructablePipeline(
                     repository=self.repository,
                     pipeline_name=self.pipeline_name,
-                    asset_selection=frozenset(asset_selection),
+                    asset_selection=asset_selection,
                 )
             # when subselecting a job
             # * job subselection depend on solid_selection rather than solids_to_execute
@@ -257,11 +262,11 @@ class ReconstructablePipeline(
     def subset_for_execution(
         self,
         solid_selection: Optional[List[str]] = None,
-        asset_selection: Optional[List[AssetKey]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ) -> "ReconstructablePipeline":
         # take a list of unresolved selection queries
         check.opt_list_param(solid_selection, "solid_selection", of_type=str)
-        check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey)
+        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         check.invariant(
             not (solid_selection and asset_selection),
@@ -275,7 +280,7 @@ class ReconstructablePipeline(
     def subset_for_execution_from_existing_pipeline(
         self,
         solids_to_execute: Optional[FrozenSet[str]] = None,
-        asset_selection: Optional[List[AssetKey]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ) -> "ReconstructablePipeline":
         # take a frozenset of resolved solid names from an existing pipeline
         # so there's no need to parse the selection
@@ -286,7 +291,7 @@ class ReconstructablePipeline(
         )
 
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
-        check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey)
+        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         return self._subset_for_execution(
             solids_to_execute=solids_to_execute,

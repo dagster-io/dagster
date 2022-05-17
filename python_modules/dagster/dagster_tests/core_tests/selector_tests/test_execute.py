@@ -31,9 +31,9 @@ def test_subset_for_execution():
 def test_asset_subset_for_execution():
     in_mem_pipeline = InMemoryPipeline(asset_selection_job)
     sub_pipeline = in_mem_pipeline.subset_for_execution(
-        solid_selection=None, asset_selection=[AssetKey("my_asset")]
+        solid_selection=None, asset_selection={AssetKey("my_asset")}
     )
-    assert sub_pipeline.asset_selection == [AssetKey("my_asset")]
+    assert sub_pipeline.asset_selection == {AssetKey("my_asset")}
 
     result = execute_pipeline(sub_pipeline)
     assert result.success
@@ -45,7 +45,7 @@ def test_asset_subset_for_execution():
         execution_plan = create_execution_plan(sub_pipeline)
         pipeline_run = instance.create_run_for_pipeline(
             asset_selection_job,
-            asset_selection=[AssetKey("my_asset")],
+            asset_selection={AssetKey("my_asset")},
             execution_plan=execution_plan,
         )
 
@@ -69,7 +69,7 @@ def test_reexecute_asset_subset():
         assert materializations[0].asset_key == AssetKey("my_asset")
 
         run = instance.get_run_by_id(result.run_id)
-        assert run.asset_selection == [AssetKey("my_asset")]
+        assert run.asset_selection == {AssetKey("my_asset")}
 
         reexecution_result = reexecute_pipeline(
             asset_selection_job,
@@ -83,7 +83,7 @@ def test_reexecute_asset_subset():
         assert len(materializations) == 1
         assert materializations[0].asset_key == AssetKey("my_asset")
         run = instance.get_run_by_id(reexecution_result.run_id)
-        assert run.asset_selection == [AssetKey("my_asset")]
+        assert run.asset_selection == {AssetKey("my_asset")}
 
 
 def test_execute_pipeline_with_solid_selection_single_clause():

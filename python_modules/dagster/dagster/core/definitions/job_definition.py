@@ -4,6 +4,7 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
+    FrozenSet,
     List,
     Mapping,
     Optional,
@@ -43,7 +44,7 @@ from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.utils import str_format_set
 from dagster.utils import merge_dicts
 
-from .asset_layer import AssetLayer, _build_asset_selection_job
+from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
@@ -238,7 +239,9 @@ class JobDefinition(PipelineDefinition):
         if op_selection:
             ephemeral_job = ephemeral_job.get_job_def_for_op_selection(op_selection)
         elif asset_selection:
-            ephemeral_job = ephemeral_job.get_job_def_for_asset_selection(asset_selection)
+            ephemeral_job = ephemeral_job.get_job_def_for_asset_selection(
+                frozenset(asset_selection)
+            )
 
         tags = None
         if partition_key:
@@ -269,7 +272,7 @@ class JobDefinition(PipelineDefinition):
             raise_on_error=raise_on_error,
             run_tags=tags,
             run_id=run_id,
-            asset_selection=asset_selection,
+            asset_selection=frozenset(asset_selection),
         )
 
     @property
@@ -282,29 +285,35 @@ class JobDefinition(PipelineDefinition):
 
     def get_job_def_for_asset_selection(
         self,
-        asset_selection: Optional[List[AssetKey]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ) -> "JobDefinition":
-        asset_selection = check.opt_list_param(asset_selection, "asset_selection", AssetKey)
+        asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
 
         for asset in asset_selection:
             nonexistent_assets = [
                 asset for asset in asset_selection if asset not in self.asset_layer.asset_keys
             ]
+            nonexistent_asset_strings = [
+                asset_str
+                for asset_str in (asset.to_string() for asset in nonexistent_assets)
+                if asset_str
+            ]
             if nonexistent_assets:
                 raise DagsterInvalidSubsetError(
                     "Assets provided in asset_selection argument "
-                    f"{', '.join([asset.to_string() for asset in nonexistent_assets])} do not exist in parent asset group or job."
+                    f"{', '.join(nonexistent_asset_strings)} do not exist in parent asset group or job."
                 )
-        new_job = _build_asset_selection_job(
-            job_to_subselect=self, asset_selection=asset_selection, asset_layer=self.asset_layer
-        )
         asset_selection_data = AssetSelectionData(
             asset_selection=asset_selection,
             parent_job_def=self,
         )
-        return new_job._with_asset_selection_data(  # pylint: disable=protected-access
-            asset_selection_data
+        new_job = build_asset_selection_job(
+            job_to_subselect=self,
+            asset_selection=asset_selection,
+            asset_layer=self.asset_layer,
+            asset_selection_data=asset_selection_data,
         )
+        return new_job
 
     def get_job_def_for_op_selection(
         self,

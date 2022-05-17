@@ -1,7 +1,7 @@
 import re
 import sys
 from collections import defaultdict, deque
-from typing import TYPE_CHECKING, AbstractSet, Dict, List, NamedTuple
+from typing import TYPE_CHECKING, AbstractSet, Dict, FrozenSet, List, NamedTuple
 
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.events import AssetKey
@@ -50,7 +50,7 @@ class AssetSelectionData(
     NamedTuple(
         "_AssetSelectionData",
         [
-            ("asset_selection", List[AssetKey]),
+            ("asset_selection", FrozenSet[AssetKey]),
             ("parent_job_def", "JobDefinition"),
         ],
     )
@@ -58,7 +58,7 @@ class AssetSelectionData(
     """The data about asset selection.
 
     Attributes:
-        asset_selection (List[AssetKey]): The queries of asset selection.
+        asset_selection (FrozenSet[AssetKey]): The set of assets to be materialized within the job.
         parent_job_def (JobDefinition): The definition of the full job. This is used for constructing
             pipeline snapshot lineage.
     """
@@ -68,7 +68,7 @@ class AssetSelectionData(
 
         return super(AssetSelectionData, cls).__new__(
             cls,
-            asset_selection=check.list_param(asset_selection, "asset_selection", AssetKey),
+            asset_selection=check.set_param(asset_selection, "asset_selection", AssetKey),
             parent_job_def=check.inst_param(parent_job_def, "parent_job_def", JobDefinition),
         )
 

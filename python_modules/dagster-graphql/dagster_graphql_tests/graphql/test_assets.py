@@ -814,7 +814,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         run_id = _create_run(graphql_context, "foo_job", asset_selection=[{"path": ["bar"]}])
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run.is_finished
-        assert run.asset_selection == [AssetKey("bar")]
+        assert run.asset_selection == {AssetKey("bar")}
 
     def test_execute_pipeline_subset(self, graphql_context):
         # Assets foo and bar are upstream dependencies of asset foo_bar
@@ -882,7 +882,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         events = _get_sorted_materialization_events(graphql_context, run_id)
         assert len(events) == 1
         assert events[0].get_dagster_event().asset_key == AssetKey("bar")
-        assert run.asset_selection == [AssetKey("bar")]
+        assert run.asset_selection == {AssetKey("bar")}
 
         selector = infer_job_or_pipeline_selector(
             graphql_context, "foo_job", asset_selection=[{"path": ["bar"]}]
@@ -905,7 +905,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         events = _get_sorted_materialization_events(graphql_context, run_id)
         assert len(events) == 1
         assert events[0].get_dagster_event().asset_key == AssetKey("bar")
-        assert run.asset_selection == [AssetKey("bar")]
+        assert run.asset_selection == {AssetKey("bar")}
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):

@@ -280,7 +280,7 @@ class PipelineRun(
             ("run_id", str),
             ("run_config", Mapping[str, object]),
             ("mode", Optional[str]),
-            ("asset_selection", Optional[List[AssetKey]]),
+            ("asset_selection", Optional[FrozenSet[AssetKey]]),
             ("solid_selection", Optional[List[str]]),
             ("solids_to_execute", Optional[FrozenSet[str]]),
             ("step_keys_to_execute", Optional[List[str]]),
@@ -305,7 +305,7 @@ class PipelineRun(
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
         mode: Optional[str] = None,
-        asset_selection: Optional[List[AssetKey]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
         solid_selection: Optional[List[str]] = None,
         solids_to_execute: Optional[FrozenSet[str]] = None,
         step_keys_to_execute: Optional[List[str]] = None,
@@ -337,7 +337,7 @@ class PipelineRun(
         )
         check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
-        asset_selection = check.opt_nullable_list_param(
+        asset_selection = check.opt_nullable_set_param(
             asset_selection, "asset_selection", of_type=AssetKey
         )
 

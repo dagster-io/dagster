@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Union, cast
+from typing import AbstractSet, Any, Dict, FrozenSet, List, NamedTuple, Optional, Union, cast
 
 from dagster import Field, Map, Permissive, Selector, Shape
 from dagster import _check as check
@@ -191,7 +191,7 @@ class PipelineSnapshot(
                 parent_snapshot_id=create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.asset_selection_data.parent_job_def)
                 ),
-                asset_selection=sorted(pipeline_def.asset_selection_data.asset_selection),
+                asset_selection=pipeline_def.asset_selection_data.asset_selection,
             )
 
         return PipelineSnapshot(
@@ -429,7 +429,7 @@ class PipelineSnapshotLineage(
             ("parent_snapshot_id", str),
             ("solid_selection", Optional[List[str]]),
             ("solids_to_execute", Optional[AbstractSet[str]]),
-            ("asset_selection", Optional[List[AssetKey]]),
+            ("asset_selection", Optional[FrozenSet[AssetKey]]),
         ],
     )
 ):
@@ -438,7 +438,7 @@ class PipelineSnapshotLineage(
         parent_snapshot_id: str,
         solid_selection: Optional[List[str]] = None,
         solids_to_execute: Optional[AbstractSet[str]] = None,
-        asset_selection: Optional[List[AssetKey]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ):
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         return super(PipelineSnapshotLineage, cls).__new__(

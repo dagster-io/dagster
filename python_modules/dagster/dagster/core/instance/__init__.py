@@ -773,7 +773,7 @@ class DagsterInstance:
         # solid_selection is only used to pass the user queries further down.
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         check.opt_list_param(solid_selection, "solid_selection", of_type=str)
-        check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey)
+        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         if solids_to_execute:
             if isinstance(pipeline_def, PipelineSubsetDefinition):

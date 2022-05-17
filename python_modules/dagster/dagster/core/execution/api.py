@@ -913,7 +913,6 @@ def _check_execute_pipeline_args(
     preset: Optional[str],
     tags: Optional[Dict[str, Any]],
     solid_selection: Optional[List[str]] = None,
-    asset_selection=None,
 ) -> Tuple[
     IPipeline,
     Optional[dict],
@@ -1000,8 +999,8 @@ def _check_execute_pipeline_args(
     tags = merge_dicts(pipeline_def.tags, tags)
 
     # generate pipeline subset from the given solid_selection
-    if solid_selection or asset_selection:
-        pipeline = pipeline.subset_for_execution(solid_selection, asset_selection)
+    if solid_selection:
+        pipeline = pipeline.subset_for_execution(solid_selection)
 
     return (
         pipeline,

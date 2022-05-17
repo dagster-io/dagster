@@ -75,7 +75,9 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
         run_id=execution_params.execution_metadata.run_id
         if execution_params.execution_metadata.run_id
         else make_new_run_id(),
-        asset_selection=execution_params.selector.asset_selection,
+        asset_selection=frozenset(execution_params.selector.asset_selection)
+        if execution_params.selector.asset_selection
+        else None,
         solid_selection=execution_params.selector.solid_selection,
         solids_to_execute=frozenset(execution_params.selector.solid_selection)
         if execution_params.selector.solid_selection

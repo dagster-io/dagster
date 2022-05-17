@@ -26,7 +26,7 @@ class IPipeline(ABC):
     def subset_for_execution(
         self,
         solid_selection: Optional[List[str]] = None,
-        asset_selection: Optional[List[AssetKey]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ) -> "IPipeline":
         pass
 
@@ -39,7 +39,7 @@ class IPipeline(ABC):
     def subset_for_execution_from_existing_pipeline(
         self,
         solids_to_execute: Optional[FrozenSet[str]] = None,
-        asset_selection: Optional[List[AssetKey]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ) -> "IPipeline":
         pass
 
@@ -93,11 +93,11 @@ class InMemoryPipeline(IPipeline, object):
     def subset_for_execution(
         self,
         solid_selection: Optional[List[str]] = None,
-        asset_selection: Optional[List[AssetKey]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ):
         # take a list of solid queries and resolve the queries to names of solids to execute
         solid_selection = check.opt_list_param(solid_selection, "solid_selection", of_type=str)
-        check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey)
+        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         check.invariant(
             not (solid_selection and asset_selection),
@@ -112,19 +112,18 @@ class InMemoryPipeline(IPipeline, object):
     def subset_for_execution_from_existing_pipeline(
         self,
         solids_to_execute: Optional[FrozenSet[str]] = None,
-        asset_selection: Optional[List[AssetKey]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ):
         # take a frozenset of resolved solid names from an existing pipeline run
         # so there's no need to parse the selection
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
-        check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey)
+        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         check.invariant(
             not (solids_to_execute and asset_selection),
             "solids_to_execute and asset_selection cannot both be provided as arguments",
         )
 
-        # TODO add typecheck
         return self._subset_for_execution(solids_to_execute, asset_selection=asset_selection)
 
     @property
@@ -138,5 +137,5 @@ class InMemoryPipeline(IPipeline, object):
         return self._solids_to_execute  # FrozenSet[str]
 
     @property
-    def asset_selection(self) -> List[AssetKey]:
+    def asset_selection(self) -> FrozenSet[AssetKey]:
         return self._asset_selection

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, Optional, cast
+from typing import Any, Dict, FrozenSet, List, Mapping, Optional, cast
 
 from dagster.core.definitions import (
     GraphDefinition,
@@ -37,7 +37,7 @@ def core_execute_in_process(
     raise_on_error: bool,
     run_tags: Optional[Dict[str, Any]] = None,
     run_id: Optional[str] = None,
-    asset_selection: Optional[List[AssetKey]] = None,
+    asset_selection: Optional[FrozenSet[AssetKey]] = None,
 ) -> ExecuteInProcessResult:
     job_def = ephemeral_pipeline
     mode_def = job_def.get_mode_definition()

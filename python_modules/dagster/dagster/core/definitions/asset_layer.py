@@ -3,6 +3,7 @@ from typing import (
     AbstractSet,
     Callable,
     Dict,
+    FrozenSet,
     Iterable,
     List,
     Mapping,
@@ -16,6 +17,7 @@ from typing import (
 
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey
+from dagster.core.selector.subset_selector import AssetSelectionData
 
 from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
 from .graph_definition import GraphDefinition
@@ -466,10 +468,11 @@ class AssetLayer:
         )
 
 
-def _build_asset_selection_job(
+def build_asset_selection_job(
     job_to_subselect: "JobDefinition",
-    asset_selection: List[AssetKey],
+    asset_selection: FrozenSet[AssetKey],
     asset_layer: AssetLayer,
+    asset_selection_data: AssetSelectionData,
 ) -> "JobDefinition":
     from ..asset_defs.asset_group import build_resource_defs
     from ..asset_defs.assets_job import build_assets_job
@@ -495,4 +498,5 @@ def _build_asset_selection_job(
         executor_def=job_to_subselect.executor_def,
         description=job_to_subselect.description,
         tags=job_to_subselect.tags,
+        _asset_selection_data=asset_selection_data,
     )

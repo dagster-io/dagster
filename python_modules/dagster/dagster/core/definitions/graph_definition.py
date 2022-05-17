@@ -27,6 +27,7 @@ from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.utils import check_valid_name
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.core.storage.io_manager import io_manager
 from dagster.core.types.dagster_type import (
     DagsterType,
@@ -464,6 +465,7 @@ class GraphDefinition(NodeDefinition):
         partitions_def: Optional["PartitionsDefinition"] = None,
         asset_layer: Optional["AssetLayer"] = None,
         input_values: Optional[Mapping[str, object]] = None,
+        _asset_selection_data: Optional[AssetSelectionData] = None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -589,6 +591,7 @@ class GraphDefinition(NodeDefinition):
             op_retry_policy=op_retry_policy,
             asset_layer=asset_layer,
             _input_values=input_values,
+            _asset_selection_data=_asset_selection_data,
         ).get_job_def_for_op_selection(op_selection)
 
     def coerce_to_job(self):

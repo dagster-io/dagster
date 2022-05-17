@@ -1,5 +1,4 @@
 from graphql.execution.base import ResolveInfo
-
 import dagster._check as check
 from dagster.core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster.core.host_representation.selector import PipelineSelector
@@ -34,7 +33,6 @@ def do_launch(graphene_info, execution_params, is_reexecuted=False):
         check.str_param(execution_metadata.root_run_id, "root_run_id")
         check.str_param(execution_metadata.parent_run_id, "parent_run_id")
     external_pipeline = get_external_pipeline_or_raise(graphene_info, execution_params.selector)
-
     pipeline_run = create_valid_pipeline_run(graphene_info, external_pipeline, execution_params)
 
     return graphene_info.context.instance.submit_run(

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional
+from typing import Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster.core.code_pointer import CodePointer
@@ -23,7 +23,6 @@ class ExecutionPlanSnapshotArgs(
         "_ExecutionPlanSnapshotArgs",
         [
             ("pipeline_origin", ExternalPipelineOrigin),
-            ("asset_selection", List[AssetKey]),
             ("solid_selection", List[str]),
             ("run_config", Mapping[str, object]),
             ("mode", str),
@@ -31,13 +30,13 @@ class ExecutionPlanSnapshotArgs(
             ("pipeline_snapshot_id", str),
             ("known_state", Optional[KnownExecutionState]),
             ("instance_ref", Optional[InstanceRef]),
+            ("asset_selection", Optional[FrozenSet[AssetKey]]),
         ],
     )
 ):
     def __new__(
         cls,
         pipeline_origin: ExternalPipelineOrigin,
-        asset_selection: List[AssetKey],
         solid_selection: List[str],
         run_config: Mapping[str, object],
         mode: str,
@@ -45,14 +44,12 @@ class ExecutionPlanSnapshotArgs(
         pipeline_snapshot_id: str,
         known_state: Optional[KnownExecutionState] = None,
         instance_ref: Optional[InstanceRef] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
                 pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
-            ),
-            asset_selection=check.opt_list_param(
-                asset_selection, "asset_selection", of_type=AssetKey
             ),
             solid_selection=check.opt_list_param(solid_selection, "solid_selection", of_type=str),
             run_config=check.dict_param(run_config, "run_config", key_type=str),
@@ -63,6 +60,9 @@ class ExecutionPlanSnapshotArgs(
             pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
             known_state=check.opt_inst_param(known_state, "known_state", KnownExecutionState),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            asset_selection=check.opt_set_param(
+                asset_selection, "asset_selection", of_type=AssetKey
+            ),
         )
 
 

@@ -211,7 +211,7 @@ def get_external_pipeline_subset_result(
         try:
             sub_pipeline = recon_pipeline.subset_for_execution(
                 solid_selection=solid_selection,
-                asset_selection=asset_selection,
+                asset_selection=frozenset(asset_selection) if asset_selection else None,
             )
             definition = sub_pipeline.get_definition()
         except Exception:
