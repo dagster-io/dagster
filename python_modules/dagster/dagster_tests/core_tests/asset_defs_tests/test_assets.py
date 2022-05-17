@@ -1,7 +1,7 @@
 import pytest
 
 from dagster import AssetKey, Out, Output
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, multi_asset
 
 

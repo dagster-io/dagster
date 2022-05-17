@@ -295,6 +295,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.partition_time_window
 
+    @property
     def selected_asset_keys(self) -> AbstractSet[AssetKey]:
         return self.job_def.asset_layer.asset_keys_for_node(self.solid_handle)
 
