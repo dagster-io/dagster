@@ -76,6 +76,8 @@ class OutputContext:
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
         asset_info: Optional[AssetOutputInfo] = None,
+        asset_partition_key_range: Optional[PartitionKeyRange] = None,
+        asset_partitions_time_window: Optional[TimeWindow] = None,
     ):
         from dagster.core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster.core.execution.build_resources import build_resources
@@ -97,6 +99,8 @@ class OutputContext:
         self._resource_config = resource_config
         self._step_context = step_context
         self._asset_info = asset_info
+        self._asset_partition_key_range = asset_partition_key_range
+        self._asset_partitions_time_window = asset_partitions_time_window
 
         if isinstance(resources, Resources):
             self._resources_cm = None
@@ -285,10 +289,7 @@ class OutputContext:
 
     @property
     def has_asset_partitions(self) -> bool:
-        if self._step_context is not None:
-            return self._step_context.has_asset_partitions_for_output(self.name)
-        else:
-            return False
+        return self._asset_partition_key_range is not None
 
     @property
     def asset_partition_key(self) -> str:
@@ -297,7 +298,22 @@ class OutputContext:
         Raises an error if the output asset has no partitioning, or if the run covers a partition
         range for the output asset.
         """
-        return self.step_context.asset_partition_key_for_output(self.name)
+        if self._asset_partition_key_range is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access asset_partitions, "
+                "but it was not provided when constructing the OutputContext"
+            )
+
+        start, end = self._asset_partition_key_range
+        if start == end:
+            return start
+        else:
+            check.failed(
+                f"Tried to access partition key for output '{self.name}' of step '{self.step_key}', "
+                f"but the step output has a partition range: '{start}' to '{end}'."
+            )
+
+        return self._asset_partitions
 
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
@@ -305,7 +321,13 @@ class OutputContext:
 
         Raises an error if the output asset has no partitioning.
         """
-        return self.step_context.asset_partition_key_range_for_output(self.name)
+        if self._asset_partition_key_range is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access asset_partition_key_range, "
+                "but it was not provided when constructing the OutputContext"
+            )
+
+        return self._asset_partition_key_range
 
     @property
     def asset_partitions_time_window(self) -> TimeWindow:
@@ -315,7 +337,13 @@ class OutputContext:
         - The output asset has no partitioning.
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
         """
-        return self.step_context.asset_partitions_time_window_for_output(self.name)
+        if self._asset_partitions_time_window is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access asset_partitions_time_window, "
+                "but it was not provided when constructing the OutputContext"
+            )
+
+        return self._asset_partitions_time_window
 
     def get_run_scoped_output_identifier(self) -> List[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique
@@ -534,6 +562,8 @@ def get_output_context(
     step_context: Optional["StepExecutionContext"],
     resources: Optional["Resources"],
     version: Optional[str],
+    asset_partition_key_range: Optional[PartitionKeyRange] = None,
+    asset_partitions_time_window: Optional[TimeWindow] = None,
 ) -> "OutputContext":
     """
     Args:
@@ -571,6 +601,24 @@ def get_output_context(
         )
         resources = build_resources_for_manager(io_manager_key, step_context)
 
+    output_name = step_output_handle.output_name
+
+    # derive asset related data from step_context if provided
+    if step_context is not None and asset_partition_key_range is None:
+        if step_context.has_asset_partitions_for_output(output_name):
+            asset_partition_key_range = step_context.asset_partition_key_range_for_output(
+                output_name
+            )
+
+    if step_context is not None and asset_partitions_time_window is None:
+        if step_context.has_asset_partitions_for_output(output_name):
+            try:
+                asset_partitions_time_window = step_context.asset_partitions_time_window_for_output(
+                    output_name
+                )
+            except ValueError:
+                pass
+
     return OutputContext(
         step_key=step_output_handle.step_key,
         name=step_output_handle.output_name,
@@ -587,6 +635,8 @@ def get_output_context(
         resource_config=resource_config,
         resources=resources,
         asset_info=asset_info,
+        asset_partition_key_range=asset_partition_key_range,
+        asset_partitions_time_window=asset_partitions_time_window,
     )
 
 
