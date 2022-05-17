@@ -20,8 +20,7 @@ setup(
     install_requires=["click", "pydantic"],
     extras_require={
         "test": [
-            # remove pin once minimum supported kubernetes version is 1.19
-            "kubernetes<22.6.0"
+            "kubernetes",
         ]
     },
     entry_points={
