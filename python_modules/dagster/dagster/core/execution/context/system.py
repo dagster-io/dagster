@@ -492,13 +492,27 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         resource_config: Any = None,
         resources: Optional["Resources"] = None,
     ) -> InputContext:
+        upstream_output: Optional[OutputContext] = None
+        if source_handle is not None:
+            upstream_output = get_output_context(
+                self.execution_plan,
+                self.pipeline_def,
+                self.resolved_run_config,
+                source_handle,
+                self._get_source_run_id(source_handle),
+                log_manager=self.log,
+                step_context=None,
+                resources=None,
+                version=self.execution_plan.get_version_for_step_output_handle(source_handle),
+            )
+
         return InputContext(
             pipeline_name=self.pipeline_def.name,
             name=name,
             solid_def=self.solid_def,
             config=config,
             metadata=metadata,
-            upstream_output=self.get_output_context(source_handle) if source_handle else None,
+            upstream_output=upstream_output,
             dagster_type=dagster_type,
             log_manager=self.log,
             step_context=self,
