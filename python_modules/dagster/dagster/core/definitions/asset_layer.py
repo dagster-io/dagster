@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -35,6 +36,7 @@ class AssetOutputInfo(
             ("key", AssetKey),
             ("partitions_fn", Callable[["OutputContext"], Optional[AbstractSet[str]]]),
             ("partitions_def", Optional["PartitionsDefinition"]),
+            ("is_required", bool),
         ],
     )
 ):
@@ -54,12 +56,14 @@ class AssetOutputInfo(
         key: AssetKey,
         partitions_fn: Optional[Callable[["OutputContext"], Optional[AbstractSet[str]]]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
+        is_required: bool = True,
     ):
         return super().__new__(
             cls,
             key=check.inst_param(key, "key", AssetKey),
             partitions_fn=check.opt_callable_param(partitions_fn, "partitions_fn", lambda _: None),
             partitions_def=partitions_def,
+            is_required=is_required,
         )
 
 
@@ -221,7 +225,7 @@ def _asset_key_to_dep_node_handles(
         dep_node_handles_by_node: Dict[
             NodeHandle, List[NodeHandle]
         ] = {}  # memoized map of nodehandle to all node handle dependencies that are ops
-        for output_name, asset_key in assets_defs.asset_keys_by_output_name.items():
+        for output_name, asset_key in assets_defs.node_asset_keys_by_output_name.items():
             output_def = assets_defs.node_def.output_def_named(output_name)
             output_name = output_def.name
 
@@ -366,6 +370,12 @@ class AssetLayer:
             value_type=Set,
         )
 
+        # keep an index from node handle to all keys expected to be generated in that node
+        self._asset_keys_by_node_handle: Dict[NodeHandle, Set[AssetKey]] = defaultdict(set)
+        for node_output_handle, asset_info in self._asset_info_by_node_output_handle.items():
+            if asset_info.is_required:
+                self._asset_keys_by_node_handle[node_output_handle.node_handle].add(asset_info.key)
+
     @staticmethod
     def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
         """Scrape asset info off of InputDefinition/OutputDefinition instances"""
@@ -403,7 +413,7 @@ class AssetLayer:
         for node_handle, assets_def in assets_defs_by_node_handle.items():
             asset_deps.update(assets_def.asset_deps)
 
-            for input_name, asset_key in assets_def.asset_keys_by_input_name.items():
+            for input_name, asset_key in assets_def.node_asset_keys_by_input_name.items():
                 # resolve graph input to list of op inputs that consume it
                 node_input_handles = _resolve_input_to_destinations(
                     input_name, assets_def.node_def, node_handle
@@ -411,7 +421,7 @@ class AssetLayer:
                 for node_input_handle in node_input_handles:
                     asset_key_by_input[node_input_handle] = asset_key
 
-            for output_name, asset_key in assets_def.asset_keys_by_output_name.items():
+            for output_name, asset_key in assets_def.node_asset_keys_by_output_name.items():
                 # resolve graph output to the op output it comes from
                 inner_output_def, inner_node_handle = assets_def.node_def.resolve_output_to_origin(
                     output_name, handle=node_handle
@@ -422,6 +432,7 @@ class AssetLayer:
                     asset_key,
                     partitions_fn=partition_fn if assets_def.partitions_def else None,
                     partitions_def=assets_def.partitions_def,
+                    is_required=asset_key in assets_def.asset_keys,
                 )
         return AssetLayer(
             asset_keys_by_node_input_handle=asset_key_by_input,
@@ -450,6 +461,9 @@ class AssetLayer:
     @property
     def asset_keys(self) -> Iterable[AssetKey]:
         return self._dependency_node_handles_by_asset_key.keys()
+
+    def asset_keys_for_node(self, node_handle: NodeHandle) -> AbstractSet[AssetKey]:
+        return self._asset_keys_by_node_handle[node_handle]
 
     def asset_key_for_input(self, node_handle: NodeHandle, input_name: str) -> Optional[AssetKey]:
         return self._asset_keys_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))

@@ -245,43 +245,49 @@ def multi_asset(
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     op_tags: Optional[Dict[str, Any]] = None,
+    can_subset: bool = False,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
-    upstream assets.
+        upstream assets.
 
-    Each argument to the decorated function references an upstream asset that this asset depends on.
-    The name of the argument designates the name of the upstream asset.
+        Each argument to the decorated function references an upstream asset that this asset depends on.
+        The name of the argument designates the name of the upstream asset.
 
-    Args:
-        name (Optional[str]): The name of the op.
-        outs: (Optional[Dict[str, Out]]): The Outs representing the produced assets.
-        ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
-            and namespaces.
-        non_argument_deps (Optional[Set[AssetKey]]): Set of asset keys that are upstream dependencies,
-            but do not pass an input to the multi_asset.
-        required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
-        io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
-            output of the op as an asset, and for loading it in downstream ops
-            (default: "io_manager").
-        compute_kind (Optional[str]): A string to represent the kind of computation that produces
-            the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
-        internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
-            that all assets produced by a multi_asset depend on all assets that are consumed by that
-            multi asset. If this default is not correct, you pass in a map of output names to a
-            corrected set of AssetKeys that they depend on. Any AssetKeys in this list must be either
-            used as input to the asset or produced within the op.
-        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
-            compose the assets.
-        partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
-            keys for this asset to partition keys of upstream assets. Each key in the dictionary
-            correponds to one of the input assets, and each value is a PartitionMapping.
-            If no entry is provided for a particular asset dependency, the partition mapping defaults
-            to the default partition mapping for the partitions definition, which is typically maps
-            partition keys to the same partition keys in upstream assets.
-        op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
-            Frameworks may expect and require certain metadata to be attached to a op. Values that
-            are not strings will be json encoded and must meet the criteria that
-            `json.loads(json.dumps(value)) == value`.
+        Args:
+            name (Optional[str]): The name of the op.
+            outs: (Optional[Dict[str, Out]]): The Outs representing the produced assets.
+            ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
+                and namespaces.
+            non_argument_deps (Optional[Set[AssetKey]]): Set of asset keys that are upstream dependencies,
+                but do not pass an input to the multi_asset.
+            required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
+            io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
+                output of the op as an asset, and for loading it in downstream ops
+                (default: "io_manager").
+            compute_kind (Optional[str]): A string to represent the kind of computation that produces
+                the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
+            internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
+                that all assets produced by a multi_asset depend on all assets that are consumed by that
+                multi asset. If this default is not correct, you pass in a map of output names to a
+                corrected set of AssetKeys that they depend on. Any AssetKeys in this list must be either
+                used as input to the asset or produced within the op.
+    <<<<<<< HEAD
+            partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+                compose the assets.
+            partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
+                keys for this asset to partition keys of upstream assets. Each key in the dictionary
+                correponds to one of the input assets, and each value is a PartitionMapping.
+                If no entry is provided for a particular asset dependency, the partition mapping defaults
+                to the default partition mapping for the partitions definition, which is typically maps
+                partition keys to the same partition keys in upstream assets.
+            op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
+                Frameworks may expect and require certain metadata to be attached to a op. Values that
+                are not strings will be json encoded and must meet the criteria that
+                `json.loads(json.dumps(value)) == value`.
+    =======
+            can_subset (bool): If this asset's computation can emit a subset of the asset
+                keys based on the context.selected_assets argument. Defaults to False.
+    >>>>>>> [2/n] Subsetting Stack: AssetsDefinition subsetting!
     """
 
     check.invariant(
@@ -354,6 +360,7 @@ def multi_asset(
             }
             if partition_mappings
             else None,
+            can_subset=can_subset,
         )
 
     return inner

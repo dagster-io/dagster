@@ -5,8 +5,10 @@ import pytest
 
 from dagster import (
     AssetKey,
+    DagsterEventType,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
+    EventRecordsFilter,
     HourlyPartitionsDefinition,
     IOManager,
     Out,
@@ -23,6 +25,7 @@ from dagster import (
 )
 from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
 from dagster.core.errors import DagsterInvalidSubsetError, DagsterUnmetExecutorRequirementsError
+from dagster.core.test_utils import instance_for_test
 
 
 def _all_asset_keys(result):
@@ -228,7 +231,7 @@ def asset_aware_io_manager():
     return io_manager_obj, _asset_aware
 
 
-def _get_assets_defs(use_multi: bool = False):
+def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
     """
     Dependencies:
         "upstream": {
@@ -268,18 +271,26 @@ def _get_assets_defs(use_multi: bool = False):
         return b + 1
 
     @multi_asset(
-        outs={"a": Out(), "b": Out(), "c": Out()},
+        outs={
+            "a": Out(is_required=False),
+            "b": Out(is_required=False),
+            "c": Out(is_required=False),
+        },
         internal_asset_deps={
             "a": {AssetKey("start")},
             "b": set(),
             "c": {AssetKey("b")},
         },
+        can_subset=allow_subset,
     )
-    def abc_(start):
-        a = start + 1
+    def abc_(context, start):
+        a = (start + 1) if start else None
         b = 1
         c = b + 1
-        return {"a": a, "b": b, "c": c}
+        out_values = {"a": a, "b": b, "c": c}
+        outputs_to_return = context.selected_output_names if allow_subset else "abc"
+        for output_name in outputs_to_return:
+            yield Output(out_values[output_name], output_name)
 
     @asset
     def d(a, b):
@@ -294,18 +305,26 @@ def _get_assets_defs(use_multi: bool = False):
         return d + e
 
     @multi_asset(
-        outs={"d": Out(), "e": Out(), "f": Out()},
+        outs={
+            "d": Out(is_required=False),
+            "e": Out(is_required=False),
+            "f": Out(is_required=False),
+        },
         internal_asset_deps={
             "d": {AssetKey("a"), AssetKey("b")},
             "e": {AssetKey("c")},
             "f": {AssetKey("d"), AssetKey("e")},
         },
+        can_subset=allow_subset,
     )
-    def def_(a, b, c):
-        d = a + b
-        e = c + 1
-        f = d + e
-        return {"d": d, "e": e, "f": f}
+    def def_(context, a, b, c):
+        d = (a + b) if a and b else None
+        e = (c + 1) if c else None
+        f = (d + e) if d and e else None
+        out_values = {"d": d, "e": e, "f": f}
+        outputs_to_return = context.selected_output_names if allow_subset else "def"
+        for output_name in outputs_to_return:
+            yield Output(out_values[output_name], output_name)
 
     @asset
     def final(a, d):
@@ -381,42 +400,126 @@ def test_asset_group_build_subset_job_errors(job_selection, use_multi, expected_
         assert group.build_job("some_name", selection=job_selection)
 
 
+@pytest.mark.parametrize("use_multi", [True, False])
 @pytest.mark.parametrize(
-    "job_selection,expected_assets",
+    "job_selection,expected_assets,prefixes",
     [
-        ("*", "start,a,b,c,d,e,f,final"),
-        ("a", "a"),
-        ("b+", "b,c,d"),
-        ("+f", "f,d,e"),
-        ("++f", "f,d,e,c,a,b"),
-        ("start*", "start,a,d,f,final"),
-        (["+a", "b+"], "start,a,b,c,d"),
-        (["*c", "final"], "b,c,final"),
+        ("*", "start,a,b,c,d,e,f,final", None),
+        ("a", "a", None),
+        ("b+", "b,c,d", None),
+        ("+f", "f,d,e", None),
+        ("++f", "f,d,e,c,a,b", None),
+        ("start*", "start,a,d,f,final", None),
+        (["+a", "b+"], "start,a,b,c,d", None),
+        (["*c", "final"], "b,c,final", None),
+        ("*", "start,a,b,c,d,e,f,final", ["core", "models"]),
+        ("core>models>a", "a", ["core", "models"]),
+        ("core>models>b+", "b,c,d", ["core", "models"]),
+        ("+core>models>f", "f,d,e", ["core", "models"]),
+        ("++core>models>f", "f,d,e,c,a,b", ["core", "models"]),
+        ("core>models>start*", "start,a,d,f,final", ["core", "models"]),
+        (["+core>models>a", "core>models>b+"], "start,a,b,c,d", ["core", "models"]),
+        (["*core>models>c", "core>models>final"], "b,c,final", ["core", "models"]),
     ],
 )
-def test_asset_group_build_subset_job2(job_selection, expected_assets):
+def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi, prefixes):
 
     _, io_manager_def = asset_aware_io_manager()
     group = AssetGroup(
-        _get_assets_defs(),
+        # for these, if we have multi assets, we'll always allow them to be subset
+        _get_assets_defs(use_multi=use_multi, allow_subset=use_multi),
         resource_defs={"io_manager": io_manager_def},
     )
+    # apply prefixes
+    for prefix in reversed(prefixes or []):
+        group = group.prefixed(prefix)
+
     # run once so values exist to load from
     group.build_job("initial").execute_in_process()
 
     # now build the subset job
     job = group.build_job("assets_job", selection=job_selection)
 
-    result = job.execute_in_process()
-    expected_asset_keys = set((AssetKey(a) for a in expected_assets.split(",")))
-    actual_asset_keys = _all_asset_keys(result)
+    with instance_for_test() as instance:
+        result = job.execute_in_process(instance=instance)
+        planned_asset_keys = {
+            record.event_log_entry.dagster_event.event_specific_data.asset_key
+            for record in instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            )
+        }
 
-    expected_outputs = {"start": 1, "b": 1, "c": 2, "d": 3, "e": 3, "final": 5}
+    expected_asset_keys = set(
+        (AssetKey([*(prefixes or []), a]) for a in expected_assets.split(","))
+    )
+    # make sure we've planned on the correct set of keys
+    assert planned_asset_keys == expected_asset_keys
+
+    # make sure we've generated the correct set of keys
+    assert _all_asset_keys(result) == expected_asset_keys
+
+    if use_multi:
+        expected_outputs = {
+            "start": 1,
+            "abc_.a": 2,
+            "abc_.b": 1,
+            "abc_.c": 2,
+            "def_.d": 3,
+            "def_.e": 3,
+            "def_.f": 6,
+            "final": 5,
+        }
+    else:
+        expected_outputs = {"start": 1, "a": 2, "b": 1, "c": 2, "d": 3, "e": 3, "f": 6, "final": 5}
+
+    # check if the output values are as we expect
     for output, value in expected_outputs.items():
-        if output in expected_assets:
-            assert result.output_for_node(output, "result") == value
+        asset_name = output.split(".")[-1]
+        if asset_name in expected_assets.split(","):
+            # dealing with multi asset
+            if output != asset_name:
+                assert result.output_for_node(output.split(".")[0], asset_name)
+            # dealing with regular asset
+            else:
+                assert result.output_for_node(output, "result") == value
 
-    assert expected_asset_keys == actual_asset_keys
+
+def test_subset_does_not_respect_context():
+    @asset
+    def start():
+        return 1
+
+    @multi_asset(outs={"a": Out(), "b": Out(), "c": Out()}, can_subset=True)
+    def abc(start):
+        # this asset declares that it can subset its computation but will always produce all outputs
+        yield Output(1 + start, "a")
+        yield Output(2 + start, "b")
+        yield Output(3 + start, "c")
+
+    @asset
+    def final(c):
+        return c + 1
+
+    group = AssetGroup([start, abc, final])
+    job = group.build_job("subset_job", selection=["*final"])
+
+    # these are the keys specified by the selection *final
+    specified_keys = {AssetKey("start"), AssetKey("c"), AssetKey("final")}
+
+    with instance_for_test() as instance:
+        result = job.execute_in_process(instance=instance)
+        planned_asset_keys = {
+            record.event_log_entry.dagster_event.event_specific_data.asset_key
+            for record in instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            )
+        }
+
+    # should only plan on creating keys start, c, final
+    assert planned_asset_keys == specified_keys
+
+    # should still emit asset materializations if we generate these outputs
+    assert _all_asset_keys(result) == specified_keys | {AssetKey("a"), AssetKey("b")}
 
 
 def test_asset_group_build_job_selection_multi_component():
