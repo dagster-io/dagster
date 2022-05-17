@@ -585,3 +585,23 @@ def test_retry_policy_rules_on_pending_node_invocation_to_job():
     assert len(_get_retry_events(result.events_for_node("override_with"))) == 1
     assert len(_get_retry_events(result.events_for_node("config_override_no"))) == 1
     assert len(_get_retry_events(result.events_for_node("override_fail"))) == 1
+
+
+def test_failure_allow_retries():
+    @op
+    def fail_allow():
+        raise Failure("I fail")
+
+    @op
+    def fail_disallow():
+        raise Failure("I fail harder", allow_retries=False)
+
+    @job(op_retry_policy=RetryPolicy(max_retries=1))
+    def hard_fail_job():
+        fail_allow()
+        fail_disallow()
+
+    result = hard_fail_job.execute_in_process(raise_on_error=False)
+    assert not result.success
+    assert len(_get_retry_events(result.events_for_node("fail_allow"))) == 1
+    assert len(_get_retry_events(result.events_for_node("fail_dissalow"))) == 0
