@@ -21,12 +21,9 @@ from dagster import (
     SolidExecutionContext,
     TableColumn,
     TableSchema,
-    get_dagster_logger,
-    op,
 )
 from dagster import _check as check
-from dagster import get_dagster_logger
-from dagster.core.asset_defs import AssetsDefinition, multi_asset
+from dagster import get_dagster_logger, op
 from dagster.core.definitions.metadata import RawMetadataValue
 
 
@@ -146,17 +143,21 @@ def _dbt_nodes_to_assets(
         dbt_output = None
         try:
             # in the case that we're running everything, opt for the cleaner selection string
-            if len(context.selected_output_names) != len(outs):
+            if len(context.selected_output_names) == len(outs):
+                subselect = select
+            else:
                 # for each output that we want to emit, translate to a dbt select string by converting
                 # the out to it's corresponding fqn
-                select = [
+                subselect = [
                     ".".join(out_name_to_node_info[out_name]["fqn"])
                     for out_name in context.selected_output_names
                 ]
+
             if use_build_command:
-                dbt_output = context.resources.dbt.build(select=select)
+                dbt_output = context.resources.dbt.build(select=subselect)
             else:
-                dbt_output = context.resources.dbt.run(select=select)
+                dbt_output = context.resources.dbt.run(select=subselect)
+
         finally:
             # in the case that the project only partially runs successfully, still attempt to generate
             # events for the parts that were successful
