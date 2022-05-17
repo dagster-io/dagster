@@ -12,6 +12,7 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
+import {Loading} from '../ui/Loading';
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {OptionsContainer} from '../gantt/VizComponents';
@@ -56,33 +57,33 @@ export const PartitionViewNew: React.FC<{
     },
   );
 
-  if (!queryResult.data) {
-    return null;
-  }
-
-  const {partitionSetOrError} = queryResult.data;
-
-  if (partitionSetOrError.__typename !== 'PartitionSet') {
-    return null;
-  }
-
-  if (
-    partitionSetOrError.__typename !== 'PartitionSet' ||
-    partitionSetOrError.partitionsOrError.__typename !== 'Partitions'
-  ) {
-    return null;
-  }
-
-  const partitionNames = partitionSetOrError.partitionsOrError.results.map(
-    (_: Partition) => _.name,
-  );
-
   return (
-    <PartitionViewContent
-      partitionNames={partitionNames}
-      partitionSet={partitionSetOrError}
-      repoAddress={repoAddress}
-    />
+    <Loading queryResult={queryResult}>
+      {({partitionSetOrError}) => {
+        if (partitionSetOrError.__typename !== 'PartitionSet') {
+          return null;
+        }
+
+        if (
+          partitionSetOrError.__typename !== 'PartitionSet' ||
+          partitionSetOrError.partitionsOrError.__typename !== 'Partitions'
+        ) {
+          return null;
+        }
+
+        const partitionNames = partitionSetOrError.partitionsOrError.results.map(
+          (_: Partition) => _.name,
+        );
+
+        return (
+          <PartitionViewContent
+            partitionNames={partitionNames}
+            partitionSet={partitionSetOrError}
+            repoAddress={repoAddress}
+          />
+        );
+      }}
+    </Loading>
   );
 };
 
