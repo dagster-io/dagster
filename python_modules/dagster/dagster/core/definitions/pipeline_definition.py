@@ -836,14 +836,3 @@ def _create_run_config_schema(
         config_type_dict_by_key=config_type_dict_by_key,
         config_mapping=mode_definition.config_mapping,
     )
-
-
-def _add_resource_req(
-    resource_reqs: Dict[str, Tuple[str, Set[str]]],
-    resource_key: str,
-    resource_type: str,
-    requiree_descriptor: str,
-) -> None:
-    if resource_key not in resource_reqs:
-        resource_reqs[resource_key] = (resource_type, set())
-    resource_reqs[resource_key][1].add(requiree_descriptor)

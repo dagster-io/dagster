@@ -46,7 +46,7 @@ from dagster.utils import merge_dicts
 from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping
 from .executor_definition import ExecutorDefinition
-from .graph_definition import GraphDefinition, SubselectedGraphDefinition
+from .graph_definition import GraphDefinition, SubselectedGraphDefinition, default_job_io_manager
 from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
 from .metadata import RawMetadataValue
@@ -55,6 +55,7 @@ from .partition import PartitionSetDefinition, PartitionedConfig, PartitionsDefi
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
+from .resource_requirement import ResourceAddable
 from .run_request import RunRequest
 from .version_strategy import VersionStrategy
 
@@ -64,7 +65,7 @@ if TYPE_CHECKING:
     from dagster.core.snap import PipelineSnapshot
 
 
-class JobDefinition(PipelineDefinition):
+class JobDefinition(PipelineDefinition, ResourceAddable):
     def __init__(
         self,
         graph_def: GraphDefinition,
@@ -460,6 +461,33 @@ class JobDefinition(PipelineDefinition):
         update_wrapper(job_def, self, updated=())
 
         return job_def
+
+    def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "JobDefinition":
+        if (  # pylint: disable=comparison-with-callable
+            self.resource_defs["io_manager"] == default_job_io_manager
+            and "io_manager" in resource_defs
+        ):
+            merged_resource_defs = merge_dicts(
+                self.resource_defs, {"io_manager": resource_defs["io_manager"]}
+            )
+            return JobDefinition(
+                name=self.name,
+                graph_def=self._graph_def,
+                resource_defs=merged_resource_defs,
+                logger_defs=dict(self.loggers),
+                executor_def=self.executor_def,
+                partitioned_config=self.partitioned_config,
+                config_mapping=self.config_mapping,
+                preset_defs=self.preset_defs,
+                tags=self.tags,
+                hook_defs=self.hook_defs,
+                description=self._description,
+                op_retry_policy=self._solid_retry_policy,
+                asset_layer=self.asset_layer,
+                _subset_selection_data=self._subset_selection_data,
+            )
+
+        return self
 
     def get_parent_pipeline_snapshot(self) -> Optional["PipelineSnapshot"]:
         if self.op_selection_data:

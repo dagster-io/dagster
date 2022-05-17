@@ -1,5 +1,5 @@
 import warnings
-from typing import AbstractSet, Dict, Iterable, Mapping, Optional, Sequence, Set, cast
+from typing import AbstractSet, Dict, Iterable, Iterator, Mapping, Optional, Sequence, Set, cast
 
 import dagster._check as check
 from dagster.core.definitions import (
@@ -11,13 +11,15 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
+from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning, experimental
 
+from ..definitions.resource_requirement import ResourceAddable, ResourceRequirement
 from .partition_mapping import PartitionMapping
 from .source_asset import SourceAsset
 
 
-class AssetsDefinition:
+class AssetsDefinition(ResourceAddable):
     def __init__(
         self,
         asset_keys_by_input_name: Mapping[str, AssetKey],
@@ -309,6 +311,27 @@ class AssetsDefinition:
             )
 
         return result
+
+    def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
+        yield from self.node_def.get_resource_requirements()
+        for source_key, resource_def in self.resource_defs.items():
+            yield from resource_def.get_resource_requirements(outer_context=source_key)
+
+    def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
+
+        merged_resource_defs = merge_dicts(resource_defs, self.resource_defs)
+
+        return AssetsDefinition(
+            asset_keys_by_input_name=self._asset_keys_by_input_name,
+            asset_keys_by_output_name=self._asset_keys_by_output_name,
+            node_def=self.node_def,
+            partitions_def=self._partitions_def,
+            partition_mappings=self._partition_mappings,
+            asset_deps=self._asset_deps,
+            selected_asset_keys=self._selected_asset_keys,
+            can_subset=self._can_subset,
+            resource_defs=merged_resource_defs,
+        )
 
 
 def _infer_asset_keys_by_input_names(
