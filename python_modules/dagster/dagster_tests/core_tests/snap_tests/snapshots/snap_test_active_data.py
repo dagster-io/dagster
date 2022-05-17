@@ -1084,6 +1084,7 @@ snapshots['test_external_pipeline_data 1'] = '''{
     "description": null,
     "graph_def_name": "a_pipeline",
     "lineage_snapshot": null,
+    "metadata": [],
     "mode_def_snaps": [
       {
         "__class__": "ModeDefSnap",
@@ -2291,6 +2292,7 @@ snapshots['test_external_repository_data 1'] = '''{
         "description": null,
         "graph_def_name": "a_pipeline",
         "lineage_snapshot": null,
+        "metadata": [],
         "mode_def_snaps": [
           {
             "__class__": "ModeDefSnap",
