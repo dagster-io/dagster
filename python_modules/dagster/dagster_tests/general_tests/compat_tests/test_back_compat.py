@@ -9,13 +9,13 @@ from gzip import GzipFile
 from typing import NamedTuple, Optional, Union
 
 import pytest
+import sqlalchemy as db
 
 from dagster import AssetKey, AssetMaterialization, Output
 from dagster import _check as check
 from dagster import execute_pipeline, file_relative_path, job, pipeline, solid
 from dagster.cli.debug import DebugRunPayload
 from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.errors import DagsterInstanceSchemaOutdated
 from dagster.core.events import DagsterEvent
 from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance, InstanceRef
@@ -161,8 +161,7 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
             noop_solid()
 
         with pytest.raises(
-            DagsterInstanceSchemaOutdated,
-            match=_run_storage_migration_regex(current_revision="9fe9e746268c"),
+            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
             execute_pipeline(noop_pipeline, instance=instance)
 
@@ -822,7 +821,6 @@ def test_instigators_table_backcompat():
 
 def test_jobs_selector_id_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite")
-    import sqlalchemy as db
 
     from dagster.core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
     from dagster.core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
@@ -875,7 +873,6 @@ def test_jobs_selector_id_migration():
 
 def test_tick_selector_index_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite")
-    import sqlalchemy as db  # pylint: disable=unused-import
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "schedules", "schedules.db")

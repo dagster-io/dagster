@@ -112,7 +112,7 @@ const BreadcrumbNav = () => {
         <ol className="md:inline-flex space-x-1 lg:space-x-3">
           {breadcrumbItems.map((item, index) => {
             return (
-              <li key={item.title}>
+              <li key={item.path || item.title}>
                 <div className="flex flex-nowrap items-center">
                   {index > 0 && (
                     <svg

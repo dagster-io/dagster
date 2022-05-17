@@ -1,13 +1,15 @@
 import re
 import sys
 from collections import defaultdict, deque
-from typing import TYPE_CHECKING, AbstractSet, Dict, List, NamedTuple
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, List, NamedTuple, Sequence, Set
 
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.utils import check
 
 if TYPE_CHECKING:
+    from dagster.core.asset_defs import AssetsDefinition
+    from dagster.core.definitions.events import AssetKey
     from dagster.core.definitions.job_definition import JobDefinition
 
 MAX_NUM = sys.maxsize
@@ -43,6 +45,23 @@ class OpSelectionData(
             ),
             parent_job_def=check.inst_param(parent_job_def, "parent_job_def", JobDefinition),
         )
+
+
+def generate_asset_dep_graph(assets_defs: Sequence["AssetsDefinition"]) -> Dict[str, Any]:
+    graph: Dict[str, Any] = {"upstream": {}, "downstream": {}}
+    for assets_def in assets_defs:
+        for asset_key in assets_def.asset_keys:
+            asset_name = asset_key.to_user_string()
+            upstream_asset_keys = assets_def.asset_deps[asset_key]
+            graph["upstream"][asset_name] = set()
+            # for each asset upstream of this one, set that as upstream, and this downstream of it
+            for upstream_key in upstream_asset_keys:
+                upstream_name = upstream_key.to_user_string()
+                if upstream_name not in graph["downstream"]:
+                    graph["downstream"][upstream_name] = set()
+                graph["upstream"][asset_name].add(upstream_name)
+                graph["downstream"][upstream_name].add(asset_name)
+    return graph
 
 
 def generate_dep_graph(pipeline_def):
@@ -136,7 +155,7 @@ def parse_clause(clause):
             return len(part)
         return None
 
-    token_matching = re.compile(r"^(\*?\+*)?([.\w\d\[\]?_-]+)(\+*\*?)?$").search(clause.strip())
+    token_matching = re.compile(r"^(\*?\+*)?([.>\w\d\[\]?_-]+)(\+*\*?)?$").search(clause.strip())
     # return None if query is invalid
     parts = token_matching.groups() if token_matching is not None else []
     if len(parts) != 3:
@@ -334,3 +353,41 @@ def parse_step_selection(step_deps, step_selection):
         steps_set.update(subset)
 
     return frozenset(steps_set)
+
+
+def parse_asset_selection(
+    assets_defs: Sequence["AssetsDefinition"], asset_selection: Sequence[str]
+) -> FrozenSet["AssetKey"]:
+    """Find assets that match the given selection query
+
+    Args:
+        assets_defs (Sequence[Assetsdefinition]): A set of AssetsDefinition objects to select over
+        asset_selection (List[str]): a list of the asset key selection queries (including single
+            asset key) to execute.
+
+    Returns:
+        FrozenSet[str]: a frozenset of qualified deduplicated asset keys, empty if no qualified
+            subset selected.
+    """
+    from dagster.core.definitions.events import AssetKey
+
+    check.list_param(asset_selection, "asset_selection", of_type=str)
+
+    # special case: select *
+    if len(asset_selection) == 1 and asset_selection[0] == "*":
+        return frozenset(set().union(*(ad.asset_keys for ad in assets_defs)))
+
+    graph = generate_asset_dep_graph(assets_defs)
+    assets_set: Set[str] = set()
+
+    # loop over clauses
+    for clause in asset_selection:
+        subset = clause_to_subset(graph, clause)
+        if len(subset) == 0:
+            raise DagsterInvalidSubsetError(
+                f"No qualified assets to execute found for clause='{clause}'"
+            )
+        assets_set.update(subset)
+
+    # at the end, turn the user selection strings into asset keys
+    return frozenset({AssetKey.from_user_string(asset_string) for asset_string in assets_set})
