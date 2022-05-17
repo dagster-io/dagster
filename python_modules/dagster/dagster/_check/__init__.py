@@ -394,6 +394,28 @@ def opt_dict_elem(
         return _check_mapping_entries(value, key_type, value_type, mapping_type=dict)
 
 
+def opt_nullable_dict_elem(
+    obj: Dict[str, Any],
+    key: str,
+    key_type: Optional[TypeOrTupleOfTypes] = None,
+    value_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Optional[Dict]:
+    from dagster.utils import frozendict
+
+    dict_param(obj, "obj")
+    str_param(key, "key")
+
+    value = obj.get(key)
+
+    if value is None:
+        return None
+    elif not isinstance(value, (frozendict, dict)):
+        raise _element_check_error(key, value, obj, dict, additional_message)
+    else:
+        return _check_mapping_entries(value, key_type, value_type, mapping_type=dict)
+
+
 def is_dict(
     obj: Dict[T, U],
     key_type: Optional[TypeOrTupleOfTypes] = None,

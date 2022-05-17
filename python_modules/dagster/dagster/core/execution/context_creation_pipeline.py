@@ -421,7 +421,8 @@ def create_executor(context_creation_data: ContextCreationData) -> "Executor":
         instance=context_creation_data.instance,
     )
     check_cross_process_constraints(init_context)
-    return context_creation_data.executor_def.executor_creation_fn(init_context)
+    creation_fn = check.not_none(context_creation_data.executor_def.executor_creation_fn)
+    return creation_fn(init_context)
 
 
 @contextmanager
