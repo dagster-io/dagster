@@ -60,7 +60,11 @@ class InMemoryPipeline(IPipeline, object):
         # resolve a list of solid selection queries to a frozenset of qualified solid names
         # e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
         check.list_param(solid_selection, "solid_selection", of_type=str)
-        solids_to_execute = parse_solid_selection(self.get_definition(), solid_selection)
+        solids_to_execute = parse_solid_selection(
+            graph_def=self.get_definition().graph,
+            solid_selection=solid_selection,
+            is_job=self.get_definition().is_job,
+        )
         if len(solids_to_execute) == 0:
             node_type = "ops" if self._pipeline_def.is_job else "solids"
             selection_type = "op_selection" if self._pipeline_def.is_job else "solid_selection"

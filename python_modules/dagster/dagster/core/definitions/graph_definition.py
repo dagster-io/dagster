@@ -61,6 +61,7 @@ if TYPE_CHECKING:
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
     from .partition import PartitionedConfig, PartitionsDefinition
+    from .pending_job_definition import PendingJobDefinition  # type: ignore[attr-defined]
     from .solid_definition import SolidDefinition
 
 
@@ -594,6 +595,134 @@ class GraphDefinition(NodeDefinition):
             _subset_selection_data=_asset_selection_data,
         ).get_job_def_for_subset_selection(op_selection)
 
+    def to_pending_job(
+        self,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
+        config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
+        tags: Optional[Dict[str, Any]] = None,
+        logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
+        executor_def: Optional["ExecutorDefinition"] = None,
+        hooks: Optional[AbstractSet[HookDefinition]] = None,
+        op_retry_policy: Optional[RetryPolicy] = None,
+        version_strategy: Optional[VersionStrategy] = None,
+        op_selection: Optional[List[str]] = None,
+        partitions_def: Optional["PartitionsDefinition"] = None,
+        asset_layer: Optional["AssetLayer"] = None,
+    ) -> "PendingJobDefinition":
+        """
+        Make this graph into a partial (non-executable) Job by providing remaining components required for execution.
+
+        Args:
+            name (Optional[str]):
+                The name for the Job. Defaults to the name of the this graph.
+            resource_defs (Optional[Dict[str, ResourceDefinition]]):
+                Resources that are required by this graph for execution.
+                If not defined, `io_manager` will default to filesystem.
+            config:
+                Describes how the job is parameterized at runtime.
+                If no value is provided, then the schema for the job's run config is a standard
+                format based on its solids and resources.
+                If a dictionary is provided, then it must conform to the standard config schema, and
+                it will be used as the job's run config for the job whenever the job is executed.
+                The values provided will be viewable and editable in the Dagit playground, so be
+                careful with secrets.
+                If a :py:class:`ConfigMapping` object is provided, then the schema for the job's run config is
+                determined by the config mapping, and the ConfigMapping, which should return
+                configuration in the standard format to configure the job.
+                If a :py:class:`PartitionedConfig` object is provided, then it defines a discrete set of config
+                values that can parameterize the job, as well as a function for mapping those
+                values to the base config. The values provided will be viewable and editable in the
+                Dagit playground, so be careful with secrets.
+            tags (Optional[Dict[str, Any]]):
+                Arbitrary metadata for any execution of the Job.
+                Values that are not strings will be json encoded and must meet the criteria that
+                `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
+                values provided at invocation time.
+            logger_defs (Optional[Dict[str, LoggerDefinition]]):
+                A dictionary of string logger identifiers to their implementations.
+            executor_def (Optional[ExecutorDefinition]):
+                How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
+                which can be switched between multi-process and in-process modes of execution. The
+                default mode of execution is multi-process.
+            op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops in this job.
+                Only used if retry policy is not defined on the op definition or op invocation.
+            version_strategy (Optional[VersionStrategy]):
+                Defines how each solid (and optionally, resource) in the job can be versioned. If
+                provided, memoizaton will be enabled for this job.
+            partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition
+                keys that can parameterize the job. If this argument is supplied, the config
+                argument can't also be supplied.
+            asset_layer (Optional[AssetLayer]): Top level information about the assets this job
+                will produce. Generally should not be set manually.
+        Returns:
+            PendingJobDefinition
+        """
+        from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
+        from .partition import PartitionedConfig, PartitionsDefinition
+        from .pending_job_definition import PendingJobDefinition
+
+        job_name = check_valid_name(name or self.name)
+
+        tags = cast(Dict[str, Any], check.opt_dict_param(tags, "tags", key_type=str))
+        executor_def = check.opt_inst_param(
+            executor_def, "executor_def", ExecutorDefinition, default=multi_or_in_process_executor
+        )
+
+        resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
+
+        hooks = check.opt_set_param(hooks, "hooks", of_type=HookDefinition)
+        op_retry_policy = check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy)
+        op_selection = check.opt_list_param(op_selection, "op_selection", of_type=str)
+        presets: List[PresetDefinition] = []
+        config_mapping = None
+        partitioned_config = None
+
+        if partitions_def:
+            check.inst_param(partitions_def, "partitions_def", PartitionsDefinition)
+            check.invariant(
+                config is None, "Can't supply both the 'config' and 'partitions_def' arguments"
+            )
+            partitioned_config = PartitionedConfig(partitions_def, lambda _: {})
+
+        if isinstance(config, ConfigMapping):
+            config_mapping = config
+        elif isinstance(config, PartitionedConfig):
+            partitioned_config = config
+        elif isinstance(config, dict):
+            presets = [PresetDefinition(name="default", run_config=config)]
+            # Using config mapping here is a trick to make it so that the preset will be used even
+            # when no config is supplied for the job.
+            config_mapping = _config_mapping_with_default_value(
+                self._get_config_schema(resource_defs, executor_def, logger_defs),
+                config,
+                job_name,
+                self.name,
+            )
+        elif config is not None:
+            check.failed(
+                f"config param must be a ConfigMapping, a PartitionedConfig, or a dictionary, but "
+                f"is an object of type {type(config)}"
+            )
+
+        return PendingJobDefinition(
+            name=job_name,
+            description=description or self.description,
+            graph_def=self,
+            resource_defs=resource_defs,
+            loggers=logger_defs,
+            executor_def=executor_def,
+            config_mapping=config_mapping,
+            partitioned_config=partitioned_config,
+            preset_defs=presets,
+            tags=tags,
+            hook_defs=hooks,
+            version_strategy=version_strategy,
+            op_retry_policy=op_retry_policy,
+            asset_layer=asset_layer,
+        ).get_job_def_for_op_selection(op_selection)
+
     def coerce_to_job(self):
         # attempt to coerce a Graph in to a Job, raising a useful error if it doesn't work
         try:
@@ -639,8 +768,7 @@ class GraphDefinition(NodeDefinition):
 
         Args:
             run_config (Optional[Dict[str, Any]]):
-                Run config to provide to execution. The configuration for the underlying graph
-                should exist under the "ops" key.
+                Run config to provide to execution. The configuration for the underlying graph should exist under the "ops" key.
             instance (Optional[DagsterInstance]):
                 The instance to execute against, an ephemeral one will be used if none provided.
             resources (Optional[Dict[str, Any]]):

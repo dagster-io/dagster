@@ -354,7 +354,9 @@ class JobDefinition(PipelineDefinition):
 
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
 
-        resolved_op_selection_dict = parse_op_selection(self, op_selection)
+        resolved_op_selection_dict = parse_op_selection(
+            graph_def=self.graph, op_selection=op_selection, is_job=True
+        )
 
         try:
             sub_graph = get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
