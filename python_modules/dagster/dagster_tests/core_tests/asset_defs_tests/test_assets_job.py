@@ -238,6 +238,8 @@ def test_source_asset():
             assert context.resource_config["a"] == 7
             assert context.resources.subresource == 9
             assert context.upstream_output.resources.subresource == 9
+            assert context.upstream_output.asset_key == AssetKey("source1")
+            assert context.asset_key == AssetKey("source1")
             return 5
 
     @io_manager(config_schema={"a": int}, required_resource_keys={"subresource"})
@@ -665,7 +667,7 @@ def test_asset_def_from_graph_inputs():
 
     @graph(ins={"x": GraphIn(), "y": GraphIn()})
     def my_graph(x, y):
-        my_op(x, y)
+        return my_op(x, y)
 
     assets_def = AssetsDefinition.from_graph(
         graph_def=my_graph,

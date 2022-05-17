@@ -5,8 +5,10 @@ import pytest
 
 from dagster import (
     AssetKey,
+    DagsterEventType,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
+    EventRecordsFilter,
     HourlyPartitionsDefinition,
     IOManager,
     Out,
@@ -22,7 +24,19 @@ from dagster import (
     resource,
 )
 from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
-from dagster.core.errors import DagsterUnmetExecutorRequirementsError
+from dagster.core.errors import DagsterInvalidSubsetError, DagsterUnmetExecutorRequirementsError
+from dagster.core.test_utils import instance_for_test
+
+
+def _all_asset_keys(result):
+    mats = [
+        event.event_specific_data.materialization
+        for event in result.all_events
+        if event.event_type_value == "ASSET_MATERIALIZATION"
+    ]
+    ret = {mat.asset_key for mat in mats}
+    assert len(mats) == len(ret)
+    return ret
 
 
 @pytest.fixture(autouse=True)
@@ -217,128 +231,295 @@ def asset_aware_io_manager():
     return io_manager_obj, _asset_aware
 
 
-def test_asset_group_build_subset_job():
-    @asset
-    def start_asset():
-        return "foo"
+def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
+    """
+    Dependencies:
+        "upstream": {
+            "start": set(),
+            "a": {"start"},
+            "b": set(),
+            "c": {"b"},
+            "d": {"a", "b"},
+            "e": {"c"},
+            "f": {"e", "d"},
+            "final": {"a", "d"},
+        },
+        "downstream": {
+            "start": {"a"},
+            "b": {"c", "d"},
+            "a": {"final", "d"},
+            "c": {"e"},
+            "d": {"final", "f"},
+            "e": {"f"},
+        }
+    """
 
-    @multi_asset(outs={"o1": Out(asset_key=AssetKey("o1")), "o2": Out(asset_key=AssetKey("o2"))})
-    def middle_asset(start_asset):
-        return (start_asset, start_asset)
+    @asset
+    def start():
+        return 1
 
     @asset
-    def follows_o1(o1):
-        return o1
+    def a(start):
+        return start + 1
 
     @asset
-    def follows_o2(o2):
-        return o2
+    def b():
+        return 1
+
+    @asset
+    def c(b):
+        return b + 1
+
+    @multi_asset(
+        outs={
+            "a": Out(is_required=False),
+            "b": Out(is_required=False),
+            "c": Out(is_required=False),
+        },
+        internal_asset_deps={
+            "a": {AssetKey("start")},
+            "b": set(),
+            "c": {AssetKey("b")},
+        },
+        can_subset=allow_subset,
+    )
+    def abc_(context, start):
+        a = (start + 1) if start else None
+        b = 1
+        c = b + 1
+        out_values = {"a": a, "b": b, "c": c}
+        outputs_to_return = context.selected_output_names if allow_subset else "abc"
+        for output_name in outputs_to_return:
+            yield Output(out_values[output_name], output_name)
+
+    @asset
+    def d(a, b):
+        return a + b
+
+    @asset
+    def e(c):
+        return c + 1
+
+    @asset
+    def f(d, e):
+        return d + e
+
+    @multi_asset(
+        outs={
+            "d": Out(is_required=False),
+            "e": Out(is_required=False),
+            "f": Out(is_required=False),
+        },
+        internal_asset_deps={
+            "d": {AssetKey("a"), AssetKey("b")},
+            "e": {AssetKey("c")},
+            "f": {AssetKey("d"), AssetKey("e")},
+        },
+        can_subset=allow_subset,
+    )
+    def def_(context, a, b, c):
+        d = (a + b) if a and b else None
+        e = (c + 1) if c else None
+        f = (d + e) if d and e else None
+        out_values = {"d": d, "e": e, "f": f}
+        outputs_to_return = context.selected_output_names if allow_subset else "def"
+        for output_name in outputs_to_return:
+            yield Output(out_values[output_name], output_name)
+
+    @asset
+    def final(a, d):
+        return a + d
+
+    if use_multi:
+        return [start, abc_, def_, final]
+    return [start, a, b, c, d, e, f, final]
+
+
+@pytest.mark.parametrize(
+    "job_selection,use_multi,expected_error",
+    [
+        ("*", False, None),
+        ("*", True, None),
+        ("e", False, None),
+        ("e", True, (DagsterInvalidDefinitionError, "")),
+        (
+            "x",
+            False,
+            (
+                DagsterInvalidSubsetError,
+                r"No qualified assets to execute found for clause='x'",
+            ),
+        ),
+        (
+            "x",
+            True,
+            (
+                DagsterInvalidSubsetError,
+                r"No qualified assets to execute found for clause='x'",
+            ),
+        ),
+        (
+            ["start", "x"],
+            False,
+            (
+                DagsterInvalidSubsetError,
+                r"No qualified assets to execute found for clause='x'",
+            ),
+        ),
+        (
+            ["start", "x"],
+            True,
+            (
+                DagsterInvalidSubsetError,
+                r"No qualified assets to execute found for clause='x'",
+            ),
+        ),
+        (["d", "e", "f"], False, None),
+        (["d", "e", "f"], True, None),
+        (["*final"], False, None),
+        (
+            ["*final"],
+            True,
+            (
+                DagsterInvalidDefinitionError,
+                r"When building job, the AssetsDefinition 'abc_' contains asset keys "
+                r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\], but attempted to "
+                r"select only \[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\)\]",
+            ),
+        ),
+    ],
+)
+def test_asset_group_build_subset_job_errors(job_selection, use_multi, expected_error):
+    group = AssetGroup(_get_assets_defs(use_multi=use_multi))
+
+    if expected_error:
+        expected_class, expected_message = expected_error
+        with pytest.raises(expected_class, match=expected_message):
+            group.build_job("some_name", selection=job_selection)
+    else:
+        assert group.build_job("some_name", selection=job_selection)
+
+
+@pytest.mark.parametrize("use_multi", [True, False])
+@pytest.mark.parametrize(
+    "job_selection,expected_assets,prefixes",
+    [
+        ("*", "start,a,b,c,d,e,f,final", None),
+        ("a", "a", None),
+        ("b+", "b,c,d", None),
+        ("+f", "f,d,e", None),
+        ("++f", "f,d,e,c,a,b", None),
+        ("start*", "start,a,d,f,final", None),
+        (["+a", "b+"], "start,a,b,c,d", None),
+        (["*c", "final"], "b,c,final", None),
+        ("*", "start,a,b,c,d,e,f,final", ["core", "models"]),
+        ("core>models>a", "a", ["core", "models"]),
+        ("core>models>b+", "b,c,d", ["core", "models"]),
+        ("+core>models>f", "f,d,e", ["core", "models"]),
+        ("++core>models>f", "f,d,e,c,a,b", ["core", "models"]),
+        ("core>models>start*", "start,a,d,f,final", ["core", "models"]),
+        (["+core>models>a", "core>models>b+"], "start,a,b,c,d", ["core", "models"]),
+        (["*core>models>c", "core>models>final"], "b,c,final", ["core", "models"]),
+    ],
+)
+def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi, prefixes):
 
     _, io_manager_def = asset_aware_io_manager()
     group = AssetGroup(
-        [start_asset, middle_asset, follows_o1, follows_o2],
+        # for these, if we have multi assets, we'll always allow them to be subset
+        _get_assets_defs(use_multi=use_multi, allow_subset=use_multi),
         resource_defs={"io_manager": io_manager_def},
     )
+    # apply prefixes
+    for prefix in reversed(prefixes or []):
+        group = group.prefixed(prefix)
 
-    full_job = group.build_job("full", selection="*")
+    # run once so values exist to load from
+    group.build_job("initial").execute_in_process()
 
-    result = full_job.execute_in_process()
+    # now build the subset job
+    job = group.build_job("assets_job", selection=job_selection)
 
-    assert result.success
-    assert result.output_for_node("follows_o1") == "foo"
-    assert result.output_for_node("follows_o2") == "foo"
+    with instance_for_test() as instance:
+        result = job.execute_in_process(instance=instance)
+        planned_asset_keys = {
+            record.event_log_entry.dagster_event.event_specific_data.asset_key
+            for record in instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            )
+        }
 
-    test_single = group.build_job(name="test_single", selection="follows_o2")
-    assert len(test_single.all_node_defs) == 1
-    assert test_single.all_node_defs[0].name == "follows_o2"
-
-    result = test_single.execute_in_process()
-    assert result.success
-    assert result.output_for_node("follows_o2") == "foo"
-
-    test_up_star = group.build_job(name="test_up_star", selection="*follows_o2")
-    assert len(test_up_star.all_node_defs) == 3
-    assert set([node.name for node in test_up_star.all_node_defs]) == {
-        "follows_o2",
-        "middle_asset",
-        "start_asset",
-    }
-
-    result = test_up_star.execute_in_process()
-    assert result.success
-    assert result.output_for_node("middle_asset", "o1") == "foo"
-    assert result.output_for_node("follows_o2") == "foo"
-    assert result.output_for_node("start_asset") == "foo"
-
-    test_down_star = group.build_job(name="test_down_star", selection="start_asset*")
-
-    assert len(test_down_star.all_node_defs) == 4
-    assert set([node.name for node in test_down_star.all_node_defs]) == {
-        "follows_o2",
-        "middle_asset",
-        "start_asset",
-        "follows_o1",
-    }
-
-    result = test_down_star.execute_in_process()
-    assert result.success
-    assert result.output_for_node("follows_o2") == "foo"
-
-    test_both_plus = group.build_job(name="test_both_plus", selection=["+o1+", "o2"])
-
-    assert len(test_both_plus.all_node_defs) == 4
-    assert set([node.name for node in test_both_plus.all_node_defs]) == {
-        "follows_o1",
-        "follows_o2",
-        "middle_asset",
-        "start_asset",
-    }
-
-    result = test_both_plus.execute_in_process()
-    assert result.success
-    assert result.output_for_node("follows_o2") == "foo"
-
-    test_selection_with_overlap = group.build_job(
-        name="test_multi_asset_multi_selection", selection=["o1", "o2+"]
+    expected_asset_keys = set(
+        (AssetKey([*(prefixes or []), a]) for a in expected_assets.split(","))
     )
+    # make sure we've planned on the correct set of keys
+    assert planned_asset_keys == expected_asset_keys
 
-    assert len(test_selection_with_overlap.all_node_defs) == 3
-    assert set([node.name for node in test_selection_with_overlap.all_node_defs]) == {
-        "follows_o1",
-        "follows_o2",
-        "middle_asset",
-    }
+    # make sure we've generated the correct set of keys
+    assert _all_asset_keys(result) == expected_asset_keys
 
-    result = test_selection_with_overlap.execute_in_process()
-    assert result.success
-    assert result.output_for_node("follows_o2") == "foo"
+    if use_multi:
+        expected_outputs = {
+            "start": 1,
+            "abc_.a": 2,
+            "abc_.b": 1,
+            "abc_.c": 2,
+            "def_.d": 3,
+            "def_.e": 3,
+            "def_.f": 6,
+            "final": 5,
+        }
+    else:
+        expected_outputs = {"start": 1, "a": 2, "b": 1, "c": 2, "d": 3, "e": 3, "f": 6, "final": 5}
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=r"When attempting to create job 'bad_subset', the clause "
-        r"'doesnt_exist' within the asset key selection did not match any asset "
-        r"keys. Present asset keys: ",
-    ):
-        group.build_job(name="bad_subset", selection="doesnt_exist")
+    # check if the output values are as we expect
+    for output, value in expected_outputs.items():
+        asset_name = output.split(".")[-1]
+        if asset_name in expected_assets.split(","):
+            # dealing with multi asset
+            if output != asset_name:
+                assert result.output_for_node(output.split(".")[0], asset_name)
+            # dealing with regular asset
+            else:
+                assert result.output_for_node(output, "result") == value
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=r"When attempting to create job 'bad_query_arguments', the clause "
-        r"follows_o1= within the asset key selection was invalid. Please review "
-        r"the selection syntax here: "
-        r"https://docs.dagster.io/concepts/ops-jobs-graphs/job-execution#op-selection-syntax.",
-    ):
-        group.build_job(name="bad_query_arguments", selection="follows_o1=")
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=r"When building job 'test_subselect_only_one_key', the asset "
-        r"'middle_asset' contains asset keys \['o1', 'o2'\], but attempted to "
-        r"select only \['o1'\]. Selecting only some of the asset keys for a "
-        r"particular asset is not yet supported behavior. Please select all "
-        r"asset keys produced by a given asset when subsetting.",
-    ):
-        group.build_job(name="test_subselect_only_one_key", selection="o1")
+def test_subset_does_not_respect_context():
+    @asset
+    def start():
+        return 1
+
+    @multi_asset(outs={"a": Out(), "b": Out(), "c": Out()}, can_subset=True)
+    def abc(start):
+        # this asset declares that it can subset its computation but will always produce all outputs
+        yield Output(1 + start, "a")
+        yield Output(2 + start, "b")
+        yield Output(3 + start, "c")
+
+    @asset
+    def final(c):
+        return c + 1
+
+    group = AssetGroup([start, abc, final])
+    job = group.build_job("subset_job", selection=["*final"])
+
+    # these are the keys specified by the selection *final
+    specified_keys = {AssetKey("start"), AssetKey("c"), AssetKey("final")}
+
+    with instance_for_test() as instance:
+        result = job.execute_in_process(instance=instance)
+        planned_asset_keys = {
+            record.event_log_entry.dagster_event.event_specific_data.asset_key
+            for record in instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            )
+        }
+
+    # should only plan on creating keys start, c, final
+    assert planned_asset_keys == specified_keys
+
+    # should still emit asset materializations if we generate these outputs
+    assert _all_asset_keys(result) == specified_keys | {AssetKey("a"), AssetKey("b")}
 
 
 def test_asset_group_build_job_selection_multi_component():
@@ -353,7 +534,7 @@ def test_asset_group_build_job_selection_multi_component():
         AssetKey(["abc", "asset1"])
     }
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="source asset"):
+    with pytest.raises(DagsterInvalidSubsetError, match="No qualified"):
         group.build_job(name="something", selection="apple>banana")
 
 
@@ -524,7 +705,7 @@ def test_materialize_with_selection():
         resource_defs={"io_manager": io_manager_def},
     )
 
-    result = group.materialize(selection="*follows_o2")
+    result = group.materialize(selection=["*follows_o2", "o1"])
     assert result.success
     assert result.output_for_node("middle_asset", "o1") == "foo"
     assert result.output_for_node("follows_o2") == "foo"

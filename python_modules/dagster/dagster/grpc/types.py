@@ -420,7 +420,7 @@ class PipelineSubsetSnapshotArgs(
         cls,
         pipeline_origin: ExternalPipelineOrigin,
         solid_selection: List[str],
-        asset_selection: List[AssetKey],
+        asset_selection: Optional[List[AssetKey]] = None,
     ):
         return super(PipelineSubsetSnapshotArgs, cls).__new__(
             cls,
@@ -430,9 +430,9 @@ class PipelineSubsetSnapshotArgs(
             solid_selection=check.list_param(solid_selection, "solid_selection", of_type=str)
             if solid_selection
             else None,
-            asset_selection=check.list_param(asset_selection, "asset_selection", of_type=AssetKey)
-            if asset_selection
-            else None,
+            asset_selection=check.opt_list_param(
+                asset_selection, "asset_selection", of_type=AssetKey
+            ),
         )
 
 

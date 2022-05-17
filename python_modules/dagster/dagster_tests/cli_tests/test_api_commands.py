@@ -120,9 +120,27 @@ def test_execute_run_fail_pipeline():
 
             assert "RUN_FAILURE" in result.stdout, "no match, result: {}".format(result)
 
-            # Framework errors (e.g. running a run that has already run) also result in a non-zero error code
-            result = runner.invoke(api.execute_run_command, [input_json_raise_on_failure])
-            assert result.exit_code != 0, str(result.stdout)
+            with mock.patch(
+                "dagster.core.execution.api.pipeline_execution_iterator"
+            ) as _mock_pipeline_execution_iterator:
+                _mock_pipeline_execution_iterator.side_effect = Exception("Framework error")
+
+                run = create_run_for_test(
+                    instance, pipeline_name="foo", run_id="new_run_framework_error"
+                )
+
+                input_json_raise_on_failure = serialize_dagster_namedtuple(
+                    ExecuteRunArgs(
+                        pipeline_origin=pipeline_handle.get_python_origin(),
+                        pipeline_run_id=run.run_id,
+                        instance_ref=instance.get_ref(),
+                        set_exit_code_on_failure=True,
+                    )
+                )
+
+                # Framework errors also result in a non-zero error code
+                result = runner.invoke(api.execute_run_command, [input_json_raise_on_failure])
+                assert result.exit_code != 0, str(result.stdout)
 
 
 def test_execute_run_cannot_load():

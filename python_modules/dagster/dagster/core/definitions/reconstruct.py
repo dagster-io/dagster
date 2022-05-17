@@ -146,8 +146,6 @@ class ReconstructablePipeline(
             be run.
         solids_to_execute (Optional[FrozenSet[str]]): A set of solid/op names to execute. None if no selection
             is specified, i.e. the entire pipeline/job will be run.
-        solids_to_execute (Optional[FrozenSet[str]]): A set of solid/op names to execute. None if no selection
-            is specified, i.e. the entire pipeline/job will be run.
         asset_selection (Optional[FrozenSet[AssetKey]]) A set of assets to execute. None if no selection
             is specified, i.e. the entire job will be run.
     """

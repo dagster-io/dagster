@@ -80,7 +80,7 @@ data:
 
     {{- $computeLogManagerType := .Values.computeLogManager.type }}
     compute_logs:
-      {{- if has $computeLogManagerType (list "NoOpComputeLogManager" "LocalComputeLogManager") -}}
+      {{- if eq $computeLogManagerType "NoOpComputeLogManager" -}}
         {{- include "dagsterYaml.computeLogManager.noop" . | indent 6 -}}
       {{- else if eq $computeLogManagerType "AzureBlobComputeLogManager" }}
         {{- include "dagsterYaml.computeLogManager.azure" . | indent 6 -}}

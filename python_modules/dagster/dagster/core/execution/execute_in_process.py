@@ -1,4 +1,4 @@
-from typing import Any, Dict, FrozenSet, List, Mapping, Optional, cast
+from typing import Any, Dict, FrozenSet, Mapping, Optional, cast
 
 from dagster.core.definitions import (
     GraphDefinition,

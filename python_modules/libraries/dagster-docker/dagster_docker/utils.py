@@ -1,5 +1,5 @@
 import os
-from typing import Tuple
+from typing import Optional, Tuple
 
 from docker_image import reference
 
@@ -59,7 +59,7 @@ def validate_docker_image(docker_image):
         ) from e
 
 
-def parse_env_var(env_var_str: str) -> Tuple[str, str]:
+def parse_env_var(env_var_str: str) -> Tuple[str, Optional[str]]:
     if "=" in env_var_str:
         split = env_var_str.split("=")
         return (split[0], split[1])

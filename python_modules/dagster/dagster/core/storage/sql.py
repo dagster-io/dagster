@@ -1,6 +1,5 @@
 # pylint chokes on the perfectly ok import from alembic.migration
 import threading
-from contextlib import contextmanager
 from functools import lru_cache
 
 import sqlalchemy as db
@@ -10,7 +9,6 @@ from alembic.migration import MigrationContext  # pylint: disable=import-error
 from alembic.script import ScriptDirectory
 from sqlalchemy.ext.compiler import compiles
 
-from dagster.core.errors import DagsterInstanceSchemaOutdated
 from dagster.utils import file_relative_path
 from dagster.utils.log import quieten
 
@@ -60,30 +58,6 @@ def check_alembic_revision(alembic_config, conn):
         head_revision = script.as_revision_number("head")
 
     return (db_revision, head_revision)
-
-
-@contextmanager
-def handle_schema_errors(conn, alembic_config):
-    try:
-        yield
-    except (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError) as e:
-        db_revision, head_revision = (None, None)
-
-        try:
-            with quieten():
-                db_revision, head_revision = check_alembic_revision(alembic_config, conn)
-        # If exceptions were raised during the revision check, we want to swallow them and
-        # allow the original exception to fall through
-        except Exception:
-            pass
-
-        if db_revision != head_revision:
-            raise DagsterInstanceSchemaOutdated(
-                db_revision=db_revision,
-                head_revision=head_revision,
-            ) from e
-
-        raise
 
 
 def run_migrations_offline(context, config, target_metadata):

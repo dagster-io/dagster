@@ -86,13 +86,29 @@ def execute_run_iterator(
                     )
 
                 return gen_ignore_duplicate_run_worker()
+            elif pipeline_run.is_finished:
+
+                def gen_ignore_duplicate_run_worker():
+                    yield instance.report_engine_event(
+                        "Ignoring a run worker that started after the run had already finished.",
+                        pipeline_run,
+                    )
+
+                return gen_ignore_duplicate_run_worker()
             else:
-                raise Exception(
-                    f"{pipeline_run.pipeline_name} ({pipeline_run.run_id}) started "
-                    f"a new run while the run was already in state {pipeline_run.status}. "
-                    "This most frequently happens when the run worker unexpectedly stops and is "
-                    "restarted by the cluster.",
-                )
+
+                def gen_fail_restarted_run_worker():
+                    yield instance.report_engine_event(
+                        f"{pipeline_run.pipeline_name} ({pipeline_run.run_id}) started "
+                        f"a new run worker while the run was already in state {pipeline_run.status}. "
+                        "This most frequently happens when the run worker unexpectedly stops and is "
+                        "restarted by the cluster. Marking the run as failed.",
+                        pipeline_run,
+                    )
+                    yield instance.report_run_failed(pipeline_run)
+
+                return gen_fail_restarted_run_worker()
+
     else:
         check.invariant(
             pipeline_run.status == PipelineRunStatus.STARTED

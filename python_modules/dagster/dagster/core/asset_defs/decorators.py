@@ -242,6 +242,10 @@ def multi_asset(
     required_resource_keys: Optional[Set[str]] = None,
     compute_kind: Optional[str] = None,
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
+    partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
+    op_tags: Optional[Dict[str, Any]] = None,
+    can_subset: bool = False,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -267,6 +271,20 @@ def multi_asset(
             multi asset. If this default is not correct, you pass in a map of output names to a
             corrected set of AssetKeys that they depend on. Any AssetKeys in this list must be either
             used as input to the asset or produced within the op.
+        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+            compose the assets.
+        partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
+            keys for this asset to partition keys of upstream assets. Each key in the dictionary
+            correponds to one of the input assets, and each value is a PartitionMapping.
+            If no entry is provided for a particular asset dependency, the partition mapping defaults
+            to the default partition mapping for the partitions definition, which is typically maps
+            partition keys to the same partition keys in upstream assets.
+        op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
+            Frameworks may expect and require certain metadata to be attached to a op. Values that
+            are not strings will be json encoded and must meet the criteria that
+            `json.loads(json.dumps(value)) == value`.
+        can_subset (bool): If this asset's computation can emit a subset of the asset
+            keys based on the context.selected_assets argument. Defaults to False.
     """
 
     check.invariant(
@@ -309,19 +327,37 @@ def multi_asset(
                 ins=dict(asset_ins.values()),
                 out=outs,
                 required_resource_keys=required_resource_keys,
-                tags={"kind": compute_kind} if compute_kind else None,
+                tags={
+                    **({"kind": compute_kind} if compute_kind else {}),
+                    **(op_tags or {}),
+                },
+                config_schema={
+                    "assets": {
+                        "input_partitions": Field(dict, is_required=False),
+                        "output_partitions": Field(dict, is_required=False),
+                    }
+                },
             )(fn)
 
+        asset_keys_by_input_name = {
+            input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
+        }
         asset_keys_by_output_name = {
             name: cast(AssetKey, out.asset_key or AssetKey([name])) for name, out in outs.items()
         }
         return AssetsDefinition(
-            asset_keys_by_input_name={
-                input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
-            },
+            asset_keys_by_input_name=asset_keys_by_input_name,
             asset_keys_by_output_name=asset_keys_by_output_name,
             node_def=op,
             asset_deps={asset_keys_by_output_name[name]: asset_deps[name] for name in asset_deps},
+            partitions_def=partitions_def,
+            partition_mappings={
+                asset_keys_by_input_name[input_name]: partition_mapping
+                for input_name, partition_mapping in partition_mappings.items()
+            }
+            if partition_mappings
+            else None,
+            can_subset=can_subset,
         )
 
     return inner

@@ -62,7 +62,7 @@ def create_step_outputs(
                     is_dynamic=output_def.is_dynamic,
                     is_asset=asset_info is not None,
                     should_materialize=output_def.name in config_output_names,
-                    asset_key=asset_info.key if asset_info else None,
+                    asset_key=asset_info.key if asset_info and asset_info.is_required else None,
                 ),
             )
         )

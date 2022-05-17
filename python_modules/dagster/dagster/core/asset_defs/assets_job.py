@@ -299,7 +299,9 @@ def build_root_manager(
         @root_input_manager(required_resource_keys=source_asset_io_manager_keys)
         def _root_manager(input_context: InputContext) -> Any:
             source_asset_key = cast(AssetKey, input_context.asset_key)
-            source_asset = source_assets_by_key[source_asset_key]
+            source_asset = source_assets_by_key.get(source_asset_key)
+            if not source_asset:
+                return None
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=ExperimentalWarning)
 
