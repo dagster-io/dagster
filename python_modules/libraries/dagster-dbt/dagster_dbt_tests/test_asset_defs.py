@@ -25,6 +25,7 @@ def test_load_from_manifest_json():
     assert_assets_match_project(dbt_assets)
 
     dbt = MagicMock()
+    dbt.get_run_results_json.return_value = run_results_json
     dbt.run.return_value = DbtOutput(run_results_json)
     dbt.build.return_value = DbtOutput(run_results_json)
     dbt.get_manifest_json.return_value = manifest_json
