@@ -125,3 +125,58 @@ def test_dataproc_resource():
             }
         )
         assert result.success
+
+
+def test_wait_for_job_with_timeout():
+    """Test submitting a job with timeout of 0 second so that it always fails.
+    """
+    with mock.patch("httplib2.Http", new=HttpSnooper):
+
+        @job(resource_defs={"dataproc": dataproc_resource})
+        def test_dataproc():
+            dataproc_op()
+
+        try:
+            result = test_dataproc.execute_in_process(
+                run_config={
+                    "ops": {
+                        "dataproc_op": {
+                            "config": {
+                                "job_timeout_in_seconds": 0,
+                                "job_config": {
+                                    "projectId": PROJECT_ID,
+                                    "region": REGION,
+                                    "job": {
+                                        "reference": {"projectId": PROJECT_ID},
+                                        "placement": {"clusterName": CLUSTER_NAME},
+                                        "hiveJob": {"queryList": {"queries": ["SHOW DATABASES"]}},
+                                    },
+                                },
+                                "job_scoped_cluster": True,
+                            }
+                        }
+                    },
+                    "resources": {
+                        "dataproc": {
+                            "config": {
+                                "projectId": PROJECT_ID,
+                                "clusterName": CLUSTER_NAME,
+                                "region": REGION,
+                                "cluster_config": {
+                                    "softwareConfig": {
+                                        "properties": {
+                                            # Create a single-node cluster
+                                            # This needs to be the string "true" when
+                                            # serialized, not a boolean true
+                                            "dataproc:dataproc.allow.zero.workers": "true"
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    },
+                }
+            )
+            assert False
+        except Exception as e:
+            assert "Job run timed out" in str(e)
