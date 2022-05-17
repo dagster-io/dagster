@@ -20,7 +20,7 @@ class AssetsDefinition:
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]] = None,
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
-        # if adding new fields, make sure to handle them in the with_replaced_asset_keys method
+        # if adding new fields, make sure to handle them in both with_replaced_asset_keys
     ):
         self._node_def = node_def
         self._asset_keys_by_input_name = check.dict_param(
@@ -196,6 +196,16 @@ class AssetsDefinition:
                 node_def=self.node_def,
                 partitions_def=self.partitions_def,
                 partition_mappings=self._partition_mappings,
+                asset_deps={
+                    output_asset_key_replacements.get(key, key): {
+                        input_asset_key_replacements.get(
+                            upstream_key,
+                            output_asset_key_replacements.get(upstream_key, upstream_key),
+                        )
+                        for upstream_key in value
+                    }
+                    for key, value in self.asset_deps.items()
+                },
             )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
