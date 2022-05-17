@@ -295,6 +295,7 @@ def _asset_mappings_for_node(
     asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
     asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
     asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
+    asset_io_managers: Dict[AssetKey, str] = {}
     if not isinstance(node_def, GraphDefinition):
         # must be in an op (or solid)
         if node_handle is None:
@@ -320,18 +321,26 @@ def _asset_mappings_for_node(
                 )
                 # assume output depends on all inputs
                 asset_deps[output_key] = input_asset_keys
+
+                asset_io_managers[output_key] = output_def.io_manager_key
     else:
         # keep recursing through structure
         for sub_node_name, sub_node in node_def.node_dict.items():
-            n_asset_key_by_input, n_asset_info_by_output, n_asset_deps = _asset_mappings_for_node(
+            (
+                n_asset_key_by_input,
+                n_asset_info_by_output,
+                n_asset_deps,
+                n_asset_io_managers,
+            ) = _asset_mappings_for_node(
                 node_def=sub_node.definition,
                 node_handle=NodeHandle(sub_node_name, parent=node_handle),
             )
             asset_key_by_input.update(n_asset_key_by_input)
             asset_info_by_output.update(n_asset_info_by_output)
             asset_deps.update(n_asset_deps)
+            asset_io_managers.update(n_asset_io_managers)
 
-    return asset_key_by_input, asset_info_by_output, asset_deps
+    return asset_key_by_input, asset_info_by_output, asset_deps, asset_io_managers
 
 
 class AssetLayer:
@@ -359,6 +368,7 @@ class AssetLayer:
         dependency_node_handles_by_asset_key: Optional[Mapping[AssetKey, Set[NodeHandle]]] = None,
         assets_defs: Optional[List["AssetsDefinition"]] = None,
         source_asset_defs: Optional[Sequence[Union["SourceAsset", "AssetsDefinition"]]] = None,
+        io_manager_keys_by_asset_key: Optional[Mapping[AssetKey, str]] = None,
     ):
         from dagster.core.asset_defs import AssetsDefinition, SourceAsset
 
@@ -393,16 +403,25 @@ class AssetLayer:
         for node_output_handle, asset_info in self._asset_info_by_node_output_handle.items():
             if asset_info.is_required:
                 self._asset_keys_by_node_handle[node_output_handle.node_handle].add(asset_info.key)
+        self._io_manager_keys_by_asset_key = check.opt_dict_param(
+            io_manager_keys_by_asset_key,
+            "io_manager_keys_by_asset_key",
+            key_type=AssetKey,
+            value_type=str,
+        )
 
     @staticmethod
     def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
         """Scrape asset info off of InputDefinition/OutputDefinition instances"""
         check.inst_param(graph_def, "graph_def", GraphDefinition)
-        asset_by_input, asset_by_output, asset_deps = _asset_mappings_for_node(graph_def, None)
+        asset_by_input, asset_by_output, asset_deps, asset_io_managers = _asset_mappings_for_node(
+            graph_def, None
+        )
         return AssetLayer(
             asset_keys_by_node_input_handle=asset_by_input,
             asset_info_by_node_output_handle=asset_by_output,
             asset_deps=asset_deps,
+            io_manager_keys_by_asset_key=asset_io_managers,
         )
 
     @staticmethod
@@ -429,6 +448,9 @@ class AssetLayer:
         asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
         asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
         asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
+        asset_io_managers: Dict[AssetKey, str] = {
+            source_asset.key: source_asset.io_manager_key for source_asset in source_assets
+        }
         for node_handle, assets_def in assets_defs_by_node_handle.items():
             asset_deps.update(assets_def.asset_deps)
 
@@ -462,6 +484,7 @@ class AssetLayer:
             ),
             assets_defs=[assets_def for assets_def in assets_defs_by_node_handle.values()],
             source_asset_defs=source_assets,
+            io_manager_keys_by_asset_key=asset_io_managers,
         )
 
     @property
@@ -488,6 +511,9 @@ class AssetLayer:
 
     def asset_key_for_input(self, node_handle: NodeHandle, input_name: str) -> Optional[AssetKey]:
         return self._asset_keys_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))
+
+    def io_manager_key_for_asset(self, asset_key: AssetKey) -> str:
+        return self._io_manager_keys_by_asset_key[asset_key]
 
     def asset_info_for_output(
         self, node_handle: NodeHandle, output_name: str

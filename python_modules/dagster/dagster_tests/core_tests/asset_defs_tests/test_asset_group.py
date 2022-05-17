@@ -201,14 +201,6 @@ def test_resource_override():
     def the_resource():
         pass
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Resource dictionary included resource with key 'root_manager', "
-        "which is a reserved resource keyword in Dagster. Please change this "
-        "key, and then change all places that require this key to a new value.",
-    ):
-        AssetGroup([], resource_defs={"root_manager": the_resource})
-
     @repository
     def the_repo():
         return [AssetGroup([], resource_defs={"io_manager": mem_io_manager})]

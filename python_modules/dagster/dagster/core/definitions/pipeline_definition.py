@@ -245,6 +245,10 @@ class PipelineDefinition:
                 )
             self._preset_dict[preset.name] = preset
 
+        self._asset_layer = check.opt_inst_param(
+            asset_layer, "asset_layer", AssetLayer, default=AssetLayer.from_graph(self.graph)
+        )
+
         self._resource_requirements = {
             mode_def.name: _checked_resource_reqs_for_mode(
                 self._graph_def,
@@ -254,6 +258,7 @@ class PipelineDefinition:
                 self._graph_def.node_dict,
                 self._hook_defs,
                 self._graph_def._dependency_structure,
+                self._asset_layer,
             )
             for mode_def in self._mode_definitions
         }
@@ -272,10 +277,6 @@ class PipelineDefinition:
 
         if self.version_strategy is not None:
             experimental_class_warning("VersionStrategy")
-
-        self._asset_layer = check.opt_inst_param(
-            asset_layer, "asset_layer", AssetLayer, default=AssetLayer.from_graph(self.graph)
-        )
 
     @property
     def name(self):
@@ -733,6 +734,7 @@ def _checked_resource_reqs_for_mode(
     root_node_dict: Dict[str, Node],
     pipeline_hook_defs: AbstractSet[HookDefinition],
     dependency_structure: DependencyStructure,
+    asset_layer: AssetLayer,
 ) -> Set[str]:
     """
     Calculate the resource requirements for the pipeline in this mode and ensure they are
@@ -814,6 +816,17 @@ def _checked_resource_reqs_for_mode(
                     resource_defs_of_type=mode_resources,
                 )
                 raise DagsterInvalidDefinitionError(error_msg)
+
+    for asset_key, io_manager_key in asset_layer._io_manager_keys_by_asset_key.items():
+        resource_reqs.add(io_manager_key)
+        if io_manager_key not in mode_resources:
+            error_msg = _get_missing_resource_error_msg(
+                resource_type="io_manager",
+                resource_key=io_manager_key,
+                descriptor=f"asset_key '{asset_key}'",
+                mode_def=mode_def,
+                resource_defs_of_type=mode_resources,
+            )
 
     for resource_key, resource in mode_def.resource_defs.items():
         for required_resource in resource.required_resource_keys:

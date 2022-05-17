@@ -168,24 +168,24 @@ class FromSourceAsset(
             f"but source is {self.solid_handle}.{self.input_name}.",
         )
 
-        input_def = step_context.solid_def.input_def_named(input_def.name)
-        source_asset = step_context.pipeline_def.asset_layer.source_asset_for_input(
-            self.solid_handle, input_name=input_def.name
+        input_asset_key = step_context.pipeline_def.asset_layer.asset_key_for_input(
+            self.solid_handle, input_name=self.input_name
+        )
+        input_manager_key = step_context.pipeline_def.asset_layer.io_manager_key_for_asset(
+            input_asset_key
         )
 
         op_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
         config_data = op_config.inputs.get(self.input_name) if op_config else None
 
-        loader = getattr(step_context.resources, source_asset.io_manager_key)
+        loader = getattr(step_context.resources, input_manager_key)
         load_input_context = step_context.for_input_manager(
             input_def.name,
             config_data,
             metadata=input_def.metadata,
             dagster_type=input_def.dagster_type,
-            resource_config=step_context.resolved_run_config.resources[
-                source_asset.io_manager_key
-            ].config,
-            resources=build_resources_for_manager(source_asset.io_manager_key, step_context),
+            resource_config=step_context.resolved_run_config.resources[input_manager_key].config,
+            resources=build_resources_for_manager(input_manager_key, step_context),
         )
 
         yield from _load_input_with_input_manager(loader, load_input_context)
@@ -195,7 +195,7 @@ class FromSourceAsset(
         yield DagsterEvent.loaded_input(
             step_context,
             input_name=input_def.name,
-            manager_key=source_asset.io_manager_key,
+            manager_key=input_manager_key,
             metadata_entries=[
                 entry for entry in metadata_entries if isinstance(entry, MetadataEntry)
             ],
@@ -241,9 +241,11 @@ class FromSourceAsset(
         )
 
     def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
-        input_def = pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
-
-        return {input_def.root_manager_key}
+        input_asset_key = pipeline_def.asset_layer.asset_key_for_input(
+            self.solid_handle, self.input_name
+        )
+        input_io_manager_key = pipeline_def.asset_layer.io_manager_key_for_asset(input_asset_key)
+        return {input_io_manager_key}
 
 
 @whitelist_for_serdes

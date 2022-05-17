@@ -130,9 +130,7 @@ def build_assets_job(
             all_resource_defs[resource_key] = resource_def
 
     return graph.to_job(
-        resource_defs=merge_dicts(
-            {"io_manager": fs_asset_io_manager}, all_resource_defs, {"root_manager": root_manager}
-        ),
+        resource_defs=merge_dicts({"io_manager": fs_asset_io_manager}, all_resource_defs),
         config=config or partitioned_config,
         tags=tags,
         executor_def=executor_def,
