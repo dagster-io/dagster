@@ -61,7 +61,7 @@ if __name__ == "__main__":
             "coloredlogs>=6.1, <=14.0",
             "contextvars; python_version < '3.7'",
             "Jinja2",
-            "markupsafe<=2.0.1",
+            "markupsafe",
             "PyYAML>=5.1",
             # core (not explicitly expressed atm)
             # alembic 1.6.3 broke our migrations: https://github.com/sqlalchemy/alembic/issues/848
