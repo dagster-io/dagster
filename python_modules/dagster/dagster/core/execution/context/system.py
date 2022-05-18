@@ -494,6 +494,16 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     ) -> InputContext:
         upstream_output: Optional[OutputContext] = None
         if source_handle is not None:
+            asset_partition_key_range: Optional[PartitionKeyRange] = None
+            if self.has_asset_partitions_for_input(name):
+                asset_partition_key_range = self.asset_partition_key_range_for_input(name)
+
+            asset_partitions_time_window: Optional[TimeWindow] = None
+            try:
+                asset_partitions_time_window = self.asset_partitions_time_window_for_input(name)
+            except ValueError:
+                pass
+
             upstream_output = get_output_context(
                 self.execution_plan,
                 self.pipeline_def,
@@ -504,6 +514,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 step_context=None,
                 resources=None,
                 version=self.execution_plan.get_version_for_step_output_handle(source_handle),
+                asset_partition_key_range=asset_partition_key_range,
+                asset_partitions_time_window=asset_partitions_time_window,
             )
 
         return InputContext(
