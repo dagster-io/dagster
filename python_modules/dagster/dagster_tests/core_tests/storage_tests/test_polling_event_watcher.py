@@ -1,7 +1,7 @@
 import tempfile
 import time
 from contextlib import contextmanager
-from typing import Callable
+from typing import Callable, Union
 
 import dagster._check as check
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
@@ -26,10 +26,17 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
     def from_config_value(inst_data, config_value):
         return SqlitePollingEventLogStorage(inst_data=inst_data, **config_value)
 
-    def watch(self, run_id: str, start_cursor: int, callback: Callable[[EventLogEntry], None]):
+    def watch(self, run_id: str, cursor: Union[str, int], callback: Callable[[EventLogEntry], None]):
         check.str_param(run_id, "run_id")
-        check.int_param(start_cursor, "start_cursor")
+        check.inst_param(cursor, "cursor", (str, int))
         check.callable_param(callback, "callback")
+        if isinstance(cursor, str):
+            try:
+                start_cursor = int(cursor)
+            except ValueError:
+                start_cursor = -1
+        else:
+            start_cursor = cursor
         self._watcher.watch_run(run_id, start_cursor, callback)
 
     def end_watch(self, run_id: str, handler: Callable[[EventLogEntry], None]):

@@ -127,7 +127,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]
 
-    def watch(self, run_id, start_cursor, callback):
+    def watch(self, run_id, cursor, callback):
         if not self._obs:
             self._obs = Observer()
             self._obs.start()
@@ -135,8 +135,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 ConsolidatedSqliteEventLogStorageWatchdog(self), self._base_dir, True
             )
 
-        cursor = start_cursor if start_cursor is not None else -1
-        self._watchers[run_id][callback] = cursor
+        self._watchers[run_id][callback] = cursor if cursor is not None else -1
 
     def on_modified(self):
         keys = [
