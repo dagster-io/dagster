@@ -80,6 +80,69 @@ def define_inty_job(adls_io_resource=adls2_resource):
 
 
 @pytest.mark.nettest
+def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_system, credential):
+    job = define_inty_job()
+
+    run_config = {
+        "resources": {
+            "io_manager": {"config": {"adls2_file_system": file_system}},
+            "adls2": {
+                "config": {"storage_account": storage_account, "credential": {"key": credential}}
+            },
+        }
+    }
+
+    run_id = make_new_run_id()
+
+    resolved_run_config = ResolvedRunConfig.build(job, run_config=run_config)
+    execution_plan = ExecutionPlan.build(InMemoryPipeline(job), resolved_run_config)
+
+    assert execution_plan.get_step_by_key("return_one")
+
+    step_keys = ["return_one"]
+    instance = DagsterInstance.ephemeral()
+    pipeline_run = PipelineRun(pipeline_name=job.name, run_id=run_id, run_config=run_config)
+
+    return_one_step_events = list(
+        execute_plan(
+            execution_plan.build_subset_plan(step_keys, job, resolved_run_config),
+            pipeline=InMemoryPipeline(job),
+            run_config=run_config,
+            pipeline_run=pipeline_run,
+            instance=instance,
+        )
+    )
+
+    assert get_step_output(return_one_step_events, "return_one")
+    context = build_input_context(
+        upstream_output=build_output_context(
+            step_key="return_one",
+            name="result",
+            run_id=run_id,
+        )
+    )
+
+    io_manager = PickledObjectADLS2IOManager(
+        file_system=file_system,
+        adls2_client=create_adls2_client(storage_account, credential),
+        blob_client=create_blob_client(storage_account, credential),
+        lease_client_constructor=DataLakeLeaseClient,
+    )
+    assert io_manager.load_input(context) == 1
+
+    # Verify that when the IO manager needs to delete recursively, it is able to do so,
+    # by removing the whole path for the run
+    recursive_path = "/".join(
+        [
+            io_manager.prefix,
+            "storage",
+            run_id,
+        ]
+    )
+    io_manager._rm_object(recursive_path)  # pylint: disable=protected-access
+
+
+@pytest.mark.nettest
 def test_adls2_pickle_io_manager_execution(storage_account, file_system, credential):
     job = define_inty_job()
 
