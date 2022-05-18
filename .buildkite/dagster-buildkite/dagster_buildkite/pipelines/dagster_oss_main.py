@@ -6,6 +6,7 @@ from dagster_buildkite.defines import DO_COVERAGE
 from dagster_buildkite.steps.coverage import build_coverage_step
 from dagster_buildkite.steps.dagit import build_dagit_steps
 from dagster_buildkite.steps.dagster import build_dagster_steps
+from dagster_buildkite.steps.integration import build_integration_steps
 from dagster_buildkite.steps.trigger import build_trigger_step
 from dagster_buildkite.steps.wait import build_wait_step
 from dagster_buildkite.utils import BuildkiteStep, is_feature_branch, safe_getenv
@@ -54,7 +55,7 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
             ),
         )
 
-    # Skip non-dagit steps if we are on a feature branch with only dagit changes.
+    # Skip non-dagit-ui steps if we are on a feature branch with only dagit-ui (web app) changes.
     if is_feature_branch(branch_name) and dagit_only_diff:
         steps += build_dagit_steps()
 
@@ -62,6 +63,7 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
     else:
         steps += build_dagit_steps()
         steps += build_dagster_steps()
+        steps += build_integration_steps()
 
         if do_coverage:
             steps.append(build_wait_step())

@@ -10,7 +10,7 @@ from ..utils import (
     connect_sibling_docker_container,
     network_buildkite_container,
 )
-from .test_images import build_test_image_steps, test_image_depends_fn
+from .test_images import test_image_depends_fn
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 DAGSTER_CURRENT_BRANCH = "current_branch"
@@ -19,7 +19,6 @@ EARLIEST_TESTED_RELEASE = "0.12.8"
 
 def build_integration_steps() -> List[BuildkiteStep]:
     steps: List[BuildkiteStep] = []
-    steps += build_test_image_steps()
 
     # Shared dependency of some test suites
     steps += PackageBuildSpec(
