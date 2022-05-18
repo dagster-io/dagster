@@ -1008,10 +1008,6 @@
                     "title": "Enabled",
                     "type": "boolean"
                 },
-                "apiVersion": {
-                    "title": "Apiversion",
-                    "type": "string"
-                },
                 "annotations": {
                     "$ref": "#/definitions/Annotations"
                 },
