@@ -15,6 +15,7 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Set,
     Union,
     cast,
@@ -56,6 +57,7 @@ from .output import OutputContext, get_output_context
 if TYPE_CHECKING:
     from dagster.core.definitions.dependency import Node, NodeHandle
     from dagster.core.definitions.resource_definition import Resources
+    from dagster.core.events import DagsterEvent
     from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.instance import DagsterInstance
 
@@ -511,16 +513,18 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         return HookContext(self, hook_def)
 
-    def can_load(self, step_output_handle: StepOutputHandle) -> bool:
+    def can_load(
+        self,
+        step_output_handle: StepOutputHandle,
+        step_output_events: Sequence["DagsterEvent"],
+    ) -> bool:
         # Whether IO Manager can load the source
         # FIXME https://github.com/dagster-io/dagster/issues/3511
         # This is a stopgap which asks the instance to check the event logs to find out step skipping
 
-        from dagster.core.events import DagsterEventType
-
         # can load from upstream in the same run
-        for record in self.instance.all_logs(self.run_id, of_type=DagsterEventType.STEP_OUTPUT):
-            if step_output_handle == record.dagster_event.event_specific_data.step_output_handle:
+        for event in step_output_events:
+            if step_output_handle == event.step_output_data.step_output_handle:
                 return True
 
         if (
