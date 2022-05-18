@@ -24,6 +24,7 @@ export const App: React.FC = (props) => {
 
 const Main = styled.div<{$navCollapsible: boolean}>`
   height: 100%;
+  z-index: 1;
 
   ${(p) =>
     p.$navCollapsible

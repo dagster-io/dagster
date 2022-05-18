@@ -22,6 +22,7 @@ export const PartitionStatus: React.FC<{
   onSelect?: (selection: string[]) => void;
   splitPartitions?: boolean;
   hideStatusTooltip?: boolean;
+  tooltipMessage?: string;
   selectionWindowSize?: number;
 }> = ({
   partitionNames,
@@ -33,6 +34,7 @@ export const PartitionStatus: React.FC<{
   small,
   selectionWindowSize,
   hideStatusTooltip,
+  tooltipMessage,
 }) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const [currentSelectionRange, setCurrentSelectionRange] = React.useState<
@@ -168,7 +170,7 @@ export const PartitionStatus: React.FC<{
               top: 0,
             }}
           >
-            {hideStatusTooltip ? (
+            {hideStatusTooltip || tooltipMessage ? (
               <div
                 style={{
                   width: '100%',
@@ -176,12 +178,15 @@ export const PartitionStatus: React.FC<{
                   outline: 'none',
                   background: _statusToColor(s.status),
                 }}
+                title={tooltipMessage}
               />
             ) : (
               <Tooltip
                 display="block"
                 content={
-                  s.startIdx === s.endIdx
+                  tooltipMessage
+                    ? tooltipMessage
+                    : s.startIdx === s.endIdx
                     ? `Partition ${partitionNames[s.startIdx]} is ${_statusToText(s.status)}`
                     : `Partitions ${partitionNames[s.startIdx]} through ${
                         partitionNames[s.endIdx]
@@ -256,7 +261,7 @@ export const PartitionStatus: React.FC<{
                 ),
                 height: small ? 14 : 24,
                 position: 'absolute',
-                zIndex: 1000,
+                zIndex: 5,
                 background: Colors.White,
                 opacity: 0.5,
                 top: 0,
@@ -280,7 +285,7 @@ export const PartitionStatus: React.FC<{
                 minWidth: 2,
                 height: small ? 14 : 24,
                 position: 'absolute',
-                zIndex: 1000,
+                zIndex: 5,
                 border: `3px solid ${Colors.Dark}`,
                 borderRadius: 4,
                 top: 0,
@@ -300,7 +305,7 @@ export const PartitionStatus: React.FC<{
                 ),
                 height: small ? 14 : 24,
                 position: 'absolute',
-                zIndex: 1000,
+                zIndex: 5,
                 background: Colors.White,
                 opacity: 0.5,
                 top: 0,
