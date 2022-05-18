@@ -1,7 +1,11 @@
 from typing import TYPE_CHECKING, Mapping
 
 import dagster._check as check
-from dagster.core.host_representation.external_data import ExternalRepositoryData
+from dagster.core.errors import DagsterUserCodeProcessError
+from dagster.core.host_representation.external_data import (
+    ExternalRepositoryData,
+    ExternalRepositoryErrorData,
+)
 from dagster.serdes import deserialize_as
 
 if TYPE_CHECKING:
@@ -27,15 +31,18 @@ def sync_get_streaming_external_repositories_data_grpc(
             )
         )
 
-        external_repository_data = deserialize_as(
+        result = deserialize_as(
             "".join(
                 [
                     chunk["serialized_external_repository_chunk"]
                     for chunk in external_repository_chunks
                 ]
             ),
-            ExternalRepositoryData,
+            (ExternalRepositoryData, ExternalRepositoryErrorData),
         )
 
-        repo_datas[repository_name] = external_repository_data
+        if isinstance(result, ExternalRepositoryErrorData):
+            raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+        repo_datas[repository_name] = result
     return repo_datas
