@@ -162,9 +162,9 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         )
 
     # pylint: disable=E1101
-    return Observable.create(
-        PipelineRunObservableSubscribe(instance, run_id, after_cursor=after)
-    ).map(_handle_events)
+    return Observable.create(PipelineRunObservableSubscribe(instance, run_id, cursor=after)).map(
+        _handle_events
+    )
 
 
 def get_compute_log_observable(graphene_info, run_id, step_key, io_type, cursor=None):

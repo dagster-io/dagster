@@ -256,7 +256,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         """Clear the log storage."""
 
     @abstractmethod
-    def watch(self, run_id: str, start_cursor: int, callback: Callable):
+    def watch(self, run_id: str, cursor: Union[int, str], callback: Callable):
         """Call this method to start watching."""
 
     @abstractmethod

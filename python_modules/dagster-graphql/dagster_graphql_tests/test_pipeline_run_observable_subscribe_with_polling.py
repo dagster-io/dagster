@@ -82,7 +82,7 @@ def test_using_instance(before_watch_config: NumEventsAndCursor, num_events_afte
         # set up instance & write `before_watch_config.num_events_before_watch` to event_log
         assert isinstance(storage, SqlitePollingEventLogStorage)
         observable_subscribe = PipelineRunObservableSubscribe(
-            instance, RUN_ID, after_cursor=before_watch_config.after_cursor
+            instance, RUN_ID, cursor=before_watch_config.after_cursor
         )
         event_storer = EventStorer(storage)
         event_storer.store_n_events(before_watch_config.num_events_before_watch)

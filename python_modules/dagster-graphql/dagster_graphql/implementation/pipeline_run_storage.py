@@ -20,30 +20,30 @@ def get_chunk_size() -> int:
 
 
 class PipelineRunObservableSubscribe:
-    def __init__(self, instance, run_id, after_cursor=None):
+    def __init__(self, instance, run_id, cursor=None):
         self.instance = instance
         self.run_id = run_id
         self.observer = None
         self.state = State.NULL
         self.stopping = None
         self.stopped = None
-        self.after_cursor = after_cursor
+        self.cursor = cursor
 
     def __call__(self, observer):
         self.observer = observer
         check.invariant(self.state is State.NULL, f"unexpected state {self.state}")
         chunk_size = get_chunk_size()
-        events = self.instance.logs_after(self.run_id, self.after_cursor, limit=chunk_size)
-        done_loading = len(events) < chunk_size
+        connection = self.instance.get_records_for_run(self.run_id, self.cursor, limit=chunk_size)
 
-        if events:
-            self.observer.on_next((events, not done_loading))
-            self.after_cursor = len(events) + int(self.after_cursor)
+        if connection and connection.records:
+            events = [record.event_log_entry for record in connection.records]
+            self.observer.on_next((events, connection.has_more))
+            self.cursor = connection.cursor
 
-        if done_loading:
-            self.watch_events()
-        else:
+        if connection.has_more:
             self.load_events()
+        else:
+            self.watch_events()
 
         return self
 
@@ -62,22 +62,23 @@ class PipelineRunObservableSubscribe:
 
     def watch_events(self):
         self.state = State.WATCHING
-        self.instance.watch_event_logs(self.run_id, self.after_cursor, self.handle_new_event)
+        self.instance.watch_event_logs(self.run_id, self.cursor, self.handle_new_event)
 
     def background_event_loading(self, sleep_fn):
         chunk_size = get_chunk_size()
 
         while not self.stopping.is_set():
-            events = self.instance.logs_after(self.run_id, self.after_cursor, limit=chunk_size)
+            connection = self.instance.get_records_for_run(
+                self.run_id, self.cursor, limit=chunk_size
+            )
             if self.observer is None:
                 break
 
-            done_loading = len(events) < chunk_size
+            events = [record.event_log_entry for record in connection.records]
+            self.observer.on_next((events, connection.has_more))
+            self.cursor = connection.cursor
 
-            self.observer.on_next((events, not done_loading))
-            self.after_cursor = len(events) + int(self.after_cursor)
-
-            if done_loading:
+            if not connection.has_more:
                 break
 
             sleep_fn(0)

@@ -382,12 +382,12 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         super(SqliteEventLogStorage, self).wipe_asset(asset_key)
         self._delete_mirrored_events_for_asset_key(asset_key)
 
-    def watch(self, run_id, start_cursor, callback):
+    def watch(self, run_id, cursor, callback):
         if not self._obs:
             self._obs = Observer()
             self._obs.start()
 
-        watchdog = SqliteEventLogStorageWatchdog(self, run_id, callback, start_cursor)
+        watchdog = SqliteEventLogStorageWatchdog(self, run_id, callback, cursor)
         self._watchers[run_id][callback] = (
             watchdog,
             self._obs.schedule(watchdog, self._base_dir, True),
@@ -411,23 +411,23 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
 
 class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
-    def __init__(self, event_log_storage, run_id, callback, start_cursor, **kwargs):
+    def __init__(self, event_log_storage, run_id, callback, cursor, **kwargs):
         self._event_log_storage = check.inst_param(
             event_log_storage, "event_log_storage", SqliteEventLogStorage
         )
         self._run_id = check.str_param(run_id, "run_id")
         self._cb = check.callable_param(callback, "callback")
         self._log_path = event_log_storage.path_for_shard(run_id)
-        self._cursor = start_cursor if start_cursor is not None else -1
+        self._cursor = cursor
         super(SqliteEventLogStorageWatchdog, self).__init__(patterns=[self._log_path], **kwargs)
 
     def _process_log(self):
-        events = self._event_log_storage.get_logs_for_run(self._run_id, self._cursor)
-        self._cursor += len(events)
-        for event in events:
+        connection = self._event_log_storage.get_records_for_run(self._run_id, self._cursor)
+        self._cursor = connection.cursor
+        for record in connection.records:
             status = None
             try:
-                status = self._cb(event)
+                status = self._cb(record.event_log_entry)
             except Exception:
                 logging.exception("Exception in callback for event watch on run %s.", self._run_id)
 

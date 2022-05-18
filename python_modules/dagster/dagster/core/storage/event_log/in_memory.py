@@ -2,7 +2,7 @@ import logging
 import time
 import warnings
 from collections import OrderedDict, defaultdict
-from typing import Dict, Iterable, Mapping, Optional, Sequence
+from typing import Dict, Iterable, Mapping, Optional, Sequence, Set, cast
 
 import dagster._check as check
 from dagster.core.assets import AssetDetails
@@ -91,7 +91,8 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         if of_types:
             events = list(
                 filter(
-                    lambda r: r.is_dagster_event and r.dagster_event.event_type_value in of_types,
+                    lambda r: r.is_dagster_event
+                    and r.dagster_event.event_type_value in cast(Set[str], of_types),
                     self._logs[run_id],
                 )
             )
