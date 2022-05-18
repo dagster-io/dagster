@@ -20440,18 +20440,6 @@ snapshots['test_all_snapshot_ids 29'] = '''{
         "input_dep_snaps": [
           {
             "__class__": "InputDependencySnap",
-            "input_name": "foo",
-            "is_dynamic_collect": false,
-            "upstream_output_snaps": [
-              {
-                "__class__": "OutputHandleSnap",
-                "output_name": "result",
-                "solid_name": "foo"
-              }
-            ]
-          },
-          {
-            "__class__": "InputDependencySnap",
             "input_name": "bar",
             "is_dynamic_collect": false,
             "upstream_output_snaps": [
@@ -20459,6 +20447,18 @@ snapshots['test_all_snapshot_ids 29'] = '''{
                 "__class__": "OutputHandleSnap",
                 "output_name": "result",
                 "solid_name": "bar"
+              }
+            ]
+          },
+          {
+            "__class__": "InputDependencySnap",
+            "input_name": "foo",
+            "is_dynamic_collect": false,
+            "upstream_output_snaps": [
+              {
+                "__class__": "OutputHandleSnap",
+                "output_name": "result",
+                "solid_name": "foo"
               }
             ]
           }
@@ -20645,13 +20645,13 @@ snapshots['test_all_snapshot_ids 29'] = '''{
             "__class__": "InputDefSnap",
             "dagster_type_key": "Any",
             "description": null,
-            "name": "foo"
+            "name": "bar"
           },
           {
             "__class__": "InputDefSnap",
             "dagster_type_key": "Any",
             "description": null,
-            "name": "bar"
+            "name": "foo"
           }
         ],
         "name": "foo_bar",
@@ -21828,7 +21828,7 @@ snapshots['test_all_snapshot_ids 3'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 30'] = '0ed1dd38ad8abd8d4b148aa4c188df681273fd5f'
+snapshots['test_all_snapshot_ids 30'] = '046bc61b12af12c19ec9f2f0e9bbf886b727a1ea'
 
 snapshots['test_all_snapshot_ids 31'] = '''{
   "__class__": "PipelineSnapshot",
