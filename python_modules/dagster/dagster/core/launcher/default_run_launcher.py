@@ -1,4 +1,5 @@
 import time
+from typing import cast
 
 import dagster.seven as seven
 from dagster import Bool, Field
@@ -104,7 +105,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             )
 
         external_pipeline_origin = check.not_none(run.external_pipeline_origin)
-        repository_location = context.workspace.get_location(
+        repository_location = context.workspace.get_repository_location(
             external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
         )
 
@@ -115,7 +116,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         )
 
         DefaultRunLauncher.launch_run_from_grpc_client(
-            self._instance, run, repository_location.client
+            self._instance, run, cast(GrpcServerRepositoryLocation, repository_location).client
         )
 
         self._run_ids.add(run.run_id)

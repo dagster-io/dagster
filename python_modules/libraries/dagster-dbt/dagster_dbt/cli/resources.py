@@ -304,7 +304,7 @@ def dbt_cli_resource(context) -> DbtCliResource:
     """This resource defines a dbt CLI interface.
 
     To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/overview/configuration#configured>`_ method.
+    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
 
     Examples:
 

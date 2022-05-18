@@ -8,7 +8,10 @@ from contextlib import ExitStack
 from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
 
 import dagster._check as check
-from dagster.core.errors import DagsterInvariantViolationError, DagsterRepositoryLocationLoadError
+from dagster.core.errors import (
+    DagsterRepositoryLocationLoadError,
+    DagsterRepositoryLocationNotFoundError,
+)
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
@@ -100,10 +103,10 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def show_instance_config(self) -> bool:
         return True
 
-    def get_location(self, location_name: str):
+    def get_repository_location(self, location_name: str) -> RepositoryLocation:
         location_entry = self.get_location_entry(location_name)
         if not location_entry:
-            raise DagsterInvariantViolationError(
+            raise DagsterRepositoryLocationNotFoundError(
                 f"Location {location_name} does not exist in workspace"
             )
 
@@ -132,16 +135,6 @@ class BaseWorkspaceRequestContext(IWorkspace):
         return [
             entry.load_error for entry in self.get_workspace_snapshot().values() if entry.load_error
         ]
-
-    def get_repository_location(self, name: str) -> RepositoryLocation:
-        location_entry = self.get_location_entry(name)
-
-        if not location_entry:
-            raise Exception(f"Location {name} not in workspace")
-        if location_entry.load_error:
-            raise Exception(f"Error loading location {name}: {location_entry.load_error}")
-
-        return cast(RepositoryLocation, location_entry.repository_location)
 
     def has_repository_location_error(self, name: str) -> bool:
         return self.get_repository_location_error(name) != None

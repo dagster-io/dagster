@@ -5,6 +5,7 @@ import pytest
 
 from dagster import lambda_solid, pipeline, repository
 from dagster.api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
+from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation import (
     ExternalRepositoryData,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
@@ -27,6 +28,19 @@ def test_streaming_external_repositories_api_grpc(instance):
 
         assert isinstance(external_repository_data, ExternalRepositoryData)
         assert external_repository_data.name == "bar_repo"
+
+
+def test_streaming_external_repositories_error(instance):
+    with get_bar_repo_repository_location(instance) as repository_location:
+        repository_location.repository_names = {"does_not_exist"}
+        assert repository_location.repository_names == {"does_not_exist"}
+
+        with pytest.raises(
+            DagsterUserCodeProcessError, match='Could not find a repository called "does_not_exist"'
+        ):
+            sync_get_streaming_external_repositories_data_grpc(
+                repository_location.client, repository_location
+            )
 
 
 @lambda_solid

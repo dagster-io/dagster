@@ -396,6 +396,17 @@ class ExternalSensorData(
 
 
 @whitelist_for_serdes
+class ExternalRepositoryErrorData(
+    NamedTuple("_ExternalRepositoryErrorData", [("error", Optional[SerializableErrorInfo])])
+):
+    def __new__(cls, error: Optional[SerializableErrorInfo]):
+        return super(ExternalRepositoryErrorData, cls).__new__(
+            cls,
+            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+        )
+
+
+@whitelist_for_serdes
 class ExternalSensorExecutionErrorData(
     NamedTuple("_ExternalSensorExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
 ):

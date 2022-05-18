@@ -24,7 +24,11 @@ def watch(args):
 
     while True:
         # check if this process has been orphaned, in which case kill the tail_pid
-        if os.getppid() == 1:
+
+        # we assume that the process is orphaned if parent pid changes. because systemd
+        # user instances also adopt processes, os.getppid() == 1 is no longer a reliable signal
+        # for being orphaned.
+        if os.getppid() != parent_pid:
             try:
                 os.kill(tail_pid, signal.SIGTERM)
             except OSError:
