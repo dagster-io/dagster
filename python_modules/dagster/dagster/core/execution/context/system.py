@@ -756,6 +756,36 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 f"but the step output has a partition range: '{start}' to '{end}'."
             )
 
+    def asset_partitions_time_window_for_input(self, input_name: str) -> TimeWindow:
+        """The time window for the partitions of the asset correponding to the given input.
+
+        Raises an error if either of the following are true:
+        - The input asset has no partitioning.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition.
+        """
+        asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
+            self.solid_handle, input_name
+        )
+        partitions_def = asset_info.partitions_def if asset_info else None
+
+        if not partitions_def:
+            raise ValueError(
+                "Tried to get asset partitions for an input that does not correspond to a "
+                "partitioned asset."
+            )
+
+        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            raise ValueError(
+                "Tried to get asset partitions for an input that correponds to a partitioned "
+                "asset that is not partitioned with a TimeWindowPartitionsDefinition."
+            )
+        partition_key_range = self.asset_partition_key_range_for_input(input_name)
+        return TimeWindow(
+            # mypy thinks partitions_def is <nothing> here because ????
+            partitions_def.time_window_for_partition_key(partition_key_range.start).start,  # type: ignore
+            partitions_def.time_window_for_partition_key(partition_key_range.end).end,  # type: ignore
+        )
+
     def asset_partitions_time_window_for_output(self, output_name: str) -> TimeWindow:
         """The time window for the partitions of the asset correponding to the given output.
 
