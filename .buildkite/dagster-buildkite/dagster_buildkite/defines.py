@@ -1,37 +1,19 @@
-from typing import Dict, List
+import packaging.version
+import requests
 
 
-class SupportedPython:
-    V3_9 = "3.9.10"
-    V3_8 = "3.8.12"
-    V3_7 = "3.7.12"
-    V3_6 = "3.6.15"
+def _get_latest_dagster_release() -> str:
+    res = requests.get("https://pypi.org/pypi/dagster/json")
+    module_json = res.json()
+    releases = module_json["releases"]
+    release_versions = [packaging.version.parse(release) for release in releases.keys()]
+    for release_version in reversed(sorted(release_versions)):
+        if not release_version.is_prerelease:
+            return str(release_version)
+    assert False, "No releases found"
 
 
-SupportedPythons = [
-    SupportedPython.V3_6,
-    SupportedPython.V3_7,
-    SupportedPython.V3_8,
-    SupportedPython.V3_9,
-]
-
-ExamplePythons = [SupportedPython.V3_8]
-
-TOX_MAP = {
-    SupportedPython.V3_9: "py39",
-    SupportedPython.V3_8: "py38",
-    SupportedPython.V3_7: "py37",
-    SupportedPython.V3_6: "py36",
-}
-
-VERSION_TEST_DIRECTIVES: Dict[str, List[str]] = {
-    "test-py36": [SupportedPython.V3_6],
-    "test-py37": [SupportedPython.V3_7],
-    "test-py38": [SupportedPython.V3_8],
-    "test-py39": [SupportedPython.V3_9],
-    "test-all": SupportedPythons,
-}
-
+LATEST_DAGSTER_RELEASE = _get_latest_dagster_release()
 
 # https://github.com/dagster-io/dagster/issues/1662
 DO_COVERAGE = True

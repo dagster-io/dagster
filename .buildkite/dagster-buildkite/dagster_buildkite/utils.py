@@ -5,8 +5,6 @@ from typing import Dict, List, Optional, Union
 import yaml
 from typing_extensions import Literal, TypeAlias, TypedDict
 
-from .defines import VERSION_TEST_DIRECTIVES, SupportedPython, SupportedPythons
-
 DAGIT_PATH = "js_modules/dagit"
 
 # ########################
@@ -155,32 +153,3 @@ def connect_sibling_docker_container(
 
 def is_release_branch(branch_name: str) -> bool:
     return branch_name.startswith("release-")
-
-
-# To more specifically customize the tested Python versions for a branch, set environment variable
-# $DEFAULT_PYTHON_VERSIONS to a comma-separated list of python version specifiers of the form VX_Y
-# (i.e. attributes of `SupportedPython`).
-_versions = os.environ.get("DEFAULT_PYTHON_VERSIONS", "V3_9")
-DEFAULT_PYTHON_VERSIONS = [getattr(SupportedPython, ver) for ver in _versions.split(",")]
-
-# By default only one representative Python version is tested on PRs, and all versions are
-# tested on master or release branches.
-def get_python_versions_for_branch(pr_versions: Optional[List[str]] = None) -> List[str]:
-
-    branch_name = safe_getenv("BUILDKITE_BRANCH")
-    commit_message = safe_getenv("BUILDKITE_MESSAGE")
-
-    if branch_name == "master" or is_release_branch(branch_name):
-        return SupportedPythons
-    elif pr_versions is None:
-        specified_versions = []
-        for k, v in VERSION_TEST_DIRECTIVES.items():
-            if k in commit_message or k in branch_name:
-                specified_versions.extend(v)
-        return (
-            list(set(specified_versions))
-            if len(specified_versions) > 0
-            else DEFAULT_PYTHON_VERSIONS
-        )
-    else:
-        return pr_versions
