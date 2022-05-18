@@ -1,4 +1,3 @@
-from dagster.core.events import DagsterEventType
 import pytest
 
 from dagster import (
@@ -18,6 +17,7 @@ from dagster import (
     solid,
 )
 from dagster.core.errors import DagsterExecutionStepNotFoundError
+from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, reexecute_pipeline
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
