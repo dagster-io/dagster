@@ -108,17 +108,9 @@ class KnownExecutionState(
         )
 
     @staticmethod
-    def for_reexecution(
-        parent_run_logs: List[EventLogEntry], step_keys_to_execute: List[str]
-    ) -> "KnownExecutionState":
+    def for_reexecution(parent_run_logs: List[EventLogEntry]) -> "KnownExecutionState":
         """
-        Copy over dynamic mappings from previous run, but drop any for steps that we intend to re-execute
+        Copy over dynamic mappings from previous run
         """
         parent_state = KnownExecutionState.derive_from_logs(parent_run_logs)
-        dynamic_mappings_to_use = {
-            step_key: parent_state.dynamic_mappings[step_key]
-            for step_key in parent_state.dynamic_mappings.keys()
-            if step_key not in step_keys_to_execute
-        }
-        # return KnownExecutionState({}, dynamic_mappings_to_use)
         return KnownExecutionState({}, parent_state.dynamic_mappings)

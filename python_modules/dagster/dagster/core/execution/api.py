@@ -1025,7 +1025,7 @@ def _resolve_reexecute_step_selection(
         run_config,
         mode,
         step_keys_to_execute=list(step_keys_to_execute),
-        known_state=KnownExecutionState.for_reexecution(parent_logs, step_keys_to_execute),
+        known_state=KnownExecutionState.for_reexecution(parent_logs),
         tags=parent_pipeline_run.tags,
     )
     return execution_plan

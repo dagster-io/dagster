@@ -140,4 +140,4 @@ def get_retry_steps_from_parent_run(
         step_handle.to_key() for step_set in to_retry.values() for step_handle in step_set
     ]
 
-    return steps_to_retry, KnownExecutionState.for_reexecution(parent_run_logs, steps_to_retry)
+    return steps_to_retry, KnownExecutionState.for_reexecution(parent_run_logs)

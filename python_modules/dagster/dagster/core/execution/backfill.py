@@ -249,7 +249,6 @@ def create_backfill_run(
         if last_run and last_run.status == PipelineRunStatus.SUCCESS:
             known_state = KnownExecutionState.for_reexecution(
                 instance.all_logs(parent_run_id),
-                step_keys_to_execute,
             )
         else:
             known_state = None
