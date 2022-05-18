@@ -10,6 +10,7 @@ import {
   LiveData,
   tokenForAssetKey,
   isAssetGroup,
+  __ASSET_GROUP_PREFIX,
 } from '../asset-graph/Utils';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
@@ -17,6 +18,7 @@ import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
 import {
@@ -183,23 +185,61 @@ const DefinitionLocation: React.FC<{
           />
         </Mono>
       ))}
-    {displayNameForAssetKey(assetNode.assetKey) !== assetNode.opName && assetNode.opName && (
-      <Box flex={{gap: 6, alignItems: 'center'}}>
-        <Icon name="op" size={16} />
-        <Mono>{assetNode.opName}</Mono>
-      </Box>
-    )}
-
+    <OpNamesDisplay assetNode={assetNode} repoAddress={repoAddress} />
     {isSourceAsset(assetNode) && (
       <Caption style={{lineHeight: '16px', marginTop: 2}}>Source Asset</Caption>
     )}
   </Box>
 );
 
+const OpNamesDisplay = (props: {
+  assetNode: AssetNodeDefinitionFragment;
+  repoAddress: RepoAddress;
+}) => {
+  const {assetNode, repoAddress} = props;
+  const {assetKey, graphName, opNames} = assetNode;
+  const opCount = opNames.length;
+
+  if (!opCount) {
+    return null;
+  }
+
+  if (!graphName) {
+    const firstOp = opNames[0];
+    if (displayNameForAssetKey(assetKey) === firstOp) {
+      return null;
+    }
+    const opPath = workspacePathFromAddress(repoAddress, `/ops/${firstOp}`);
+    return (
+      <Box flex={{gap: 4, alignItems: 'center'}}>
+        <Icon name="op" size={16} />
+        <Mono>
+          <Link to={opPath}>{firstOp}</Link>
+        </Mono>
+      </Box>
+    );
+  }
+
+  const graphPath = workspacePathFromAddress(
+    repoAddress,
+    `/graphs/${__ASSET_GROUP_PREFIX}/${graphName}/`,
+  );
+
+  return (
+    <Box flex={{gap: 4, alignItems: 'center'}}>
+      <Icon name="job" size={16} />
+      <Mono>
+        <Link to={graphPath}>{graphName}</Link> ({opCount === 1 ? '1 op' : `${opCount} ops`})
+      </Mono>
+    </Box>
+  );
+};
+
 export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
     description
+    graphName
     opName
     opNames
     jobNames
