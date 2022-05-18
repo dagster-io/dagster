@@ -92,6 +92,7 @@ class AssetsDefinition:
             partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
                 compose the assets.
         """
+        graph_def = check.inst_param(graph_def, "graph_def", GraphDefinition)
         asset_keys_by_input_name = check.opt_dict_param(
             asset_keys_by_input_name, "asset_keys_by_input_name", key_type=str, value_type=AssetKey
         )
