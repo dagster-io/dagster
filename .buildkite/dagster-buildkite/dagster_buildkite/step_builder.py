@@ -2,11 +2,11 @@ import os
 from enum import Enum
 from typing import Dict, List, Optional
 
-from .defines import SupportedPythons
 from .images.versions import INTEGRATION_IMAGE_VERSION, UNIT_IMAGE_VERSION
+from .python_version import AvailablePythonVersion
 from .utils import CommandStep
 
-TIMEOUT_IN_MIN = 20
+DEFAULT_TIMEOUT_IN_MIN = 20
 
 DOCKER_PLUGIN = "docker#v3.7.0"
 ECR_PLUGIN = "ecr#v2.2.0"
@@ -25,17 +25,20 @@ class BuildkiteQueue(Enum):
         return isinstance(value, cls)
 
 
-class StepBuilder:
+class CommandStepBuilder:
 
     _step: CommandStep
 
     def __init__(
-        self, label: str, key: Optional[str] = None, timeout_in_minutes: Optional[int] = None
+        self,
+        label: str,
+        key: Optional[str] = None,
+        timeout_in_minutes: int = DEFAULT_TIMEOUT_IN_MIN,
     ):
         self._step = {
             "agents": {"queue": BuildkiteQueue.MEDIUM.value},
             "label": label,
-            "timeout_in_minutes": timeout_in_minutes or TIMEOUT_IN_MIN,
+            "timeout_in_minutes": timeout_in_minutes,
             "retry": {
                 "automatic": [
                     {"exit_status": -1, "limit": 2},  # agent lost
@@ -47,7 +50,7 @@ class StepBuilder:
         if key is not None:
             self._step["key"] = key
 
-    def run(self, *commands: str) -> "StepBuilder":
+    def run(self, *commands: str) -> "CommandStepBuilder":
         self._step["commands"] = ["time " + cmd for cmd in commands]
         return self
 
@@ -58,7 +61,7 @@ class StepBuilder:
             "mount-ssh-agent": True,
         }
 
-    def on_python_image(self, image: str, env: Optional[List[str]] = None) -> "StepBuilder":
+    def on_python_image(self, image: str, env: Optional[List[str]] = None) -> "CommandStepBuilder":
         settings = self._base_docker_settings()
         settings["image"] = f"{AWS_ACCOUNT_ID}.dkr.ecr.{AWS_ECR_REGION}.amazonaws.com/{image}"
         # Mount the Docker socket so we can run Docker inside of our container
@@ -83,46 +86,51 @@ class StepBuilder:
         self._step["plugins"] = [{ECR_PLUGIN: ecr_settings}, {DOCKER_PLUGIN: settings}]
         return self
 
-    def on_unit_image(self, ver: str, env: Optional[List[str]] = None) -> "StepBuilder":
-        if ver not in SupportedPythons:
-            raise Exception("Unsupported python version for unit image {ver}".format(ver=ver))
+    def on_unit_image(
+        self, ver: AvailablePythonVersion, env: Optional[List[str]] = None
+    ) -> "CommandStepBuilder":
+        if not isinstance(ver, AvailablePythonVersion):
+            raise Exception(f"Unsupported python version for unit image: {ver}.")
 
         return self.on_python_image(
-            image="buildkite-unit:py{python_version}-{image_version}".format(
-                python_version=ver, image_version=UNIT_IMAGE_VERSION
-            ),
+            image=f"buildkite-unit:py{ver}-{UNIT_IMAGE_VERSION}",
             env=env,
         )
 
-    def on_integration_image(self, ver: str, env: Optional[List[str]] = None) -> "StepBuilder":
-        if ver not in SupportedPythons:
-            raise Exception(
-                "Unsupported python version for integration image {ver}".format(ver=ver)
-            )
+    def on_integration_image(
+        self, ver: AvailablePythonVersion, env: Optional[List[str]] = None
+    ) -> "CommandStepBuilder":
+        if not isinstance(ver, AvailablePythonVersion):
+            raise Exception(f"Unsupported python version for integration image: {ver}.")
 
         return self.on_python_image(
-            image="buildkite-integration:py{python_version}-{image_version}".format(
-                python_version=ver, image_version=INTEGRATION_IMAGE_VERSION
-            ),
+            image=f"buildkite-integration:py{ver}-{INTEGRATION_IMAGE_VERSION}",
             env=env,
         )
 
-    def with_timeout(self, num_minutes: int) -> "StepBuilder":
-        self._step["timeout_in_minutes"] = num_minutes
+    # The below builder methods are no-ops if `None` is passed-- this allows chaining them together without the
+    # need to check for `None` in advance.
+
+    def with_timeout(self, num_minutes: Optional[int]) -> "CommandStepBuilder":
+        if num_minutes is not None:
+            self._step["timeout_in_minutes"] = num_minutes
         return self
 
-    def with_retry(self, num_retries: int) -> "StepBuilder":
-        self._step["retry"] = {"automatic": {"limit": num_retries}}
+    def with_retry(self, num_retries: Optional[int]) -> "CommandStepBuilder":
+        if num_retries is not None:
+            self._step["retry"] = {"automatic": {"limit": num_retries}}
         return self
 
-    def on_queue(self, queue: BuildkiteQueue) -> "StepBuilder":
-        assert BuildkiteQueue.contains(queue)
-        agents = self._step["agents"]  # type: ignore
-        agents["queue"] = queue.value
+    def with_queue(self, queue: Optional[BuildkiteQueue]) -> "CommandStepBuilder":
+        if queue is not None:
+            assert BuildkiteQueue.contains(queue)
+            agents = self._step["agents"]  # type: ignore
+            agents["queue"] = queue.value
         return self
 
-    def depends_on(self, step_keys: List[str]) -> "StepBuilder":
-        self._step["depends_on"] = step_keys
+    def with_dependencies(self, step_keys: Optional[List[str]]) -> "CommandStepBuilder":
+        if step_keys is not None:
+            self._step["depends_on"] = step_keys
         return self
 
     def build(self) -> CommandStep:
