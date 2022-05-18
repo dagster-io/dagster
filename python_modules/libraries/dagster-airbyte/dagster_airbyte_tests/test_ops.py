@@ -40,7 +40,6 @@ def test_airbyte_sync_op():
         rsps.add(rsps.POST, f"{ab_url}/connections/sync", json={"job": {"id": 1}})
         rsps.add(rsps.POST, f"{ab_url}/jobs/get", json={"job": {"id": 1, "status": "running"}})
         rsps.add(rsps.POST, f"{ab_url}/jobs/get", json={"job": {"id": 1, "status": "succeeded"}})
-        rsps.add(rsps.POST, f"{ab_url}/jobs/cancel", status=204)
 
         result = airbyte_sync_job.execute_in_process()
         assert result.output_for_node("airbyte_sync_op") == AirbyteOutput(
