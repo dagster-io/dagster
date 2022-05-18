@@ -4,7 +4,7 @@ from typing import List
 from .defines import DO_COVERAGE
 from .steps.coverage import build_coverage_step
 from .steps.dagit import dagit_steps
-from .steps.dagster import dagster_steps
+from .steps.dagster import build_dagster_steps
 from .steps.integration import integration_steps
 from .steps.trigger import trigger_step
 from .steps.wait import wait_step
@@ -55,7 +55,7 @@ def dagster() -> None:
     # If we're on a PR/feature branch and are only making dagit changes, skip the
     # remaining steps since they're not relevant to the diff.
     if not dagit_only:
-        all_steps += dagster_steps()
+        all_steps += build_dagster_steps()
 
         all_steps.append(wait_step())
 
