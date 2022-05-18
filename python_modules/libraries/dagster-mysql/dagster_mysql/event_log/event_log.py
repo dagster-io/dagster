@@ -172,14 +172,14 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # the API accepts opaque string cursor, but sql implementations uses the integer
         # primary key `id` as the cursor, so coerce to an int for the sake of watching
         if cursor is None:
-            start_cursor = -1
+            cursor = -1
         elif isinstance(cursor, str):
             try:
-                start_cursor = int(cursor)
+                cursor = int(cursor)
             except ValueError:
-                start_cursor = -1
+                cursor = -1
 
-        self._event_watcher.watch_run(run_id, start_cursor, callback)
+        self._event_watcher.watch_run(run_id, cursor, callback)
 
     def end_watch(self, run_id, handler):
         self._event_watcher.unwatch_run(run_id, handler)

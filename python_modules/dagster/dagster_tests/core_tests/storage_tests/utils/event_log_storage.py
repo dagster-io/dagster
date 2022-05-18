@@ -809,8 +809,8 @@ class TestEventLogStorage:
 
         with create_and_delete_test_runs(instance, [run_id_one, run_id_two]):
 
-            storage.watch(run_id_one, -1, lambda x: event_list_one.append(x))
-            storage.watch(run_id_two, -1, lambda x: event_list_two.append(x))
+            storage.watch(run_id_one, None, lambda x: event_list_one.append(x))
+            storage.watch(run_id_two, None, lambda x: event_list_two.append(x))
 
             events_one, _result_one = _synthesize_events(return_one_solid_func, run_id=run_id_one)
             for event in events_one:

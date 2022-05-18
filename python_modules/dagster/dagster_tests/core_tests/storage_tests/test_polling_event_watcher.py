@@ -26,7 +26,9 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
     def from_config_value(inst_data, config_value):
         return SqlitePollingEventLogStorage(inst_data=inst_data, **config_value)
 
-    def watch(self, run_id: str, cursor: Union[str, int], callback: Callable[[EventLogEntry], None]):
+    def watch(
+        self, run_id: str, cursor: Union[str, int], callback: Callable[[EventLogEntry], None]
+    ):
         check.str_param(run_id, "run_id")
         check.inst_param(cursor, "cursor", (str, int))
         check.callable_param(callback, "callback")
