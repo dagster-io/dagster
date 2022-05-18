@@ -2,8 +2,9 @@ import os
 from typing import List
 
 from .defines import DO_COVERAGE
+from .steps.coverage import build_coverage_step
 from .steps.dagit import dagit_steps
-from .steps.dagster import coverage_step, dagster_steps
+from .steps.dagster import dagster_steps
 from .steps.integration import integration_steps
 from .steps.trigger import trigger_step
 from .steps.wait import wait_step
@@ -59,7 +60,7 @@ def dagster() -> None:
         all_steps.append(wait_step())
 
         if DO_COVERAGE:
-            all_steps += [coverage_step()]
+            all_steps += [build_coverage_step()]
 
     buildkite_yaml = buildkite_yaml_for_steps(all_steps)
     print(buildkite_yaml)  # pylint: disable=print-call
