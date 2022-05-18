@@ -15,6 +15,7 @@ ECR_PLUGIN = "ecr#v2.2.0"
 AWS_ACCOUNT_ID = os.environ.get("AWS_ACCOUNT_ID")
 AWS_ECR_REGION = "us-west-2"
 
+
 class BuildkiteQueue(Enum):
     DOCKER = "docker-p"
     MEDIUM = "buildkite-medium-v5-0-1"

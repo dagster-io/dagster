@@ -21,7 +21,6 @@ def build_docs_steps() -> List[GroupStep]:
         .run("pushd docs; make docs_dev_install; make snapshot", "git diff --exit-code")
         .on_integration_image(AvailablePythonVersion.V3_7)
         .build(),
-
         # Make sure the docs site can build end-to-end.
         CommandStepBuilder("docs next")
         .run(
@@ -32,7 +31,6 @@ def build_docs_steps() -> List[GroupStep]:
         )
         .on_integration_image(AvailablePythonVersion.V3_7)
         .build(),
-
         # Make sure docs sphinx build runs.
         CommandStepBuilder("docs sphinx json build")
         .run(
@@ -42,16 +40,13 @@ def build_docs_steps() -> List[GroupStep]:
         )
         .on_integration_image(AvailablePythonVersion.V3_8)
         .build(),
-
         # Verify screenshot integrity.
         CommandStepBuilder("docs screenshot spec")
         .run("python docs/screenshot_capture/match_screenshots.py")
         .on_integration_image(AvailablePythonVersion.V3_8)
         .build(),
-
         # mypy for build scripts
         build_tox_step("docs", "mypy", base_label=":mypy: docs"),
-
         # pylint for build scripts
         build_tox_step("docs", "pylint", base_label=":lint-roller: docs"),
     ]
