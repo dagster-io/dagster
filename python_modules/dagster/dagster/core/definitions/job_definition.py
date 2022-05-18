@@ -80,8 +80,7 @@ class JobDefinition(PipelineDefinition):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
-        _op_selection_data: Optional[OpSelectionData] = None,
-        _asset_selection_data: Optional[AssetSelectionData] = None,
+        _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
         asset_layer: Optional[AssetLayer] = None,
         _input_values: Optional[Mapping[str, object]] = None,
     ):
@@ -96,11 +95,10 @@ class JobDefinition(PipelineDefinition):
         )
 
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
-        self._op_selection_data = check.opt_inst_param(
-            _op_selection_data, "_op_selection_data", OpSelectionData
-        )
-        self._asset_selection_data = check.opt_inst_param(
-            _asset_selection_data, "_asset_selection_data", AssetSelectionData
+        self._subset_selection_data = check.opt_inst_param(
+            _subset_selection_data,
+            "_subset_selection_data",
+            (OpSelectionData, AssetSelectionData),
         )
         self._input_values: Mapping[str, object] = check.opt_mapping_param(
             _input_values, "_input_values"
@@ -274,11 +272,19 @@ class JobDefinition(PipelineDefinition):
 
     @property
     def op_selection_data(self) -> Optional[OpSelectionData]:
-        return self._op_selection_data
+        return (
+            self._subset_selection_data
+            if isinstance(self._subset_selection_data, OpSelectionData)
+            else None
+        )
 
     @property
     def asset_selection_data(self) -> Optional[AssetSelectionData]:
-        return self._asset_selection_data
+        return (
+            self._subset_selection_data
+            if isinstance(self._subset_selection_data, AssetSelectionData)
+            else None
+        )
 
     def get_job_def_for_subset_selection(
         self,
@@ -356,7 +362,7 @@ class JobDefinition(PipelineDefinition):
                 op_retry_policy=self._solid_retry_policy,
                 graph_def=sub_graph,
                 version_strategy=self.version_strategy,
-                _op_selection_data=OpSelectionData(
+                _subset_selection_data=OpSelectionData(
                     op_selection=op_selection,
                     resolved_op_selection=set(
                         resolved_op_selection_dict.keys()
@@ -435,7 +441,7 @@ class JobDefinition(PipelineDefinition):
             description=self._description,
             op_retry_policy=self._solid_retry_policy,
             asset_layer=self.asset_layer,
-            _op_selection_data=self._op_selection_data,
+            _subset_selection_data=self._subset_selection_data,
         )
 
         update_wrapper(job_def, self, updated=())

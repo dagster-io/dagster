@@ -591,7 +591,7 @@ class GraphDefinition(NodeDefinition):
             op_retry_policy=op_retry_policy,
             asset_layer=asset_layer,
             _input_values=input_values,
-            _asset_selection_data=_asset_selection_data,
+            _subset_selection_data=_asset_selection_data,
         ).get_job_def_for_subset_selection(op_selection)
 
     def coerce_to_job(self):
