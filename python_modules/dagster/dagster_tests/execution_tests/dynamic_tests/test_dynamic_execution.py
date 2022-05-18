@@ -283,6 +283,66 @@ def test_fan_out_in_out_in(run_config):
         assert empty_result.result_for_solid("sum_numbers").output_value() == 0
 
 
+def test_select_dynamic_step_and_downstream():
+    with instance_for_test() as instance:
+        result_1 = execute_pipeline(dynamic_pipeline, instance=instance)
+        assert result_1.success
+
+        result_2 = reexecute_pipeline(
+            dynamic_pipeline,
+            parent_run_id=result_1.run_id,
+            instance=instance,
+            step_selection=["emit*"],
+        )
+        assert result_2.success
+
+        keys_2 = result_2.events_by_step_key.keys()
+        assert "multiply_inputs[0]" in keys_2
+        assert "multiply_inputs[1]" in keys_2
+        assert "multiply_inputs[2]" in keys_2
+        assert "multiply_by_two[0]" in keys_2
+        assert "multiply_by_two[1]" in keys_2
+        assert "multiply_by_two[2]" in keys_2
+        assert result_2.result_for_solid("double_total").output_value() == 120
+
+        result_3 = reexecute_pipeline(
+            dynamic_pipeline,
+            parent_run_id=result_1.run_id,
+            instance=instance,
+            step_selection=["emit+"],
+        )
+        assert result_3.success
+
+        keys_3 = result_3.events_by_step_key.keys()
+        assert "multiply_inputs[0]" in keys_3
+        assert "multiply_inputs[1]" in keys_3
+        assert "multiply_inputs[2]" in keys_3
+        assert "multiply_by_two[0]" not in keys_3
+
+
+        result_4 = reexecute_pipeline(
+            dynamic_pipeline,
+            parent_run_id=result_1.run_id,
+            instance=instance,
+            step_selection=["emit", "emit_ten", "multiply_inputs[1]"],
+        )
+
+        keys_4 = result_4.events_by_step_key.keys()
+        assert "multiply_inputs[1]" in keys_4
+        assert "multiply_inputs[0]" not in keys_4
+
+        result_5 = reexecute_pipeline(
+            dynamic_pipeline,
+            parent_run_id=result_1.run_id,
+            instance=instance,
+            step_selection=["emit", "emit_ten", "multiply_inputs[1]", "multiply_by_two[1]"],
+        )
+
+        keys_5 = result_5.events_by_step_key.keys()
+        assert "multiply_inputs[1]" in keys_5
+        assert "multiply_by_two[1]" in keys_5
+        assert "multiply_inputs[0]" not in keys_5
+
 def test_bad_step_selection():
     with instance_for_test() as instance:
         result_1 = execute_pipeline(dynamic_pipeline, instance=instance)

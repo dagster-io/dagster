@@ -120,4 +120,5 @@ class KnownExecutionState(
             for step_key in parent_state.dynamic_mappings.keys()
             if step_key not in step_keys_to_execute
         }
-        return KnownExecutionState({}, dynamic_mappings_to_use)
+        # return KnownExecutionState({}, dynamic_mappings_to_use)
+        return KnownExecutionState({}, parent_state.dynamic_mappings)
