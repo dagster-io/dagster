@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import dagster._check as check
 
@@ -20,6 +20,7 @@ class DbtCliOutput(DbtOutput):
         result (Optional[Dict[str, Any]]): Dictionary containing dbt-reported result information
             contained in run_results.json.  Some dbt commands do not produce results, and will
             therefore have result = None.
+        docs_url (Optional[str]): Hostname where dbt docs are being served for this project.
     """
 
     def __init__(
@@ -29,11 +30,13 @@ class DbtCliOutput(DbtOutput):
         raw_output: str,
         logs: List[Dict[str, Any]],
         result: Dict[str, Any],
+        docs_url: Optional[str] = None,
     ):
         self._command = check.str_param(command, "command")
         self._return_code = check.int_param(return_code, "return_code")
         self._raw_output = check.str_param(raw_output, "raw_output")
         self._logs = check.list_param(logs, "logs", of_type=dict)
+        self._docs_url = check.opt_str_param(docs_url, "docs_url")
         super().__init__(result)
 
     @property
@@ -51,3 +54,7 @@ class DbtCliOutput(DbtOutput):
     @property
     def logs(self) -> List[Dict[str, Any]]:
         return self._logs
+
+    @property
+    def docs_url(self) -> Optional[str]:
+        return self._docs_url
