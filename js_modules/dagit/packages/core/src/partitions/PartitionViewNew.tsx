@@ -35,10 +35,10 @@ import {
 } from './types/PartitionsStatusQuery';
 import {PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results} from './types/PipelinePartitionsRootQuery';
 import {usePartitionStepQuery} from './usePartitionStepQuery';
+import {BackfillStepStatusDialogContent} from '../instance/BackfillStepStatusDialog';
 
 type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
 type PartitionStatus = PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses_results;
-type Partition = PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results;
 
 const FAILED_STATUSES = [RunStatus.FAILURE, RunStatus.CANCELED, RunStatus.CANCELING];
 
@@ -60,10 +60,6 @@ export const PartitionViewNew: React.FC<{
   return (
     <Loading queryResult={queryResult}>
       {({partitionSetOrError}) => {
-        if (partitionSetOrError.__typename !== 'PartitionSet') {
-          return null;
-        }
-
         if (
           partitionSetOrError.__typename !== 'PartitionSet' ||
           partitionSetOrError.partitionsOrError.__typename !== 'Partitions'
@@ -71,9 +67,7 @@ export const PartitionViewNew: React.FC<{
           return null;
         }
 
-        const partitionNames = partitionSetOrError.partitionsOrError.results.map(
-          (_: Partition) => _.name,
-        );
+        const partitionNames = partitionSetOrError.partitionsOrError.results.map(({name}) => name);
 
         return (
           <PartitionViewContent
@@ -100,7 +94,7 @@ const PartitionViewContent: React.FC<{
   const repositorySelector = repoAddressToSelector(repoAddress);
   const {canLaunchPartitionBackfill} = usePermissions();
   const {viewport, containerProps} = useViewport();
-  const backfillQueryRef = React.useRef(0);
+  const [backfillRefetchCounter, setBackfillRefetchCounter] = React.useState(0);
   const partitions = usePartitionStepQuery(
     partitionSet.name,
     partitionNames,
@@ -174,7 +168,7 @@ const PartitionViewContent: React.FC<{
             pipelineName={partitionSet.pipelineName}
             onCancel={() => setShowBackfillSetup(false)}
             onLaunch={(_backfillId, _stepQuery) => {
-              backfillQueryRef.current += 1;
+              setBackfillRefetchCounter(backfillRefetchCounter + 1);
               setShowBackfillSetup(false);
             }}
             onSubmit={onSubmit}
@@ -303,7 +297,7 @@ const PartitionViewContent: React.FC<{
           partitionSet={partitionSet}
           repositorySelector={repositorySelector}
           partitionNames={partitionNames}
-          refetchRef={backfillQueryRef.current}
+          refetchCounter={backfillRefetchCounter}
         />
       </Box>
     </div>
@@ -316,12 +310,12 @@ const JobBackfills = ({
   partitionSet,
   partitionNames,
   repositorySelector,
-  refetchRef,
+  refetchCounter,
 }: {
   partitionSet: PartitionsStatusQuery_partitionSetOrError_PartitionSet;
   partitionNames: string[];
   repositorySelector: RepositorySelector;
-  refetchRef: number;
+  refetchCounter: number;
 }) => {
   const [cursorStack, setCursorStack] = React.useState<string[]>(() => []);
   const [cursor, setCursor] = React.useState<string | undefined>();
@@ -336,8 +330,8 @@ const JobBackfills = ({
   });
 
   React.useEffect(() => {
-    refetchRef && refetch();
-  }, [refetch, refetchRef]);
+    refetchCounter && refetch();
+  }, [refetch, refetchCounter]);
 
   if (!data) {
     return <NonIdealState title="Could not fetch backfill data" icon="error" />;
