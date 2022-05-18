@@ -164,6 +164,11 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
       repositoryLocationName
     }
     solidSelection
+    assetSelection {
+      ... on AssetKey {
+        path
+      }
+    }
     status
     tags {
       key

@@ -36,6 +36,7 @@ from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.context.input import InputContext, build_input_context
 from dagster.core.execution.context.output import build_output_context
+from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.storage.root_input_manager import RootInputManagerDefinition, root_input_manager
 from dagster.utils.backcompat import ExperimentalWarning, experimental
@@ -56,6 +57,7 @@ def build_assets_job(
     config: Optional[Union[ConfigMapping, Dict[str, Any], PartitionedConfig]] = None,
     tags: Optional[Dict[str, Any]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
+    _asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
 
@@ -96,6 +98,7 @@ def build_assets_job(
         source_assets, "source_assets", of_type=(SourceAsset, AssetsDefinition)
     )
     check.opt_str_param(description, "description")
+    check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
     source_assets_by_key = build_source_assets_by_key(source_assets)
 
     deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
@@ -120,8 +123,10 @@ def build_assets_job(
         tags=tags,
         executor_def=executor_def,
         asset_layer=AssetLayer.from_graph_and_assets_node_mapping(
-            graph, assets_defs_by_node_handle
+            graph,
+            assets_defs_by_node_handle,
         ),
+        _asset_selection_data=_asset_selection_data,
     )
 
 

@@ -5,6 +5,7 @@ from typing import cast
 from graphql.execution.base import ResolveInfo
 
 import dagster._check as check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.host_representation import GraphSelector, PipelineSelector
 from dagster.core.workspace.context import BaseWorkspaceRequestContext
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -65,11 +66,13 @@ class UserFacingGraphQLError(Exception):
 
 
 def pipeline_selector_from_graphql(data):
+    asset_selection = data.get("assetSelection", [])
     return PipelineSelector(
         location_name=data["repositoryLocationName"],
         repository_name=data["repositoryName"],
         pipeline_name=data.get("pipelineName") or data.get("jobName"),
         solid_selection=data.get("solidSelection"),
+        asset_selection=[AssetKey.from_graphql_input(asset_key) for asset_key in asset_selection],
     )
 
 

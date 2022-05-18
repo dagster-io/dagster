@@ -23,11 +23,13 @@ from dagster import (
 )
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
 from dagster.core.definitions.dependency import NodeHandle
+from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.snap import DependencyStructureIndex
 from dagster.core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_icontains_solids,
 )
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import safe_tempfile_path
 
 
@@ -1034,3 +1036,110 @@ def test_internal_asset_deps_assets():
     assert node_handle_deps_by_asset[AssetKey("my_other_out_name")] == {
         NodeHandle(name="multi_asset_with_internal_deps", parent=None)
     }
+
+
+@asset
+def foo():
+    return 5
+
+
+@asset
+def bar():
+    return 10
+
+
+@asset
+def foo_bar(foo, bar):
+    return foo + bar
+
+
+@asset
+def baz(foo_bar):
+    return foo_bar
+
+
+@asset
+def unconnected():
+    pass
+
+
+asset_group = AssetGroup([foo, bar, foo_bar, baz, unconnected])
+
+
+def test_disconnected_subset():
+    with instance_for_test() as instance:
+        job = asset_group.build_job("foo")
+        result = job.execute_in_process(
+            instance=instance, asset_selection=[AssetKey("unconnected"), AssetKey("bar")]
+        )
+        materialization_events = [
+            event for event in result.all_events if event.is_step_materialization
+        ]
+
+        assert len(materialization_events) == 2
+        assert materialization_events[0].asset_key == AssetKey("bar")
+        assert materialization_events[1].asset_key == AssetKey("unconnected")
+
+
+def test_connected_subset():
+    with instance_for_test() as instance:
+        job = asset_group.build_job("foo")
+        result = job.execute_in_process(
+            instance=instance,
+            asset_selection=[AssetKey("foo"), AssetKey("bar"), AssetKey("foo_bar")],
+        )
+        materialization_events = sorted(
+            [event for event in result.all_events if event.is_step_materialization],
+            key=lambda event: event.asset_key,
+        )
+
+        assert len(materialization_events) == 3
+        assert materialization_events[0].asset_key == AssetKey("bar")
+        assert materialization_events[1].asset_key == AssetKey("foo")
+        assert materialization_events[2].asset_key == AssetKey("foo_bar")
+
+
+def test_subset_of_asset_job():
+    with instance_for_test() as instance:
+        foo_job = asset_group.build_job("foo_job", selection=["*baz"])
+        result = foo_job.execute_in_process(
+            instance=instance,
+            asset_selection=[AssetKey("foo"), AssetKey("bar"), AssetKey("foo_bar")],
+        )
+        materialization_events = sorted(
+            [event for event in result.all_events if event.is_step_materialization],
+            key=lambda event: event.asset_key,
+        )
+        assert len(materialization_events) == 3
+        assert materialization_events[0].asset_key == AssetKey("bar")
+        assert materialization_events[1].asset_key == AssetKey("foo")
+        assert materialization_events[2].asset_key == AssetKey("foo_bar")
+
+        with pytest.raises(DagsterInvalidSubsetError):
+            result = foo_job.execute_in_process(
+                instance=instance,
+                asset_selection=[AssetKey("unconnected")],
+            )
+
+
+def test_subset_of_build_assets_job():
+    foo_job = build_assets_job("foo_job", assets=[foo, bar, foo_bar, baz])
+    with instance_for_test() as instance:
+        result = foo_job.execute_in_process(
+            instance=instance,
+            asset_selection=[AssetKey("foo"), AssetKey("bar"), AssetKey("foo_bar")],
+        )
+        materialization_events = sorted(
+            [event for event in result.all_events if event.is_step_materialization],
+            key=lambda event: event.asset_key,
+        )
+        assert len(materialization_events) == 3
+        assert materialization_events[0].asset_key == AssetKey("bar")
+        assert materialization_events[1].asset_key == AssetKey("foo")
+        assert materialization_events[2].asset_key == AssetKey("foo_bar")
+
+        with pytest.raises(DagsterInvalidSubsetError):
+            result = foo_job.execute_in_process(
+                instance=instance,
+                asset_selection=[AssetKey("unconnected")],
+            )

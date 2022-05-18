@@ -1,6 +1,7 @@
 import pytest
 
-from dagster import InputDefinition, lambda_solid, pipeline
+from dagster import AssetGroup, InputDefinition, asset, lambda_solid, pipeline
+from dagster.core.definitions.executor_definition import execute_in_process_executor
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.core.selector.subset_selector import (
     MAX_NUM,
@@ -244,3 +245,19 @@ def test_parse_step_selection_invalid():
         match="No qualified steps to execute found for step_selection",
     ):
         parse_step_selection(step_deps, ["1+some_solid"])
+
+
+@asset
+def my_asset(context):
+    assert context.pipeline_def.asset_selection_data != None
+    return 1
+
+
+@asset
+def asset_2(my_asset):
+    return my_asset
+
+
+asset_selection_job = AssetGroup([my_asset, asset_2]).build_job(
+    "asset_selection_job", executor_def=execute_in_process_executor
+)

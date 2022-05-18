@@ -213,10 +213,7 @@ class AssetGroup:
             executor_def, "executor_def", ExecutorDefinition, self.executor_def
         )
         description = check.opt_str_param(description, "description")
-        resource_defs = {
-            **self.resource_defs,
-            **{"root_manager": build_root_manager(build_source_assets_by_key(self.source_assets))},
-        }
+        resource_defs = build_resource_defs(self.resource_defs, self.source_assets)
 
         if selection:
             selected_asset_keys = parse_asset_selection(self.assets, selection)
@@ -619,6 +616,13 @@ class AssetGroup:
             and self.resource_defs == other.resource_defs
             and self.executor_def == other.executor_def
         )
+
+
+def build_resource_defs(resource_defs, source_assets):
+    return {
+        **resource_defs,
+        **{"root_manager": build_root_manager(build_source_assets_by_key(source_assets))},
+    }
 
 
 def _find_assets_in_module(

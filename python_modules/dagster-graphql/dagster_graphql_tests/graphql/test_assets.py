@@ -1,14 +1,18 @@
 import os
 import time
 
-from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
+from dagster_graphql.client.query import (
+    LAUNCH_PIPELINE_EXECUTION_MUTATION,
+    LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+)
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
+    infer_job_or_pipeline_selector,
     infer_pipeline_selector,
     infer_repository_selector,
 )
 
-from dagster import AssetKey
+from dagster import AssetKey, DagsterEventType
 from dagster.utils import safe_tempfile_path
 
 # from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
@@ -287,8 +291,18 @@ GET_RUN_MATERIALIZATIONS = """
 """
 
 
-def _create_run(graphql_context, pipeline_name, mode="default", step_keys=None):
-    selector = infer_pipeline_selector(graphql_context, pipeline_name)
+def _create_run(
+    graphql_context, pipeline_name, mode="default", step_keys=None, asset_selection=None
+):
+    if asset_selection:
+        selector = infer_job_or_pipeline_selector(
+            graphql_context, pipeline_name, asset_selection=asset_selection
+        )
+    else:
+        selector = infer_pipeline_selector(
+            graphql_context,
+            pipeline_name,
+        )
     result = execute_dagster_graphql(
         graphql_context,
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -297,6 +311,17 @@ def _create_run(graphql_context, pipeline_name, mode="default", step_keys=None):
     assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
     graphql_context.instance.run_launcher.join()
     return result.data["launchPipelineExecution"]["run"]["runId"]
+
+
+def _get_sorted_materialization_events(graphql_context, run_id):
+    return sorted(
+        [
+            event
+            for event in graphql_context.instance.all_logs(run_id=run_id)
+            if event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ],
+        key=lambda event: event.get_dagster_event().asset_key,
+    )
 
 
 class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
@@ -783,6 +808,104 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["runsOrError"]["results"]) == 1
         assert len(result.data["runsOrError"]["results"][0]["assetMaterializations"]) == 1
         snapshot.assert_match(result.data)
+
+    def test_asset_selection_in_run(self, graphql_context):
+        # Generate materializations for bar asset
+        run_id = _create_run(graphql_context, "foo_job", asset_selection=[{"path": ["bar"]}])
+        run = graphql_context.instance.get_run_by_id(run_id)
+        assert run.is_finished
+        assert run.asset_selection == {AssetKey("bar")}
+
+    def test_execute_pipeline_subset(self, graphql_context):
+        # Assets foo and bar are upstream dependencies of asset foo_bar
+
+        # Execute subselection with asset bar
+        run_id = _create_run(graphql_context, "foo_job", asset_selection=[{"path": ["bar"]}])
+        run = graphql_context.instance.get_run_by_id(run_id)
+        assert run.is_finished
+        events = _get_sorted_materialization_events(graphql_context, run_id)
+        assert len(events) == 1
+        assert events[0].get_dagster_event().asset_key == AssetKey("bar")
+
+        # Execute subselection with assets foo and foo_bar
+        run_id = _create_run(
+            graphql_context, "foo_job", asset_selection=[{"path": ["foo"]}, {"path": ["foo_bar"]}]
+        )
+        run = graphql_context.instance.get_run_by_id(run_id)
+        assert run.is_finished
+        events = _get_sorted_materialization_events(graphql_context, run_id)
+        assert len(events) == 2
+        assert events[0].get_dagster_event().asset_key == AssetKey("foo")
+        assert events[1].get_dagster_event().asset_key == AssetKey("foo_bar")
+
+    def test_execute_dependent_subset(self, graphql_context):
+        # Asset foo is upstream of baz but not directly connected
+
+        # Generate materializations for all assets upstream of baz
+        run_id = _create_run(
+            graphql_context,
+            "foo_job",
+            asset_selection=[{"path": ["foo"]}, {"path": ["bar"]}, {"path": ["foo_bar"]}],
+        )
+        run = graphql_context.instance.get_run_by_id(run_id)
+        assert run.is_finished
+
+        # Generate materializations with subselection of foo and baz
+        run_id = _create_run(
+            graphql_context, "foo_job", asset_selection=[{"path": ["foo"]}, {"path": ["baz"]}]
+        )
+        run = graphql_context.instance.get_run_by_id(run_id)
+        assert run.is_finished
+        events = _get_sorted_materialization_events(graphql_context, run_id)
+        assert len(events) == 2
+        assert events[0].get_dagster_event().asset_key == AssetKey("baz")
+        assert events[1].get_dagster_event().asset_key == AssetKey("foo")
+
+    def test_execute_unconnected_subset(self, graphql_context):
+        # Assets "foo" and "unconnected" are disconnected assets
+        run_id = _create_run(
+            graphql_context,
+            "foo_job",
+            asset_selection=[{"path": ["foo"]}, {"path": ["unconnected"]}],
+        )
+        run = graphql_context.instance.get_run_by_id(run_id)
+        assert run.is_finished
+        events = _get_sorted_materialization_events(graphql_context, run_id)
+        assert len(events) == 2
+        assert events[0].get_dagster_event().asset_key == AssetKey("foo")
+        assert events[1].get_dagster_event().asset_key == AssetKey("unconnected")
+
+    def test_reexecute_subset(self, graphql_context):
+        run_id = _create_run(graphql_context, "foo_job", asset_selection=[{"path": ["bar"]}])
+        run = graphql_context.instance.get_run_by_id(run_id)
+        assert run.is_finished
+        events = _get_sorted_materialization_events(graphql_context, run_id)
+        assert len(events) == 1
+        assert events[0].get_dagster_event().asset_key == AssetKey("bar")
+        assert run.asset_selection == {AssetKey("bar")}
+
+        selector = infer_job_or_pipeline_selector(
+            graphql_context, "foo_job", asset_selection=[{"path": ["bar"]}]
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "executionMetadata": {"parentRunId": run_id, "rootRunId": run_id},
+                },
+            },
+        )
+        graphql_context.instance.run_launcher.join()
+        run_id = result.data["launchPipelineReexecution"]["run"]["runId"]
+        run = graphql_context.instance.get_run_by_id(run_id)
+        assert run.is_finished
+        events = _get_sorted_materialization_events(graphql_context, run_id)
+        assert len(events) == 1
+        assert events[0].get_dagster_event().asset_key == AssetKey("bar")
+        assert run.asset_selection == {AssetKey("bar")}
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):

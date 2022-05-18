@@ -19,6 +19,11 @@ export interface RunActionButtonsTestQuery_pipelineRunOrError_Run_tags {
   value: string;
 }
 
+export interface RunActionButtonsTestQuery_pipelineRunOrError_Run_assetSelection {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface RunActionButtonsTestQuery_pipelineRunOrError_Run_executionPlan_steps_inputs_dependsOn {
   __typename: "ExecutionStep";
   key: string;
@@ -85,6 +90,7 @@ export interface RunActionButtonsTestQuery_pipelineRunOrError_Run {
   parentRunId: string | null;
   pipelineName: string;
   solidSelection: string[] | null;
+  assetSelection: RunActionButtonsTestQuery_pipelineRunOrError_Run_assetSelection[] | null;
   pipelineSnapshotId: string | null;
   executionPlan: RunActionButtonsTestQuery_pipelineRunOrError_Run_executionPlan | null;
   stepKeysToExecute: string[] | null;

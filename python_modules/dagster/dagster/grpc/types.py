@@ -1,7 +1,8 @@
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional
+from typing import Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster.core.code_pointer import CodePointer
+from dagster.core.definitions.events import AssetKey
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryMode
 from dagster.core.host_representation.origin import (
@@ -29,6 +30,7 @@ class ExecutionPlanSnapshotArgs(
             ("pipeline_snapshot_id", str),
             ("known_state", Optional[KnownExecutionState]),
             ("instance_ref", Optional[InstanceRef]),
+            ("asset_selection", Optional[FrozenSet[AssetKey]]),
         ],
     )
 ):
@@ -42,6 +44,7 @@ class ExecutionPlanSnapshotArgs(
         pipeline_snapshot_id: str,
         known_state: Optional[KnownExecutionState] = None,
         instance_ref: Optional[InstanceRef] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
@@ -57,6 +60,9 @@ class ExecutionPlanSnapshotArgs(
             pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
             known_state=check.opt_inst_param(known_state, "known_state", KnownExecutionState),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            asset_selection=check.opt_set_param(
+                asset_selection, "asset_selection", of_type=AssetKey
+            ),
         )
 
 
@@ -403,10 +409,19 @@ class PartitionSetExecutionParamArgs(
 class PipelineSubsetSnapshotArgs(
     NamedTuple(
         "_PipelineSubsetSnapshotArgs",
-        [("pipeline_origin", ExternalPipelineOrigin), ("solid_selection", Optional[List[str]])],
+        [
+            ("pipeline_origin", ExternalPipelineOrigin),
+            ("solid_selection", Optional[List[str]]),
+            ("asset_selection", Optional[List[AssetKey]]),
+        ],
     )
 ):
-    def __new__(cls, pipeline_origin: ExternalPipelineOrigin, solid_selection: List[str]):
+    def __new__(
+        cls,
+        pipeline_origin: ExternalPipelineOrigin,
+        solid_selection: List[str],
+        asset_selection: Optional[List[AssetKey]] = None,
+    ):
         return super(PipelineSubsetSnapshotArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
@@ -415,6 +430,9 @@ class PipelineSubsetSnapshotArgs(
             solid_selection=check.list_param(solid_selection, "solid_selection", of_type=str)
             if solid_selection
             else None,
+            asset_selection=check.opt_list_param(
+                asset_selection, "asset_selection", of_type=AssetKey
+            ),
         )
 
 

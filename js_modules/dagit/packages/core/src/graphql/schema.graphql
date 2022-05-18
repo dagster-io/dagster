@@ -393,6 +393,7 @@ type Run implements PipelineRun {
   canTerminate: Boolean!
   assets: [Asset!]!
   events(after: Cursor): [DagsterRunEvent!]!
+  assetSelection: [AssetKey!]
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
   startTime: Float
@@ -2128,6 +2129,7 @@ input JobOrPipelineSelector {
   repositoryName: String!
   repositoryLocationName: String!
   solidSelection: [String!]
+  assetSelection: [AssetKeyInput!]
 }
 
 input ExecutionMetadata {
