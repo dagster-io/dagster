@@ -123,7 +123,7 @@ def test_docs_url_run(
     def my_dbt_solid(context):
         return context.resources.dbt.run()
 
-    context = get_dbt_solid_context(test_project_dir, dbt_config_dir, docs_url=["foo.com"])
+    context = get_dbt_solid_context(test_project_dir, dbt_config_dir, docs_url="foo.com")
     dbt_result = my_dbt_solid(context)
     assert len(dbt_result.result["results"]) == 4
     assert dbt_result.docs_url == "foo.com"
