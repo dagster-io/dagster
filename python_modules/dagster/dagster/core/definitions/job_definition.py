@@ -236,12 +236,9 @@ class JobDefinition(PipelineDefinition):
             _input_values=input_values,
         )
 
-        if op_selection:
-            ephemeral_job = ephemeral_job.get_job_def_for_op_selection(op_selection)
-        elif asset_selection:
-            ephemeral_job = ephemeral_job.get_job_def_for_asset_selection(
-                frozenset(asset_selection)
-            )
+        ephemeral_job = ephemeral_job.get_job_def_for_subset_selection(
+            op_selection, frozenset(asset_selection) if asset_selection else None
+        )
 
         tags = None
         if partition_key:
@@ -283,7 +280,23 @@ class JobDefinition(PipelineDefinition):
     def asset_selection_data(self) -> Optional[AssetSelectionData]:
         return self._asset_selection_data
 
-    def get_job_def_for_asset_selection(
+    def get_job_def_for_subset_selection(
+        self,
+        op_selection: Optional[List[str]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+    ):
+        check.invariant(
+            not (op_selection and asset_selection),
+            "op_selection and asset_selection cannot both be provided as args to execute_in_process",
+        )
+        if op_selection:
+            return self._get_job_def_for_op_selection(op_selection)
+        if asset_selection:  # asset_selection:
+            return self._get_job_def_for_asset_selection(asset_selection)
+        else:
+            return self
+
+    def _get_job_def_for_asset_selection(
         self,
         asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ) -> "JobDefinition":
@@ -315,7 +328,7 @@ class JobDefinition(PipelineDefinition):
         )
         return new_job
 
-    def get_job_def_for_op_selection(
+    def _get_job_def_for_op_selection(
         self,
         op_selection: Optional[List[str]] = None,
     ) -> "JobDefinition":

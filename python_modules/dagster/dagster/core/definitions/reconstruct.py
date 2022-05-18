@@ -180,16 +180,10 @@ class ReconstructablePipeline(
         defn = self.repository.get_definition().get_pipeline(self.pipeline_name)
 
         if isinstance(defn, JobDefinition):
-            if self.asset_selection:
-                return (
-                    self.repository.get_definition()
-                    .get_pipeline(self.pipeline_name)
-                    .get_job_def_for_asset_selection(self.asset_selection)
-                )
             return (
-                self.repository.get_definition().get_pipeline(self.pipeline_name)
-                # jobs use pre-resolved selection
-                .get_job_def_for_op_selection(self.solid_selection)
+                self.repository.get_definition()
+                .get_pipeline(self.pipeline_name)
+                .get_job_def_for_subset_selection(self.solid_selection, self.asset_selection)
             )
 
         check.invariant(
@@ -221,24 +215,20 @@ class ReconstructablePipeline(
 
         pipeline_def = self.get_definition()
         if isinstance(pipeline_def, JobDefinition):
-            if asset_selection:
-                return ReconstructablePipeline(
-                    repository=self.repository,
-                    pipeline_name=self.pipeline_name,
-                    asset_selection=asset_selection,
-                )
+            # jobs use pre-resolved selection
             # when subselecting a job
             # * job subselection depend on solid_selection rather than solids_to_execute
             # * we'll resolve the op selection later in the stack
-            elif solid_selection is None:
+            if solid_selection is None:
                 # when the pre-resolution info is unavailable (e.g. subset from existing run),
                 # we need to fill the solid_selection in order to pass the value down to deeper stack.
                 solid_selection = list(solids_to_execute) if solids_to_execute else None
             return ReconstructablePipeline(
                 repository=self.repository,
                 pipeline_name=self.pipeline_name,
-                solid_selection_str=seven.json.dumps(solid_selection),
+                solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
                 solids_to_execute=None,
+                asset_selection=asset_selection,
             )
         elif isinstance(pipeline_def, PipelineDefinition):
             # when subselecting a pipeline

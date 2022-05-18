@@ -1195,15 +1195,15 @@ def test_resource_op_subset():
         "io_manager",
     }
 
-    assert nested.get_job_def_for_op_selection(["foo_op"]).get_required_resource_defs_for_mode(
+    assert nested.get_job_def_for_subset_selection(["foo_op"]).get_required_resource_defs_for_mode(
         "default"
     ).keys() == {"foo", "bar", "io_manager"}
 
-    assert nested.get_job_def_for_op_selection(["bar_op"]).get_required_resource_defs_for_mode(
+    assert nested.get_job_def_for_subset_selection(["bar_op"]).get_required_resource_defs_for_mode(
         "default"
     ).keys() == {"bar", "io_manager"}
 
-    assert nested.get_job_def_for_op_selection(["baz_op"]).get_required_resource_defs_for_mode(
+    assert nested.get_job_def_for_subset_selection(["baz_op"]).get_required_resource_defs_for_mode(
         "default"
     ).keys() == {"baz", "io_manager"}
 

@@ -74,7 +74,9 @@ class InMemoryPipeline(IPipeline, object):
     def _subset_for_execution(self, solids_to_execute, solid_selection=None, asset_selection=None):
         if asset_selection:
             return InMemoryPipeline(
-                self._pipeline_def.get_job_def_for_asset_selection(asset_selection),
+                self._pipeline_def.get_job_def_for_subset_selection(
+                    asset_selection=asset_selection
+                ),
                 asset_selection=asset_selection,
             )
         if self._pipeline_def.is_subset_pipeline:

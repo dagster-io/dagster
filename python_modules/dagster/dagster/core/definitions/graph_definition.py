@@ -592,7 +592,7 @@ class GraphDefinition(NodeDefinition):
             asset_layer=asset_layer,
             _input_values=input_values,
             _asset_selection_data=_asset_selection_data,
-        ).get_job_def_for_op_selection(op_selection)
+        ).get_job_def_for_subset_selection(op_selection)
 
     def coerce_to_job(self):
         # attempt to coerce a Graph in to a Job, raising a useful error if it doesn't work
@@ -681,7 +681,7 @@ class GraphDefinition(NodeDefinition):
             executor_def=execute_in_process_executor,
             resource_defs=resource_defs,
             _input_values=input_values,
-        ).get_job_def_for_op_selection(op_selection)
+        ).get_job_def_for_subset_selection(op_selection)
 
         run_config = run_config if run_config is not None else {}
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
