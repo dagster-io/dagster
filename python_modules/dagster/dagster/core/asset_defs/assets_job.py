@@ -265,7 +265,9 @@ def build_deps(
             node_key = node_name
         deps[node_key] = {}
         assets_defs_by_node_handle[NodeHandle(alias, parent=None)] = assets_def
-        for input_name, asset_key in assets_def.asset_keys_by_input_name.items():
+        for input_name, asset_key in sorted(
+            assets_def.asset_keys_by_input_name.items(), key=lambda input: input[0]
+        ):  # sort so that input definition order is deterministic
             if asset_key in node_outputs_by_asset:
                 node_def, output_name = node_outputs_by_asset[asset_key]
                 deps[node_key][input_name] = DependencyDefinition(node_def.name, output_name)
