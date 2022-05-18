@@ -162,6 +162,7 @@ from dagster.core.definitions.policy import Backoff, Jitter, RetryPolicy
 from dagster.core.definitions.run_status_sensor_definition import build_run_status_sensor_context
 from dagster.core.definitions.schedule_definition import build_schedule_context
 from dagster.core.definitions.sensor_definition import build_sensor_context
+from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.definitions.utils import (
     config_from_files,
     config_from_pkg_resources,
@@ -172,6 +173,7 @@ from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterError,
     DagsterEventLogInvalidForRun,
+    DagsterExecutionInterruptedError,
     DagsterExecutionStepExecutionError,
     DagsterExecutionStepNotFoundError,
     DagsterInvalidConfigDefinitionError,
@@ -188,6 +190,7 @@ from dagster.core.errors import (
     DagsterUnknownResourceError,
     DagsterUnmetExecutorRequirementsError,
     DagsterUserCodeExecutionError,
+    raise_execution_interrupts,
 )
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.api import (
@@ -206,6 +209,12 @@ from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.context.output import OutputContext, build_output_context
 from dagster.core.execution.context.system import TypeCheckContext
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster.core.execution.plan.external_step import (
+    external_instance_from_step_run_ref,
+    run_step_from_ref,
+    step_context_to_step_run_ref,
+    step_run_ref_to_step_context,
+)
 from dagster.core.execution.results import (
     CompositeSolidExecutionResult,
     PipelineExecutionResult,
@@ -255,6 +264,7 @@ from dagster.core.types.decorator import (
 from dagster.core.types.python_dict import Dict
 from dagster.core.types.python_set import Set
 from dagster.core.types.python_tuple import Tuple
+from dagster.serdes import deserialize_value, serialize_value
 from dagster.utils import file_relative_path
 from dagster.utils.alert import make_email_on_run_failure_sensor
 from dagster.utils.backcompat import ExperimentalWarning, rename_warning
@@ -465,6 +475,10 @@ __all__ = [
     "InitLoggerContext",
     "InitResourceContext",
     "ExecuteInProcessResult",
+    "step_context_to_step_run_ref",
+    "external_instance_from_step_run_ref",
+    "step_run_ref_to_step_context",
+    "run_step_from_ref",
     "build_init_resource_context",
     "OpExecutionContext",
     "PipelineExecutionResult",
@@ -501,6 +515,7 @@ __all__ = [
     "DagsterConfigMappingFunctionError",
     "DagsterError",
     "DagsterEventLogInvalidForRun",
+    "DagsterExecutionInterruptedError",
     "DagsterExecutionStepExecutionError",
     "DagsterExecutionStepNotFoundError",
     "DagsterInvalidConfigDefinitionError",
@@ -517,6 +532,7 @@ __all__ = [
     "DagsterUnknownResourceError",
     "DagsterUnmetExecutorRequirementsError",
     "DagsterUserCodeExecutionError",
+    "raise_execution_interrupts",
     # Logging
     "DagsterLogManager",
     "get_dagster_logger",
@@ -574,6 +590,8 @@ __all__ = [
     # storage
     "EventRecordsFilter",
     "RunShardedEventsCursor",
+    "serialize_value",
+    "deserialize_value",
     # partitions and schedules
     "build_schedule_from_partitioned_job",
     "schedule_from_partitions",
@@ -610,6 +628,7 @@ __all__ = [
     "RunStatusSensorContext",
     "build_sensor_context",
     "build_run_status_sensor_context",
+    "StepLauncher",
     "SkipReason",
     "daily_schedule",
     "hourly_schedule",

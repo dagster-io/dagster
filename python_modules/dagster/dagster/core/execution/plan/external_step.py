@@ -5,11 +5,12 @@ import subprocess
 import sys
 from typing import TYPE_CHECKING, Iterator, Optional, cast
 
-from dagster import Field, StringSource
-from dagster import _check as check
-from dagster import resource
+import dagster._check as check
+from dagster.config.field import Field
+from dagster.config.source import StringSource
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
 from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster.core.definitions.resource_definition import resource
 from dagster.core.definitions.step_launcher import StepLauncher, StepRunRef
 from dagster.core.errors import raise_execution_interrupts
 from dagster.core.events import DagsterEvent, DagsterEventType
