@@ -5,8 +5,6 @@ from typing import Dict, List, Optional, Union
 import yaml
 from typing_extensions import Literal, TypeAlias, TypedDict
 
-DAGIT_PATH = "js_modules/dagit"
-
 # ########################
 # ##### BUILDKITE STEP DATA STRUCTURES
 # ########################
@@ -101,28 +99,6 @@ def check_for_release() -> bool:
     return False
 
 
-def is_pr_and_dagit_only() -> bool:
-    branch_name = safe_getenv("BUILDKITE_BRANCH")
-    base_branch = safe_getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")
-
-    if branch_name is None or branch_name == "master" or branch_name.startswith("release"):
-        return False
-
-    try:
-        pr_commit = safe_getenv("BUILDKITE_COMMIT")
-        origin_base = "origin/" + base_branch
-        diff_files = (
-            subprocess.check_output(["git", "diff", origin_base, pr_commit, "--name-only"])
-            .decode("utf-8")
-            .strip()
-            .split("\n")
-        )
-        return all(filepath.startswith(DAGIT_PATH) for (filepath) in diff_files)
-
-    except subprocess.CalledProcessError:
-        return False
-
-
 def network_buildkite_container(network_name: str) -> List[str]:
     return [
         # hold onto your hats, this is docker networking at its best. First, we figure out
@@ -149,6 +125,10 @@ def connect_sibling_docker_container(
             f"{container_name}`"
         )
     ]
+
+
+def is_feature_branch(branch_name: str) -> bool:
+    return not (branch_name == "master" or branch_name.startswith("release"))
 
 
 def is_release_branch(branch_name: str) -> bool:
