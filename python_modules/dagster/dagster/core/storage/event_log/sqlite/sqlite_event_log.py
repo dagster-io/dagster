@@ -383,6 +383,16 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         self._delete_mirrored_events_for_asset_key(asset_key)
 
     def watch(self, run_id, cursor, callback):
+        # the API accepts opaque string cursor, but the sqlite implementation uses the integer
+        # primary key `id` as the cursor, so coerce to an int for the sake of watching
+        if cursor is None:
+            cursor = -1
+        elif isinstance(cursor, str):
+            try:
+                cursor = int(cursor)
+            except ValueError:
+                cursor = -1
+
         if not self._obs:
             self._obs = Observer()
             self._obs.start()

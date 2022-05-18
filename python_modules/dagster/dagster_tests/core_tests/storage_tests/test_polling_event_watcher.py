@@ -30,16 +30,9 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
         self, run_id: str, cursor: Union[str, int], callback: Callable[[EventLogEntry], None]
     ):
         check.str_param(run_id, "run_id")
-        check.inst_param(cursor, "cursor", (str, int))
+        check.opt_str_param(cursor, "cursor")
         check.callable_param(callback, "callback")
-        if isinstance(cursor, str):
-            try:
-                start_cursor = int(cursor)
-            except ValueError:
-                start_cursor = -1
-        else:
-            start_cursor = cursor
-        self._watcher.watch_run(run_id, start_cursor, callback)
+        self._watcher.watch_run(run_id, cursor, callback)
 
     def end_watch(self, run_id: str, handler: Callable[[EventLogEntry], None]):
         check.str_param(run_id, "run_id")
