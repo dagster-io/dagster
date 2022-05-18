@@ -396,7 +396,6 @@ def parse_asset_selection(
         FrozenSet[str]: a frozenset of qualified deduplicated asset keys, empty if no qualified
             subset selected.
     """
-    from dagster.core.definitions.events import AssetKey
 
     check.list_param(asset_selection, "asset_selection", of_type=str)
 
