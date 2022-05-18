@@ -100,6 +100,7 @@ const PartitionViewContent: React.FC<{
   const repositorySelector = repoAddressToSelector(repoAddress);
   const {canLaunchPartitionBackfill} = usePermissions();
   const {viewport, containerProps} = useViewport();
+  const backfillQueryRef = React.useRef(0);
   const partitions = usePartitionStepQuery(
     partitionSet.name,
     partitionNames,
@@ -168,10 +169,12 @@ const PartitionViewContent: React.FC<{
         {showBackfillSetup && (
           <BackfillPartitionSelector
             partitionSetName={partitionSet.name}
+            partitionNames={partitionNames}
             partitionData={statusData}
             pipelineName={partitionSet.pipelineName}
             onCancel={() => setShowBackfillSetup(false)}
             onLaunch={(_backfillId, _stepQuery) => {
+              backfillQueryRef.current += 1;
               setShowBackfillSetup(false);
             }}
             onSubmit={onSubmit}
@@ -299,6 +302,7 @@ const PartitionViewContent: React.FC<{
           partitionSet={partitionSet}
           repositorySelector={repositorySelector}
           partitionNames={partitionNames}
+          refetchRef={backfillQueryRef.current}
         />
       </Box>
     </div>
@@ -311,14 +315,16 @@ const JobBackfills = ({
   partitionSet,
   partitionNames,
   repositorySelector,
+  refetchRef,
 }: {
   partitionSet: PartitionsStatusQuery_partitionSetOrError_PartitionSet;
   partitionNames: string[];
   repositorySelector: RepositorySelector;
+  refetchRef: number;
 }) => {
   const [cursorStack, setCursorStack] = React.useState<string[]>(() => []);
   const [cursor, setCursor] = React.useState<string | undefined>();
-  const queryResult = useQuery(JOB_BACKFILLS_QUERY, {
+  const {data, refetch} = useQuery(JOB_BACKFILLS_QUERY, {
     variables: {
       partitionSetName: partitionSet.name,
       repositorySelector,
@@ -328,11 +334,15 @@ const JobBackfills = ({
     partialRefetch: true,
   });
 
-  if (!queryResult.data) {
+  React.useEffect(() => {
+    refetchRef && refetch();
+  }, [refetch, refetchRef]);
+
+  if (!data) {
     return <NonIdealState title="Could not fetch backfill data" icon="error" />;
   }
 
-  const {backfills, pipelineName} = queryResult.data?.partitionSetOrError;
+  const {backfills, pipelineName} = data?.partitionSetOrError;
 
   if (!backfills) {
     return <NonIdealState title={`No backfills for ${pipelineName}`} icon="no-results" />;
@@ -366,7 +376,7 @@ const JobBackfills = ({
     <>
       <BackfillTable
         backfills={backfills}
-        refetch={queryResult.refetch}
+        refetch={refetch}
         showPartitionSet={false}
         allPartitions={partitionNames}
       />
