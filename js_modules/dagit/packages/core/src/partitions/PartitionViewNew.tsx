@@ -250,6 +250,7 @@ const PartitionViewContent: React.FC<{
                 setShowSteps(true);
               }
             }}
+            tooltipMessage="Click to view per-step status"
           />
         </div>
         {showSteps ? (
