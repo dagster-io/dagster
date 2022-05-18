@@ -1,6 +1,8 @@
+from dagster.core.events import DagsterEventType
 import pytest
 
 from dagster import (
+    DynamicOut,
     DynamicOutput,
     DynamicOutputDefinition,
     Field,
@@ -9,6 +11,8 @@ from dagster import (
     OutputDefinition,
     composite_solid,
     execute_pipeline,
+    job,
+    op,
     pipeline,
     reconstructable,
     solid,
@@ -283,6 +287,91 @@ def test_fan_out_in_out_in(run_config):
         assert empty_result.result_for_solid("sum_numbers").output_value() == 0
 
 
+def define_real_dynamic_job():
+    @op(config_schema=list, out=DynamicOut(int))
+    def generate_subtasks(context):
+        for num in context.op_config:
+            yield DynamicOutput(num, mapping_key=str(num))
+
+    @op
+    def subtask(input_number: int):
+        print(f"Found {input_number} cereals")
+        return input_number
+
+    @job
+    def real_dynamic_job():
+        generate_subtasks().map(subtask)
+
+    return real_dynamic_job
+
+
+def test_select_dynamic_step_with_non_static_mapping():
+    with instance_for_test() as instance:
+        result_0 = execute_pipeline(
+            reconstructable(define_real_dynamic_job),
+            instance=instance,
+            run_config={"ops": {"generate_subtasks": {"config": [0, 2, 4]}}},
+        )
+        assert result_0.success
+
+        result_1 = reexecute_pipeline(
+            reconstructable(define_real_dynamic_job),
+            parent_run_id=result_0.run_id,
+            instance=instance,
+            step_selection=["generate_subtasks", "subtask[4]"],
+            run_config={"ops": {"generate_subtasks": {"config": [0, 2, 4]}}},
+        )
+        assert result_1.success
+        keys_1 = result_1.events_by_step_key.keys()
+        assert "generate_subtasks" in keys_1
+        assert "subtask[4]" in keys_1
+        assert "subtask[0]" not in keys_1
+        assert "subtask[2]" not in keys_1
+
+        result_2 = reexecute_pipeline(
+            reconstructable(define_real_dynamic_job),
+            parent_run_id=result_0.run_id,
+            instance=instance,
+            step_selection=["generate_subtasks", "subtask[4]"],
+            run_config={"ops": {"generate_subtasks": {"config": [1, 3, 5]}}},
+        )
+        # subtask[4] is skipped - bc generate_subtasks doesn't yield "4"
+        # subtask[1], subtask[3], subtask[5] have been generated but not selected to execute
+        assert result_2.success
+        keys_2 = result_2.events_by_step_key.keys()
+        assert "generate_subtasks" in keys_2
+        assert "subtask[4]" in keys_2
+        assert (
+            result_2.events_by_step_key["subtask[4]"][0].event_type == DagsterEventType.STEP_SKIPPED
+        )
+        assert "subtask[1]" not in keys_2
+        assert "subtask[3]" not in keys_2
+        assert "subtask[5]" not in keys_2
+
+        result_3 = reexecute_pipeline(
+            reconstructable(define_real_dynamic_job),
+            parent_run_id=result_0.run_id,
+            instance=instance,
+            step_selection=["generate_subtasks", "subtask[4]"],
+            run_config={"ops": {"generate_subtasks": {"config": [1, 2, 3, 4, 5]}}},
+        )
+        # subtask[4] is executed
+        # subtask[0], subtask[1], subtask[2], subtask[3], subtask[5] have been generated but not
+        # selected to execute
+        assert result_3.success
+        keys_3 = result_3.events_by_step_key.keys()
+        assert "generate_subtasks" in keys_3
+        assert "subtask[4]" in keys_3
+        assert DagsterEventType.STEP_SUCCESS in [
+            e.event_type for e in result_3.events_by_step_key["subtask[4]"]
+        ]
+        assert "subtask[0]" not in keys_3
+        assert "subtask[1]" not in keys_3
+        assert "subtask[2]" not in keys_3
+        assert "subtask[3]" not in keys_3
+        assert "subtask[5]" not in keys_3
+
+
 def test_select_dynamic_step_and_downstream():
     with instance_for_test() as instance:
         result_1 = execute_pipeline(dynamic_pipeline, instance=instance)
@@ -319,44 +408,19 @@ def test_select_dynamic_step_and_downstream():
         assert "multiply_inputs[2]" in keys_3
         assert "multiply_by_two[0]" not in keys_3
 
-
         result_4 = reexecute_pipeline(
             dynamic_pipeline,
             parent_run_id=result_1.run_id,
             instance=instance,
-            step_selection=["emit", "emit_ten", "multiply_inputs[1]"],
+            step_selection=["emit_ten", "multiply_inputs[1]", "multiply_by_two[1]"],
         )
 
         keys_4 = result_4.events_by_step_key.keys()
+        assert "emit_ten" in keys_4
         assert "multiply_inputs[1]" in keys_4
+        assert "multiply_by_two[1]" in keys_4
+        assert "emit" not in keys_4
         assert "multiply_inputs[0]" not in keys_4
-
-        result_5 = reexecute_pipeline(
-            dynamic_pipeline,
-            parent_run_id=result_1.run_id,
-            instance=instance,
-            step_selection=["emit", "emit_ten", "multiply_inputs[1]", "multiply_by_two[1]"],
-        )
-
-        keys_5 = result_5.events_by_step_key.keys()
-        assert "multiply_inputs[1]" in keys_5
-        assert "multiply_by_two[1]" in keys_5
-        assert "multiply_inputs[0]" not in keys_5
-
-def test_bad_step_selection():
-    with instance_for_test() as instance:
-        result_1 = execute_pipeline(dynamic_pipeline, instance=instance)
-        assert result_1.success
-
-        # this exact error could be improved, but it should fail if you try to select
-        # both the dynamic outputting step key and something resolved by it in the previous run
-        with pytest.raises(DagsterExecutionStepNotFoundError):
-            reexecute_pipeline(
-                dynamic_pipeline,
-                parent_run_id=result_1.run_id,
-                instance=instance,
-                step_selection=["emit", "multiply_by_two[1]"],
-            )
 
 
 @pytest.mark.parametrize(
