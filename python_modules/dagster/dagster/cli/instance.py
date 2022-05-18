@@ -32,12 +32,10 @@ def info_command():
 
         click.echo("$DAGSTER_HOME: {}\n".format(home))
 
+        click.echo("\nInstance configuration:\n-----------------------")
         click.echo(instance.info_str())
 
-
-@instance_cli.command(name="schema", help="List the status of the storage schema.")
-def schema_command():
-    with DagsterInstance.get() as instance:
+        click.echo("\nStorage schema state:\n---------------------")
         click.echo(instance.schema_str())
 
 

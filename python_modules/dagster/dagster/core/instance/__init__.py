@@ -531,13 +531,22 @@ class DagsterInstance:
         return yaml.dump(self.info_dict(), default_flow_style=False, sort_keys=False)
 
     def schema_str(self) -> str:
+        def _schema_dict(alembic_version):
+            if not alembic_version:
+                return None
+            db_revision, head_revision = alembic_version
+            return {
+                "current": db_revision,
+                "latest": head_revision,
+            }
+
         return yaml.dump(
             {
-                "event_log_storage": self._event_storage.alembic_version(),
-                "run_storage": self._run_storage.alembic_version(),
-                "schedule_storage": self._schedule_storage.alembic_version()
-                if self._schedule_storage
-                else None,
+                "schema": {
+                    "event_log_storage": _schema_dict(self._event_storage.alembic_version()),
+                    "run_storage": _schema_dict(self._event_storage.alembic_version()),
+                    "schedule_storage": _schema_dict(self._event_storage.alembic_version()),
+                }
             },
             default_flow_style=False,
             sort_keys=False,

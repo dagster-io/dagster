@@ -28,7 +28,6 @@ from dagster import (
     solid,
 )
 from dagster.cli import ENV_PREFIX, cli
-from dagster.cli.instance import schema_command
 from dagster.cli.job import job_execute_command
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli.run import run_delete_command, run_list_command, run_wipe_command
@@ -866,10 +865,3 @@ def test_use_env_vars_for_cli_option():
     result = runner.invoke(cli, ["debug"], auto_envvar_prefix=ENV_PREFIX)
     assert __version__ in result.output
     assert result.exit_code == 0
-
-
-def test_schema_version():
-    with instance_for_test() as instance:
-        runner = CliRunner()
-        result = runner.invoke(schema_command)
-        assert result.exit_code == 0
