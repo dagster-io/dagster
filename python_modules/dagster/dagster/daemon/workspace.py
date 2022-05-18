@@ -42,7 +42,7 @@ class BaseDaemonWorkspace(IWorkspace):
     def _load_workspace(self) -> Dict[str, WorkspaceLocationEntry]:
         pass
 
-    def get_location(self, location_name: str) -> RepositoryLocation:
+    def get_repository_location(self, location_name: str) -> RepositoryLocation:
         if self._location_entries == None:
             self._location_entries = self._load_workspace()
 

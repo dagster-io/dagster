@@ -63,7 +63,7 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
         )
 
         try:
-            repo_location = workspace.get_location(origin.location_name)
+            repo_location = workspace.get_repository_location(origin.location_name)
             repo_name = backfill_job.partition_set_origin.external_repository_origin.repository_name
             partition_set_name = backfill_job.partition_set_origin.partition_set_name
             if not repo_location.has_repository(repo_name):

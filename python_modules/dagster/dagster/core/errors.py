@@ -389,6 +389,10 @@ class DagsterUserCodeProcessError(DagsterError):
         super(DagsterUserCodeProcessError, self).__init__(*args, **kwargs)
 
 
+class DagsterRepositoryLocationNotFoundError(DagsterError):
+    pass
+
+
 class DagsterRepositoryLocationLoadError(DagsterError):
     def __init__(self, *args, **kwargs):
         from dagster.utils.error import SerializableErrorInfo
