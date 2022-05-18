@@ -429,32 +429,6 @@ class JobDefinition(PipelineDefinition):
 
         return job_def
 
-    def _with_asset_selection_data(self, asset_selection_data: AssetSelectionData):
-
-        asset_selection_data = check.inst_param(
-            asset_selection_data, "asset_selection_data", AssetSelectionData
-        )
-
-        job_def = JobDefinition(
-            name=self.name,
-            graph_def=self._graph_def,
-            resource_defs=dict(self.resource_defs),
-            logger_defs=dict(self.loggers),
-            executor_def=self.executor_def,
-            partitioned_config=self.partitioned_config,
-            config_mapping=self.config_mapping,
-            preset_defs=self.preset_defs,
-            tags=self.tags,
-            hook_defs=self.hook_defs,
-            description=self._description,
-            op_retry_policy=self._solid_retry_policy,
-            asset_layer=self.asset_layer,
-            _op_selection_data=self._op_selection_data,
-            _asset_selection_data=asset_selection_data,
-        )
-
-        return job_def
-
     def get_parent_pipeline_snapshot(self) -> Optional["PipelineSnapshot"]:
         if self.op_selection_data:
             return self.op_selection_data.parent_job_def.get_pipeline_snapshot()
