@@ -12,13 +12,13 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {Loading} from '../ui/Loading';
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {OptionsContainer} from '../gantt/VizComponents';
 import {useViewport} from '../gantt/useViewport';
 import {BackfillTable, BACKFILL_TABLE_FRAGMENT} from '../instance/BackfillTable';
 import {RepositorySelector, RunStatus} from '../types/globalTypes';
+import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -28,14 +28,12 @@ import {PartitionStatus} from './PartitionStatus';
 import {PartitionStepStatus} from './PartitionStepStatus';
 import {
   PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses_results,
-  PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
   PartitionsStatusQuery_partitionSetOrError_PartitionSet,
   PartitionsStatusQuery,
   PartitionsStatusQueryVariables,
 } from './types/PartitionsStatusQuery';
 import {PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results} from './types/PipelinePartitionsRootQuery';
 import {usePartitionStepQuery} from './usePartitionStepQuery';
-import {BackfillStepStatusDialogContent} from '../instance/BackfillStepStatusDialog';
 
 type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
 type PartitionStatus = PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses_results;

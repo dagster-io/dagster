@@ -2,13 +2,13 @@ import {gql} from '@apollo/client';
 import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
 import React from 'react';
 
+import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {GanttChartLayout} from '../gantt/Constants';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {StepEventStatus} from '../types/globalTypes';
-import {featureEnabled, FeatureFlag} from '../app/Flags';
 
 import {PartitionMatrixStepRunFragment} from './types/PartitionMatrixStepRunFragment';
 import {PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles} from './types/PartitionRunMatrixPipelineQuery';
