@@ -18,7 +18,7 @@ necessary files like tox.ini, etc.
 """
 
 
-def add_to_examples_json(name):
+def add_to_examples_json(name: str) -> None:
     with open(EXAMPLES_JSON_PATH, "r", encoding="utf8") as examples_file:
         examples = json.load(examples_file)
 
@@ -44,15 +44,15 @@ def cli():
 @click.option(
     "--name", prompt='Name of library (ex: "foo" will create dagster-foo)', help="Name of library"
 )
-def library(name):
+def library(name: str):
     """Scaffolds a Dagster library <NAME> in python_modules/libraries/dagster-<NAME>."""
     template_library_path = os.path.join(ASSETS_PATH, "dagster-library-tmpl")
     new_template_library_path = os.path.abspath(
-        "python_modules/libraries/dagster-{name}".format(name=name)
+        f"python_modules/libraries/dagster-{name}"
     )
 
     if os.path.exists(new_template_library_path):
-        raise click.UsageError("Library with name {name} already exists".format(name=name))
+        raise click.UsageError(f"Library with name {name} already exists")
 
     copy_directory(template_library_path, new_template_library_path)
 

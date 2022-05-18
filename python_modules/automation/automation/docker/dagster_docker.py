@@ -97,6 +97,7 @@ class DagsterDockerImage(
         check.opt_str_param(python_version, "python_version")
         check.opt_str_param(custom_tag, "custom_tag")
 
+        tag: Optional[str]
         if python_version:
             last_updated = self._get_last_updated_for_python_version(python_version)
             tag = python_version_image_tag(python_version, last_updated)
