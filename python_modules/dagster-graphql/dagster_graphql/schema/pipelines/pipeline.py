@@ -418,6 +418,10 @@ class GrapheneRun(graphene.ObjectType):
 
             if self._run_stats is None or self._run_stats.start_time is None:
                 self._run_stats = graphene_info.context.instance.get_run_stats(self.runId)
+
+            if self._run_stats.start_time is None and self._run_stats.end_time:
+                return self._run_stats.end_time
+
             return self._run_stats.start_time
         return run_record.start_time
 

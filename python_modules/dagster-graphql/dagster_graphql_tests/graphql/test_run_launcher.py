@@ -18,6 +18,8 @@ query RunQuery($runId: ID!) {
           stepsSucceeded
         }
       }
+      startTime
+      endTime
     }
   }
 }
@@ -79,3 +81,31 @@ class TestBasicLaunch(BaseTestSuite):
         assert result.data["pipelineRunOrError"]["__typename"] == "Run"
         assert result.data["pipelineRunOrError"]["status"] == "SUCCESS"
         assert result.data["pipelineRunOrError"]["stats"]["stepsSucceeded"] == 1
+
+
+LaunchFailTestSuite: Any = make_graphql_context_test_suite(
+    context_variants=GraphQLContextVariant.all_non_launchable_variants()
+)
+
+
+class TestFailedLaunch(LaunchFailTestSuite):
+    def test_launch_failure(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "no_config_pipeline")
+        result = execute_dagster_graphql(
+            context=graphql_context,
+            query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={"executionParams": {"selector": selector, "mode": "default"}},
+        )
+        assert result.data["launchPipelineExecution"]["__typename"] != "LaunchRunSuccess"
+
+        # fetch the most recent run, which should be this one that just failed to launch
+        run = graphql_context.instance.get_runs(limit=1)[0]
+
+        result = execute_dagster_graphql(
+            context=graphql_context, query=RUN_QUERY, variables={"runId": run.run_id}
+        )
+        assert result.data["pipelineRunOrError"]["__typename"] == "Run"
+        assert result.data["pipelineRunOrError"]["status"] == "FAILURE"
+        print(result.data["pipelineRunOrError"])
+        assert result.data["pipelineRunOrError"]["startTime"]
+        assert result.data["pipelineRunOrError"]["endTime"]
