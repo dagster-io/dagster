@@ -5,6 +5,7 @@ from typing import Callable, List, MutableMapping, Optional
 
 import dagster._check as check
 from dagster.core.events.log import EventLogEntry
+from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.storage.event_log.polling_event_watcher import CallbackAfterCursor
 
 from ..pynotify import await_pg_notifications
@@ -45,9 +46,11 @@ def watcher_thread(
             dagster_event = gen_event_log_entry_from_cursor(index)
 
             for callback_with_cursor in handlers:
-                cursor = callback_with_cursor.cursor
                 try:
-                    if cursor is None or int(cursor) < index:
+                    if (
+                        callback_with_cursor.cursor is None
+                        or EventLogCursor.parse(callback_with_cursor.cursor).storage_id() < index
+                    ):
                         callback_with_cursor.callback(dagster_event)
                 except:
                     logging.exception("Exception in callback for event watch on run %s.", run_id)

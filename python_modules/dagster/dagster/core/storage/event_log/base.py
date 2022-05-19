@@ -1,6 +1,8 @@
+import base64
 import warnings
 from abc import ABC, abstractmethod
 from datetime import datetime
+from enum import Enum
 from typing import (
     Callable,
     Iterable,
@@ -27,6 +29,7 @@ from dagster.core.execution.stats import (
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
 from dagster.serdes import whitelist_for_serdes
+from dagster.seven import json
 
 
 class RunShardedEventsCursor(NamedTuple):
@@ -50,8 +53,54 @@ class EventLogRecord(NamedTuple):
 
 class EventLogConnection(NamedTuple):
     records: List[EventLogRecord]
-    cursor: Optional[str]
+    cursor: str
     has_more: bool
+
+
+class EventLogCursorType(Enum):
+    OFFSET = "OFFSET"
+    STORAGE_ID = "STORAGE_ID"
+
+
+class EventLogCursor(NamedTuple):
+    """Representation of an event record cursor, keeping track of the log query state"""
+
+    cursor_type: EventLogCursorType
+    value: int
+
+    def is_offset_cursor(self) -> bool:
+        return self.cursor_type == EventLogCursorType.OFFSET
+
+    def is_id_cursor(self) -> bool:
+        return self.cursor_type == EventLogCursorType.STORAGE_ID
+
+    def offset(self) -> int:
+        check.invariant(self.cursor_type == EventLogCursorType.OFFSET)
+        return max(0, int(self.value))
+
+    def storage_id(self) -> int:
+        check.invariant(self.cursor_type == EventLogCursorType.STORAGE_ID)
+        return int(self.value)
+
+    def __str__(self):
+        return self.to_string()
+
+    def to_string(self) -> str:
+        raw = json.dumps({"type": self.cursor_type.value, "value": self.value})
+        return base64.b64encode(bytes(raw, encoding="utf-8")).decode("utf-8")
+
+    @staticmethod
+    def parse(cursor_str: str) -> "EventLogCursor":
+        raw = json.loads(base64.b64decode(cursor_str).decode("utf-8"))
+        return EventLogCursor(EventLogCursorType(raw["type"]), raw["value"])
+
+    @staticmethod
+    def from_offset(offset: int) -> "EventLogCursor":
+        return EventLogCursor(EventLogCursorType.OFFSET, offset)
+
+    @staticmethod
+    def from_storage_id(storage_id: int) -> "EventLogCursor":
+        return EventLogCursor(EventLogCursorType.STORAGE_ID, storage_id)
 
 
 class AssetEntry(
@@ -188,6 +237,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
             of_type (Optional[DagsterEventType]): the dagster event type to filter the logs.
             limit (Optional[int]): Max number of records to return.
         """
+        if isinstance(cursor, int):
+            cursor = EventLogCursor.from_offset(cursor + 1).to_string()
         records = self.get_records_for_run(run_id, cursor, of_type, limit).records
         return [record.event_log_entry for record in records]
 

@@ -3,6 +3,7 @@ from typing import Callable, List, MutableMapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster.core.events.log import EventLogEntry
+from dagster.core.storage.event_log.base import EventLogCursor
 
 from .sql_event_log import SqlEventLogStorage
 
@@ -119,7 +120,7 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
             Add a callback to execute on new EventLogEntrys after the given cursor
 
         Args:
-            cursor (Optional[str]): minimum event_id for the callback to execute
+            cursor (Optional[str]): event log cursor for the callback to execute
             callback (Callable[[EventLogEntry], None]): callback to update the Dagster UI
         """
         cursor = check.opt_str_param(cursor, "cursor")
@@ -160,14 +161,9 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
             for event_record in conn.records:
                 with self._callback_fn_list_lock:
                     for callback_with_cursor in self._callback_fn_list:
-                        should_callback = False
-                        try:
-                            should_callback = (
-                                callback_with_cursor.cursor is None
-                                or int(callback_with_cursor.cursor) < event_record.storage_id
-                            )
-                        except ValueError:
-                            pass
-
-                        if should_callback:
+                        if (
+                            callback_with_cursor.cursor is None
+                            or EventLogCursor.parse(callback_with_cursor.cursor).storage_id()
+                            < event_record.storage_id
+                        ):
                             callback_with_cursor.callback(event_record.event_log_entry)

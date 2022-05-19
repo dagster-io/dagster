@@ -15,6 +15,8 @@ from dagster.utils import utc_datetime_from_timestamp
 
 from .base import (
     EventLogConnection,
+    EventLogCursor,
+    EventLogCursorType,
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
@@ -62,7 +64,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         limit=None,
     ) -> EventLogConnection:
         check.str_param(run_id, "run_id")
-        check.opt_inst_param(cursor, "cursor", (int, str))
+        check.opt_str_param(cursor, "cursor")
         of_types = (
             (
                 {of_type.value}
@@ -83,10 +85,12 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         if cursor is None:
             offset = 0
         else:
-            try:
-                offset = int(cursor) + 1
-            except ValueError:
-                offset = 0
+            cursor = EventLogCursor.parse(cursor)
+            check.invariant(
+                cursor.cursor_type == EventLogCursorType.OFFSET,
+                "only offset cursors are supported with the in-memory event log",
+            )
+            offset = cursor.offset()
 
         if of_types:
             events = list(
@@ -108,7 +112,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                 EventLogRecord(storage_id=event_id + offset, event_log_entry=event)
                 for event_id, event in enumerate(events)
             ],
-            cursor=str(offset + len(events)),
+            cursor=EventLogCursor.from_offset(offset + len(events)).to_string(),
             has_more=bool(limit and len(events) == limit),
         )
 

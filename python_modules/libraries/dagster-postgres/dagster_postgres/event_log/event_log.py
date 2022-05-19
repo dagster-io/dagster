@@ -10,6 +10,7 @@ from dagster.core.storage.event_log import (
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
+from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.core.storage.sql import (
     check_alembic_revision,
@@ -234,8 +235,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             del self._secondary_index_cache[name]
 
     def watch(self, run_id, cursor, callback):
-        # the API accepts opaque string cursor, but the postgres implementation uses the integer
-        # primary key `id` as the cursor, so coerce to an int for the sake of watching
+        if cursor and EventLogCursor.parse(cursor).is_offset_cursor():
+            check.failed("Cannot call `watch` with an offset cursor")
+
         if self._event_watcher is None:
             self._event_watcher = PostgresEventWatcher(
                 self.postgres_url,

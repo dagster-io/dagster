@@ -416,7 +416,9 @@ class TestEventLogStorage:
         assert len(storage.get_logs_for_run(test_run_id)) == 1
         assert len(watched) == 0
 
-        storage.watch(test_run_id, str(1), watcher)
+        conn = storage.get_records_for_run(test_run_id)
+        assert len(conn.records) == 1
+        storage.watch(test_run_id, conn.cursor, watcher)
 
         storage.store_event(create_test_event_log_record(str(2), test_run_id))
         storage.store_event(create_test_event_log_record(str(3), test_run_id))

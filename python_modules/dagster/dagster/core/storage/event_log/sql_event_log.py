@@ -25,6 +25,7 @@ from .base import (
     AssetEntry,
     AssetRecord,
     EventLogConnection,
+    EventLogCursor,
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
@@ -244,7 +245,7 @@ class SqlEventLogStorage(EventLogStorage):
             limit (Optional[int]): the maximum number of events to fetch
         """
         check.str_param(run_id, "run_id")
-        check.opt_inst_param(cursor, "cursor", (int, str))
+        check.opt_str_param(cursor, "cursor")
 
         check.invariant(
             not of_type
@@ -271,14 +272,12 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
         # adjust 0 based index cursor to SQL offset
-        if isinstance(cursor, int):
-            query = query.offset(cursor + 1)
-        elif cursor:
-            try:
-                last_known_id = int(cursor)
-                query = query.where(SqlEventLogStorageTable.c.id > last_known_id)
-            except ValueError:
-                pass
+        if cursor is not None:
+            cursor_obj = EventLogCursor.parse(cursor)
+            if cursor_obj.is_offset_cursor():
+                query = query.offset(cursor_obj.offset())
+            elif cursor_obj.is_id_cursor():
+                query = query.where(SqlEventLogStorageTable.c.id > cursor_obj.storage_id())
 
         if limit:
             query = query.limit(limit)
@@ -305,9 +304,17 @@ class SqlEventLogStorage(EventLogStorage):
         except (seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
+        if last_record_id is not None:
+            next_cursor = EventLogCursor.from_storage_id(last_record_id).to_string()
+        elif cursor:
+            next_cursor = cursor
+        else:
+            # rely on the fact that all storage ids will be positive integers
+            next_cursor = EventLogCursor.from_storage_id(-1).to_string()
+
         return EventLogConnection(
             records=records,
-            cursor=str(last_record_id) if last_record_id else None,
+            cursor=next_cursor,
             has_more=bool(limit and len(results) == limit),
         )
 
