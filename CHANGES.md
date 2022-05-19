@@ -1,5 +1,38 @@
 # Changelog
 
+# 0.14.16
+
+### New
+
+* `AssetsDefinition.from_graph` now accepts a `partitions_def` argument.
+* `@asset`-decorated functions can now accept variable keyword arguments.
+* Jobs executed in ECS tasks now report the health status of the ECS task
+* The CLI command `dagster instance info` now prints the current schema migration state for the configured instance storage.
+* [dagster-dbt] You can now configure a `docs_url` on the `dbt_cli_resource`. If this value is set, AssetMaterializations associated with each dbt model will contain a link to the dbt docs for that model.
+* [dagster-dbt] You can now configure a `dbt_cloud_host` on the `dbt_cloud_resource`, in the case that your dbt cloud instance is under a custom domain.
+
+### Bugfixes
+
+* Fixed a bug where `InputContext.upstream_output` was missing the `asset_key` when it referred to an asset outside the run.
+* When specifying a `selection` parameter in `AssetGroup.build_job()`, the generated job would include an incorrect set of assets in certain situations. This has been fixed.
+* Previously, a set of database operational exceptions were masked with a `DagsterInstanceSchemaOutdated` exception if the instance storage was not up to date with the latest schema.  We no longer wrap these exceptions, allowing the underlying exceptions to bubble up.
+* [dagster-airbyte] Fixed issue where successfully completed Airbyte syncs would send a cancellation request on completion. While this did not impact the sync itself, if alerts were set up on that connection, they would get triggered regardless of if the sync was successful or not.
+* [dagster-azure] Fixed an issue where the Azure Data Lake Storage `adls2_pickle_io_manager` would sometimes fail to recursively delete a folder when cleaning up an output.
+* Previously, if two different jobs with the same name were provided to the same repo, and one was targeted by a sensor/schedule, the job provided by the sensor/schedule would silently overwrite the other job instead of failing. In this release, a warning is fired when this case is hit, which will turn into an error in 0.15.0.
+* Dagit will now display workspace errors after reloading all repositories.
+
+### Breaking Changes
+
+* Calls to `instance.get_event_records` without an event type filter is now deprecated and will generate a warning.  These calls will raise an exception starting in `0.15.0`.
+
+### Community Contributions
+
+* `@multi_asset` now supports partitioning. Thanks @aroig!
+* Orphaned process detection now works correctly across a broader set of platforms. Thanks @aroig!
+* [K8s] Added a new `max_concurrent` field to the `k8s_job_executor` that limits the number of concurrent Ops that will execute per run. Since this executor launches a Kubernetes Job per Op, this also limits the number of concurrent Kuberenetes Jobs. Note that this limit is per run, not global. Thanks @kervel!
+* [Helm] Added a new `externalConfigmap` field as an alternative to `dagit.workspace.servers` when running the user deployments chart in a separate release. This allows the workspace to be managed outside of the main Helm chart. Thanks @peay!
+* Removed the pin on `markupsafe<=2.0.1`. Thanks @[bollwyvl](https://github.com/dagster-io/dagster/commits?author=bollwyvl)!
+
 # 0.14.15
 
 ### New
