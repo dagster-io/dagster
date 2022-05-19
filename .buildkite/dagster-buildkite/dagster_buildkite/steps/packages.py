@@ -1,6 +1,6 @@
 import os
 from glob import glob
-from typing import List
+from typing import List, Optional
 
 from dagster_buildkite.defines import GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.package_build_spec import PackageBuildSpec
@@ -96,6 +96,23 @@ airline_demo_extra_cmds = [
     ),
     "popd",
 ]
+
+
+def dagster_graphql_extra_cmds(_, tox_factor: Optional[str]) -> List[str]:
+    if tox_factor and tox_factor.startswith("postgres"):
+        return [
+            "pushd python_modules/dagster-graphql/dagster_graphql_tests/graphql/",
+            "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+            # Can't use host networking on buildkite and communicate via localhost
+            # between these sibling containers, so pass along the ip.
+            *network_buildkite_container("postgres"),
+            *connect_sibling_docker_container(
+                "postgres", "test-postgres-db-graphql", "POSTGRES_TEST_DB_HOST"
+            ),
+            "popd",
+        ]
+    else:
+        return []
 
 
 dbt_example_extra_cmds = [
@@ -280,19 +297,6 @@ postgres_extra_cmds = [
 ]
 
 
-graphql_pg_extra_cmds = [
-    "pushd python_modules/dagster-graphql/dagster_graphql_tests/graphql/",
-    "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
-    # Can't use host networking on buildkite and communicate via localhost
-    # between these sibling containers, so pass along the ip.
-    *network_buildkite_container("postgres"),
-    *connect_sibling_docker_container(
-        "postgres", "test-postgres-db-graphql", "POSTGRES_TEST_DB_HOST"
-    ),
-    "popd",
-]
-
-
 # Some Dagster packages have more involved test configs or support only certain Python version;
 # special-case those here
 PACKAGES_WITH_CUSTOM_CONFIG: List[PackageBuildSpec] = [
@@ -349,6 +353,7 @@ PACKAGES_WITH_CUSTOM_CONFIG: List[PackageBuildSpec] = [
     ),
     PackageBuildSpec(
         "python_modules/dagster-graphql",
+        pytest_extra_cmds=dagster_graphql_extra_cmds,
         pytest_tox_factors=[
             "not_graphql_context_test_suite",
             "in_memory_instance_multi_location",
@@ -357,18 +362,10 @@ PACKAGES_WITH_CUSTOM_CONFIG: List[PackageBuildSpec] = [
             "sqlite_instance_managed_grpc_env",
             "sqlite_instance_deployed_grpc_env",
             "graphql_python_client",
-        ],
-    ),
-    PackageBuildSpec(
-        "python_modules/dagster-graphql",
-        pytest_extra_cmds=graphql_pg_extra_cmds,
-        tox_file="tox_postgres.ini",
-        name="dagster-graphql-postgres",
-        pytest_tox_factors=[
-            "graphql_context_variants",
-            "postgres_instance_multi_location",
-            "postgres_instance_managed_grpc_env",
-            "postgres_instance_deployed_grpc_env",
+            "postgres-graphql_context_variants",
+            "postgres-instance_multi_location",
+            "postgres-instance_managed_grpc_env",
+            "postgres-instance_deployed_grpc_env",
         ],
     ),
     PackageBuildSpec(
