@@ -91,7 +91,7 @@ type Repository {
   sensors: [Sensor!]!
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
-  inProgressRunsByStep: [InProgressRunsByStep!]!
+  inProgressRunsByAsset: [InProgressRunsByAsset!]!
   latestRunByStep: [LatestRun!]!
 }
 
@@ -1497,8 +1497,8 @@ type NodeInvocationSite {
   solidHandle: SolidHandle!
 }
 
-type InProgressRunsByStep {
-  stepKey: String!
+type InProgressRunsByAsset {
+  assetKey: AssetKey!
   unstartedRuns: [Run!]!
   inProgressRuns: [Run!]!
 }

@@ -818,6 +818,8 @@ def external_asset_graph_from_defs(
                 dep_by[upstream_key][output_key] = ExternalAssetDependedBy(
                     downstream_asset_key=output_key
                 )
+    print("is this the step key mapping?")
+    print(op_names_by_asset_key)
 
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
         node_defs_by_asset_key.keys()

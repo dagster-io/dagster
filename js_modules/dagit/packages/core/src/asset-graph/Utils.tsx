@@ -244,7 +244,7 @@ export const buildLiveData = (
     const isPartitioned = graphNode.definition.partitionDefinition;
     const repo = repos.find((r) => r.id === liveNode.repository.id);
 
-    const runs = repo?.inProgressRunsByStep.find((r) => r.stepKey === liveNode.opName);
+    const runs = repo?.inProgressRunsByAsset.find((r) => r.assetKey === liveNode.assetKey);
     const info = repo?.latestRunByStep.find((r) => r.stepKey === liveNode.opName);
 
     const latestRunForStepKey = info?.__typename === 'LatestRun' ? info.run : null;
@@ -312,8 +312,10 @@ export function displayNameForAssetKey(key: {path: string[]}) {
 }
 
 export const IN_PROGRESS_RUNS_FRAGMENT = gql`
-  fragment InProgressRunsFragment on InProgressRunsByStep {
-    stepKey
+  fragment InProgressRunsFragment on InProgressRunsByAsset {
+    assetKey {
+      path
+    }
     unstartedRuns {
       id
     }
@@ -341,7 +343,7 @@ export const REPOSITORY_LIVE_FRAGMENT = gql`
       id
       name
     }
-    inProgressRunsByStep {
+    inProgressRunsByAsset {
       ...InProgressRunsFragment
     }
     latestRunByStep {

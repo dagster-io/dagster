@@ -7,6 +7,11 @@
 // GraphQL fragment: InProgressRunsFragment
 // ====================================================
 
+export interface InProgressRunsFragment_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface InProgressRunsFragment_unstartedRuns {
   __typename: "Run";
   id: string;
@@ -18,8 +23,8 @@ export interface InProgressRunsFragment_inProgressRuns {
 }
 
 export interface InProgressRunsFragment {
-  __typename: "InProgressRunsByStep";
-  stepKey: string;
+  __typename: "InProgressRunsByAsset";
+  assetKey: InProgressRunsFragment_assetKey;
   unstartedRuns: InProgressRunsFragment_unstartedRuns[];
   inProgressRuns: InProgressRunsFragment_inProgressRuns[];
 }

@@ -910,6 +910,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
     def test_asset_in_progress(self, graphql_context):
+        # fix test
         selector = infer_pipeline_selector(graphql_context, "hanging_job")
         run_id = "foo"
 

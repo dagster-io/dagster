@@ -19,21 +19,26 @@ export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_locat
   name: string;
 }
 
-export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByStep_unstartedRuns {
+export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByAsset_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByAsset_unstartedRuns {
   __typename: "Run";
   id: string;
 }
 
-export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByStep_inProgressRuns {
+export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByAsset_inProgressRuns {
   __typename: "Run";
   id: string;
 }
 
-export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByStep {
-  __typename: "InProgressRunsByStep";
-  stepKey: string;
-  unstartedRuns: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByStep_unstartedRuns[];
-  inProgressRuns: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByStep_inProgressRuns[];
+export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByAsset {
+  __typename: "InProgressRunsByAsset";
+  assetKey: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByAsset_assetKey;
+  unstartedRuns: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByAsset_unstartedRuns[];
+  inProgressRuns: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByAsset_inProgressRuns[];
 }
 
 export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_latestRunByStep_run {
@@ -53,7 +58,7 @@ export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository {
   id: string;
   name: string;
   location: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_location;
-  inProgressRunsByStep: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByStep[];
+  inProgressRunsByAsset: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByAsset[];
   latestRunByStep: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_latestRunByStep[];
 }
 

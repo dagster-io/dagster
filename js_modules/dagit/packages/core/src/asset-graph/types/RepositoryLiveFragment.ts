@@ -15,21 +15,26 @@ export interface RepositoryLiveFragment_location {
   name: string;
 }
 
-export interface RepositoryLiveFragment_inProgressRunsByStep_unstartedRuns {
+export interface RepositoryLiveFragment_inProgressRunsByAsset_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface RepositoryLiveFragment_inProgressRunsByAsset_unstartedRuns {
   __typename: "Run";
   id: string;
 }
 
-export interface RepositoryLiveFragment_inProgressRunsByStep_inProgressRuns {
+export interface RepositoryLiveFragment_inProgressRunsByAsset_inProgressRuns {
   __typename: "Run";
   id: string;
 }
 
-export interface RepositoryLiveFragment_inProgressRunsByStep {
-  __typename: "InProgressRunsByStep";
-  stepKey: string;
-  unstartedRuns: RepositoryLiveFragment_inProgressRunsByStep_unstartedRuns[];
-  inProgressRuns: RepositoryLiveFragment_inProgressRunsByStep_inProgressRuns[];
+export interface RepositoryLiveFragment_inProgressRunsByAsset {
+  __typename: "InProgressRunsByAsset";
+  assetKey: RepositoryLiveFragment_inProgressRunsByAsset_assetKey;
+  unstartedRuns: RepositoryLiveFragment_inProgressRunsByAsset_unstartedRuns[];
+  inProgressRuns: RepositoryLiveFragment_inProgressRunsByAsset_inProgressRuns[];
 }
 
 export interface RepositoryLiveFragment_latestRunByStep_run {
@@ -49,6 +54,6 @@ export interface RepositoryLiveFragment {
   id: string;
   name: string;
   location: RepositoryLiveFragment_location;
-  inProgressRunsByStep: RepositoryLiveFragment_inProgressRunsByStep[];
+  inProgressRunsByAsset: RepositoryLiveFragment_inProgressRunsByAsset[];
   latestRunByStep: RepositoryLiveFragment_latestRunByStep[];
 }

@@ -19,21 +19,26 @@ export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_no
   name: string;
 }
 
-export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep_unstartedRuns {
+export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByAsset_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByAsset_unstartedRuns {
   __typename: "Run";
   id: string;
 }
 
-export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep_inProgressRuns {
+export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByAsset_inProgressRuns {
   __typename: "Run";
   id: string;
 }
 
-export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep {
-  __typename: "InProgressRunsByStep";
-  stepKey: string;
-  unstartedRuns: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep_unstartedRuns[];
-  inProgressRuns: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep_inProgressRuns[];
+export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByAsset {
+  __typename: "InProgressRunsByAsset";
+  assetKey: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByAsset_assetKey;
+  unstartedRuns: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByAsset_unstartedRuns[];
+  inProgressRuns: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByAsset_inProgressRuns[];
 }
 
 export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_run {
@@ -53,7 +58,7 @@ export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_no
   id: string;
   name: string;
   location: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_location;
-  inProgressRunsByStep: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep[];
+  inProgressRunsByAsset: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByAsset[];
   latestRunByStep: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep[];
 }
 

@@ -787,13 +787,13 @@ class GrapheneRunOrError(graphene.Union):
         name = "RunOrError"
 
 
-class GrapheneInProgressRunsByStep(graphene.ObjectType):
-    stepKey = graphene.NonNull(graphene.String)
+class GrapheneInProgressRunsByAsset(graphene.ObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKey)
     unstartedRuns = non_null_list(GrapheneRun)
     inProgressRuns = non_null_list(GrapheneRun)
 
     class Meta:
-        name = "InProgressRunsByStep"
+        name = "InProgressRunsByAsset"
 
 
 class GrapheneLatestRun(graphene.ObjectType):
