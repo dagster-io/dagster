@@ -13,6 +13,7 @@ from dagster_tests.core_tests.storage_tests.test_polling_event_watcher import (
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log import SqlEventLogStorage
+from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.test_utils import instance_for_test
 
 
@@ -72,13 +73,17 @@ MAX_NUM_EVENTS_AFTER_WATCH = 2
     [
         NumEventsAndCursor(num_events_before_watch, after_cursor)
         for num_events_before_watch in range(0, MAX_NUM_EVENTS_BEFORE_WATCH + 1)
-        for after_cursor in [None, *map(str, range(1, num_events_before_watch + 1))]
+        for after_cursor in [
+            None,
+            *map(
+                lambda storage_id: str(EventLogCursor.from_storage_id(storage_id)),
+                range(1, num_events_before_watch + 1),
+            ),
+        ]
     ],
 )
 @pytest.mark.parametrize("num_events_after_watch", list(range(1, MAX_NUM_EVENTS_AFTER_WATCH + 1)))
 def test_using_instance(before_watch_config: NumEventsAndCursor, num_events_after_watch: int):
-    # before_watch_config = NumEventsAndCursor(num_events_before_watch=2, cursor="2")
-    # num_events_after_watch = 2
     total_num_events: int = before_watch_config.num_events_before_watch + num_events_after_watch
     with create_test_instance_and_storage() as (instance, storage):
         # set up instance & write `before_watch_config.num_events_before_watch` to event_log
@@ -108,5 +113,9 @@ def test_using_instance(before_watch_config: NumEventsAndCursor, num_events_afte
             [event_record.user_message for event_record in call[0][0][0]] for call in call_args
         ]
         flattened_events_list = [int(message) for lst in events_list for message in lst]
-        beginning_id = int(before_watch_config.cursor) + 1 if before_watch_config.cursor else 1
+        beginning_id = (
+            EventLogCursor.parse(before_watch_config.cursor).storage_id() + 1
+            if before_watch_config.cursor
+            else 1
+        )
         assert flattened_events_list == list(range(beginning_id, total_num_events + 1))

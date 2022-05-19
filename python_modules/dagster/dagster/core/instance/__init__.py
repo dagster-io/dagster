@@ -1322,7 +1322,7 @@ class DagsterInstance:
     def get_records_for_run(
         self,
         run_id: str,
-        cursor: Optional[Union[str, int]] = None,
+        cursor: Optional[str] = None,
         of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None,
         limit: Optional[int] = None,
     ):
