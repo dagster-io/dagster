@@ -246,7 +246,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     def get_records_for_run(
         self,
         run_id: str,
-        cursor: Optional[Union[str, int]] = None,
+        cursor: Optional[str] = None,
         of_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
     ) -> EventLogConnection:
@@ -254,8 +254,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
         Args:
             run_id (str): The id of the run for which to fetch logs.
-            cursor (Optional[Union[str, int]]): Cursor value to track paginated queries.  Legacy
-                support for integer offset cursors.
+            cursor (Optional[str]): Cursor value to track paginated queries.
             of_type (Optional[DagsterEventType]): the dagster event type to filter the logs.
             limit (Optional[int]): Max number of records to return.
         """
