@@ -7,6 +7,7 @@ import dagster._check as check
 from dagster.core.events import DagsterEventType, EngineEventData
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
+from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -158,8 +159,11 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
             hasMorePastEvents=loading_past,
         )
 
+    # need to translate after into an offset cursor
+    cursor = str(EventLogCursor.from_offset(after)) if after is not None else None
+
     # pylint: disable=E1101
-    return Observable.create(PipelineRunObservableSubscribe(instance, run_id, cursor=after)).map(
+    return Observable.create(PipelineRunObservableSubscribe(instance, run_id, cursor=cursor)).map(
         _handle_events
     )
 
