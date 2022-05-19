@@ -4,12 +4,14 @@ import threading
 import time
 import uuid
 from contextlib import ExitStack, contextmanager
+from typing import Callable, ContextManager, Iterator, Sequence, Tuple
 
 import pendulum
 
 import dagster._check as check
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
+from dagster.core.workspace import IWorkspace
 from dagster.core.workspace.load_target import WorkspaceLoadTarget
 from dagster.daemon.daemon import (
     BackfillDaemon,
@@ -67,13 +69,15 @@ def create_daemon_grpc_server_registry(instance):
 
 @contextmanager
 def daemon_controller_from_instance(
-    instance,
-    workspace_load_target,
-    heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
-    heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
-    wait_for_processes_on_exit=False,
-    gen_daemons=create_daemons_from_instance,
-    error_interval_seconds=DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
+    instance: DagsterInstance,
+    workspace_load_target: WorkspaceLoadTarget,
+    heartbeat_interval_seconds: int = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+    heartbeat_tolerance_seconds: int = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
+    wait_for_processes_on_exit: bool = False,
+    gen_daemons: Callable[
+        [DagsterInstance], Iterator[DagsterDaemon]
+    ] = create_daemons_from_instance,
+    error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
 ):
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(workspace_load_target, "workspace_load_target", WorkspaceLoadTarget)
@@ -83,16 +87,22 @@ def daemon_controller_from_instance(
             grpc_server_registry = stack.enter_context(create_daemon_grpc_server_registry(instance))
             daemons = [stack.enter_context(daemon) for daemon in gen_daemons(instance)]
 
+            instance_ref = instance.get_ref()
+
             # Create this in each daemon to generate a workspace per-daemon
             @contextmanager
-            def gen_workspace(_instance):
-                with DaemonWorkspace(grpc_server_registry, workspace_load_target) as workspace:
-                    yield workspace
+            def _context_fn():
+                with DaemonWorkspace(
+                    grpc_server_registry, workspace_load_target
+                ) as workspace, DagsterInstance.from_ref(  # clone instance object so each thread has its own
+                    instance_ref
+                ) as thread_instance:
+                    yield thread_instance, workspace
 
             with DagsterDaemonController(
                 instance,
                 daemons,
-                gen_workspace,
+                _context_fn,
                 heartbeat_interval_seconds=heartbeat_interval_seconds,
                 heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
                 error_interval_seconds=error_interval_seconds,
@@ -106,13 +116,13 @@ def daemon_controller_from_instance(
 class DagsterDaemonController:
     def __init__(
         self,
-        instance,
-        daemons,
-        gen_workspace,
-        heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
-        heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
-        error_interval_seconds=DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
-        handler="default",
+        instance: DagsterInstance,
+        daemons: Sequence[DagsterDaemon],
+        context_fn: Callable[[], ContextManager[Tuple[DagsterInstance, IWorkspace]]],
+        heartbeat_interval_seconds: int = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+        heartbeat_tolerance_seconds: int = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
+        error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
+        handler: str = "default",
     ):
 
         self._daemon_uuid = str(uuid.uuid4())
@@ -126,7 +136,7 @@ class DagsterDaemonController:
             for daemon in check.list_param(daemons, "daemons", of_type=DagsterDaemon)
         }
 
-        self._gen_workspace = check.callable_param(gen_workspace, "gen_workspace")
+        self._context_fn = check.callable_param(context_fn, "context_fn")
 
         self._heartbeat_interval_seconds = check.numeric_param(
             heartbeat_interval_seconds, "heartbeat_interval_seconds"
@@ -155,10 +165,9 @@ class DagsterDaemonController:
             self._daemon_threads[daemon_type] = threading.Thread(
                 target=daemon.run_daemon_loop,
                 args=(
-                    self._instance.get_ref(),
                     self._daemon_uuid,
                     self._daemon_shutdown_event,
-                    gen_workspace,
+                    context_fn,
                     heartbeat_interval_seconds,
                     error_interval_seconds,
                 ),
