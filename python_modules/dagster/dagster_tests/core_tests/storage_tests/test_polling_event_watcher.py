@@ -7,6 +7,7 @@ import dagster._check as check
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log import SqlPollingEventWatcher, SqliteEventLogStorage
+from dagster.core.storage.event_log.base import EventLogCursor
 
 
 class SqlitePollingEventLogStorage(SqliteEventLogStorage):
@@ -83,12 +84,12 @@ def test_using_logstorage():
         assert len(storage.get_logs_for_run(RUN_ID)) == 1
         assert len(watched_1) == 0
 
-        storage.watch(RUN_ID, str(1), watched_1.append)
+        storage.watch(RUN_ID, str(EventLogCursor.from_storage_id(1)), watched_1.append)
 
         storage.store_event(create_event(2))
         storage.store_event(create_event(3))
 
-        storage.watch(RUN_ID, str(3), watched_2.append)
+        storage.watch(RUN_ID, str(EventLogCursor.from_storage_id(3)), watched_2.append)
         storage.store_event(create_event(4))
 
         attempts = 10

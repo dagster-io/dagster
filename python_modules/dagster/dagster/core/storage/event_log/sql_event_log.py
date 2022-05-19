@@ -16,7 +16,11 @@ from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.stats import build_run_step_stats_from_events
-from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster.serdes import (
+    deserialize_as,
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+)
 from dagster.serdes.errors import DeserializationError
 from dagster.utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
 
@@ -295,9 +299,7 @@ class SqlEventLogStorage(EventLogStorage):
                 records.append(
                     EventLogRecord(
                         storage_id=record_id,
-                        event_log_entry=cast(
-                            EventLogEntry, deserialize_json_to_dagster_namedtuple(json_str)
-                        ),
+                        event_log_entry=deserialize_as(json_str, EventLogEntry),
                     )
                 )
                 last_record_id = record_id

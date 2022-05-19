@@ -71,9 +71,9 @@ MAX_NUM_EVENTS_AFTER_WATCH = 2
 @pytest.mark.parametrize(
     "before_watch_config",
     [
-        NumEventsAndCursor(num_events_before_watch, after_cursor)
+        NumEventsAndCursor(num_events_before_watch, cursor)
         for num_events_before_watch in range(0, MAX_NUM_EVENTS_BEFORE_WATCH + 1)
-        for after_cursor in [
+        for cursor in [
             None,
             *map(
                 lambda storage_id: str(EventLogCursor.from_storage_id(storage_id)),
@@ -100,7 +100,12 @@ def test_using_instance(before_watch_config: NumEventsAndCursor, num_events_afte
         call_args = observable_subscribe.observer.on_next.call_args_list
 
         # wait until all events have been captured
-        most_recent_event_processed = lambda: int(call_args[-1][0][0][0][-1].user_message)
+        def most_recent_event_processed():
+            events = call_args[-1][0][0][0]
+            if not events:
+                return 0
+            return int(events[-1].user_message)
+
         attempts = 10
         while (
             len(call_args) == 0 or most_recent_event_processed() < total_num_events
