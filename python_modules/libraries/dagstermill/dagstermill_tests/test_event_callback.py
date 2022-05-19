@@ -24,7 +24,7 @@ def test_event_callback_logging():
     with instance_for_test() as instance:
         pipeline_run = instance.create_run_for_pipeline(pipeline_def)
 
-        instance.watch_event_logs(pipeline_run.run_id, -1, _event_callback)
+        instance.watch_event_logs(pipeline_run.run_id, None, _event_callback)
 
         res = execute_run(
             pipeline,

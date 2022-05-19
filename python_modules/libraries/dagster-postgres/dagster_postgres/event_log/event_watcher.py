@@ -45,8 +45,9 @@ def watcher_thread(
             dagster_event = gen_event_log_entry_from_cursor(index)
 
             for callback_with_cursor in handlers:
+                cursor = callback_with_cursor.cursor
                 try:
-                    if int(callback_with_cursor.cursor) < index:
+                    if cursor is None or int(cursor) < index:
                         callback_with_cursor.callback(dagster_event)
                 except:
                     logging.exception("Exception in callback for event watch on run %s.", run_id)

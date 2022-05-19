@@ -416,7 +416,7 @@ class TestEventLogStorage:
         assert len(storage.get_logs_for_run(test_run_id)) == 1
         assert len(watched) == 0
 
-        storage.watch(test_run_id, 0, watcher)
+        storage.watch(test_run_id, str(0), watcher)
 
         storage.store_event(create_test_event_log_record(str(2), test_run_id))
         storage.store_event(create_test_event_log_record(str(3), test_run_id))
@@ -757,7 +757,7 @@ class TestEventLogStorage:
 
         event_list = []
 
-        storage.watch(test_run_id, -1, lambda x: event_list.append(x))
+        storage.watch(test_run_id, None, lambda x: event_list.append(x))
 
         events, _ = _synthesize_events(return_one_solid_func, run_id=test_run_id)
         for event in events:
@@ -780,7 +780,7 @@ class TestEventLogStorage:
         with create_and_delete_test_runs(instance, [run_id_one, run_id_two]):
             # only watch one of the runs
             event_list = []
-            storage.watch(run_id_two, -1, lambda x: event_list.append(x))
+            storage.watch(run_id_two, None, lambda x: event_list.append(x))
 
             events_one, _result_one = _synthesize_events(return_one_solid_func, run_id=run_id_one)
             for event in events_one:
@@ -1359,8 +1359,8 @@ class TestEventLogStorage:
 
         event_list = []
 
-        storage.watch(err_run_id, -1, _throw)
-        storage.watch(safe_run_id, -1, lambda x: event_list.append(x))
+        storage.watch(err_run_id, None, _throw)
+        storage.watch(safe_run_id, None, lambda x: event_list.append(x))
 
         for event in err_events:
             storage.store_event(event)
@@ -1398,10 +1398,10 @@ class TestEventLogStorage:
 
         # Direct end_watch emulates behavior of clean up on exception downstream
         # of the subscription in the dagit webserver.
-        storage.watch(err_run_id, -1, _unsub)
+        storage.watch(err_run_id, None, _unsub)
 
         # Other active watches should proceed correctly.
-        storage.watch(safe_run_id, -1, lambda x: event_list.append(x))
+        storage.watch(safe_run_id, None, lambda x: event_list.append(x))
 
         for event in err_events:
             storage.store_event(event)
