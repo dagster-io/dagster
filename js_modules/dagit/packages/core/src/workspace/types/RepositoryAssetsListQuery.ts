@@ -35,7 +35,6 @@ export interface RepositoryAssetsListQuery_repositoryOrError_Repository_assetNod
   __typename: "AssetNode";
   id: string;
   assetKey: RepositoryAssetsListQuery_repositoryOrError_Repository_assetNodes_assetKey;
-  opName: string | null;
   opNames: string[];
   description: string | null;
   repository: RepositoryAssetsListQuery_repositoryOrError_Repository_assetNodes_repository;

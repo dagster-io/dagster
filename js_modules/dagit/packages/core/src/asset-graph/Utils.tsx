@@ -45,8 +45,8 @@ export interface GraphData {
   downstream: {[assetId: GraphId]: {[childAssetId: GraphId]: boolean}};
   upstream: {[assetId: GraphId]: {[parentAssetId: GraphId]: boolean}};
 }
-export const isSourceAsset = (node: {jobNames: string[]; opName: string | null}) => {
-  return node.jobNames.length === 0 && !node.opName;
+export const isSourceAsset = (node: {jobNames: string[]; opNames: string[]}) => {
+  return node.jobNames.length === 0 && !node.opNames.length;
 };
 
 export function identifyBundles(assetIds: string[]) {
@@ -244,8 +244,8 @@ export const buildLiveData = (
     const isPartitioned = graphNode.definition.partitionDefinition;
     const repo = repos.find((r) => r.id === liveNode.repository.id);
 
-    const runs = repo?.inProgressRunsByStep.find((r) => r.stepKey === liveNode.opName);
-    const info = repo?.latestRunByStep.find((r) => r.stepKey === liveNode.opName);
+    const runs = repo?.inProgressRunsByStep.find((r) => liveNode.opNames.includes(r.stepKey));
+    const info = repo?.latestRunByStep.find((r) => liveNode.opNames.includes(r.stepKey));
 
     const latestRunForStepKey = info?.__typename === 'LatestRun' ? info.run : null;
 

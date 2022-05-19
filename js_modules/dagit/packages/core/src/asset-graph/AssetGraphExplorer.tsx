@@ -665,7 +665,7 @@ const opsInRange = (
     return [];
   }
   if (from.id === to.id) {
-    return [to.definition.opName!];
+    return [...to.definition.opNames];
   }
 
   if (seen.length === 0 && graphDirectionOf({graph, from, to}) === 'upstream') {
@@ -684,7 +684,7 @@ const opsInRange = (
     }
     const result: string[] = opsInRange({graph, from: node, to}, [...seen, from.id]);
     if (result.length) {
-      ledToTarget.push(from.definition.opName!, ...result);
+      ledToTarget.push(...from.definition.opNames, ...result);
     }
   }
   return uniq(ledToTarget);

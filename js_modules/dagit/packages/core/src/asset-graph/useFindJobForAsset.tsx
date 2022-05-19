@@ -39,7 +39,6 @@ const ASSET_FOR_NAVIGATION_QUERY = gql`
         id
         definition {
           id
-          opName
           opNames
           jobNames
         }

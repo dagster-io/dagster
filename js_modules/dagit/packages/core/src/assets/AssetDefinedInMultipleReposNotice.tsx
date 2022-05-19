@@ -20,7 +20,7 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
       : [];
 
   const otherReposWithAsset = otherRepos.filter((r) =>
-    r.assetNodes.some((a) => a.id === assetId && a.opName),
+    r.assetNodes.some((a) => a.id === assetId && a.opNames.length),
   );
 
   if (otherReposWithAsset.length === 0) {
@@ -59,7 +59,6 @@ const ASSET_ID_SCAN_QUERY = gql`
           }
           assetNodes {
             id
-            opName
             opNames
           }
         }
