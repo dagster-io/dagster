@@ -2,7 +2,7 @@ import os
 from typing import Callable, List, Optional
 
 from ..defines import GCP_CREDS_LOCAL_FILE, LATEST_DAGSTER_RELEASE
-from ..package_build_spec import PackageBuildSpec
+from ..package_spec import PackageSpec
 from ..python_version import AvailablePythonVersion
 from ..utils import (
     BuildkiteStep,
@@ -21,7 +21,7 @@ def build_integration_steps() -> List[BuildkiteStep]:
     steps: List[BuildkiteStep] = []
 
     # Shared dependency of some test suites
-    steps += PackageBuildSpec(
+    steps += PackageSpec(
         os.path.join("integration_tests", "python_modules", "dagster-k8s-test-infra"),
         upload_coverage=True,
     ).build_steps()
@@ -170,7 +170,7 @@ def build_integration_suite_steps(
     queue=None,
 ) -> List[GroupStep]:
     pytest_extra_cmds = pytest_extra_cmds or default_integration_suite_pytest_extra_cmds
-    return PackageBuildSpec(
+    return PackageSpec(
         directory,
         env_vars=[
             "AIRFLOW_HOME",

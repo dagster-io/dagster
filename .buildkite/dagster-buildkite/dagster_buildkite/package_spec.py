@@ -36,9 +36,9 @@ PytestExtraCommandsFunction = Callable[[AvailablePythonVersion, Optional[str]], 
 PytestDependenciesFunction = Callable[[AvailablePythonVersion, Optional[str]], List[str]]
 
 
-class PackageBuildSpec(
+class PackageSpec(
     NamedTuple(
-        "_PackageBuildSpec",
+        "_PackageSpec",
         [
             ("directory", str),
             ("name", str),
@@ -123,7 +123,7 @@ class PackageBuildSpec(
         run_mypy: bool = True,
         run_pylint: bool = True,
     ):
-        return super(PackageBuildSpec, cls).__new__(
+        return super(PackageSpec, cls).__new__(
             cls,
             directory,
             name or os.path.basename(directory),

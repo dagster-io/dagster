@@ -1,7 +1,7 @@
 import os
 from typing import List
 
-from ..package_build_spec import PackageBuildSpec
+from ..package_spec import PackageSpec
 from ..python_version import AvailablePythonVersion
 from ..step_builder import CommandStepBuilder
 from ..utils import BuildkiteLeafStep, BuildkiteStep, CommandStep, GroupStep
@@ -10,7 +10,7 @@ from ..utils import BuildkiteLeafStep, BuildkiteStep, CommandStep, GroupStep
 def build_helm_steps() -> List[BuildkiteStep]:
     steps: List[BuildkiteLeafStep] = []
     steps += _build_lint_steps()
-    schema_group = PackageBuildSpec(
+    schema_group = PackageSpec(
         os.path.join("helm", "dagster", "schema"),
         name="dagster-helm-schema",
         upload_coverage=False,
