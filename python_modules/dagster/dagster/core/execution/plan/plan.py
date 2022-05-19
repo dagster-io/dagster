@@ -758,18 +758,34 @@ class ExecutionPlan(
         step_output_versions = check.opt_dict_param(
             step_output_versions, "step_output_versions", key_type=StepOutputHandle, value_type=str
         )
-        step_handles_to_execute = [StepHandle.parse_from_key(key) for key in step_keys_to_execute]
 
+        step_handles_to_execute_set = set()
         bad_keys = []
-        for handle in step_handles_to_execute:
+        for key in step_keys_to_execute:
+            handle = StepHandle.parse_from_key(key)
+
             if handle not in self.step_dict:
+                if isinstance(handle, ResolvedFromDynamicStepHandle):
+                    unresolved_handle = handle.unresolved_form
+                    if unresolved_handle in self.step_dict and unresolved_handle in [
+                        StepHandle.parse_from_key(key) for key in step_keys_to_execute
+                    ]:  # ok if the unresolved version is present
+
+                        step_handles_to_execute_set.add(unresolved_handle)
+                        continue
                 bad_keys.append(handle.to_key())
+
+            step_handles_to_execute_set.add(handle)
 
         if bad_keys:
             raise DagsterExecutionStepNotFoundError(
                 f"Can not build subset plan from unknown step{'s' if len(bad_keys)> 1 else ''}: {', '.join(bad_keys)}",
                 step_keys=bad_keys,
             )
+
+        step_handles_to_execute = (
+            list(step_handles_to_execute_set) if step_handles_to_execute_set else []
+        )
 
         executable_map, resolvable_map = _compute_step_maps(
             self.step_dict,
@@ -1376,6 +1392,9 @@ def _compute_step_maps(step_dict, step_dict_by_key, step_handles_to_execute, kno
         if step_handle not in step_dict
     ]
     if missing_steps:
+        import ipdb
+
+        ipdb.set_trace()
         raise DagsterExecutionStepNotFoundError(
             "Execution plan does not contain step{plural}: {steps}".format(
                 plural="s" if len(missing_steps) > 1 else "", steps=", ".join(missing_steps)
@@ -1394,6 +1413,9 @@ def _compute_step_maps(step_dict, step_dict_by_key, step_handles_to_execute, kno
         elif isinstance(step, (UnresolvedMappedExecutionStep, UnresolvedCollectExecutionStep)):
             for key in step.resolved_by_step_keys:
                 if key not in step_keys_to_execute:
+                    import ipdb
+
+                    ipdb.set_trace()
                     raise DagsterInvariantViolationError(
                         f'Unresolved ExecutionStep "{step.key}" is resolved by "{key}" '
                         "which is not part of the current step selection"
