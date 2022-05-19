@@ -106,6 +106,5 @@ class TestFailedLaunch(LaunchFailTestSuite):
         )
         assert result.data["pipelineRunOrError"]["__typename"] == "Run"
         assert result.data["pipelineRunOrError"]["status"] == "FAILURE"
-        print(result.data["pipelineRunOrError"])
         assert result.data["pipelineRunOrError"]["startTime"]
         assert result.data["pipelineRunOrError"]["endTime"]
