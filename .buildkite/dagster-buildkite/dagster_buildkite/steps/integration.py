@@ -182,7 +182,7 @@ def build_integration_suite_steps(
         ],
         upload_coverage=upload_coverage,
         pytest_extra_cmds=pytest_extra_cmds,
-        pytest_dependencies=test_image_depends_fn,
+        pytest_step_dependencies=test_image_depends_fn,
         pytest_tox_factors=pytest_tox_factors,
         retries=2,
         timeout_in_minutes=30,
