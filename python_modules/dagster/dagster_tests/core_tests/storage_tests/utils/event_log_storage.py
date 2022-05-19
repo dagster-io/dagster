@@ -1339,6 +1339,17 @@ class TestEventLogStorage:
             ]
             assert [r.event_log_entry.run_id for r in filtered_records] == ["2", "3"]
 
+            # use invalid cursor
+            with pytest.raises(
+                Exception, match="Add a RunShardedEventsCursor to your query filter"
+            ):
+                storage.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.PIPELINE_SUCCESS,
+                        after_cursor=0,
+                    ),
+                )
+
     def test_watch_exc_recovery(self, storage):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
