@@ -13,6 +13,13 @@ _CORE_PACKAGES = [
     "js_modules/dagit",
 ]
 
+_INFRASTRUCTURE_PACKAGES = [
+    ".buildkite/dagster-buildkite",
+    "python_modules/automation",
+    "python_modules/dagster-test",
+    "scripts",
+]
+
 
 def _infer_package_type(directory: str) -> str:
     if directory in _CORE_PACKAGES:
@@ -21,15 +28,20 @@ def _infer_package_type(directory: str) -> str:
         return "example"
     elif directory.startswith("python_modules/libraries/"):
         return "extension"
-    else:
+    elif directory in _INFRASTRUCTURE_PACKAGES or directory.startswith("integration_tests"):
         return "infrastructure"
+    else:
+        return "unknown"
 
 
+# The list of all available emojis is here:
+#   https://github.com/buildkite/emojis#emoji-reference
 _PACKAGE_TYPE_TO_EMOJI_MAP: Mapping[str, str] = {
     "core": ":dagster:",
     "example": ":large_blue_diamond:",
     "extension": ":electric_plug:",
     "infrastructure": ":gear:",
+    "unknown": ":grey_question:",
 }
 
 PytestExtraCommandsFunction = Callable[[AvailablePythonVersion, Optional[str]], List[str]]

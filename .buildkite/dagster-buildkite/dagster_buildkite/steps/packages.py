@@ -44,7 +44,7 @@ def build_packages_steps() -> List[BuildkiteStep]:
     return steps
 
 
-_PACKAGE_TYPE_ORDER = ["core", "extension", "example", "infrastructure"]
+_PACKAGE_TYPE_ORDER = ["core", "extension", "example", "infrastructure", "unknown"]
 
 # Find packages under a root subdirectory that are not configured above.
 def _get_uncustomized_pkg_roots(root, custom_pkg_roots) -> List[str]:
