@@ -75,12 +75,6 @@ class RunLauncher(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def can_terminate(self, run_id):
-        """
-        Can this run_id be terminated by this run launcher.
-        """
-
-    @abstractmethod
     def terminate(self, run_id):
         """
         Terminates a process.

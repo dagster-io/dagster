@@ -162,12 +162,9 @@ class TestQueuedRunCoordinator:
         run = self.create_run(
             instance, external_pipeline, run_id="foo-1", status=PipelineRunStatus.NOT_STARTED
         )
-        assert not coordinator.can_cancel_run(run.run_id)
 
         coordinator.submit_run(SubmitRunContext(run, workspace))
-        assert coordinator.can_cancel_run(run.run_id)
 
         coordinator.cancel_run(run.run_id)
         stored_run = instance.get_run_by_id("foo-1")
         assert stored_run.status == PipelineRunStatus.CANCELED
-        assert not coordinator.can_cancel_run(run.run_id)

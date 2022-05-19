@@ -236,7 +236,6 @@ def test_terminate_launched_docker_run():
 
             poll_for_step_start(instance, run_id)
 
-            assert instance.run_launcher.can_terminate(run_id)
             assert instance.run_launcher.terminate(run_id)
 
             terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
@@ -469,7 +468,6 @@ def _test_launch(
                             raise Exception("Timed out waiting for run to start")
 
                 launcher = instance.run_launcher
-                assert launcher.can_terminate(run.run_id)
                 assert launcher.terminate(run.run_id)
 
                 poll_for_finished_run(instance, run.run_id, timeout=60)

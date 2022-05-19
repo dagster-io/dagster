@@ -193,9 +193,6 @@ class TestNonResumeRunLauncher(RunLauncher, ConfigurableClass):
     def join(self, timeout=30):
         raise NotImplementedError()
 
-    def can_terminate(self, run_id):
-        raise NotImplementedError()
-
     def terminate(self, run_id):
         raise NotImplementedError()
 
@@ -421,9 +418,6 @@ def test_instance_subclass():
 
 # class that doesn't implement needed methods on ConfigurableClass
 class InvalidRunLauncher(RunLauncher, ConfigurableClass):
-    def can_terminate(self, run_id):
-        return False
-
     def launch_run(self, context: LaunchRunContext) -> None:
         pass
 
