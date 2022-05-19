@@ -4,7 +4,7 @@ from typing import List
 
 from dagster_buildkite.defines import DO_COVERAGE
 from dagster_buildkite.steps.coverage import build_coverage_step
-from dagster_buildkite.steps.dagit import build_dagit_steps
+from dagster_buildkite.steps.dagit_ui import build_dagit_ui_steps
 from dagster_buildkite.steps.dagster import build_dagster_steps
 from dagster_buildkite.steps.integration import build_integration_steps
 from dagster_buildkite.steps.trigger import build_trigger_step
@@ -19,7 +19,7 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
     build_creator_email = os.getenv("BUILDKITE_BUILD_CREATOR_EMAIL")
     oss_contribution = os.getenv("OSS_CONTRIBUTION")
     do_coverage = DO_COVERAGE
-    dagit_only_diff = _is_dagit_only_diff()
+    dagit_ui_only_diff = _is_dagit_ui_only_diff()
 
     steps: List[BuildkiteStep] = []
 
@@ -50,18 +50,18 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
                 env={
                     "DAGSTER_BRANCH": branch_name,
                     "DAGSTER_COMMIT_HASH": commit_hash,
-                    "DAGIT_ONLY_OSS_CHANGE": "1" if dagit_only_diff else "",
+                    "DAGIT_ONLY_OSS_CHANGE": "1" if dagit_ui_only_diff else "",
                 },
             ),
         )
 
     # Skip non-dagit-ui steps if we are on a feature branch with only dagit-ui (web app) changes.
-    if is_feature_branch(branch_name) and dagit_only_diff:
-        steps += build_dagit_steps()
+    if is_feature_branch(branch_name) and dagit_ui_only_diff:
+        steps += build_dagit_ui_steps()
 
     # Full pipeline.
     else:
-        steps += build_dagit_steps()
+        steps += build_dagit_ui_steps()
         steps += build_dagster_steps()
         steps += build_integration_steps()
 
@@ -75,7 +75,7 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
 _DAGIT_PATH = "js_modules/dagit"
 
 
-def _is_dagit_only_diff() -> bool:
+def _is_dagit_ui_only_diff() -> bool:
     base_branch = safe_getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")
 
     try:
