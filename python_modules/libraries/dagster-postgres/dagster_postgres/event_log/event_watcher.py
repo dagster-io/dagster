@@ -74,12 +74,12 @@ class PostgresEventWatcher:
     def watch_run(
         self,
         run_id: str,
-        start_cursor: int,
+        cursor: Optional[str],
         callback: Callable[[EventLogEntry], None],
         start_timeout=15,
     ):
         check.str_param(run_id, "run_id")
-        check.int_param(start_cursor, "start_cursor")
+        check.opt_str_param(cursor, "cursor")
         check.callable_param(callback, "callback")
         if not self._watcher_thread:
             self._watcher_thread_exit = threading.Event()
@@ -107,7 +107,7 @@ class PostgresEventWatcher:
                 raise Exception("Watcher thread never started")
 
         with self._dict_lock:
-            self._handlers_dict[run_id].append(CallbackAfterCursor(str(start_cursor + 1), callback))
+            self._handlers_dict[run_id].append(CallbackAfterCursor(cursor, callback))
 
     def unwatch_run(self, run_id: str, handler: Callable[[EventLogEntry], None]):
         check.str_param(run_id, "run_id")
