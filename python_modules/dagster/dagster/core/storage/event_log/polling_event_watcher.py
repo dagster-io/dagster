@@ -12,13 +12,12 @@ POLLING_CADENCE = 0.1  # 100 ms
 class CallbackAfterCursor(NamedTuple):
     """Callback passed from Observer class in event polling
 
-    start_cursor (int): Only process EventLogEntrys with an id >= start_cursor
-        (earlier ones have presumably already been processed)
+    cursor (str): Only process EventLogEntrys after the given cursor
     callback (Callable[[EventLogEntry], None]): callback passed from Observer
         to call on new EventLogEntrys
     """
 
-    start_cursor: Optional[str]
+    cursor: Optional[str]
     callback: Callable[[EventLogEntry], None]
 
 
@@ -49,10 +48,10 @@ class SqlPollingEventWatcher:
         return _has_run_id
 
     def watch_run(
-        self, run_id: str, start_cursor: Optional[str], callback: Callable[[EventLogEntry], None]
+        self, run_id: str, cursor: Optional[str], callback: Callable[[EventLogEntry], None]
     ):
         run_id = check.str_param(run_id, "run_id")
-        start_cursor = check.opt_str_param(start_cursor, "start_cursor")
+        cursor = check.opt_str_param(cursor, "cursor")
         callback = check.callable_param(callback, "callback")
         with self._dict_lock:
             if run_id not in self._run_id_to_watcher_dict:
@@ -61,7 +60,7 @@ class SqlPollingEventWatcher:
                 )
                 self._run_id_to_watcher_dict[run_id].daemon = True
                 self._run_id_to_watcher_dict[run_id].start()
-            self._run_id_to_watcher_dict[run_id].add_callback(start_cursor, callback)
+            self._run_id_to_watcher_dict[run_id].add_callback(cursor, callback)
 
     def unwatch_run(self, run_id: str, handler: Callable[[EventLogEntry], None]):
         run_id = check.str_param(run_id, "run_id")
@@ -92,7 +91,7 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
 
     Holds a list of callbacks (_callback_fn_list) each passed in by an `Observer`. Note that
         the callbacks have a cursor associated; this means that the callbacks should be
-        only executed on EventLogEntrys with an associated id >= callback.start_cursor
+        only executed on EventLogEntrys with an associated id >= callback.cursor
     Exits when `self.should_thread_exit` is set.
 
     LOCKING INFO:
@@ -115,18 +114,18 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
     def should_thread_exit(self) -> threading.Event:
         return self._should_thread_exit
 
-    def add_callback(self, start_cursor: Optional[str], callback: Callable[[EventLogEntry], None]):
+    def add_callback(self, cursor: Optional[str], callback: Callable[[EventLogEntry], None]):
         """Observer has started watching this run.
-            Add a callback to execute on new EventLogEntrys st. id >= start_cursor
+            Add a callback to execute on new EventLogEntrys after the given cursor
 
         Args:
-            start_cursor (int): minimum event_id for the callback to execute
+            cursor (Optional[str]): minimum event_id for the callback to execute
             callback (Callable[[EventLogEntry], None]): callback to update the Dagster UI
         """
-        start_cursor = check.opt_str_param(start_cursor, "start_cursor")
+        cursor = check.opt_str_param(cursor, "cursor")
         callback = check.callable_param(callback, "callback")
         with self._callback_fn_list_lock:
-            self._callback_fn_list.append(CallbackAfterCursor(start_cursor, callback))
+            self._callback_fn_list.append(CallbackAfterCursor(cursor, callback))
 
     def remove_callback(self, callback: Callable[[EventLogEntry], None]):
         """Observer has stopped watching this run;
@@ -154,16 +153,18 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
             2. fires each callback (taking into account the callback.cursor) on the new EventLogEntrys
         Uses max_index_so_far as a cursor in the DB to make sure that only new records are retrieved
         """
+        cursor = None
         while not self._should_thread_exit.wait(POLLING_CADENCE):
-            conn = self._event_log_storage.get_records_for_run(self._run_id)
+            conn = self._event_log_storage.get_records_for_run(self._run_id, cursor=cursor)
+            cursor = conn.cursor if conn.cursor else cursor
             for event_record in conn.records:
                 with self._callback_fn_list_lock:
                     for callback_with_cursor in self._callback_fn_list:
                         should_callback = False
                         try:
                             should_callback = (
-                                callback_with_cursor.start_cursor is None
-                                or int(callback_with_cursor.start_cursor) < event_record.storage_id
+                                callback_with_cursor.cursor is None
+                                or int(callback_with_cursor.cursor) < event_record.storage_id
                             )
                         except ValueError:
                             pass

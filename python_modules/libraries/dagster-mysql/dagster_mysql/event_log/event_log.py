@@ -169,16 +169,6 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             del self._secondary_index_cache[name]
 
     def watch(self, run_id, cursor, callback):
-        # the API accepts opaque string cursor, but sql implementations uses the integer
-        # primary key `id` as the cursor, so coerce to an int for the sake of watching
-        if cursor is None:
-            cursor = -1
-        elif isinstance(cursor, str):
-            try:
-                cursor = int(cursor)
-            except ValueError:
-                cursor = -1
-
         self._event_watcher.watch_run(run_id, cursor, callback)
 
     def end_watch(self, run_id, handler):

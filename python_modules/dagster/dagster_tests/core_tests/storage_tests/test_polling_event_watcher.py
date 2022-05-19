@@ -83,12 +83,12 @@ def test_using_logstorage():
         assert len(storage.get_logs_for_run(RUN_ID)) == 1
         assert len(watched_1) == 0
 
-        storage.watch(RUN_ID, 0, watched_1.append)
+        storage.watch(RUN_ID, str(1), watched_1.append)
 
         storage.store_event(create_event(2))
         storage.store_event(create_event(3))
 
-        storage.watch(RUN_ID, 2, watched_2.append)
+        storage.watch(RUN_ID, str(3), watched_2.append)
         storage.store_event(create_event(4))
 
         attempts = 10
