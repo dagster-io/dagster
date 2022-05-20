@@ -759,7 +759,7 @@ class ExecutionPlan(
             step_output_versions, "step_output_versions", key_type=StepOutputHandle, value_type=str
         )
 
-        step_handles_to_execute_set = set()
+        step_handles_to_execute_set: Set[StepHandleUnion] = set()
         bad_keys = []
         for key in step_keys_to_execute:
             handle = StepHandle.parse_from_key(key)
