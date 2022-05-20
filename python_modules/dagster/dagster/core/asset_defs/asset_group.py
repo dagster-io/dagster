@@ -37,7 +37,7 @@ from ..definitions.partition import PartitionsDefinition
 from ..definitions.resource_definition import ResourceDefinition
 from ..errors import DagsterInvalidDefinitionError
 from .assets import AssetsDefinition
-from .assets_job import build_assets_job, build_root_manager, build_source_assets_by_key
+from .assets_job import build_assets_job
 from .source_asset import SourceAsset
 
 ASSET_GROUP_BASE_JOB_PREFIX = "__ASSET_GROUP"

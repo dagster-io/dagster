@@ -151,7 +151,7 @@ class FromSourceAsset(
     StepInputSource,
 ):
     """
-    Load input value via a SourceAsset.
+    Load input value from an asset
     """
 
     def load_input_object(
@@ -159,18 +159,15 @@ class FromSourceAsset(
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
     ) -> Iterator["DagsterEvent"]:
+        from dagster.core.definitions.asset_layer import AssetOutputInfo
         from dagster.core.events import DagsterEvent
-
-        check.invariant(
-            step_context.solid_handle == self.solid_handle and input_def.name == self.input_name,
-            "RootInputManager source must be op input and not one along compostion mapping. "
-            f"Loading for op {step_context.solid_handle}.{input_def.name} "
-            f"but source is {self.solid_handle}.{self.input_name}.",
-        )
+        from dagster.core.execution.context.output import OutputContext
 
         input_asset_key = step_context.pipeline_def.asset_layer.asset_key_for_input(
             self.solid_handle, input_name=self.input_name
         )
+        assert input_asset_key is not None
+
         input_manager_key = step_context.pipeline_def.asset_layer.io_manager_key_for_asset(
             input_asset_key
         )
@@ -179,13 +176,17 @@ class FromSourceAsset(
         config_data = op_config.inputs.get(self.input_name) if op_config else None
 
         loader = getattr(step_context.resources, input_manager_key)
+        resources = build_resources_for_manager(input_manager_key, step_context)
         load_input_context = step_context.for_input_manager(
             input_def.name,
             config_data,
             metadata=input_def.metadata,
             dagster_type=input_def.dagster_type,
             resource_config=step_context.resolved_run_config.resources[input_manager_key].config,
-            resources=build_resources_for_manager(input_manager_key, step_context),
+            resources=resources,
+            artificial_output_context=OutputContext(
+                resources=resources, asset_info=AssetOutputInfo(key=input_asset_key)
+            ),
         )
 
         yield from _load_input_with_input_manager(loader, load_input_context)
@@ -211,7 +212,7 @@ class FromSourceAsset(
         ]
 
         op_config = resolved_run_config.solids.get(op.name)
-        input_config = solid_config.inputs.get(self.input_name)
+        input_config = op_config.inputs.get(self.input_name)
         resource_config = resolved_run_config.resources.get(io_manager_key).config
 
         version_context = ResourceVersionContext(
@@ -224,7 +225,7 @@ class FromSourceAsset(
                 version_context
             )
         else:
-            root_manager_def_version = root_manager_def.version
+            io_manager_def_version = io_manager_def.version
 
         if io_manager_def_version is None:
             raise DagsterInvariantViolationError(
@@ -244,8 +245,9 @@ class FromSourceAsset(
         input_asset_key = pipeline_def.asset_layer.asset_key_for_input(
             self.solid_handle, self.input_name
         )
-        input_io_manager_key = pipeline_def.asset_layer.io_manager_key_for_asset(input_asset_key)
-        return {input_io_manager_key}
+        input_manager_key = pipeline_def.asset_layer.io_manager_key_for_asset(input_asset_key)
+        assert input_manager_key is not None
+        return {input_manager_key}
 
 
 @whitelist_for_serdes

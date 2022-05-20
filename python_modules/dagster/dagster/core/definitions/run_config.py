@@ -4,12 +4,12 @@ from dagster.config import Field, Permissive, Selector
 from dagster.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
 from dagster.config.field_utils import Shape
 from dagster.config.iterate_types import iterate_config_types
+from dagster.core.definitions.asset_layer import AssetLayer
 from dagster.core.definitions.executor_definition import (
     ExecutorDefinition,
     execute_in_process_executor,
     in_process_executor,
 )
-from dagster.core.definitions.asset_layer import AssetLayer
 from dagster.core.definitions.input import InputDefinition
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError

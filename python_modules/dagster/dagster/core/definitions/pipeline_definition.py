@@ -817,7 +817,7 @@ def _checked_resource_reqs_for_mode(
                 )
                 raise DagsterInvalidDefinitionError(error_msg)
 
-    for asset_key, io_manager_key in asset_layer._io_manager_keys_by_asset_key.items():
+    for asset_key, io_manager_key in asset_layer.io_manager_keys_by_asset_key.items():
         resource_reqs.add(io_manager_key)
         if io_manager_key not in mode_resources:
             error_msg = _get_missing_resource_error_msg(

@@ -5,6 +5,7 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetsDefinition,
     DagsterEventType,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
@@ -398,6 +399,74 @@ def test_asset_group_build_subset_job_errors(job_selection, use_multi, expected_
             group.build_job("some_name", selection=job_selection)
     else:
         assert group.build_job("some_name", selection=job_selection)
+
+
+@pytest.mark.parametrize(
+    "job_selection,expected_assets",
+    [
+        (None, "a,b,c"),
+        ("a+", "a,b"),
+        ("+c", "b,c"),
+        (["a", "c"], "a,c"),
+    ],
+)
+def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
+    @op
+    def one():
+        return 1
+
+    @op
+    def add_one(x):
+        return x + 1
+
+    @op(out=Out(io_manager_key="asset_io_manager"))
+    def create_asset(x):
+        return x * 2
+
+    @graph
+    def a():
+        return create_asset(add_one(add_one(one())))
+
+    @graph
+    def b(a):
+        return create_asset(add_one(add_one(a)))
+
+    @graph
+    def c(b):
+        return create_asset(add_one(add_one(b)))
+
+    a_asset = AssetsDefinition.from_graph(a)
+    b_asset = AssetsDefinition.from_graph(b)
+    c_asset = AssetsDefinition.from_graph(c)
+
+    _, io_manager_def = asset_aware_io_manager()
+    group = AssetGroup(
+        [a_asset, b_asset, c_asset],
+        resource_defs={"asset_io_manager": io_manager_def},
+    )
+
+    # run once so values exist to load from
+    group.build_job("initial").execute_in_process()
+
+    # now build the subset job
+    job = group.build_job("assets_job", selection=job_selection)
+
+    result = job.execute_in_process()
+
+    expected_asset_keys = set((AssetKey(a) for a in expected_assets.split(",")))
+
+    # make sure we've generated the correct set of keys
+    assert _all_asset_keys(result) == expected_asset_keys
+
+    if AssetKey("a") in expected_asset_keys:
+        # (1 + 1 + 1) * 2
+        assert result.output_for_node("a.create_asset") == 6
+    if AssetKey("b") in expected_asset_keys:
+        # (6 + 1 + 1) * 8
+        assert result.output_for_node("b.create_asset") == 16
+    if AssetKey("c") in expected_asset_keys:
+        # (16 + 1 + 1) * 2
+        assert result.output_for_node("c.create_asset") == 36
 
 
 @pytest.mark.parametrize("use_multi", [True, False])

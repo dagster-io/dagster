@@ -221,8 +221,7 @@ class InputContext:
         )
         if result is None:
             raise DagsterInvariantViolationError(
-                "Attempting to access asset_key, "
-                "but it was not provided when constructing the InputContext"
+                "Attempting to access asset_key, but no asset is associated with this input"
             )
 
         return result

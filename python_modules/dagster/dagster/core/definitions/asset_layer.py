@@ -32,7 +32,12 @@ from .node_definition import NodeDefinition
 from .resource_definition import ResourceDefinition
 
 if TYPE_CHECKING:
+<<<<<<< HEAD
     from dagster.core.asset_defs import AssetGroup, AssetsDefinition, SourceAsset
+=======
+    from dagster.core.asset_defs import AssetGroup, AssetsDefinition
+    from dagster.core.asset_defs.source_asset import SourceAsset
+>>>>>>> passing all tests
     from dagster.core.execution.context.output import OutputContext
 
     from .job_definition import JobDefinition
@@ -284,6 +289,7 @@ def _asset_mappings_for_node(
     Mapping[NodeInputHandle, AssetKey],
     Mapping[NodeOutputHandle, AssetOutputInfo],
     Mapping[AssetKey, AbstractSet[AssetKey]],
+    Mapping[AssetKey, str],
 ]:
     """
     Recursively iterate through all the sub-nodes of a Node to find any ops with asset info
@@ -403,6 +409,7 @@ class AssetLayer:
         for node_output_handle, asset_info in self._asset_info_by_node_output_handle.items():
             if asset_info.is_required:
                 self._asset_keys_by_node_handle[node_output_handle.node_handle].add(asset_info.key)
+
         self._io_manager_keys_by_asset_key = check.opt_dict_param(
             io_manager_keys_by_asset_key,
             "io_manager_keys_by_asset_key",
@@ -455,6 +462,7 @@ class AssetLayer:
             asset_deps.update(assets_def.asset_deps)
 
             for input_name, asset_key in assets_def.node_asset_keys_by_input_name.items():
+                asset_key_by_input[NodeInputHandle(node_handle, input_name)] = asset_key
                 # resolve graph input to list of op inputs that consume it
                 node_input_handles = _resolve_input_to_destinations(
                     input_name, assets_def.node_def, node_handle
@@ -475,6 +483,7 @@ class AssetLayer:
                     partitions_def=assets_def.partitions_def,
                     is_required=asset_key in assets_def.asset_keys,
                 )
+                asset_io_managers[asset_key] = inner_output_def.io_manager_key
         return AssetLayer(
             asset_keys_by_node_input_handle=asset_key_by_input,
             asset_info_by_node_output_handle=asset_info_by_output,
@@ -490,6 +499,10 @@ class AssetLayer:
     @property
     def asset_info_by_node_output_handle(self) -> Mapping[NodeOutputHandle, AssetOutputInfo]:
         return self._asset_info_by_node_output_handle
+
+    @property
+    def io_manager_keys_by_asset_key(self) -> Mapping[AssetKey, str]:
+        return self._io_manager_keys_by_asset_key
 
     def upstream_assets_for_asset(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         check.invariant(
@@ -513,7 +526,7 @@ class AssetLayer:
         return self._asset_keys_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))
 
     def io_manager_key_for_asset(self, asset_key: AssetKey) -> str:
-        return self._io_manager_keys_by_asset_key[asset_key]
+        return self._io_manager_keys_by_asset_key.get(asset_key, "io_manager")
 
     def asset_info_for_output(
         self, node_handle: NodeHandle, output_name: str
@@ -524,44 +537,17 @@ class AssetLayer:
 
 
 def build_asset_selection_job(
-    name: str,
-    assets: Sequence["AssetsDefinition"],
-    source_assets: Sequence[Union["AssetsDefinition", "SourceAsset"]],
-    executor_def: ExecutorDefinition,
-    resource_defs: Mapping[str, ResourceDefinition],
-    description: str,
-    tags: Dict[str, Any],
-    asset_selection: Optional[FrozenSet[AssetKey]],
-    asset_selection_data: Optional[AssetSelectionData] = None,
-):
-    from dagster.core.asset_defs import build_assets_job
+    job_to_subselect: "JobDefinition",
+    asset_selection: FrozenSet[AssetKey],
+    asset_layer: AssetLayer,
+    asset_selection_data: AssetSelectionData,
+) -> "JobDefinition":
+    from ..asset_defs.assets_job import build_assets_job
 
-    if asset_selection:
-        included_assets, excluded_assets = _subset_assets_defs(
-            assets, source_assets, asset_selection
-        )
-        resource_defs = _build_resource_defs(resource_defs, excluded_assets)
-    else:
-        included_assets = cast(List["AssetsDefinition"], assets)
-        # Slice [:] serves as a copy constructor, so that we don't
-        # accidentally add to the original list
-        excluded_assets = source_assets[:]
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
-        asset_job = build_assets_job(
-            name=name,
-            assets=included_assets,
-            source_assets=excluded_assets,
-            resource_defs=resource_defs,
-            executor_def=executor_def,
-            description=description,
-            tags=tags,
-            _asset_selection_data=asset_selection_data,
-        )
-
-    return asset_job
-
+    check.invariant(
+        asset_layer._assets_defs != None,  # pylint:disable=protected-access
+        "Asset layer must have _asset_defs argument defined",
+    )
 
 def _subset_assets_defs(
     assets: Sequence["AssetsDefinition"],
