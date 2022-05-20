@@ -128,8 +128,7 @@ def test_dataproc_resource():
 
 
 def test_wait_for_job_with_timeout():
-    """Test submitting a job with timeout of 0 second so that it always fails.
-    """
+    """Test submitting a job with timeout of 0 second so that it always fails."""
     with mock.patch("httplib2.Http", new=HttpSnooper):
 
         @job(resource_defs={"dataproc": dataproc_resource})
@@ -137,7 +136,7 @@ def test_wait_for_job_with_timeout():
             dataproc_op()
 
         try:
-            result = test_dataproc.execute_in_process(
+            test_dataproc.execute_in_process(
                 run_config={
                     "ops": {
                         "dataproc_op": {
