@@ -62,6 +62,10 @@ import {
   InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet,
   InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs,
 } from './types/InstanceBackfillsQuery';
+import {
+  InstanceBackfillsQueryNew,
+  InstanceBackfillsQueryNewVariables,
+} from './types/InstanceBackfillsQueryNew';
 import {InstanceHealthForBackfillsQuery} from './types/InstanceHealthForBackfillsQuery';
 import {resumeBackfill, resumeBackfillVariables} from './types/resumeBackfill';
 
@@ -71,6 +75,14 @@ type BackfillRun = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBac
 const PAGE_SIZE = 25;
 
 export const InstanceBackfills = () => {
+  return featureEnabled(FeatureFlag.flagNewPartitionsView) ? (
+    <InstanceBackfillsNew />
+  ) : (
+    <InstanceBackfillsOld />
+  );
+};
+
+export const InstanceBackfillsOld = () => {
   const queryData = useQuery<InstanceHealthForBackfillsQuery>(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
@@ -121,17 +133,6 @@ export const InstanceBackfills = () => {
             .filter((daemon) => daemon.daemonType === 'BACKFILL')
             .map((daemon) => daemon.required && daemon.healthy);
           const isBackfillHealthy = backfillHealths.length && backfillHealths.every((x) => x);
-          const backfillTable = featureEnabled(FeatureFlag.flagNewPartitionsView) ? (
-            <BackfillTableNew
-              backfills={partitionBackfillsOrError.results.slice(0, PAGE_SIZE)}
-              refetch={queryResult.refetch}
-            />
-          ) : (
-            <BackfillTable
-              backfills={partitionBackfillsOrError.results.slice(0, PAGE_SIZE)}
-              refetch={queryResult.refetch}
-            />
-          );
 
           return (
             <div>
@@ -156,7 +157,102 @@ export const InstanceBackfills = () => {
                   />
                 </Box>
               )}
-              {backfillTable}
+              <BackfillTable
+                backfills={partitionBackfillsOrError.results.slice(0, PAGE_SIZE)}
+                refetch={queryResult.refetch}
+              />
+              {partitionBackfillsOrError.results.length > 0 ? (
+                <div style={{marginTop: '16px'}}>
+                  <CursorPaginationControls {...paginationProps} />
+                </div>
+              ) : null}
+            </div>
+          );
+        }}
+      </Loading>
+    </>
+  );
+};
+
+export const InstanceBackfillsNew = () => {
+  const queryData = useQuery<InstanceHealthForBackfillsQuery>(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
+
+  const {queryResult, paginationProps} = useCursorPaginatedQuery<
+    InstanceBackfillsQueryNew,
+    InstanceBackfillsQueryNewVariables
+  >({
+    query: BACKFILLS_QUERY_NEW,
+    variables: {},
+    pageSize: PAGE_SIZE,
+    nextCursorForResult: (result) =>
+      result.partitionBackfillsOrError.__typename === 'PartitionBackfills'
+        ? result.partitionBackfillsOrError.results[PAGE_SIZE - 1]?.backfillId
+        : undefined,
+    getResultArray: (result) =>
+      result?.partitionBackfillsOrError.__typename === 'PartitionBackfills'
+        ? result.partitionBackfillsOrError.results
+        : [],
+  });
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  useDocumentTitle('Backfills');
+
+  return (
+    <>
+      <PageHeader
+        title={<Heading>Instance status</Heading>}
+        tabs={<InstanceTabs tab="backfills" refreshState={refreshState} />}
+      />
+      <Loading queryResult={queryResult} allowStaleData={true}>
+        {({partitionBackfillsOrError}) => {
+          if (partitionBackfillsOrError.__typename === 'PythonError') {
+            return <PythonErrorInfo error={partitionBackfillsOrError} />;
+          }
+
+          if (!partitionBackfillsOrError.results.length) {
+            return (
+              <Box padding={{vertical: 64}}>
+                <NonIdealState
+                  icon="no-results"
+                  title="No backfills found"
+                  description={<p>This instance does not have any backfill jobs.</p>}
+                />
+              </Box>
+            );
+          }
+
+          const daemonHealths = queryData.data?.instance.daemonHealth.allDaemonStatuses || [];
+          const backfillHealths = daemonHealths
+            .filter((daemon) => daemon.daemonType === 'BACKFILL')
+            .map((daemon) => daemon.required && daemon.healthy);
+          const isBackfillHealthy = backfillHealths.length && backfillHealths.every((x) => x);
+
+          return (
+            <div>
+              {isBackfillHealthy ? null : (
+                <Box padding={{horizontal: 24, vertical: 16}}>
+                  <Alert
+                    intent="warning"
+                    title="The backfill daemon is not running."
+                    description={
+                      <div>
+                        See the{' '}
+                        <a
+                          href="https://docs.dagster.io/deployment/dagster-daemon"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          dagster-daemon documentation
+                        </a>{' '}
+                        for more information on how to deploy the dagster-daemon process.
+                      </div>
+                    }
+                  />
+                </Box>
+              )}
+              <BackfillTableNew
+                backfills={partitionBackfillsOrError.results.slice(0, PAGE_SIZE)}
+                refetch={queryResult.refetch}
+              />
               {partitionBackfillsOrError.results.length > 0 ? (
                 <div style={{marginTop: '16px'}}>
                   <CursorPaginationControls {...paginationProps} />
@@ -602,6 +698,52 @@ const BackfillStatusTableRow = ({
 
 const BACKFILLS_QUERY = gql`
   query InstanceBackfillsQuery($cursor: String, $limit: Int) {
+    partitionBackfillsOrError(cursor: $cursor, limit: $limit) {
+      ... on PartitionBackfills {
+        results {
+          backfillId
+          status
+          numRequested
+          partitionNames
+          runs {
+            id
+            canTerminate
+            status
+            tags {
+              key
+              value
+            }
+          }
+          timestamp
+          partitionSetName
+          partitionSet {
+            id
+            name
+            mode
+            pipelineName
+            repositoryOrigin {
+              id
+              repositoryName
+              repositoryLocationName
+            }
+          }
+          error {
+            ...PythonErrorFragment
+          }
+
+          ...BackfillTableFragment
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
+
+  ${PYTHON_ERROR_FRAGMENT}
+  ${BACKFILL_TABLE_FRAGMENT}
+`;
+
+const BACKFILLS_QUERY_NEW = gql`
+  query InstanceBackfillsQueryNew($cursor: String, $limit: Int) {
     partitionBackfillsOrError(cursor: $cursor, limit: $limit) {
       ... on PartitionBackfills {
         results {
