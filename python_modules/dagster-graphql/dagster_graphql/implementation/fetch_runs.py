@@ -127,7 +127,6 @@ def get_in_progress_runs_by_asset(graphene_info, job_names, step_keys_by_asset):
 
     instance = graphene_info.context.instance
 
-    # TODO check if pipeline run is generating the asset
     asset_key_by_step_key = defaultdict(set)
     for asset_key, step_keys in step_keys_by_asset.items():
         for step_key in step_keys:
@@ -148,7 +147,7 @@ def get_in_progress_runs_by_asset(graphene_info, job_names, step_keys_by_asset):
 
     for record in in_progress_records:
         run = record.pipeline_run
-
+        asset_selection = run.asset_selection
         run_step_keys = graphene_info.context.instance.get_execution_plan_snapshot(
             run.execution_plan_snapshot_id
         ).step_keys_to_execute
@@ -160,37 +159,41 @@ def get_in_progress_runs_by_asset(graphene_info, job_names, step_keys_by_asset):
                 step_stats = graphene_info.context.instance.get_run_step_stats(
                     run.run_id, run_step_keys
                 )
-                step_stats_by_asset: Dict[AssetKey, List[RunStepKeyStatsSnapshot]] = defaultdict(
-                    list
-                )
+                step_stats_by_asset: Dict[AssetKey, List[RunStepKeyStatsSnapshot]] = {}
                 for step_stat in step_stats:
                     asset_keys = asset_key_by_step_key[step_stat.step_key]
                     for asset_key in asset_keys:
+                        if asset_key not in step_stats_by_asset:
+                            step_stats_by_asset[asset_key] = []
                         step_stats_by_asset[asset_key].append(step_stat)
 
-                for asset in step_keys_by_asset.keys():
-                    step_stats = step_stats_by_asset[asset]
-                    if any(
-                        [
-                            step_stat.status == StepEventStatus.IN_PROGRESS
-                            for step_stat in step_stats
-                        ]
-                    ):
-                        in_progress_runs_by_asset[asset].add(GrapheneRun(record))
-                    elif len(step_stats) == 0:
+                selected_assets = (
+                    step_stats_by_asset if asset_selection == None else asset_selection
+                )  # only display in progress/unstarted indicators for selected assets
+                for asset in selected_assets:
+                    step_stats = step_stats_by_asset.get(asset)
+                    if step_stats:
+                        # step_stats will contain all steps that are in progress or complete
+                        if any(
+                            [
+                                step_stat.status == StepEventStatus.IN_PROGRESS
+                                for step_stat in step_stats
+                            ]
+                        ):
+                            in_progress_runs_by_asset[asset].add(GrapheneRun(record))
+                    else:  # if step stats is none, then the step has not started
                         unstarted_runs_by_asset[asset].add(GrapheneRun(record))
             else:
                 # the run never began execution, all steps are unstarted
-                for step_key in run_step_keys:
-                    for asset_key in asset_key_by_step_key[step_key]:
+                if asset_selection:
+                    for asset in asset_selection:
                         unstarted_runs_by_asset[asset_key].add(GrapheneRun(record))
+                else:
+                    for step_key in run_step_keys:
+                        for asset_key in asset_key_by_step_key[step_key]:
+                            unstarted_runs_by_asset[asset_key].add(GrapheneRun(record))
 
     all_assets = in_progress_runs_by_asset.keys() | unstarted_runs_by_asset.keys()
-
-    for asset_key in all_assets:
-        print(asset_key)
-        print(unstarted_runs_by_asset.get(asset_key, []))
-        print(in_progress_runs_by_asset.get(asset_key, []))
 
     return [
         GrapheneInProgressRunsByAsset(

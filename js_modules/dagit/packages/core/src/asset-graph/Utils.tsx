@@ -244,7 +244,9 @@ export const buildLiveData = (
     const isPartitioned = graphNode.definition.partitionDefinition;
     const repo = repos.find((r) => r.id === liveNode.repository.id);
 
-    const runs = repo?.inProgressRunsByAsset.find((r) => r.assetKey === liveNode.assetKey);
+    const runs = repo?.inProgressRunsByAsset.find(
+      (r) => JSON.stringify(r.assetKey) === JSON.stringify(liveNode.assetKey),
+    );
     const info = repo?.latestRunByStep.find((r) => r.stepKey === liveNode.opName);
 
     const latestRunForStepKey = info?.__typename === 'LatestRun' ? info.run : null;
@@ -272,6 +274,7 @@ export const buildLiveData = (
         : 'none',
     };
   }
+  console.log(data);
 
   for (const liveNodeId of Object.keys(data)) {
     data[liveNodeId].computeStatus = findComputeStatusForId(data, graph.upstream, liveNodeId);

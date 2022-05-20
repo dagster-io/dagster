@@ -47,6 +47,8 @@ export function useLiveDataForAssetKeys(
     return buildLiveData(graphData, liveAssetNodes, repos);
   }, [graphData, liveResult]);
 
+  console.log(liveDataByNode);
+
   return {
     liveResult,
     liveDataByNode,
