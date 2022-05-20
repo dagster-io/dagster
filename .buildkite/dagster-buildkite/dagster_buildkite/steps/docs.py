@@ -46,9 +46,9 @@ def build_docs_steps() -> List[GroupStep]:
         .on_integration_image(AvailablePythonVersion.V3_8)
         .build(),
         # mypy for build scripts
-        build_tox_step("docs", "mypy", base_label=":mypy: docs"),
+        build_tox_step("docs", "mypy", command_type="mypy"),
         # pylint for build scripts
-        build_tox_step("docs", "pylint", base_label=":lint-roller: docs"),
+        build_tox_step("docs", "pylint", command_type="pylint"),
     ]
     return [
         GroupStep(

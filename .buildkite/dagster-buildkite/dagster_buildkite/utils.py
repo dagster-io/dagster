@@ -133,3 +133,15 @@ def is_feature_branch(branch_name: str) -> bool:
 
 def is_release_branch(branch_name: str) -> bool:
     return branch_name.startswith("release-")
+
+
+# Preceding a line of BK output with "---" turns it into a section header.
+# The characters surrounding the `message` are ANSI escope sequences used to colorize the output.
+# Note that "\" is doubled below to insert a single literal backslash in the string.
+#
+# \033[0;32m : initiate green coloring
+# \033[0m : end coloring
+#
+# Green is hardcoded, but can easily be parameterized if needed.
+def make_buildkite_section_header(message: str) -> str:
+    return f"--- \\033[0;32m{message}\\033[0m"
