@@ -759,10 +759,13 @@ class ExecutionPlan(
             step_output_versions, "step_output_versions", key_type=StepOutputHandle, value_type=str
         )
 
+        step_handles_to_validate_set: Set[StepHandleUnion] = {
+            StepHandle.parse_from_key(key) for key in step_keys_to_execute
+        }
         step_handles_to_execute: List[StepHandleUnion] = []
         bad_keys = []
-        for key in step_keys_to_execute:
-            handle = StepHandle.parse_from_key(key)
+
+        for handle in step_handles_to_validate_set:
 
             if handle not in self.step_dict:
                 # Ok if the entire dynamic step is selected to execute.
@@ -779,13 +782,15 @@ class ExecutionPlan(
                 #   keys `subtask[0], subtask[1], subtask[2]`
                 if isinstance(handle, ResolvedFromDynamicStepHandle):
                     unresolved_handle = handle.unresolved_form
-                    if unresolved_handle in self.step_dict and unresolved_handle in [
-                        StepHandle.parse_from_key(key) for key in step_keys_to_execute
-                    ]:
+                    if (
+                        unresolved_handle in self.step_dict
+                        and unresolved_handle in step_handles_to_validate_set
+                    ):
                         continue
 
                 bad_keys.append(handle.to_key())
 
+            # Add the handle to the ready-to-execute list once it's validated
             step_handles_to_execute.append(handle)
 
         if bad_keys:
