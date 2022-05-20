@@ -22,7 +22,10 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
       flex={{direction: 'column', justifyContent: 'stretch'}}
       style={{height: '100%', position: 'relative'}}
     >
-      <PageHeader title={<Heading>Assets</Heading>} />
+      <PageHeader
+        title={<Heading>Assets</Heading>}
+        right={<ReloadAllButton label="Reload definitions" />}
+      />
       <Box
         background={Colors.White}
         padding={{left: 24, right: 12, vertical: 8}}
@@ -30,8 +33,6 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
         flex={{direction: 'row', gap: 12}}
       >
         <AssetViewModeSwitch />
-        <div style={{flex: 1}} />
-        <ReloadAllButton label="Reload definitions" />
       </Box>
       <AssetGraphExplorer
         options={{preferAssetRendering: true, explodeComposites: true}}

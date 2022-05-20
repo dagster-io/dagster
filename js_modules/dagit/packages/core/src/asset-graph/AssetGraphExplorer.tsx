@@ -1,6 +1,9 @@
 import {
+  Body,
   Box,
   Checkbox,
+  Colors,
+  Icon,
   MenuItem,
   Mono,
   NonIdealState,
@@ -25,6 +28,7 @@ import {
   QueryRefreshState,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
+import {withMiddleTruncation} from '../app/Util';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
@@ -52,7 +56,7 @@ import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
 import {AssetConnectedEdges, AssetDisconnectedEdges} from './AssetEdges';
-import {AssetNode, AssetNodeMinimal} from './AssetNode';
+import {AssetNode, AssetNodeMinimal, NameMinimal} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
 import {OmittedAssetsNotice} from './OmittedAssetsNotice';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
