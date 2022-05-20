@@ -292,24 +292,15 @@ def test_select_dynamic_step_and_downstream():
             dynamic_pipeline,
             parent_run_id=result_1.run_id,
             instance=instance,
-            step_selection=["emit*"],
+            step_selection=["+multiply_inputs[?]"],
         )
         assert result_2.success
-
-        keys_2 = result_2.events_by_step_key.keys()
-        assert "multiply_inputs[0]" in keys_2
-        assert "multiply_inputs[1]" in keys_2
-        assert "multiply_inputs[2]" in keys_2
-        assert "multiply_by_two[0]" in keys_2
-        assert "multiply_by_two[1]" in keys_2
-        assert "multiply_by_two[2]" in keys_2
-        assert result_2.result_for_solid("double_total").output_value() == 120
 
         result_3 = reexecute_pipeline(
             dynamic_pipeline,
             parent_run_id=result_1.run_id,
             instance=instance,
-            step_selection=["emit+"],
+            step_selection=["emit*"],
         )
         assert result_3.success
 
@@ -317,7 +308,38 @@ def test_select_dynamic_step_and_downstream():
         assert "multiply_inputs[0]" in keys_3
         assert "multiply_inputs[1]" in keys_3
         assert "multiply_inputs[2]" in keys_3
-        assert "multiply_by_two[0]" not in keys_3
+        assert "multiply_by_two[0]" in keys_3
+        assert "multiply_by_two[1]" in keys_3
+        assert "multiply_by_two[2]" in keys_3
+        assert result_3.result_for_solid("double_total").output_value() == 120
+
+        result_4 = reexecute_pipeline(
+            dynamic_pipeline,
+            parent_run_id=result_1.run_id,
+            instance=instance,
+            step_selection=["emit+"],
+        )
+        assert result_4.success
+
+        keys_4 = result_4.events_by_step_key.keys()
+        assert "multiply_inputs[0]" in keys_4
+        assert "multiply_inputs[1]" in keys_4
+        assert "multiply_inputs[2]" in keys_4
+        assert "multiply_by_two[0]" not in keys_4
+
+        result_5 = reexecute_pipeline(
+            dynamic_pipeline,
+            parent_run_id=result_1.run_id,
+            instance=instance,
+            step_selection=["emit", "multiply_inputs[?]"],
+        )
+        assert result_5.success
+
+        keys_5 = result_5.events_by_step_key.keys()
+        assert "multiply_inputs[0]" in keys_5
+        assert "multiply_inputs[1]" in keys_5
+        assert "multiply_inputs[2]" in keys_5
+        assert "multiply_by_two[0]" not in keys_5
 
 
 def test_bad_step_selection():

@@ -40,7 +40,10 @@ export const toGraphQueryItems = (
       if (!invocationsHappened && keys.length === 0) {
         keys = [step.key];
       }
-      keyExpansionMap[step.key] = keys;
+      // The order matters here: add the planned dynamic step at the end, so when displaying the gantt
+      // chart, we can ignore planned dynamic step if any of its invocation exists (i.e. hide the
+      // unresolved node if any resolved node exists).
+      keyExpansionMap[step.key] = [...keys, step.key];
     }
   }
 
