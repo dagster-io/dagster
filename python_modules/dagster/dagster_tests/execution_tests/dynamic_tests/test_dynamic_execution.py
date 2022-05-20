@@ -1,6 +1,7 @@
 import pytest
 
 from dagster import (
+    DynamicOut,
     DynamicOutput,
     DynamicOutputDefinition,
     Field,
@@ -9,6 +10,8 @@ from dagster import (
     OutputDefinition,
     composite_solid,
     execute_pipeline,
+    job,
+    op,
     pipeline,
     reconstructable,
     solid,
@@ -356,6 +359,68 @@ def test_bad_step_selection():
                 instance=instance,
                 step_selection=["emit", "multiply_by_two[1]"],
             )
+
+
+def define_real_dynamic_job():
+    @op(config_schema=list, out=DynamicOut(int))
+    def generate_subtasks(context):
+        for num in context.op_config:
+            yield DynamicOutput(num, mapping_key=str(num))
+
+    @op
+    def subtask(input_number: int):
+        print(f"Found {input_number} cereals")
+        return input_number
+
+    @job
+    def real_dynamic_job():
+        generate_subtasks().map(subtask)
+
+    return real_dynamic_job
+
+
+def test_select_dynamic_step_with_non_static_mapping():
+    with instance_for_test() as instance:
+        result_0 = execute_pipeline(
+            reconstructable(define_real_dynamic_job),
+            instance=instance,
+            run_config={"ops": {"generate_subtasks": {"config": [0, 2, 4]}}},
+        )
+        assert result_0.success
+
+        # Should generate dynamic steps using the outs in current run
+        result_1 = reexecute_pipeline(
+            reconstructable(define_real_dynamic_job),
+            parent_run_id=result_0.run_id,
+            instance=instance,
+            step_selection=["generate_subtasks+"],
+            run_config={"ops": {"generate_subtasks": {"config": [0, 1, 2, 3, 4]}}},
+        )
+        assert result_1.success
+        keys_1 = result_1.events_by_step_key.keys()
+        assert "generate_subtasks" in keys_1
+        assert "subtask[0]" in keys_1
+        assert "subtask[1]" in keys_1
+        assert "subtask[2]" in keys_1
+        assert "subtask[3]" in keys_1
+        assert "subtask[4]" in keys_1
+
+        # Should generate dynamic steps using the outs in current run
+        result_2 = reexecute_pipeline(
+            reconstructable(define_real_dynamic_job),
+            parent_run_id=result_0.run_id,
+            instance=instance,
+            step_selection=["+subtask[?]"],
+            run_config={"ops": {"generate_subtasks": {"config": [1, 2, 3]}}},
+        )
+        assert result_2.success
+        keys_2 = result_2.events_by_step_key.keys()
+        assert "generate_subtasks" in keys_2
+        assert "subtask[0]" not in keys_2
+        assert "subtask[1]" in keys_2
+        assert "subtask[2]" in keys_2
+        assert "subtask[3]" in keys_2
+        assert "subtask[4]" not in keys_2
 
 
 @pytest.mark.parametrize(

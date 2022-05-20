@@ -40,6 +40,7 @@ from dagster.core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
 )
 from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import ExecutionStep
 from dagster.core.execution.retries import RetryMode
@@ -644,15 +645,28 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return None
 
     def _should_load_from_previous_runs(self, step_output_handle: StepOutputHandle) -> bool:
-        return (  # this is re-execution
-            self.pipeline_run.parent_run_id is not None
-            # we are not re-executing the entire pipeline
-            and self.pipeline_run.step_keys_to_execute is not None
-            # this step is not being executed
-            and step_output_handle.step_key not in self.pipeline_run.step_keys_to_execute
-        )
+        print(step_output_handle.step_key, self.pipeline_run.step_keys_to_execute)
+        # should not load if not a re-execution
+        if self.pipeline_run.parent_run_id is None:
+            return False
+        # should not load if re-executing the entire pipeline
+        if self.pipeline_run.step_keys_to_execute is None:
+            return False
+        # should not load if this step is being executed in the current run
+        handle = StepHandle.parse_from_key(step_output_handle.step_key)
+        if isinstance(handle, ResolvedFromDynamicStepHandle):
+            print("handle.unresolved_form: ", handle.unresolved_form)
+            print("self.pipeline_run.step_keys_to_execute:", self.pipeline_run.step_keys_to_execute)
+            return handle.unresolved_form.to_key() not in self.pipeline_run.step_keys_to_execute
+        return step_output_handle.step_key not in self.pipeline_run.step_keys_to_execute
 
     def _get_source_run_id(self, step_output_handle: StepOutputHandle) -> Optional[str]:
+        print(
+            step_output_handle.step_key,
+            "self._should_load_from_previous_runs(step_output_handle)",
+            self._should_load_from_previous_runs(step_output_handle),
+        )
+
         if self._should_load_from_previous_runs(step_output_handle):
             return self._get_source_run_id_from_logs(step_output_handle)
         else:

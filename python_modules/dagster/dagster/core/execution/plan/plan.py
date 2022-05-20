@@ -759,7 +759,7 @@ class ExecutionPlan(
             step_output_versions, "step_output_versions", key_type=StepOutputHandle, value_type=str
         )
 
-        step_handles_to_execute = []
+        step_handles_to_execute_set = set()
         bad_keys = []
         for key in step_keys_to_execute:
             handle = StepHandle.parse_from_key(key)
@@ -778,10 +778,15 @@ class ExecutionPlan(
                         # solely from the resolved handles, we can't tell if an entire dynamic
                         # node is being selected, so the best bet here is to check both unresolved
                         # and resolved handles exist.
+                        step_handles_to_execute_set.add(unresolved_handle)
                         continue
                 bad_keys.append(handle.to_key())
 
-            step_handles_to_execute.append(handle)
+            step_handles_to_execute_set.add(handle)
+
+        step_handles_to_execute = (
+            list(step_handles_to_execute_set) if step_handles_to_execute_set else None
+        )
 
         if bad_keys:
             raise DagsterExecutionStepNotFoundError(
