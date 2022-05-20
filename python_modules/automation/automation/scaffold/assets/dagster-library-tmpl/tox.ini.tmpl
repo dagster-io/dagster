@@ -9,10 +9,7 @@ deps =
   -e ../../dagster[mypy,test]
   -e .[test]
 usedevelop = true
-allowlist_externals =
-  /bin/bash
 commands =
-  !windows: /bin/bash -c '! pip list --exclude-editable | grep -e dagster -e dagit'
   coverage erase
   pytest -vv --junitxml=test_results.xml --cov=dagster_{{LIBRARY_NAME}} --cov-append --cov-report= {posargs}
   coverage report --omit='.tox/*,**/test_*.py' --skip-covered
