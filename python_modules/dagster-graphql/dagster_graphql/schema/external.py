@@ -1,9 +1,6 @@
 # pylint: disable=missing-graphene-docstring
 import graphene
-from dagster_graphql.implementation.fetch_runs import (
-    get_in_progress_runs_by_asset,
-    get_latest_asset_run_by_step_key,
-)
+from dagster_graphql.implementation.fetch_runs import get_latest_asset_run_by_step_key
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 
@@ -20,12 +17,7 @@ from dagster.core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoad
 from .asset_graph import GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
 from .partition_sets import GraphenePartitionSet
-from .pipelines.pipeline import (
-    GrapheneInProgressRunsByAsset,
-    GrapheneJob,
-    GrapheneLatestRun,
-    GraphenePipeline,
-)
+from .pipelines.pipeline import GrapheneJob, GrapheneLatestRun, GraphenePipeline
 from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
 from .schedules import GrapheneSchedule
 from .sensors import GrapheneSensor
@@ -170,7 +162,6 @@ class GrapheneRepository(graphene.ObjectType):
     sensors = non_null_list(GrapheneSensor)
     assetNodes = non_null_list(GrapheneAssetNode)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
-    inProgressRunsByAsset = non_null_list(GrapheneInProgressRunsByAsset)
     latestRunByStep = non_null_list(GrapheneLatestRun)
 
     class Meta:
@@ -263,17 +254,6 @@ class GrapheneRepository(graphene.ObjectType):
             GrapheneAssetNode(self._repository_location, self._repository, external_asset_node)
             for external_asset_node in self._repository.get_external_asset_nodes()
         ]
-
-    def resolve_inProgressRunsByAsset(self, graphene_info):
-        job_names = [
-            job.name for job in self._repository.get_all_external_pipelines() if job.is_job
-        ]
-
-        step_keys_by_asset: Dict[AssetKey, List[str]] = {
-            node.asset_key: node.op_names for node in self._repository.get_external_asset_nodes()
-        }
-
-        return get_in_progress_runs_by_asset(graphene_info, job_names, step_keys_by_asset)
 
     def resolve_latestRunByStep(self, graphene_info):
         asset_node = [node for node in self._repository.get_external_asset_nodes() if node.op_name]

@@ -19,28 +19,6 @@ export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_no
   name: string;
 }
 
-export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByAsset_assetKey {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByAsset_unstartedRuns {
-  __typename: "Run";
-  id: string;
-}
-
-export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByAsset_inProgressRuns {
-  __typename: "Run";
-  id: string;
-}
-
-export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByAsset {
-  __typename: "InProgressRunsByAsset";
-  assetKey: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByAsset_assetKey;
-  unstartedRuns: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByAsset_unstartedRuns[];
-  inProgressRuns: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByAsset_inProgressRuns[];
-}
-
 export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_run {
   __typename: "Run";
   id: string;
@@ -58,7 +36,6 @@ export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_no
   id: string;
   name: string;
   location: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_location;
-  inProgressRunsByAsset: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByAsset[];
   latestRunByStep: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep[];
 }
 
@@ -95,9 +72,29 @@ export interface AssetGraphLiveQuery_assetNodes {
   assetMaterializations: AssetGraphLiveQuery_assetNodes_assetMaterializations[];
 }
 
+export interface AssetGraphLiveQuery_assetsLiveInfo_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetGraphLiveQuery_assetsLiveInfo_latestMaterialization {
+  __typename: "MaterializationEvent";
+  timestamp: string;
+  runId: string;
+}
+
+export interface AssetGraphLiveQuery_assetsLiveInfo {
+  __typename: "AssetLiveInfo";
+  assetKey: AssetGraphLiveQuery_assetsLiveInfo_assetKey;
+  latestMaterialization: AssetGraphLiveQuery_assetsLiveInfo_latestMaterialization | null;
+  unstartedRunIds: string[];
+  inProgressRunIds: string[];
+}
+
 export interface AssetGraphLiveQuery {
   repositoriesOrError: AssetGraphLiveQuery_repositoriesOrError;
   assetNodes: AssetGraphLiveQuery_assetNodes[];
+  assetsLiveInfo: AssetGraphLiveQuery_assetsLiveInfo[];
 }
 
 export interface AssetGraphLiveQueryVariables {

@@ -8,11 +8,10 @@ from dagster import _check as check
 from dagster.config.validate import validate_config
 from dagster.core.definitions import create_run_config_schema
 from dagster.core.errors import DagsterRunNotFoundError
-from dagster.core.execution.stats import StepEventStatus
+from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster.core.host_representation import PipelineSelector
 from dagster.core.storage.pipeline_run import PipelineRun, RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
-from dagster.core.execution.stats import RunStepKeyStatsSnapshot
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import UserFacingGraphQLError, capture_error
@@ -122,8 +121,9 @@ IN_PROGRESS_STATUSES = [
 ]
 
 
-def get_in_progress_runs_by_asset(graphene_info, job_names, step_keys_by_asset):
-    from ..schema.pipelines.pipeline import GrapheneInProgressRunsByAsset, GrapheneRun
+def get_assets_live_info(graphene_info, step_keys_by_asset):
+    from ..schema.asset_graph import GrapheneAssetLiveInfo
+    from ..schema.logs.events import GrapheneMaterializationEvent
 
     instance = graphene_info.context.instance
 
@@ -132,14 +132,15 @@ def get_in_progress_runs_by_asset(graphene_info, job_names, step_keys_by_asset):
         for step_key in step_keys:
             asset_key_by_step_key[step_key].add(asset_key)
 
-    in_progress_records = []
-    for job_name in job_names:
-        in_progress_records.extend(
-            instance.get_run_records(RunsFilter(pipeline_name=job_name, statuses=PENDING_STATUSES))
-        )
+    asset_records = instance.get_asset_records(step_keys_by_asset.keys())
+    latest_run_ids = [asset_record.asset_entry.last_run_id for asset_record in asset_records]
 
-    in_progress_runs_by_asset = defaultdict(set)
-    unstarted_runs_by_asset = defaultdict(set)
+    in_progress_records = instance.get_run_records(
+        RunsFilter(run_ids=latest_run_ids, statuses=PENDING_STATUSES)
+    )
+
+    in_progress_run_ids_by_asset = defaultdict(set)
+    unstarted_run_ids_by_asset = defaultdict(set)
 
     asset_step_keys = set()
     for step_keys_for_asset in step_keys_by_asset.values():
@@ -180,26 +181,36 @@ def get_in_progress_runs_by_asset(graphene_info, job_names, step_keys_by_asset):
                                 for step_stat in step_stats
                             ]
                         ):
-                            in_progress_runs_by_asset[asset].add(GrapheneRun(record))
+                            in_progress_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
                     else:  # if step stats is none, then the step has not started
-                        unstarted_runs_by_asset[asset].add(GrapheneRun(record))
+                        unstarted_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
             else:
                 # the run never began execution, all steps are unstarted
                 if asset_selection:
                     for asset in asset_selection:
-                        unstarted_runs_by_asset[asset_key].add(GrapheneRun(record))
+                        unstarted_run_ids_by_asset[asset_key].add(record.pipeline_run.run_id)
                 else:
                     for step_key in run_step_keys:
                         for asset_key in asset_key_by_step_key[step_key]:
-                            unstarted_runs_by_asset[asset_key].add(GrapheneRun(record))
+                            unstarted_run_ids_by_asset[asset_key].add(record.pipeline_run.run_id)
 
-    all_assets = in_progress_runs_by_asset.keys() | unstarted_runs_by_asset.keys()
+    all_assets = in_progress_run_ids_by_asset.keys() | unstarted_run_ids_by_asset.keys()
+
+    latest_materialization_by_asset = {
+        asset_record.asset_entry.asset_key: GrapheneMaterializationEvent(
+            event=asset_record.asset_entry.last_materialization
+        )
+        if asset_record.asset_entry.last_materialization
+        else None
+        for asset_record in asset_records
+    }
 
     return [
-        GrapheneInProgressRunsByAsset(
+        GrapheneAssetLiveInfo(
             asset_key,
-            list(unstarted_runs_by_asset.get(asset_key, [])),
-            list(in_progress_runs_by_asset.get(asset_key, [])),
+            latest_materialization_by_asset.get(asset_key),
+            list(unstarted_run_ids_by_asset.get(asset_key, [])),
+            list(in_progress_run_ids_by_asset.get(asset_key, [])),
         )
         for asset_key in all_assets
     ]

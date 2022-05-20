@@ -69,6 +69,7 @@ type DagitQuery {
     limit: Int
   ): PartitionBackfillsOrError!
   permissions: [GraphenePermission!]!
+  assetsLiveInfo(assetKeys: [AssetKeyInput!]): [AssetLiveInfo!]!
 }
 
 union RepositoriesOrError = RepositoryConnection | PythonError
@@ -91,7 +92,6 @@ type Repository {
   sensors: [Sensor!]!
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
-  inProgressRunsByAsset: [InProgressRunsByAsset!]!
   latestRunByStep: [LatestRun!]!
 }
 
@@ -1497,12 +1497,6 @@ type NodeInvocationSite {
   solidHandle: SolidHandle!
 }
 
-type InProgressRunsByAsset {
-  assetKey: AssetKey!
-  unstartedRuns: [Run!]!
-  inProgressRuns: [Run!]!
-}
-
 type LatestRun {
   stepKey: String!
   run: Run
@@ -1932,6 +1926,13 @@ type PartitionBackfills {
 type GraphenePermission {
   permission: String!
   value: Boolean!
+}
+
+type AssetLiveInfo {
+  assetKey: AssetKey!
+  latestMaterialization: MaterializationEvent
+  unstartedRunIds: [String!]!
+  inProgressRunIds: [String!]!
 }
 
 """

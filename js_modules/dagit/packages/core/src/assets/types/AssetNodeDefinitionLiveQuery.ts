@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, RunStatus } from "./../../types/globalTypes";
+import { RepositorySelector, AssetKeyInput, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: AssetNodeDefinitionLiveQuery
@@ -17,28 +17,6 @@ export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_locat
   __typename: "RepositoryLocation";
   id: string;
   name: string;
-}
-
-export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByAsset_assetKey {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByAsset_unstartedRuns {
-  __typename: "Run";
-  id: string;
-}
-
-export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByAsset_inProgressRuns {
-  __typename: "Run";
-  id: string;
-}
-
-export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByAsset {
-  __typename: "InProgressRunsByAsset";
-  assetKey: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByAsset_assetKey;
-  unstartedRuns: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByAsset_unstartedRuns[];
-  inProgressRuns: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByAsset_inProgressRuns[];
 }
 
 export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_latestRunByStep_run {
@@ -58,16 +36,36 @@ export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository {
   id: string;
   name: string;
   location: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_location;
-  inProgressRunsByAsset: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByAsset[];
   latestRunByStep: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_latestRunByStep[];
 }
 
 export type AssetNodeDefinitionLiveQuery_repositoryOrError = AssetNodeDefinitionLiveQuery_repositoryOrError_PythonError | AssetNodeDefinitionLiveQuery_repositoryOrError_Repository;
 
+export interface AssetNodeDefinitionLiveQuery_assetsLiveInfo_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetNodeDefinitionLiveQuery_assetsLiveInfo_latestMaterialization {
+  __typename: "MaterializationEvent";
+  timestamp: string;
+  runId: string;
+}
+
+export interface AssetNodeDefinitionLiveQuery_assetsLiveInfo {
+  __typename: "AssetLiveInfo";
+  assetKey: AssetNodeDefinitionLiveQuery_assetsLiveInfo_assetKey;
+  latestMaterialization: AssetNodeDefinitionLiveQuery_assetsLiveInfo_latestMaterialization | null;
+  unstartedRunIds: string[];
+  inProgressRunIds: string[];
+}
+
 export interface AssetNodeDefinitionLiveQuery {
   repositoryOrError: AssetNodeDefinitionLiveQuery_repositoryOrError;
+  assetsLiveInfo: AssetNodeDefinitionLiveQuery_assetsLiveInfo[];
 }
 
 export interface AssetNodeDefinitionLiveQueryVariables {
   repositorySelector: RepositorySelector;
+  assetKeys?: AssetKeyInput[] | null;
 }

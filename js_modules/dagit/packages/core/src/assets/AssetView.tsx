@@ -87,6 +87,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         repositoryLocationName: repoAddress ? repoAddress.location : '',
         repositoryName: repoAddress ? repoAddress.name : '',
       },
+      assetKeys: [assetKey],
     },
     notifyOnNetworkStatusChange: true,
   });
@@ -107,7 +108,9 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       ? liveQueryResult.data.repositoryOrError
       : null;
 
-  if (definition && repo) {
+  const assetsLiveInfo = liveQueryResult.data ? liveQueryResult.data.assetsLiveInfo : null;
+
+  if (definition && repo && assetsLiveInfo) {
     const nodesWithLatestMaterialization = [
       definition,
       ...definition.dependencies.map((d) => d.asset),
@@ -117,6 +120,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       buildGraphDataFromSingleNode(definition),
       nodesWithLatestMaterialization,
       [repo],
+      assetsLiveInfo,
     );
   }
 
@@ -259,7 +263,10 @@ const ASSET_QUERY = gql`
 `;
 
 const ASSET_NODE_DEFINITION_LIVE_QUERY = gql`
-  query AssetNodeDefinitionLiveQuery($repositorySelector: RepositorySelector!) {
+  query AssetNodeDefinitionLiveQuery(
+    $repositorySelector: RepositorySelector!
+    $assetKeys: [AssetKeyInput!]
+  ) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       __typename
       ... on Repository {
@@ -267,6 +274,17 @@ const ASSET_NODE_DEFINITION_LIVE_QUERY = gql`
         name
         ...RepositoryLiveFragment
       }
+    }
+    assetsLiveInfo(assetKeys: $assetKeys) {
+      assetKey {
+        path
+      }
+      latestMaterialization {
+        timestamp
+        runId
+      }
+      unstartedRunIds
+      inProgressRunIds
     }
   }
   ${REPOSITORY_LIVE_FRAGMENT}

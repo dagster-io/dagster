@@ -14,7 +14,7 @@ import {
   RepositoryLiveFragment,
   RepositoryLiveFragment_latestRunByStep_run,
 } from './types/RepositoryLiveFragment';
-
+import {AssetGraphLiveQuery_assetsLiveInfo} from './types/AssetGraphLiveQuery';
 type AssetNode = AssetGraphQuery_assetNodes;
 type AssetKey = AssetGraphQuery_assetNodes_assetKey;
 
@@ -229,6 +229,7 @@ export const buildLiveData = (
   graph: GraphData,
   nodes: AssetNodeLiveFragment[],
   repos: RepositoryLiveFragment[],
+  assetsLiveInfo: AssetGraphLiveQuery_assetsLiveInfo[],
 ) => {
   const data: LiveData = {};
 
@@ -244,7 +245,7 @@ export const buildLiveData = (
     const isPartitioned = graphNode.definition.partitionDefinition;
     const repo = repos.find((r) => r.id === liveNode.repository.id);
 
-    const runs = repo?.inProgressRunsByAsset.find(
+    const runs = assetsLiveInfo.find(
       (r) => JSON.stringify(r.assetKey) === JSON.stringify(liveNode.assetKey),
     );
     const info = repo?.latestRunByStep.find((r) => r.stepKey === liveNode.opName);
@@ -260,8 +261,8 @@ export const buildLiveData = (
     data[graphId] = {
       lastChanged,
       lastMaterialization,
-      inProgressRunIds: runs?.inProgressRuns.map((r) => r.id) || [],
-      unstartedRunIds: runs?.unstartedRuns.map((r) => r.id) || [],
+      inProgressRunIds: runs?.inProgressRunIds || [],
+      unstartedRunIds: runs?.unstartedRunIds || [],
       runWhichFailedToMaterialize,
       computeStatus: isSourceAsset(graphNode.definition)
         ? 'good' // foreign nodes are always considered up-to-date
@@ -314,20 +315,6 @@ export function displayNameForAssetKey(key: {path: string[]}) {
   return key.path.join(' / ');
 }
 
-export const IN_PROGRESS_RUNS_FRAGMENT = gql`
-  fragment InProgressRunsFragment on InProgressRunsByAsset {
-    assetKey {
-      path
-    }
-    unstartedRuns {
-      id
-    }
-    inProgressRuns {
-      id
-    }
-  }
-`;
-
 export const LAST_RUNS_WARNINGS_FRAGMENT = gql`
   fragment LastRunsWarningsFragment on LatestRun {
     stepKey
@@ -346,14 +333,10 @@ export const REPOSITORY_LIVE_FRAGMENT = gql`
       id
       name
     }
-    inProgressRunsByAsset {
-      ...InProgressRunsFragment
-    }
     latestRunByStep {
       __typename
       ...LastRunsWarningsFragment
     }
   }
-  ${IN_PROGRESS_RUNS_FRAGMENT}
   ${LAST_RUNS_WARNINGS_FRAGMENT}
 `;
