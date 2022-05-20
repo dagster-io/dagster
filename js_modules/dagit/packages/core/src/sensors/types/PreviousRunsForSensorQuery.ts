@@ -13,17 +13,6 @@ export interface PreviousRunsForSensorQuery_pipelineRunsOrError_InvalidPipelineR
   __typename: "InvalidPipelineRunsFilterError" | "PythonError";
 }
 
-export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_assetNodesToExecute_assetKey {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_assetNodesToExecute {
-  __typename: "AssetNode";
-  id: string;
-  assetKey: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_assetNodesToExecute_assetKey;
-}
-
 export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
@@ -48,7 +37,6 @@ export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results {
   runId: string;
   status: RunStatus;
   stepKeysToExecute: string[] | null;
-  assetNodesToExecute: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_assetNodesToExecute[] | null;
   canTerminate: boolean;
   mode: string;
   rootRunId: string | null;

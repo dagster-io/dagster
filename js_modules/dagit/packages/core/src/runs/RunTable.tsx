@@ -23,7 +23,13 @@ import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunAssetKeyTags} from './RunAssetKeyTags';
 import {RunStatusTagWithStats} from './RunStatusTag';
 import {RunTags} from './RunTags';
-import {RunStateSummary, RunTime, RUN_TIME_FRAGMENT, titleForRun} from './RunUtils';
+import {
+  assetKeysForRun,
+  RunStateSummary,
+  RunTime,
+  RUN_TIME_FRAGMENT,
+  titleForRun,
+} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 
@@ -152,12 +158,6 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
     runId
     status
     stepKeysToExecute
-    assetNodesToExecute {
-      id
-      assetKey {
-        path
-      }
-    }
     canTerminate
     mode
     rootRunId
@@ -242,7 +242,7 @@ const RunRow: React.FC<{
       <td>
         <Box flex={{direction: 'column', gap: 5}}>
           {isAssetGroup(run.pipelineName) ? (
-            <RunAssetKeyTags assetKeys={(run.assetNodesToExecute || []).map((a) => a.assetKey)} />
+            <RunAssetKeyTags assetKeys={assetKeysForRun(run)} />
           ) : (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <PipelineReference

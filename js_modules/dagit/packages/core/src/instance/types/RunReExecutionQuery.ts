@@ -19,6 +19,17 @@ export interface RunReExecutionQuery_pipelineRunOrError_Run_tags {
   value: string;
 }
 
+export interface RunReExecutionQuery_pipelineRunOrError_Run_assets_key {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface RunReExecutionQuery_pipelineRunOrError_Run_assets {
+  __typename: "Asset";
+  id: string;
+  key: RunReExecutionQuery_pipelineRunOrError_Run_assets_key;
+}
+
 export interface RunReExecutionQuery_pipelineRunOrError_Run_assetSelection {
   __typename: "AssetKey";
   path: string[];
@@ -86,6 +97,7 @@ export interface RunReExecutionQuery_pipelineRunOrError_Run {
   status: RunStatus;
   mode: string;
   tags: RunReExecutionQuery_pipelineRunOrError_Run_tags[];
+  assets: RunReExecutionQuery_pipelineRunOrError_Run_assets[];
   rootRunId: string | null;
   parentRunId: string | null;
   pipelineName: string;

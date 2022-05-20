@@ -54,12 +54,6 @@ export const RunFragments = {
         ...ExecutionPlanToGraphFragment
       }
       stepKeysToExecute
-      assetNodesToExecute {
-        id
-        assetKey {
-          path
-        }
-      }
       ...RunFragmentForRepositoryMatch
       ...RunDetailsFragment
       updateTime

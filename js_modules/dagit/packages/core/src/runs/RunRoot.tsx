@@ -16,6 +16,7 @@ import {RunAssetKeyTags} from './RunAssetKeyTags';
 import {RunConfigDialog, RunDetails} from './RunDetails';
 import {RunFragments} from './RunFragments';
 import {RunStatusTag} from './RunStatusTag';
+import {assetKeysForRun} from './RunUtils';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRootQuery';
 
 export const RunRoot = () => {
@@ -39,10 +40,6 @@ export const RunRoot = () => {
     () => !!(run && repoMatch && isThisThingAJob(repoMatch.match, run.pipelineName)),
     [run, repoMatch],
   );
-
-  const assetKeys = React.useMemo(() => (run?.assetNodesToExecute || []).map((a) => a.assetKey), [
-    run,
-  ]);
 
   return (
     <div
@@ -73,7 +70,7 @@ export const RunRoot = () => {
               <>
                 <RunStatusTag status={run.status} />
                 {isAssetGroup(run.pipelineName) ? (
-                  <RunAssetKeyTags assetKeys={assetKeys} clickableTags />
+                  <RunAssetKeyTags assetKeys={assetKeysForRun(run)} clickableTags />
                 ) : (
                   <>
                     <Tag icon="run">

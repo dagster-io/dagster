@@ -3,7 +3,6 @@ import graphene
 import yaml
 
 import dagster._check as check
-from dagster.core.asset_defs.asset_group import AssetGroup
 from dagster.core.events import DagsterEventType
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
@@ -232,9 +231,6 @@ class GrapheneRun(graphene.ObjectType):
     )
     executionPlan = graphene.Field(GrapheneExecutionPlan)
     stepKeysToExecute = graphene.List(graphene.NonNull(graphene.String))
-    assetNodesToExecute = graphene.List(
-        graphene.NonNull("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
-    )
     runConfigYaml = graphene.NonNull(graphene.String)
     runConfig = graphene.NonNull(GrapheneRunConfigData)
     mode = graphene.NonNull(graphene.String)
@@ -332,38 +328,6 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_stepKeysToExecute(self, _graphene_info):
         return self._pipeline_run.step_keys_to_execute
-
-    def resolve_assetNodesToExecute(self, graphene_info):
-        from dagster_graphql.schema.asset_graph import GrapheneAssetNode
-
-        step_keys = self._pipeline_run.step_keys_to_execute
-        origin = self._pipeline_run.external_pipeline_origin.external_repository_origin
-
-        try:
-            location = graphene_info.context.get_repository_location(
-                origin.repository_location_origin.location_name
-            )
-            repository = location.get_repository(origin.repository_name)
-        except:
-            return None
-
-        asset_filter = (
-            self._pipeline_run.pipeline_name
-            if not AssetGroup.is_base_job_name(self._pipeline_run.pipeline_name)
-            else None
-        )
-        asset_nodes = repository.get_external_asset_nodes(asset_filter)
-
-        if not step_keys:
-            result = asset_nodes
-        else:
-            result = []
-            for node in asset_nodes:
-                for op_name in node.op_names:
-                    if op_name in step_keys:
-                        result.append(node)
-
-        return [GrapheneAssetNode(location, repository, node) for node in result]
 
     def resolve_runConfigYaml(self, _graphene_info):
         return yaml.dump(

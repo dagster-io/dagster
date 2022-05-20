@@ -9,17 +9,6 @@ import { RunsFilter, RunStatus } from "./../../types/globalTypes";
 // GraphQL query operation: PreviousRunsForScheduleQuery
 // ====================================================
 
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_assetNodesToExecute_assetKey {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_assetNodesToExecute {
-  __typename: "AssetNode";
-  id: string;
-  assetKey: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_assetNodesToExecute_assetKey;
-}
-
 export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
@@ -44,7 +33,6 @@ export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results {
   runId: string;
   status: RunStatus;
   stepKeysToExecute: string[] | null;
-  assetNodesToExecute: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_assetNodesToExecute[] | null;
   canTerminate: boolean;
   mode: string;
   rootRunId: string | null;
