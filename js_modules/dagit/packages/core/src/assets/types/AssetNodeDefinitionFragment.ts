@@ -2417,7 +2417,6 @@ export interface AssetNodeDefinitionFragment_dependencies_asset_assetMaterializa
 export interface AssetNodeDefinitionFragment_dependencies_asset {
   __typename: "AssetNode";
   id: string;
-  opName: string | null;
   opNames: string[];
   jobNames: string[];
   graphName: string | null;
@@ -2461,7 +2460,6 @@ export interface AssetNodeDefinitionFragment_dependedBy_asset_assetMaterializati
 export interface AssetNodeDefinitionFragment_dependedBy_asset {
   __typename: "AssetNode";
   id: string;
-  opName: string | null;
   opNames: string[];
   jobNames: string[];
   graphName: string | null;
@@ -2483,7 +2481,6 @@ export interface AssetNodeDefinitionFragment {
   id: string;
   description: string | null;
   graphName: string | null;
-  opName: string | null;
   opNames: string[];
   jobNames: string[];
   repository: AssetNodeDefinitionFragment_repository;

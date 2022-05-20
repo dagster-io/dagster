@@ -26,7 +26,6 @@ export interface AssetNodeLiveFragment_assetMaterializations {
 export interface AssetNodeLiveFragment {
   __typename: "AssetNode";
   id: string;
-  opName: string | null;
   opNames: string[];
   repository: AssetNodeLiveFragment_repository;
   assetKey: AssetNodeLiveFragment_assetKey;
