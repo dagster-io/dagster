@@ -785,7 +785,7 @@ class ExecutionPlan(
             step_handles_to_execute_set.add(handle)
 
         step_handles_to_execute = (
-            list(step_handles_to_execute_set) if step_handles_to_execute_set else None
+            list(step_handles_to_execute_set) if step_handles_to_execute_set else []
         )
 
         if bad_keys:

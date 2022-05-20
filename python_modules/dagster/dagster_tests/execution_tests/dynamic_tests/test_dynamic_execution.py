@@ -369,7 +369,6 @@ def define_real_dynamic_job():
 
     @op
     def subtask(input_number: int):
-        print(f"Found {input_number} cereals")
         return input_number
 
     @job
