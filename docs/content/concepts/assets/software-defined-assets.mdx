@@ -142,7 +142,7 @@ There are a couple ways in Dagit to launch a run that materializes assets:
 - Navigate to the Asset Details Page for the asset and click the "Materialize" button in the upper right corner.
 - In the graph view of the Asset Catalog page, click the "Materialize" button in the upper right corner. You can click on assets to collect a subset to materialize.
 
-## Source assets - representing assets are generated somewhere else
+## Source assets - representing assets that are generated somewhere else
 
 It's common for software-defined assets to depend on assets that are generated somewhere else. For example, your data warehouse might contain a set of tables that another team is responsible for ingesting, but that your assets are derived from. To allow the assets in your <PyObject object="AssetGroup" /> to depend on them, you can include <PyObject object="SourceAsset" />s that represent them.
 
