@@ -35,7 +35,7 @@ class PipelineRunObservableSubscribe:
         chunk_size = get_chunk_size()
         connection = self.instance.get_records_for_run(self.run_id, self.cursor, limit=chunk_size)
         events = [record.event_log_entry for record in connection.records]
-        self.observer.on_next((events, connection.has_more))
+        self.observer.on_next((events, connection.has_more, connection.cursor))
         self.cursor = connection.cursor
 
         if connection.has_more:
@@ -73,7 +73,7 @@ class PipelineRunObservableSubscribe:
                 break
 
             events = [record.event_log_entry for record in connection.records]
-            self.observer.on_next((events, connection.has_more))
+            self.observer.on_next((events, connection.has_more, connection.cursor))
             self.cursor = connection.cursor
 
             if not connection.has_more:
@@ -98,6 +98,6 @@ class PipelineRunObservableSubscribe:
         elif self.state is State.LOADING:
             self.stopping.set()
 
-    def handle_new_event(self, new_event):
+    def handle_new_event(self, new_event, cursor):
         if self.observer:
-            self.observer.on_next(([new_event], False))
+            self.observer.on_next(([new_event], False, cursor))

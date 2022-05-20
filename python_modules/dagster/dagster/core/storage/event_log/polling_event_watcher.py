@@ -15,11 +15,11 @@ class CallbackAfterCursor(NamedTuple):
 
     cursor (str): Only process EventLogEntrys after the given cursor
     callback (Callable[[EventLogEntry], None]): callback passed from Observer
-        to call on new EventLogEntrys
+        to call on new EventLogEntrys, with a string cursor
     """
 
     cursor: Optional[str]
-    callback: Callable[[EventLogEntry], None]
+    callback: Callable[[EventLogEntry, str], None]
 
 
 class SqlPollingEventWatcher:
@@ -49,7 +49,7 @@ class SqlPollingEventWatcher:
         return _has_run_id
 
     def watch_run(
-        self, run_id: str, cursor: Optional[str], callback: Callable[[EventLogEntry], None]
+        self, run_id: str, cursor: Optional[str], callback: Callable[[EventLogEntry, str], None]
     ):
         run_id = check.str_param(run_id, "run_id")
         cursor = check.opt_str_param(cursor, "cursor")
@@ -63,7 +63,7 @@ class SqlPollingEventWatcher:
                 self._run_id_to_watcher_dict[run_id].start()
             self._run_id_to_watcher_dict[run_id].add_callback(cursor, callback)
 
-    def unwatch_run(self, run_id: str, handler: Callable[[EventLogEntry], None]):
+    def unwatch_run(self, run_id: str, handler: Callable[[EventLogEntry, str], None]):
         run_id = check.str_param(run_id, "run_id")
         handler = check.callable_param(handler, "handler")
         with self._dict_lock:
@@ -115,27 +115,27 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
     def should_thread_exit(self) -> threading.Event:
         return self._should_thread_exit
 
-    def add_callback(self, cursor: Optional[str], callback: Callable[[EventLogEntry], None]):
+    def add_callback(self, cursor: Optional[str], callback: Callable[[EventLogEntry, str], None]):
         """Observer has started watching this run.
             Add a callback to execute on new EventLogEntrys after the given cursor
 
         Args:
             cursor (Optional[str]): event log cursor for the callback to execute
-            callback (Callable[[EventLogEntry], None]): callback to update the Dagster UI
+            callback (Callable[[EventLogEntry, str], None]): callback to update the Dagster UI
         """
         cursor = check.opt_str_param(cursor, "cursor")
         callback = check.callable_param(callback, "callback")
         with self._callback_fn_list_lock:
             self._callback_fn_list.append(CallbackAfterCursor(cursor, callback))
 
-    def remove_callback(self, callback: Callable[[EventLogEntry], None]):
+    def remove_callback(self, callback: Callable[[EventLogEntry, str], None]):
         """Observer has stopped watching this run;
             Remove a callback from the list of callbacks to execute on new EventLogEntrys
 
             Also kill thread if no callbacks remaining (i.e. no Observers are watching this run_id)
 
         Args:
-            callback (Callable[[EventLogEntry], None]): callback to remove from list of callbacks
+            callback (Callable[[EventLogEntry, str], None]): callback to remove from list of callbacks
         """
         callback = check.callable_param(callback, "callback")
         with self._callback_fn_list_lock:
@@ -166,4 +166,7 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
                             or EventLogCursor.parse(callback_with_cursor.cursor).storage_id()
                             < event_record.storage_id
                         ):
-                            callback_with_cursor.callback(event_record.event_log_entry)
+                            callback_with_cursor.callback(
+                                event_record.event_log_entry,
+                                str(EventLogCursor.from_storage_id(event_record.storage_id)),
+                            )

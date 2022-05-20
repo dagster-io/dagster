@@ -19,7 +19,7 @@ import dagster.seven as seven
 from dagster.config.source import StringSource
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
-from dagster.core.storage.event_log.base import EventLogRecord, EventRecordsFilter
+from dagster.core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.core.storage.sql import (
     check_alembic_revision,
@@ -428,7 +428,9 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
         for record in connection.records:
             status = None
             try:
-                status = self._cb(record.event_log_entry)
+                status = self._cb(
+                    record.event_log_entry, str(EventLogCursor.from_storage_id(record.storage_id))
+                )
             except Exception:
                 logging.exception("Exception in callback for event watch on run %s.", self._run_id)
 

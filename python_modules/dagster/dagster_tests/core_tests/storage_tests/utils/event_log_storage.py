@@ -408,7 +408,7 @@ class TestEventLogStorage:
             pytest.skip("storage cannot watch runs")
 
         watched = []
-        watcher = lambda x: watched.append(x)  # pylint: disable=unnecessary-lambda
+        watcher = lambda x, y: watched.append(x)  # pylint: disable=unnecessary-lambda
 
         assert len(storage.get_logs_for_run(test_run_id)) == 0
 
@@ -759,7 +759,7 @@ class TestEventLogStorage:
 
         event_list = []
 
-        storage.watch(test_run_id, None, lambda x: event_list.append(x))
+        storage.watch(test_run_id, None, lambda x, _y: event_list.append(x))
 
         events, _ = _synthesize_events(return_one_solid_func, run_id=test_run_id)
         for event in events:
@@ -782,7 +782,7 @@ class TestEventLogStorage:
         with create_and_delete_test_runs(instance, [run_id_one, run_id_two]):
             # only watch one of the runs
             event_list = []
-            storage.watch(run_id_two, None, lambda x: event_list.append(x))
+            storage.watch(run_id_two, None, lambda x, _y: event_list.append(x))
 
             events_one, _result_one = _synthesize_events(return_one_solid_func, run_id=run_id_one)
             for event in events_one:
@@ -811,8 +811,8 @@ class TestEventLogStorage:
 
         with create_and_delete_test_runs(instance, [run_id_one, run_id_two]):
 
-            storage.watch(run_id_one, None, lambda x: event_list_one.append(x))
-            storage.watch(run_id_two, None, lambda x: event_list_two.append(x))
+            storage.watch(run_id_one, None, lambda x, _y: event_list_one.append(x))
+            storage.watch(run_id_two, None, lambda x, _y: event_list_two.append(x))
 
             events_one, _result_one = _synthesize_events(return_one_solid_func, run_id=run_id_one)
             for event in events_one:
@@ -1364,7 +1364,7 @@ class TestEventLogStorage:
         class CBException(Exception):
             pass
 
-        def _throw(_):
+        def _throw(_x, _y):
             raise CBException("problem in watch callback")
 
         err_events, _ = _synthesize_events(return_one_solid_func, run_id=err_run_id)
@@ -1373,7 +1373,7 @@ class TestEventLogStorage:
         event_list = []
 
         storage.watch(err_run_id, None, _throw)
-        storage.watch(safe_run_id, None, lambda x: event_list.append(x))
+        storage.watch(safe_run_id, None, lambda x, _y: event_list.append(x))
 
         for event in err_events:
             storage.store_event(event)
@@ -1401,7 +1401,7 @@ class TestEventLogStorage:
         err_run_id = make_new_run_id()
         safe_run_id = make_new_run_id()
 
-        def _unsub(_):
+        def _unsub(_x, _y):
             storage.end_watch(err_run_id, _unsub)
 
         err_events, _ = _synthesize_events(return_one_solid_func, run_id=err_run_id)
@@ -1414,7 +1414,7 @@ class TestEventLogStorage:
         storage.watch(err_run_id, None, _unsub)
 
         # Other active watches should proceed correctly.
-        storage.watch(safe_run_id, None, lambda x: event_list.append(x))
+        storage.watch(safe_run_id, None, lambda x, _y: event_list.append(x))
 
         for event in err_events:
             storage.store_event(event)

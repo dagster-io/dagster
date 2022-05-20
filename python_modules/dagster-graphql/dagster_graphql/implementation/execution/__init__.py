@@ -152,7 +152,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
     run = record.pipeline_run
 
     def _handle_events(payload):
-        events, loading_past = payload
+        events, loading_past, _cursor = payload
         return GraphenePipelineRunLogsSubscriptionSuccess(
             run=GrapheneRun(record),
             messages=[from_event_record(event, run.pipeline_name) for event in events],

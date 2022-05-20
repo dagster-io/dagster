@@ -29,18 +29,24 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
         watched_1 = []
         watched_2 = []
 
+        def watch_one(event, _cursor):
+            watched_1.append(event)
+
+        def watch_two(event, _cursor):
+            watched_2.append(event)
+
         assert len(storage.get_logs_for_run(run_id)) == 0
 
         storage.store_event(create_test_event_log_record(str(1), run_id=run_id))
         assert len(storage.get_logs_for_run(run_id)) == 1
         assert len(watched_1) == 0
 
-        storage.watch(run_id, str(EventLogCursor.from_storage_id(1)), watched_1.append)
+        storage.watch(run_id, str(EventLogCursor.from_storage_id(1)), watch_one)
 
         storage.store_event(create_test_event_log_record(str(2), run_id=run_id))
         storage.store_event(create_test_event_log_record(str(3), run_id=run_id))
 
-        storage.watch(run_id, str(EventLogCursor.from_storage_id(3)), watched_2.append)
+        storage.watch(run_id, str(EventLogCursor.from_storage_id(3)), watch_two)
         storage.store_event(create_test_event_log_record(str(4), run_id=run_id))
 
         attempts = 10
@@ -52,7 +58,7 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
         assert len(watched_1) == 3
         assert len(watched_2) == 1
 
-        storage.end_watch(run_id, watched_1.append)
+        storage.end_watch(run_id, watch_one)
         time.sleep(0.3)  # this value scientifically selected from a range of attractive values
         storage.store_event(create_test_event_log_record(str(5), run_id=run_id))
 
@@ -60,7 +66,7 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
         while len(watched_2) < 2 and attempts > 0:
             time.sleep(0.1)
             attempts -= 1
-        storage.end_watch(run_id, watched_2.append)
+        storage.end_watch(run_id, watch_two)
 
         assert len(storage.get_logs_for_run(run_id)) == 5
         assert len(watched_1) == 3

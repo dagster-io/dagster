@@ -51,7 +51,9 @@ def watcher_thread(
                         callback_with_cursor.cursor is None
                         or EventLogCursor.parse(callback_with_cursor.cursor).storage_id() < index
                     ):
-                        callback_with_cursor.callback(dagster_event)
+                        callback_with_cursor.callback(
+                            dagster_event, str(EventLogCursor.from_storage_id(index))
+                        )
                 except:
                     logging.exception("Exception in callback for event watch on run %s.", run_id)
 
@@ -78,7 +80,7 @@ class PostgresEventWatcher:
         self,
         run_id: str,
         cursor: Optional[str],
-        callback: Callable[[EventLogEntry], None],
+        callback: Callable[[EventLogEntry, str], None],
         start_timeout=15,
     ):
         check.str_param(run_id, "run_id")
@@ -112,7 +114,7 @@ class PostgresEventWatcher:
         with self._dict_lock:
             self._handlers_dict[run_id].append(CallbackAfterCursor(cursor, callback))
 
-    def unwatch_run(self, run_id: str, handler: Callable[[EventLogEntry], None]):
+    def unwatch_run(self, run_id: str, handler: Callable[[EventLogEntry, str], None]):
         check.str_param(run_id, "run_id")
         check.callable_param(handler, "handler")
         with self._dict_lock:

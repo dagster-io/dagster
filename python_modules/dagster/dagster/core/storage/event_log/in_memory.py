@@ -120,6 +120,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         check.inst_param(event, "event", EventLogEntry)
         run_id = event.run_id
         self._logs[run_id].append(event)
+        offset = len(self._log[run_id])
 
         if (
             event.is_dagster_event
@@ -137,7 +138,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
 
         for handler in handlers:
             try:
-                handler(event)
+                handler(event, str(EventLogCursor.from_offset(offset)))
             except Exception:
                 logging.exception("Exception in callback for event watch on run %s.", run_id)
 

@@ -9,6 +9,7 @@ from watchdog.observers import Observer
 
 import dagster._check as check
 from dagster.config.source import StringSource
+from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.sql import (
     check_alembic_revision,
@@ -156,7 +157,10 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             for record in connection.records:
                 status = None
                 try:
-                    status = callback(record.event_log_entry)
+                    status = callback(
+                        record.event_log_entry,
+                        str(EventLogCursor.from_storage_id(record.storage_id)),
+                    )
                 except Exception:
                     logging.exception("Exception in callback for event watch on run %s.", run_id)
 

@@ -78,18 +78,24 @@ def test_using_logstorage():
         watched_1 = []
         watched_2 = []
 
+        def watch_one(event, _cursor):
+            watched_1.append(event)
+
+        def watch_two(event, _cursor):
+            watched_2.append(event)
+
         assert len(storage.get_logs_for_run(RUN_ID)) == 0
 
         storage.store_event(create_event(1))
         assert len(storage.get_logs_for_run(RUN_ID)) == 1
         assert len(watched_1) == 0
 
-        storage.watch(RUN_ID, str(EventLogCursor.from_storage_id(1)), watched_1.append)
+        storage.watch(RUN_ID, str(EventLogCursor.from_storage_id(1)), watch_one)
 
         storage.store_event(create_event(2))
         storage.store_event(create_event(3))
 
-        storage.watch(RUN_ID, str(EventLogCursor.from_storage_id(3)), watched_2.append)
+        storage.watch(RUN_ID, str(EventLogCursor.from_storage_id(3)), watch_two)
         storage.store_event(create_event(4))
 
         attempts = 10
@@ -101,7 +107,7 @@ def test_using_logstorage():
         assert len(watched_1) == 3
         assert len(watched_2) == 1
 
-        storage.end_watch(RUN_ID, watched_1.append)
+        storage.end_watch(RUN_ID, watch_one)
         time.sleep(0.3)  # this value scientifically selected from a range of attractive values
         storage.store_event(create_event(5))
 
@@ -109,7 +115,7 @@ def test_using_logstorage():
         while len(watched_2) < 2 and attempts > 0:
             time.sleep(0.1)
             attempts -= 1
-        storage.end_watch(RUN_ID, watched_2.append)
+        storage.end_watch(RUN_ID, watch_two)
 
         assert len(storage.get_logs_for_run(RUN_ID)) == 5
         assert len(watched_1) == 3
