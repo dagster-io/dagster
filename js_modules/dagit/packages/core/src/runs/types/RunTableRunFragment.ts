@@ -9,6 +9,17 @@ import { RunStatus } from "./../../types/globalTypes";
 // GraphQL fragment: RunTableRunFragment
 // ====================================================
 
+export interface RunTableRunFragment_assetNodesToExecute_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface RunTableRunFragment_assetNodesToExecute {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: RunTableRunFragment_assetNodesToExecute_assetKey;
+}
+
 export interface RunTableRunFragment_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
@@ -33,6 +44,7 @@ export interface RunTableRunFragment {
   runId: string;
   status: RunStatus;
   stepKeysToExecute: string[] | null;
+  assetNodesToExecute: RunTableRunFragment_assetNodesToExecute[] | null;
   canTerminate: boolean;
   mode: string;
   rootRunId: string | null;

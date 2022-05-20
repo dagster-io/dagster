@@ -12,10 +12,10 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
 import {Run} from './Run';
+import {RunAssetKeyTags} from './RunAssetKeyTags';
 import {RunConfigDialog, RunDetails} from './RunDetails';
 import {RunFragments} from './RunFragments';
 import {RunStatusTag} from './RunStatusTag';
-import {RunStepKeysAssetList} from './RunStepKeysAssetList';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRootQuery';
 
 export const RunRoot = () => {
@@ -39,6 +39,10 @@ export const RunRoot = () => {
     () => !!(run && repoMatch && isThisThingAJob(repoMatch.match, run.pipelineName)),
     [run, repoMatch],
   );
+
+  const assetKeys = React.useMemo(() => (run?.assetNodesToExecute || []).map((a) => a.assetKey), [
+    run,
+  ]);
 
   return (
     <div
@@ -68,66 +72,71 @@ export const RunRoot = () => {
             run ? (
               <>
                 <RunStatusTag status={run.status} />
-                {!isAssetGroup(run.pipelineName) ? (
-                  <Tag icon="run">
-                    Run of{' '}
-                    <PipelineReference
-                      pipelineName={run?.pipelineName}
-                      pipelineHrefContext={repoAddress || 'repo-unknown'}
-                      snapshotId={snapshotID}
-                      size="small"
-                      isJob={isJob}
-                    />
-                  </Tag>
+                {isAssetGroup(run.pipelineName) ? (
+                  <RunAssetKeyTags assetKeys={assetKeys} clickableTags />
                 ) : (
-                  <RunStepKeysAssetList stepKeys={run.stepKeysToExecute} clickableTags />
+                  <>
+                    <Tag icon="run">
+                      Run of{' '}
+                      <PipelineReference
+                        pipelineName={run?.pipelineName}
+                        pipelineHrefContext={repoAddress || 'repo-unknown'}
+                        snapshotId={snapshotID}
+                        size="small"
+                        isJob={isJob}
+                      />
+                    </Tag>
+                    <RunAssetKeyTags assetKeys={run.assets.map((a) => a.key)} clickableTags />
+                  </>
                 )}
-                {run?.startTime ? (
-                  <Popover
-                    interactionKind="hover"
-                    placement="bottom"
-                    content={
-                      <Box padding={16}>
-                        <RunDetails run={run} loading={loading} />
-                      </Box>
-                    }
-                  >
+                <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>
+                  {run?.startTime ? (
+                    <Popover
+                      interactionKind="hover"
+                      placement="bottom"
+                      content={
+                        <Box padding={16}>
+                          <RunDetails run={run} loading={loading} />
+                        </Box>
+                      }
+                    >
+                      <Tag icon="schedule">
+                        <TimestampDisplay
+                          timestamp={run.startTime}
+                          timeFormat={{showSeconds: true, showTimezone: false}}
+                        />
+                      </Tag>
+                    </Popover>
+                  ) : run.updateTime ? (
                     <Tag icon="schedule">
                       <TimestampDisplay
-                        timestamp={run.startTime}
+                        timestamp={run.updateTime}
                         timeFormat={{showSeconds: true, showTimezone: false}}
                       />
                     </Tag>
-                  </Popover>
-                ) : run.updateTime ? (
-                  <Tag icon="schedule">
-                    <TimestampDisplay
-                      timestamp={run.updateTime}
-                      timeFormat={{showSeconds: true, showTimezone: false}}
-                    />
-                  </Tag>
-                ) : undefined}
-                {run?.startTime && run?.endTime ? (
-                  <Popover
-                    interactionKind="hover"
-                    placement="bottom"
-                    content={
-                      <Box padding={16}>
-                        <RunDetails run={run} loading={loading} />
-                      </Box>
-                    }
-                  >
-                    <Tag icon="timer">
-                      <span style={{fontVariantNumeric: 'tabular-nums'}}>
-                        {run?.startTime
-                          ? formatElapsedTime(
-                              (run?.endTime * 1000 || Date.now()) - run?.startTime * 1000,
-                            )
-                          : '–'}
-                      </span>
-                    </Tag>
-                  </Popover>
-                ) : null}
+                  ) : undefined}
+                  {run?.startTime && run?.endTime ? (
+                    <Popover
+                      interactionKind="hover"
+                      placement="bottom"
+                      content={
+                        <Box padding={16}>
+                          <RunDetails run={run} loading={loading} />
+                        </Box>
+                      }
+                    >
+                      <Tag icon="timer">
+                        <span style={{fontVariantNumeric: 'tabular-nums'}}>
+                          {run?.startTime
+                            ? formatElapsedTime(
+                                (run?.endTime * 1000 || Date.now()) - run?.startTime * 1000,
+                              )
+                            : '–'}
+                        </span>
+                      </Tag>
+                    </Popover>
+                  ) : null}
+                </Box>
               </>
             ) : null
           }

@@ -24,7 +24,7 @@ export const PageHeader = (props: Props) => {
       border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
     >
       <Box flex={{direction: 'row', justifyContent: 'space-between'}} padding={{bottom: 16}}>
-        <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12}}>
+        <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>
           {title}
           {tags}
         </Box>
