@@ -3,7 +3,6 @@ import {Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {doneStatuses} from '../runs/RunStatuses';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {BulkActionStatus} from '../types/globalTypes';
 
@@ -26,13 +25,13 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
   if (!backfill) {
     return null;
   }
-  const numUnscheduled = (backfill.partitionNames.length || 0) - (backfill.numRequested || 0);
-  const cancelableRuns = backfill.runs.filter(
-    (run) => !doneStatuses.has(run?.status) && run.canTerminate,
+  const numUnscheduled = (backfill.numPartitions || 0) - (backfill.numRequested || 0);
+  const unfinishedRuns = backfill.unfinishedRuns;
+
+  const unfinishedMap = unfinishedRuns?.reduce(
+    (accum, run) => ({...accum, [run.id]: run.canTerminate}),
+    {},
   );
-  const unfinishedMap = backfill.runs
-    .filter((run) => !doneStatuses.has(run?.status))
-    .reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {});
 
   const cancel = async () => {
     setIsSubmitting(true);
@@ -71,7 +70,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
         isOpen={
           !!backfill &&
           (!numUnscheduled || backfill.status !== 'REQUESTED') &&
-          !!cancelableRuns.length
+          !!unfinishedRuns.length
         }
         onClose={onClose}
         onComplete={onComplete}

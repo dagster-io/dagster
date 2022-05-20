@@ -119,13 +119,9 @@ export const BackfillTable = ({
     }
   };
 
-  const cancelableRuns = cancelRunBackfill?.runs.filter(
-    (run) => !doneStatuses.has(run?.status) && run.canTerminate,
-  );
+  const unfinishedRuns = cancelRunBackfill?.unfinishedRuns;
   const unfinishedMap =
-    cancelRunBackfill?.runs
-      .filter((run) => !doneStatuses.has(run?.status))
-      .reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {}) || {};
+    unfinishedRuns?.reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {}) || {};
 
   return (
     <>
@@ -170,7 +166,7 @@ export const BackfillTable = ({
         onComplete={() => refetch()}
       />
       <TerminationDialog
-        isOpen={!!cancelableRuns?.length}
+        isOpen={!!unfinishedRuns?.length}
         onClose={() => setCancelRunBackfill(undefined)}
         onComplete={() => refetch()}
         selectedRuns={unfinishedMap}
@@ -523,8 +519,18 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
   fragment BackfillTableFragment on PartitionBackfill {
     backfillId
     status
+    backfillStatus
     numRequested
     partitionNames
+    numPartitions
+    partitionRunStats {
+      numQueued
+      numInProgress
+      numSucceeded
+      numFailed
+      numPartitionsWithRuns
+      numTotalRuns
+    }
     runs {
       id
       canTerminate
@@ -533,6 +539,10 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
         key
         value
       }
+    }
+    unfinishedRuns {
+      id
+      canTerminate
     }
     timestamp
     partitionSetName

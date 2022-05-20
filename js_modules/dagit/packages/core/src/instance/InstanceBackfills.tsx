@@ -31,19 +31,11 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {
-  doneStatuses,
-  failedStatuses,
-  inProgressStatuses,
-  queuedStatuses,
-  successStatuses,
-} from '../runs/RunStatuses';
-import {DagsterTag} from '../runs/RunTag';
 import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {BulkActionStatus, RunStatus} from '../types/globalTypes';
+import {BulkActionStatus} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -60,7 +52,6 @@ import {
   InstanceBackfillsQueryVariables,
   InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results,
   InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet,
-  InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs,
 } from './types/InstanceBackfillsQuery';
 import {
   InstanceBackfillsQueryNew,
@@ -70,7 +61,6 @@ import {InstanceHealthForBackfillsQuery} from './types/InstanceHealthForBackfill
 import {resumeBackfill, resumeBackfillVariables} from './types/resumeBackfill';
 
 type Backfill = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results;
-type BackfillRun = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs;
 
 const PAGE_SIZE = 25;
 
@@ -326,13 +316,9 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
     }
   };
 
-  const cancelableRuns = cancelRunBackfill?.runs.filter(
-    (run) => !doneStatuses.has(run?.status) && run.canTerminate,
-  );
+  const unfinishedRuns = cancelRunBackfill?.unfinishedRuns;
   const unfinishedMap =
-    cancelRunBackfill?.runs
-      .filter((run) => !doneStatuses.has(run?.status))
-      .reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {}) || {};
+    unfinishedRuns?.reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {}) || {};
 
   return (
     <>
@@ -364,7 +350,7 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
         onComplete={() => refetch()}
       />
       <TerminationDialog
-        isOpen={!!cancelableRuns?.length}
+        isOpen={!!unfinishedRuns?.length}
         onClose={() => setCancelRunBackfill(undefined)}
         onComplete={() => refetch()}
         selectedRuns={unfinishedMap}
@@ -418,7 +404,7 @@ const BackfillRow = ({
       })
     : null;
 
-  const canCancel = backfill.runs.some((run) => run.canTerminate);
+  const canCancel = backfill.unfinishedRuns.length > 0;
 
   return (
     <tr>
@@ -529,38 +515,16 @@ const TagButton = styled.button`
 `;
 
 const getProgressCounts = (backfill: Backfill) => {
-  const byPartitionRuns: {[key: string]: BackfillRun} = {};
-  backfill.runs.forEach((run) => {
-    const [runPartitionName] = run.tags
-      .filter((tag) => tag.key === DagsterTag.Partition)
-      .map((tag) => tag.value);
+  const partitionRunStats = backfill.partitionRunStats;
+  const numTotal = backfill.numPartitions;
 
-    if (runPartitionName && !byPartitionRuns[runPartitionName]) {
-      byPartitionRuns[runPartitionName] = run;
-    }
-  });
-
-  const latestPartitionRuns = Object.values(byPartitionRuns);
-  const {numQueued, numInProgress, numSucceeded, numFailed} = latestPartitionRuns.reduce(
-    (accum: any, {status}: {status: RunStatus}) => {
-      return {
-        numQueued: accum.numQueued + (queuedStatuses.has(status) ? 1 : 0),
-        numInProgress: accum.numInProgress + (inProgressStatuses.has(status) ? 1 : 0),
-        numSucceeded: accum.numSucceeded + (successStatuses.has(status) ? 1 : 0),
-        numFailed: accum.numFailed + (failedStatuses.has(status) ? 1 : 0),
-      };
-    },
-    {numQueued: 0, numInProgress: 0, numSucceeded: 0, numFailed: 0},
-  );
-
-  const numTotal = backfill.partitionNames.length;
   return {
-    numQueued,
-    numInProgress,
-    numSucceeded,
-    numFailed,
+    numQueued: partitionRunStats.numQueued,
+    numInProgress: partitionRunStats.numInProgress,
+    numSucceeded: partitionRunStats.numSucceeded,
+    numFailed: partitionRunStats.numFailed,
     numUnscheduled: numTotal - backfill.numRequested,
-    numSkipped: backfill.numRequested - latestPartitionRuns.length,
+    numSkipped: backfill.numRequested - partitionRunStats.numPartitionsWithRuns,
     numTotal,
   };
 };
@@ -703,16 +667,20 @@ const BACKFILLS_QUERY = gql`
         results {
           backfillId
           status
+          backfillStatus
           numRequested
-          partitionNames
-          runs {
+          numPartitions
+          partitionRunStats {
+            numQueued
+            numInProgress
+            numSucceeded
+            numFailed
+            numPartitionsWithRuns
+            numTotalRuns
+          }
+          unfinishedRuns {
             id
             canTerminate
-            status
-            tags {
-              key
-              value
-            }
           }
           timestamp
           partitionSetName
@@ -730,8 +698,6 @@ const BACKFILLS_QUERY = gql`
           error {
             ...PythonErrorFragment
           }
-
-          ...BackfillTableFragment
         }
       }
       ...PythonErrorFragment
@@ -739,7 +705,6 @@ const BACKFILLS_QUERY = gql`
   }
 
   ${PYTHON_ERROR_FRAGMENT}
-  ${BACKFILL_TABLE_FRAGMENT}
 `;
 
 const BACKFILLS_QUERY_NEW = gql`
@@ -749,16 +714,21 @@ const BACKFILLS_QUERY_NEW = gql`
         results {
           backfillId
           status
+          backfillStatus
           numRequested
           partitionNames
-          runs {
+          numPartitions
+          partitionRunStats {
+            numQueued
+            numInProgress
+            numSucceeded
+            numFailed
+            numPartitionsWithRuns
+            numTotalRuns
+          }
+          unfinishedRuns {
             id
             canTerminate
-            status
-            tags {
-              key
-              value
-            }
           }
           timestamp
           partitionSetName

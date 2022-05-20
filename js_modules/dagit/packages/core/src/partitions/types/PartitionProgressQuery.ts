@@ -3,24 +3,26 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { BulkActionStatus, RunStatus } from "./../../types/globalTypes";
+import { BulkActionStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PartitionProgressQuery
 // ====================================================
 
-export interface PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_runs_tags {
-  __typename: "PipelineTag";
-  key: string;
-  value: string;
+export interface PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_partitionRunStats {
+  __typename: "BackfillRunStats";
+  numQueued: number;
+  numInProgress: number;
+  numSucceeded: number;
+  numFailed: number;
+  numPartitionsWithRuns: number;
+  numTotalRuns: number;
 }
 
-export interface PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_runs {
+export interface PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_unfinishedRuns {
   __typename: "Run";
   id: string;
   canTerminate: boolean;
-  status: RunStatus;
-  tags: PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_runs_tags[];
 }
 
 export interface PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill {
@@ -29,7 +31,9 @@ export interface PartitionProgressQuery_partitionBackfillOrError_PartitionBackfi
   status: BulkActionStatus;
   numRequested: number;
   partitionNames: string[];
-  runs: PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_runs[];
+  numPartitions: number;
+  partitionRunStats: PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_partitionRunStats;
+  unfinishedRuns: PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_unfinishedRuns[];
 }
 
 export interface PartitionProgressQuery_partitionBackfillOrError_PythonError_cause {
@@ -53,5 +57,4 @@ export interface PartitionProgressQuery {
 
 export interface PartitionProgressQueryVariables {
   backfillId: string;
-  limit?: number | null;
 }

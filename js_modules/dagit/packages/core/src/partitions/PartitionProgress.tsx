@@ -13,14 +13,6 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {RunStatusDot} from '../runs/RunStatusDots';
-import {
-  doneStatuses,
-  failedStatuses,
-  inProgressStatuses,
-  queuedStatuses,
-  successStatuses,
-} from '../runs/RunStatuses';
-import {DagsterTag} from '../runs/RunTag';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {RunStatus} from '../types/globalTypes';
 import {RepoAddress} from '../workspace/types';
@@ -30,15 +22,12 @@ import {
   PartitionProgressQuery,
   PartitionProgressQueryVariables,
   PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill,
-  PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_runs,
 } from './types/PartitionProgressQuery';
 interface Props {
   pipelineName: string;
   repoAddress: RepoAddress;
   backfillId: string;
 }
-
-type BackfillRun = PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_runs;
 
 export const PartitionProgress = (props: Props) => {
   const {pipelineName, repoAddress, backfillId} = props;
@@ -52,7 +41,6 @@ export const PartitionProgress = (props: Props) => {
       notifyOnNetworkStatusChange: true,
       variables: {
         backfillId,
-        limit: 100000,
       },
     },
   );
@@ -80,44 +68,21 @@ export const PartitionProgress = (props: Props) => {
     if (!results) {
       return null;
     }
-    const byPartitionRuns: {[key: string]: BackfillRun} = {};
-    results.runs.forEach((run) => {
-      const [runPartitionName] = run.tags
-        .filter((tag) => tag.key === DagsterTag.Partition)
-        .map((tag) => tag.value);
-
-      if (runPartitionName && !byPartitionRuns[runPartitionName]) {
-        byPartitionRuns[runPartitionName] = run;
-      }
-    });
-
-    const latestPartitionRuns = Object.values(byPartitionRuns);
-
-    const {numQueued, numInProgress, numSucceeded, numFailed} = latestPartitionRuns.reduce(
-      (accum, {status}) => {
-        return {
-          numQueued: accum.numQueued + (queuedStatuses.has(status) ? 1 : 0),
-          numInProgress: accum.numInProgress + (inProgressStatuses.has(status) ? 1 : 0),
-          numSucceeded: accum.numSucceeded + (successStatuses.has(status) ? 1 : 0),
-          numFailed: accum.numFailed + (failedStatuses.has(status) ? 1 : 0),
-        };
-      },
-      {numQueued: 0, numInProgress: 0, numSucceeded: 0, numFailed: 0},
-    );
+    const partitionRunStats = results.partitionRunStats;
     return {
-      numQueued,
-      numInProgress,
-      numSucceeded,
-      numFailed,
-      numPartitionRuns: latestPartitionRuns.length,
-      numTotalRuns: results.runs.length,
+      numQueued: partitionRunStats.numQueued,
+      numInProgress: partitionRunStats.numInProgress,
+      numSucceeded: partitionRunStats.numSucceeded,
+      numFailed: partitionRunStats.numFailed,
+      numPartitionsWithRuns: partitionRunStats.numPartitionsWithRuns,
+      numTotalRuns: partitionRunStats.numTotalRuns,
     };
   }, [results]);
 
   React.useEffect(() => {
     if (counts) {
-      const {numPartitionRuns, numSucceeded, numFailed} = counts;
-      setShouldPoll(numPartitionRuns !== numSucceeded + numFailed);
+      const {numPartitionsWithRuns, numSucceeded, numFailed} = counts;
+      setShouldPoll(numPartitionsWithRuns !== numSucceeded + numFailed);
     }
   }, [counts]);
 
@@ -130,14 +95,14 @@ export const PartitionProgress = (props: Props) => {
     numInProgress,
     numSucceeded,
     numFailed,
-    numPartitionRuns,
+    numPartitionsWithRuns,
     numTotalRuns,
   } = counts;
   const numFinished = numSucceeded + numFailed;
   const numTotal = results.partitionNames.length;
   const unscheduled = numTotal - results.numRequested;
 
-  const skipped = results.numRequested - numPartitionRuns;
+  const skipped = results.numRequested - numPartitionsWithRuns;
 
   const table = (
     <TooltipTable>
@@ -174,9 +139,9 @@ export const PartitionProgress = (props: Props) => {
     </TooltipTable>
   );
 
-  const unfinishedMap: {[id: string]: boolean} = results.runs
-    .filter((run) => !doneStatuses.has(run?.status))
-    .reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {});
+  const unfinishedRuns = results.unfinishedRuns;
+  const unfinishedMap =
+    unfinishedRuns?.reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {}) || {};
 
   return (
     <Box flex={{alignItems: 'center', grow: 1, justifyContent: 'space-between'}}>
@@ -285,21 +250,25 @@ const TooltipTable = styled.table`
 `;
 
 const PARTITION_PROGRESS_QUERY = gql`
-  query PartitionProgressQuery($backfillId: String!, $limit: Int) {
+  query PartitionProgressQuery($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
         backfillId
         status
         numRequested
         partitionNames
-        runs(limit: $limit) {
+        numPartitions
+        partitionRunStats {
+          numQueued
+          numInProgress
+          numSucceeded
+          numFailed
+          numPartitionsWithRuns
+          numTotalRuns
+        }
+        unfinishedRuns {
           id
           canTerminate
-          status
-          tags {
-            key
-            value
-          }
         }
       }
       ...PythonErrorFragment
