@@ -184,10 +184,6 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         except Exception:
             return None
 
-    def can_terminate(self, run_id):
-        run = self._instance.get_run_by_id(run_id)
-        return self._get_container(run) != None
-
     def terminate(self, run_id):
         run = self._instance.get_run_by_id(run_id)
         container = self._get_container(run)

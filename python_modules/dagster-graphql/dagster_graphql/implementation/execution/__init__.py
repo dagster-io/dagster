@@ -70,10 +70,11 @@ def terminate_pipeline_execution(instance, run_id, terminate_policy):
     run = record.pipeline_run
     graphene_run = GrapheneRun(record)
 
-    valid_status = not run.is_finished and (
-        force_mark_as_canceled
-        or (run.status == PipelineRunStatus.STARTED or run.status == PipelineRunStatus.QUEUED)
+    can_cancel_run = (
+        run.status == PipelineRunStatus.STARTED or run.status == PipelineRunStatus.QUEUED
     )
+
+    valid_status = not run.is_finished and (force_mark_as_canceled or can_cancel_run)
 
     if not valid_status:
         return GrapheneTerminateRunFailure(
@@ -85,7 +86,7 @@ def terminate_pipeline_execution(instance, run_id, terminate_policy):
 
     if force_mark_as_canceled:
         try:
-            if instance.run_coordinator and instance.run_coordinator.can_cancel_run(run_id):
+            if instance.run_coordinator and can_cancel_run:
                 instance.run_coordinator.cancel_run(run_id)
         except:
             instance.report_engine_event(
@@ -98,11 +99,7 @@ def terminate_pipeline_execution(instance, run_id, terminate_policy):
             )
         return _force_mark_as_canceled(instance, run_id)
 
-    if (
-        instance.run_coordinator
-        and instance.run_coordinator.can_cancel_run(run_id)
-        and instance.run_coordinator.cancel_run(run_id)
-    ):
+    if instance.run_coordinator and can_cancel_run and instance.run_coordinator.cancel_run(run_id):
         return GrapheneTerminateRunSuccess(graphene_run)
 
     return GrapheneTerminateRunFailure(

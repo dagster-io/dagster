@@ -43,12 +43,6 @@ class RunCoordinator(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def can_cancel_run(self, run_id):
-        """
-        Can this run_id be canceled
-        """
-
-    @abstractmethod
     def cancel_run(self, run_id):
         """
         Cancels a run. The run may be queued in the coordinator, or it may have been launched.

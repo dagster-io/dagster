@@ -145,15 +145,6 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             check.failed(f"Failed to reload run {pipeline_run.run_id}")
         return run
 
-    def can_cancel_run(self, run_id):
-        run = self._instance.get_run_by_id(run_id)
-        if not run:
-            return False
-        if run.status == PipelineRunStatus.QUEUED:
-            return True
-        else:
-            return self._instance.run_launcher.can_terminate(run_id)
-
     def cancel_run(self, run_id):
         run = self._instance.get_run_by_id(run_id)
         if not run:

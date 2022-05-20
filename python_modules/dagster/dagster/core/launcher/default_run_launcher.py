@@ -4,22 +4,13 @@ from typing import cast
 import dagster.seven as seven
 from dagster import Bool, Field
 from dagster import _check as check
-from dagster.core.errors import (
-    DagsterInvariantViolationError,
-    DagsterLaunchFailedError,
-    DagsterUserCodeUnreachableError,
-)
+from dagster.core.errors import DagsterInvariantViolationError, DagsterLaunchFailedError
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import GRPC_INFO_TAG
 from dagster.grpc.client import DagsterGrpcClient
-from dagster.grpc.types import (
-    CanCancelExecutionRequest,
-    CancelExecutionRequest,
-    ExecuteExternalPipelineArgs,
-    StartRunResult,
-)
+from dagster.grpc.types import CancelExecutionRequest, ExecuteExternalPipelineArgs, StartRunResult
 from dagster.serdes import ConfigurableClass, deserialize_as, deserialize_json_to_dagster_namedtuple
 from dagster.utils import merge_dicts
 
@@ -145,23 +136,6 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             host=grpc_info.get("host"),
             use_ssl=bool(grpc_info.get("use_ssl", False)),
         )
-
-    def can_terminate(self, run_id):
-        check.str_param(run_id, "run_id")
-
-        client = self._get_grpc_client_for_termination(run_id)
-        if not client:
-            return False
-
-        try:
-            res = deserialize_json_to_dagster_namedtuple(
-                client.can_cancel_execution(CanCancelExecutionRequest(run_id=run_id), timeout=5)
-            )
-        except DagsterUserCodeUnreachableError:
-            # Server that created the run may no longer exist
-            return False
-
-        return res.can_cancel
 
     def terminate(self, run_id):
         check.str_param(run_id, "run_id")
