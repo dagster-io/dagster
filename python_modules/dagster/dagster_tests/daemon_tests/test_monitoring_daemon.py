@@ -50,9 +50,6 @@ class TestRunLauncher(RunLauncher, ConfigurableClass):
     def join(self, timeout=30):
         pass
 
-    def can_terminate(self, run_id):
-        raise NotImplementedError()
-
     def terminate(self, run_id):
         raise NotImplementedError()
 
