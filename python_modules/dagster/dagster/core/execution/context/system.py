@@ -651,11 +651,16 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         # should not load if re-executing the entire pipeline
         if self.pipeline_run.step_keys_to_execute is None:
             return False
-        # should not load if this step is being executed in the current run
+
+        # should not load if the entire dynamic step is being executed in the current run
         handle = StepHandle.parse_from_key(step_output_handle.step_key)
-        if isinstance(handle, ResolvedFromDynamicStepHandle):
-            # Should not load if the entire dynamic step is being executed in the current run
-            return handle.unresolved_form.to_key() not in self.pipeline_run.step_keys_to_execute
+        if (
+            isinstance(handle, ResolvedFromDynamicStepHandle)
+            and handle.unresolved_form.to_key() in self.pipeline_run.step_keys_to_execute
+        ):
+            return False
+
+        # should not load if this step is being executed in the current run
         return step_output_handle.step_key not in self.pipeline_run.step_keys_to_execute
 
     def _get_source_run_id(self, step_output_handle: StepOutputHandle) -> Optional[str]:
