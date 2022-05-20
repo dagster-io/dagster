@@ -33,7 +33,7 @@ import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
-import {closestNodeInDirection, isNodeOffscreen, isPointWayOffscreen} from '../graph/common';
+import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {
   GraphExplorerOptions,
@@ -55,7 +55,7 @@ import {PipelineSelector} from '../types/globalTypes';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
-import {AssetConnectedEdges, AssetDisconnectedEdges} from './AssetEdges';
+import {AssetConnectedEdges} from './AssetEdges';
 import {AssetNode, AssetNodeMinimal, NameMinimal} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
 import {OmittedAssetsNotice} from './OmittedAssetsNotice';
@@ -323,11 +323,6 @@ const AssetGraphExplorerWithData: React.FC<
     }
   };
 
-  const onGoToPoint = React.useCallback(
-    (p) => viewportEl.current?.zoomToSVGCoords(p.x, p.y, true),
-    [viewportEl],
-  );
-
   const allBundleNames = React.useMemo(() => {
     return Object.keys(identifyBundles(props.allAssetKeys.map((a) => JSON.stringify(a.path))));
   }, [props.allAssetKeys]);
@@ -365,27 +360,7 @@ const AssetGraphExplorerWithData: React.FC<
             >
               {({scale: _scale}, viewportRect) => (
                 <SVGContainer width={layout.width} height={layout.height}>
-                  <AssetConnectedEdges
-                    highlighted={highlighted}
-                    edges={
-                      experiments
-                        ? layout.edges.filter(
-                            (e) =>
-                              !isPointWayOffscreen(e.from, viewportRect) &&
-                              !isPointWayOffscreen(e.to, viewportRect),
-                          )
-                        : layout.edges
-                    }
-                  />
-                  {experiments && (
-                    <AssetDisconnectedEdges
-                      viewport={viewportRect}
-                      layout={layout}
-                      highlighted={highlighted}
-                      setHighlighted={setHighlighted}
-                      onGoToPoint={onGoToPoint}
-                    />
-                  )}
+                  <AssetConnectedEdges highlighted={highlighted} edges={layout.edges} />
 
                   {Object.values(layout.bundles)
                     .sort((a, b) => a.id.length - b.id.length)
