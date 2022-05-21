@@ -92,24 +92,17 @@ GET_ASSET_MATERIALIZATION_TIMESTAMP = """
 """
 
 GET_ASSET_IN_PROGRESS_RUNS = """
-    query AssetGraphQuery($repositorySelector: RepositorySelector!) {
-        repositoryOrError(repositorySelector: $repositorySelector) {
-            ... on Repository {
-                assetNodes {
-                    opName
-                    jobNames
-                    description
-                }
-                inProgressRunsByStep {
-                    stepKey
-                    unstartedRuns {
-                        runId
-                    }
-                    inProgressRuns {
-                        runId
-                    }
-                }
+    query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]) {
+        assetsLiveInfo(assetKeys: $assetKeys) {
+            assetKey {
+                path
             }
+            latestMaterialization {
+                timestamp
+                runId
+            }
+            unstartedRunIds
+            inProgressRunIds
         }
     }
 """
@@ -940,37 +933,38 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             result = execute_dagster_graphql(
                 graphql_context,
                 GET_ASSET_IN_PROGRESS_RUNS,
-                variables={"repositorySelector": infer_repository_selector(graphql_context)},
+                variables={
+                    "assetKeys": [
+                        {"path": "first_asset"},
+                        {"path": "hanging_asset"},
+                        {"path": "never_runs_asset"},
+                    ]
+                },
             )
             graphql_context.instance.run_launcher.terminate(run_id)
 
             assert result.data
-            assert result.data["repositoryOrError"]
-            assert result.data["repositoryOrError"]["inProgressRunsByStep"]
+            assert result.data["assetsLiveInfo"]
 
-            in_progress_runs_by_step = result.data["repositoryOrError"]["inProgressRunsByStep"]
+            assets_live_info = result.data["assetsLiveInfo"]
 
-            assert len(in_progress_runs_by_step) == 2
+            assets_live_info = sorted(assets_live_info, key=lambda res: res['assetKey']['path'])
+            assert len(assets_live_info) == 3
 
-            hanging_asset_status = in_progress_runs_by_step[0]
-            never_runs_asset_status = in_progress_runs_by_step[1]
-            # graphql endpoint returns unordered list of steps
-            # swap if never_runs_asset_status is first in list
-            if hanging_asset_status["stepKey"] != "hanging_asset":
-                never_runs_asset_status, hanging_asset_status = (
-                    hanging_asset_status,
-                    never_runs_asset_status,
-                )
+            assert assets_live_info[0]['assetKey']['path'] == ['first_asset']
+            assert assets_live_info[0]['latestMaterialization']['runId'] == 'foo'
+            assert assets_live_info[0]['unstartedRunIds'] == []
+            assert assets_live_info[0]['inProgressRunIds'] == []
 
-            assert hanging_asset_status["stepKey"] == "hanging_asset"
-            assert len(hanging_asset_status["inProgressRuns"]) == 1
-            assert hanging_asset_status["inProgressRuns"][0]["runId"] == run_id
-            assert len(hanging_asset_status["unstartedRuns"]) == 0
+            assert assets_live_info[1]['assetKey']['path'] == ['hanging_asset']
+            assert assets_live_info[1]['latestMaterialization'] == None
+            assert assets_live_info[1]['unstartedRunIds'] == []
+            assert assets_live_info[1]['inProgressRunIds'] == ['foo']
 
-            assert never_runs_asset_status["stepKey"] == "never_runs_asset"
-            assert len(never_runs_asset_status["inProgressRuns"]) == 0
-            assert len(never_runs_asset_status["unstartedRuns"]) == 1
-            assert never_runs_asset_status["unstartedRuns"][0]["runId"] == run_id
+            assert assets_live_info[2]['assetKey']['path'] == ['never_runs_asset']
+            assert assets_live_info[2]['latestMaterialization'] == None
+            assert assets_live_info[2]['unstartedRunIds'] == ['foo']
+            assert assets_live_info[2]['inProgressRunIds'] == []
 
 
 class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):

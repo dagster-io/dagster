@@ -245,7 +245,7 @@ export const buildLiveData = (
     const isPartitioned = graphNode.definition.partitionDefinition;
     const repo = repos.find((r) => r.id === liveNode.repository.id);
 
-    const runs = assetsLiveInfo.find(
+    const assetLiveRuns = assetsLiveInfo.find(
       (r) => JSON.stringify(r.assetKey) === JSON.stringify(liveNode.assetKey),
     );
     const info = repo?.latestRunByStep.find((r) => r.stepKey === liveNode.opName);
@@ -261,8 +261,8 @@ export const buildLiveData = (
     data[graphId] = {
       lastChanged,
       lastMaterialization,
-      inProgressRunIds: runs?.inProgressRunIds || [],
-      unstartedRunIds: runs?.unstartedRunIds || [],
+      inProgressRunIds: assetLiveRuns?.inProgressRunIds || [],
+      unstartedRunIds: assetLiveRuns?.unstartedRunIds || [],
       runWhichFailedToMaterialize,
       computeStatus: isSourceAsset(graphNode.definition)
         ? 'good' // foreign nodes are always considered up-to-date
@@ -275,7 +275,6 @@ export const buildLiveData = (
         : 'none',
     };
   }
-  console.log(data);
 
   for (const liveNodeId of Object.keys(data)) {
     data[liveNodeId].computeStatus = findComputeStatusForId(data, graph.upstream, liveNodeId);

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict
+from typing import Dict, Mapping, List
 
 from graphql.execution.base import ResolveInfo
 
@@ -12,6 +12,7 @@ from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatu
 from dagster.core.host_representation import PipelineSelector
 from dagster.core.storage.pipeline_run import PipelineRun, RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
+from dagster.core.storage.event_log.base import AssetRecord
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import UserFacingGraphQLError, capture_error
@@ -121,80 +122,14 @@ IN_PROGRESS_STATUSES = [
 ]
 
 
-def get_assets_live_info(graphene_info, step_keys_by_asset):
+def get_assets_live_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, List[str]]):
     from ..schema.asset_graph import GrapheneAssetLiveInfo
     from ..schema.logs.events import GrapheneMaterializationEvent
 
     instance = graphene_info.context.instance
 
-    asset_key_by_step_key = defaultdict(set)
-    for asset_key, step_keys in step_keys_by_asset.items():
-        for step_key in step_keys:
-            asset_key_by_step_key[step_key].add(asset_key)
-
+    # Get latest run ID for all selected assets
     asset_records = instance.get_asset_records(step_keys_by_asset.keys())
-    latest_run_ids = [asset_record.asset_entry.last_run_id for asset_record in asset_records]
-
-    in_progress_records = instance.get_run_records(
-        RunsFilter(run_ids=latest_run_ids, statuses=PENDING_STATUSES)
-    )
-
-    in_progress_run_ids_by_asset = defaultdict(set)
-    unstarted_run_ids_by_asset = defaultdict(set)
-
-    asset_step_keys = set()
-    for step_keys_for_asset in step_keys_by_asset.values():
-        asset_step_keys = asset_step_keys.union(set(step_keys_for_asset))
-
-    for record in in_progress_records:
-        run = record.pipeline_run
-        asset_selection = run.asset_selection
-        run_step_keys = graphene_info.context.instance.get_execution_plan_snapshot(
-            run.execution_plan_snapshot_id
-        ).step_keys_to_execute
-
-        run_generates_assets = len(set(run_step_keys).intersection(asset_step_keys)) > 0
-
-        if run_generates_assets:
-            if run.status in IN_PROGRESS_STATUSES:
-                step_stats = graphene_info.context.instance.get_run_step_stats(
-                    run.run_id, run_step_keys
-                )
-                step_stats_by_asset: Dict[AssetKey, List[RunStepKeyStatsSnapshot]] = {}
-                for step_stat in step_stats:
-                    asset_keys = asset_key_by_step_key[step_stat.step_key]
-                    for asset_key in asset_keys:
-                        if asset_key not in step_stats_by_asset:
-                            step_stats_by_asset[asset_key] = []
-                        step_stats_by_asset[asset_key].append(step_stat)
-
-                selected_assets = (
-                    step_stats_by_asset if asset_selection == None else asset_selection
-                )  # only display in progress/unstarted indicators for selected assets
-                for asset in selected_assets:
-                    step_stats = step_stats_by_asset.get(asset)
-                    if step_stats:
-                        # step_stats will contain all steps that are in progress or complete
-                        if any(
-                            [
-                                step_stat.status == StepEventStatus.IN_PROGRESS
-                                for step_stat in step_stats
-                            ]
-                        ):
-                            in_progress_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
-                    else:  # if step stats is none, then the step has not started
-                        unstarted_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
-            else:
-                # the run never began execution, all steps are unstarted
-                if asset_selection:
-                    for asset in asset_selection:
-                        unstarted_run_ids_by_asset[asset_key].add(record.pipeline_run.run_id)
-                else:
-                    for step_key in run_step_keys:
-                        for asset_key in asset_key_by_step_key[step_key]:
-                            unstarted_run_ids_by_asset[asset_key].add(record.pipeline_run.run_id)
-
-    all_assets = in_progress_run_ids_by_asset.keys() | unstarted_run_ids_by_asset.keys()
 
     latest_materialization_by_asset = {
         asset_record.asset_entry.asset_key: GrapheneMaterializationEvent(
@@ -205,6 +140,20 @@ def get_assets_live_info(graphene_info, step_keys_by_asset):
         for asset_record in asset_records
     }
 
+    latest_run_ids = [
+        asset_record.asset_entry.last_run_id
+        for asset_record in asset_records
+        if asset_record.asset_entry.last_run_id
+    ]
+    in_progress_records = (
+        instance.get_run_records(RunsFilter(run_ids=latest_run_ids, statuses=PENDING_STATUSES))
+        if latest_run_ids
+        else []
+    )
+    in_progress_run_ids_by_asset, unstarted_run_ids_by_asset = _get_in_progress_runs_for_assets(
+        graphene_info, in_progress_records, step_keys_by_asset
+    )
+
     return [
         GrapheneAssetLiveInfo(
             asset_key,
@@ -212,8 +161,67 @@ def get_assets_live_info(graphene_info, step_keys_by_asset):
             list(unstarted_run_ids_by_asset.get(asset_key, [])),
             list(in_progress_run_ids_by_asset.get(asset_key, [])),
         )
-        for asset_key in all_assets
+        for asset_key in step_keys_by_asset.keys()
     ]
+
+
+def _get_in_progress_runs_for_assets(
+    graphene_info,
+    in_progress_records: List[AssetRecord],
+    step_keys_by_asset: Mapping[AssetKey, List[str]],
+):
+    # Build mapping of step key to the assets it generates
+    asset_key_by_step_key = defaultdict(set)
+    for asset_key, step_keys in step_keys_by_asset.items():
+        for step_key in step_keys:
+            asset_key_by_step_key[step_key].add(asset_key)
+
+    in_progress_run_ids_by_asset = defaultdict(set)
+    unstarted_run_ids_by_asset = defaultdict(set)
+
+    for record in in_progress_records:
+        run = record.pipeline_run
+        asset_selection = run.asset_selection
+        run_step_keys = graphene_info.context.instance.get_execution_plan_snapshot(
+            run.execution_plan_snapshot_id
+        ).step_keys_to_execute
+
+        selected_assets = (
+            set.union(*[asset_key_by_step_key[run_step_key] for run_step_key in run_step_keys])
+            if asset_selection == None
+            else asset_selection
+        )  # only display in progress/unstarted indicators for selected assets
+
+        if run.status in IN_PROGRESS_STATUSES:
+            step_stats = graphene_info.context.instance.get_run_step_stats(
+                run.run_id, run_step_keys
+            )
+            # Build mapping of asset to all the step stats that generate the asset
+            step_stats_by_asset: Dict[AssetKey, List[RunStepKeyStatsSnapshot]] = defaultdict(list)
+            for step_stat in step_stats:
+                for asset_key in asset_key_by_step_key[step_stat.step_key]:
+                    step_stats_by_asset[asset_key].append(step_stat)
+
+            for asset in selected_assets:
+                step_stats = step_stats_by_asset.get(asset)
+                if step_stats:
+                    # step_stats will contain all steps that are in progress or complete
+                    if any(
+                        [
+                            step_stat.status == StepEventStatus.IN_PROGRESS
+                            for step_stat in step_stats
+                        ]
+                    ):
+                        in_progress_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
+                    # else if step_stats exist and none are in progress, the step has completed
+                else:  # if step stats is none, then the step has not started
+                    unstarted_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
+        else:
+            # the run never began execution, all steps are unstarted
+            for asset in selected_assets:
+                unstarted_run_ids_by_asset[asset_key].add(record.pipeline_run.run_id)
+
+    return in_progress_run_ids_by_asset, unstarted_run_ids_by_asset
 
 
 def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
