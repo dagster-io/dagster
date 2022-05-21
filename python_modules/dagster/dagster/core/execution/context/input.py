@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey, AssetObservation
@@ -305,6 +305,15 @@ class InputContext:
             partitions_def.time_window_for_partition_key(partition_key_range.start).start,  # type: ignore
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,  # type: ignore
         )
+
+    def get_asset_input_identifier(self) -> Sequence[str]:
+        if self.asset_key is not None:
+            if self.has_asset_partitions:
+                return self.asset_key.path + [self.asset_partition_key]
+            else:
+                return self.asset_key.path
+        else:
+            check.failed("Can't get asset inpu identifier for an input with no asset key")
 
     def consume_events(self) -> Iterator["DagsterEvent"]:
         """Pops and yields all user-generated events that have been recorded from this context.
