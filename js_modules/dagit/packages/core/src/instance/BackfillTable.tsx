@@ -24,14 +24,7 @@ import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PartitionStatus} from '../partitions/PartitionStatus';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {
-  doneStatuses,
-  failedStatuses,
-  inProgressStatuses,
-  queuedStatuses,
-  successStatuses,
-} from '../runs/RunStatuses';
-import {DagsterTag} from '../runs/RunTag';
+import {inProgressStatuses} from '../runs/RunStatuses';
 import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -47,12 +40,9 @@ import {BackfillTerminationDialog} from './BackfillTerminationDialog';
 import {RESUME_BACKFILL_MUTATION} from './BackfillUtils';
 import {
   BackfillTableFragment,
-  BackfillTableFragment_runs,
   BackfillTableFragment_partitionSet,
 } from './types/BackfillTableFragment';
 import {resumeBackfill, resumeBackfillVariables} from './types/resumeBackfill';
-
-type BackfillRun = BackfillTableFragment_runs;
 
 export const BackfillTable = ({
   showPartitionSet = true,
@@ -194,7 +184,6 @@ const BackfillRow = ({
 }) => {
   const history = useHistory();
   const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissions();
-  const counts = React.useMemo(() => getProgressCounts(backfill), [backfill]);
   const runsUrl = runsPathWithFilters([
     {
       token: 'tag',
@@ -228,7 +217,7 @@ const BackfillRow = ({
       })
     : null;
 
-  const canCancel = backfill.runs.some((run) => run.canTerminate);
+  const canCancel = backfill.unfinishedRuns.length > 0;
 
   return (
     <tr>
@@ -274,7 +263,8 @@ const BackfillRow = ({
             <Menu>
               {canCancelPartitionBackfill ? (
                 <>
-                  {counts.numUnscheduled && backfill.status === BulkActionStatus.REQUESTED ? (
+                  {backfill.numRequested > backfill.partitionStatuses.results.length &&
+                  backfill.status === BulkActionStatus.REQUESTED ? (
                     <MenuItem
                       text="Cancel backfill submission"
                       icon="cancel"
@@ -377,16 +367,15 @@ const BackfillStatus = ({backfill}: {backfill: BackfillTableFragment}) => {
         </Box>
       );
     case BulkActionStatus.COMPLETED:
-      const runStatuses = backfill.runs.map((run) => run.status);
-      const isDone = runStatuses.every((status) => doneStatuses.has(status));
-      if (!isDone) {
-        return <Tag intent="primary">In progress</Tag>;
-      }
+      const statuses = backfill.partitionStatuses.results.map((r) => r.runStatus);
       if (
-        runStatuses.filter((status) => successStatuses.has(status)).length ===
+        statuses.filter((runStatus) => runStatus === RunStatus.SUCCESS).length ===
         backfill.partitionNames.length
       ) {
         return <Tag intent="success">Completed</Tag>;
+      }
+      if (statuses.filter((runStatus) => runStatus && runStatus in inProgressStatuses).length) {
+        return <Tag intent="primary">In progress</Tag>;
       }
       return <Tag intent="warning">Incomplete</Tag>;
   }
@@ -401,13 +390,9 @@ const BackfillRunStatus = ({
 }) => {
   const partitionData = {};
   const partitionRun = {};
-  backfill.runs.forEach((run) => {
-    run.tags.forEach((tag) => {
-      if (tag.key === DagsterTag.Partition) {
-        partitionData[tag.value] = run.status;
-        partitionRun[tag.value] = run;
-      }
-    });
+  backfill.partitionStatuses.results.forEach((s) => {
+    partitionData[s.partitionName] = s.runStatus;
+    partitionRun[s.partitionName] = s.runId;
   });
 
   return (
@@ -417,7 +402,7 @@ const BackfillRunStatus = ({
       splitPartitions={true}
       onClick={(partitionName) => {
         if (partitionRun[partitionName]) {
-          history.push(`/instance/runs/${partitionRun[partitionName].id}`);
+          history.push(`/instance/runs/${partitionRun[partitionName]}`);
         }
       }}
     />
@@ -465,44 +450,6 @@ const PartitionSetReference: React.FC<{
   );
 };
 
-const getProgressCounts = (backfill: BackfillTableFragment) => {
-  const byPartitionRuns: {[key: string]: BackfillRun} = {};
-  backfill.runs.forEach((run) => {
-    const [runPartitionName] = run.tags
-      .filter((tag) => tag.key === DagsterTag.Partition)
-      .map((tag) => tag.value);
-
-    if (runPartitionName && !byPartitionRuns[runPartitionName]) {
-      byPartitionRuns[runPartitionName] = run;
-    }
-  });
-
-  const latestPartitionRuns = Object.values(byPartitionRuns);
-  const {numQueued, numInProgress, numSucceeded, numFailed} = latestPartitionRuns.reduce(
-    (accum: any, {status}: {status: RunStatus}) => {
-      return {
-        numQueued: accum.numQueued + (queuedStatuses.has(status) ? 1 : 0),
-        numInProgress: accum.numInProgress + (inProgressStatuses.has(status) ? 1 : 0),
-        numSucceeded: accum.numSucceeded + (successStatuses.has(status) ? 1 : 0),
-        numFailed: accum.numFailed + (failedStatuses.has(status) ? 1 : 0),
-      };
-    },
-    {numQueued: 0, numInProgress: 0, numSucceeded: 0, numFailed: 0},
-  );
-
-  const numTotal = backfill.partitionNames.length;
-
-  return {
-    numQueued,
-    numInProgress,
-    numSucceeded,
-    numFailed,
-    numUnscheduled: numTotal - backfill.numRequested,
-    numSkipped: backfill.numRequested - latestPartitionRuns.length,
-    numTotal,
-  };
-};
-
 const TagButton = styled.button`
   border: none;
   background: none;
@@ -519,27 +466,9 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
   fragment BackfillTableFragment on PartitionBackfill {
     backfillId
     status
-    backfillStatus
     numRequested
     partitionNames
     numPartitions
-    partitionRunStats {
-      numQueued
-      numInProgress
-      numSucceeded
-      numFailed
-      numPartitionsWithRuns
-      numTotalRuns
-    }
-    runs {
-      id
-      canTerminate
-      status
-      tags {
-        key
-        value
-      }
-    }
     unfinishedRuns {
       id
       canTerminate
@@ -555,6 +484,14 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
         id
         repositoryName
         repositoryLocationName
+      }
+    }
+    partitionStatuses {
+      results {
+        id
+        partitionName
+        runId
+        runStatus
       }
     }
     error {

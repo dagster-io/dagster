@@ -6,13 +6,11 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {BulkActionStatus} from '../types/globalTypes';
 
+import {BackfillTableFragment} from './types/BackfillTableFragment';
 import {CancelBackfill, CancelBackfillVariables} from './types/CancelBackfill';
-import {InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results} from './types/InstanceBackfillsQuery';
-
-type Backfill = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results;
 
 interface Props {
-  backfill?: Backfill;
+  backfill?: BackfillTableFragment;
   onClose: () => void;
   onComplete: () => void;
 }

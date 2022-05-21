@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, BulkActionStatus, BackfillStatus, RunStatus } from "./../../types/globalTypes";
+import { RepositorySelector, BulkActionStatus, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: JobBackfillsQuery
@@ -11,30 +11,6 @@ import { RepositorySelector, BulkActionStatus, BackfillStatus, RunStatus } from 
 
 export interface JobBackfillsQuery_partitionSetOrError_PartitionSetNotFoundError {
   __typename: "PartitionSetNotFoundError" | "PythonError";
-}
-
-export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionRunStats {
-  __typename: "BackfillRunStats";
-  numQueued: number;
-  numInProgress: number;
-  numSucceeded: number;
-  numFailed: number;
-  numPartitionsWithRuns: number;
-  numTotalRuns: number;
-}
-
-export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_runs_tags {
-  __typename: "PipelineTag";
-  key: string;
-  value: string;
-}
-
-export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_runs {
-  __typename: "Run";
-  id: string;
-  canTerminate: boolean;
-  status: RunStatus;
-  tags: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_runs_tags[];
 }
 
 export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_unfinishedRuns {
@@ -59,6 +35,19 @@ export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_pa
   repositoryOrigin: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionSet_repositoryOrigin;
 }
 
+export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionStatuses_results {
+  __typename: "PartitionStatus";
+  id: string;
+  partitionName: string;
+  runId: string | null;
+  runStatus: RunStatus | null;
+}
+
+export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionStatuses {
+  __typename: "PartitionStatuses";
+  results: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionStatuses_results[];
+}
+
 export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_error_cause {
   __typename: "PythonError";
   message: string;
@@ -76,16 +65,14 @@ export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills {
   __typename: "PartitionBackfill";
   backfillId: string;
   status: BulkActionStatus;
-  backfillStatus: BackfillStatus;
   numRequested: number;
   partitionNames: string[];
   numPartitions: number;
-  partitionRunStats: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionRunStats;
-  runs: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_runs[];
   unfinishedRuns: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_unfinishedRuns[];
   timestamp: number;
   partitionSetName: string;
   partitionSet: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionSet | null;
+  partitionStatuses: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionStatuses;
   error: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_error | null;
 }
 

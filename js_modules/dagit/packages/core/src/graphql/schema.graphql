@@ -1676,6 +1676,7 @@ type PartitionStatuses {
 type PartitionStatus {
   id: String!
   partitionName: String!
+  runId: String
   runStatus: RunStatus
   runDuration: Float
 }
@@ -1702,6 +1703,7 @@ type PartitionBackfill {
   unfinishedRuns(limit: Int): [Run!]!
   error: PythonError
   partitionRunStats: BackfillRunStats!
+  partitionStatuses: PartitionStatuses!
 }
 
 enum BulkActionStatus {
