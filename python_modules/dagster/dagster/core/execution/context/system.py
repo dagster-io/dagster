@@ -524,6 +524,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 step_context=self,
                 resources=None,
                 version=version,
+                warn_on_step_context_use=True,
             )
         else:
             upstream_output = artificial_output_context
