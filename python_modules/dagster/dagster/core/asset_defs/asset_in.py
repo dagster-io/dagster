@@ -1,7 +1,7 @@
 from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
-from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.events import AssetKey, CoerceableToAssetKey
 
 
 class AssetIn(
@@ -16,7 +16,7 @@ class AssetIn(
 ):
     def __new__(
         cls,
-        asset_key: Optional[AssetKey] = None,
+        asset_key: Optional[CoerceableToAssetKey] = None,
         metadata: Optional[Mapping[str, Any]] = None,
         namespace: Optional[Sequence[str]] = None,
     ):
@@ -30,7 +30,7 @@ class AssetIn(
 
         return super(AssetIn, cls).__new__(
             cls,
-            asset_key=check.opt_inst_param(asset_key, "asset_key", AssetKey),
+            asset_key=AssetKey.from_coerceable(asset_key) if asset_key is not None else None,
             metadata=check.opt_inst_param(metadata, "metadata", Mapping),
             namespace=check.opt_list_param(namespace, "namespace", str),
         )
