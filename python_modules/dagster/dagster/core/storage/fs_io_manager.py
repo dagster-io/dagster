@@ -1,5 +1,6 @@
 import os
 import pickle
+from typing import List, Union
 
 import dagster._check as check
 from dagster.config import Field
@@ -94,11 +95,23 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         self.write_mode = "wb"
         self.read_mode = "rb"
 
-    def _get_path(self, context):
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         """Automatically construct filepath."""
-        keys = context.get_output_identifier()
+        identifier: List[str]
 
-        return os.path.join(self.base_dir, *keys)
+        if isinstance(context, InputContext):
+            identifier = context.upstream_output.get_output_identifier()
+
+        elif isinstance(context, OutputContext):
+            identifier = context.get_output_identifier()
+
+        else:
+            raise RuntimeError(
+                f"Unexpected type for context. got {type(context)}, "
+                "expected Union[InputContext, OutputContext]"
+            )
+
+        return os.path.join(self.base_dir, *identifier)
 
     def has_output(self, context):
         filepath = self._get_path(context)
@@ -148,7 +161,7 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         """Unpickle the file and Load it to a data object."""
         check.inst_param(context, "context", InputContext)
 
-        filepath = self._get_path(context.upstream_output)
+        filepath = self._get_path(context)
         context.add_input_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
 
         with open(filepath, self.read_mode) as read_obj:
