@@ -481,7 +481,9 @@ def validate_tick(
     assert tick_data.instigator_name == external_schedule.name
     assert tick_data.timestamp == expected_datetime.timestamp()
     assert tick_data.status == expected_status
-    assert set(tick_data.run_ids) == set(expected_run_ids)
+    assert len(tick_data.run_ids) == len(expected_run_ids) and set(tick_data.run_ids) == set(
+        expected_run_ids
+    )
     if expected_error:
         assert expected_error in str(tick_data.error)
     assert tick_data.failure_count == expected_failure_count
