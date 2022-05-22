@@ -308,6 +308,10 @@
                 "image": {
                     "$ref": "#/definitions/Image"
                 },
+                "nameOverride": {
+                    "title": "Nameoverride",
+                    "type": "string"
+                },
                 "service": {
                     "$ref": "#/definitions/schema__charts__utils__kubernetes__Service"
                 },
@@ -409,6 +413,7 @@
             "required": [
                 "replicaCount",
                 "image",
+                "nameOverride",
                 "service",
                 "workspace",
                 "env",
