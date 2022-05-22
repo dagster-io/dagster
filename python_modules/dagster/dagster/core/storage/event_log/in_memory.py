@@ -120,7 +120,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         check.inst_param(event, "event", EventLogEntry)
         run_id = event.run_id
         self._logs[run_id].append(event)
-        offset = len(self._log[run_id])
+        offset = len(self._logs[run_id])
 
         if (
             event.is_dagster_event
