@@ -155,6 +155,18 @@ def test_dagit_image_tag(deployment_template: HelmTemplate):
     assert image_tag == tag
 
 
+@pytest.mark.parametrize("name_override", ["dagit", "new-name"])
+def test_dagit_name_override(deployment_template, name_override):
+    helm_values = DagsterHelmValues.construct(dagit=Dagit.construct(nameOverride=name_override))
+    dagit_deployments = deployment_template.render(helm_values)
+
+    assert len(dagit_deployments) == 1
+
+    deployment_name = dagit_deployments[0].metadata.name
+
+    assert deployment_name == f"{deployment_template.release_name}-{name_override}"
+
+
 def test_dagit_service(service_template):
     helm_values = DagsterHelmValues.construct()
     dagit_template = service_template.render(helm_values)

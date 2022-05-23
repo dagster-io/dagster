@@ -21,6 +21,7 @@ class Workspace(BaseModel):
 class Dagit(BaseModel):
     replicaCount: int
     image: kubernetes.Image
+    nameOverride: str
     service: kubernetes.Service
     workspace: Workspace
     env: Dict[str, str]
