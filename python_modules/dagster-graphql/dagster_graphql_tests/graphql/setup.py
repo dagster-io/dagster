@@ -1429,7 +1429,7 @@ def my_op():
 
 
 @op(required_resource_keys={"hanging_asset_resource"})
-def hanging_op(context, my_op):
+def hanging_op(context, my_op):  # pylint: disable=unused-argument
     with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
         ff.write("yup")
 
@@ -1438,7 +1438,7 @@ def hanging_op(context, my_op):
 
 
 @op
-def never_runs_op(hanging_op):
+def never_runs_op(hanging_op):  # pylint: disable=unused-argument
     pass
 
 
@@ -1451,7 +1451,7 @@ hanging_graph_asset = AssetsDefinition.from_graph(hanging_graph)
 
 
 @asset
-def downstream_asset(hanging_graph):
+def downstream_asset(hanging_graph):  # pylint: disable=unused-argument
     return 1
 
 

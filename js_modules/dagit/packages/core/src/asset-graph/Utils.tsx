@@ -4,7 +4,10 @@ import uniq from 'lodash/uniq';
 
 import {AssetNodeDefinitionFragment} from '../assets/types/AssetNodeDefinitionFragment';
 
-import {AssetGraphLiveQuery_assetNodes_assetMaterializations} from './types/AssetGraphLiveQuery';
+import {
+  AssetGraphLiveQuery_assetsLiveInfo,
+  AssetGraphLiveQuery_assetNodes_assetMaterializations,
+} from './types/AssetGraphLiveQuery';
 import {
   AssetGraphQuery_assetNodes,
   AssetGraphQuery_assetNodes_assetKey,
@@ -14,7 +17,6 @@ import {
   RepositoryLiveFragment,
   RepositoryLiveFragment_latestRunByStep_run,
 } from './types/RepositoryLiveFragment';
-import {AssetGraphLiveQuery_assetsLiveInfo} from './types/AssetGraphLiveQuery';
 type AssetNode = AssetGraphQuery_assetNodes;
 type AssetKey = AssetGraphQuery_assetNodes_assetKey;
 

@@ -1,4 +1,6 @@
 # pylint: disable=missing-graphene-docstring
+from typing import Dict, List
+
 import graphene
 from dagster_graphql.implementation.fetch_runs import get_assets_live_info
 

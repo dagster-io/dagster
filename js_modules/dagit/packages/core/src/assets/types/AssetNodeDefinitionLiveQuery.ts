@@ -46,16 +46,9 @@ export interface AssetNodeDefinitionLiveQuery_assetsLiveInfo_assetKey {
   path: string[];
 }
 
-export interface AssetNodeDefinitionLiveQuery_assetsLiveInfo_latestMaterialization {
-  __typename: "MaterializationEvent";
-  timestamp: string;
-  runId: string;
-}
-
 export interface AssetNodeDefinitionLiveQuery_assetsLiveInfo {
   __typename: "AssetLiveInfo";
   assetKey: AssetNodeDefinitionLiveQuery_assetsLiveInfo_assetKey;
-  latestMaterialization: AssetNodeDefinitionLiveQuery_assetsLiveInfo_latestMaterialization | null;
   unstartedRunIds: string[];
   inProgressRunIds: string[];
 }

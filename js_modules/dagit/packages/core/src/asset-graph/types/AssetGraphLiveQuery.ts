@@ -76,16 +76,9 @@ export interface AssetGraphLiveQuery_assetsLiveInfo_assetKey {
   path: string[];
 }
 
-export interface AssetGraphLiveQuery_assetsLiveInfo_latestMaterialization {
-  __typename: "MaterializationEvent";
-  timestamp: string;
-  runId: string;
-}
-
 export interface AssetGraphLiveQuery_assetsLiveInfo {
   __typename: "AssetLiveInfo";
   assetKey: AssetGraphLiveQuery_assetsLiveInfo_assetKey;
-  latestMaterialization: AssetGraphLiveQuery_assetsLiveInfo_latestMaterialization | null;
   unstartedRunIds: string[];
   inProgressRunIds: string[];
 }

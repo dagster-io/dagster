@@ -279,10 +279,6 @@ const ASSET_NODE_DEFINITION_LIVE_QUERY = gql`
       assetKey {
         path
       }
-      latestMaterialization {
-        timestamp
-        runId
-      }
       unstartedRunIds
       inProgressRunIds
     }
