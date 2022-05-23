@@ -23,6 +23,7 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    AssetsDefinition,
     Bool,
     DagsterInstance,
     DefaultScheduleStatus,
@@ -1422,6 +1423,47 @@ hanging_job = build_assets_job(
 )
 
 
+@op
+def my_op():
+    return 1
+
+
+@op(required_resource_keys={"hanging_asset_resource"})
+def hanging_op(context, my_op):
+    with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
+        ff.write("yup")
+
+    while True:
+        time.sleep(0.1)
+
+
+@op
+def never_runs_op(hanging_op):
+    pass
+
+
+@graph
+def hanging_graph():
+    return never_runs_op(hanging_op(my_op()))
+
+
+hanging_graph_asset = AssetsDefinition.from_graph(hanging_graph)
+
+
+@asset
+def downstream_asset(hanging_graph):
+    return 1
+
+
+hanging_graph_asset_job = AssetGroup(
+    [hanging_graph_asset, downstream_asset],
+    resource_defs={
+        "hanging_asset_resource": hanging_asset_resource,
+        "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),
+    },
+).build_job("hanging_graph_asset_job")
+
+
 @asset
 def asset_one():
     return 1
@@ -1651,6 +1693,7 @@ def define_pipelines():
         observation_job,
         failure_assets_job,
         asset_group_job,
+        hanging_graph_asset_job,
     ]
 
 

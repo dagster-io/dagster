@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, Mapping, List
+from typing import Dict, List, Mapping
 
 from graphql.execution.base import ResolveInfo
 
@@ -10,9 +10,9 @@ from dagster.core.definitions import create_run_config_schema
 from dagster.core.errors import DagsterRunNotFoundError
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster.core.host_representation import PipelineSelector
+from dagster.core.storage.event_log.base import AssetRecord
 from dagster.core.storage.pipeline_run import PipelineRun, RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
-from dagster.core.storage.event_log.base import AssetRecord
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import UserFacingGraphQLError, capture_error
