@@ -10,7 +10,6 @@ from dagster_graphql.client.query import (
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import parse
 
-from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.utils import file_relative_path
 from dagster.utils.test import get_temp_file_name
@@ -422,13 +421,16 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                 RUN_EVENTS_QUERY,
                 variables={
                     "runId": exc_result.data["launchPipelineExecution"]["run"]["runId"],
-                    "after": cursor,
+                    "cursor": cursor,
                 },
             )
             assert not events_result.errors
             assert events_result.data
             assert events_result.data["pipelineRunOrError"]["__typename"] == "Run"
-            return events_result.data["pipelineRunOrError"]["eventConnection"]["events"], cursor
+            return (
+                events_result.data["pipelineRunOrError"]["eventConnection"]["events"],
+                events_result.data["pipelineRunOrError"]["eventConnection"]["cursor"],
+            )
 
         full_logs = []
         cursor = None
@@ -444,7 +446,8 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         # block until run finishes
         graphql_context.instance.run_launcher.join()
-        full_logs.extend(_fetch_events(cursor))
+        _events, _cursor = _fetch_events(cursor)
+        full_logs.extend(_events)
 
         non_engine_event_types = [
             message["__typename"] for message in full_logs if message["__typename"] != "EngineEvent"
