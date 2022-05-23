@@ -17,7 +17,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["test"]),
-    install_requires=["PyYAML", "packaging>=20.9", "requests"],
+    install_requires=["PyYAML", "packaging>=20.9", "requests", "typing_extensions>=4.2"],
     entry_points={
         "console_scripts": [
             "dagster-buildkite = dagster_buildkite.cli:dagster",
