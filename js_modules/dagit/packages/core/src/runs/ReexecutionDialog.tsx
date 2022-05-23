@@ -15,6 +15,7 @@ import {
   LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError,
   LaunchPipelineReexecution_launchPipelineReexecution_PythonError,
   LaunchPipelineReexecution_launchPipelineReexecution_RunConfigValidationInvalid,
+  LaunchPipelineReexecution_launchPipelineReexecution_InvalidSubsetError,
 } from './types/LaunchPipelineReexecution';
 
 export interface Props {
@@ -29,6 +30,7 @@ type Error =
   | LaunchPipelineReexecution_launchPipelineReexecution_InvalidStepError
   | LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError
   | LaunchPipelineReexecution_launchPipelineReexecution_RunConfigValidationInvalid
+  | LaunchPipelineReexecution_launchPipelineReexecution_InvalidSubsetError
   | LaunchPipelineReexecution_launchPipelineReexecution_PythonError
   | undefined;
 
@@ -57,6 +59,8 @@ const errorText = (error: Error) => {
       return 'Run conflict';
     case 'UnauthorizedError':
       return 'Re-execution not authorized';
+    case 'InvalidSubsetError':
+      return 'Invalid op subset: ' + error.message;
     default:
       return 'Unknown error';
   }

@@ -6,7 +6,12 @@ from dagster.core.host_representation import RepresentedPipeline
 
 from ..implementation.run_config_schema import resolve_is_run_config_valid
 from .config_types import GrapheneConfigType, to_config_type
-from .errors import GrapheneModeNotFoundError, GraphenePipelineNotFoundError, GraphenePythonError
+from .errors import (
+    GrapheneInvalidSubsetError,
+    GrapheneModeNotFoundError,
+    GraphenePipelineNotFoundError,
+    GraphenePythonError,
+)
 from .pipelines.config_result import GraphenePipelineConfigValidationResult
 from .runs import GrapheneRunConfigData, parse_run_config_input
 from .util import non_null_list
@@ -82,8 +87,6 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
 
 class GrapheneRunConfigSchemaOrError(graphene.Union):
     class Meta:
-        from .pipelines.pipeline_errors import GrapheneInvalidSubsetError
-
         types = (
             GrapheneRunConfigSchema,
             GraphenePipelineNotFoundError,

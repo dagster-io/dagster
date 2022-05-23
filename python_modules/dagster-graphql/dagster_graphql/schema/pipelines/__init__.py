@@ -30,7 +30,6 @@ def types():
         GrapheneRun,
         GrapheneRunOrError,
     )
-    from .pipeline_errors import GrapheneConfigTypeNotFoundError, GrapheneInvalidSubsetError
     from .pipeline_ref import GraphenePipelineReference, GrapheneUnknownPipeline
     from .pipeline_run_stats import (
         GraphenePipelineRunStatsSnapshot,
@@ -48,7 +47,6 @@ def types():
 
     return [
         GrapheneAsset,
-        GrapheneConfigTypeNotFoundError,
         GrapheneEvaluationErrorReason,
         GrapheneEvaluationStack,
         GrapheneEvaluationStackEntry,
@@ -58,7 +56,6 @@ def types():
         GrapheneEvaluationStackMapValueEntry,
         GrapheneFieldNotDefinedConfigError,
         GrapheneFieldsNotDefinedConfigError,
-        GrapheneInvalidSubsetError,
         GrapheneIPipelineSnapshot,
         GrapheneLogger,
         GrapheneMissingFieldConfigError,
