@@ -190,6 +190,10 @@ def job(
             Values that are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
             values provided at invocation time.
+        metadata (Optional[Dict[str, RawMetadataValue]]):
+            Arbitrary information that will be attached to the JobDefinition and be viewable in Dagit.
+            Keys must be strings, and values must be python primitive types or one of the provided
+            MetadataValue types
         logger_defs (Optional[Dict[str, LoggerDefinition]]):
             A dictionary of string logger identifiers to their implementations.
         executor_def (Optional[ExecutorDefinition]):

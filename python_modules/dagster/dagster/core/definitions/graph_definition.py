@@ -188,7 +188,6 @@ class GraphDefinition(NodeDefinition):
         output_mappings: Optional[List[OutputMapping]] = None,
         config: Optional[ConfigMapping] = None,
         tags: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         **kwargs,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)
@@ -216,10 +215,6 @@ class GraphDefinition(NodeDefinition):
         )
 
         self._config_mapping = check.opt_inst_param(config, "config", ConfigMapping)
-
-        self._metadata = None
-        if metadata is not None:
-            self._metadata = normalize_metadata(metadata, [])
 
         super(GraphDefinition, self).__init__(
             name=name,
@@ -503,10 +498,14 @@ class GraphDefinition(NodeDefinition):
                 values to the base config. The values provided will be viewable and editable in the
                 Dagit playground, so be careful with secrets.
             tags (Optional[Dict[str, Any]]):
-                Arbitrary metadata for any execution of the Job.
+                Arbitrary information that will be attached to the execution of the Job.
                 Values that are not strings will be json encoded and must meet the criteria that
                 `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
                 values provided at invocation time.
+            metadata (Optional[Dict[str, RawMetadataValue]]):
+                Arbitrary information that will be attached to the JobDefinition and be viewable in Dagit.
+                Keys must be strings, and values must be python primitive types or one of the provided
+                MetadataValue types
             logger_defs (Optional[Dict[str, LoggerDefinition]]):
                 A dictionary of string logger identifiers to their implementations.
             executor_def (Optional[ExecutorDefinition]):
