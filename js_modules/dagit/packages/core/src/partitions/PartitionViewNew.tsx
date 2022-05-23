@@ -317,7 +317,7 @@ const JobBackfills = ({
 }) => {
   const [cursorStack, setCursorStack] = React.useState<string[]>(() => []);
   const [cursor, setCursor] = React.useState<string | undefined>();
-  const {data, refetch} = useQuery(JOB_BACKFILLS_QUERY, {
+  const queryResult = useQuery(JOB_BACKFILLS_QUERY, {
     variables: {
       partitionSetName: partitionSet.name,
       repositorySelector,
@@ -327,54 +327,56 @@ const JobBackfills = ({
     partialRefetch: true,
   });
 
+  const refetch = queryResult.refetch;
   React.useEffect(() => {
     refetchCounter && refetch();
   }, [refetch, refetchCounter]);
 
-  if (!data) {
-    return <NonIdealState title="Could not fetch backfill data" icon="error" />;
-  }
-
-  const {backfills, pipelineName} = data?.partitionSetOrError;
-
-  if (!backfills) {
-    return <NonIdealState title={`No backfills for ${pipelineName}`} icon="no-results" />;
-  }
-
-  const paginationProps: CursorPaginationProps = {
-    hasPrevCursor: !!cursor,
-    hasNextCursor: backfills && backfills.length === BACKFILL_PAGE_SIZE,
-    popCursor: () => {
-      const nextStack = [...cursorStack];
-      setCursor(nextStack.pop());
-      setCursorStack(nextStack);
-    },
-    advanceCursor: () => {
-      if (cursor) {
-        setCursorStack((current) => [...current, cursor]);
-      }
-      const nextCursor = backfills && backfills[backfills.length - 1].backfillId;
-      if (!nextCursor) {
-        return;
-      }
-      setCursor(nextCursor);
-    },
-    reset: () => {
-      setCursorStack([]);
-      setCursor(undefined);
-    },
-  };
-
   return (
-    <>
-      <BackfillTable
-        backfills={backfills}
-        refetch={refetch}
-        showPartitionSet={false}
-        allPartitions={partitionNames}
-      />
-      <CursorPaginationControls {...paginationProps} />
-    </>
+    <Loading queryResult={queryResult}>
+      {({partitionSetOrError}) => {
+        const {backfills, pipelineName} = partitionSetOrError;
+
+        if (!backfills) {
+          return <NonIdealState title={`No backfills for ${pipelineName}`} icon="no-results" />;
+        }
+
+        const paginationProps: CursorPaginationProps = {
+          hasPrevCursor: !!cursor,
+          hasNextCursor: backfills && backfills.length === BACKFILL_PAGE_SIZE,
+          popCursor: () => {
+            const nextStack = [...cursorStack];
+            setCursor(nextStack.pop());
+            setCursorStack(nextStack);
+          },
+          advanceCursor: () => {
+            if (cursor) {
+              setCursorStack((current) => [...current, cursor]);
+            }
+            const nextCursor = backfills && backfills[backfills.length - 1].backfillId;
+            if (!nextCursor) {
+              return;
+            }
+            setCursor(nextCursor);
+          },
+          reset: () => {
+            setCursorStack([]);
+            setCursor(undefined);
+          },
+        };
+        return (
+          <>
+            <BackfillTable
+              backfills={backfills}
+              refetch={refetch}
+              showPartitionSet={false}
+              allPartitions={partitionNames}
+            />
+            <CursorPaginationControls {...paginationProps} />
+          </>
+        );
+      }}
+    </Loading>
   );
 };
 
