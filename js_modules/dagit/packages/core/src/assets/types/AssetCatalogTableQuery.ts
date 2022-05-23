@@ -28,7 +28,6 @@ export interface AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes_defi
 export interface AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes_definition {
   __typename: "AssetNode";
   id: string;
-  opName: string | null;
   opNames: string[];
   description: string | null;
   repository: AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes_definition_repository;

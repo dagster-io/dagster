@@ -70,7 +70,8 @@ def test_sync_and_poll(state):
         json={"job": {"id": 1, "status": state}},
         status=200,
     )
-    responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
+    if state == "unrecognized":
+        responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
 
     if state == AirbyteState.ERROR:
         with pytest.raises(Failure, match="Job failed"):

@@ -50,12 +50,17 @@ def build_schedule_from_partitioned_job(
     check.inst(partitioned_config.partitions_def, TimeWindowPartitionsDefinition)
     partitions_def = cast(TimeWindowPartitionsDefinition, partitioned_config.partitions_def)
 
-    minute_of_hour = cast(int, check.opt_int_param(minute_of_hour, "minute_of_hour", default=0))
+    minute_of_hour = cast(
+        int,
+        check.opt_int_param(minute_of_hour, "minute_of_hour", default=partitions_def.minute_offset),
+    )
 
     if partitions_def.schedule_type == ScheduleType.HOURLY:
         check.invariant(hour_of_day is None, "Cannot set hour parameter with hourly partitions.")
 
-    hour_of_day = cast(int, check.opt_int_param(hour_of_day, "hour_of_day", default=0))
+    hour_of_day = cast(
+        int, check.opt_int_param(hour_of_day, "hour_of_day", default=partitions_def.hour_offset)
+    )
     execution_time = time(minute=minute_of_hour, hour=hour_of_day)
 
     if partitions_def.schedule_type == ScheduleType.DAILY:

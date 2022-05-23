@@ -4,6 +4,7 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
+    FrozenSet,
     List,
     Mapping,
     Optional,
@@ -25,6 +26,7 @@ from dagster.core.definitions.dependency import (
     NodeInvocation,
     SolidOutputHandle,
 )
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import (
@@ -33,6 +35,7 @@ from dagster.core.errors import (
     DagsterInvalidSubsetError,
 )
 from dagster.core.selector.subset_selector import (
+    AssetSelectionData,
     LeafNodeSelection,
     OpSelectionData,
     parse_op_selection,
@@ -41,7 +44,7 @@ from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.utils import str_format_set
 from dagster.utils import merge_dicts
 
-from .asset_layer import AssetLayer
+from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
@@ -79,7 +82,7 @@ class JobDefinition(PipelineDefinition):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
-        _op_selection_data: Optional[OpSelectionData] = None,
+        _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
         asset_layer: Optional[AssetLayer] = None,
         _input_values: Optional[Mapping[str, object]] = None,
     ):
@@ -94,8 +97,10 @@ class JobDefinition(PipelineDefinition):
         )
 
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
-        self._op_selection_data = check.opt_inst_param(
-            _op_selection_data, "_op_selection_data", OpSelectionData
+        self._subset_selection_data = check.opt_inst_param(
+            _subset_selection_data,
+            "_subset_selection_data",
+            (OpSelectionData, AssetSelectionData),
         )
         self._input_values: Mapping[str, object] = check.opt_mapping_param(
             _input_values, "_input_values"
@@ -159,6 +164,7 @@ class JobDefinition(PipelineDefinition):
         partition_key: Optional[str] = None,
         raise_on_error: bool = True,
         op_selection: Optional[List[str]] = None,
+        asset_selection: Optional[List[AssetKey]] = None,
         run_id: Optional[str] = None,
         input_values: Optional[Mapping[str, object]] = None,
     ) -> "ExecuteInProcessResult":
@@ -198,6 +204,13 @@ class JobDefinition(PipelineDefinition):
 
         run_config = check.opt_dict_param(run_config, "run_config")
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
+        asset_selection = check.opt_list_param(asset_selection, "asset_selection", AssetKey)
+
+        check.invariant(
+            not (op_selection and asset_selection),
+            "op_selection and asset_selection cannot both be provided as args to execute_in_process",
+        )
+
         partition_key = check.opt_str_param(partition_key, "partition_key")
         input_values = check.opt_mapping_param(input_values, "input_values")
 
@@ -222,7 +235,11 @@ class JobDefinition(PipelineDefinition):
             version_strategy=self.version_strategy,
             asset_layer=self.asset_layer,
             _input_values=input_values,
-        ).get_job_def_for_op_selection(op_selection)
+        )
+
+        ephemeral_job = ephemeral_job.get_job_def_for_subset_selection(
+            op_selection, frozenset(asset_selection) if asset_selection else None
+        )
 
         tags = None
         if partition_key:
@@ -253,13 +270,74 @@ class JobDefinition(PipelineDefinition):
             raise_on_error=raise_on_error,
             run_tags=tags,
             run_id=run_id,
+            asset_selection=frozenset(asset_selection),
         )
 
     @property
     def op_selection_data(self) -> Optional[OpSelectionData]:
-        return self._op_selection_data
+        return (
+            self._subset_selection_data
+            if isinstance(self._subset_selection_data, OpSelectionData)
+            else None
+        )
 
-    def get_job_def_for_op_selection(
+    @property
+    def asset_selection_data(self) -> Optional[AssetSelectionData]:
+        return (
+            self._subset_selection_data
+            if isinstance(self._subset_selection_data, AssetSelectionData)
+            else None
+        )
+
+    def get_job_def_for_subset_selection(
+        self,
+        op_selection: Optional[List[str]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+    ):
+        check.invariant(
+            not (op_selection and asset_selection),
+            "op_selection and asset_selection cannot both be provided as args to execute_in_process",
+        )
+        if op_selection:
+            return self._get_job_def_for_op_selection(op_selection)
+        if asset_selection:  # asset_selection:
+            return self._get_job_def_for_asset_selection(asset_selection)
+        else:
+            return self
+
+    def _get_job_def_for_asset_selection(
+        self,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+    ) -> "JobDefinition":
+        asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
+
+        for asset in asset_selection:
+            nonexistent_assets = [
+                asset for asset in asset_selection if asset not in self.asset_layer.asset_keys
+            ]
+            nonexistent_asset_strings = [
+                asset_str
+                for asset_str in (asset.to_string() for asset in nonexistent_assets)
+                if asset_str
+            ]
+            if nonexistent_assets:
+                raise DagsterInvalidSubsetError(
+                    "Assets provided in asset_selection argument "
+                    f"{', '.join(nonexistent_asset_strings)} do not exist in parent asset group or job."
+                )
+        asset_selection_data = AssetSelectionData(
+            asset_selection=asset_selection,
+            parent_job_def=self,
+        )
+        new_job = build_asset_selection_job(
+            job_to_subselect=self,
+            asset_selection=asset_selection,
+            asset_layer=self.asset_layer,
+            asset_selection_data=asset_selection_data,
+        )
+        return new_job
+
+    def _get_job_def_for_op_selection(
         self,
         op_selection: Optional[List[str]] = None,
     ) -> "JobDefinition":
@@ -287,7 +365,7 @@ class JobDefinition(PipelineDefinition):
                 op_retry_policy=self._solid_retry_policy,
                 graph_def=sub_graph,
                 version_strategy=self.version_strategy,
-                _op_selection_data=OpSelectionData(
+                _subset_selection_data=OpSelectionData(
                     op_selection=op_selection,
                     resolved_op_selection=set(
                         resolved_op_selection_dict.keys()
@@ -366,7 +444,7 @@ class JobDefinition(PipelineDefinition):
             description=self._description,
             op_retry_policy=self._solid_retry_policy,
             asset_layer=self.asset_layer,
-            _op_selection_data=self._op_selection_data,
+            _subset_selection_data=self._subset_selection_data,
         )
 
         update_wrapper(job_def, self, updated=())
@@ -374,11 +452,12 @@ class JobDefinition(PipelineDefinition):
         return job_def
 
     def get_parent_pipeline_snapshot(self) -> Optional["PipelineSnapshot"]:
-        return (
-            self.op_selection_data.parent_job_def.get_pipeline_snapshot()
-            if self.op_selection_data
-            else None
-        )
+        if self.op_selection_data:
+            return self.op_selection_data.parent_job_def.get_pipeline_snapshot()
+        elif self.asset_selection_data:
+            return self.asset_selection_data.parent_job_def.get_pipeline_snapshot()
+        else:
+            return None
 
     def has_direct_input_value(self, input_name: str) -> bool:
         return input_name in self._input_values

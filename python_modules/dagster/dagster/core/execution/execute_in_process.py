@@ -1,4 +1,4 @@
-from typing import Any, Dict, Mapping, Optional, cast
+from typing import Any, Dict, FrozenSet, Mapping, Optional, cast
 
 from dagster.core.definitions import (
     GraphDefinition,
@@ -8,6 +8,7 @@ from dagster.core.definitions import (
     NodeHandle,
     OpDefinition,
 )
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
@@ -36,6 +37,7 @@ def core_execute_in_process(
     raise_on_error: bool,
     run_tags: Optional[Dict[str, Any]] = None,
     run_id: Optional[str] = None,
+    asset_selection: Optional[FrozenSet[AssetKey]] = None,
 ) -> ExecuteInProcessResult:
     job_def = ephemeral_pipeline
     mode_def = job_def.get_mode_definition()
@@ -59,6 +61,7 @@ def core_execute_in_process(
             mode=mode_def.name,
             tags={**job_def.tags, **(run_tags or {})},
             run_id=run_id,
+            asset_selection=asset_selection,
         )
         run_id = pipeline_run.run_id
 

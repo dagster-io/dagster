@@ -11,8 +11,8 @@ import Icons from "../Icons";
 import Link from "../Link";
 import { useVersion } from "../../util/useVersion";
 import Image from "next/image";
-import Zoom from 'react-medium-image-zoom'
-import 'react-medium-image-zoom/dist/styles.css'
+import Zoom from "react-medium-image-zoom";
+import "react-medium-image-zoom/dist/styles.css";
 export const SearchIndexContext = React.createContext(null);
 import path from "path";
 
@@ -199,14 +199,26 @@ const LinkGridItem = ({ title, href, children, tags = [] }) => {
 };
 
 const ADMONITION_STYLES = {
-  note: { colors: { bg: 'primary-100', borderIcon: 'primary-500', text: 'primary-500'}, icon: Icons.InfoCircle },
-  warning: { colors: { bg: 'yellow-50', borderIcon: 'yellow-400', text: 'yellow-700'}, icon: Icons.Warning },
-}
+  note: {
+    colors: {
+      bg: "primary-100",
+      borderIcon: "primary-500",
+      text: "primary-500",
+    },
+    icon: Icons.InfoCircle,
+  },
+  warning: {
+    colors: { bg: "yellow-50", borderIcon: "yellow-400", text: "yellow-700" },
+    icon: Icons.Warning,
+  },
+};
 
 const Admonition = ({ style, children }) => {
   const { colors, icon } = ADMONITION_STYLES[style];
   return (
-    <div className={`bg-${colors.bg} border-l-4 border-${colors.borderIcon} px-4 my-4`}>
+    <div
+      className={`bg-${colors.bg} border-l-4 border-${colors.borderIcon} px-4 my-4`}
+    >
       <div className="flex items-center">
         <div className="flex-shrink-0">
           <svg
@@ -240,7 +252,7 @@ const CodeReferenceLink = ({ filePath, isInline, children }) => {
   const url = `https://github.com/dagster-io/dagster/tree/${version}/${filePath}`;
 
   if (isInline) {
-    return <a href={url}>{children}</a>
+    return <a href={url}>{children}</a>;
   } else {
     return (
       <div className="bg-primary-100 rounded flex item-center p-4">
@@ -254,12 +266,7 @@ const CodeReferenceLink = ({ filePath, isInline, children }) => {
           </svg>
         </div>
         <div className="pl-4 pt-1">
-          You can find the code for this example on{" "}
-          <a
-            href={url}
-          >
-            Github
-          </a>
+          You can find the code for this example on <a href={url}>Github</a>
         </div>
       </div>
     );
@@ -327,23 +334,24 @@ export default {
      */
     const { version } = useVersion();
     const { src } = props;
-    if (version === "master" || !src.startsWith("/images/")) {
+    if (!src.startsWith("/images/")) {
       return (
-      <Zoom wrapElement="span" wrapStyle={{display: 'block'}}>
         <span className="block mx-auto">
           <Image {...(props as any)} />
         </span>
-      </Zoom>
       );
     }
 
-    const resolvedPath = new URL(
-      path.join("versioned_images", version, src.replace("/images/", "")),
-      "https://dagster-docs-versioned-content.s3.us-west-1.amazonaws.com"
-    ).href;
+    const resolvedPath =
+      version === "master"
+        ? src
+        : new URL(
+            path.join("versioned_images", version, src.replace("/images/", "")),
+            "https://dagster-docs-versioned-content.s3.us-west-1.amazonaws.com"
+          ).href;
 
     return (
-      <Zoom wrapElement="span" wrapStyle={{display: 'block'}}>
+      <Zoom wrapElement="span" wrapStyle={{ display: "block" }}>
         <span className="block mx-auto">
           <Image
             src={resolvedPath}

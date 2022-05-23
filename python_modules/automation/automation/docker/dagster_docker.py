@@ -1,6 +1,6 @@
 import contextlib
 import os
-from typing import Callable, Dict, List, NamedTuple, Optional
+from typing import Callable, Dict, Iterator, List, NamedTuple, Optional
 
 import yaml
 
@@ -22,7 +22,7 @@ IMAGES_PATH = os.path.join(os.path.dirname(__file__), "images")
 
 
 @contextlib.contextmanager
-def do_nothing(_cwd):
+def do_nothing(_cwd: str) -> Iterator[None]:
     yield
 
 
@@ -97,6 +97,7 @@ class DagsterDockerImage(
         check.opt_str_param(python_version, "python_version")
         check.opt_str_param(custom_tag, "custom_tag")
 
+        tag: Optional[str]
         if python_version:
             last_updated = self._get_last_updated_for_python_version(python_version)
             tag = python_version_image_tag(python_version, last_updated)

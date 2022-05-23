@@ -98,7 +98,7 @@ class DataprocResource:
             projectId=self.project_id, region=self.region, jobId=job_id
         ).execute()
 
-    def wait_for_job(self, job_id):
+    def wait_for_job(self, job_id, wait_timeout=TWENTY_MINUTES):
         """This method polls job status every 5 seconds"""
         # TODO: Add logging here print('Waiting for job ID {} to finish...'.format(job_id))
         def iter_fn():
@@ -114,7 +114,7 @@ class DataprocResource:
 
             return False
 
-        done = DataprocResource._iter_and_sleep_until_ready(iter_fn)
+        done = DataprocResource._iter_and_sleep_until_ready(iter_fn, max_wait_time_sec=wait_timeout)
         if not done:
             job = self.get_job(job_id)
             raise DataprocError("Job run timed out: %s" % str(job["status"]))

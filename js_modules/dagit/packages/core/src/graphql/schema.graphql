@@ -394,6 +394,7 @@ type Run implements PipelineRun {
   canTerminate: Boolean!
   assets: [Asset!]!
   events(after: Cursor): [DagsterRunEvent!]!
+  assetSelection: [AssetKey!]
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
   startTime: Float
@@ -1406,7 +1407,9 @@ type PartitionRun {
 type PartitionBackfill {
   backfillId: String!
   status: BulkActionStatus!
+  backfillStatus: BackfillStatus!
   partitionNames: [String!]!
+  numPartitions: Int!
   numRequested: Int!
   fromFailure: Boolean!
   reexecutionSteps: [String!]!
@@ -1414,7 +1417,9 @@ type PartitionBackfill {
   timestamp: Float!
   partitionSet: PartitionSet
   runs(limit: Int): [Run!]!
+  unfinishedRuns(limit: Int): [Run!]!
   error: PythonError
+  partitionRunStats: BackfillRunStats!
 }
 
 enum BulkActionStatus {
@@ -1422,6 +1427,24 @@ enum BulkActionStatus {
   COMPLETED
   FAILED
   CANCELED
+}
+
+enum BackfillStatus {
+  REQUESTED
+  FAILED
+  CANCELED
+  IN_PROGRESS
+  COMPLETED
+  INCOMPLETE
+}
+
+type BackfillRunStats {
+  numQueued: Int!
+  numInProgress: Int!
+  numSucceeded: Int!
+  numFailed: Int!
+  numPartitionsWithRuns: Int!
+  numTotalRuns: Int!
 }
 
 type FutureInstigationTicks {
@@ -2132,6 +2155,7 @@ input JobOrPipelineSelector {
   repositoryName: String!
   repositoryLocationName: String!
   solidSelection: [String!]
+  assetSelection: [AssetKeyInput!]
 }
 
 input ExecutionMetadata {

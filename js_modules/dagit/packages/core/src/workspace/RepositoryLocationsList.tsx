@@ -15,7 +15,10 @@ import React from 'react';
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {Timestamp} from '../app/time/Timestamp';
 import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
-import {useRepositoryLocationReload} from '../nav/useRepositoryLocationReload';
+import {
+  buildReloadFnForLocation,
+  useRepositoryLocationReload,
+} from '../nav/useRepositoryLocationReload';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
 import {RepositoryRemoteLocationLink} from './RepositoryRemoteLocationLink';
@@ -29,7 +32,12 @@ const LocationStatus: React.FC<{
 }> = (props) => {
   const {location, locationOrError} = props;
   const [showDialog, setShowDialog] = React.useState(false);
-  const {reloading, tryReload} = useRepositoryLocationReload(location);
+
+  const reloadFn = React.useMemo(() => buildReloadFnForLocation(location), [location]);
+  const {reloading, tryReload} = useRepositoryLocationReload({
+    scope: 'location',
+    reloadFn,
+  });
 
   if (locationOrError.loadStatus === 'LOADING') {
     if (locationOrError.locationOrLoadError) {

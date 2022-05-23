@@ -222,6 +222,7 @@ class GrapheneRun(graphene.ObjectType):
     pipelineName = graphene.NonNull(graphene.String)
     jobName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
+    assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
     resolvedOpSelection = graphene.List(graphene.NonNull(graphene.String))
     stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
     stepStats = non_null_list(GrapheneRunStepStats)
@@ -291,6 +292,9 @@ class GrapheneRun(graphene.ObjectType):
     def resolve_solidSelection(self, _graphene_info):
         return self._pipeline_run.solid_selection
 
+    def resolve_assetSelection(self, _graphene_info):
+        return self._pipeline_run.asset_selection
+
     def resolve_resolvedOpSelection(self, _graphene_info):
         return self._pipeline_run.solids_to_execute
 
@@ -354,11 +358,14 @@ class GrapheneRun(graphene.ObjectType):
     def run_id(self):
         return self.runId
 
-    def resolve_canTerminate(self, graphene_info):
+    def resolve_canTerminate(self, _graphene_info):
         # short circuit if the pipeline run is in a terminal state
         if self._pipeline_run.is_finished:
             return False
-        return graphene_info.context.instance.run_coordinator.can_cancel_run(self.run_id)
+        return (
+            self._pipeline_run.status == PipelineRunStatus.QUEUED
+            or self._pipeline_run.status == PipelineRunStatus.STARTED
+        )
 
     def resolve_assets(self, graphene_info):
         return get_assets_for_run_id(graphene_info, self.run_id)

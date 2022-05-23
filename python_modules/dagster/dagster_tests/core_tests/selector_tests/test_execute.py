@@ -8,22 +8,82 @@ from dagster import (
     reexecute_pipeline,
     reexecute_pipeline_iterator,
 )
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
+from dagster.core.execution.api import create_execution_plan, execute_run
 from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import step_output_event_filter
+from dagster.core.test_utils import instance_for_test, step_output_event_filter
 
-from .test_subset_selector import foo_pipeline
+from .test_subset_selector import asset_selection_job, foo_pipeline
 
 
 def test_subset_for_execution():
     pipeline = InMemoryPipeline(foo_pipeline)
-    sub_pipeline = pipeline.subset_for_execution(["*add_nums"])
+    sub_pipeline = pipeline.subset_for_execution(["*add_nums"], asset_selection=None)
     assert sub_pipeline.solid_selection == ["*add_nums"]
     assert sub_pipeline.solids_to_execute == {"add_nums", "return_one", "return_two"}
 
     result = execute_pipeline(sub_pipeline)
     assert result.success
+
+
+def test_asset_subset_for_execution():
+    in_mem_pipeline = InMemoryPipeline(asset_selection_job)
+    sub_pipeline = in_mem_pipeline.subset_for_execution(
+        solid_selection=None, asset_selection={AssetKey("my_asset")}
+    )
+    assert sub_pipeline.asset_selection == {AssetKey("my_asset")}
+
+    result = execute_pipeline(sub_pipeline)
+    assert result.success
+    materializations = [event for event in result.step_event_list if event.is_step_materialization]
+    assert len(materializations) == 1
+    assert materializations[0].asset_key == AssetKey("my_asset")
+
+    with instance_for_test() as instance:
+        execution_plan = create_execution_plan(sub_pipeline)
+        pipeline_run = instance.create_run_for_pipeline(
+            asset_selection_job,
+            asset_selection={AssetKey("my_asset")},
+            execution_plan=execution_plan,
+        )
+
+        result = execute_run(in_mem_pipeline, pipeline_run, instance)
+        assert result.success
+        materializations = [
+            event for event in result.step_event_list if event.is_step_materialization
+        ]
+        assert len(materializations) == 1
+        assert materializations[0].asset_key == AssetKey("my_asset")
+
+
+def test_reexecute_asset_subset():
+    with instance_for_test() as instance:
+        result = asset_selection_job.execute_in_process(
+            instance=instance, asset_selection=[AssetKey("my_asset")]
+        )
+        assert result.success
+        materializations = [event for event in result.all_events if event.is_step_materialization]
+        assert len(materializations) == 1
+        assert materializations[0].asset_key == AssetKey("my_asset")
+
+        run = instance.get_run_by_id(result.run_id)
+        assert run.asset_selection == {AssetKey("my_asset")}
+
+        reexecution_result = reexecute_pipeline(
+            asset_selection_job,
+            parent_run_id=result.run_id,
+            instance=instance,
+        )
+        assert reexecution_result.success
+        materializations = [
+            event for event in reexecution_result.step_event_list if event.is_step_materialization
+        ]
+        assert len(materializations) == 1
+        assert materializations[0].asset_key == AssetKey("my_asset")
+        run = instance.get_run_by_id(reexecution_result.run_id)
+        assert run.asset_selection == {AssetKey("my_asset")}
 
 
 def test_execute_pipeline_with_solid_selection_single_clause():

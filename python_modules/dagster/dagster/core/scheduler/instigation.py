@@ -534,8 +534,16 @@ class TickData(
             **merge_dicts(
                 self._asdict(),
                 {
-                    "run_ids": [*self.run_ids, run_id] if run_id else self.run_ids,
-                    "run_keys": [*self.run_keys, run_key] if run_key else self.run_keys,
+                    "run_ids": (
+                        [*self.run_ids, run_id]
+                        if (run_id and run_id not in self.run_ids)
+                        else self.run_ids
+                    ),
+                    "run_keys": (
+                        [*self.run_keys, run_key]
+                        if (run_key and run_key not in self.run_keys)
+                        else self.run_keys
+                    ),
                 },
             )
         )

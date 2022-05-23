@@ -328,6 +328,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     ) -> Mapping[AssetKey, Mapping[str, int]]:
         pass
 
+    def alembic_version(self):
+        return None
+
 
 def extract_asset_events_cursor(cursor, before_cursor, after_cursor, ascending):
     if cursor:

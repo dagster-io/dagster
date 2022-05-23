@@ -1,6 +1,6 @@
 from typing import List
 
-from pydantic import BaseModel, Field  # pylint: disable=no-name-in-module
+from pydantic import BaseModel, Field
 
 from ..dagster_user_deployments.subschema.user_deployments import UserDeployments
 from ..utils import kubernetes

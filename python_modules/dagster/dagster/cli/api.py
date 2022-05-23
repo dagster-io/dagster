@@ -352,7 +352,9 @@ def _execute_step_command_body(
 
         recon_pipeline = recon_pipeline_from_origin(
             args.pipeline_origin
-        ).subset_for_execution_from_existing_pipeline(pipeline_run.solids_to_execute)
+        ).subset_for_execution_from_existing_pipeline(
+            pipeline_run.solids_to_execute, pipeline_run.asset_selection
+        )
 
         execution_plan = create_execution_plan(
             recon_pipeline,

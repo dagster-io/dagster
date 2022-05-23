@@ -245,6 +245,7 @@ def multi_asset(
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     op_tags: Optional[Dict[str, Any]] = None,
+    can_subset: bool = False,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -282,6 +283,8 @@ def multi_asset(
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
+        can_subset (bool): If this asset's computation can emit a subset of the asset
+            keys based on the context.selected_assets argument. Defaults to False.
     """
 
     check.invariant(
@@ -354,6 +357,7 @@ def multi_asset(
             }
             if partition_mappings
             else None,
+            can_subset=can_subset,
         )
 
     return inner

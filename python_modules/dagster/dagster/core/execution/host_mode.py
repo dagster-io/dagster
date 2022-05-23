@@ -184,10 +184,12 @@ def execute_run_host_mode(
         ),
     )
 
-    if pipeline_run.solids_to_execute:
-        pipeline = pipeline.subset_for_execution_from_existing_pipeline(
-            frozenset(pipeline_run.solids_to_execute)
-        )
+    pipeline = pipeline.subset_for_execution_from_existing_pipeline(
+        solids_to_execute=frozenset(pipeline_run.solids_to_execute)
+        if pipeline_run.solids_to_execute
+        else None,
+        asset_selection=pipeline_run.asset_selection,
+    )
 
     execution_plan_snapshot = instance.get_execution_plan_snapshot(
         pipeline_run.execution_plan_snapshot_id

@@ -16,6 +16,11 @@ export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_r
   repositoryLocationName: string;
 }
 
+export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_assetSelection {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_tags {
   __typename: "PipelineTag";
   key: string;
@@ -36,6 +41,7 @@ export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results {
   pipelineName: string;
   repositoryOrigin: PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_repositoryOrigin | null;
   solidSelection: string[] | null;
+  assetSelection: PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_assetSelection[] | null;
   tags: PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_tags[];
   startTime: number | null;
   endTime: number | null;

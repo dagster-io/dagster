@@ -32,7 +32,11 @@ def info_command():
 
         click.echo("$DAGSTER_HOME: {}\n".format(home))
 
+        click.echo("\nInstance configuration:\n-----------------------")
         click.echo(instance.info_str())
+
+        click.echo("\nStorage schema state:\n---------------------")
+        click.echo(instance.schema_str())
 
 
 @instance_cli.command(name="migrate", help="Automatically migrate an out of date instance.")

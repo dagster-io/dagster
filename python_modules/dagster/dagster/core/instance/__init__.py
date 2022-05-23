@@ -530,6 +530,28 @@ class DagsterInstance:
     def info_str(self) -> str:
         return yaml.dump(self.info_dict(), default_flow_style=False, sort_keys=False)
 
+    def schema_str(self) -> str:
+        def _schema_dict(alembic_version):
+            if not alembic_version:
+                return None
+            db_revision, head_revision = alembic_version
+            return {
+                "current": db_revision,
+                "latest": head_revision,
+            }
+
+        return yaml.dump(
+            {
+                "schema": {
+                    "event_log_storage": _schema_dict(self._event_storage.alembic_version()),
+                    "run_storage": _schema_dict(self._event_storage.alembic_version()),
+                    "schedule_storage": _schema_dict(self._event_storage.alembic_version()),
+                }
+            },
+            default_flow_style=False,
+            sort_keys=False,
+        )
+
     @property
     def run_storage(self) -> "RunStorage":
         return self._run_storage
@@ -755,6 +777,7 @@ class DagsterInstance:
         root_run_id=None,
         parent_run_id=None,
         solid_selection=None,
+        asset_selection=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
     ):
@@ -772,6 +795,7 @@ class DagsterInstance:
         # solid_selection is only used to pass the user queries further down.
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         if solids_to_execute:
             if isinstance(pipeline_def, PipelineSubsetDefinition):
@@ -810,6 +834,7 @@ class DagsterInstance:
             run_config=run_config,
             mode=check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name()),
             solid_selection=solid_selection,
+            asset_selection=asset_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
@@ -841,6 +866,7 @@ class DagsterInstance:
         pipeline_snapshot,
         execution_plan_snapshot,
         parent_pipeline_snapshot,
+        asset_selection=None,
         solid_selection=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
@@ -877,6 +903,7 @@ class DagsterInstance:
             run_id=run_id,
             run_config=run_config,
             mode=mode,
+            asset_selection=asset_selection,
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
@@ -989,6 +1016,7 @@ class DagsterInstance:
         pipeline_snapshot,
         execution_plan_snapshot,
         parent_pipeline_snapshot,
+        asset_selection=None,
         solid_selection=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
@@ -999,6 +1027,7 @@ class DagsterInstance:
             run_id=run_id,
             run_config=run_config,
             mode=mode,
+            asset_selection=asset_selection,
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
@@ -1104,6 +1133,7 @@ class DagsterInstance:
             execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
             parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
             solid_selection=parent_run.solid_selection,
+            asset_selection=parent_run.asset_selection,
             external_pipeline_origin=external_pipeline.get_external_origin(),
             pipeline_code_origin=external_pipeline.get_python_origin(),
         )
@@ -1791,11 +1821,9 @@ records = instance.get_event_records(
         return run
 
     def count_resume_run_attempts(self, run_id: str):
-        from dagster.core.events import DagsterEventType
-        from dagster.daemon.monitoring import RESUME_RUN_LOG_MESSAGE
+        from dagster.daemon.monitoring import count_resume_run_attempts
 
-        events = self.all_logs(run_id, of_type=DagsterEventType.ENGINE_EVENT)
-        return len([event for event in events if event.message == RESUME_RUN_LOG_MESSAGE])
+        return count_resume_run_attempts(self, run_id)
 
     def run_will_resume(self, run_id: str):
         if not self.run_monitoring_enabled:

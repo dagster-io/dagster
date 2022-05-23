@@ -15,6 +15,7 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Set,
     Union,
     cast,
@@ -56,10 +57,19 @@ from .output import OutputContext, get_output_context
 if TYPE_CHECKING:
     from dagster.core.definitions.dependency import Node, NodeHandle
     from dagster.core.definitions.resource_definition import Resources
+    from dagster.core.events import DagsterEvent
     from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.instance import DagsterInstance
 
     from .hook import HookContext
+
+
+def is_iterable(obj: Any) -> bool:
+    try:
+        iter(obj)
+    except:
+        return False
+    return True
 
 
 class IPlanContext(ABC):
@@ -511,16 +521,18 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         return HookContext(self, hook_def)
 
-    def can_load(self, step_output_handle: StepOutputHandle) -> bool:
+    def can_load(
+        self,
+        step_output_handle: StepOutputHandle,
+        step_output_events: Sequence["DagsterEvent"],
+    ) -> bool:
         # Whether IO Manager can load the source
         # FIXME https://github.com/dagster-io/dagster/issues/3511
         # This is a stopgap which asks the instance to check the event logs to find out step skipping
 
-        from dagster.core.events import DagsterEventType
-
         # can load from upstream in the same run
-        for record in self.instance.all_logs(self.run_id, of_type=DagsterEventType.STEP_OUTPUT):
-            if step_output_handle == record.dagster_event.event_specific_data.step_output_handle:
+        for event in step_output_events:
+            if step_output_handle == event.step_output_data.step_output_handle:
                 return True
 
         if (
@@ -676,7 +688,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         op_config = self.op_config
-        if op_config is not None and "assets" in op_config:
+
+        if is_iterable(op_config) and "assets" in op_config:
             all_input_asset_partitions = op_config["assets"].get("input_partitions")
             if all_input_asset_partitions is not None:
                 this_input_asset_partitions = all_input_asset_partitions.get(input_name)
@@ -687,7 +700,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
         op_config = self.op_config
-        if op_config is not None and "assets" in op_config:
+        if is_iterable(op_config) and "assets" in op_config:
             all_input_asset_partitions = op_config["assets"].get("input_partitions")
             if all_input_asset_partitions is not None:
                 this_input_asset_partitions = all_input_asset_partitions.get(input_name)
@@ -710,7 +723,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def has_asset_partitions_for_output(self, output_name: str) -> bool:
         op_config = self.op_config
-        if op_config is not None and "assets" in op_config:
+        if is_iterable(op_config) and "assets" in op_config:
             all_output_asset_partitions = op_config["assets"].get("output_partitions")
             if all_output_asset_partitions is not None:
                 this_output_asset_partitions = all_output_asset_partitions.get(output_name)
@@ -721,7 +734,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def asset_partition_key_range_for_output(self, output_name: str) -> PartitionKeyRange:
         op_config = self.op_config
-        if op_config is not None and "assets" in op_config:
+        if is_iterable(op_config) and "assets" in op_config:
             all_output_asset_partitions = op_config["assets"].get("output_partitions")
             if all_output_asset_partitions is not None:
                 this_output_asset_partitions = all_output_asset_partitions.get(output_name)

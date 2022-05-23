@@ -53,13 +53,10 @@ def test_non_assets_job_no_register_event():
         my_op()
 
     with instance_for_test() as instance:
-        result = my_job.execute_in_process(instance=instance)
-        events = result.all_events
-        intent_to_materialize_events = [
-            event
-            for event in events
-            if event.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
-        ]
+        my_job.execute_in_process(instance=instance)
+        intent_to_materialize_events = instance.get_event_records(
+            EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+        )
 
         assert intent_to_materialize_events == []
 

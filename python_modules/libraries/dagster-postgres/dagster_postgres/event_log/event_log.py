@@ -11,7 +11,12 @@ from dagster.core.storage.event_log import (
     SqlEventLogStorageTable,
 )
 from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
+from dagster.core.storage.sql import (
+    check_alembic_revision,
+    create_engine,
+    run_alembic_upgrade,
+    stamp_alembic_rev,
+)
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, deserialize_as
 
 from ..utils import (
@@ -262,3 +267,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self._disposed = True
             if self._event_watcher:
                 self._event_watcher.close()
+
+    def alembic_version(self):
+        alembic_config = pg_alembic_config(__file__)
+        with self._connect() as conn:
+            return check_alembic_revision(alembic_config, conn)

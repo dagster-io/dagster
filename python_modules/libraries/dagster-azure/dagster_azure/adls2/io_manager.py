@@ -46,8 +46,7 @@ class PickledObjectADLS2IOManager(IOManager):
 
         file_client = self.file_system_client.get_file_client(key)
         with self._acquire_lease(file_client, is_rm=True) as lease:
-            # This operates recursively already so is nice and simple.
-            file_client.delete_file(lease=lease)
+            file_client.delete_file(lease=lease, recursive=True)
 
     def _has_object(self, key):
         check.str_param(key, "key")

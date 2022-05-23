@@ -481,7 +481,9 @@ def validate_tick(
     assert tick_data.instigator_name == external_schedule.name
     assert tick_data.timestamp == expected_datetime.timestamp()
     assert tick_data.status == expected_status
-    assert set(tick_data.run_ids) == set(expected_run_ids)
+    assert len(tick_data.run_ids) == len(expected_run_ids) and set(tick_data.run_ids) == set(
+        expected_run_ids
+    )
     if expected_error:
         assert expected_error in str(tick_data.error)
     assert tick_data.failure_count == expected_failure_count
@@ -1950,7 +1952,7 @@ def test_grpc_server_down(instance):
             with _grpc_server_external_repo(port) as external_repo:
                 external_schedule = external_repo.get_external_schedule("simple_schedule")
                 instance.start_schedule(external_schedule)
-                workspace.get_location(location_origin.location_name)
+                workspace.get_repository_location(location_origin.location_name)
 
             # Server is no longer running, ticks fail but indicate it will resume once it is reachable
             for _trial in range(3):

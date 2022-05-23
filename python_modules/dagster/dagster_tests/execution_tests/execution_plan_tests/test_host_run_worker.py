@@ -64,6 +64,7 @@ class ExplodingTestPipeline(ReconstructablePipeline):
         pipeline_name,
         solid_selection_str=None,
         solids_to_execute=None,
+        asset_selection=None,
     ):  # pylint: disable=signature-differs
         return super(ExplodingTestPipeline, cls).__new__(
             cls,
@@ -71,6 +72,7 @@ class ExplodingTestPipeline(ReconstructablePipeline):
             pipeline_name,
             solid_selection_str,
             solids_to_execute,
+            asset_selection,
         )
 
     def get_definition(self):

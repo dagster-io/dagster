@@ -4,7 +4,6 @@ import os
 import sqlite3
 import threading
 import time
-import warnings
 from collections import defaultdict
 from contextlib import contextmanager
 from typing import Iterable, Optional
@@ -277,15 +276,16 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         else:
             asset_details = None
 
-        if not event_records_filter or not (
-            isinstance(event_records_filter.after_cursor, RunShardedEventsCursor)
+        if (
+            event_records_filter
+            and event_records_filter.after_cursor != None
+            and not isinstance(event_records_filter.after_cursor, RunShardedEventsCursor)
         ):
-            warnings.warn(
+            raise Exception(
                 """
-                Called `get_event_records` on a run-sharded event log storage with a query that
-                is not run aware (e.g. not using a RunShardedEventsCursor).  This likely has poor
-                performance characteristics.  Consider adding a RunShardedEventsCursor to your query
-                or switching your instance configuration to use a non-run sharded event log storage
+                Called `get_event_records` on a run-sharded event log storage with a cursor that
+                is not run-aware. Add a RunShardedEventsCursor to your query filter
+                or switch your instance configuration to use a non-run-sharded event log storage
                 (e.g. PostgresEventLogStorage, ConsolidatedSqliteEventLogStorage)
             """
             )
@@ -403,6 +403,11 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if self._obs:
             self._obs.stop()
             self._obs.join(timeout=15)
+
+    def alembic_version(self):
+        alembic_config = get_alembic_config(__file__)
+        with self.index_connection() as conn:
+            return check_alembic_revision(alembic_config, conn)
 
 
 class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
