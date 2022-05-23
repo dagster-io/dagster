@@ -29,7 +29,6 @@ from ..logs.events import (
     GrapheneObservationEvent,
     GrapheneRunStepStats,
 )
-from ..paging import GrapheneCursor
 from ..repository_origin import GrapheneRepositoryOrigin
 from ..runs import GrapheneRunConfigData
 from ..schedules.schedules import GrapheneSchedule
@@ -382,8 +381,6 @@ class GrapheneRun(graphene.ObjectType):
         ]
 
     def resolve_eventConnection(self, graphene_info, cursor=None):
-        if after is not None:
-            cursor = EventLogCursor.from_offset(after)
         conn = graphene_info.context.instance.get_records_for_run(self.run_id, cursor=cursor)
         return GrapheneEventConnection(
             events=[

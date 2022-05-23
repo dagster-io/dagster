@@ -7,7 +7,6 @@ from dagster.core.storage.compute_log_manager import ComputeIOType
 from ...implementation.execution import get_compute_log_observable, get_pipeline_run_observable
 from ..external import GrapheneLocationStateChangeSubscription, get_location_state_change_observable
 from ..logs.compute_logs import GrapheneComputeIOType, GrapheneComputeLogFile
-from ..paging import GrapheneCursor
 from ..pipelines.subscription import GraphenePipelineRunLogsSubscriptionPayload
 
 

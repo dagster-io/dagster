@@ -10,6 +10,7 @@ from dagster_graphql.client.query import (
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import parse
 
+from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.utils import file_relative_path
 from dagster.utils.test import get_temp_file_name
@@ -386,7 +387,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         non_engine_event_types = [
             message["__typename"]
-            for message in events_result.data["pipelineRunOrError"]["events"]
+            for message in events_result.data["pipelineRunOrError"]["eventConnection"]["events"]
             if message["__typename"] != "EngineEvent"
         ]
         assert non_engine_event_types == self._csv_hello_world_event_sequence()
@@ -415,28 +416,29 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert exc_result.data
         assert exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
-        def _fetch_events(after):
+        def _fetch_events(cursor):
             events_result = execute_dagster_graphql(
                 graphql_context,
                 RUN_EVENTS_QUERY,
                 variables={
                     "runId": exc_result.data["launchPipelineExecution"]["run"]["runId"],
-                    "after": after,
+                    "after": cursor,
                 },
             )
             assert not events_result.errors
             assert events_result.data
             assert events_result.data["pipelineRunOrError"]["__typename"] == "Run"
-            return events_result.data["pipelineRunOrError"]["events"]
+            return events_result.data["pipelineRunOrError"]["eventConnection"]["events"], cursor
 
         full_logs = []
-        cursor = -1
+        cursor = None
         iters = 0
 
         # do 3 polls, then fetch after waiting for execution to finish
         while iters < 3:
-            full_logs.extend(_fetch_events(cursor))
-            cursor = len(full_logs) - 1
+            _events, _cursor = _fetch_events(cursor)
+            full_logs.extend(_events)
+            cursor = _cursor
             iters += 1
             time.sleep(0.05)  # 50ms
 
