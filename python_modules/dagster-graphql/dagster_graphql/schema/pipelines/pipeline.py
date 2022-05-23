@@ -537,6 +537,7 @@ class GrapheneIPipelineSnapshotMixin:
         ]
 
     def resolve_metadata_entries(self, _graphene_info) -> List[GrapheneMetadataEntry]:
+        breakpoint()
         represented_pipeline = self.get_represented_pipeline()
         return list(iterate_metadata_entries(represented_pipeline.pipeline_snapshot.metadata))
 

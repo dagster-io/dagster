@@ -10,3 +10,6 @@ In order to run, the `EARLIEST_TESTED_RELEASE` environment variable needs to be 
     ```bash
     export EARLIEST_TESTED_RELEASE="0.12.8"
     ```
+
+
+need docker running
