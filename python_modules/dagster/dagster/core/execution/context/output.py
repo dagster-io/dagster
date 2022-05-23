@@ -455,7 +455,7 @@ class OutputContext:
 
         return identifier
 
-    def get_asset_output_identifier(self) -> Sequence[str]:
+    def get_asset_identifier(self) -> Sequence[str]:
         if self.asset_key is not None:
             if self.has_asset_partitions:
                 return self.asset_key.path + [self.asset_partition_key]
@@ -463,6 +463,14 @@ class OutputContext:
                 return self.asset_key.path
         else:
             check.failed("Can't get asset output identifier for an output with no asset key")
+
+    def get_asset_output_identifier(self) -> Sequence[str]:
+        warnings.warn(
+            "`OutputContext.get_asset_output_identifier` is deprecated. Use "
+            "`OutputContext.get_asset_identifier` instead."
+        )
+
+        return self.get_asset_identifier()
 
     def log_event(
         self, event: Union[AssetObservation, AssetMaterialization, Materialization]

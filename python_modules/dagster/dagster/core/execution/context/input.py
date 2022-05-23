@@ -306,14 +306,14 @@ class InputContext:
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,  # type: ignore
         )
 
-    def get_asset_input_identifier(self) -> Sequence[str]:
+    def get_asset_identifier(self) -> Sequence[str]:
         if self.asset_key is not None:
             if self.has_asset_partitions:
                 return self.asset_key.path + [self.asset_partition_key]
             else:
                 return self.asset_key.path
         else:
-            check.failed("Can't get asset inpu identifier for an input with no asset key")
+            check.failed("Can't get asset identifier for an input with no asset key")
 
     def consume_events(self) -> Iterator["DagsterEvent"]:
         """Pops and yields all user-generated events that have been recorded from this context.
