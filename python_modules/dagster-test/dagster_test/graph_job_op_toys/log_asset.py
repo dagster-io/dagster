@@ -15,5 +15,5 @@ def log_asset():
 
 
 log_asset_job = log_asset.to_job(
-    description="Demo job that logs asset materializations from graphs",
+    description="Demo job that logs asset materializations from graphs"
 )

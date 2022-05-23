@@ -53,5 +53,5 @@ def log_spew():
 
 
 log_spew_job = log_spew.to_job(
-    description="Demo job that spits out different types of log messages to the event log.",
+    description="Demo job that spits out different types of log messages to the event log."
 )

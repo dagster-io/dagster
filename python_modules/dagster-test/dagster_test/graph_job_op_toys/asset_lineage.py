@@ -172,6 +172,4 @@ def asset_lineage():
     daily_top_action(top_10_reviews(reviews), top_10_comments(comments))
 
 
-asset_lineage_job = asset_lineage.to_job(
-    resource_defs={"my_db_io_manager": my_db_io_manager},
-)
+asset_lineage_job = asset_lineage.to_job(resource_defs={"my_db_io_manager": my_db_io_manager})

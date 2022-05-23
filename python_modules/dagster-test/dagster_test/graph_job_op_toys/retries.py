@@ -36,5 +36,5 @@ retry_job = retry.to_job(
                 }
             }
         }
-    },
+    }
 )

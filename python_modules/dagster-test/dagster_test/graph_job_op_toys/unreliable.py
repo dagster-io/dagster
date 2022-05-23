@@ -31,5 +31,5 @@ def unreliable():
 
 
 unreliable_job = unreliable.to_job(
-    description="Demo graph of chained ops that fail with a configurable probability.",
+    description="Demo graph of chained ops that fail with a configurable probability."
 )
