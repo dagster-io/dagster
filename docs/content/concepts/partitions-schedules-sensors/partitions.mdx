@@ -295,14 +295,14 @@ def test_do_stuff_partitioned():
 
 ### Relevant APIs
 
-| Name                                                        | Description                                                                       |
-| ----------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| <PyObject object="PartitionsDefinition" decorator />        | Superclass - defines the set of partitions that can be materialized for an asset. |
-| <PyObject object="HourlyPartitionsDefinition" decorator />  | A partitions definition with a partition for each hour.                           |
-| <PyObject object="DailyPartitionsDefinition" decorator />   | A partitions definition with a partition for each day.                            |
-| <PyObject object="WeeklyPartitionsDefinition" decorator />  | A partitions definition with a partition for each week.                           |
-| <PyObject object="MonthlyPartitionsDefinition" decorator /> | A partitions definition with a partition for each month.                          |
-| <PyObject object="StaticPartitionsDefinition" decorator />  | A partitions definition with a fixed set of partitions.                           |
+| Name                                              | Description                                                                       |
+| ------------------------------------------------- | --------------------------------------------------------------------------------- |
+| <PyObject object="PartitionsDefinition" />        | Superclass - defines the set of partitions that can be materialized for an asset. |
+| <PyObject object="HourlyPartitionsDefinition" />  | A partitions definition with a partition for each hour.                           |
+| <PyObject object="DailyPartitionsDefinition" />   | A partitions definition with a partition for each day.                            |
+| <PyObject object="WeeklyPartitionsDefinition" />  | A partitions definition with a partition for each week.                           |
+| <PyObject object="MonthlyPartitionsDefinition" /> | A partitions definition with a partition for each month.                          |
+| <PyObject object="StaticPartitionsDefinition" />  | A partitions definition with a fixed set of partitions.                           |
 
 A software-defined asset can be assigned a <PyObject object="PartitionsDefinition" />, which determines the set of partitions that compose it. Once an asset has a set of partitions, you can launch materializations of individual partitions, as well as view the materialization history by partition in Dagit.
 
