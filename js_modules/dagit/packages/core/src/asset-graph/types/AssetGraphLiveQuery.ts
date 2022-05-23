@@ -71,14 +71,14 @@ export interface AssetGraphLiveQuery_assetNodes {
   assetMaterializations: AssetGraphLiveQuery_assetNodes_assetMaterializations[];
 }
 
-export interface AssetGraphLiveQuery_assetsLiveInfo_assetKey {
+export interface AssetGraphLiveQuery_assetsLatestInfo_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetGraphLiveQuery_assetsLiveInfo {
+export interface AssetGraphLiveQuery_assetsLatestInfo {
   __typename: "AssetLiveInfo";
-  assetKey: AssetGraphLiveQuery_assetsLiveInfo_assetKey;
+  assetKey: AssetGraphLiveQuery_assetsLatestInfo_assetKey;
   unstartedRunIds: string[];
   inProgressRunIds: string[];
 }
@@ -86,7 +86,7 @@ export interface AssetGraphLiveQuery_assetsLiveInfo {
 export interface AssetGraphLiveQuery {
   repositoriesOrError: AssetGraphLiveQuery_repositoriesOrError;
   assetNodes: AssetGraphLiveQuery_assetNodes[];
-  assetsLiveInfo: AssetGraphLiveQuery_assetsLiveInfo[];
+  assetsLatestInfo: AssetGraphLiveQuery_assetsLatestInfo[];
 }
 
 export interface AssetGraphLiveQueryVariables {

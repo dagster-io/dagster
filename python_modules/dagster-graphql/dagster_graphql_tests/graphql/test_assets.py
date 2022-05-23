@@ -93,7 +93,7 @@ GET_ASSET_MATERIALIZATION_TIMESTAMP = """
 
 GET_ASSET_IN_PROGRESS_RUNS = """
     query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]) {
-        assetsLiveInfo(assetKeys: $assetKeys) {
+        assetsLatestInfo(assetKeys: $assetKeys) {
             assetKey {
                 path
             }
@@ -943,9 +943,9 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             graphql_context.instance.run_launcher.terminate(run_id)
 
             assert result.data
-            assert result.data["assetsLiveInfo"]
+            assert result.data["assetsLatestInfo"]
 
-            assets_live_info = result.data["assetsLiveInfo"]
+            assets_live_info = result.data["assetsLatestInfo"]
 
             assets_live_info = sorted(assets_live_info, key=lambda res: res["assetKey"]["path"])
             assert len(assets_live_info) == 3
@@ -1005,9 +1005,9 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             graphql_context.instance.run_launcher.terminate(run_id)
 
             assert result.data
-            assert result.data["assetsLiveInfo"]
+            assert result.data["assetsLatestInfo"]
 
-            assets_live_info = result.data["assetsLiveInfo"]
+            assets_live_info = result.data["assetsLatestInfo"]
 
             assets_live_info = sorted(assets_live_info, key=lambda res: res["assetKey"]["path"])
             assert len(assets_live_info) == 2

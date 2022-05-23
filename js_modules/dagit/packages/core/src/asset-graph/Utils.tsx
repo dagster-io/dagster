@@ -5,7 +5,7 @@ import uniq from 'lodash/uniq';
 import {AssetNodeDefinitionFragment} from '../assets/types/AssetNodeDefinitionFragment';
 
 import {
-  AssetGraphLiveQuery_assetsLiveInfo,
+  AssetGraphLiveQuery_assetsLatestInfo,
   AssetGraphLiveQuery_assetNodes_assetMaterializations,
 } from './types/AssetGraphLiveQuery';
 import {
@@ -231,7 +231,7 @@ export const buildLiveData = (
   graph: GraphData,
   nodes: AssetNodeLiveFragment[],
   repos: RepositoryLiveFragment[],
-  assetsLiveInfo: AssetGraphLiveQuery_assetsLiveInfo[],
+  assetsLatestInfo: AssetGraphLiveQuery_assetsLatestInfo[],
 ) => {
   const data: LiveData = {};
 
@@ -247,7 +247,7 @@ export const buildLiveData = (
     const isPartitioned = graphNode.definition.partitionDefinition;
     const repo = repos.find((r) => r.id === liveNode.repository.id);
 
-    const assetLiveRuns = assetsLiveInfo.find(
+    const assetLiveRuns = assetsLatestInfo.find(
       (r) => JSON.stringify(r.assetKey) === JSON.stringify(liveNode.assetKey),
     );
     const info = repo?.latestRunByStep.find((r) => liveNode.opNames.includes(r.stepKey));

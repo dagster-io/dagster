@@ -271,7 +271,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     permissions = graphene.Field(non_null_list(GraphenePermission))
 
-    assetsLiveInfo = graphene.Field(
+    assetsLatestInfo = graphene.Field(
         non_null_list(GrapheneAssetLiveInfo),
         assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
     )
@@ -523,7 +523,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         permissions = graphene_info.context.permissions
         return [GraphenePermission(permission, value) for permission, value in permissions.items()]
 
-    def resolve_assetsLiveInfo(self, graphene_info, **kwargs):
+    def resolve_assetsLatestInfo(self, graphene_info, **kwargs):
         asset_keys = set(
             AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
         )

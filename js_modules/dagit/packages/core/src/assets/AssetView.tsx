@@ -108,9 +108,9 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       ? liveQueryResult.data.repositoryOrError
       : null;
 
-  const assetsLiveInfo = liveQueryResult.data ? liveQueryResult.data.assetsLiveInfo : null;
+  const assetsLatestInfo = liveQueryResult.data ? liveQueryResult.data.assetsLatestInfo : null;
 
-  if (definition && repo && assetsLiveInfo) {
+  if (definition && repo && assetsLatestInfo) {
     const nodesWithLatestMaterialization = [
       definition,
       ...definition.dependencies.map((d) => d.asset),
@@ -120,7 +120,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       buildGraphDataFromSingleNode(definition),
       nodesWithLatestMaterialization,
       [repo],
-      assetsLiveInfo,
+      assetsLatestInfo,
     );
   }
 
@@ -275,7 +275,7 @@ const ASSET_NODE_DEFINITION_LIVE_QUERY = gql`
         ...RepositoryLiveFragment
       }
     }
-    assetsLiveInfo(assetKeys: $assetKeys) {
+    assetsLatestInfo(assetKeys: $assetKeys) {
       assetKey {
         path
       }

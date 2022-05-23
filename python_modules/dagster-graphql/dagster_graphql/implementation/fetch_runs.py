@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, List, Mapping
+from typing import Dict, List, Mapping, cast
 
 from graphql.execution.base import ResolveInfo
 
@@ -188,7 +188,7 @@ def _get_in_progress_runs_for_assets(
         selected_assets = (
             set.union(*[asset_key_by_step_key[run_step_key] for run_step_key in run_step_keys])
             if asset_selection == None
-            else asset_selection
+            else cast(frozenset, asset_selection)
         )  # only display in progress/unstarted indicators for selected assets
 
         if run.status in IN_PROGRESS_STATUSES:

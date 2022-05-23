@@ -41,21 +41,21 @@ export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository {
 
 export type AssetNodeDefinitionLiveQuery_repositoryOrError = AssetNodeDefinitionLiveQuery_repositoryOrError_PythonError | AssetNodeDefinitionLiveQuery_repositoryOrError_Repository;
 
-export interface AssetNodeDefinitionLiveQuery_assetsLiveInfo_assetKey {
+export interface AssetNodeDefinitionLiveQuery_assetsLatestInfo_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetNodeDefinitionLiveQuery_assetsLiveInfo {
+export interface AssetNodeDefinitionLiveQuery_assetsLatestInfo {
   __typename: "AssetLiveInfo";
-  assetKey: AssetNodeDefinitionLiveQuery_assetsLiveInfo_assetKey;
+  assetKey: AssetNodeDefinitionLiveQuery_assetsLatestInfo_assetKey;
   unstartedRunIds: string[];
   inProgressRunIds: string[];
 }
 
 export interface AssetNodeDefinitionLiveQuery {
   repositoryOrError: AssetNodeDefinitionLiveQuery_repositoryOrError;
-  assetsLiveInfo: AssetNodeDefinitionLiveQuery_assetsLiveInfo[];
+  assetsLatestInfo: AssetNodeDefinitionLiveQuery_assetsLatestInfo[];
 }
 
 export interface AssetNodeDefinitionLiveQueryVariables {
