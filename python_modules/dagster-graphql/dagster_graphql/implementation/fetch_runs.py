@@ -140,7 +140,7 @@ def get_assets_live_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, Li
         for asset_record in asset_records
     }
 
-    latest_run_ids = [
+    latest_run_ids = [  # last_run_id column is written to upon run creation (via ASSET_MATERIALIZATION_PLANNED event)
         asset_record.asset_entry.last_run_id
         for asset_record in asset_records
         if asset_record.asset_entry.last_run_id
