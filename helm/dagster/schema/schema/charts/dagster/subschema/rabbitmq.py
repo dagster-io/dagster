@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field  # pylint: disable=no-name-in-module
+from pydantic import BaseModel, Field
 
 from ...utils.kubernetes import ExternalImage
 

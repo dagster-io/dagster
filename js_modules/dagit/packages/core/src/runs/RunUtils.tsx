@@ -8,6 +8,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
+import {AssetKey} from '../assets/types';
 import {ExecutionParams, RunStatus} from '../types/globalTypes';
 
 import {DagsterTag} from './RunTag';
@@ -21,6 +22,16 @@ import {RunTimeFragment} from './types/RunTimeFragment';
 
 export function titleForRun(run: {runId: string}) {
   return run.runId.split('-').shift();
+}
+
+export function assetKeysForRun(run: {
+  assetSelection: {path: string[]}[] | null;
+  stepKeysToExecute: string[] | null;
+}): AssetKey[] {
+  // Note: The fallback logic here is only necessary for Dagit <0.15.0 and should be removed
+  // soon, because stepKeysToExecute and asset keys do not map 1:1 for multi-component asset
+  // paths.
+  return run.assetSelection || run.stepKeysToExecute?.map((s) => ({path: [s]})) || [];
 }
 
 export function linkToRunEvent(

@@ -1821,11 +1821,9 @@ records = instance.get_event_records(
         return run
 
     def count_resume_run_attempts(self, run_id: str):
-        from dagster.core.events import DagsterEventType
-        from dagster.daemon.monitoring import RESUME_RUN_LOG_MESSAGE
+        from dagster.daemon.monitoring import count_resume_run_attempts
 
-        events = self.all_logs(run_id, of_type=DagsterEventType.ENGINE_EVENT)
-        return len([event for event in events if event.message == RESUME_RUN_LOG_MESSAGE])
+        return count_resume_run_attempts(self, run_id)
 
     def run_will_resume(self, run_id: str):
         if not self.run_monitoring_enabled:

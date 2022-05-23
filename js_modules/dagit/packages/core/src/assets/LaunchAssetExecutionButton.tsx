@@ -11,7 +11,6 @@ import {AssetKey} from './types';
 
 type AssetMinimal = {
   assetKey: {path: string[]};
-  opName: string | null;
   opNames: string[];
   jobNames: string[];
   partitionDefinition: string | null;

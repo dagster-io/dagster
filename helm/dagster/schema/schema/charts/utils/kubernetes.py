@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Extra  # pylint: disable=no-name-in-module
+from pydantic import BaseModel, Extra
 
 from .utils import BaseModel as BaseModelWithNullableRequiredFields
 from .utils import create_definition_ref

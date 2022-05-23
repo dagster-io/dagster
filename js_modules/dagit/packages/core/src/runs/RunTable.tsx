@@ -20,10 +20,16 @@ import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
+import {RunAssetKeyTags} from './RunAssetKeyTags';
 import {RunStatusTagWithStats} from './RunStatusTag';
-import {RunStepKeysAssetList} from './RunStepKeysAssetList';
 import {RunTags} from './RunTags';
-import {RunStateSummary, RunTime, RUN_TIME_FRAGMENT, titleForRun} from './RunUtils';
+import {
+  assetKeysForRun,
+  RunStateSummary,
+  RunTime,
+  RUN_TIME_FRAGMENT,
+  titleForRun,
+} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 
@@ -235,7 +241,9 @@ const RunRow: React.FC<{
       </td>
       <td>
         <Box flex={{direction: 'column', gap: 5}}>
-          {!isAssetGroup(run.pipelineName) ? (
+          {isAssetGroup(run.pipelineName) ? (
+            <RunAssetKeyTags assetKeys={assetKeysForRun(run)} />
+          ) : (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <PipelineReference
                 isJob={isJob}
@@ -258,8 +266,6 @@ const RunRow: React.FC<{
                 <Icon name="open_in_new" color={Colors.Blue500} />
               </Link>
             </Box>
-          ) : (
-            <RunStepKeysAssetList stepKeys={run.stepKeysToExecute} />
           )}
           <RunTags
             tags={run.tags}

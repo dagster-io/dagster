@@ -240,7 +240,6 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     id
     description
     graphName
-    opName
     opNames
     jobNames
     repository {
@@ -259,7 +258,6 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     dependencies {
       asset {
         id
-        opName
         opNames
         jobNames
         ...AssetNodeFragment
@@ -269,7 +267,6 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     dependedBy {
       asset {
         id
-        opName
         opNames
         jobNames
         ...AssetNodeFragment

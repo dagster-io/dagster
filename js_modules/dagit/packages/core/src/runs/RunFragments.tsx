@@ -33,6 +33,12 @@ export const RunFragments = {
         key
         value
       }
+      assets {
+        id
+        key {
+          path
+        }
+      }
       rootRunId
       parentRunId
       pipelineName

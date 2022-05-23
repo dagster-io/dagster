@@ -1,4 +1,7 @@
-{{- if .Values.ingress.enabled }}
+{{- $apiVersion := .Values.ingress.apiVersion | default "" }}
+{{- $hasApiVersion := (.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress") }}
+{{- $hasOverrideApiVersion := eq $apiVersion "networking.k8s.io/v1/Ingress" }}
+{{- if and (.Values.ingress.enabled) (or $hasApiVersion $hasOverrideApiVersion) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

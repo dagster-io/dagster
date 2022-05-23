@@ -1225,7 +1225,6 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_assetNodes {
   __typename: "AssetNode";
   id: string;
-  opName: string | null;
   opNames: string[];
   assetKey: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_assetNodes_assetKey;
 }
@@ -1289,7 +1288,6 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_assetNodes {
   __typename: "AssetNode";
   id: string;
-  opName: string | null;
   opNames: string[];
   assetKey: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_assetNodes_assetKey;
 }

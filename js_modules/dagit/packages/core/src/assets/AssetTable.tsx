@@ -187,7 +187,7 @@ const AssetEntryRow: React.FC<{
       <td>
         {asset ? (
           <Box flex={{gap: 8, alignItems: 'center'}}>
-            {asset.definition?.opName ? (
+            {asset.definition?.opNames.length ? (
               <Link
                 to={instanceAssetsExplorerPathToURL({
                   opsQuery: `++"${tokenForAssetKey({path})}"++`,
@@ -292,7 +292,6 @@ export const ASSET_TABLE_FRAGMENT = gql`
     }
     definition {
       id
-      opName
       opNames
       description
       repository {

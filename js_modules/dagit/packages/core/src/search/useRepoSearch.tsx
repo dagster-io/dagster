@@ -1,4 +1,4 @@
-import {gql, useLazyQuery, useQuery} from '@apollo/client';
+import {gql, useLazyQuery} from '@apollo/client';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 
@@ -127,15 +127,15 @@ const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
 };
 
 export const useRepoSearch = () => {
-  const {data: bootstrapData, loading: bootstrapLoading} = useQuery<SearchBootstrapQuery>(
-    SEARCH_BOOTSTRAP_QUERY,
-    {
-      fetchPolicy: 'cache-and-network',
-    },
-  );
+  const [
+    performBootstrapQuery,
+    {data: bootstrapData, loading: bootstrapLoading},
+  ] = useLazyQuery<SearchBootstrapQuery>(SEARCH_BOOTSTRAP_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
 
   const [
-    performQuery,
+    performSecondaryQuery,
     {data: secondaryData, loading: secondaryLoading, called: secondaryQueryCalled},
   ] = useLazyQuery<SearchSecondaryQuery>(SEARCH_SECONDARY_QUERY, {
     fetchPolicy: 'cache-and-network',
@@ -151,16 +151,16 @@ export const useRepoSearch = () => {
   const performSearch = React.useCallback(
     (queryString: string, buildSecondary?: boolean): Fuse.FuseResult<SearchResult>[] => {
       if ((queryString || buildSecondary) && !secondaryQueryCalled) {
-        performQuery();
+        performSecondaryQuery();
       }
       const bootstrapResults: Fuse.FuseResult<SearchResult>[] = bootstrapFuse.search(queryString);
       const secondaryResults: Fuse.FuseResult<SearchResult>[] = secondaryFuse.search(queryString);
       return [...bootstrapResults, ...secondaryResults];
     },
-    [bootstrapFuse, secondaryFuse, performQuery, secondaryQueryCalled],
+    [bootstrapFuse, secondaryFuse, performSecondaryQuery, secondaryQueryCalled],
   );
 
-  return {loading, performSearch};
+  return {performBootstrapQuery, loading, performSearch};
 };
 
 const SEARCH_BOOTSTRAP_QUERY = gql`

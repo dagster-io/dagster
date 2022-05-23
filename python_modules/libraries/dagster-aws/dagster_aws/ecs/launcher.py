@@ -268,22 +268,6 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             cls=self.__class__,
         )
 
-    def can_terminate(self, run_id):
-        tags = self._get_run_tags(run_id)
-
-        if not (tags.arn and tags.cluster):
-            return False
-
-        tasks = self.ecs.describe_tasks(tasks=[tags.arn], cluster=tags.cluster).get("tasks")
-        if not tasks:
-            return False
-
-        status = tasks[0].get("lastStatus")
-        if status and status != "STOPPED":
-            return True
-
-        return False
-
     def terminate(self, run_id):
         tags = self._get_run_tags(run_id)
 

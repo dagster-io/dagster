@@ -56,7 +56,7 @@ interface Props {
   setOpen: (open: boolean) => void;
   repoAddress: RepoAddress;
   assetJobName: string;
-  assets: {assetKey: AssetKey; opName: string | null; partitionDefinition: string | null}[];
+  assets: {assetKey: AssetKey; opNames: string[]; partitionDefinition: string | null}[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
 }
 
@@ -199,7 +199,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
       const tags = [...partition.tagsOrError.results];
       const runConfigData = yaml.parse(partition.runConfigOrError.yaml || '') || {};
-      const stepKeys = assets.map((a) => a.opName!);
+      const stepKeys = assets.map((a) => a.opNames).flat();
 
       const launchResult = await client.mutate<
         LaunchPipelineExecution,
@@ -248,7 +248,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               },
             },
             partitionNames: selected,
-            reexecutionSteps: assets.map((a) => a.opName!),
+            reexecutionSteps: assets.map((a) => a.opNames).flat(),
             fromFailure: false,
             tags: [],
           },

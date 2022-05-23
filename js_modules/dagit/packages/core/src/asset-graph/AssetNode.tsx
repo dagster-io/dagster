@@ -31,7 +31,11 @@ export const AssetNode: React.FC<{
   padded?: boolean;
   inAssetCatalog?: boolean;
 }> = React.memo(({definition, selected, liveData, inAssetCatalog, padded = true}) => {
-  const stepKey = definition.opName || '';
+  const firstOp = definition.opNames.length ? definition.opNames[0] : null;
+
+  // Used for linking to the run with this step highlighted. We only support highlighting
+  // a single step, so just use the first one.
+  const stepKey = firstOp || '';
 
   const displayName = withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {
     maxLength: ASSET_NODE_NAME_MAX_LENGTH,
@@ -64,7 +68,7 @@ export const AssetNode: React.FC<{
         {definition.description && !inAssetCatalog && (
           <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
         )}
-        {definition.opName && displayName !== definition.opName && (
+        {firstOp && displayName !== firstOp && (
           <Description>
             <Box
               flex={{gap: 4, alignItems: 'flex-end'}}
@@ -72,7 +76,7 @@ export const AssetNode: React.FC<{
             >
               <Icon name="op" size={16} />
               <div style={{minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis'}}>
-                {definition.opName}
+                {firstOp}
               </div>
             </Box>
           </Description>
@@ -201,7 +205,6 @@ export const AssetRunLink: React.FC<{
 export const ASSET_NODE_LIVE_FRAGMENT = gql`
   fragment AssetNodeLiveFragment on AssetNode {
     id
-    opName
     opNames
     repository {
       id
@@ -220,7 +223,6 @@ export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeFragment on AssetNode {
     id
     graphName
-    opName
     opNames
     description
     partitionDefinition
