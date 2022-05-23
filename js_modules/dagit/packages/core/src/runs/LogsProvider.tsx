@@ -310,7 +310,7 @@ const RUN_LOGS_QUERY = gql`
         runId
         status
         canTerminate
-        eventConnection(cursor: $cursor) {
+        eventConnection(afterCursor: $cursor) {
           events {
             __typename
             ... on MessageEvent {

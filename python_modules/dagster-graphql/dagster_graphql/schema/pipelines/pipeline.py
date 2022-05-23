@@ -205,7 +205,7 @@ class GraphenePipelineRun(graphene.Interface):
     assets = non_null_list(GrapheneAsset)
     eventConnection = graphene.Field(
         graphene.NonNull(GrapheneEventConnection),
-        cursor=graphene.Argument(graphene.String),
+        afterCursor=graphene.Argument(graphene.String),
     )
 
     class Meta:
@@ -247,7 +247,7 @@ class GrapheneRun(graphene.ObjectType):
     assets = non_null_list(GrapheneAsset)
     eventConnection = graphene.Field(
         graphene.NonNull(GrapheneEventConnection),
-        cursor=graphene.Argument(graphene.String),
+        afterCursor=graphene.Argument(graphene.String),
     )
     startTime = graphene.Float()
     endTime = graphene.Float()
@@ -380,8 +380,8 @@ class GrapheneRun(graphene.ObjectType):
             )
         ]
 
-    def resolve_eventConnection(self, graphene_info, cursor=None):
-        conn = graphene_info.context.instance.get_records_for_run(self.run_id, cursor=cursor)
+    def resolve_eventConnection(self, graphene_info, afterCursor=None):
+        conn = graphene_info.context.instance.get_records_for_run(self.run_id, cursor=afterCursor)
         return GrapheneEventConnection(
             events=[
                 from_event_record(record.event_log_entry, self._pipeline_run.pipeline_name)

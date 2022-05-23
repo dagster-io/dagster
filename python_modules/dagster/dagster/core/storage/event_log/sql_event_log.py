@@ -309,6 +309,7 @@ class SqlEventLogStorage(EventLogStorage):
         if last_record_id is not None:
             next_cursor = EventLogCursor.from_storage_id(last_record_id).to_string()
         elif cursor:
+            # record fetch returned no new logs, return the same cursor
             next_cursor = cursor
         else:
             # rely on the fact that all storage ids will be positive integers

@@ -248,7 +248,7 @@ query pipelineRunEvents($runId: ID!, $cursor: String) {
   pipelineRunOrError(runId: $runId) {
     __typename
     ... on PipelineRun {
-      eventConnection(cursor: $cursor) {
+      eventConnection(afterCursor: $cursor) {
         events {
           ...messageEventFragment
         }
