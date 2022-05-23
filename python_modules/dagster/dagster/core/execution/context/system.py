@@ -64,6 +64,14 @@ if TYPE_CHECKING:
     from .hook import HookContext
 
 
+def is_iterable(obj: Any) -> bool:
+    try:
+        iter(obj)
+    except:
+        return False
+    return True
+
+
 class IPlanContext(ABC):
     """Context interface to represent run information that does not require access to user code.
 
@@ -680,7 +688,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         op_config = self.op_config
-        if op_config is not None and "assets" in op_config:
+
+        if is_iterable(op_config) and "assets" in op_config:
             all_input_asset_partitions = op_config["assets"].get("input_partitions")
             if all_input_asset_partitions is not None:
                 this_input_asset_partitions = all_input_asset_partitions.get(input_name)
@@ -691,7 +700,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
         op_config = self.op_config
-        if op_config is not None and "assets" in op_config:
+        if is_iterable(op_config) and "assets" in op_config:
             all_input_asset_partitions = op_config["assets"].get("input_partitions")
             if all_input_asset_partitions is not None:
                 this_input_asset_partitions = all_input_asset_partitions.get(input_name)
@@ -714,7 +723,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def has_asset_partitions_for_output(self, output_name: str) -> bool:
         op_config = self.op_config
-        if op_config is not None and "assets" in op_config:
+        if is_iterable(op_config) and "assets" in op_config:
             all_output_asset_partitions = op_config["assets"].get("output_partitions")
             if all_output_asset_partitions is not None:
                 this_output_asset_partitions = all_output_asset_partitions.get(output_name)
@@ -725,7 +734,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def asset_partition_key_range_for_output(self, output_name: str) -> PartitionKeyRange:
         op_config = self.op_config
-        if op_config is not None and "assets" in op_config:
+        if is_iterable(op_config) and "assets" in op_config:
             all_output_asset_partitions = op_config["assets"].get("output_partitions")
             if all_output_asset_partitions is not None:
                 this_output_asset_partitions = all_output_asset_partitions.get(output_name)
