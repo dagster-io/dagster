@@ -168,6 +168,12 @@ class GrapheneAsset(graphene.ObjectType):
         ]
 
 
+class GrapheneEventConnection(graphene.ObjectType):
+    events = non_null_list(GrapheneDagsterRunEvent)
+    cursor = graphene.NonNull(graphene.String)
+    hasMore = graphene.NonNull(graphene.Boolean)
+
+
 class GraphenePipelineRun(graphene.Interface):
     id = graphene.NonNull(graphene.ID)
     runId = graphene.NonNull(graphene.String)
@@ -198,9 +204,9 @@ class GraphenePipelineRun(graphene.Interface):
     parentRunId = graphene.Field(graphene.String)
     canTerminate = graphene.NonNull(graphene.Boolean)
     assets = non_null_list(GrapheneAsset)
-    events = graphene.Field(
-        non_null_list(GrapheneDagsterRunEvent),
-        after=graphene.Argument(GrapheneCursor),
+    eventConnection = graphene.Field(
+        graphene.NonNull(GrapheneEventConnection),
+        cursor=graphene.Argument(graphene.String),
     )
 
     class Meta:
@@ -240,9 +246,9 @@ class GrapheneRun(graphene.ObjectType):
     canTerminate = graphene.NonNull(graphene.Boolean)
     assetMaterializations = non_null_list(GrapheneMaterializationEvent)
     assets = non_null_list(GrapheneAsset)
-    events = graphene.Field(
-        non_null_list(GrapheneDagsterRunEvent),
-        after=graphene.Argument(GrapheneCursor),
+    eventConnection = graphene.Field(
+        graphene.NonNull(GrapheneEventConnection),
+        cursor=graphene.Argument(graphene.String),
     )
     startTime = graphene.Float()
     endTime = graphene.Float()
@@ -375,9 +381,18 @@ class GrapheneRun(graphene.ObjectType):
             )
         ]
 
-    def resolve_events(self, graphene_info, after=-1):
-        events = graphene_info.context.instance.logs_after(self.run_id, cursor=after)
-        return [from_event_record(event, self._pipeline_run.pipeline_name) for event in events]
+    def resolve_eventConnection(self, graphene_info, cursor=None):
+        if after is not None:
+            cursor = EventLogCursor.from_offset(after)
+        conn = graphene_info.context.instance.get_records_for_run(self.run_id, cursor=cursor)
+        return GrapheneEventConnection(
+            events=[
+                from_event_record(record.event_log_entry, self._pipeline_run.pipeline_name)
+                for record in conn.records
+            ],
+            cursor=conn.cursor,
+            hasMore=conn.has_more,
+        )
 
     def _get_run_record(self, instance):
         if not self._run_record:

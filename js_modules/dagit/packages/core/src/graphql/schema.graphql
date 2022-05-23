@@ -392,7 +392,7 @@ type Run implements PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  events(after: Cursor): [DagsterRunEvent!]!
+  eventConnection(cursor: String): GrapheneEventConnection!
   assetSelection: [AssetKey!]
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
@@ -428,7 +428,7 @@ interface PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  events(after: Cursor): [DagsterRunEvent!]!
+  eventConnection(cursor: String): GrapheneEventConnection!
 }
 
 type RepositoryOrigin {
@@ -653,6 +653,12 @@ type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
   runOrError: RunOrError!
   stepStats: RunStepStats!
   partition: String
+}
+
+type GrapheneEventConnection {
+  events: [DagsterRunEvent!]!
+  cursor: String!
+  hasMore: Boolean!
 }
 
 union DagsterRunEvent =
@@ -1080,8 +1086,6 @@ type AssetMaterializationPlannedEvent implements MessageEvent & RunEvent {
   assetKey: AssetKey
   runOrError: RunOrError!
 }
-
-scalar Cursor
 
 type RunNotFoundError implements PipelineRunNotFoundError & Error {
   runId: String!
@@ -2390,7 +2394,7 @@ type LogTelemetrySuccess {
 }
 
 type DagitSubscription {
-  pipelineRunLogs(runId: ID!, after: Cursor): PipelineRunLogsSubscriptionPayload!
+  pipelineRunLogs(runId: ID!, cursor: String): PipelineRunLogsSubscriptionPayload!
   computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
   locationStateChangeEvents: LocationStateChangeSubscription!
 }
@@ -2403,6 +2407,7 @@ type PipelineRunLogsSubscriptionSuccess {
   run: Run!
   messages: [DagsterRunEvent!]!
   hasMorePastEvents: Boolean!
+  cursor: String!
 }
 
 type PipelineRunLogsSubscriptionFailure {
@@ -3004,6 +3009,8 @@ type AssetMetadataEntry implements MetadataEntry {
   description: String
   assetKey: AssetKey!
 }
+
+scalar Cursor
 
 type RunGroups {
   results: [RunGroup!]!

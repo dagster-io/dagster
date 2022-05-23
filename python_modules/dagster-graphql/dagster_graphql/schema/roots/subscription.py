@@ -18,7 +18,7 @@ class GrapheneDagitSubscription(graphene.ObjectType):
     pipelineRunLogs = graphene.Field(
         graphene.NonNull(GraphenePipelineRunLogsSubscriptionPayload),
         runId=graphene.Argument(graphene.NonNull(graphene.ID)),
-        after=graphene.Argument(GrapheneCursor),
+        cursor=graphene.Argument(graphene.String),
     )
 
     computeLogs = graphene.Field(
@@ -33,8 +33,8 @@ class GrapheneDagitSubscription(graphene.ObjectType):
         graphene.NonNull(GrapheneLocationStateChangeSubscription)
     )
 
-    def resolve_pipelineRunLogs(self, graphene_info, runId, after=None):
-        return get_pipeline_run_observable(graphene_info, runId, after)
+    def resolve_pipelineRunLogs(self, graphene_info, runId, cursor=None):
+        return get_pipeline_run_observable(graphene_info, runId, cursor)
 
     def resolve_computeLogs(self, graphene_info, runId, stepKey, ioType, cursor=None):
         check.str_param(ioType, "ioType")  # need to resolve to enum

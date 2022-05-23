@@ -123,7 +123,7 @@ def delete_pipeline_run(graphene_info, run_id):
     return GrapheneDeletePipelineRunSuccess(run_id)
 
 
-def get_pipeline_run_observable(graphene_info, run_id, after=None):
+def get_pipeline_run_observable(graphene_info, run_id, cursor=None):
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.pipelines.subscription import (
         GraphenePipelineRunLogsSubscriptionFailure,
@@ -133,7 +133,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(run_id, "run_id")
-    check.opt_int_param(after, "after")
+    check.opt_str_param(cursor, "cursor")
     instance = graphene_info.context.instance
     records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
 
@@ -152,15 +152,13 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
     run = record.pipeline_run
 
     def _handle_events(payload):
-        events, loading_past, _cursor = payload
+        events, loading_past, cursor = payload
         return GraphenePipelineRunLogsSubscriptionSuccess(
             run=GrapheneRun(record),
             messages=[from_event_record(event, run.pipeline_name) for event in events],
             hasMorePastEvents=loading_past,
+            cursor=cursor,
         )
-
-    # need to translate after into an offset cursor
-    cursor = str(EventLogCursor.from_offset(after)) if after is not None else None
 
     # pylint: disable=E1101
     return Observable.create(PipelineRunObservableSubscribe(instance, run_id, cursor=cursor)).map(
