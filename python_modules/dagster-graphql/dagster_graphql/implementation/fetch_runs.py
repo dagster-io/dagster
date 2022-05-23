@@ -10,8 +10,7 @@ from dagster.core.definitions import create_run_config_schema
 from dagster.core.errors import DagsterRunNotFoundError
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster.core.host_representation import PipelineSelector
-from dagster.core.storage.event_log.base import AssetRecord
-from dagster.core.storage.pipeline_run import PipelineRun, RunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, RunRecord, RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
@@ -167,7 +166,7 @@ def get_assets_live_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, Li
 
 def _get_in_progress_runs_for_assets(
     graphene_info,
-    in_progress_records: List[AssetRecord],
+    in_progress_records: List[RunRecord],
     step_keys_by_asset: Mapping[AssetKey, List[str]],
 ):
     # Build mapping of step key to the assets it generates
@@ -187,9 +186,7 @@ def _get_in_progress_runs_for_assets(
         ).step_keys_to_execute
 
         selected_assets = (
-            set.union(
-                *[asset_key_by_step_key.get(run_step_key, set()) for run_step_key in run_step_keys]
-            )
+            set.union(*[asset_key_by_step_key[run_step_key] for run_step_key in run_step_keys])
             if asset_selection == None
             else asset_selection
         )  # only display in progress/unstarted indicators for selected assets
@@ -221,7 +218,7 @@ def _get_in_progress_runs_for_assets(
         else:
             # the run never began execution, all steps are unstarted
             for asset in selected_assets:
-                unstarted_run_ids_by_asset[asset_key].add(record.pipeline_run.run_id)
+                unstarted_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
 
     return in_progress_run_ids_by_asset, unstarted_run_ids_by_asset
 
