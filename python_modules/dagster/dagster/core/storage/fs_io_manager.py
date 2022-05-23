@@ -1,6 +1,6 @@
 import os
 import pickle
-from typing import List, Union
+from typing import Union
 
 import dagster._check as check
 from dagster.config import Field
@@ -97,20 +97,7 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
 
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         """Automatically construct filepath."""
-        identifier: List[str]
-
-        if isinstance(context, InputContext):
-            identifier = context.upstream_output.get_output_identifier()
-
-        elif isinstance(context, OutputContext):
-            identifier = context.get_output_identifier()
-
-        else:
-            raise RuntimeError(
-                f"Unexpected type for context. got {type(context)}, "
-                "expected Union[InputContext, OutputContext]"
-            )
-
+        identifier = context.get_identifier()
         return os.path.join(self.base_dir, *identifier)
 
     def has_output(self, context):

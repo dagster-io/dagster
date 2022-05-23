@@ -1,10 +1,12 @@
 import os
 import pickle
 from abc import abstractmethod
+from typing import Union
 
 import dagster._check as check
 from dagster.config import Field
 from dagster.config.source import StringSource
+from dagster.core.execution.context.input import InputContext
 from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.io_manager import IOManager, io_manager
 from dagster.utils import PICKLE_PROTOCOL, mkdir_p
@@ -36,11 +38,18 @@ class VersionedPickledObjectFilesystemIOManager(MemoizableIOManager):
         self.write_mode = "wb"
         self.read_mode = "rb"
 
-    def _get_path(self, context):
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+        output_context: OutputContext
+
+        if isinstance(context, OutputContext):
+            output_context = context
+        else:
+            output_context = context.upstream_output
+
         # automatically construct filepath
-        step_key = check.str_param(context.step_key, "context.step_key")
-        output_name = check.str_param(context.name, "context.name")
-        version = check.str_param(context.version, "context.version")
+        step_key = check.str_param(output_context.step_key, "context.step_key")
+        output_name = check.str_param(output_context.name, "context.name")
+        version = check.str_param(output_context.version, "context.version")
 
         return os.path.join(self.base_dir, step_key, output_name, version)
 
@@ -64,7 +73,7 @@ class VersionedPickledObjectFilesystemIOManager(MemoizableIOManager):
     def load_input(self, context):
         """Unpickle the file and Load it to a data object."""
 
-        filepath = self._get_path(context.upstream_output)
+        filepath = self._get_path(context)
 
         context.log.debug(f"Loading file from: {filepath}")
 

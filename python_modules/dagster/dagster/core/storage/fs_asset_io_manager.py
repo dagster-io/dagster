@@ -1,5 +1,5 @@
 import os
-from typing import List, Union
+from typing import Union
 
 from dagster.config import Field
 from dagster.config.source import StringSource
@@ -84,18 +84,5 @@ def fs_asset_io_manager(init_context):
 
 class AssetPickledObjectFilesystemIOManager(PickledObjectFilesystemIOManager):
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
-        identifier: List[str]
-
-        if isinstance(context, InputContext):
-            identifier = context.get_asset_input_identifier()
-
-        elif isinstance(context, OutputContext):
-            identifier = context.get_asset_output_identifier()
-
-        else:
-            raise RuntimeError(
-                f"Unexpected type for context. got {type(context)}, "
-                "expected Union[InputContext, OutputContext]"
-            )
-
+        identifier = context.get_asset_identifier()
         return os.path.join(self.base_dir, *identifier)
