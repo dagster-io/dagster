@@ -62,7 +62,9 @@ import {resumeBackfill, resumeBackfillVariables} from './types/resumeBackfill';
 
 type Backfill = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results;
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
+
+const PAGE_SIZE_NEW = 25;
 
 export const InstanceBackfills = () => {
   return featureEnabled(FeatureFlag.flagNewPartitionsView) ? (
@@ -173,10 +175,10 @@ export const InstanceBackfillsNew = () => {
   >({
     query: BACKFILLS_QUERY_NEW,
     variables: {},
-    pageSize: PAGE_SIZE,
+    pageSize: PAGE_SIZE_NEW,
     nextCursorForResult: (result) =>
       result.partitionBackfillsOrError.__typename === 'PartitionBackfills'
-        ? result.partitionBackfillsOrError.results[PAGE_SIZE - 1]?.backfillId
+        ? result.partitionBackfillsOrError.results[PAGE_SIZE_NEW - 1]?.backfillId
         : undefined,
     getResultArray: (result) =>
       result?.partitionBackfillsOrError.__typename === 'PartitionBackfills'
@@ -240,7 +242,7 @@ export const InstanceBackfillsNew = () => {
                 </Box>
               )}
               <BackfillTableNew
-                backfills={partitionBackfillsOrError.results.slice(0, PAGE_SIZE)}
+                backfills={partitionBackfillsOrError.results.slice(0, PAGE_SIZE_NEW)}
                 refetch={queryResult.refetch}
               />
               {partitionBackfillsOrError.results.length > 0 ? (
