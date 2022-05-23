@@ -83,15 +83,15 @@ def test_event_log_step_key_migration():
         run_ids = instance._event_storage.get_all_run_ids()
         assert run_ids == ["6405c4a0-3ccc-4600-af81-b5ee197f8528"]
         assert isinstance(instance._event_storage, SqlEventLogStorage)
-        events_by_id = instance._event_storage.get_logs_for_run_by_log_id(
+        records = instance._event_storage.get_records_for_run(
             "6405c4a0-3ccc-4600-af81-b5ee197f8528"
-        )
-        assert len(events_by_id) == 40
+        ).records
+        assert len(records) == 40
 
         step_key_records = []
-        for record_id, _event in events_by_id.items():
+        for record in records:
             row_data = instance._event_storage.get_event_log_table_data(
-                "6405c4a0-3ccc-4600-af81-b5ee197f8528", record_id
+                "6405c4a0-3ccc-4600-af81-b5ee197f8528", record.storage_id
             )
             if row_data.step_key is not None:
                 step_key_records.append(row_data)
@@ -101,9 +101,9 @@ def test_event_log_step_key_migration():
         migrate_event_log_data(instance=instance)
 
         step_key_records = []
-        for record_id, _event in events_by_id.items():
+        for record in records:
             row_data = instance._event_storage.get_event_log_table_data(
-                "6405c4a0-3ccc-4600-af81-b5ee197f8528", record_id
+                "6405c4a0-3ccc-4600-af81-b5ee197f8528", record.storage_id
             )
             if row_data.step_key is not None:
                 step_key_records.append(row_data)

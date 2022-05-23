@@ -7,6 +7,7 @@ from dagster.core.storage.event_log import (
     SqlEventLogStorageMetadata,
     SqlPollingEventWatcher,
 )
+from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.core.storage.sql import (
     check_alembic_revision,
@@ -168,8 +169,10 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]
 
-    def watch(self, run_id, start_cursor, callback):
-        self._event_watcher.watch_run(run_id, start_cursor, callback)
+    def watch(self, run_id, cursor, callback):
+        if cursor and EventLogCursor.parse(cursor).is_offset_cursor():
+            check.failed("Cannot call `watch` with an offset cursor")
+        self._event_watcher.watch_run(run_id, cursor, callback)
 
     def end_watch(self, run_id, handler):
         self._event_watcher.unwatch_run(run_id, handler)

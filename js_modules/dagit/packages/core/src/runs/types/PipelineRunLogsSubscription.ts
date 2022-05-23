@@ -2049,6 +2049,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   __typename: "PipelineRunLogsSubscriptionSuccess";
   messages: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages[];
   hasMorePastEvents: boolean;
+  cursor: string;
 }
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionFailure {
@@ -2065,5 +2066,5 @@ export interface PipelineRunLogsSubscription {
 
 export interface PipelineRunLogsSubscriptionVariables {
   runId: string;
-  after?: any | null;
+  cursor?: string | null;
 }
