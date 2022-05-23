@@ -76,7 +76,7 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
             graphene_info,
             self._represented_pipeline,
             self._mode,
-            parse_run_config_input(kwargs.get("runConfigData", {})),
+            parse_run_config_input(kwargs.get("runConfigData", {}), raise_on_error=False),
         )
 
 
