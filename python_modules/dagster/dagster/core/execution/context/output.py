@@ -394,7 +394,7 @@ class OutputContext:
 
         warnings.warn(
             "`OutputContext.get_run_scoped_output_identifier` is deprecated. Use "
-            "`OutputContext.get_output_identifier` instead."
+            "`OutputContext.get_identifier` instead."
         )
         # if run_id is None and this is a re-execution, it means we failed to find its source run id
         check.invariant(
@@ -418,7 +418,7 @@ class OutputContext:
 
         return [run_id, step_key, name]
 
-    def get_output_identifier(self) -> List[str]:
+    def get_identifier(self) -> List[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique
         step output.
 
@@ -454,6 +454,14 @@ class OutputContext:
                 identifier.append(self.mapping_key)
 
         return identifier
+
+    def get_output_identifier(self) -> List[str]:
+        warnings.warn(
+            "`OutputContext.get_output_identifier` is deprecated. Use "
+            "`OutputContext.get_identifier` instead."
+        )
+
+        return self.get_identifier()
 
     def get_asset_identifier(self) -> Sequence[str]:
         if self.asset_key is not None:

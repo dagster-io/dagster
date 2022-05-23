@@ -302,9 +302,35 @@ class InputContext:
         partition_key_range = self.asset_partition_key_range
         return TimeWindow(
             # mypy thinks partitions_def is <nothing> here because ????
-            partitions_def.time_window_for_partition_key(partition_key_range.start).start,  # type: ignore
-            partitions_def.time_window_for_partition_key(partition_key_range.end).end,  # type: ignore
+            partitions_def.time_window_for_partition_key(
+                partition_key_range.start
+            ).start,  # type: ignore
+            partitions_def.time_window_for_partition_key(
+                partition_key_range.end
+            ).end,  # type: ignore
         )
+
+    def get_identifier(self) -> List[str]:
+        """Utility method to get a collection of identifiers that as a whole represent a unique
+        step input.
+
+        If not using memoization, the unique identifier collection consists of
+
+        - ``run_id``: the id of the run which generates the input.
+            Note: This method also handles the re-execution memoization logic. If the step that
+            generates the input is skipped in the re-execution, the ``run_id`` will be the id
+            of its parent run.
+        - ``step_key``: the key for a compute step.
+        - ``name``: the name of the output. (default: 'result').
+
+        If using memoization, the ``version`` corresponding to the step output is used in place of
+        the ``run_id``.
+
+        Returns:
+            List[str, ...]: A list of identifiers, i.e. (run_id or version), step_key, and output_name
+        """
+        check.invariant(self.upstream_output is not None, "upstream_output field not defined. ")
+        return self.upstream_output.get_identifier()
 
     def get_asset_identifier(self) -> Sequence[str]:
         if self.asset_key is not None:
