@@ -245,19 +245,19 @@ export const buildLiveData = (
     const lastMaterialization = liveNode.assetMaterializations[0] || null;
     const lastChanged = Number(lastMaterialization?.timestamp || 0) / 1000;
     const isPartitioned = graphNode.definition.partitionDefinition;
-    const repo = repos.find((r) => r.id === liveNode.repository.id);
+    // const repo = repos.find((r) => r.id === liveNode.repository.id);
 
     const assetLiveRuns = assetsLatestInfo.find(
       (r) => JSON.stringify(r.assetKey) === JSON.stringify(liveNode.assetKey),
     );
-    const info = repo?.latestRunByStep.find((r) => liveNode.opNames.includes(r.stepKey));
+    // const info = repo?.latestRunByStep.find((r) => liveNode.opNames.includes(r.stepKey));
 
-    const latestRunForStepKey = info?.__typename === 'LatestRun' ? info.run : null;
+    const latestRunForAsset = assetLiveRuns?.latestRun ? assetLiveRuns.latestRun : null;
 
     const runWhichFailedToMaterialize =
-      (latestRunForStepKey?.status === 'FAILURE' &&
-        (!lastMaterialization || lastMaterialization.runId !== latestRunForStepKey?.id) &&
-        latestRunForStepKey) ||
+      (latestRunForAsset?.status === 'FAILURE' &&
+        (!lastMaterialization || lastMaterialization.runId !== latestRunForAsset?.id) &&
+        latestRunForAsset) ||
       null;
 
     data[graphId] = {

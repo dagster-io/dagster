@@ -124,6 +124,7 @@ IN_PROGRESS_STATUSES = [
 def get_assets_live_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, List[str]]):
     from ..schema.asset_graph import GrapheneAssetLatestInfo
     from ..schema.logs.events import GrapheneMaterializationEvent
+    from ..schema.pipelines.pipeline import GrapheneRun
 
     instance = graphene_info.context.instance
 
@@ -139,16 +140,24 @@ def get_assets_live_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, Li
         for asset_record in asset_records
     }
 
-    latest_run_ids = [  # last_run_id column is written to upon run creation (via ASSET_MATERIALIZATION_PLANNED event)
-        asset_record.asset_entry.last_run_id
+    latest_run_ids_by_asset: Dict[
+        AssetKey, str
+    ] = {  # last_run_id column is written to upon run creation (via ASSET_MATERIALIZATION_PLANNED event)
+        asset_record.asset_entry.asset_key: asset_record.asset_entry.last_run_id
         for asset_record in asset_records
         if asset_record.asset_entry.last_run_id
-    ]
-    in_progress_records = (
-        instance.get_run_records(RunsFilter(run_ids=latest_run_ids, statuses=PENDING_STATUSES))
-        if latest_run_ids
-        else []
-    )
+    }
+
+    run_records_by_run_id = {}
+    in_progress_records = []
+    run_ids = list(set(latest_run_ids_by_asset.values())) if latest_run_ids_by_asset else []
+    if run_ids:
+        run_records = instance.get_run_records(RunsFilter(run_ids=run_ids))
+        for run_record in run_records:
+            if run_record.pipeline_run.status in PENDING_STATUSES:
+                in_progress_records.append(run_record)
+            run_records_by_run_id[run_record.pipeline_run.run_id] = run_record
+
     in_progress_run_ids_by_asset, unstarted_run_ids_by_asset = _get_in_progress_runs_for_assets(
         graphene_info, in_progress_records, step_keys_by_asset
     )
@@ -159,6 +168,9 @@ def get_assets_live_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, Li
             latest_materialization_by_asset.get(asset_key),
             list(unstarted_run_ids_by_asset.get(asset_key, [])),
             list(in_progress_run_ids_by_asset.get(asset_key, [])),
+            GrapheneRun(run_records_by_run_id[latest_run_ids_by_asset[asset_key]])
+            if asset_key in latest_run_ids_by_asset
+            else None,
         )
         for asset_key in step_keys_by_asset.keys()
     ]

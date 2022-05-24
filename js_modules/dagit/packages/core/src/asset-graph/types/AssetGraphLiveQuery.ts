@@ -76,11 +76,18 @@ export interface AssetGraphLiveQuery_assetsLatestInfo_assetKey {
   path: string[];
 }
 
+export interface AssetGraphLiveQuery_assetsLatestInfo_latestRun {
+  __typename: "Run";
+  status: RunStatus;
+  id: string;
+}
+
 export interface AssetGraphLiveQuery_assetsLatestInfo {
   __typename: "AssetLatestInfo";
   assetKey: AssetGraphLiveQuery_assetsLatestInfo_assetKey;
   unstartedRunIds: string[];
   inProgressRunIds: string[];
+  latestRun: AssetGraphLiveQuery_assetsLatestInfo_latestRun | null;
 }
 
 export interface AssetGraphLiveQuery {

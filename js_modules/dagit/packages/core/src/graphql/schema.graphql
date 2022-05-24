@@ -1959,6 +1959,7 @@ type AssetLatestInfo {
   latestMaterialization: MaterializationEvent
   unstartedRunIds: [String!]!
   inProgressRunIds: [String!]!
+  latestRun: Run
 }
 
 """
