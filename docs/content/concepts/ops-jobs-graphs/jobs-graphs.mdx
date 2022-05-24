@@ -12,7 +12,10 @@ description: A job is an executable graph of ops, with optional resources and co
 | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject object="job" decorator /> | The decorator used to create a job.                                                                                                                             |
 | <PyObject object="JobDefinition" /> | A job definition. Jobs are the main unit of execution and monitoring in Dagster. Typically constructed using the <PyObject object="job" decorator /> decorator. |
-| </Note>                             |                                                                                                                                                                 |
+|                              |                                                                                                                                                                 |
+</Note>
+
+
 
 Jobs are the main unit of execution and monitoring in Dagster. The core of a job is a [graph](/concepts/ops-jobs-graphs/graphs) of [ops](/concepts/ops-jobs-graphs/ops) connected via data dependencies.
 
@@ -88,6 +91,8 @@ def interact_with_server(context):
 def do_stuff():
     interact_with_server()
 ```
+
+
 
 Then you build jobs from it using the <PyObject object="GraphDefinition" method="to_job" /> method:
 
