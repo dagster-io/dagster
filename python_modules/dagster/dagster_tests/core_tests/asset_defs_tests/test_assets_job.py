@@ -315,17 +315,15 @@ def test_non_argument_deps():
 
 
 def test_non_argument_deps_as_str():
-    with safe_tempfile_path() as path:
+    @asset
+    def foo():
+        pass
 
-        @asset
-        def foo():
-            pass
+    @asset(non_argument_deps={"foo"})
+    def bar():
+        pass
 
-        @asset(non_argument_deps={"foo"})
-        def bar():
-            pass
-
-        assert AssetKey("foo") in bar.asset_deps[AssetKey("bar")]
+    assert AssetKey("foo") in bar.asset_deps[AssetKey("bar")]
 
 
 def test_multiple_non_argument_deps():
