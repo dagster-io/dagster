@@ -145,12 +145,12 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
               ),
             },
             {
-              key: 'Sectioned left nav (experimental)',
+              key: 'Sectioned left nav (opt-out)',
               value: (
                 <Checkbox
                   format="switch"
-                  checked={flags.includes(FeatureFlag.flagSectionedLeftNav)}
-                  onChange={() => toggleFlag(FeatureFlag.flagSectionedLeftNav)}
+                  checked={!flags.includes(FeatureFlag.flagFlatLeftNav)}
+                  onChange={() => toggleFlag(FeatureFlag.flagFlatLeftNav)}
                 />
               ),
             },
