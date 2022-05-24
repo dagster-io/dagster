@@ -122,7 +122,7 @@ IN_PROGRESS_STATUSES = [
 
 
 def get_assets_live_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, List[str]]):
-    from ..schema.asset_graph import GrapheneAssetLiveInfo
+    from ..schema.asset_graph import GrapheneAssetLatestInfo
     from ..schema.logs.events import GrapheneMaterializationEvent
 
     instance = graphene_info.context.instance
@@ -154,7 +154,7 @@ def get_assets_live_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, Li
     )
 
     return [
-        GrapheneAssetLiveInfo(
+        GrapheneAssetLatestInfo(
             asset_key,
             latest_materialization_by_asset.get(asset_key),
             list(unstarted_run_ids_by_asset.get(asset_key, [])),

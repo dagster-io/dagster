@@ -77,7 +77,7 @@ export interface AssetGraphLiveQuery_assetsLatestInfo_assetKey {
 }
 
 export interface AssetGraphLiveQuery_assetsLatestInfo {
-  __typename: "AssetLiveInfo";
+  __typename: "AssetLatestInfo";
   assetKey: AssetGraphLiveQuery_assetsLatestInfo_assetKey;
   unstartedRunIds: string[];
   inProgressRunIds: string[];

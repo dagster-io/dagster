@@ -47,7 +47,7 @@ export interface AssetNodeDefinitionLiveQuery_assetsLatestInfo_assetKey {
 }
 
 export interface AssetNodeDefinitionLiveQuery_assetsLatestInfo {
-  __typename: "AssetLiveInfo";
+  __typename: "AssetLatestInfo";
   assetKey: AssetNodeDefinitionLiveQuery_assetsLatestInfo_assetKey;
   unstartedRunIds: string[];
   inProgressRunIds: string[];

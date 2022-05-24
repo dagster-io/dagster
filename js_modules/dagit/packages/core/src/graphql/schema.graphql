@@ -69,7 +69,7 @@ type DagitQuery {
     limit: Int
   ): PartitionBackfillsOrError!
   permissions: [GraphenePermission!]!
-  assetsLatestInfo(assetKeys: [AssetKeyInput!]): [AssetLiveInfo!]!
+  assetsLatestInfo(assetKeys: [AssetKeyInput!]): [AssetLatestInfo!]!
 }
 
 union RepositoriesOrError = RepositoryConnection | PythonError
@@ -1954,7 +1954,7 @@ type GraphenePermission {
   value: Boolean!
 }
 
-type AssetLiveInfo {
+type AssetLatestInfo {
   assetKey: AssetKey!
   latestMaterialization: MaterializationEvent
   unstartedRunIds: [String!]!

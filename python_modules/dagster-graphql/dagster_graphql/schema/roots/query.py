@@ -46,7 +46,7 @@ from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependedByLoader
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
-from ..asset_graph import GrapheneAssetLiveInfo, GrapheneAssetNode, GrapheneAssetNodeOrError
+from ..asset_graph import GrapheneAssetLatestInfo, GrapheneAssetNode, GrapheneAssetNodeOrError
 from ..backfill import (
     GrapheneBulkActionStatus,
     GraphenePartitionBackfillOrError,
@@ -272,7 +272,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     permissions = graphene.Field(non_null_list(GraphenePermission))
 
     assetsLatestInfo = graphene.Field(
-        non_null_list(GrapheneAssetLiveInfo),
+        non_null_list(GrapheneAssetLatestInfo),
         assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
     )
 
