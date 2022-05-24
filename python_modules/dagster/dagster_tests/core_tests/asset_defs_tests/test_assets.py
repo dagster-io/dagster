@@ -218,7 +218,7 @@ def test_asset_with_io_manager_def():
     def the_io_manager():
         return io_manager_inst
 
-    @asset(io_manager=the_io_manager)
+    @asset(io_manager_def=the_io_manager)
     def the_asset():
         return 5
 
@@ -237,11 +237,11 @@ def test_multiple_assets_io_manager_defs():
         return io_manager_inst
 
     # These will produce different instances of the io manager.
-    @asset(io_manager=the_io_manager)
+    @asset(io_manager_def=the_io_manager)
     def the_asset():
         return 5
 
-    @asset(io_manager=the_io_manager)
+    @asset(io_manager_def=the_io_manager)
     def other_asset():
         return 6
 
@@ -263,7 +263,7 @@ def test_asset_with_io_manager_key_and_def():
     def the_io_manager():
         return io_manager_inst
 
-    @asset(io_manager={"the_key": the_io_manager})
+    @asset(io_manager_def={"the_key": the_io_manager})
     def the_asset():
         return 5
 
@@ -279,10 +279,26 @@ def test_asset_with_io_manager_key_only():
     def the_io_manager():
         return io_manager_inst
 
-    @asset(io_manager="the_key")
+    @asset(io_manager_key="the_key")
     def the_asset():
         return 5
 
     AssetGroup([the_asset], resource_defs={"the_key": the_io_manager}).materialize()
 
     assert list(io_manager_inst.values.values())[0] == 5
+
+
+def test_asset_both_io_manager_args_provided():
+    @io_manager
+    def the_io_manager():
+        pass
+
+    with pytest.raises(
+        CheckError,
+        match="Both io_manager_key and io_manager_def were provided to `@asset` "
+        "decorator. Please provide one or the other.",
+    ):
+
+        @asset(io_manager_key="the_key", io_manager_def=the_io_manager)
+        def the_asset():
+            pass

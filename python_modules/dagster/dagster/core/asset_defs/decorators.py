@@ -53,7 +53,7 @@ def asset(
     description: Optional[str] = ...,
     required_resource_keys: Optional[Set[str]] = ...,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
-    io_manager: Optional[Union[Mapping[str, IOManagerDefinition], str, IOManagerDefinition]] = ...,
+    io_manager_def: Optional[Union[Mapping[str, IOManagerDefinition], IOManagerDefinition]] = ...,
     io_manager_key: Optional[str] = ...,
     compute_kind: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
@@ -74,7 +74,7 @@ def asset(
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-    io_manager: Optional[Union[Mapping[str, IOManagerDefinition], str, IOManagerDefinition]] = None,
+    io_manager_def: Optional[Union[Mapping[str, IOManagerDefinition], IOManagerDefinition]] = None,
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
@@ -104,10 +104,13 @@ def asset(
             but do not pass an input to the asset.
         metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
-        io_manager (Optional[Union[Mapping[str, IOManagerDefinition], str, IOManagerDefinition]]): The key, definition, or definition and key of
-            the IOManager used for storing the
-            output of the op as an asset, and for loading it in downstream ops
-            (default: "io_manager").
+        io_manager_key (Optional[str]): The resource key of the IOManager used
+            for storing the output of the op as an asset, and for loading it in downstream ops (default: "io_manager"). Only one of io_manager_key and io_manager_def can be provided
+        io_manager_def (Optional[Union[Mapping[str, IOManagerDefinition], IOManagerDefinition]]): The definition of the IOManager used for
+            storing the output of the op as an asset,  and for loading it in
+            downstream ops (default: "io_manager"). A key can be specified for
+            the io manager using a dictionary mapping i.e.
+            ``{my_key: io_manager_def}``.
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
             the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
         dagster_type (Optional[DagsterType]): Allows specifying type validation functions that
@@ -137,6 +140,10 @@ def asset(
         return _Asset()(name)
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
+        check.invariant(
+            not (io_manager_key and io_manager_def),
+            "Both io_manager_key and io_manager_def were provided to `@asset` decorator. Please provide one or the other. ",
+        )
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             namespace=namespace,
@@ -146,7 +153,7 @@ def asset(
             description=description,
             required_resource_keys=required_resource_keys,
             resource_defs=resource_defs,
-            io_manager=io_manager or io_manager_key,
+            io_manager=io_manager_def or io_manager_key,
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             dagster_type=dagster_type,
             partitions_def=partitions_def,
