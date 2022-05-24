@@ -225,7 +225,7 @@ export function UnversionedMDXRenderer({
           {/* Start secondary column (hidden on smaller screens) */}
           <div className="flex flex-col justify-between sticky top-24 py-6 px-4">
             <div
-              className="mb-8 px-4 pt-2 pb-10 relative overflow-y-scroll border-b border-gray-200"
+              className="mb-6 px-4 pt-2 pb-10 relative overflow-y-scroll border-b border-gray-200"
               style={{ maxHeight: "calc(100vh - 300px)" }}
             >
               <div className="font-semibold text-gable-green">On This Page</div>
@@ -276,7 +276,10 @@ export function UnversionedMDXRenderer({
                 Share Feedback
               </button>
             </div>
-            <div className="py-2 px-4 flex items-center group">
+            <div className="px-4 flex-row items-center">
+              <div className="py-2 flex items-center text-sm text-gray-500">
+                Enjoy using Dagster? Star us on GitHub
+              </div>
               <GitHubButton
                 href="https://github.com/dagster-io/dagster"
                 data-icon="octicon-star"
@@ -338,7 +341,7 @@ function VersionedMDXRenderer({
           {/* Start secondary column (hidden on smaller screens) */}
           <div className="flex flex-col justify-between sticky top-24 py-6 px-4">
             <div
-              className="mb-8 px-4 pt-2 pb-10 relative overflow-y-scroll border-b border-gray-200"
+              className="mb-6 px-4 pt-2 pb-10 relative overflow-y-scroll border-b border-gray-200"
               style={{ maxHeight: "calc(100vh - 300px)" }}
             >
               <div className="font-semibold text-gable-green">On This Page</div>
@@ -388,7 +391,10 @@ function VersionedMDXRenderer({
                 Share Feedback
               </button>
             </div>
-            <div className="py-2 px-4 flex items-center group">
+            <div className="px-4 flex-row items-center">
+              <div className="py-2 flex items-center text-sm text-gray-500">
+                Enjoy using Dagster? Star us on GitHub
+              </div>
               <GitHubButton
                 href="https://github.com/dagster-io/dagster"
                 data-icon="octicon-star"
