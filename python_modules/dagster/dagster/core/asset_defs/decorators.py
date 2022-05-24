@@ -448,10 +448,7 @@ def _make_asset_keys(deps: Optional[Union[Set[AssetKey], Set[str]]]) -> Optional
     if deps is None:
         return deps
 
-    deps_asset_keys = set()
-    for dep in deps:
-        if isinstance(dep, str):
-            deps_asset_keys.add(AssetKey.from_user_string(dep))
-        else:
-            deps_asset_keys.add(dep)
+    deps_asset_keys = {
+        AssetKey.from_user_string(dep) if isinstance(dep, str) else dep for dep in deps
+    }
     return deps_asset_keys
