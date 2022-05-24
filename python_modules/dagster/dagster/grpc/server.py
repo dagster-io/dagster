@@ -111,8 +111,10 @@ class LoadedRepositories:
                 entry_point=entry_point,
             )
             repo_def = recon_repo.get_definition()
-            # force load of all lazy constructed jobs/pipelines
-            repo_def.get_all_pipelines()
+            # force load of all lazy constructed code artifacts to prevent
+            # any thread-safety issues loading them later on when serving
+            # definitions from multiple threads
+            repo_def.load_all_definitions()
 
             self._code_pointers_by_repo_name[repo_def.name] = pointer
             self._recon_repos_by_name[repo_def.name] = recon_repo

@@ -82,13 +82,14 @@ def test_repository_data_can_reload_without_restarting(workspace_process_context
     request_context = workspace_process_context.create_request_context()
     repo_location = request_context.get_repository_location("test")
     repo = repo_location.get_repository("bar_repo")
-    # get_all_pipelines called on server init then on repository load, so starts at 2
+    # get_all_pipelines called on server init twice, then on repository load, so starts at 3
     # this is a janky test
-    assert repo.has_pipeline("foo_2")
+    assert repo.has_pipeline("foo_3")
     assert not repo.has_pipeline("foo_1")
+    assert not repo.has_pipeline("foo_2")
 
-    external_pipeline = repo.get_full_external_pipeline("foo_2")
-    assert external_pipeline.has_solid_invocation("do_something_2")
+    external_pipeline = repo.get_full_external_pipeline("foo_3")
+    assert external_pipeline.has_solid_invocation("do_something_3")
 
     # Reloading the location changes the pipeline without needing
     # to restart the server process
@@ -96,11 +97,11 @@ def test_repository_data_can_reload_without_restarting(workspace_process_context
     request_context = workspace_process_context.create_request_context()
     repo_location = request_context.get_repository_location("test")
     repo = repo_location.get_repository("bar_repo")
-    assert repo.has_pipeline("foo_3")
-    assert not repo.has_pipeline("foo_2")
+    assert repo.has_pipeline("foo_4")
+    assert not repo.has_pipeline("foo_3")
 
-    external_pipeline = repo.get_full_external_pipeline("foo_3")
-    assert external_pipeline.has_solid_invocation("do_something_3")
+    external_pipeline = repo.get_full_external_pipeline("foo_4")
+    assert external_pipeline.has_solid_invocation("do_something_4")
 
 
 def test_custom_repo_select_only_job():
