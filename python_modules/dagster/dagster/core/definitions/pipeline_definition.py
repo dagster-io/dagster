@@ -21,6 +21,7 @@ from dagster.core.errors import (
     DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
 )
+from dagster.core.storage.io_manager import IOManagerDefinition
 from dagster.core.storage.output_manager import IOutputManagerDefinition
 from dagster.core.storage.root_input_manager import (
     IInputManagerDefinition,
@@ -916,6 +917,13 @@ def _checked_input_resource_reqs_for_mode(
         for key, resource_def in mode_def.resource_defs.items()
         if isinstance(resource_def, RootInputManagerDefinition)
     )
+    mode_io_managers = set(
+        key
+        for key, resource_def in mode_def.resource_defs.items()
+        if isinstance(resource_def, IOManagerDefinition)
+    )
+    print("MODE IO MANAGERS")
+    print(mode_io_managers)
 
     for node in node_dict.values():
         node_handle = NodeHandle(name=node.name, parent=parent_node_handle)
@@ -983,12 +991,6 @@ def _checked_input_resource_reqs_for_mode(
             else:
                 # input is not connected to upstream output
                 input_def = handle.input_def
-                print("-----------------------")
-                print(asset_layer.io_manager_keys_by_asset_key)
-                print("....")
-                print(node_handle)
-                print(asset_layer._asset_keys_by_node_input_handle)
-                print("-----------------------")
                 input_asset_key = asset_layer.asset_key_for_input(node_handle, input_def.name)
 
                 # Input is not nothing, not resolvable by config, and isn't
@@ -1031,8 +1033,9 @@ def _checked_input_resource_reqs_for_mode(
                             resource_key=io_manager_key,
                             descriptor=f"unsatisfied input '{input_def.name}' of {node.describe_node()} with asset key {input_asset_key}",
                             mode_def=mode_def,
-                            resource_defs_of_type=mode_resources,
+                            resource_defs_of_type=mode_io_managers,
                         )
+                        raise DagsterInvalidDefinitionError(error_msg)
 
     return resource_reqs
 

@@ -245,8 +245,15 @@ class FromSourceAsset(
         input_asset_key = pipeline_def.asset_layer.asset_key_for_input(
             self.solid_handle, self.input_name
         )
+        if input_asset_key is None:
+            check.failed(
+                f"Must have an asset key associated with input {self.input_name} to load it using FromSourceAsset",
+            )
         input_manager_key = pipeline_def.asset_layer.io_manager_key_for_asset(input_asset_key)
-        assert input_manager_key is not None
+        if input_manager_key is None:
+            check.failed(
+                f"Must have an io_manager associated with asset {input_asset_key} to load it using FromSourceAsset"
+            )
         return {input_manager_key}
 
 

@@ -607,6 +607,58 @@ def test_asset_group_build_job_selection_multi_component():
         group.build_job(name="something", selection="apple>banana")
 
 
+@pytest.mark.parametrize(
+    "job_selection,expected_nodes", [("*", "n1,n2,n3"), ("n2+", "n2,n3"), ("n1", "n1")]
+)
+def test_asset_group_io_managers(job_selection, expected_nodes):
+
+    # we're testing that when this job is subset, the correct io managers are used to load each
+    # source asset
+    @io_manager(config_schema={"n": int})
+    def return_n_io_manager(context):
+        class ReturnNIOManager(IOManager):
+            def handle_output(self, _context, obj):
+                pass
+
+            def load_input(self, _context):
+                return context.resource_config["n"]
+
+        return ReturnNIOManager()
+
+    _ACTUAL_OUTPUT_VAL = 99999
+
+    @asset(io_manager_key="n1_iom")
+    def n1(context):
+        return _ACTUAL_OUTPUT_VAL
+
+    @asset(io_manager_key="n2_iom")
+    def n2(context, n1):
+        assert n1 == 1
+        return _ACTUAL_OUTPUT_VAL
+
+    @asset(io_manager_key="n3_iom")
+    def n3(context, n1, n2):
+        assert n1 == 1
+        assert n2 == 2
+        return _ACTUAL_OUTPUT_VAL
+
+    result = (
+        AssetGroup(
+            [n1, n2, n3],
+            resource_defs={
+                "n1_iom": return_n_io_manager.configured({"n": 1}),
+                "n2_iom": return_n_io_manager.configured({"n": 2}),
+                "n3_iom": return_n_io_manager.configured({"n": 3}),
+            },
+        )
+        .build_job("test", selection=job_selection)
+        .execute_in_process()
+    )
+
+    for node in expected_nodes.split(","):
+        assert result.output_for_node(node) == _ACTUAL_OUTPUT_VAL
+
+
 def test_asset_group_from_package_name():
     from . import asset_package
 
