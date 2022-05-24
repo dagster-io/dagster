@@ -1,16 +1,25 @@
 import os
 import re
+import shlex
 from typing import List, Optional
 
 from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.step_builder import BuildkiteQueue, CommandStepBuilder
-from dagster_buildkite.utils import CommandStep
+from dagster_buildkite.utils import CommandStep, make_buildkite_section_header
+
+_COMMAND_TYPE_TO_EMOJI_MAP = {
+    "pytest": ":pytest:",
+    "mypy": ":mypy:",
+    "pylint": ":lint-roller:",
+    "miscellaneous": ":sparkle",
+}
 
 
 def build_tox_step(
     root_dir: str,
     tox_env: str,
     base_label: Optional[str] = None,
+    command_type: str = "miscellaneous",
     python_version: Optional[AvailablePythonVersion] = None,
     tox_file: Optional[str] = None,
     extra_commands_pre: Optional[List[str]] = None,
@@ -22,8 +31,12 @@ def build_tox_step(
     queue: Optional[BuildkiteQueue] = None,
 ) -> CommandStep:
     base_label = base_label or os.path.basename(root_dir)
-    label = base_label + _tox_env_to_label_suffix(tox_env)
+    emoji = _COMMAND_TYPE_TO_EMOJI_MAP[command_type]
+    label = f"{emoji} {base_label} {_tox_env_to_label_suffix(tox_env)}"
     python_version = python_version or _resolve_python_version(tox_env)
+
+    header_message = f"{emoji} Running tox env: {tox_env}"
+    buildkite_section_header = make_buildkite_section_header(header_message)
 
     tox_command_parts = filter(
         None,
@@ -40,6 +53,7 @@ def build_tox_step(
         *(extra_commands_pre or []),
         f"cd {root_dir}",
         "pip install -U virtualenv",
+        f"echo -e {shlex.quote(buildkite_section_header)}",
         tox_command,
         *(extra_commands_post or []),
     ]

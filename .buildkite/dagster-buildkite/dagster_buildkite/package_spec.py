@@ -216,7 +216,8 @@ class PackageSpec(
                         build_tox_step(
                             self.directory,
                             tox_env,
-                            base_label=f":pytest: {base_name}",
+                            base_label=base_name,
+                            command_type="pytest",
                             python_version=py_version,
                             env_vars=self.env_vars,
                             extra_commands_pre=extra_commands_pre,
@@ -234,7 +235,8 @@ class PackageSpec(
                 build_tox_step(
                     self.directory,
                     "mypy",
-                    base_label=f":mypy: {base_name}",
+                    base_label=base_name,
+                    command_type="mypy",
                     python_version=supported_python_versions[-1],
                 )
             )
@@ -244,7 +246,8 @@ class PackageSpec(
                 build_tox_step(
                     self.directory,
                     "pylint",
-                    base_label=f":lint-roller: {base_name}",
+                    base_label=base_name,
+                    command_type="pylint",
                     python_version=supported_python_versions[-1],
                 )
             )
