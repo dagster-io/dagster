@@ -314,6 +314,18 @@ def test_non_argument_deps():
         assert _asset_keys_for_node(result, "bar") == {AssetKey("bar")}
 
 
+def test_non_argument_deps_as_str():
+    @asset
+    def foo():
+        pass
+
+    @asset(non_argument_deps={"foo"})
+    def bar():
+        pass
+
+    assert AssetKey("foo") in bar.asset_deps[AssetKey("bar")]
+
+
 def test_multiple_non_argument_deps():
     @asset
     def foo():
