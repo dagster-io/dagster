@@ -85,27 +85,11 @@
     "path": "/concepts",
     "children": [
       {
-        "title": "Ops, Jobs, and Graphs",
+        "title": "Ops",
         "children": [
           {
             "title": "Ops",
             "path": "/concepts/ops-jobs-graphs/ops"
-          },
-          {
-            "title": "Jobs & Graphs",
-            "path": "/concepts/ops-jobs-graphs/jobs-graphs"
-          },
-          {
-            "title": "Job Execution",
-            "path": "/concepts/ops-jobs-graphs/job-execution"
-          },
-          {
-            "title": "Nesting Graphs",
-            "path": "/concepts/ops-jobs-graphs/nesting-graphs"
-          },
-          {
-            "title": "Dynamic Graphs",
-            "path": "/concepts/ops-jobs-graphs/dynamic-graphs"
           },
           {
             "title": "Op Events",
@@ -118,6 +102,48 @@
           {
             "title": "Op Retries",
             "path": "/concepts/ops-jobs-graphs/op-retries"
+          }
+        ]
+      },
+      {
+        "title": "Graphs",
+        "children": [
+          {
+            "title": "Graphs",
+            "path": "/concepts/ops-jobs-graphs/graphs"
+          },
+          {
+            "title": "Nesting Graphs",
+            "path": "/concepts/ops-jobs-graphs/nesting-graphs"
+          },
+          {
+            "title": "Dynamic Graphs",
+            "path": "/concepts/ops-jobs-graphs/dynamic-graphs"
+          }
+        ]
+      },
+      {
+        "title": "Jobs",
+        "children": [
+          {
+            "title": "Jobs",
+            "path": "/concepts/ops-jobs-graphs/jobs-graphs"
+          },
+          {
+            "title": "Creating Jobs",
+            "path": "/concepts/ops-jobs-graphs/jobs-graphs#creating-jobs"
+          },
+          {
+            "title": "Configuring Jobs",
+            "path": "/concepts/ops-jobs-graphs/jobs-graphs#configuring-jobs"
+          },
+          {
+            "title": "Testing Jobs",
+            "path": "/concepts/ops-jobs-graphs/jobs-graphs#testing-jobs"
+          },
+          {
+            "title": "Executing Jobs",
+            "path": "/concepts/ops-jobs-graphs/job-execution"
           }
         ]
       },
