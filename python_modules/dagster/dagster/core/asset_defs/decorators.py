@@ -430,10 +430,8 @@ def build_asset_ins(
 
 def _make_asset_keys(deps: Optional[Union[Set[AssetKey], Set[str]]]) -> Optional[Set[AssetKey]]:
     """Convert all str items to AssetKey in the set."""
-    if not deps:
+    if deps is None:
         return deps
-
-    check.opt_set_param(deps, "non_argument_deps", (str, AssetKey))
 
     deps_asset_keys = set()
     for dep in deps:
