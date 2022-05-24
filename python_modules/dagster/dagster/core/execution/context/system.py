@@ -40,6 +40,7 @@ from dagster.core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
 )
 from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import ExecutionStep
 from dagster.core.execution.retries import RetryMode
@@ -652,13 +653,23 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return None
 
     def _should_load_from_previous_runs(self, step_output_handle: StepOutputHandle) -> bool:
-        return (  # this is re-execution
-            self.pipeline_run.parent_run_id is not None
-            # we are not re-executing the entire pipeline
-            and self.pipeline_run.step_keys_to_execute is not None
-            # this step is not being executed
-            and step_output_handle.step_key not in self.pipeline_run.step_keys_to_execute
-        )
+        # should not load if not a re-execution
+        if self.pipeline_run.parent_run_id is None:
+            return False
+        # should not load if re-executing the entire pipeline
+        if self.pipeline_run.step_keys_to_execute is None:
+            return False
+
+        # should not load if the entire dynamic step is being executed in the current run
+        handle = StepHandle.parse_from_key(step_output_handle.step_key)
+        if (
+            isinstance(handle, ResolvedFromDynamicStepHandle)
+            and handle.unresolved_form.to_key() in self.pipeline_run.step_keys_to_execute
+        ):
+            return False
+
+        # should not load if this step is being executed in the current run
+        return step_output_handle.step_key not in self.pipeline_run.step_keys_to_execute
 
     def _get_source_run_id(self, step_output_handle: StepOutputHandle) -> Optional[str]:
         if self._should_load_from_previous_runs(step_output_handle):

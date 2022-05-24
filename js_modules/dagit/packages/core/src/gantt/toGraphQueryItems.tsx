@@ -29,7 +29,7 @@ export const toGraphQueryItems = (
 
   for (const step of plan.steps) {
     if (step.kind === StepKind.UNRESOLVED_MAPPED) {
-      let keys = invocationsOfPlannedDynamicStep(step.key, runtimeStepKeys);
+      const keys = invocationsOfPlannedDynamicStep(step.key, runtimeStepKeys);
 
       // If the upstream steps have NOT succeeded, it's expected that there are zero runtime step keys
       // matching the dynamic step. Until upstream steps run, we should show the [*] placeholder item
@@ -38,9 +38,13 @@ export const toGraphQueryItems = (
         i.dependsOn.every((s) => IStepState.SUCCEEDED === runtimeStepMetadata[s.key]?.state),
       );
       if (!invocationsHappened && keys.length === 0) {
-        keys = [step.key];
+        keyExpansionMap[step.key] = [step.key];
+        continue;
       }
-      keyExpansionMap[step.key] = keys;
+      // The order matters here: add the planned dynamic step at the end, so when displaying the gantt
+      // chart, we can ignore planned dynamic step if any of its invocation exists (i.e. hide the
+      // unresolved node if any resolved node exists).
+      keyExpansionMap[step.key] = [...keys, step.key];
     }
   }
 
