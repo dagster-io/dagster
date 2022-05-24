@@ -405,6 +405,15 @@ class RepositoryData(ABC):
     def get_source_assets_by_key(self) -> Mapping[AssetKey, SourceAsset]:
         return {}
 
+    def load_all_definitions(self):
+        # force load of all lazy constructed code artifacts
+        self.get_all_pipelines()
+        self.get_all_jobs()
+        self.get_all_partition_sets()
+        self.get_all_schedules()
+        self.get_all_sensors()
+        self.get_source_assets_by_key()
+
 
 T = TypeVar("T")
 Resolvable = Callable[[], T]
@@ -1051,6 +1060,10 @@ class RepositoryDefinition:
     @property
     def description(self) -> Optional[str]:
         return self._description
+
+    def load_all_definitions(self):
+        # force load of all lazy constructed code artifacts
+        self._repository_data.load_all_definitions()
 
     @property
     def pipeline_names(self) -> List[str]:
