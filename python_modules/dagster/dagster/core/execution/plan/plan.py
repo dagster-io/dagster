@@ -758,12 +758,40 @@ class ExecutionPlan(
         step_output_versions = check.opt_dict_param(
             step_output_versions, "step_output_versions", key_type=StepOutputHandle, value_type=str
         )
-        step_handles_to_execute = [StepHandle.parse_from_key(key) for key in step_keys_to_execute]
 
+        step_handles_to_validate_set: Set[StepHandleUnion] = {
+            StepHandle.parse_from_key(key) for key in step_keys_to_execute
+        }
+        step_handles_to_execute: List[StepHandleUnion] = []
         bad_keys = []
-        for handle in step_handles_to_execute:
+
+        for handle in step_handles_to_validate_set:
+
             if handle not in self.step_dict:
+                # Ok if the entire dynamic step is selected to execute.
+                # https://github.com/dagster-io/dagster/issues/8000
+                # Note: the assumption here is when the entire dynamic step is selected,
+                # the step_keys_to_execute will include both unresolved step (i.e. [?])
+                # and all the resolved steps (i.e. [0], ... [n]). Given that at this point
+                # we no longer track the parent known state (we don't know what "n" was),
+                # solely from the resolved handles, we can't tell if an entire dynamic
+                # node is being selected, so the best bet here is to check both unresolved
+                # and resolved handles exist. Examples:
+                # * `generate_subtasks, subtask[?], subtask[0], subtask[1], subtask[2]` will pass
+                # * `generate_subtasks, subtask[0], subtask[1], subtask[2]` will result in 3 bad
+                #   keys `subtask[0], subtask[1], subtask[2]`
+                if isinstance(handle, ResolvedFromDynamicStepHandle):
+                    unresolved_handle = handle.unresolved_form
+                    if (
+                        unresolved_handle in self.step_dict
+                        and unresolved_handle in step_handles_to_validate_set
+                    ):
+                        continue
+
                 bad_keys.append(handle.to_key())
+
+            # Add the handle to the ready-to-execute list once it's validated
+            step_handles_to_execute.append(handle)
 
         if bad_keys:
             raise DagsterExecutionStepNotFoundError(

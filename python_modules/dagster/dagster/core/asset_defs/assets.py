@@ -2,7 +2,13 @@ import warnings
 from typing import AbstractSet, Dict, Iterable, Mapping, Optional, Sequence, Set, cast
 
 import dagster._check as check
-from dagster.core.definitions import GraphDefinition, NodeDefinition, NodeHandle, OpDefinition
+from dagster.core.definitions import (
+    GraphDefinition,
+    NodeDefinition,
+    NodeHandle,
+    OpDefinition,
+    ResourceDefinition,
+)
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.utils.backcompat import ExperimentalWarning, experimental
@@ -22,7 +28,8 @@ class AssetsDefinition:
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
         selected_asset_keys: Optional[AbstractSet[AssetKey]] = None,
         can_subset: bool = False,
-        # if adding new fields, make sure to handle them in both with_replaced_asset_keys and subset_for
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        # if adding new fields, make sure to handle them in the with_replaced_asset_keys method
     ):
         self._node_def = node_def
         self._asset_keys_by_input_name = check.dict_param(
@@ -54,6 +61,7 @@ class AssetsDefinition:
             f"asset_deps keys: {set(self._asset_deps.keys())} \n"
             f"expected keys: {all_asset_keys}",
         )
+        self._resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
 
         if selected_asset_keys is not None:
             self._selected_asset_keys = selected_asset_keys
@@ -161,6 +169,10 @@ class AssetsDefinition:
         return next(iter(self.asset_keys))
 
     @property
+    def resource_defs(self) -> Mapping[str, ResourceDefinition]:
+        return self._resource_defs
+
+    @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
         return self._selected_asset_keys
 
@@ -246,6 +258,7 @@ class AssetsDefinition:
                 selected_asset_keys={
                     output_asset_key_replacements.get(key, key) for key in self._selected_asset_keys
                 },
+                resource_defs=self.resource_defs,
             )
 
     def subset_for(self, selected_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":

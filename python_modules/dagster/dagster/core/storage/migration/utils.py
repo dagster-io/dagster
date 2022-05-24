@@ -29,6 +29,13 @@ def has_column(table_name, column_name):
     return column_name in columns
 
 
+def has_index(table_name, index_name):
+    if not has_table(table_name):
+        return False
+    indexes = [x.get("name") for x in get_inspector().get_indexes(table_name)]
+    return index_name in indexes
+
+
 _UPGRADING_INSTANCE = None
 
 
@@ -200,8 +207,7 @@ def create_event_log_event_idx():
     if not has_table("event_logs"):
         return
 
-    indices = [x.get("name") for x in get_inspector().get_indexes("event_logs")]
-    if "idx_event_type" in indices:
+    if has_index("event_logs", "idx_event_type"):
         return
 
     op.create_index(
@@ -215,19 +221,21 @@ def create_event_log_event_idx():
 def create_run_range_indices():
     if not has_table("runs"):
         return
-    indices = [x.get("name") for x in get_inspector().get_indexes("runs")]
-    if not "idx_run_range" in indices:
-        op.create_index(
-            "idx_run_range",
-            "runs",
-            ["status", "update_timestamp", "create_timestamp"],
-            unique=False,
-            mysql_length={
-                "status": 32,
-                "update_timestamp": 8,
-                "create_timestamp": 8,
-            },
-        )
+
+    if has_index("runs", "idx_run_range"):
+        return
+
+    op.create_index(
+        "idx_run_range",
+        "runs",
+        ["status", "update_timestamp", "create_timestamp"],
+        unique=False,
+        mysql_length={
+            "status": 32,
+            "update_timestamp": 8,
+            "create_timestamp": 8,
+        },
+    )
 
 
 def add_run_record_start_end_timestamps():
@@ -293,12 +301,9 @@ def create_instigators_table():
 
 def create_tick_selector_index():
     if not has_table("job_ticks"):
-        # not a schedule storage db
         return
 
-    indexes = [x.get("name") for x in get_inspector().get_indexes("job_ticks")]
-    if "idx_tick_selector_timestamp" in indexes:
-        # already migrated
+    if has_index("job_ticks", "idx_tick_selector_timestamp"):
         return
 
     op.create_index(

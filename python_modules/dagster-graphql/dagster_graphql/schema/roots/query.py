@@ -1,5 +1,8 @@
 # pylint: disable=missing-graphene-docstring
+from typing import Dict, List
+
 import graphene
+from dagster_graphql.implementation.fetch_runs import get_assets_live_info
 
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey
@@ -43,7 +46,7 @@ from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependedByLoader
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
-from ..asset_graph import GrapheneAssetNode, GrapheneAssetNodeOrError
+from ..asset_graph import GrapheneAssetLatestInfo, GrapheneAssetNode, GrapheneAssetNodeOrError
 from ..backfill import (
     GrapheneBulkActionStatus,
     GraphenePartitionBackfillOrError,
@@ -268,6 +271,11 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     permissions = graphene.Field(non_null_list(GraphenePermission))
 
+    assetsLatestInfo = graphene.Field(
+        non_null_list(GrapheneAssetLatestInfo),
+        assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
+    )
+
     def resolve_repositoriesOrError(self, graphene_info, **kwargs):
         if kwargs.get("repositorySelector"):
             return GrapheneRepositoryConnection(
@@ -419,7 +427,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return validate_pipeline_config(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            parse_run_config_input(kwargs.get("runConfigData", {})),
+            parse_run_config_input(kwargs.get("runConfigData", {}), raise_on_error=False),
             kwargs.get("mode"),
         )
 
@@ -427,7 +435,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return get_execution_plan(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            parse_run_config_input(kwargs.get("runConfigData", {})),
+            parse_run_config_input(kwargs.get("runConfigData", {}), raise_on_error=True),
             kwargs.get("mode"),
         )
 
@@ -514,3 +522,20 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_permissions(self, graphene_info):
         permissions = graphene_info.context.permissions
         return [GraphenePermission(permission, value) for permission, value in permissions.items()]
+
+    def resolve_assetsLatestInfo(self, graphene_info, **kwargs):
+        asset_keys = set(
+            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
+        )
+
+        results = get_asset_nodes(graphene_info)
+
+        # Filter down to requested asset keys
+        # Build mapping of asset key to the step keys required to generate the asset
+        step_keys_by_asset: Dict[AssetKey, List[str]] = {
+            node.external_asset_node.asset_key: node.external_asset_node.op_names
+            for node in results
+            if not asset_keys or node.assetKey in asset_keys
+        }
+
+        return get_assets_live_info(graphene_info, step_keys_by_asset)

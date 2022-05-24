@@ -3,6 +3,7 @@ import {Alert, Box, Checkbox, Colors, Group, Table, Subheading, Tooltip} from '@
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
+import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {
   displayScheduleMutationErrors,
   STOP_SCHEDULE_MUTATION,
@@ -124,6 +125,7 @@ const UnloadableScheduleInfo = () => (
 
 const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) => {
   const {id, selectorId, name, status, ticks} = sensorState;
+  const {canStopSensor} = usePermissions();
 
   const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor, StopSensorVariables>(
     STOP_SENSOR_MUTATION,
@@ -146,18 +148,24 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
     }
   };
 
+  const lacksPermission = status === InstigationStatus.RUNNING && !canStopSensor;
   const latestTick = ticks.length ? ticks[0] : null;
+
+  const checkbox = () => {
+    const element = (
+      <Checkbox
+        format="switch"
+        disabled={toggleOffInFlight || status === InstigationStatus.STOPPED || lacksPermission}
+        checked={status === InstigationStatus.RUNNING}
+        onChange={onChangeSwitch}
+      />
+    );
+    return lacksPermission ? <Tooltip content={DISABLED_MESSAGE}>{element}</Tooltip> : element;
+  };
 
   return (
     <tr key={name}>
-      <td style={{width: 60}}>
-        <Checkbox
-          format="switch"
-          disabled={toggleOffInFlight || status === InstigationStatus.STOPPED}
-          checked={status === InstigationStatus.RUNNING}
-          onChange={onChangeSwitch}
-        />
-      </td>
+      <td style={{width: 60}}>{checkbox()}</td>
       <td>
         <Group direction="row" spacing={8} alignItems="center">
           {name}
@@ -183,6 +191,7 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
 const ScheduleStateRow: React.FC<{
   scheduleState: InstigationStateFragment;
 }> = ({scheduleState}) => {
+  const {canStopRunningSchedule} = usePermissions();
   const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<
     StopSchedule,
     StopScheduleVariables
@@ -209,16 +218,23 @@ const ScheduleStateRow: React.FC<{
     }
   };
 
+  const lacksPermission = status === InstigationStatus.RUNNING && !canStopRunningSchedule;
+  const checkbox = () => {
+    const element = (
+      <Checkbox
+        format="switch"
+        checked={status === InstigationStatus.RUNNING}
+        disabled={status !== InstigationStatus.RUNNING || toggleOffInFlight || lacksPermission}
+        onChange={onChangeSwitch}
+      />
+    );
+
+    return lacksPermission ? <Tooltip content={DISABLED_MESSAGE}>{element}</Tooltip> : element;
+  };
+
   return (
     <tr key={name}>
-      <td style={{width: 60}}>
-        <Checkbox
-          format="switch"
-          checked={status === InstigationStatus.RUNNING}
-          disabled={status !== InstigationStatus.RUNNING || toggleOffInFlight}
-          onChange={onChangeSwitch}
-        />
-      </td>
+      <td style={{width: 60}}>{checkbox()}</td>
       <td>
         <Group direction="row" spacing={8} alignItems="center">
           <div>{name}</div>

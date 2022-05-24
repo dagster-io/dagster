@@ -14,6 +14,10 @@ export function isDynamicStep(stepKey: string) {
   return stepKey.endsWith(']');
 }
 
+export function isPlannedDynamicStep(stepKey: string) {
+  return stepKey.endsWith('[?]');
+}
+
 export function invocationsOfPlannedDynamicStep(plannedStepKey: string, runtimeStepKeys: string[]) {
   return runtimeStepKeys.filter((k) => k.startsWith(plannedStepKey.replace('?]', '')));
 }

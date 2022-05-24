@@ -23,6 +23,7 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.input import In
 from dagster.core.definitions.output import Out
 from dagster.core.definitions.partition import PartitionsDefinition
+from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.utils import NoValueSentinel
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType
@@ -50,6 +51,7 @@ def asset(
     metadata: Optional[Mapping[str, Any]] = ...,
     description: Optional[str] = ...,
     required_resource_keys: Optional[Set[str]] = ...,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
     io_manager_key: Optional[str] = ...,
     compute_kind: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
@@ -69,6 +71,7 @@ def asset(
     metadata: Optional[Mapping[str, Any]] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
@@ -138,6 +141,7 @@ def asset(
             metadata=metadata,
             description=description,
             required_resource_keys=required_resource_keys,
+            resource_defs=resource_defs,
             io_manager_key=io_manager_key,
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             dagster_type=dagster_type,
@@ -159,6 +163,7 @@ class _Asset:
         metadata: Optional[Mapping[str, Any]] = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[Set[str]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         io_manager_key: Optional[str] = None,
         compute_kind: Optional[str] = None,
         dagster_type: Optional[DagsterType] = None,
@@ -173,13 +178,16 @@ class _Asset:
         self.non_argument_deps = non_argument_deps
         self.metadata = metadata
         self.description = description
-        self.required_resource_keys = required_resource_keys
+        self.required_resource_keys = check.opt_set_param(
+            required_resource_keys, "required_resource_keys"
+        )
         self.io_manager_key = io_manager_key
         self.compute_kind = compute_kind
         self.dagster_type = dagster_type
         self.partitions_def = partitions_def
         self.partition_mappings = partition_mappings
         self.op_tags = op_tags
+        self.resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -197,12 +205,18 @@ class _Asset:
                 description=self.description,
             )
 
+            required_resource_keys = set()
+            for key in self.required_resource_keys:
+                required_resource_keys.add(key)
+            for key in self.resource_defs.keys():
+                required_resource_keys.add(key)
+
             op = _Op(
                 name="__".join(out_asset_key.path),
                 description=self.description,
                 ins=dict(asset_ins.values()),
                 out=out,
-                required_resource_keys=self.required_resource_keys,
+                required_resource_keys=required_resource_keys,
                 tags={
                     **({"kind": self.compute_kind} if self.compute_kind else {}),
                     **(self.op_tags or {}),
@@ -229,6 +243,7 @@ class _Asset:
             }
             if self.partition_mappings
             else None,
+            resource_defs=self.resource_defs,
         )
 
 

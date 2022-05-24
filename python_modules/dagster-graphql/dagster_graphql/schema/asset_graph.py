@@ -76,6 +76,16 @@ class GrapheneAssetDependency(graphene.ObjectType):
         )
 
 
+class GrapheneAssetLatestInfo(graphene.ObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+    latestMaterialization = graphene.Field(GrapheneMaterializationEvent)
+    unstartedRunIds = non_null_list(graphene.String)
+    inProgressRunIds = non_null_list(graphene.String)
+
+    class Meta:
+        name = "AssetLatestInfo"
+
+
 class GrapheneAssetNode(graphene.ObjectType):
 
     # NOTE: properties/resolvers are listed alphabetically
