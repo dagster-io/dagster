@@ -90,6 +90,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
             {
                 'key': {
                     'path': [
+                        'downstream_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'downstream_static_partitioned_asset'
                     ]
                 }
@@ -133,6 +140,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
                 'key': {
                     'path': [
                         'hanging_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'hanging_graph'
                     ]
                 }
             },
@@ -259,6 +273,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
             {
                 'key': {
                     'path': [
+                        'downstream_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'downstream_static_partitioned_asset'
                     ]
                 }
@@ -302,6 +323,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
                 'key': {
                     'path': [
                         'hanging_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'hanging_graph'
                     ]
                 }
             },
@@ -428,6 +456,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
             {
                 'key': {
                     'path': [
+                        'downstream_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'downstream_static_partitioned_asset'
                     ]
                 }
@@ -471,6 +506,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
                 'key': {
                     'path': [
                         'hanging_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'hanging_graph'
                     ]
                 }
             },
@@ -597,6 +639,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
             {
                 'key': {
                     'path': [
+                        'downstream_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'downstream_static_partitioned_asset'
                     ]
                 }
@@ -646,6 +695,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
             {
                 'key': {
                     'path': [
+                        'hanging_graph'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'never_runs_asset'
                     ]
                 }
@@ -679,445 +735,5 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
                 }
             }
         ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_asset_op[postgres_with_default_run_launcher_deployed_grpc_env] 1'] = {
-    'assetOrError': {
-        'definition': {
-            'op': {
-                'description': None,
-                'inputDefinitions': [
-                    {
-                        'name': 'asset_one'
-                    }
-                ],
-                'name': 'asset_two',
-                'outputDefinitions': [
-                    {
-                        'name': 'result'
-                    }
-                ]
-            }
-        }
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_asset_op[postgres_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'assetOrError': {
-        'definition': {
-            'op': {
-                'description': None,
-                'inputDefinitions': [
-                    {
-                        'name': 'asset_one'
-                    }
-                ],
-                'name': 'asset_two',
-                'outputDefinitions': [
-                    {
-                        'name': 'result'
-                    }
-                ]
-            }
-        }
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_asset_op[sqlite_with_default_run_launcher_deployed_grpc_env] 1'] = {
-    'assetOrError': {
-        'definition': {
-            'op': {
-                'description': None,
-                'inputDefinitions': [
-                    {
-                        'name': 'asset_one'
-                    }
-                ],
-                'name': 'asset_two',
-                'outputDefinitions': [
-                    {
-                        'name': 'result'
-                    }
-                ]
-            }
-        }
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_asset_op[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'assetOrError': {
-        'definition': {
-            'op': {
-                'description': None,
-                'inputDefinitions': [
-                    {
-                        'name': 'asset_one'
-                    }
-                ],
-                'name': 'asset_two',
-                'outputDefinitions': [
-                    {
-                        'name': 'result'
-                    }
-                ]
-            }
-        }
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_asset_key_lineage[postgres_with_default_run_launcher_deployed_grpc_env] 1'] = {
-    'assetOrError': {
-        'assetMaterializations': [
-            {
-                'assetLineage': [
-                ],
-                'label': 'b'
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_asset_key_lineage[postgres_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'assetOrError': {
-        'assetMaterializations': [
-            {
-                'assetLineage': [
-                ],
-                'label': 'b'
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_asset_key_lineage[sqlite_with_default_run_launcher_deployed_grpc_env] 1'] = {
-    'assetOrError': {
-        'assetMaterializations': [
-            {
-                'assetLineage': [
-                ],
-                'label': 'b'
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_asset_key_lineage[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'assetOrError': {
-        'assetMaterializations': [
-            {
-                'assetLineage': [
-                ],
-                'label': 'b'
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_asset_key_materialization[postgres_with_default_run_launcher_deployed_grpc_env] 1'] = {
-    'assetOrError': {
-        'assetMaterializations': [
-            {
-                'assetLineage': [
-                ],
-                'label': 'a'
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_asset_key_materialization[postgres_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'assetOrError': {
-        'assetMaterializations': [
-            {
-                'assetLineage': [
-                ],
-                'label': 'a'
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_asset_key_materialization[sqlite_with_default_run_launcher_deployed_grpc_env] 1'] = {
-    'assetOrError': {
-        'assetMaterializations': [
-            {
-                'assetLineage': [
-                ],
-                'label': 'a'
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_asset_key_materialization[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'assetOrError': {
-        'assetMaterializations': [
-            {
-                'assetLineage': [
-                ],
-                'label': 'a'
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_asset_key_not_found[postgres_with_default_run_launcher_deployed_grpc_env] 1'] = {
-    'assetOrError': {
-        '__typename': 'AssetNotFoundError'
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_asset_key_not_found[postgres_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'assetOrError': {
-        '__typename': 'AssetNotFoundError'
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_asset_key_not_found[sqlite_with_default_run_launcher_deployed_grpc_env] 1'] = {
-    'assetOrError': {
-        '__typename': 'AssetNotFoundError'
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_asset_key_not_found[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'assetOrError': {
-        '__typename': 'AssetNotFoundError'
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_partitioned_asset_key_lineage[postgres_with_default_run_launcher_deployed_grpc_env] 1'] = {
-    'assetOrError': {
-        'assetMaterializations': [
-            {
-                'assetLineage': [
-                ],
-                'label': 'b'
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_partitioned_asset_key_lineage[postgres_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'assetOrError': {
-        'assetMaterializations': [
-            {
-                'assetLineage': [
-                ],
-                'label': 'b'
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_partitioned_asset_key_lineage[sqlite_with_default_run_launcher_deployed_grpc_env] 1'] = {
-    'assetOrError': {
-        'assetMaterializations': [
-            {
-                'assetLineage': [
-                ],
-                'label': 'b'
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_partitioned_asset_key_lineage[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'assetOrError': {
-        'assetMaterializations': [
-            {
-                'assetLineage': [
-                ],
-                'label': 'b'
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_partitioned_asset_key_materialization[postgres_with_default_run_launcher_deployed_grpc_env] 1'] = {
-    'assetOrError': {
-        'assetMaterializations': [
-            {
-                'label': 'a',
-                'partition': 'partition_1'
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_partitioned_asset_key_materialization[postgres_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'assetOrError': {
-        'assetMaterializations': [
-            {
-                'label': 'a',
-                'partition': 'partition_1'
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_partitioned_asset_key_materialization[sqlite_with_default_run_launcher_deployed_grpc_env] 1'] = {
-    'assetOrError': {
-        'assetMaterializations': [
-            {
-                'label': 'a',
-                'partition': 'partition_1'
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_partitioned_asset_key_materialization[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'assetOrError': {
-        'assetMaterializations': [
-            {
-                'label': 'a',
-                'partition': 'partition_1'
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_run_materialization[postgres_with_default_run_launcher_deployed_grpc_env] 1'] = {
-    'runsOrError': {
-        'results': [
-            {
-                'assetMaterializations': [
-                    {
-                        'assetKey': {
-                            'path': [
-                                'a'
-                            ]
-                        }
-                    }
-                ]
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_run_materialization[postgres_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'runsOrError': {
-        'results': [
-            {
-                'assetMaterializations': [
-                    {
-                        'assetKey': {
-                            'path': [
-                                'a'
-                            ]
-                        }
-                    }
-                ]
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_run_materialization[sqlite_with_default_run_launcher_deployed_grpc_env] 1'] = {
-    'runsOrError': {
-        'results': [
-            {
-                'assetMaterializations': [
-                    {
-                        'assetKey': {
-                            'path': [
-                                'a'
-                            ]
-                        }
-                    }
-                ]
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_run_materialization[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'runsOrError': {
-        'results': [
-            {
-                'assetMaterializations': [
-                    {
-                        'assetKey': {
-                            'path': [
-                                'a'
-                            ]
-                        }
-                    }
-                ]
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_op_assets[postgres_with_default_run_launcher_deployed_grpc_env] 1'] = {
-    'repositoryOrError': {
-        'usedSolid': {
-            'definition': {
-                'assetNodes': [
-                    {
-                        'assetKey': {
-                            'path': [
-                                'asset_two'
-                            ]
-                        }
-                    }
-                ]
-            }
-        }
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_op_assets[postgres_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'repositoryOrError': {
-        'usedSolid': {
-            'definition': {
-                'assetNodes': [
-                    {
-                        'assetKey': {
-                            'path': [
-                                'asset_two'
-                            ]
-                        }
-                    }
-                ]
-            }
-        }
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_op_assets[sqlite_with_default_run_launcher_deployed_grpc_env] 1'] = {
-    'repositoryOrError': {
-        'usedSolid': {
-            'definition': {
-                'assetNodes': [
-                    {
-                        'assetKey': {
-                            'path': [
-                                'asset_two'
-                            ]
-                        }
-                    }
-                ]
-            }
-        }
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_op_assets[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'repositoryOrError': {
-        'usedSolid': {
-            'definition': {
-                'assetNodes': [
-                    {
-                        'assetKey': {
-                            'path': [
-                                'asset_two'
-                            ]
-                        }
-                    }
-                ]
-            }
-        }
     }
 }

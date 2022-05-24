@@ -19,23 +19,6 @@ export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_no
   name: string;
 }
 
-export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep_unstartedRuns {
-  __typename: "Run";
-  id: string;
-}
-
-export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep_inProgressRuns {
-  __typename: "Run";
-  id: string;
-}
-
-export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep {
-  __typename: "InProgressRunsByStep";
-  stepKey: string;
-  unstartedRuns: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep_unstartedRuns[];
-  inProgressRuns: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep_inProgressRuns[];
-}
-
 export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_run {
   __typename: "Run";
   id: string;
@@ -53,7 +36,6 @@ export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_no
   id: string;
   name: string;
   location: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_location;
-  inProgressRunsByStep: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep[];
   latestRunByStep: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep[];
 }
 
@@ -89,9 +71,22 @@ export interface AssetGraphLiveQuery_assetNodes {
   assetMaterializations: AssetGraphLiveQuery_assetNodes_assetMaterializations[];
 }
 
+export interface AssetGraphLiveQuery_assetsLatestInfo_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetGraphLiveQuery_assetsLatestInfo {
+  __typename: "AssetLatestInfo";
+  assetKey: AssetGraphLiveQuery_assetsLatestInfo_assetKey;
+  unstartedRunIds: string[];
+  inProgressRunIds: string[];
+}
+
 export interface AssetGraphLiveQuery {
   repositoriesOrError: AssetGraphLiveQuery_repositoriesOrError;
   assetNodes: AssetGraphLiveQuery_assetNodes[];
+  assetsLatestInfo: AssetGraphLiveQuery_assetsLatestInfo[];
 }
 
 export interface AssetGraphLiveQueryVariables {
