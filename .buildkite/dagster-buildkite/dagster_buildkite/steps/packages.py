@@ -329,7 +329,7 @@ PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         run_mypy=False,
     ),
     PackageSpec(
-        "examples/ge-example",
+        "examples/ge_example",
         unsupported_python_versions=[
             # dependency on dagster-ge
             AvailablePythonVersion.V3_6,
