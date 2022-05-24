@@ -109,7 +109,9 @@ def create_execution_params(graphene_info, graphql_execution_params):
 def execution_params_from_graphql(graphql_execution_params):
     return ExecutionParams(
         selector=pipeline_selector_from_graphql(graphql_execution_params.get("selector")),
-        run_config=parse_run_config_input(graphql_execution_params.get("runConfigData") or {}),
+        run_config=parse_run_config_input(
+            graphql_execution_params.get("runConfigData") or {}, raise_on_error=True
+        ),
         mode=graphql_execution_params.get("mode"),
         execution_metadata=create_execution_metadata(
             graphql_execution_params.get("executionMetadata")

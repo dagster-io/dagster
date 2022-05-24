@@ -33,7 +33,7 @@ To add a new back-compat test for sqlite, follow the following steps:
 1. Make sure your configured storage directory (e.g. $DAGSTER_HOME/history) is wiped
 1. Start dagit and execute a pipeline run, to ensure that both the run db and per-run event_log dbs are created.
 1. Copy the runs.db and all per-run event log dbs to the back compat test directory:
-   - `mkdir python_modules/dagster/dagster_tests/general_tests/compat_tests/<my_schema_change>/sqlite/history`
+   - `mkdir -p python_modules/dagster/dagster_tests/general_tests/compat_tests/<my_schema_change>/sqlite/history`
    - `cp $DAGSTER_HOME/history/runs.db\* python_modules/dagster/dagster_tests/general_tests/compat_tests/<my_schema_change>/sqlite/history/`
    - `cp -R $DAGSTER_HOME/history/runs python_modules/dagster/dagster_tests/general_tests/compat_tests/<my_schema_change>/sqlite/history/`
 1. Write your back compat test, loading your snapshot directory

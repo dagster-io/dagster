@@ -2,7 +2,7 @@ import logging
 import time
 import warnings
 from collections import OrderedDict, defaultdict
-from typing import Dict, Iterable, Mapping, Optional, Sequence
+from typing import Dict, Iterable, Mapping, Optional, Sequence, Set, cast
 
 import dagster._check as check
 from dagster.core.assets import AssetDetails
@@ -14,6 +14,9 @@ from dagster.serdes import ConfigurableClass
 from dagster.utils import utc_datetime_from_timestamp
 
 from .base import (
+    EventLogConnection,
+    EventLogCursor,
+    EventLogCursorType,
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
@@ -53,20 +56,15 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     def from_config_value(cls, inst_data, config_value):
         return cls(inst_data)
 
-    def get_logs_for_run(
+    def get_records_for_run(
         self,
         run_id,
-        cursor=-1,
+        cursor=None,
         of_type=None,
         limit=None,
-    ):
+    ) -> EventLogConnection:
         check.str_param(run_id, "run_id")
-        check.int_param(cursor, "cursor")
-        check.invariant(
-            cursor >= -1,
-            "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
-        )
-
+        check.opt_str_param(cursor, "cursor")
         of_types = (
             (
                 {of_type.value}
@@ -84,26 +82,45 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
             else None
         )
 
-        cursor = cursor + 1
+        if cursor is None:
+            offset = 0
+        else:
+            cursor = EventLogCursor.parse(cursor)
+            check.invariant(
+                cursor.cursor_type == EventLogCursorType.OFFSET,
+                "only offset cursors are supported with the in-memory event log",
+            )
+            offset = cursor.offset()
+
         if of_types:
             events = list(
                 filter(
-                    lambda r: r.is_dagster_event and r.dagster_event.event_type_value in of_types,
-                    self._logs[run_id][cursor:],
+                    lambda r: r.is_dagster_event
+                    and r.dagster_event.event_type_value in cast(Set[str], of_types),
+                    self._logs[run_id],
                 )
             )
+            events = events[offset:]
         else:
-            events = self._logs[run_id][cursor:]
+            events = self._logs[run_id][offset:]
 
         if limit:
             events = events[:limit]
 
-        return events
+        return EventLogConnection(
+            records=[
+                EventLogRecord(storage_id=event_id + offset, event_log_entry=event)
+                for event_id, event in enumerate(events)
+            ],
+            cursor=EventLogCursor.from_offset(offset + len(events)).to_string(),
+            has_more=bool(limit and len(events) == limit),
+        )
 
     def store_event(self, event):
         check.inst_param(event, "event", EventLogEntry)
         run_id = event.run_id
         self._logs[run_id].append(event)
+        offset = len(self._logs[run_id])
 
         if (
             event.is_dagster_event
@@ -121,7 +138,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
 
         for handler in handlers:
             try:
-                handler(event)
+                handler(event, str(EventLogCursor.from_offset(offset)))
             except Exception:
                 logging.exception("Exception in callback for event watch on run %s.", run_id)
 

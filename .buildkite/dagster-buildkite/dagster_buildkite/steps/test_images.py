@@ -1,20 +1,25 @@
-from ..defines import TOX_MAP, SupportedPython
+from typing import List
+
 from ..images.versions import TEST_IMAGE_BUILDER_VERSION, UNIT_IMAGE_VERSION
-from ..step_builder import StepBuilder
-from ..utils import get_python_versions_for_branch
+from ..python_version import AvailablePythonVersion
+from ..step_builder import CommandStepBuilder
+from ..utils import BuildkiteLeafStep, GroupStep
 
 
-def publish_test_images():
+def build_test_image_steps() -> List[GroupStep]:
     """This set of tasks builds and pushes Docker images, which are used by the dagster-airflow and
     the dagster-k8s tests
     """
-    tests = []
-    for version in get_python_versions_for_branch(
-        pr_versions=[SupportedPython.V3_8, SupportedPython.V3_9]
-    ):
+    steps: List[BuildkiteLeafStep] = []
+
+    # Build for all available versions because a dependent extension might need to run tests on any
+    # version.
+    py_versions = AvailablePythonVersion.get_all()
+
+    for version in py_versions:
         key = _test_image_step(version)
-        tests.append(
-            StepBuilder(f":docker: test-image {version}", key=key)
+        steps.append(
+            CommandStepBuilder(f":docker: test-image {version}", key=key)
             # these run commands are coupled to the way the test-image-builder is built
             # see python_modules/automation/automation/docker/images/buildkite-test-image-builder
             .run(
@@ -39,7 +44,8 @@ def publish_test_images():
             )
             .on_python_image(
                 "buildkite-test-image-builder:py{python_version}-{image_version}".format(
-                    python_version=SupportedPython.V3_8, image_version=TEST_IMAGE_BUILDER_VERSION
+                    python_version=AvailablePythonVersion.V3_8,
+                    image_version=TEST_IMAGE_BUILDER_VERSION,
                 ),
                 [
                     "AIRFLOW_HOME",
@@ -53,8 +59,8 @@ def publish_test_images():
         )
 
         key = _core_test_image_step(version)
-        tests.append(
-            StepBuilder(f":docker: test-image-core {version}", key=key)
+        steps.append(
+            CommandStepBuilder(f":docker: test-image-core {version}", key=key)
             # these run commands are coupled to the way the test-image-builder is built
             # see python_modules/automation/automation/docker/images/buildkite-test-image-builder
             .run(
@@ -76,7 +82,8 @@ def publish_test_images():
             )
             .on_python_image(
                 "buildkite-test-image-builder:py{python_version}-{image_version}".format(
-                    python_version=SupportedPython.V3_8, image_version=TEST_IMAGE_BUILDER_VERSION
+                    python_version=AvailablePythonVersion.V3_8,
+                    image_version=TEST_IMAGE_BUILDER_VERSION,
                 ),
                 [
                     "AWS_ACCOUNT_ID",
@@ -87,20 +94,26 @@ def publish_test_images():
             )
             .build()
         )
-    return tests
+    return [
+        GroupStep(
+            group=":docker: test-image",
+            key="test-image",
+            steps=steps,
+        )
+    ]
 
 
-def _test_image_step(version):
-    return "dagster-test-images-{version}".format(version=TOX_MAP[version])
+def _test_image_step(version: AvailablePythonVersion) -> str:
+    return f"dagster-test-images-{AvailablePythonVersion.to_tox_factor(version)}"
 
 
-def test_image_depends_fn(version):
+def test_image_depends_fn(version: AvailablePythonVersion, _) -> List[str]:
     return [_test_image_step(version)]
 
 
-def _core_test_image_step(version):
-    return "dagster-core-test-images-{version}".format(version=TOX_MAP[version])
+def _core_test_image_step(version: AvailablePythonVersion) -> str:
+    return f"dagster-core-test-images-{AvailablePythonVersion.to_tox_factor(version)}"
 
 
-def core_test_image_depends_fn(version):
+def core_test_image_depends_fn(version: AvailablePythonVersion, _) -> List[str]:
     return [_core_test_image_step(version)]

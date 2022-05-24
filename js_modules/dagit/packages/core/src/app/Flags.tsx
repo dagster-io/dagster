@@ -11,6 +11,7 @@ export enum FeatureFlag {
   flagAlwaysCollapseNavigation = 'flagAlwaysCollapseNavigation',
   flagDisableWebsockets = 'flagDisableWebsockets',
   flagNewPartitionsView = 'flagNewPartitionsView',
+  flagSectionedLeftNav = 'flagSectionedLeftNav',
 }
 
 export const getFeatureFlags: () => FeatureFlag[] = memoize(

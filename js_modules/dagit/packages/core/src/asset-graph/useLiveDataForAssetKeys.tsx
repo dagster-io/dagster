@@ -40,11 +40,11 @@ export function useLiveDataForAssetKeys(
       return {};
     }
 
-    const {repositoriesOrError, assetNodes: liveAssetNodes} = liveResult.data;
+    const {repositoriesOrError, assetNodes: liveAssetNodes, assetsLatestInfo} = liveResult.data;
     const repos =
       repositoriesOrError.__typename === 'RepositoryConnection' ? repositoriesOrError.nodes : [];
 
-    return buildLiveData(graphData, liveAssetNodes, repos);
+    return buildLiveData(graphData, liveAssetNodes, repos, assetsLatestInfo);
   }, [graphData, liveResult]);
 
   return {
@@ -69,6 +69,13 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
     assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
       id
       ...AssetNodeLiveFragment
+    }
+    assetsLatestInfo(assetKeys: $assetKeys) {
+      assetKey {
+        path
+      }
+      unstartedRunIds
+      inProgressRunIds
     }
   }
   ${REPOSITORY_LIVE_FRAGMENT}

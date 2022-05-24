@@ -7,6 +7,7 @@ import dagster._check as check
 from dagster.core.events import DagsterEventType, EngineEventData
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
+from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -122,7 +123,7 @@ def delete_pipeline_run(graphene_info, run_id):
     return GrapheneDeletePipelineRunSuccess(run_id)
 
 
-def get_pipeline_run_observable(graphene_info, run_id, after=None):
+def get_pipeline_run_observable(graphene_info, run_id, cursor=None):
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.pipelines.subscription import (
         GraphenePipelineRunLogsSubscriptionFailure,
@@ -132,7 +133,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(run_id, "run_id")
-    check.opt_int_param(after, "after")
+    check.opt_str_param(cursor, "cursor")
     instance = graphene_info.context.instance
     records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
 
@@ -151,17 +152,18 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
     run = record.pipeline_run
 
     def _handle_events(payload):
-        events, loading_past = payload
+        events, loading_past, cursor = payload
         return GraphenePipelineRunLogsSubscriptionSuccess(
             run=GrapheneRun(record),
             messages=[from_event_record(event, run.pipeline_name) for event in events],
             hasMorePastEvents=loading_past,
+            cursor=cursor,
         )
 
     # pylint: disable=E1101
-    return Observable.create(
-        PipelineRunObservableSubscribe(instance, run_id, after_cursor=after)
-    ).map(_handle_events)
+    return Observable.create(PipelineRunObservableSubscribe(instance, run_id, cursor=cursor)).map(
+        _handle_events
+    )
 
 
 def get_compute_log_observable(graphene_info, run_id, step_key, io_type, cursor=None):
