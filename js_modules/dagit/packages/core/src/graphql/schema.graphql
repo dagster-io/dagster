@@ -2073,6 +2073,7 @@ union LaunchRunResult =
   | RunConflict
   | UnauthorizedError
   | PythonError
+  | InvalidSubsetError
   | PresetNotFoundError
   | ConflictingExecutionParamsError
   | NoModeProvidedError
@@ -2186,6 +2187,7 @@ union LaunchRunReexecutionResult =
   | RunConflict
   | UnauthorizedError
   | PythonError
+  | InvalidSubsetError
   | PresetNotFoundError
   | ConflictingExecutionParamsError
   | NoModeProvidedError
@@ -2341,6 +2343,7 @@ union LaunchBackfillResult =
   | RunConflict
   | UnauthorizedError
   | PythonError
+  | InvalidSubsetError
   | PresetNotFoundError
   | ConflictingExecutionParamsError
   | NoModeProvidedError
@@ -2440,12 +2443,6 @@ enum LocationStateChangeEventType {
 
 type MissingRunIdErrorEvent {
   invalidRunId: String!
-}
-
-type ConfigTypeNotFoundError implements Error {
-  message: String!
-  pipeline: Pipeline!
-  configTypeName: String!
 }
 
 type FieldNotDefinedConfigError implements PipelineConfigValidationError {
@@ -2699,6 +2696,12 @@ type RegularConfigType implements ConfigType {
   typeParamKeys: [String!]!
   isSelector: Boolean!
   givenName: String!
+}
+
+type ConfigTypeNotFoundError implements Error {
+  message: String!
+  pipeline: Pipeline!
+  configTypeName: String!
 }
 
 type ArrayConfigType implements ConfigType & WrappingConfigType {

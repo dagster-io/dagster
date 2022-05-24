@@ -32,6 +32,11 @@ export interface LaunchPipelineReexecution_launchPipelineReexecution_PipelineNot
   message: string;
 }
 
+export interface LaunchPipelineReexecution_launchPipelineReexecution_InvalidSubsetError {
+  __typename: "InvalidSubsetError";
+  message: string;
+}
+
 export interface LaunchPipelineReexecution_launchPipelineReexecution_RunConfigValidationInvalid_errors {
   __typename: "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "MissingFieldConfigError" | "MissingFieldsConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
   message: string;
@@ -55,7 +60,7 @@ export interface LaunchPipelineReexecution_launchPipelineReexecution_PythonError
   cause: LaunchPipelineReexecution_launchPipelineReexecution_PythonError_cause | null;
 }
 
-export type LaunchPipelineReexecution_launchPipelineReexecution = LaunchPipelineReexecution_launchPipelineReexecution_InvalidStepError | LaunchPipelineReexecution_launchPipelineReexecution_LaunchRunSuccess | LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError | LaunchPipelineReexecution_launchPipelineReexecution_RunConfigValidationInvalid | LaunchPipelineReexecution_launchPipelineReexecution_PythonError;
+export type LaunchPipelineReexecution_launchPipelineReexecution = LaunchPipelineReexecution_launchPipelineReexecution_InvalidStepError | LaunchPipelineReexecution_launchPipelineReexecution_LaunchRunSuccess | LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError | LaunchPipelineReexecution_launchPipelineReexecution_InvalidSubsetError | LaunchPipelineReexecution_launchPipelineReexecution_RunConfigValidationInvalid | LaunchPipelineReexecution_launchPipelineReexecution_PythonError;
 
 export interface LaunchPipelineReexecution {
   launchPipelineReexecution: LaunchPipelineReexecution_launchPipelineReexecution;
