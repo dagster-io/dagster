@@ -104,6 +104,7 @@ def build_assets_job(
     deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
     root_manager = build_root_manager(source_assets_by_key)
     partitioned_config = build_job_partitions_from_assets(assets, source_assets or [])
+    resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
 
     graph = GraphDefinition(
         name=name,
@@ -115,9 +116,21 @@ def build_assets_job(
         config=None,
     )
 
+    all_resource_defs = dict(resource_defs)
+    for asset_def in assets:
+        for resource_key, resource_def in asset_def.resource_defs.items():
+            if (
+                resource_key in all_resource_defs
+                and all_resource_defs[resource_key] != resource_def
+            ):
+                raise DagsterInvalidDefinitionError(
+                    f"When attempting to build job, asset {asset_def.asset_key} had a conflicting version of the same resource key {resource_key}. Please resolve this conflict by giving different keys to each resource definition."
+                )
+            all_resource_defs[resource_key] = resource_def
+
     return graph.to_job(
         resource_defs=merge_dicts(
-            {"io_manager": fs_asset_io_manager}, resource_defs or {}, {"root_manager": root_manager}
+            {"io_manager": fs_asset_io_manager}, all_resource_defs, {"root_manager": root_manager}
         ),
         config=config or partitioned_config,
         tags=tags,
