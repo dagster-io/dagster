@@ -25,7 +25,7 @@ from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition
 
 if TYPE_CHECKING:
-    from dagster.core.asset_defs import AssetGroup, AssetsDefinition
+    from dagster.core.asset_defs import AssetGroup, AssetsDefinition, SourceAsset
     from dagster.core.execution.context.output import OutputContext
 
     from .job_definition import JobDefinition
@@ -351,7 +351,10 @@ class AssetLayer:
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
         dependency_node_handles_by_asset_key: Optional[Mapping[AssetKey, Set[NodeHandle]]] = None,
         assets_defs: Optional[List["AssetsDefinition"]] = None,
+        source_asset_defs: Optional[Sequence[Union["SourceAsset", "AssetsDefinition"]]] = None,
     ):
+        from dagster.core.asset_defs import AssetsDefinition, SourceAsset
+
         self._asset_keys_by_node_input_handle = check.opt_dict_param(
             asset_keys_by_node_input_handle,
             "asset_keys_by_node_input_handle",
@@ -374,6 +377,9 @@ class AssetLayer:
             value_type=Set,
         )
         self._assets_defs = check.opt_list_param(assets_defs, "assets_defs")
+        self._source_asset_defs = check.opt_list_param(
+            source_asset_defs, "source_assets", of_type=(SourceAsset, AssetsDefinition)
+        )
 
         # keep an index from node handle to all keys expected to be generated in that node
         self._asset_keys_by_node_handle: Dict[NodeHandle, Set[AssetKey]] = defaultdict(set)
@@ -396,6 +402,7 @@ class AssetLayer:
     def from_graph_and_assets_node_mapping(
         graph_def: GraphDefinition,
         assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
+        source_assets: Optional[Sequence[Union["SourceAsset", "AssetsDefinition"]]] = None,
     ) -> "AssetLayer":
         """
         Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
@@ -447,6 +454,7 @@ class AssetLayer:
                 graph_def, assets_defs_by_node_handle
             ),
             assets_defs=[assets_def for assets_def in assets_defs_by_node_handle.values()],
+            source_asset_defs=source_assets,
         )
 
     @property
@@ -503,6 +511,8 @@ def build_asset_selection_job(
             included_assets.append(assets_def)
         else:
             excluded_assets.append(assets_def)
+
+    excluded_assets += asset_layer._source_asset_defs  # pylint:disable=protected-access
 
     return build_assets_job(
         name=job_to_subselect.name,

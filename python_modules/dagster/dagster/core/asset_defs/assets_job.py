@@ -136,8 +136,7 @@ def build_assets_job(
         tags=tags,
         executor_def=executor_def,
         asset_layer=AssetLayer.from_graph_and_assets_node_mapping(
-            graph,
-            assets_defs_by_node_handle,
+            graph, assets_defs_by_node_handle, source_assets
         ),
         _asset_selection_data=_asset_selection_data,
     )

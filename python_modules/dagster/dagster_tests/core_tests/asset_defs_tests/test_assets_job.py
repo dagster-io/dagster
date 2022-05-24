@@ -1143,3 +1143,31 @@ def test_subset_of_build_assets_job():
                 instance=instance,
                 asset_selection=[AssetKey("unconnected")],
             )
+
+
+def test_subset_with_source_asset():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return 5
+
+    @io_manager
+    def the_manager():
+        return MyIOManager()
+
+    my_source_asset = SourceAsset(key=AssetKey("my_source_asset"), io_manager_key="the_manager")
+
+    @asset
+    def my_derived_asset(my_source_asset):
+        return my_source_asset + 4
+
+    source_asset_job = AssetGroup(
+        assets=[my_derived_asset],
+        source_assets=[my_source_asset],
+        resource_defs={"the_manager": the_manager},
+    ).build_job("source_asset_job")
+
+    result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
+    assert result.success
