@@ -1143,3 +1143,33 @@ def test_subset_of_build_assets_job():
                 instance=instance,
                 asset_selection=[AssetKey("unconnected")],
             )
+
+
+def test_raise_error_on_incomplete_graph_asset_subset():
+    @op
+    def do_something(x):
+        return x * 2
+
+    @op
+    def foo():
+        return 1, 2
+
+    @graph(
+        out={
+            "comments_table": GraphOut(),
+            "stories_table": GraphOut(),
+        },
+    )
+    def complicated_graph():
+        result = foo()
+        return do_something(result), do_something(result)
+
+    job = AssetGroup(
+        [
+            AssetsDefinition.from_graph(complicated_graph),
+        ],
+    ).build_job("job")
+
+    with instance_for_test() as instance:
+        with pytest.raises(DagsterInvalidSubsetError, match="complicated_graph"):
+            job.execute_in_process(instance=instance, asset_selection=[AssetKey("comments_table")])

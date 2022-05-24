@@ -20,6 +20,7 @@ import dagster._check as check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.selector.subset_selector import AssetSelectionData
 
+from ..errors import DagsterInvalidSubsetError
 from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
 from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition
@@ -500,6 +501,15 @@ def build_asset_selection_job(
     excluded_assets: List["AssetsDefinition"] = []
     for assets_def in asset_layer._assets_defs:  # pylint:disable=protected-access
         if any([asset_key in asset_selection for asset_key in assets_def.asset_keys]):
+            # For now, the asset selection provided must select all assets in each
+            # AssetsDefinition (i.e. all assets outputted from a graph-backed asset).
+            # Subsetting a graph-backed asset is a future feature.
+            if not all(
+                [asset_key in asset_selection for asset_key in assets_def.asset_keys],
+            ):
+                raise DagsterInvalidSubsetError(
+                    f"Asset selection provided must contain all assets outputted from {assets_def.node_def.name}"
+                )
             included_assets.append(assets_def)
         else:
             excluded_assets.append(assets_def)
