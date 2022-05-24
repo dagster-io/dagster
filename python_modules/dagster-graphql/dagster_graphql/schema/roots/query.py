@@ -427,7 +427,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return validate_pipeline_config(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            parse_run_config_input(kwargs.get("runConfigData", {})),
+            parse_run_config_input(kwargs.get("runConfigData", {}), raise_on_error=False),
             kwargs.get("mode"),
         )
 
@@ -435,7 +435,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return get_execution_plan(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            parse_run_config_input(kwargs.get("runConfigData", {})),
+            parse_run_config_input(kwargs.get("runConfigData", {}), raise_on_error=True),
             kwargs.get("mode"),
         )
 

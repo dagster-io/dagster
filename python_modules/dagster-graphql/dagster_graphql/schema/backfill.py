@@ -9,6 +9,7 @@ from dagster.core.storage.tags import PARTITION_NAME_TAG
 from .errors import (
     GrapheneInvalidOutputError,
     GrapheneInvalidStepError,
+    GrapheneInvalidSubsetError,
     GraphenePartitionSetNotFoundError,
     GraphenePipelineNotFoundError,
     GraphenePythonError,
@@ -27,6 +28,7 @@ pipeline_execution_error_types = (
     GrapheneRunConflict,
     GrapheneUnauthorizedError,
     GraphenePythonError,
+    GrapheneInvalidSubsetError,
 ) + create_execution_params_error_types
 
 

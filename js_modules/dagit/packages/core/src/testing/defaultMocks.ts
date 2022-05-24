@@ -181,4 +181,7 @@ export const defaultMocks = {
   ConfigTypeOrError: () => ({
     __typename: 'EnumConfigType',
   }),
+  InstigationStatesOrError: () => ({
+    __typename: 'InstigationStates',
+  }),
 };

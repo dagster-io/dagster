@@ -7,7 +7,6 @@ from dagster.core.storage.compute_log_manager import ComputeIOType
 from ...implementation.execution import get_compute_log_observable, get_pipeline_run_observable
 from ..external import GrapheneLocationStateChangeSubscription, get_location_state_change_observable
 from ..logs.compute_logs import GrapheneComputeIOType, GrapheneComputeLogFile
-from ..paging import GrapheneCursor
 from ..pipelines.subscription import GraphenePipelineRunLogsSubscriptionPayload
 
 
@@ -18,7 +17,7 @@ class GrapheneDagitSubscription(graphene.ObjectType):
     pipelineRunLogs = graphene.Field(
         graphene.NonNull(GraphenePipelineRunLogsSubscriptionPayload),
         runId=graphene.Argument(graphene.NonNull(graphene.ID)),
-        after=graphene.Argument(GrapheneCursor),
+        cursor=graphene.Argument(graphene.String),
     )
 
     computeLogs = graphene.Field(
@@ -33,8 +32,8 @@ class GrapheneDagitSubscription(graphene.ObjectType):
         graphene.NonNull(GrapheneLocationStateChangeSubscription)
     )
 
-    def resolve_pipelineRunLogs(self, graphene_info, runId, after=None):
-        return get_pipeline_run_observable(graphene_info, runId, after)
+    def resolve_pipelineRunLogs(self, graphene_info, runId, cursor=None):
+        return get_pipeline_run_observable(graphene_info, runId, cursor)
 
     def resolve_computeLogs(self, graphene_info, runId, stepKey, ioType, cursor=None):
         check.str_param(ioType, "ioType")  # need to resolve to enum

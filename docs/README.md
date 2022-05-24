@@ -138,6 +138,8 @@ A screenshot spec includes:
 - A `url` for the page to take the screenshot from.
 - An optional set of manual `steps`, which the person generating the screenshot is expected to carry out before the screenshot is taken.
 - A `vetted` boolean, which indicates whether the current screenshot in the repo was generated using the spec.
+- An optional `width` in pixels for the window in which the screenshot will be taken.
+- An optional `height` in pixels for the window in which the screenshot will be taken.
 
 #### Setup
 

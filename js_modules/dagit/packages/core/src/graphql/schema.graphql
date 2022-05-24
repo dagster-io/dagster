@@ -392,7 +392,7 @@ type Run implements PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  events(after: Cursor): [DagsterRunEvent!]!
+  eventConnection(afterCursor: String): GrapheneEventConnection!
   assetSelection: [AssetKey!]
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
@@ -428,7 +428,7 @@ interface PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  events(after: Cursor): [DagsterRunEvent!]!
+  eventConnection(afterCursor: String): GrapheneEventConnection!
 }
 
 type RepositoryOrigin {
@@ -653,6 +653,12 @@ type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
   runOrError: RunOrError!
   stepStats: RunStepStats!
   partition: String
+}
+
+type GrapheneEventConnection {
+  events: [DagsterRunEvent!]!
+  cursor: String!
+  hasMore: Boolean!
 }
 
 union DagsterRunEvent =
@@ -1080,8 +1086,6 @@ type AssetMaterializationPlannedEvent implements MessageEvent & RunEvent {
   assetKey: AssetKey
   runOrError: RunOrError!
 }
-
-scalar Cursor
 
 type RunNotFoundError implements PipelineRunNotFoundError & Error {
   runId: String!
@@ -2070,6 +2074,7 @@ union LaunchRunResult =
   | RunConflict
   | UnauthorizedError
   | PythonError
+  | InvalidSubsetError
   | PresetNotFoundError
   | ConflictingExecutionParamsError
   | NoModeProvidedError
@@ -2183,6 +2188,7 @@ union LaunchRunReexecutionResult =
   | RunConflict
   | UnauthorizedError
   | PythonError
+  | InvalidSubsetError
   | PresetNotFoundError
   | ConflictingExecutionParamsError
   | NoModeProvidedError
@@ -2338,6 +2344,7 @@ union LaunchBackfillResult =
   | RunConflict
   | UnauthorizedError
   | PythonError
+  | InvalidSubsetError
   | PresetNotFoundError
   | ConflictingExecutionParamsError
   | NoModeProvidedError
@@ -2391,7 +2398,7 @@ type LogTelemetrySuccess {
 }
 
 type DagitSubscription {
-  pipelineRunLogs(runId: ID!, after: Cursor): PipelineRunLogsSubscriptionPayload!
+  pipelineRunLogs(runId: ID!, cursor: String): PipelineRunLogsSubscriptionPayload!
   computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
   locationStateChangeEvents: LocationStateChangeSubscription!
 }
@@ -2404,6 +2411,7 @@ type PipelineRunLogsSubscriptionSuccess {
   run: Run!
   messages: [DagsterRunEvent!]!
   hasMorePastEvents: Boolean!
+  cursor: String!
 }
 
 type PipelineRunLogsSubscriptionFailure {
@@ -2436,12 +2444,6 @@ enum LocationStateChangeEventType {
 
 type MissingRunIdErrorEvent {
   invalidRunId: String!
-}
-
-type ConfigTypeNotFoundError implements Error {
-  message: String!
-  pipeline: Pipeline!
-  configTypeName: String!
 }
 
 type FieldNotDefinedConfigError implements PipelineConfigValidationError {
@@ -2695,6 +2697,12 @@ type RegularConfigType implements ConfigType {
   typeParamKeys: [String!]!
   isSelector: Boolean!
   givenName: String!
+}
+
+type ConfigTypeNotFoundError implements Error {
+  message: String!
+  pipeline: Pipeline!
+  configTypeName: String!
 }
 
 type ArrayConfigType implements ConfigType & WrappingConfigType {
@@ -3005,6 +3013,8 @@ type AssetMetadataEntry implements MetadataEntry {
   description: String
   assetKey: AssetKey!
 }
+
+scalar Cursor
 
 type RunGroups {
   results: [RunGroup!]!
