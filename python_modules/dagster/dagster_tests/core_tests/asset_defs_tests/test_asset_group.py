@@ -28,7 +28,6 @@ from dagster import (
 from dagster.core.asset_defs import (
     AssetGroup,
     AssetIn,
-    AssetsDefinition,
     SourceAsset,
     asset,
     multi_asset,

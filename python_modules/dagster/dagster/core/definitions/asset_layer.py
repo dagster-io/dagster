@@ -32,12 +32,8 @@ from .node_definition import NodeDefinition
 from .resource_definition import ResourceDefinition
 
 if TYPE_CHECKING:
-<<<<<<< HEAD
     from dagster.core.asset_defs import AssetGroup, AssetsDefinition, SourceAsset
-=======
-    from dagster.core.asset_defs import AssetGroup, AssetsDefinition
     from dagster.core.asset_defs.source_asset import SourceAsset
->>>>>>> passing all tests
     from dagster.core.execution.context.output import OutputContext
 
     from .job_definition import JobDefinition
@@ -435,7 +431,7 @@ class AssetLayer:
     def from_graph_and_assets_node_mapping(
         graph_def: GraphDefinition,
         assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
-        source_assets: Optional[Sequence[Union["SourceAsset", "AssetsDefinition"]]] = None,
+        source_assets: Sequence[Union["SourceAsset"]],
     ) -> "AssetLayer":
         """
         Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
@@ -493,7 +489,7 @@ class AssetLayer:
             ),
             assets_defs=[assets_def for assets_def in assets_defs_by_node_handle.values()],
             source_asset_defs=source_assets,
-            io_manager_keys_by_asset_key=asset_io_managers,
+            io_manager_keys_by_asset_key=io_manager_by_asset,
         )
 
     @property
@@ -537,17 +533,43 @@ class AssetLayer:
 
 
 def build_asset_selection_job(
-    job_to_subselect: "JobDefinition",
-    asset_selection: FrozenSet[AssetKey],
-    asset_layer: AssetLayer,
-    asset_selection_data: AssetSelectionData,
-) -> "JobDefinition":
-    from ..asset_defs.assets_job import build_assets_job
+    name: str,
+    assets: Sequence["AssetsDefinition"],
+    source_assets: Sequence[Union["AssetsDefinition", "SourceAsset"]],
+    executor_def: ExecutorDefinition,
+    resource_defs: Mapping[str, ResourceDefinition],
+    description: str,
+    tags: Dict[str, Any],
+    asset_selection: Optional[FrozenSet[AssetKey]],
+    asset_selection_data: Optional[AssetSelectionData] = None,
+):
+    from dagster.core.asset_defs import build_assets_job
 
-    check.invariant(
-        asset_layer._assets_defs != None,  # pylint:disable=protected-access
-        "Asset layer must have _asset_defs argument defined",
-    )
+    if asset_selection:
+        included_assets, excluded_assets = _subset_assets_defs(
+            assets, source_assets, asset_selection
+        )
+    else:
+        included_assets = cast(List["AssetsDefinition"], assets)
+        # Slice [:] serves as a copy constructor, so that we don't
+        # accidentally add to the original list
+        excluded_assets = source_assets[:]
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=ExperimentalWarning)
+        asset_job = build_assets_job(
+            name=name,
+            assets=included_assets,
+            source_assets=excluded_assets,
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+            description=description,
+            tags=tags,
+            _asset_selection_data=asset_selection_data,
+        )
+
+    return asset_job
+
 
 def _subset_assets_defs(
     assets: Sequence["AssetsDefinition"],
@@ -589,12 +611,3 @@ def _subset_assets_defs(
     all_excluded_assets = [*excluded_assets, *source_assets]
 
     return list(included_assets), all_excluded_assets
-
-
-def _build_resource_defs(resource_defs, source_assets):
-    from dagster.core.asset_defs.assets_job import build_root_manager, build_source_assets_by_key
-
-    return {
-        **resource_defs,
-        **{"root_manager": build_root_manager(build_source_assets_by_key(source_assets))},
-    }
