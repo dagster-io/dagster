@@ -262,6 +262,21 @@ def test_source_asset():
     assert _asset_keys_for_node(result, "asset1") == {AssetKey("asset1")}
 
 
+def test_missing_io_manager():
+    @asset
+    def asset1(source1):
+        return source1
+
+    with pytest.raises(
+        Exception, match="'special_io_manager' is required by unsatisfied input 'source1'"
+    ):
+        build_assets_job(
+            "a",
+            [asset1],
+            source_assets=[SourceAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
+        )
+
+
 def test_source_op_asset():
     @asset(io_manager_key="special_io_manager")
     def source1():

@@ -502,14 +502,19 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         source_handle: Optional[StepOutputHandle] = None,
         resource_config: Any = None,
         resources: Optional["Resources"] = None,
+        artificial_output_context: Optional["OutputContext"] = None,
     ) -> InputContext:
+        if source_handle and artificial_output_context:
+            check.failed("Cannot specify both source_handle and artificial_output_context.")
         return InputContext(
             pipeline_name=self.pipeline_def.name,
             name=name,
             solid_def=self.solid_def,
             config=config,
             metadata=metadata,
-            upstream_output=self.get_output_context(source_handle) if source_handle else None,
+            upstream_output=self.get_output_context(source_handle)
+            if source_handle is not None
+            else artificial_output_context,
             dagster_type=dagster_type,
             log_manager=self.log,
             step_context=self,
