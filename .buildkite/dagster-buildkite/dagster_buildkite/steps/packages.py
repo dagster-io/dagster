@@ -327,6 +327,10 @@ PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "examples/docs_snippets",
         pytest_extra_cmds=docs_snippets_extra_cmds,
         run_mypy=False,
+        unsupported_python_versions=[
+            # dependency on various 3.6-incompatible extension libs
+            AvailablePythonVersion.V3_6,
+        ]
     ),
     PackageSpec(
         "examples/ge_example",
