@@ -1,6 +1,5 @@
 # pylint: disable=missing-graphene-docstring
 import graphene
-from dagster_graphql.implementation.fetch_runs import get_latest_asset_run_by_step_key
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 
@@ -162,7 +161,6 @@ class GrapheneRepository(graphene.ObjectType):
     sensors = non_null_list(GrapheneSensor)
     assetNodes = non_null_list(GrapheneAssetNode)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
-    latestRunByStep = non_null_list(GrapheneLatestRun)
 
     class Meta:
         name = "Repository"
@@ -254,14 +252,6 @@ class GrapheneRepository(graphene.ObjectType):
             GrapheneAssetNode(self._repository_location, self._repository, external_asset_node)
             for external_asset_node in self._repository.get_external_asset_nodes()
         ]
-
-    def resolve_latestRunByStep(self, graphene_info):
-        asset_node = [node for node in self._repository.get_external_asset_nodes() if node.op_name]
-
-        return get_latest_asset_run_by_step_key(
-            graphene_info,
-            asset_node,
-        )
 
 
 class GrapheneRepositoryConnection(graphene.ObjectType):

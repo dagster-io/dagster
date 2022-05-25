@@ -235,38 +235,6 @@ def _get_in_progress_runs_for_assets(
     return in_progress_run_ids_by_asset, unstarted_run_ids_by_asset
 
 
-def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
-    from ..schema.pipelines.pipeline import GrapheneLatestRun, GrapheneRun
-
-    instance = graphene_info.context.instance
-
-    latest_run_by_step: Dict[str, PipelineRun] = {}
-    latest_run_id_by_asset: Dict[AssetKey, str] = {}
-
-    for record in instance.get_asset_records([asset.asset_key for asset in asset_nodes]):
-        asset_key = record.asset_entry.asset_key
-        last_run_id = record.asset_entry.last_run_id
-        if last_run_id:
-            latest_run_id_by_asset[asset_key] = last_run_id
-
-    run_records_by_run_id = {}
-    run_ids = list(set(latest_run_id_by_asset.values()))
-    if run_ids:
-        run_records = instance.get_run_records(RunsFilter(run_ids=run_ids))
-        for run_record in run_records:
-            run_records_by_run_id[run_record.pipeline_run.run_id] = run_record
-
-    for asset in asset_nodes:
-        run_id = latest_run_id_by_asset.get(asset.asset_key)
-        step_key = asset.op_name
-        # return run = None when no runs have occurred for the asset
-        latest_run_by_step[step_key] = GrapheneLatestRun(
-            step_key, GrapheneRun(run_records_by_run_id[run_id]) if run_id else None
-        )
-
-    return [latest_run_by_step.get(asset_node.op_name) for asset_node in asset_nodes]
-
-
 def get_runs_count(graphene_info, filters):
     return graphene_info.context.instance.get_runs_count(filters)
 

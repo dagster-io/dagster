@@ -109,17 +109,18 @@ GET_ASSET_IN_PROGRESS_RUNS = """
 
 
 GET_ASSET_LATEST_RUN_STATS = """
-    query AssetGraphQuery($repositorySelector: RepositorySelector!) {
-        repositoryOrError(repositorySelector: $repositorySelector) {
-            ... on Repository {
-                latestRunByStep{
-                    ... on LatestRun {
-                        stepKey
-                        run {
-                            runId
-                        }
-                    }
-                }
+    query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]) {
+        assetsLatestInfo(assetKeys: $assetKeys) {
+            assetKey {
+                path
+            }
+            latestMaterialization {
+                timestamp
+                runId
+            }
+            latestRun {
+                status
+                id
             }
         }
     }
@@ -739,8 +740,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         snapshot.assert_match(result.data)
 
     def test_latest_run_by_asset(self, graphql_context):
-        def get_response_by_step(response):
-            return {stat["stepKey"]: stat for stat in response}
+        def get_response_by_asset(response):
+            return {stat["assetKey"]["path"][0]: stat for stat in response}
 
         selector = infer_repository_selector(graphql_context)
 
@@ -748,16 +749,21 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_LATEST_RUN_STATS,
-            variables={"repositorySelector": selector},
+            variables={
+                "assetKeys": [
+                    {"path": "asset_1"},
+                    {"path": "asset_2"},
+                    {"path": "asset_3"},
+                ]
+            },
         )
 
         assert result.data
-        assert result.data["repositoryOrError"]
-        assert result.data["repositoryOrError"]["latestRunByStep"]
-        result = get_response_by_step(result.data["repositoryOrError"]["latestRunByStep"])
+        assert result.data["assetsLatestInfo"]
+        result = get_response_by_asset(result.data["assetsLatestInfo"])
 
-        assert result["asset_1"]["stepKey"] == "asset_1"
-        assert result["asset_1"]["run"] == None
+        assert result["asset_1"]["latestRun"] == None
+        assert result["asset_1"]["latestMaterialization"] == None
 
         # Test with 1 run on all assets
         first_run_id = _create_run(graphql_context, "failure_assets_job")
@@ -765,32 +771,49 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_LATEST_RUN_STATS,
-            variables={"repositorySelector": selector},
+            variables={
+                "assetKeys": [
+                    {"path": "asset_1"},
+                    {"path": "asset_2"},
+                    {"path": "asset_3"},
+                ]
+            },
         )
 
         assert result.data
-        assert result.data["repositoryOrError"]
-        result = get_response_by_step(result.data["repositoryOrError"]["latestRunByStep"])
-        assert result["asset_1"]["run"]["runId"] == first_run_id
-        assert result["asset_2"]["run"]["runId"] == first_run_id
-        assert result["asset_3"]["run"]["runId"] == first_run_id
+        assert result.data["assetsLatestInfo"]
+        result = get_response_by_asset(result.data["assetsLatestInfo"])
 
-        # Confirm that step selection is respected among 5 latest runs
-        run_id = _create_run(graphql_context, "failure_assets_job", step_keys=["asset_3"])
+        assert result["asset_1"]["latestRun"]["id"] == first_run_id
+        assert result["asset_1"]["latestMaterialization"]["runId"] == first_run_id
+        assert result["asset_2"]["latestRun"]["id"] == first_run_id
+        assert result["asset_2"]["latestMaterialization"] == None
+        assert result["asset_3"]["latestRun"]["id"] == first_run_id
+        assert result["asset_3"]["latestMaterialization"] == None
+
+        # Confirm that asset selection is respected
+        run_id = _create_run(
+            graphql_context, "failure_assets_job", asset_selection=[{"path": ["asset_3"]}]
+        )
 
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_LATEST_RUN_STATS,
-            variables={"repositorySelector": selector},
+            variables={
+                "assetKeys": [
+                    {"path": "asset_1"},
+                    {"path": "asset_2"},
+                    {"path": "asset_3"},
+                ]
+            },
         )
 
         assert result.data
-        assert result.data["repositoryOrError"]
-        assert result.data["repositoryOrError"]["latestRunByStep"]
-        result = get_response_by_step(result.data["repositoryOrError"]["latestRunByStep"])
-        assert result["asset_1"]["run"]["runId"] == first_run_id
-        assert result["asset_2"]["run"]["runId"] == first_run_id
-        assert result["asset_3"]["run"]["runId"] == run_id
+        assert result.data["assetsLatestInfo"]
+        result = get_response_by_asset(result.data["assetsLatestInfo"])
+        assert result["asset_1"]["latestRun"]["id"] == first_run_id
+        assert result["asset_2"]["latestRun"]["id"] == first_run_id
+        assert result["asset_3"]["latestRun"]["id"] == run_id
 
     def test_get_run_materialization(self, graphql_context, snapshot):
         _create_run(graphql_context, "single_asset_pipeline")

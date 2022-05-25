@@ -92,7 +92,6 @@ type Repository {
   sensors: [Sensor!]!
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
-  latestRunByStep: [LatestRun!]!
 }
 
 type RepositoryLocation {
@@ -1521,11 +1520,6 @@ An invocation of a solid within a repo.
 type NodeInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
-}
-
-type LatestRun {
-  stepKey: String!
-  run: Run
 }
 
 """

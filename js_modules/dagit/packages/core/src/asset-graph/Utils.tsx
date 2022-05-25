@@ -6,6 +6,7 @@ import {AssetNodeDefinitionFragment} from '../assets/types/AssetNodeDefinitionFr
 
 import {
   AssetGraphLiveQuery_assetsLatestInfo,
+  AssetGraphLiveQuery_assetsLatestInfo_latestRun,
   AssetGraphLiveQuery_assetNodes_assetMaterializations,
 } from './types/AssetGraphLiveQuery';
 import {
@@ -13,10 +14,6 @@ import {
   AssetGraphQuery_assetNodes_assetKey,
 } from './types/AssetGraphQuery';
 import {AssetNodeLiveFragment} from './types/AssetNodeLiveFragment';
-import {
-  RepositoryLiveFragment,
-  RepositoryLiveFragment_latestRunByStep_run,
-} from './types/RepositoryLiveFragment';
 type AssetNode = AssetGraphQuery_assetNodes;
 type AssetKey = AssetGraphQuery_assetNodes_assetKey;
 
@@ -219,7 +216,7 @@ export interface LiveDataForNode {
   computeStatus: Status;
   unstartedRunIds: string[]; // run in progress and step not started
   inProgressRunIds: string[]; // run in progress and step in progress
-  runWhichFailedToMaterialize: RepositoryLiveFragment_latestRunByStep_run | null;
+  runWhichFailedToMaterialize: AssetGraphLiveQuery_assetsLatestInfo_latestRun | null;
   lastMaterialization: AssetGraphLiveQuery_assetNodes_assetMaterializations | null;
   lastChanged: number;
 }
@@ -230,7 +227,6 @@ export interface LiveData {
 export const buildLiveData = (
   graph: GraphData,
   nodes: AssetNodeLiveFragment[],
-  repos: RepositoryLiveFragment[],
   assetsLatestInfo: AssetGraphLiveQuery_assetsLatestInfo[],
 ) => {
   const data: LiveData = {};
@@ -245,12 +241,10 @@ export const buildLiveData = (
     const lastMaterialization = liveNode.assetMaterializations[0] || null;
     const lastChanged = Number(lastMaterialization?.timestamp || 0) / 1000;
     const isPartitioned = graphNode.definition.partitionDefinition;
-    // const repo = repos.find((r) => r.id === liveNode.repository.id);
 
     const assetLiveRuns = assetsLatestInfo.find(
       (r) => JSON.stringify(r.assetKey) === JSON.stringify(liveNode.assetKey),
     );
-    // const info = repo?.latestRunByStep.find((r) => liveNode.opNames.includes(r.stepKey));
 
     const latestRunForAsset = assetLiveRuns?.latestRun ? assetLiveRuns.latestRun : null;
 
@@ -315,29 +309,3 @@ export function tokenForAssetKey(key: {path: string[]}) {
 export function displayNameForAssetKey(key: {path: string[]}) {
   return key.path.join(' / ');
 }
-
-export const LAST_RUNS_WARNINGS_FRAGMENT = gql`
-  fragment LastRunsWarningsFragment on LatestRun {
-    stepKey
-    run {
-      id
-      status
-    }
-  }
-`;
-
-export const REPOSITORY_LIVE_FRAGMENT = gql`
-  fragment RepositoryLiveFragment on Repository {
-    id
-    name
-    location {
-      id
-      name
-    }
-    latestRunByStep {
-      __typename
-      ...LastRunsWarningsFragment
-    }
-  }
-  ${LAST_RUNS_WARNINGS_FRAGMENT}
-`;

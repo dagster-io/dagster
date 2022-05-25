@@ -4,7 +4,7 @@ import React from 'react';
 import {AssetKeyInput, PipelineSelector} from '../types/globalTypes';
 
 import {ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
-import {buildLiveData, GraphData, REPOSITORY_LIVE_FRAGMENT} from './Utils';
+import {buildLiveData, GraphData} from './Utils';
 import {AssetGraphLiveQuery, AssetGraphLiveQueryVariables} from './types/AssetGraphLiveQuery';
 
 /** Fetches the last materialization, "upstream changed", and other live state
@@ -24,12 +24,6 @@ export function useLiveDataForAssetKeys(
       skip: graphAssetKeys.length === 0,
       variables: {
         assetKeys: graphAssetKeys,
-        repositorySelector: pipelineSelector
-          ? {
-              repositoryLocationName: pipelineSelector.repositoryLocationName,
-              repositoryName: pipelineSelector.repositoryName,
-            }
-          : undefined,
       },
       notifyOnNetworkStatusChange: true,
     },
@@ -40,11 +34,9 @@ export function useLiveDataForAssetKeys(
       return {};
     }
 
-    const {repositoriesOrError, assetNodes: liveAssetNodes, assetsLatestInfo} = liveResult.data;
-    const repos =
-      repositoriesOrError.__typename === 'RepositoryConnection' ? repositoriesOrError.nodes : [];
+    const {assetNodes: liveAssetNodes, assetsLatestInfo} = liveResult.data;
 
-    return buildLiveData(graphData, liveAssetNodes, repos, assetsLatestInfo);
+    return buildLiveData(graphData, liveAssetNodes, assetsLatestInfo);
   }, [graphData, liveResult]);
 
   return {
@@ -55,17 +47,7 @@ export function useLiveDataForAssetKeys(
 }
 
 const ASSETS_GRAPH_LIVE_QUERY = gql`
-  query AssetGraphLiveQuery($repositorySelector: RepositorySelector, $assetKeys: [AssetKeyInput!]) {
-    repositoriesOrError(repositorySelector: $repositorySelector) {
-      __typename
-      ... on RepositoryConnection {
-        nodes {
-          __typename
-          id
-          ...RepositoryLiveFragment
-        }
-      }
-    }
+  query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]) {
     assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
       id
       ...AssetNodeLiveFragment
@@ -84,6 +66,5 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
       }
     }
   }
-  ${REPOSITORY_LIVE_FRAGMENT}
   ${ASSET_NODE_LIVE_FRAGMENT}
 `;
