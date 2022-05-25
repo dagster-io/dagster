@@ -13,19 +13,9 @@ Op outputs often correspond to assets. For example, an op might be responsible f
 
 Assets can also have partitions, which refer to slices of the overall asset. The simplest example would be a table that has a partition for each day. A given op execution may simply write a single day's worth of data to that table, rather than dropping the entire table and replacing it with new data.
 
-Dagster lets you track the interactions between ops, outputs, and assets over time and view them in the Dagit [Asset Catalog](/concepts/dagit/dagit#assets). Every asset has a "key", which serves as a unique identifier for that particular entity. The act of creating or updating the contents of an asset is called a "materialization", and Dagster tracks these materializations using <PyObject object="AssetMaterialization" /> events. These events can either be logged by the user at runtime, or automatically created by Dagster in cases where an <PyObject object="AssetKey" /> has been referenced by an op output.
+Dagster lets you track the interactions between ops, outputs, and assets over time and view them in the Dagit [Assets page](/concepts/dagit/dagit#assets). Every asset has a "key", which serves as a unique identifier for that particular entity. The act of creating or updating the contents of an asset is called a "materialization", and Dagster tracks these materializations using <PyObject object="AssetMaterialization" /> events. These events can either be logged by the user at runtime, or automatically created by Dagster in cases where an <PyObject object="AssetKey" /> has been referenced by an op output.
 
-The [Asset Catalog](/concepts/dagit/dagit#assets) shows all assets that have been materialized and allows you to wipe the asset or view other details about the asset.
-
-<!-- Reusing image linked from dagit.mdx -->
-
-<Image
-alt="Dagit Asset Catalog"
-src="/images/concepts/dagit/all-assets.png"
-width={3808}
-height={2414}
-/>
-
+The [Assets page](/concepts/dagit/dagit#assets) shows all assets that have been materialized and allows you to wipe the assets or view other details about the assets.
 
 ## Relevant APIs
 
@@ -121,7 +111,7 @@ class PandasCsvIOManager(IOManager):
 
 ### Attaching Metadata to an AssetMaterialization
 
-There are a variety of types of metadata that can be associated with a materialization event, all through the <PyObject module="dagster" object="MetadataEntry" /> class. Each materialization event optionally takes a list of metadata entries that are then displayed in the event log and the [Asset Catalog](/concepts/dagit/dagit#assets).
+There are a variety of types of metadata that can be associated with a materialization event, all through the <PyObject module="dagster" object="MetadataEntry" /> class. Each materialization event optionally takes a list of metadata entries that are then displayed in the event log and the [Assets page](/concepts/dagit/dagit#assets).
 
 #### Example: Op body
 
@@ -332,7 +322,7 @@ In this case, it's certainly fair to say that this ML model, which we have assig
 
 Why is that? By specifying the structure of your job, you have already defined data depedencies between these ops. By linking the output of `scrape_users` to the input of `get_prediction_model`, we can now infer that whatever this second op outputs will be some function of its input. Furthermore, since we have linked each of these outputs to external assets, we can use this knowledge to say that the asset associated with the output of `get_prediction_model` depends on the asset associated with the output of `scrape_users`.
 
-This feature is still in its early stages, but for now, this lineage information is surfaced in the [Asset Catalog](/concepts/dagit/dagit#assets) page for each asset ("Parent assets"):
+This feature is still in its early stages, but for now, this lineage information is surfaced in the [Assets page](/concepts/dagit/dagit#assets) page for each asset ("Parent assets"):
 
 <!-- This was generated with:
     * `dagit -f materialization_jobs.py -p 3333` inside dagster/examples/docs_snippets/docs_snippets/concepts/assets directory
