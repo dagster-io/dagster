@@ -6,7 +6,6 @@ from collections import defaultdict
 from importlib import import_module
 from types import ModuleType
 from typing import (
-    AbstractSet,
     Any,
     Dict,
     FrozenSet,
@@ -17,9 +16,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     Union,
-    cast,
 )
 
 import dagster._check as check
