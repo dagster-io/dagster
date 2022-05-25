@@ -451,10 +451,7 @@ def build_asset_ins(
             list(filter(None, [*(namespace or asset_namespace or []), input_name]))
         )
 
-        ins_by_asset_key[asset_key] = (
-            input_name.replace("-", "_"),
-            In(metadata=metadata, root_manager_key="root_manager"),
-        )
+        ins_by_asset_key[asset_key] = (input_name.replace("-", "_"), In(metadata=metadata))
 
     for asset_key in non_argument_deps:
         stringified_asset_key = "_".join(asset_key.path).replace("-", "_")
