@@ -265,7 +265,7 @@ def test_source_asset():
 def test_missing_io_manager():
     @asset
     def asset1(source1):
-        return 1
+        return source1
 
     with pytest.raises(
         Exception, match="'special_io_manager' is required by unsatisfied input 'source1'"

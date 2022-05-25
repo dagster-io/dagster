@@ -922,8 +922,6 @@ def _checked_input_resource_reqs_for_mode(
         for key, resource_def in mode_def.resource_defs.items()
         if isinstance(resource_def, IOManagerDefinition)
     )
-    print("MODE IO MANAGERS")
-    print(mode_io_managers)
 
     for node in node_dict.values():
         node_handle = NodeHandle(name=node.name, parent=parent_node_handle)

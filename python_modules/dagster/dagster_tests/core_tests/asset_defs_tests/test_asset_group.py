@@ -628,16 +628,16 @@ def test_asset_group_io_managers(job_selection, expected_nodes):
     _ACTUAL_OUTPUT_VAL = 99999
 
     @asset(io_manager_key="n1_iom")
-    def n1(context):
+    def n1():
         return _ACTUAL_OUTPUT_VAL
 
     @asset(io_manager_key="n2_iom")
-    def n2(context, n1):
+    def n2(n1):
         assert n1 == 1
         return _ACTUAL_OUTPUT_VAL
 
     @asset(io_manager_key="n3_iom")
-    def n3(context, n1, n2):
+    def n3(n1, n2):
         assert n1 == 1
         assert n2 == 2
         return _ACTUAL_OUTPUT_VAL
