@@ -17,6 +17,7 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["test"]),
         install_requires=[
+            "dagit",
             "dagster",
             "dagstermill",
             "dagster-airflow",
@@ -27,6 +28,8 @@ if __name__ == "__main__":
             "dagster-gcp",
             "dagster-graphql",
             "dagster-k8s",
+            "dagster-postgres",
+            "dagster-slack",
         ],
         extras_require={
             "full": [
