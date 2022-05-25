@@ -1175,3 +1175,61 @@ def test_subset_of_build_assets_job():
                 instance=instance,
                 asset_selection=[AssetKey("unconnected")],
             )
+
+
+def test_raise_error_on_incomplete_graph_asset_subset():
+    @op
+    def do_something(x):
+        return x * 2
+
+    @op
+    def foo():
+        return 1, 2
+
+    @graph(
+        out={
+            "comments_table": GraphOut(),
+            "stories_table": GraphOut(),
+        },
+    )
+    def complicated_graph():
+        result = foo()
+        return do_something(result), do_something(result)
+
+    job = AssetGroup(
+        [
+            AssetsDefinition.from_graph(complicated_graph),
+        ],
+    ).build_job("job")
+
+    with instance_for_test() as instance:
+        with pytest.raises(DagsterInvalidDefinitionError, match="complicated_graph"):
+            job.execute_in_process(instance=instance, asset_selection=[AssetKey("comments_table")])
+
+
+def test_subset_with_source_asset():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return 5
+
+    @io_manager
+    def the_manager():
+        return MyIOManager()
+
+    my_source_asset = SourceAsset(key=AssetKey("my_source_asset"), io_manager_key="the_manager")
+
+    @asset
+    def my_derived_asset(my_source_asset):
+        return my_source_asset + 4
+
+    source_asset_job = AssetGroup(
+        assets=[my_derived_asset],
+        source_assets=[my_source_asset],
+        resource_defs={"the_manager": the_manager},
+    ).build_job("source_asset_job")
+
+    result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
+    assert result.success
