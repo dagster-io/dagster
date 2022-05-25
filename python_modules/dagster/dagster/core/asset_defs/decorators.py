@@ -74,7 +74,7 @@ def asset(
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-    io_manager_def: Optional[Union[Mapping[str, IOManagerDefinition], IOManagerDefinition]] = None,
+    io_manager_def: Optional[IOManagerDefinition] = None,
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
@@ -105,12 +105,10 @@ def asset(
         metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
         io_manager_key (Optional[str]): The resource key of the IOManager used
-            for storing the output of the op as an asset, and for loading it in downstream ops (default: "io_manager"). Only one of io_manager_key and io_manager_def can be provided
-        io_manager_def (Optional[Union[Mapping[str, IOManagerDefinition], IOManagerDefinition]]): The definition of the IOManager used for
+            for storing the output of the op as an asset, and for loading it in downstream ops (default: "io_manager"). Only one of io_manager_key and io_manager_def can be provided.
+        io_manager_def (Optional[IOManagerDefinition]): The definition of the IOManager used for
             storing the output of the op as an asset,  and for loading it in
-            downstream ops (default: "io_manager"). A key can be specified for
-            the io manager using a dictionary mapping i.e.
-            ``{my_key: io_manager_def}``.
+            downstream ops. Only one of io_manager_def and io_manager_key can be provided.
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
             the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
         dagster_type (Optional[DagsterType]): Allows specifying type validation functions that
@@ -175,9 +173,7 @@ class _Asset:
         description: Optional[str] = None,
         required_resource_keys: Optional[Set[str]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        io_manager: Optional[
-            Union[Mapping[str, IOManagerDefinition], str, IOManagerDefinition]
-        ] = None,
+        io_manager: Optional[Union[str, IOManagerDefinition]] = None,
         compute_kind: Optional[str] = None,
         dagster_type: Optional[DagsterType] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
@@ -211,16 +207,7 @@ class _Asset:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-            if check.is_mapping_param(self.io_manager):
-                io_manager = cast(Mapping[str, IOManagerDefinition], self.io_manager)
-                io_manager = dict(io_manager)
-                check.invariant(
-                    len(io_manager) == 1,
-                    "Attempted to provide multiple io manager keys to asset.",
-                )
-                io_manager_key = list(io_manager.keys())[0]
-                self.resource_defs[io_manager_key] = io_manager[io_manager_key]
-            elif isinstance(self.io_manager, str):
+            if isinstance(self.io_manager, str):
                 io_manager_key = cast(str, self.io_manager)
             elif self.io_manager is not None:
                 io_manager_def = check.inst_param(

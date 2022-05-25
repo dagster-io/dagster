@@ -867,10 +867,6 @@ def is_list(
 # ########################
 
 
-def is_mapping_param(obj: object) -> bool:
-    return isinstance(obj, collections.abc.Mapping)
-
-
 def mapping_param(
     obj: Mapping[T, U],
     param_name: str,

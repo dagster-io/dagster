@@ -256,22 +256,6 @@ def test_multiple_assets_io_manager_defs():
     assert io_manager_inst.values[other_asset_key] == 6
 
 
-def test_asset_with_io_manager_key_and_def():
-    io_manager_inst = InMemoryIOManager()
-
-    @io_manager
-    def the_io_manager():
-        return io_manager_inst
-
-    @asset(io_manager_def={"the_key": the_io_manager})
-    def the_asset():
-        return 5
-
-    AssetGroup([the_asset]).materialize()
-
-    assert list(io_manager_inst.values.values())[0] == 5
-
-
 def test_asset_with_io_manager_key_only():
     io_manager_inst = InMemoryIOManager()
 
