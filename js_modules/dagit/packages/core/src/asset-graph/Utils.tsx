@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {pathVerticalDiagonal} from '@vx/shape';
 import uniq from 'lodash/uniq';
 

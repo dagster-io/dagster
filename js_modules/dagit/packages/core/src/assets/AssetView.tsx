@@ -260,10 +260,8 @@ const ASSET_NODE_DEFINITION_LIVE_QUERY = gql`
       unstartedRunIds
       inProgressRunIds
       latestRun {
-        ... on Run {
-          status
-          id
-        }
+        status
+        id
       }
     }
   }

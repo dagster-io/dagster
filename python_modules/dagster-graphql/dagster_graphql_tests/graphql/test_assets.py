@@ -743,8 +743,6 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         def get_response_by_asset(response):
             return {stat["assetKey"]["path"][0]: stat for stat in response}
 
-        selector = infer_repository_selector(graphql_context)
-
         # Confirm that when no runs are present, run returned is None
         result = execute_dagster_graphql(
             graphql_context,

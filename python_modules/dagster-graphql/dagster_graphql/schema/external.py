@@ -16,7 +16,7 @@ from dagster.core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoad
 from .asset_graph import GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
 from .partition_sets import GraphenePartitionSet
-from .pipelines.pipeline import GrapheneJob, GrapheneLatestRun, GraphenePipeline
+from .pipelines.pipeline import GrapheneJob, GraphenePipeline
 from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
 from .schedules import GrapheneSchedule
 from .sensors import GrapheneSensor

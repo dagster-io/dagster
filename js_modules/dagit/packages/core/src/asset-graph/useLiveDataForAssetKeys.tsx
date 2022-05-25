@@ -59,10 +59,8 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
       unstartedRunIds
       inProgressRunIds
       latestRun {
-        ... on Run {
-          status
-          id
-        }
+        status
+        id
       }
     }
   }

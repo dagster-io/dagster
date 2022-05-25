@@ -10,7 +10,7 @@ from dagster.core.definitions import create_run_config_schema
 from dagster.core.errors import DagsterRunNotFoundError
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster.core.host_representation import PipelineSelector
-from dagster.core.storage.pipeline_run import PipelineRun, RunRecord, RunsFilter
+from dagster.core.storage.pipeline_run import RunRecord, RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
