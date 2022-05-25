@@ -10,29 +10,29 @@
 
 Dagster is an orchestration platform for the development, production, and observation of data assets.
 
-- **Develop and Test Locally, then Deploy Anywhere:** With Dagster, the same computations can run
-in-process against your local file system, or on a distributed work queue against your production
-data lake. You can choose to locally develop on your labtop, deploy on-premise, or run in any
+- **Develop and test locally, then deploy anywhere:** With Dagster, the same computations can run
+in-process against your local file system or on a distributed work queue against your production
+data lake. Choose to locally develop on your laptop, deploy on-premise, or run in any
 cloud.
-- **Model the Data Produced and Consumed:** In your orchestration graph, Dagster models data
+- **Model the data produced and consumed:** In your orchestration graph, Dagster models data
 dependencies and handles how data passes between steps. Gradual typing on inputs and outputs catches
 bugs early.
-- **Link Data To Computations:** Dagster’s Asset Catalog tracks the data sets and ML models produced
-by your jobs. You can understand how they were generated and trace issues when asset declarations
+- **Link data to computations:** Dagster’s Asset Catalog tracks the data sets and ML models produced
+by your jobs. Understand how they were generated and trace issues when asset declarations
 do not match their materializations in storage.
-- **Build a Self-Service Data Platform:** Dagster helps platform teams build systems for data
+- **Build a self-service data platform:** Dagster helps platform teams build systems for data
 practitioners. Jobs are built from shared, reusable, configurable data processing components.
 Dagit, Dagster’s web interface, lets anyone inspect these objects and discover how to use them.
-- **Declare and Isolate Dependencies:** Dagster’s server model lets you isolate codebases. Problems
+- **Declare and isolate dependencies:** Dagster’s server model enables you to isolate codebases. Problems
 in one job will not bring down the system or other jobs. Each job can have its own package
 dependencies and Python version.
-- **Debug Jobs from a Rich Interface**: Dagit also includes expansive facilities for understanding
+- **Debug jobs from a rich interface**: Dagit includes expansive facilities for understanding
 the jobs it orchestrates. When inspecting a run of your job, you can query over logs, discover the
-most time consuming tasks via a Gantt chart, re-execute subsets of steps, and more.
+most time-consuming tasks via a Gantt chart, re-execute subsets of steps, and more.
 
 ## Installation
 
-Dagster is available on PyPI, and officially supports Python 3.6+.
+Dagster is available on PyPI and officially supports Python 3.6+.
 
 ```bash
 $ pip install dagster dagit
