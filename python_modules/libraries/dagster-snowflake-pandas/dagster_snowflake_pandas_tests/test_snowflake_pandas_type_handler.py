@@ -1,15 +1,22 @@
+import os
 from unittest.mock import patch
 
+import pandas
+import pytest
+from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.snowflake_io_manager import TableSlice
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 from pandas import DataFrame
 
 from dagster import (
     MetadataValue,
+    Out,
     TableColumn,
     TableSchema,
     build_input_context,
     build_output_context,
+    job,
+    op,
 )
 
 resource_config = {
@@ -19,6 +26,8 @@ resource_config = {
     "password": "password_abc",
     "warehouse": "warehouse_abc",
 }
+
+IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 def test_handle_output():
@@ -67,3 +76,43 @@ def test_load_input():
         )
         assert mock_read_sql.call_args_list[0][1]["sql"] == "SELECT * FROM my_db.my_schema.my_table"
         assert df.equals(DataFrame([{"col1": "a", "col2": 1}]))
+
+
+@op(out=Out(io_manager_key="snowflake", metadata={"schema": "snowflake_io_manager_schema"}))
+def emit_pandas_df(_):
+    return pandas.DataFrame({"foo": ["bar", "baz"], "quux": [1, 2]})
+
+
+@op
+def read_pandas_df(df: pandas.DataFrame):
+    assert set(df.columns) == {"foo", "quux"}
+
+
+snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
+
+
+@job(
+    resource_defs={"snowflake": snowflake_io_manager},
+    config={
+        "resources": {
+            "snowflake": {
+                "config": {
+                    "account": {"env": "SNOWFLAKE_ACCOUNT"},
+                    "user": "BUILDKITE",
+                    "password": {
+                        "env": "SNOWFLAKE_BUILDKITE_PASSWORD",
+                    },
+                    "database": "TEST_SNOWFLAKE_IO_MANAGER",
+                }
+            }
+        }
+    },
+)
+def io_manager_test_pipeline():
+    read_pandas_df(emit_pandas_df())
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+def test_io_manager_with_snowflake_pandas():
+    res = io_manager_test_pipeline.execute_in_process()
+    assert res.success
