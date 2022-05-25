@@ -18,7 +18,7 @@ def _connect_snowflake(context: Union[InputContext, OutputContext], table_slice:
             **cast(Mapping[str, str], context.resource_config),
         ),
         context.log,
-    ).get_connection()
+    ).get_connection(raw_conn=False)
 
 
 class SnowflakePandasTypeHandler(DbTypeHandler[DataFrame]):
@@ -72,3 +72,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[DataFrame]):
             result = read_sql(sql=SnowflakeDbClient.get_select_statement(table_slice), con=con)
             result.columns = map(str.lower, result.columns)
             return result
+
+    @property
+    def supported_types(self):
+        return [DataFrame]

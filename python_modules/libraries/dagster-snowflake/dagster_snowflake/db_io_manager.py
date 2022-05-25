@@ -48,8 +48,9 @@ class DbTypeHandler(ABC, Generic[T]):
         """Loads the contents of the given table in the given schema."""
 
     @property
+    @abstractmethod
     def supported_types(self) -> Sequence[Type]:
-        ...
+        pass
 
 
 class DbClient:
