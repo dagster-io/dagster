@@ -376,7 +376,7 @@ def load_assets_from_dbt_manifest(
     dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"]}
 
     if select is None:
-        if selected_unqiue_ids:
+        if selected_unique_ids:
             # generate selection string from unique ids
             select = " ".join(".".join(dbt_nodes[uid]["fqn"]) for uid in selected_unique_ids)
         else:
