@@ -1,16 +1,4 @@
-import {
-  Box,
-  Button,
-  ButtonLink,
-  Colors,
-  DialogFooter,
-  Dialog,
-  Table,
-  Tag,
-  Subheading,
-  Tooltip,
-  FontFamily,
-} from '@dagster-io/ui';
+import {Box, ButtonLink, Colors, Tag, Tooltip, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -21,6 +9,8 @@ import {SensorSwitch} from '../sensors/SensorSwitch';
 import {SensorSwitchFragment} from '../sensors/types/SensorSwitchFragment';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
 
 export const ScheduleOrSensorTag: React.FC<{
   schedules: ScheduleSwitchFragment[];
@@ -41,13 +31,6 @@ export const ScheduleOrSensorTag: React.FC<{
         ? `View ${scheduleCount} schedules`
         : `View ${sensorCount} sensors`;
 
-    const dialogTitle =
-      scheduleCount && sensorCount
-        ? 'Schedules and sensors'
-        : scheduleCount
-        ? 'Schedules'
-        : 'Sensors';
-
     const icon = scheduleCount > 1 ? 'schedule' : 'sensors';
 
     return (
@@ -57,97 +40,14 @@ export const ScheduleOrSensorTag: React.FC<{
             {buttonText}
           </ButtonLink>
         </Tag>
-        <Dialog
-          title={dialogTitle}
-          canOutsideClickClose
-          canEscapeKeyClose
+        <ScheduleAndSensorDialog
           isOpen={open}
-          style={{width: '50vw', minWidth: '600px', maxWidth: '800px'}}
           onClose={() => setOpen(false)}
-        >
-          <Box padding={{bottom: 12}}>
-            {schedules.length ? (
-              <>
-                {sensors.length ? (
-                  <Box padding={{vertical: 16, horizontal: 24}}>
-                    <Subheading>Schedules ({schedules.length})</Subheading>
-                  </Box>
-                ) : null}
-                <Table>
-                  <thead>
-                    <tr>
-                      {showSwitch ? <th style={{width: '80px'}} /> : null}
-                      <th>Schedule name</th>
-                      <th>Schedule</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {schedules.map((schedule) => (
-                      <tr key={schedule.name}>
-                        {showSwitch ? (
-                          <td>
-                            <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
-                          </td>
-                        ) : null}
-                        <td>
-                          <Link
-                            to={workspacePathFromAddress(
-                              repoAddress,
-                              `/schedules/${schedule.name}`,
-                            )}
-                          >
-                            {schedule.name}
-                          </Link>
-                        </td>
-                        <td>{humanCronString(schedule.cronSchedule)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </>
-            ) : null}
-            {sensors.length ? (
-              <>
-                {schedules.length ? (
-                  <Box padding={{vertical: 16, horizontal: 24}}>
-                    <Subheading>Sensors ({sensors.length})</Subheading>
-                  </Box>
-                ) : null}
-                <Table>
-                  <thead>
-                    <tr>
-                      {showSwitch ? <th style={{width: '80px'}} /> : null}
-                      <th>Sensor name</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sensors.map((sensor) => (
-                      <tr key={sensor.name}>
-                        {showSwitch ? (
-                          <td>
-                            <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
-                          </td>
-                        ) : null}
-                        <td>
-                          <Link
-                            to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}
-                          >
-                            {sensor.name}
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </>
-            ) : null}
-          </Box>
-          <DialogFooter>
-            <Button intent="primary" onClick={() => setOpen(false)}>
-              OK
-            </Button>
-          </DialogFooter>
-        </Dialog>
+          repoAddress={repoAddress}
+          schedules={schedules}
+          sensors={sensors}
+          showSwitch={showSwitch}
+        />
       </>
     );
   }
