@@ -303,36 +303,56 @@ PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/airflow_ingest",
         unsupported_python_versions=[AvailablePythonVersion.V3_9],
-        upload_coverage=False,
+    ),
+    PackageSpec(
+        "examples/bollinger",
+        unsupported_python_versions=[
+            # dependency on dagster-pandera
+            AvailablePythonVersion.V3_6,
+        ],
     ),
     PackageSpec(
         "examples/dbt_example",
         pytest_extra_cmds=dbt_example_extra_cmds,
-        upload_coverage=False,
+        unsupported_python_versions=[
+            # dependency on dagster-dbt
+            AvailablePythonVersion.V3_6,
+        ],
     ),
     PackageSpec(
         "examples/deploy_docker",
         pytest_extra_cmds=deploy_docker_example_extra_cmds,
-        upload_coverage=False,
     ),
     PackageSpec(
         "examples/docs_snippets",
         pytest_extra_cmds=docs_snippets_extra_cmds,
-        upload_coverage=False,
         run_mypy=False,
     ),
     PackageSpec(
-        "examples/hacker_news_assets",
-        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
-        upload_coverage=False,
+        "examples/ge_example",
+        unsupported_python_versions=[
+            # dependency on dagster-ge
+            AvailablePythonVersion.V3_6,
+        ],
     ),
     PackageSpec(
         "examples/hacker_news",
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
-        upload_coverage=False,
+        unsupported_python_versions=[
+            # dependency on dagster-dbt
+            AvailablePythonVersion.V3_6,
+        ],
     ),
-    PackageSpec("python_modules/dagit", pytest_extra_cmds=dagit_extra_cmds),
+    PackageSpec(
+        "examples/hacker_news_assets",
+        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
+        unsupported_python_versions=[
+            # dependency on dagster-dbt
+            AvailablePythonVersion.V3_6,
+        ],
+    ),
     PackageSpec("python_modules/automation"),
+    PackageSpec("python_modules/dagit", pytest_extra_cmds=dagit_extra_cmds),
     PackageSpec(
         "python_modules/dagster",
         pytest_extra_cmds=dagster_extra_cmds,
