@@ -56,7 +56,9 @@ By default, the name of the decorated function, `my_asset`, is used as the asset
 
 #### Defining basic dependencies
 
-Software-defined assets can depend on other software-defined assets. The easiest way to define an asset dependency is to include an upstream asset name as an argument to the decorated function. In the following example, `downstream_asset` depends on `upstream_asset`. That means that the contents of `upstream_asset` are provided to the function that computes the contents of `downstream_asset`.
+Software-defined assets can depend on other software-defined assets. The easiest way to define an asset dependency is to include an upstream asset name as an argument to the decorated function.
+
+In the following example, `downstream_asset` depends on `upstream_asset`. That means that the contents of `upstream_asset` are provided to the function that computes the contents of `downstream_asset`.
 
 ```python file=/concepts/assets/asset_dependency.py startafter=start_marker endbefore=end_marker
 @asset
