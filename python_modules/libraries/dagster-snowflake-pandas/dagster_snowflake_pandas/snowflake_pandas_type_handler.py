@@ -49,7 +49,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[DataFrame]):
             with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
             with_uppercase_cols.to_sql(
                 table_slice.table,
-                con=con,
+                con=con.engine,
                 if_exists="append",
                 index=False,
                 method=pd_writer,
