@@ -86,6 +86,7 @@ def emit_pandas_df(_):
 @op
 def read_pandas_df(df: pandas.DataFrame):
     assert set(df.columns) == {"foo", "quux"}
+    assert len(df.index) == 2
 
 
 snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
