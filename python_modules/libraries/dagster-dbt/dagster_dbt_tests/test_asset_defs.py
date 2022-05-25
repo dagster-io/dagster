@@ -464,4 +464,4 @@ def test_static_select_invalid_selection(select, error_match):
         manifest_json = json.load(f)
 
     with pytest.raises(Exception, match=error_match):
-        dbt_assets = load_assets_from_dbt_manifest(manifest_json, select=select)
+        load_assets_from_dbt_manifest(manifest_json, select=select)

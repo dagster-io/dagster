@@ -54,7 +54,7 @@ def _load_manifest_for_project(
 
 
 def _select_unique_ids_from_manifest_json(
-    manifest_json: Dict[str, Any], select: str
+    manifest_json: Mapping[str, Any], select: str
 ) -> AbstractSet[str]:
     """Method to apply a selection string to an existing manifest.json file."""
     try:
@@ -62,10 +62,10 @@ def _select_unique_ids_from_manifest_json(
         import dbt.graph.selector as graph_selector
         from dbt.contracts.graph.manifest import Manifest
         from networkx import DiGraph
-    except ImportError as e:
+    except ImportError:
         check.failed(
             "In order to use the `select` argument on load_assets_from_manifest_json, you must have"
-            "dbt-core >= 1.0.0 installed."
+            "`dbt-core >= 1.0.0` and `networkx` installed."
         )
 
     class _DictShim(dict):
@@ -376,10 +376,15 @@ def load_assets_from_dbt_manifest(
     dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"]}
 
     if select is None:
-        # if no select specified, default to "*"
-        select = "*"
-        selected_unique_ids = manifest_json["nodes"].keys()
-    elif not selected_unique_ids:
+        if selected_unqiue_ids:
+            # generate selection string from unique ids
+            select = " ".join(".".join(dbt_nodes[uid]["fqn"]) for uid in selected_unique_ids)
+        else:
+            # if no selection specified, default to "*"
+            select = "*"
+            selected_unique_ids = manifest_json["nodes"].keys()
+
+    if selected_unique_ids is None:
         # must resolve the selection string using the existing manifest.json data (hacky)
         selected_unique_ids = _select_unique_ids_from_manifest_json(manifest_json, select)
 
