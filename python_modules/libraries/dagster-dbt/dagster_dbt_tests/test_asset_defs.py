@@ -367,3 +367,68 @@ def test_subsetting(
     }
     expected_keys = {AssetKey(["test-schema", name]) for name in expected_asset_names.split(",")}
     assert all_keys == expected_keys
+
+
+@pytest.mark.parametrize(
+    "select,expected_asset_keys",
+    [
+        (
+            "*",
+            {
+                "sort_by_calories",
+                "sort_cold_cereals_by_calories",
+                "least_caloric",
+                "sort_hot_cereals_by_calories",
+            },
+        ),
+        (
+            "+least_caloric",
+            {"sort_by_calories", "least_caloric"},
+        ),
+        (
+            "sort_by_calories least_caloric",
+            {"sort_by_calories", "least_caloric"},
+        ),
+        (
+            "tag:bar+",
+            {
+                "sort_by_calories",
+                "sort_cold_cereals_by_calories",
+                "least_caloric",
+                "sort_hot_cereals_by_calories",
+            },
+        ),
+        (
+            "tag:foo",
+            {"sort_by_calories", "sort_cold_cereals_by_calories"},
+        ),
+        (
+            "tag:foo,tag:bar",
+            {"sort_by_calories"},
+        ),
+    ],
+)
+def test_static_select_from_manifest_json(select, expected_asset_keys):
+
+    manifest_path = file_relative_path(__file__, "sample_manifest.json")
+    with open(manifest_path, "r", encoding="utf8") as f:
+        manifest_json = json.load(f)
+
+    dbt_assets = load_assets_from_dbt_manifest(manifest_json, select=select)
+
+    assert dbt_assets[0].asset_keys == {
+        AssetKey(["test-schema", key]) for key in expected_asset_keys
+    }
+
+
+@pytest.mark.parametrize(
+    "select,error_match",
+    [("tag:nonexist", "No dbt models match"), ("asjdlhalskujh:z", "not a valid method name")],
+)
+def test_static_select_invalid_selection(select, error_match):
+    manifest_path = file_relative_path(__file__, "sample_manifest.json")
+    with open(manifest_path, "r", encoding="utf8") as f:
+        manifest_json = json.load(f)
+
+    with pytest.raises(Exception, match=error_match):
+        dbt_assets = load_assets_from_dbt_manifest(manifest_json, select=select)
