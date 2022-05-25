@@ -222,7 +222,7 @@ const SectionHeader = styled.button<{$open: boolean; $showRepoLocation: boolean}
 
   ${IconWrapper}[aria-label="arrow_drop_down"] {
     transition: transform 100ms linear;
-    ${({$open}) => ($open ? null : `transform: rotate(90deg);`)}
+    ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
   }
 
   :disabled ${IconWrapper} {
