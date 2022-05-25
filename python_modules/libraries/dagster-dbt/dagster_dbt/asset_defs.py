@@ -57,10 +57,16 @@ def _select_unique_ids_from_manifest_json(
     manifest_json: Dict[str, Any], select: str
 ) -> AbstractSet[str]:
     """Method to apply a selection string to an existing manifest.json file."""
-    import dbt.graph.cli as graph_cli
-    import dbt.graph.selector as graph_selector
-    from dbt.contracts.graph.manifest import Manifest
-    from networkx import DiGraph
+    try:
+        import dbt.graph.cli as graph_cli
+        import dbt.graph.selector as graph_selector
+        from dbt.contracts.graph.manifest import Manifest
+        from networkx import DiGraph
+    except ImportError as e:
+        check.failed(
+            "In order to use the `select` argument on load_assets_from_manifest_json, you must have"
+            "dbt-core >= 1.0.0 installed."
+        )
 
     class _DictShim(dict):
         """Shim to enable hydrating a dictionary into a dot-accessible object"""
