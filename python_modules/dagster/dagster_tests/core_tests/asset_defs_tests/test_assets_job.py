@@ -42,7 +42,8 @@ def _asset_keys_for_node(result, node_name):
 
 def test_single_asset_pipeline():
     @asset
-    def asset1():
+    def asset1(context):
+        assert context.asset_key_for_output() == AssetKey(["asset1"])
         return 1
 
     job = build_assets_job("a", [asset1])
@@ -728,6 +729,25 @@ def test_graph_asset_decorator_no_args():
     assert assets_def.asset_keys_by_input_name["x"] == AssetKey("x")
     assert assets_def.asset_keys_by_input_name["y"] == AssetKey("y")
     assert assets_def.asset_keys_by_output_name["result"] == AssetKey("my_graph")
+
+
+def test_execute_graph_asset():
+    @op(out={"x": Out(), "y": Out()})
+    def x_op(context):
+        assert context.asset_key_for_output("x") == AssetKey("x_asset")
+        return 1, 2
+
+    @graph(out={"x": GraphOut(), "y": GraphOut()})
+    def my_graph():
+        x, y = x_op()
+        return {"x": x, "y": y}
+
+    assets_def = AssetsDefinition.from_graph(
+        graph_def=my_graph,
+        asset_keys_by_output_name={"y": AssetKey("y_asset"), "x": AssetKey("x_asset")},
+    )
+
+    assert AssetGroup([assets_def]).build_job("abc").execute_in_process().success
 
 
 def test_graph_asset_partitioned():
