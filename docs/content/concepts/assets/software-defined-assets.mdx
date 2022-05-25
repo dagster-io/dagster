@@ -65,6 +65,74 @@ def downstream_asset(upstream_asset):
 
 The [explicit dependencies](#explicit-dependencies) example covers an alternative way to specify asset dependencies without needing to match argument names to upstream asset names.
 
+#### Defining external asset dependencies
+
+Software-defined assets frequently depend on assets that are generated elsewhere. Using <PyObject object="SourceAsset" />, you can include these external assets and allow the assets in your <PyObject object="AssetGroup" /> to depend on them.
+
+For example:
+
+```python file=/concepts/assets/source_asset.py startafter=start_marker endbefore=end_marker
+from dagster import AssetGroup, AssetKey, SourceAsset, asset
+
+my_source_asset = SourceAsset(key=AssetKey("my_source_asset"))
+
+
+@asset
+def my_derived_asset(my_source_asset):
+    return my_source_asset + [4]
+
+
+asset_group = AssetGroup(assets=[my_derived_asset], source_assets=[my_source_asset])
+```
+
+You can also re-use assets across repositories by including them as source assets:
+
+```python file=/concepts/assets/cross_repository_asset.py
+from dagster import AssetGroup, AssetKey, Output, SourceAsset, asset, repository
+
+
+@asset
+def my_source_asset():
+    yield Output(5)
+
+
+@asset
+def second_asset(my_source_asset):
+    yield Output(1)
+
+
+upstream_asset_group = AssetGroup(assets=[my_source_asset, second_asset])
+
+
+@repository
+def upstream_repo():
+    return [upstream_asset_group]
+
+
+my_source_asset = SourceAsset(key=AssetKey("my_source_asset"))
+
+
+@asset
+def downstream_asset(my_source_asset):
+    yield Output(5)
+
+
+asset_group = AssetGroup(assets=[downstream_asset], source_assets=[my_source_asset])
+
+
+@repository
+def downstream_repo():
+    return [asset_group]
+```
+
+Using source assets has a few advantages over having the code inside of an asset's op load the data:
+
+- **Dagit can show asset lineage that includes the source assets**. If a different <PyObject object="AssetGroup" /> in the same [workspace](/concepts/repositories-workspaces/workspaces) contains an asset definition with the same asset key as a <PyObject object="SourceAsset" />, Dagit can represent the asset lineage across those groups.
+- **Dagster can use data-loading code facotred into an <PyObject object="IOManager" /> to load the contents of the source asset**.
+- **Asset dependencies can be written in a consistent way,** independent of whether they're downstream from a source asset or a derived asset. This makes it easy to swap out a source asset for a derived asset and vice versa.
+
+---
+
 ## Combining assets in groups
 
 To materialize assets or load them in Dagit, you first need to combine them into an <PyObject object="AssetGroup" />, which is a set of assets with no unsatisfied dependencies. For example:
@@ -142,33 +210,7 @@ There are a couple ways in Dagit to launch a run that materializes assets:
 - Navigate to the Asset Details Page for the asset and click the "Materialize" button in the upper right corner.
 - In the graph view of the Asset Catalog page, click the "Materialize" button in the upper right corner. You can click on assets to collect a subset to materialize.
 
-## Source assets - representing assets that are generated somewhere else
-
-It's common for software-defined assets to depend on assets that are generated somewhere else. For example, your data warehouse might contain a set of tables that another team is responsible for ingesting, but that your assets are derived from. To allow the assets in your <PyObject object="AssetGroup" /> to depend on them, you can include <PyObject object="SourceAsset" />s that represent them.
-
-For example:
-
-```python file=/concepts/assets/source_asset.py startafter=start_marker endbefore=end_marker
-from dagster import AssetGroup, AssetKey, SourceAsset, asset
-
-my_source_asset = SourceAsset(key=AssetKey("my_source_asset"))
-
-
-@asset
-def my_derived_asset(my_source_asset):
-    return my_source_asset + [4]
-
-
-asset_group = AssetGroup(assets=[my_derived_asset], source_assets=[my_source_asset])
-```
-
-In any situation where you might use a source asset, you could also have the code inside the asset's op load the data. However, using source assets has a few advantages:
-
-- It allows Dagit to show asset lineage that includes the source assets. If a different <PyObject object="AssetGroup" /> in the same [workspace](/concepts/repositories-workspaces/workspaces) contains an asset definition with the same asset key as a <PyObject object="SourceAsset" />, Dagit can represent the asset lineage across those groups.
-- If you've already factored your data-loading code into an <PyObject object="IOManager" />, Dagster can use it to load the contents of your source asset.
-- It allows you to write your asset dependencies in the same way, independent of whether they're downstream from a source asset or a derived asset. This makes it easy to swap out a source asset for a derived asset and vice versa.
-
-### Customizing how assets are materialized with IO managers
+## Customizing how assets are materialized with IO managers
 
 By default, materializing an asset will pickle it to a local file named "my_asset", in a temporary directory. You can specify this directory by providing a value for the `local_artifact_storage` property in your dagster.yaml file.
 
