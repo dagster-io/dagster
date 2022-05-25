@@ -84,5 +84,5 @@ class AssetPickledObjectFilesystemIOManager(PickledObjectFilesystemIOManager):
         if context.has_asset_key:
             path = context.get_asset_output_identifier()
         else:
-            path = [context.run_id, context.step_key]
+            path = context.get_output_identifier()
         return os.path.join(self.base_dir, *path)
