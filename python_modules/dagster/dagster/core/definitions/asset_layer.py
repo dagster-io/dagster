@@ -301,7 +301,7 @@ def _asset_mappings_for_node(
     asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
     asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
     asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
-    asset_io_managers: Dict[AssetKey, str] = {}
+    io_manager_by_asset: Dict[AssetKey, str] = {}
     if not isinstance(node_def, GraphDefinition):
         # must be in an op (or solid)
         if node_handle is None:
@@ -328,7 +328,7 @@ def _asset_mappings_for_node(
                 # assume output depends on all inputs
                 asset_deps[output_key] = input_asset_keys
 
-                asset_io_managers[output_key] = output_def.io_manager_key
+                io_manager_by_asset[output_key] = output_def.io_manager_key
     else:
         # keep recursing through structure
         for sub_node_name, sub_node in node_def.node_dict.items():
@@ -336,7 +336,7 @@ def _asset_mappings_for_node(
                 n_asset_key_by_input,
                 n_asset_info_by_output,
                 n_asset_deps,
-                n_asset_io_managers,
+                n_io_manager_by_asset,
             ) = _asset_mappings_for_node(
                 node_def=sub_node.definition,
                 node_handle=NodeHandle(sub_node_name, parent=node_handle),
@@ -344,9 +344,9 @@ def _asset_mappings_for_node(
             asset_key_by_input.update(n_asset_key_by_input)
             asset_info_by_output.update(n_asset_info_by_output)
             asset_deps.update(n_asset_deps)
-            asset_io_managers.update(n_asset_io_managers)
+            io_manager_by_asset.update(n_io_manager_by_asset)
 
-    return asset_key_by_input, asset_info_by_output, asset_deps, asset_io_managers
+    return asset_key_by_input, asset_info_by_output, asset_deps, io_manager_by_asset
 
 
 class AssetLayer:
@@ -421,14 +421,14 @@ class AssetLayer:
     def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
         """Scrape asset info off of InputDefinition/OutputDefinition instances"""
         check.inst_param(graph_def, "graph_def", GraphDefinition)
-        asset_by_input, asset_by_output, asset_deps, asset_io_managers = _asset_mappings_for_node(
+        asset_by_input, asset_by_output, asset_deps, io_manager_by_asset = _asset_mappings_for_node(
             graph_def, None
         )
         return AssetLayer(
             asset_keys_by_node_input_handle=asset_by_input,
             asset_info_by_node_output_handle=asset_by_output,
             asset_deps=asset_deps,
-            io_manager_keys_by_asset_key=asset_io_managers,
+            io_manager_keys_by_asset_key=io_manager_by_asset,
         )
 
     @staticmethod
@@ -455,7 +455,7 @@ class AssetLayer:
         asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
         asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
         asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
-        asset_io_managers: Dict[AssetKey, str] = {
+        io_manager_by_asset: Dict[AssetKey, str] = {
             source_asset.key: source_asset.io_manager_key for source_asset in source_assets
         }
         for node_handle, assets_def in assets_defs_by_node_handle.items():
@@ -483,7 +483,7 @@ class AssetLayer:
                     partitions_def=assets_def.partitions_def,
                     is_required=asset_key in assets_def.asset_keys,
                 )
-                asset_io_managers[asset_key] = inner_output_def.io_manager_key
+                io_manager_by_asset[asset_key] = inner_output_def.io_manager_key
         return AssetLayer(
             asset_keys_by_node_input_handle=asset_key_by_input,
             asset_info_by_node_output_handle=asset_info_by_output,

@@ -24,7 +24,7 @@ class SourceAsset(
         ],
     )
 ):
-    """A SourceAsset represents an asset that will be loaded by, but not updated by, a given job.
+    """A SourceAsset represents an asset that will be loaded by (but not updated by) Dagster.
 
     Attributes:
         key (Union[AssetKey, Sequence[str], str]): The key of the asset.
