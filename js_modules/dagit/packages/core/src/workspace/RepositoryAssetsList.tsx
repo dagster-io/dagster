@@ -26,7 +26,6 @@ const REPOSITORY_ASSETS_LIST_QUERY = gql`
           assetKey {
             path
           }
-          opName
           opNames
           description
           repository {

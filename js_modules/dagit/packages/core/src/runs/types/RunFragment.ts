@@ -15,6 +15,22 @@ export interface RunFragment_tags {
   value: string;
 }
 
+export interface RunFragment_assets_key {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface RunFragment_assets {
+  __typename: "Asset";
+  id: string;
+  key: RunFragment_assets_key;
+}
+
+export interface RunFragment_assetSelection {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface RunFragment_executionPlan_steps_inputs_dependsOn {
   __typename: "ExecutionStep";
   key: string;
@@ -77,10 +93,12 @@ export interface RunFragment {
   status: RunStatus;
   mode: string;
   tags: RunFragment_tags[];
+  assets: RunFragment_assets[];
   rootRunId: string | null;
   parentRunId: string | null;
   pipelineName: string;
   solidSelection: string[] | null;
+  assetSelection: RunFragment_assetSelection[] | null;
   pipelineSnapshotId: string | null;
   executionPlan: RunFragment_executionPlan | null;
   stepKeysToExecute: string[] | null;

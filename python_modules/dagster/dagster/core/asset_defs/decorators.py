@@ -23,6 +23,7 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.input import In
 from dagster.core.definitions.output import Out
 from dagster.core.definitions.partition import PartitionsDefinition
+from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.utils import NoValueSentinel
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType
@@ -46,10 +47,11 @@ def asset(
     name: Optional[str] = ...,
     namespace: Optional[Sequence[str]] = ...,
     ins: Optional[Mapping[str, AssetIn]] = ...,
-    non_argument_deps: Optional[Set[AssetKey]] = ...,
+    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     metadata: Optional[Mapping[str, Any]] = ...,
     description: Optional[str] = ...,
     required_resource_keys: Optional[Set[str]] = ...,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
     io_manager_key: Optional[str] = ...,
     compute_kind: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
@@ -65,10 +67,11 @@ def asset(
     name: Optional[Union[Callable[..., Any], Optional[str]]] = None,
     namespace: Optional[Sequence[str]] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    non_argument_deps: Optional[Set[AssetKey]] = None,
+    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
@@ -94,8 +97,8 @@ def asset(
             name forms the asset key.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
             and namespaces.
-        non_argument_deps (Optional[Set[AssetKey]]): Set of asset keys that are upstream dependencies,
-            but do not pass an input to the asset.
+        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are
+            upstream dependencies, but do not pass an input to the asset.
         metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
         io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
@@ -134,10 +137,11 @@ def asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             namespace=namespace,
             ins=ins,
-            non_argument_deps=non_argument_deps,
+            non_argument_deps=_make_asset_keys(non_argument_deps),
             metadata=metadata,
             description=description,
             required_resource_keys=required_resource_keys,
+            resource_defs=resource_defs,
             io_manager_key=io_manager_key,
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             dagster_type=dagster_type,
@@ -159,6 +163,7 @@ class _Asset:
         metadata: Optional[Mapping[str, Any]] = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[Set[str]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         io_manager_key: Optional[str] = None,
         compute_kind: Optional[str] = None,
         dagster_type: Optional[DagsterType] = None,
@@ -173,13 +178,16 @@ class _Asset:
         self.non_argument_deps = non_argument_deps
         self.metadata = metadata
         self.description = description
-        self.required_resource_keys = required_resource_keys
+        self.required_resource_keys = check.opt_set_param(
+            required_resource_keys, "required_resource_keys"
+        )
         self.io_manager_key = io_manager_key
         self.compute_kind = compute_kind
         self.dagster_type = dagster_type
         self.partitions_def = partitions_def
         self.partition_mappings = partition_mappings
         self.op_tags = op_tags
+        self.resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -197,12 +205,18 @@ class _Asset:
                 description=self.description,
             )
 
+            required_resource_keys = set()
+            for key in self.required_resource_keys:
+                required_resource_keys.add(key)
+            for key in self.resource_defs.keys():
+                required_resource_keys.add(key)
+
             op = _Op(
-                name="__".join(out_asset_key.path),
+                name="__".join(out_asset_key.path).replace("-", "_"),
                 description=self.description,
                 ins=dict(asset_ins.values()),
                 out=out,
-                required_resource_keys=self.required_resource_keys,
+                required_resource_keys=required_resource_keys,
                 tags={
                     **({"kind": self.compute_kind} if self.compute_kind else {}),
                     **(self.op_tags or {}),
@@ -229,6 +243,7 @@ class _Asset:
             }
             if self.partition_mappings
             else None,
+            resource_defs=self.resource_defs,
         )
 
 
@@ -237,7 +252,7 @@ def multi_asset(
     outs: Dict[str, Out],
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    non_argument_deps: Optional[Set[AssetKey]] = None,
+    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
     compute_kind: Optional[str] = None,
@@ -258,7 +273,7 @@ def multi_asset(
         outs: (Optional[Dict[str, Out]]): The Outs representing the produced assets.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
             and namespaces.
-        non_argument_deps (Optional[Set[AssetKey]]): Set of asset keys that are upstream dependencies,
+        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are upstream dependencies,
             but do not pass an input to the multi_asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
         io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
@@ -298,7 +313,9 @@ def multi_asset(
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
 
         op_name = name or fn.__name__
-        asset_ins = build_asset_ins(fn, None, ins or {}, non_argument_deps)
+        asset_ins = build_asset_ins(
+            fn, None, ins or {}, non_argument_deps=_make_asset_keys(non_argument_deps)
+        )
 
         # validate that the asset_deps make sense
         valid_asset_deps = set(asset_ins.keys())
@@ -414,13 +431,24 @@ def build_asset_ins(
         )
 
         ins_by_asset_key[asset_key] = (
-            input_name,
+            input_name.replace("-", "_"),
             In(metadata=metadata, root_manager_key="root_manager"),
         )
 
     for asset_key in non_argument_deps:
-        stringified_asset_key = "_".join(asset_key.path)
+        stringified_asset_key = "_".join(asset_key.path).replace("-", "_")
         # mypy doesn't realize that Nothing is a valid type here
         ins_by_asset_key[asset_key] = (stringified_asset_key, In(cast(type, Nothing)))
 
     return ins_by_asset_key
+
+
+def _make_asset_keys(deps: Optional[Union[Set[AssetKey], Set[str]]]) -> Optional[Set[AssetKey]]:
+    """Convert all str items to AssetKey in the set."""
+    if deps is None:
+        return deps
+
+    deps_asset_keys = {
+        AssetKey.from_user_string(dep) if isinstance(dep, str) else dep for dep in deps
+    }
+    return deps_asset_keys

@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from pydantic import Extra  # pylint: disable=no-name-in-module
+from pydantic import Extra
 
 from ...utils import kubernetes
 from ...utils.utils import BaseModel
@@ -21,6 +21,7 @@ class Workspace(BaseModel):
 class Dagit(BaseModel):
     replicaCount: int
     image: kubernetes.Image
+    nameOverride: str
     service: kubernetes.Service
     workspace: Workspace
     env: Dict[str, str]

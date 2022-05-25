@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {getJSONForKey} from '../hooks/useStateWithStorage';
 
-const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
+export const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
 
 export enum FeatureFlag {
   flagExperimentalAssetDAG = 'flagExperimentalAssetDAG',
@@ -11,6 +11,7 @@ export enum FeatureFlag {
   flagAlwaysCollapseNavigation = 'flagAlwaysCollapseNavigation',
   flagDisableWebsockets = 'flagDisableWebsockets',
   flagNewPartitionsView = 'flagNewPartitionsView',
+  flagFlatLeftNav = 'flagFlatLeftNav',
 }
 
 export const getFeatureFlags: () => FeatureFlag[] = memoize(

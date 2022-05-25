@@ -276,6 +276,14 @@ class ExternalPipeline(RepresentedPipeline):
         )
 
     @property
+    def asset_selection(self):
+        return (
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.asset_selection
+            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            else None
+        )
+
+    @property
     def active_presets(self):
         return list(self._active_preset_dict.values())
 

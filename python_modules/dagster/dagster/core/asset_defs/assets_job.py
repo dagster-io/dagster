@@ -36,6 +36,7 @@ from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.context.input import InputContext, build_input_context
 from dagster.core.execution.context.output import build_output_context
+from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.storage.root_input_manager import RootInputManagerDefinition, root_input_manager
 from dagster.utils.backcompat import ExperimentalWarning, experimental
@@ -56,6 +57,7 @@ def build_assets_job(
     config: Optional[Union[ConfigMapping, Dict[str, Any], PartitionedConfig]] = None,
     tags: Optional[Dict[str, Any]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
+    _asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
 
@@ -90,17 +92,20 @@ def build_assets_job(
     Returns:
         JobDefinition: A job that materializes the given assets.
     """
+
     check.str_param(name, "name")
     check.sequence_param(assets, "assets", of_type=AssetsDefinition)
     check.opt_sequence_param(
         source_assets, "source_assets", of_type=(SourceAsset, AssetsDefinition)
     )
     check.opt_str_param(description, "description")
+    check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
     source_assets_by_key = build_source_assets_by_key(source_assets)
 
     deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
     root_manager = build_root_manager(source_assets_by_key)
     partitioned_config = build_job_partitions_from_assets(assets, source_assets or [])
+    resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
 
     graph = GraphDefinition(
         name=name,
@@ -112,16 +117,29 @@ def build_assets_job(
         config=None,
     )
 
+    all_resource_defs = dict(resource_defs)
+    for asset_def in assets:
+        for resource_key, resource_def in asset_def.resource_defs.items():
+            if (
+                resource_key in all_resource_defs
+                and all_resource_defs[resource_key] != resource_def
+            ):
+                raise DagsterInvalidDefinitionError(
+                    f"When attempting to build job, asset {asset_def.asset_key} had a conflicting version of the same resource key {resource_key}. Please resolve this conflict by giving different keys to each resource definition."
+                )
+            all_resource_defs[resource_key] = resource_def
+
     return graph.to_job(
         resource_defs=merge_dicts(
-            {"io_manager": fs_asset_io_manager}, resource_defs or {}, {"root_manager": root_manager}
+            {"io_manager": fs_asset_io_manager}, all_resource_defs, {"root_manager": root_manager}
         ),
         config=config or partitioned_config,
         tags=tags,
         executor_def=executor_def,
         asset_layer=AssetLayer.from_graph_and_assets_node_mapping(
-            graph, assets_defs_by_node_handle
+            graph, assets_defs_by_node_handle, source_assets
         ),
+        _asset_selection_data=_asset_selection_data,
     )
 
 
@@ -265,7 +283,9 @@ def build_deps(
             node_key = node_name
         deps[node_key] = {}
         assets_defs_by_node_handle[NodeHandle(alias, parent=None)] = assets_def
-        for input_name, asset_key in assets_def.asset_keys_by_input_name.items():
+        for input_name, asset_key in sorted(
+            assets_def.asset_keys_by_input_name.items(), key=lambda input: input[0]
+        ):  # sort so that input definition order is deterministic
             if asset_key in node_outputs_by_asset:
                 node_def, output_name = node_outputs_by_asset[asset_key]
                 deps[node_key][input_name] = DependencyDefinition(node_def.name, output_name)

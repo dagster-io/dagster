@@ -20,10 +20,18 @@ from dagster import (
     io_manager,
     mem_io_manager,
     multiprocess_executor,
+    op,
     repository,
     resource,
 )
-from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
+from dagster.core.asset_defs import (
+    AssetGroup,
+    AssetIn,
+    AssetsDefinition,
+    SourceAsset,
+    asset,
+    multi_asset,
+)
 from dagster.core.errors import DagsterInvalidSubsetError, DagsterUnmetExecutorRequirementsError
 from dagster.core.test_utils import instance_for_test
 
@@ -921,3 +929,98 @@ def test_to_source_assets():
         SourceAsset(AssetKey(["my_asset_name"])),
         SourceAsset(AssetKey(["my_other_asset"])),
     ]
+
+
+def test_build_job_resource_defs_on_asset():
+    the_resource = ResourceDefinition.hardcoded_resource("blah")
+
+    @asset(required_resource_keys={"bar"}, resource_defs={"foo": the_resource})
+    def the_asset():
+        pass
+
+    @asset(resource_defs={"foo": the_resource})
+    def other_asset():
+        pass
+
+    group = AssetGroup([the_asset, other_asset], resource_defs={"bar": the_resource})
+    the_job = group.build_job("some_name")
+    assert the_job.execute_in_process().success
+
+
+def test_build_job_diff_resource_defs():
+    the_resource = ResourceDefinition.hardcoded_resource("blah")
+    other_resource = ResourceDefinition.hardcoded_resource("baz")
+
+    @asset(resource_defs={"foo": the_resource})
+    def the_asset():
+        pass
+
+    @asset(resource_defs={"foo": other_resource})
+    def other_asset():
+        pass
+
+    group = AssetGroup([the_asset, other_asset])
+
+    assert group.build_job("some_name", selection="the_asset").execute_in_process().success
+
+
+def test_repo_asset_group_diff_resource_defs():
+    the_resource = ResourceDefinition.hardcoded_resource("blah")
+    other_resource = ResourceDefinition.hardcoded_resource("baz")
+
+    @asset(resource_defs={"foo": the_resource})
+    def the_asset():
+        pass
+
+    @asset(resource_defs={"foo": other_resource})
+    def other_asset():
+        pass
+
+    group = AssetGroup([the_asset, other_asset])
+
+    # Demonstrate that repository construction with conflicting versions of
+    # same key fails
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="had a conflicting version of the same resource key foo. Please resolve this conflict by giving different keys to each resource definition.",
+    ):
+
+        @repository
+        def use_group():
+            return [group]
+
+
+def test_graph_backed_asset_resources():
+    @op(required_resource_keys={"foo"})
+    def the_op():
+        pass
+
+    @graph
+    def basic():
+        return the_op()
+
+    the_resource = ResourceDefinition.hardcoded_resource("blah")
+    other_resource = ResourceDefinition.hardcoded_resource("baz")
+
+    the_asset = AssetsDefinition(
+        asset_keys_by_input_name={},
+        asset_keys_by_output_name={"result": AssetKey("the_asset")},
+        node_def=basic,
+        resource_defs={"foo": the_resource},
+    )
+    no_conflict_group = AssetGroup([the_asset])
+    assert no_conflict_group.materialize().success
+
+    other_asset = AssetsDefinition(
+        asset_keys_by_input_name={},
+        asset_keys_by_output_name={"result": AssetKey("other_asset")},
+        node_def=basic,
+        resource_defs={"foo": other_resource},
+    )
+
+    asset_group = AssetGroup([the_asset, other_asset])
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="had a conflicting version of the same resource key foo.",
+    ):
+        asset_group.materialize()

@@ -1,9 +1,12 @@
+import warnings
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Any,
     Callable,
     Dict,
+    FrozenSet,
     Iterable,
     List,
     Mapping,
@@ -13,19 +16,26 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey
+from dagster.core.selector.subset_selector import AssetSelectionData
+from dagster.utils.backcompat import ExperimentalWarning
 
+from ..errors import DagsterInvalidDefinitionError
 from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
+from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition
+from .resource_definition import ResourceDefinition
 
 if TYPE_CHECKING:
-    from dagster.core.asset_defs import AssetsDefinition
+    from dagster.core.asset_defs import AssetGroup, AssetsDefinition, SourceAsset
     from dagster.core.execution.context.output import OutputContext
 
+    from .job_definition import JobDefinition
     from .partition import PartitionsDefinition
 
 
@@ -347,7 +357,11 @@ class AssetLayer:
         ] = None,
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
         dependency_node_handles_by_asset_key: Optional[Mapping[AssetKey, Set[NodeHandle]]] = None,
+        assets_defs: Optional[List["AssetsDefinition"]] = None,
+        source_asset_defs: Optional[Sequence[Union["SourceAsset", "AssetsDefinition"]]] = None,
     ):
+        from dagster.core.asset_defs import AssetsDefinition, SourceAsset
+
         self._asset_keys_by_node_input_handle = check.opt_dict_param(
             asset_keys_by_node_input_handle,
             "asset_keys_by_node_input_handle",
@@ -368,6 +382,10 @@ class AssetLayer:
             "dependency_node_handles_by_asset_key",
             key_type=AssetKey,
             value_type=Set,
+        )
+        self._assets_defs = check.opt_list_param(assets_defs, "assets_defs")
+        self._source_asset_defs = check.opt_list_param(
+            source_asset_defs, "source_assets", of_type=(SourceAsset, AssetsDefinition)
         )
 
         # keep an index from node handle to all keys expected to be generated in that node
@@ -391,6 +409,7 @@ class AssetLayer:
     def from_graph_and_assets_node_mapping(
         graph_def: GraphDefinition,
         assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
+        source_assets: Optional[Sequence[Union["SourceAsset", "AssetsDefinition"]]] = None,
     ) -> "AssetLayer":
         """
         Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
@@ -441,6 +460,8 @@ class AssetLayer:
             dependency_node_handles_by_asset_key=_asset_key_to_dep_node_handles(
                 graph_def, assets_defs_by_node_handle
             ),
+            assets_defs=[assets_def for assets_def in assets_defs_by_node_handle.values()],
+            source_asset_defs=source_assets,
         )
 
     @property
@@ -474,3 +495,94 @@ class AssetLayer:
         return self._asset_info_by_node_output_handle.get(
             NodeOutputHandle(node_handle, output_name)
         )
+
+
+def build_asset_selection_job(
+    name: str,
+    assets: Sequence["AssetsDefinition"],
+    source_assets: Sequence[Union["AssetsDefinition", "SourceAsset"]],
+    executor_def: ExecutorDefinition,
+    resource_defs: Mapping[str, ResourceDefinition],
+    description: str,
+    tags: Dict[str, Any],
+    asset_selection: Optional[FrozenSet[AssetKey]],
+    asset_selection_data: Optional[AssetSelectionData] = None,
+):
+    from dagster.core.asset_defs import build_assets_job
+
+    if asset_selection:
+        included_assets, excluded_assets = _subset_assets_defs(
+            assets, source_assets, asset_selection
+        )
+        resource_defs = _build_resource_defs(resource_defs, excluded_assets)
+    else:
+        included_assets = cast(List["AssetsDefinition"], assets)
+        # Slice [:] serves as a copy constructor, so that we don't
+        # accidentally add to the original list
+        excluded_assets = source_assets[:]
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=ExperimentalWarning)
+        asset_job = build_assets_job(
+            name=name,
+            assets=included_assets,
+            source_assets=excluded_assets,
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+            description=description,
+            tags=tags,
+            _asset_selection_data=asset_selection_data,
+        )
+
+    return asset_job
+
+
+def _subset_assets_defs(
+    assets: Sequence["AssetsDefinition"],
+    source_assets: Sequence[Union["AssetsDefinition", "SourceAsset"]],
+    selected_asset_keys: AbstractSet[AssetKey],
+) -> Tuple[Sequence["AssetsDefinition"], Sequence[Union["AssetsDefinition", "SourceAsset"]]]:
+    """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
+    representing the included/excluded definitions.
+    """
+    from dagster.core.asset_defs import AssetsDefinition
+
+    included_assets: Set[AssetsDefinition] = set()
+    excluded_assets: Set[AssetsDefinition] = set()
+
+    for asset in assets:
+        # intersection
+        selected_subset = selected_asset_keys & asset.asset_keys
+        # all assets in this def are selected
+        if selected_subset == asset.asset_keys:
+            included_assets.add(asset)
+        # no assets in this def are selected
+        elif len(selected_subset) == 0:
+            excluded_assets.add(asset)
+        elif asset.can_subset:
+            # subset of the asset that we want
+            subset_asset = asset.subset_for(selected_asset_keys)
+            included_assets.add(subset_asset)
+            # subset of the asset that we don't want
+            excluded_assets.add(asset.subset_for(asset.asset_keys - subset_asset.asset_keys))
+        else:
+            raise DagsterInvalidDefinitionError(
+                f"When building job, the AssetsDefinition '{asset.node_def.name}' "
+                f"contains asset keys {sorted(list(asset.asset_keys))}, but "
+                f"attempted to select only {sorted(list(selected_subset))}. "
+                "This AssetsDefinition does not support subsetting. Please select all "
+                "asset keys produced by this asset."
+            )
+
+    all_excluded_assets = [*excluded_assets, *source_assets]
+
+    return list(included_assets), all_excluded_assets
+
+
+def _build_resource_defs(resource_defs, source_assets):
+    from dagster.core.asset_defs.assets_job import build_root_manager, build_source_assets_by_key
+
+    return {
+        **resource_defs,
+        **{"root_manager": build_root_manager(build_source_assets_by_key(source_assets))},
+    }

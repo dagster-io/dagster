@@ -4,12 +4,12 @@ from collections import defaultdict, deque
 from typing import TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, List, NamedTuple, Sequence, Set
 
 from dagster.core.definitions.dependency import DependencyStructure
+from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.utils import check
 
 if TYPE_CHECKING:
     from dagster.core.asset_defs import AssetsDefinition
-    from dagster.core.definitions.events import AssetKey
     from dagster.core.definitions.job_definition import JobDefinition
 
 MAX_NUM = sys.maxsize
@@ -43,6 +43,33 @@ class OpSelectionData(
             resolved_op_selection=check.set_param(
                 resolved_op_selection, "resolved_op_selection", str
             ),
+            parent_job_def=check.inst_param(parent_job_def, "parent_job_def", JobDefinition),
+        )
+
+
+class AssetSelectionData(
+    NamedTuple(
+        "_AssetSelectionData",
+        [
+            ("asset_selection", FrozenSet[AssetKey]),
+            ("parent_job_def", "JobDefinition"),
+        ],
+    )
+):
+    """The data about asset selection.
+
+    Attributes:
+        asset_selection (FrozenSet[AssetKey]): The set of assets to be materialized within the job.
+        parent_job_def (JobDefinition): The definition of the full job. This is used for constructing
+            pipeline snapshot lineage.
+    """
+
+    def __new__(cls, asset_selection, parent_job_def):
+        from dagster.core.definitions.job_definition import JobDefinition
+
+        return super(AssetSelectionData, cls).__new__(
+            cls,
+            asset_selection=check.set_param(asset_selection, "asset_selection", AssetKey),
             parent_job_def=check.inst_param(parent_job_def, "parent_job_def", JobDefinition),
         )
 
@@ -369,7 +396,6 @@ def parse_asset_selection(
         FrozenSet[str]: a frozenset of qualified deduplicated asset keys, empty if no qualified
             subset selected.
     """
-    from dagster.core.definitions.events import AssetKey
 
     check.list_param(asset_selection, "asset_selection", of_type=str)
 

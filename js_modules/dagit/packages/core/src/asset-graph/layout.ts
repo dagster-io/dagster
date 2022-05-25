@@ -46,7 +46,7 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
   });
   g.setDefaultEdgeLabel(() => ({}));
 
-  const shouldRender = (node?: GraphNode) => node && node.definition.opName;
+  const shouldRender = (node?: GraphNode) => node && node.definition.opNames.length > 0;
 
   // Add all the nodes to the graph
   Object.values(graphData.nodes)
@@ -199,7 +199,7 @@ const DISPLAY_NAME_PX_PER_CHAR = 8.0;
 
 export const getAssetNodeDimensions = (def: {
   assetKey: {path: string[]};
-  opName: string | null;
+  opNames: string[];
   description?: string | null;
 }) => {
   let height = 75;
@@ -207,7 +207,8 @@ export const getAssetNodeDimensions = (def: {
     height += 25;
   }
   const displayName = displayNameForAssetKey(def.assetKey);
-  if (def.opName && displayName !== def.opName) {
+  const firstOp = def.opNames[0];
+  if (firstOp && displayName !== firstOp) {
     height += 25;
   }
   return {

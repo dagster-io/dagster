@@ -18,6 +18,7 @@ import {OptionsContainer} from '../gantt/VizComponents';
 import {useViewport} from '../gantt/useViewport';
 import {BackfillTable, BACKFILL_TABLE_FRAGMENT} from '../instance/BackfillTable';
 import {RepositorySelector, RunStatus} from '../types/globalTypes';
+import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -27,7 +28,6 @@ import {PartitionStatus} from './PartitionStatus';
 import {PartitionStepStatus} from './PartitionStepStatus';
 import {
   PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses_results,
-  PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
   PartitionsStatusQuery_partitionSetOrError_PartitionSet,
   PartitionsStatusQuery,
   PartitionsStatusQueryVariables,
@@ -37,7 +37,6 @@ import {usePartitionStepQuery} from './usePartitionStepQuery';
 
 type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
 type PartitionStatus = PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses_results;
-type Partition = PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results;
 
 const FAILED_STATUSES = [RunStatus.FAILURE, RunStatus.CANCELED, RunStatus.CANCELING];
 
@@ -56,33 +55,27 @@ export const PartitionViewNew: React.FC<{
     },
   );
 
-  if (!queryResult.data) {
-    return null;
-  }
-
-  const {partitionSetOrError} = queryResult.data;
-
-  if (partitionSetOrError.__typename !== 'PartitionSet') {
-    return null;
-  }
-
-  if (
-    partitionSetOrError.__typename !== 'PartitionSet' ||
-    partitionSetOrError.partitionsOrError.__typename !== 'Partitions'
-  ) {
-    return null;
-  }
-
-  const partitionNames = partitionSetOrError.partitionsOrError.results.map(
-    (_: Partition) => _.name,
-  );
-
   return (
-    <PartitionViewContent
-      partitionNames={partitionNames}
-      partitionSet={partitionSetOrError}
-      repoAddress={repoAddress}
-    />
+    <Loading queryResult={queryResult}>
+      {({partitionSetOrError}) => {
+        if (
+          partitionSetOrError.__typename !== 'PartitionSet' ||
+          partitionSetOrError.partitionsOrError.__typename !== 'Partitions'
+        ) {
+          return null;
+        }
+
+        const partitionNames = partitionSetOrError.partitionsOrError.results.map(({name}) => name);
+
+        return (
+          <PartitionViewContent
+            partitionNames={partitionNames}
+            partitionSet={partitionSetOrError}
+            repoAddress={repoAddress}
+          />
+        );
+      }}
+    </Loading>
   );
 };
 
@@ -99,6 +92,7 @@ const PartitionViewContent: React.FC<{
   const repositorySelector = repoAddressToSelector(repoAddress);
   const {canLaunchPartitionBackfill} = usePermissions();
   const {viewport, containerProps} = useViewport();
+  const [backfillRefetchCounter, setBackfillRefetchCounter] = React.useState(0);
   const partitions = usePartitionStepQuery(
     partitionSet.name,
     partitionNames,
@@ -167,10 +161,12 @@ const PartitionViewContent: React.FC<{
         {showBackfillSetup && (
           <BackfillPartitionSelector
             partitionSetName={partitionSet.name}
+            partitionNames={partitionNames}
             partitionData={statusData}
             pipelineName={partitionSet.pipelineName}
             onCancel={() => setShowBackfillSetup(false)}
             onLaunch={(_backfillId, _stepQuery) => {
+              setBackfillRefetchCounter(backfillRefetchCounter + 1);
               setShowBackfillSetup(false);
             }}
             onSubmit={onSubmit}
@@ -246,6 +242,7 @@ const PartitionViewContent: React.FC<{
                 setShowSteps(true);
               }
             }}
+            tooltipMessage="Click to view per-step status"
           />
         </div>
         {showSteps ? (
@@ -298,6 +295,7 @@ const PartitionViewContent: React.FC<{
           partitionSet={partitionSet}
           repositorySelector={repositorySelector}
           partitionNames={partitionNames}
+          refetchCounter={backfillRefetchCounter}
         />
       </Box>
     </div>
@@ -310,10 +308,12 @@ const JobBackfills = ({
   partitionSet,
   partitionNames,
   repositorySelector,
+  refetchCounter,
 }: {
   partitionSet: PartitionsStatusQuery_partitionSetOrError_PartitionSet;
   partitionNames: string[];
   repositorySelector: RepositorySelector;
+  refetchCounter: number;
 }) => {
   const [cursorStack, setCursorStack] = React.useState<string[]>(() => []);
   const [cursor, setCursor] = React.useState<string | undefined>();
@@ -327,50 +327,56 @@ const JobBackfills = ({
     partialRefetch: true,
   });
 
-  if (!queryResult.data) {
-    return <NonIdealState title="Could not fetch backfill data" icon="error" />;
-  }
-
-  const {backfills, pipelineName} = queryResult.data?.partitionSetOrError;
-
-  if (!backfills) {
-    return <NonIdealState title={`No backfills for ${pipelineName}`} icon="no-results" />;
-  }
-
-  const paginationProps: CursorPaginationProps = {
-    hasPrevCursor: !!cursor,
-    hasNextCursor: backfills && backfills.length === BACKFILL_PAGE_SIZE,
-    popCursor: () => {
-      const nextStack = [...cursorStack];
-      setCursor(nextStack.pop());
-      setCursorStack(nextStack);
-    },
-    advanceCursor: () => {
-      if (cursor) {
-        setCursorStack((current) => [...current, cursor]);
-      }
-      const nextCursor = backfills && backfills[backfills.length - 1].backfillId;
-      if (!nextCursor) {
-        return;
-      }
-      setCursor(nextCursor);
-    },
-    reset: () => {
-      setCursorStack([]);
-      setCursor(undefined);
-    },
-  };
+  const refetch = queryResult.refetch;
+  React.useEffect(() => {
+    refetchCounter && refetch();
+  }, [refetch, refetchCounter]);
 
   return (
-    <>
-      <BackfillTable
-        backfills={backfills}
-        refetch={queryResult.refetch}
-        showPartitionSet={false}
-        allPartitions={partitionNames}
-      />
-      <CursorPaginationControls {...paginationProps} />
-    </>
+    <Loading queryResult={queryResult}>
+      {({partitionSetOrError}) => {
+        const {backfills, pipelineName} = partitionSetOrError;
+
+        if (!backfills) {
+          return <NonIdealState title={`No backfills for ${pipelineName}`} icon="no-results" />;
+        }
+
+        const paginationProps: CursorPaginationProps = {
+          hasPrevCursor: !!cursor,
+          hasNextCursor: backfills && backfills.length === BACKFILL_PAGE_SIZE,
+          popCursor: () => {
+            const nextStack = [...cursorStack];
+            setCursor(nextStack.pop());
+            setCursorStack(nextStack);
+          },
+          advanceCursor: () => {
+            if (cursor) {
+              setCursorStack((current) => [...current, cursor]);
+            }
+            const nextCursor = backfills && backfills[backfills.length - 1].backfillId;
+            if (!nextCursor) {
+              return;
+            }
+            setCursor(nextCursor);
+          },
+          reset: () => {
+            setCursorStack([]);
+            setCursor(undefined);
+          },
+        };
+        return (
+          <>
+            <BackfillTable
+              backfills={backfills}
+              refetch={refetch}
+              showPartitionSet={false}
+              allPartitions={partitionNames}
+            />
+            <CursorPaginationControls {...paginationProps} />
+          </>
+        );
+      }}
+    </Loading>
   );
 };
 

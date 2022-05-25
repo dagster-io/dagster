@@ -249,6 +249,32 @@ class GrapheneRunConflict(graphene.ObjectType):
         name = "RunConflict"
 
 
+class GrapheneInvalidSubsetError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "InvalidSubsetError"
+
+    pipeline = graphene.Field(
+        graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GraphenePipeline")
+    )
+
+    def __init__(self, message, pipeline):
+        super().__init__()
+        self.message = check.str_param(message, "message")
+        self.pipeline = pipeline
+
+
+class GrapheneConfigTypeNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "ConfigTypeNotFoundError"
+
+    pipeline = graphene.Field(
+        graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GraphenePipeline")
+    )
+    config_type_name = graphene.NonNull(graphene.String)
+
+
 create_execution_params_error_types = (
     GraphenePresetNotFoundError,
     GrapheneConflictingExecutionParamsError,
@@ -344,11 +370,13 @@ class GrapheneUnauthorizedError(graphene.ObjectType):
 types = [
     GrapheneAssetNotFoundError,
     GrapheneConflictingExecutionParamsError,
+    GrapheneConfigTypeNotFoundError,
     GrapheneDagsterTypeNotFoundError,
     GrapheneError,
     GrapheneInvalidOutputError,
     GrapheneInvalidPipelineRunsFilterError,
     GrapheneInvalidStepError,
+    GrapheneInvalidSubsetError,
     GrapheneModeNotFoundError,
     GrapheneNoModeProvidedError,
     GraphenePartitionSetNotFoundError,

@@ -5,6 +5,8 @@ import uuid
 from abc import abstractmethod
 from collections import deque
 from contextlib import AbstractContextManager
+from threading import Event
+from typing import Callable, ContextManager, Tuple
 
 import pendulum
 
@@ -57,63 +59,56 @@ class DagsterDaemon(AbstractContextManager):
 
     def run_daemon_loop(
         self,
-        instance_ref,
-        daemon_uuid,
-        daemon_shutdown_event,
-        gen_workspace,
-        heartbeat_interval_seconds,
-        error_interval_seconds,
-        until=None,
+        daemon_uuid: str,
+        daemon_shutdown_event: Event,
+        context_fn: Callable[[], ContextManager[Tuple[DagsterInstance, IWorkspace]]],
+        heartbeat_interval_seconds: int,
+        error_interval_seconds: int,
     ):
         from dagster.core.telemetry_upload import uploading_logging_thread
 
         # Each loop runs in its own thread with its own instance and IWorkspace
-        with DagsterInstance.from_ref(instance_ref) as instance:
+        with context_fn() as (instance, workspace):
             with uploading_logging_thread():
-                with gen_workspace(instance) as workspace:
-                    check.inst_param(workspace, "workspace", IWorkspace)
+                check.inst_param(workspace, "workspace", IWorkspace)
 
-                    daemon_generator = self.core_loop(instance, workspace)
+                daemon_generator = self.core_loop(instance, workspace)
 
-                    try:
-                        while (not daemon_shutdown_event.is_set()) and (
-                            not until or pendulum.now("UTC") < until
-                        ):
+                try:
+                    while not daemon_shutdown_event.is_set():
+                        try:
+                            result = check.opt_inst(next(daemon_generator), SerializableErrorInfo)
+                            if result:
+                                self._errors.appendleft((result, pendulum.now("UTC")))
+                        except StopIteration:
+                            self._logger.error(
+                                "Daemon loop finished without raising an error - daemon loops should run forever until they are interrupted."
+                            )
+                            break
+                        except Exception:
+                            error_info = serializable_error_info_from_exc_info(sys.exc_info())
+                            self._logger.error(
+                                "Caught error, daemon loop will restart:\n%s", error_info
+                            )
+                            self._errors.appendleft((error_info, pendulum.now("UTC")))
+                            daemon_generator.close()
+                            daemon_generator = self.core_loop(instance, workspace)
+                        finally:
                             try:
-                                result = check.opt_inst(
-                                    next(daemon_generator), SerializableErrorInfo
+                                self._check_add_heartbeat(
+                                    instance,
+                                    daemon_uuid,
+                                    heartbeat_interval_seconds,
+                                    error_interval_seconds,
                                 )
-                                if result:
-                                    self._errors.appendleft((result, pendulum.now("UTC")))
-                            except StopIteration:
-                                self._logger.error(
-                                    "Daemon loop finished without raising an error - daemon loops should run forever until they are interrupted."
-                                )
-                                break
                             except Exception:
-                                error_info = serializable_error_info_from_exc_info(sys.exc_info())
                                 self._logger.error(
-                                    "Caught error, daemon loop will restart:\n%s", error_info
+                                    "Failed to add heartbeat: \n%s",
+                                    serializable_error_info_from_exc_info(sys.exc_info()),
                                 )
-                                self._errors.appendleft((error_info, pendulum.now("UTC")))
-                                daemon_generator.close()
-                                daemon_generator = self.core_loop(instance, workspace)
-                            finally:
-                                try:
-                                    self._check_add_heartbeat(
-                                        instance,
-                                        daemon_uuid,
-                                        heartbeat_interval_seconds,
-                                        error_interval_seconds,
-                                    )
-                                except Exception:
-                                    self._logger.error(
-                                        "Failed to add heartbeat: \n%s",
-                                        serializable_error_info_from_exc_info(sys.exc_info()),
-                                    )
-                    finally:
-                        # cleanup the generator if it was stopped part-way through
-                        daemon_generator.close()
+                finally:
+                    # cleanup the generator if it was stopped part-way through
+                    daemon_generator.close()
 
     def _check_add_heartbeat(
         self, instance, daemon_uuid, heartbeat_interval_seconds, error_interval_seconds

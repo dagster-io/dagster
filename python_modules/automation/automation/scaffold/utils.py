@@ -1,7 +1,7 @@
 import shutil
 
 
-def copy_directory(src, dest):
+def copy_directory(src: str, dest: str) -> None:
     try:
         shutil.copytree(src, dest, ignore=shutil.ignore_patterns(".DS_Store"))
     # Directories are the same

@@ -15,7 +15,7 @@ import {
   IGanttNode,
   LEFT_INSET,
 } from './Constants';
-import {isDynamicStep} from './DynamicStepSupport';
+import {isDynamicStep, isPlannedDynamicStep, dynamicKeyWithoutIndex} from './DynamicStepSupport';
 
 export interface BuildLayoutParams {
   nodes: IGanttNode[];
@@ -199,6 +199,17 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
       if (seen.includes(depNode.name)) {
         continue;
       }
+
+      // Hide the unresolved node if any its resolved node exists
+      if (
+        isPlannedDynamicStep(depNode.name) &&
+        seen
+          .filter((n) => isDynamicStep(n))
+          .some((n) => dynamicKeyWithoutIndex(n) === dynamicKeyWithoutIndex(depNode.name))
+      ) {
+        continue;
+      }
+
       seen.push(depNode.name);
 
       const depBoxIdx = boxes.findIndex((r) => r.node === depNode);

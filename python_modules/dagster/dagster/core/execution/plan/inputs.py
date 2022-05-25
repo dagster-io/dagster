@@ -635,13 +635,24 @@ class FromMultipleSources(
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
     ):
-        from dagster.core.events import DagsterEvent
+        from dagster.core.events import DagsterEvent, DagsterEventType
 
         values = []
 
+        # https://github.com/dagster-io/dagster/issues/3511
+        step_output_events = [
+            record.dagster_event
+            for record in step_context.instance.all_logs(
+                step_context.run_id, of_type=DagsterEventType.STEP_OUTPUT
+            )
+        ]
+
         # some upstream steps may have skipped and we allow fan-in to continue in their absence
         source_handles_to_skip = list(
-            filter(lambda x: not step_context.can_load(x), self.step_output_handle_dependencies)
+            filter(
+                lambda x: not step_context.can_load(x, step_output_events),
+                self.step_output_handle_dependencies,
+            )
         )
 
         for inner_source in self.sources:

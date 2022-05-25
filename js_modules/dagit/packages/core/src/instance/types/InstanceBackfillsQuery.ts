@@ -3,24 +3,26 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { BulkActionStatus, RunStatus } from "./../../types/globalTypes";
+import { BulkActionStatus, BackfillStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: InstanceBackfillsQuery
 // ====================================================
 
-export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs_tags {
-  __typename: "PipelineTag";
-  key: string;
-  value: string;
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionRunStats {
+  __typename: "BackfillRunStats";
+  numQueued: number;
+  numInProgress: number;
+  numSucceeded: number;
+  numFailed: number;
+  numPartitionsWithRuns: number;
+  numTotalRuns: number;
 }
 
-export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs {
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_unfinishedRuns {
   __typename: "Run";
   id: string;
   canTerminate: boolean;
-  status: RunStatus;
-  tags: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs_tags[];
 }
 
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet_repositoryOrigin {
@@ -56,9 +58,11 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   __typename: "PartitionBackfill";
   backfillId: string;
   status: BulkActionStatus;
+  backfillStatus: BackfillStatus;
   numRequested: number;
-  partitionNames: string[];
-  runs: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs[];
+  numPartitions: number;
+  partitionRunStats: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionRunStats;
+  unfinishedRuns: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_unfinishedRuns[];
   timestamp: number;
   partitionSetName: string;
   partitionSet: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet | null;

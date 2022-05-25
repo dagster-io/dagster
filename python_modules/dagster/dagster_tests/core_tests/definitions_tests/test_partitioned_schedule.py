@@ -94,6 +94,9 @@ def test_daily_schedule_with_offsets():
         "end": "2021-05-06T02:15:00+00:00",
     }
 
+    my_schedule_default = schedule_for_partitioned_config(my_partitioned_config)
+    assert my_schedule_default.cron_schedule == "15 2 * * *"
+
     my_schedule = schedule_for_partitioned_config(
         my_partitioned_config, hour_of_day=9, minute_of_hour=30
     )
@@ -127,6 +130,9 @@ def test_hourly_schedule():
         "start": "2021-05-05T00:00:00+00:00",
         "end": "2021-05-05T01:00:00+00:00",
     }
+
+    my_schedule_default = schedule_for_partitioned_config(my_partitioned_config)
+    assert my_schedule_default.cron_schedule == "0 * * * *"
 
     my_schedule = schedule_for_partitioned_config(my_partitioned_config, minute_of_hour=30)
     assert my_schedule.cron_schedule == "30 * * * *"

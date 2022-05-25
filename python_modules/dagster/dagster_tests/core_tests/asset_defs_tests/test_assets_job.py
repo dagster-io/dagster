@@ -23,11 +23,13 @@ from dagster import (
 )
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
 from dagster.core.definitions.dependency import NodeHandle
+from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.snap import DependencyStructureIndex
 from dagster.core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_icontains_solids,
 )
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import safe_tempfile_path
 
 
@@ -40,7 +42,8 @@ def _asset_keys_for_node(result, node_name):
 
 def test_single_asset_pipeline():
     @asset
-    def asset1():
+    def asset1(context):
+        assert context.asset_key_for_output() == AssetKey(["asset1"])
         return 1
 
     job = build_assets_job("a", [asset1])
@@ -310,6 +313,18 @@ def test_non_argument_deps():
         assert result.success
         assert _asset_keys_for_node(result, "foo") == {AssetKey("foo")}
         assert _asset_keys_for_node(result, "bar") == {AssetKey("bar")}
+
+
+def test_non_argument_deps_as_str():
+    @asset
+    def foo():
+        pass
+
+    @asset(non_argument_deps={"foo"})
+    def bar():
+        pass
+
+    assert AssetKey("foo") in bar.asset_deps[AssetKey("bar")]
 
 
 def test_multiple_non_argument_deps():
@@ -716,6 +731,25 @@ def test_graph_asset_decorator_no_args():
     assert assets_def.asset_keys_by_output_name["result"] == AssetKey("my_graph")
 
 
+def test_execute_graph_asset():
+    @op(out={"x": Out(), "y": Out()})
+    def x_op(context):
+        assert context.asset_key_for_output("x") == AssetKey("x_asset")
+        return 1, 2
+
+    @graph(out={"x": GraphOut(), "y": GraphOut()})
+    def my_graph():
+        x, y = x_op()
+        return {"x": x, "y": y}
+
+    assets_def = AssetsDefinition.from_graph(
+        graph_def=my_graph,
+        asset_keys_by_output_name={"y": AssetKey("y_asset"), "x": AssetKey("x_asset")},
+    )
+
+    assert AssetGroup([assets_def]).build_job("abc").execute_in_process().success
+
+
 def test_graph_asset_partitioned():
     @op
     def my_op(context):
@@ -1034,3 +1068,168 @@ def test_internal_asset_deps_assets():
     assert node_handle_deps_by_asset[AssetKey("my_other_out_name")] == {
         NodeHandle(name="multi_asset_with_internal_deps", parent=None)
     }
+
+
+@asset
+def foo():
+    return 5
+
+
+@asset
+def bar():
+    return 10
+
+
+@asset
+def foo_bar(foo, bar):
+    return foo + bar
+
+
+@asset
+def baz(foo_bar):
+    return foo_bar
+
+
+@asset
+def unconnected():
+    pass
+
+
+asset_group = AssetGroup([foo, bar, foo_bar, baz, unconnected])
+
+
+def test_disconnected_subset():
+    with instance_for_test() as instance:
+        job = asset_group.build_job("foo")
+        result = job.execute_in_process(
+            instance=instance, asset_selection=[AssetKey("unconnected"), AssetKey("bar")]
+        )
+        materialization_events = [
+            event for event in result.all_events if event.is_step_materialization
+        ]
+
+        assert len(materialization_events) == 2
+        assert materialization_events[0].asset_key == AssetKey("bar")
+        assert materialization_events[1].asset_key == AssetKey("unconnected")
+
+
+def test_connected_subset():
+    with instance_for_test() as instance:
+        job = asset_group.build_job("foo")
+        result = job.execute_in_process(
+            instance=instance,
+            asset_selection=[AssetKey("foo"), AssetKey("bar"), AssetKey("foo_bar")],
+        )
+        materialization_events = sorted(
+            [event for event in result.all_events if event.is_step_materialization],
+            key=lambda event: event.asset_key,
+        )
+
+        assert len(materialization_events) == 3
+        assert materialization_events[0].asset_key == AssetKey("bar")
+        assert materialization_events[1].asset_key == AssetKey("foo")
+        assert materialization_events[2].asset_key == AssetKey("foo_bar")
+
+
+def test_subset_of_asset_job():
+    with instance_for_test() as instance:
+        foo_job = asset_group.build_job("foo_job", selection=["*baz"])
+        result = foo_job.execute_in_process(
+            instance=instance,
+            asset_selection=[AssetKey("foo"), AssetKey("bar"), AssetKey("foo_bar")],
+        )
+        materialization_events = sorted(
+            [event for event in result.all_events if event.is_step_materialization],
+            key=lambda event: event.asset_key,
+        )
+        assert len(materialization_events) == 3
+        assert materialization_events[0].asset_key == AssetKey("bar")
+        assert materialization_events[1].asset_key == AssetKey("foo")
+        assert materialization_events[2].asset_key == AssetKey("foo_bar")
+
+        with pytest.raises(DagsterInvalidSubsetError):
+            result = foo_job.execute_in_process(
+                instance=instance,
+                asset_selection=[AssetKey("unconnected")],
+            )
+
+
+def test_subset_of_build_assets_job():
+    foo_job = build_assets_job("foo_job", assets=[foo, bar, foo_bar, baz])
+    with instance_for_test() as instance:
+        result = foo_job.execute_in_process(
+            instance=instance,
+            asset_selection=[AssetKey("foo"), AssetKey("bar"), AssetKey("foo_bar")],
+        )
+        materialization_events = sorted(
+            [event for event in result.all_events if event.is_step_materialization],
+            key=lambda event: event.asset_key,
+        )
+        assert len(materialization_events) == 3
+        assert materialization_events[0].asset_key == AssetKey("bar")
+        assert materialization_events[1].asset_key == AssetKey("foo")
+        assert materialization_events[2].asset_key == AssetKey("foo_bar")
+
+        with pytest.raises(DagsterInvalidSubsetError):
+            result = foo_job.execute_in_process(
+                instance=instance,
+                asset_selection=[AssetKey("unconnected")],
+            )
+
+
+def test_raise_error_on_incomplete_graph_asset_subset():
+    @op
+    def do_something(x):
+        return x * 2
+
+    @op
+    def foo():
+        return 1, 2
+
+    @graph(
+        out={
+            "comments_table": GraphOut(),
+            "stories_table": GraphOut(),
+        },
+    )
+    def complicated_graph():
+        result = foo()
+        return do_something(result), do_something(result)
+
+    job = AssetGroup(
+        [
+            AssetsDefinition.from_graph(complicated_graph),
+        ],
+    ).build_job("job")
+
+    with instance_for_test() as instance:
+        with pytest.raises(DagsterInvalidDefinitionError, match="complicated_graph"):
+            job.execute_in_process(instance=instance, asset_selection=[AssetKey("comments_table")])
+
+
+def test_subset_with_source_asset():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return 5
+
+    @io_manager
+    def the_manager():
+        return MyIOManager()
+
+    my_source_asset = SourceAsset(key=AssetKey("my_source_asset"), io_manager_key="the_manager")
+
+    @asset
+    def my_derived_asset(my_source_asset):
+        return my_source_asset + 4
+
+    source_asset_job = AssetGroup(
+        assets=[my_derived_asset],
+        source_assets=[my_source_asset],
+        resource_defs={"the_manager": the_manager},
+    ).build_job("source_asset_job")
+
+    result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
+    assert result.success

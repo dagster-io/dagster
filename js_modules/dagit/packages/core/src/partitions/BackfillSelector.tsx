@@ -53,6 +53,7 @@ interface BackfillOptions {
 
 export const BackfillPartitionSelector: React.FC<{
   partitionSetName: string;
+  partitionNames: string[];
   partitionData: {[name: string]: RunStatus | null};
   pipelineName: string;
   onLaunch?: (backfillId: string, stepQuery: string) => void;
@@ -67,6 +68,7 @@ export const BackfillPartitionSelector: React.FC<{
   repoAddress,
   partitionData,
   pipelineName,
+  partitionNames,
 }) => {
   const history = useHistory();
   const [selected, _setSelected] = React.useState<string[]>(
@@ -140,7 +142,6 @@ export const BackfillPartitionSelector: React.FC<{
     name: box.node.name,
   }));
 
-  const partitionNames = Object.keys(partitionData);
   const usingDefaultRunLauncher = instance.runLauncher?.name === DEFAULT_RUN_LAUNCHER_NAME;
 
   const isFailed = (name: string) =>
@@ -148,7 +149,7 @@ export const BackfillPartitionSelector: React.FC<{
     partitionData[name] === RunStatus.CANCELED ||
     partitionData[name] === RunStatus.CANCELING;
   const failedPartitions = partitionNames.filter(isFailed);
-  const missingPartitions = partitionNames.filter((name: string) => partitionData[name] === null);
+  const missingPartitions = partitionNames.filter((name: string) => !partitionData[name]);
   const successPartitions = partitionNames.filter(
     (name: string) => partitionData[name] === RunStatus.SUCCESS,
   );

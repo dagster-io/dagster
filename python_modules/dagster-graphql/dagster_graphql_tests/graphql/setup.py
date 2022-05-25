@@ -19,9 +19,11 @@ from dagster_graphql.test.utils import (
 
 from dagster import (
     Any,
+    AssetGroup,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    AssetsDefinition,
     Bool,
     DagsterInstance,
     DefaultScheduleStatus,
@@ -1421,6 +1423,47 @@ hanging_job = build_assets_job(
 )
 
 
+@op
+def my_op():
+    return 1
+
+
+@op(required_resource_keys={"hanging_asset_resource"})
+def hanging_op(context, my_op):  # pylint: disable=unused-argument
+    with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
+        ff.write("yup")
+
+    while True:
+        time.sleep(0.1)
+
+
+@op
+def never_runs_op(hanging_op):  # pylint: disable=unused-argument
+    pass
+
+
+@graph
+def hanging_graph():
+    return never_runs_op(hanging_op(my_op()))
+
+
+hanging_graph_asset = AssetsDefinition.from_graph(hanging_graph)
+
+
+@asset
+def downstream_asset(hanging_graph):  # pylint: disable=unused-argument
+    return 1
+
+
+hanging_graph_asset_job = AssetGroup(
+    [hanging_graph_asset, downstream_asset],
+    resource_defs={
+        "hanging_asset_resource": hanging_asset_resource,
+        "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),
+    },
+).build_job("hanging_graph_asset_job")
+
+
 @asset
 def asset_one():
     return 1
@@ -1557,6 +1600,38 @@ failure_assets_job = build_assets_job(
 )
 
 
+@asset
+def foo(context):
+    assert context.pipeline_def.asset_selection_data != None
+    return 5
+
+
+@asset
+def bar(context):
+    assert context.pipeline_def.asset_selection_data != None
+    return 10
+
+
+@asset
+def foo_bar(context, foo, bar):
+    assert context.pipeline_def.asset_selection_data != None
+    return foo + bar
+
+
+@asset
+def baz(context, foo_bar):
+    assert context.pipeline_def.asset_selection_data != None
+    return foo_bar
+
+
+@asset
+def unconnected(context):
+    assert context.pipeline_def.asset_selection_data != None
+
+
+asset_group_job = AssetGroup([foo, bar, foo_bar, baz, unconnected]).build_job("foo_job")
+
+
 @repository
 def empty_repo():
     return []
@@ -1617,6 +1692,8 @@ def define_pipelines():
         partition_materialization_job,
         observation_job,
         failure_assets_job,
+        asset_group_job,
+        hanging_graph_asset_job,
     ]
 
 

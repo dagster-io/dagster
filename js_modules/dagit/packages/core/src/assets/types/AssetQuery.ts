@@ -2471,7 +2471,6 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_ass
 export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset {
   __typename: "AssetNode";
   id: string;
-  opName: string | null;
   opNames: string[];
   jobNames: string[];
   graphName: string | null;
@@ -2515,7 +2514,6 @@ export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_asset
 export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset {
   __typename: "AssetNode";
   id: string;
-  opName: string | null;
   opNames: string[];
   jobNames: string[];
   graphName: string | null;
@@ -2540,7 +2538,6 @@ export interface AssetQuery_assetOrError_Asset_definition {
   jobs: AssetQuery_assetOrError_Asset_definition_jobs[];
   description: string | null;
   graphName: string | null;
-  opName: string | null;
   opNames: string[];
   jobNames: string[];
   computeKind: string | null;

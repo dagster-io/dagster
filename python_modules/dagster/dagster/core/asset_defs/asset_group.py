@@ -6,9 +6,9 @@ from collections import defaultdict
 from importlib import import_module
 from types import ModuleType
 from typing import (
-    AbstractSet,
     Any,
     Dict,
+    FrozenSet,
     Generator,
     Iterable,
     List,
@@ -16,9 +16,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     Union,
-    cast,
 )
 
 import dagster._check as check
@@ -27,10 +25,12 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning
 
+from ..definitions.asset_layer import build_asset_selection_job
 from ..definitions.executor_definition import ExecutorDefinition
 from ..definitions.job_definition import JobDefinition
 from ..definitions.partition import PartitionsDefinition
@@ -163,6 +163,7 @@ class AssetGroup:
         executor_def: Optional[ExecutorDefinition] = None,
         tags: Optional[Dict[str, Any]] = None,
         description: Optional[str] = None,
+        _asset_selection_data: Optional[AssetSelectionData] = None,
     ) -> JobDefinition:
         """Defines an executable job from the provided assets, resources, and executor.
 
@@ -204,75 +205,34 @@ class AssetGroup:
         from dagster.core.selector.subset_selector import parse_asset_selection
 
         check.str_param(name, "name")
+        check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
 
-        if not isinstance(selection, str):
+        selected_asset_keys: FrozenSet[AssetKey] = frozenset()
+        if isinstance(selection, str):
+            selected_asset_keys = parse_asset_selection(self.assets, [selection])
+        elif isinstance(selection, list):
             selection = check.opt_list_param(selection, "selection", of_type=str)
-        else:
-            selection = [selection]
+            selected_asset_keys = parse_asset_selection(self.assets, selection)
+        elif isinstance(selection, FrozenSet):
+            check.opt_set_param(selection, "selection", of_type=AssetKey)
+            selected_asset_keys = selection
+
         executor_def = check.opt_inst_param(
             executor_def, "executor_def", ExecutorDefinition, self.executor_def
         )
-        description = check.opt_str_param(description, "description")
-        resource_defs = {
-            **self.resource_defs,
-            **{"root_manager": build_root_manager(build_source_assets_by_key(self.source_assets))},
-        }
+        description = check.opt_str_param(description, "description", "")
+        tags = check.opt_dict_param(tags, "tags", key_type=str)
 
-        if selection:
-            selected_asset_keys = parse_asset_selection(self.assets, selection)
-            included_assets, excluded_assets = self._subset_assets_defs(selected_asset_keys)
-        else:
-            included_assets = cast(List[AssetsDefinition], self.assets)
-            # Call to list(...) serves as a copy constructor, so that we don't
-            # accidentally add to the original list
-            excluded_assets = list(self.source_assets)
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-            asset_job = build_assets_job(
-                name=name,
-                assets=included_assets,
-                source_assets=excluded_assets,
-                resource_defs=resource_defs,
-                executor_def=executor_def,
-                description=description,
-                tags=tags,
-            )
-        return asset_job
-
-    def _subset_assets_defs(
-        self, selected_asset_keys: AbstractSet[AssetKey]
-    ) -> Tuple[Sequence[AssetsDefinition], Sequence[AssetsDefinition]]:
-        """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
-        representing the included/excluded definitions.
-        """
-        included_assets: Set[AssetsDefinition] = set()
-        excluded_assets: Set[AssetsDefinition] = set()
-
-        for asset in self.assets:
-            # intersection
-            selected_subset = selected_asset_keys & asset.asset_keys
-            # all assets in this def are selected
-            if selected_subset == asset.asset_keys:
-                included_assets.add(asset)
-            # no assets in this def are selected
-            elif len(selected_subset) == 0:
-                excluded_assets.add(asset)
-            elif asset.can_subset:
-                # subset of the asset that we want
-                subset_asset = asset.subset_for(selected_asset_keys)
-                included_assets.add(subset_asset)
-                # subset of the asset that we don't want
-                excluded_assets.add(asset.subset_for(asset.asset_keys - subset_asset.asset_keys))
-            else:
-                raise DagsterInvalidDefinitionError(
-                    f"When building job, the AssetsDefinition '{asset.node_def.name}' "
-                    f"contains asset keys {sorted(list(asset.asset_keys))}, but "
-                    f"attempted to select only {sorted(list(selected_subset))}. "
-                    "This AssetsDefinition does not support subsetting. Please select all "
-                    "asset keys produced by this asset."
-                )
-        return list(included_assets), list(excluded_assets)
+        return build_asset_selection_job(
+            name=name,
+            assets=self.assets,
+            source_assets=self.source_assets,
+            executor_def=executor_def,
+            resource_defs=self.resource_defs,
+            description=description,
+            tags=tags,
+            asset_selection=selected_asset_keys,
+        )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
         """
@@ -660,10 +620,13 @@ def _validate_resource_reqs_for_asset_group(
 ):
     present_resource_keys = set(resource_defs.keys())
     for asset_def in asset_list:
-        resource_keys: Set[str] = set()
+        provided_resource_keys = set(asset_def.resource_defs.keys())
+        present_resource_keys = present_resource_keys.union(provided_resource_keys)
+
+        required_resource_keys: Set[str] = set()
         for op_def in asset_def.node_def.iterate_solid_defs():
-            resource_keys.update(set(op_def.required_resource_keys or {}))
-        missing_resource_keys = list(set(resource_keys) - present_resource_keys)
+            required_resource_keys.update(set(op_def.required_resource_keys or {}))
+        missing_resource_keys = list(set(required_resource_keys) - present_resource_keys)
         if missing_resource_keys:
             raise DagsterInvalidDefinitionError(
                 f"AssetGroup is missing required resource keys for asset '{asset_def.node_def.name}'. "

@@ -16,6 +16,11 @@ export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_reposito
   repositoryLocationName: string;
 }
 
+export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_assetSelection {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_tags {
   __typename: "PipelineTag";
   key: string;
@@ -36,6 +41,7 @@ export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results {
   pipelineName: string;
   repositoryOrigin: PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_repositoryOrigin | null;
   solidSelection: string[] | null;
+  assetSelection: PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_assetSelection[] | null;
   tags: PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_tags[];
   startTime: number | null;
   endTime: number | null;

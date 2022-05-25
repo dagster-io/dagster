@@ -4,6 +4,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional, Type
 
 import dagster._check as check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
@@ -167,6 +168,7 @@ def pipeline_run_from_storage(
     run_id=None,
     run_config=None,
     mode=None,
+    asset_selection=None,
     solid_selection=None,
     solids_to_execute=None,
     step_keys_to_execute=None,
@@ -196,6 +198,7 @@ def pipeline_run_from_storage(
     # * added solid_subset
     # * renamed solid_subset -> solid_selection, added solids_to_execute
     # * renamed environment_dict -> run_config
+    # * added asset_selection
 
     # back compat for environment dict => run_config
     if environment_dict:
@@ -254,6 +257,7 @@ def pipeline_run_from_storage(
         run_id=run_id,
         run_config=run_config,
         mode=mode,
+        asset_selection=asset_selection,
         solid_selection=solid_selection,
         solids_to_execute=solids_to_execute,
         step_keys_to_execute=step_keys_to_execute,
@@ -276,6 +280,7 @@ class PipelineRun(
             ("run_id", str),
             ("run_config", Mapping[str, object]),
             ("mode", Optional[str]),
+            ("asset_selection", Optional[FrozenSet[AssetKey]]),
             ("solid_selection", Optional[List[str]]),
             ("solids_to_execute", Optional[FrozenSet[str]]),
             ("step_keys_to_execute", Optional[List[str]]),
@@ -300,6 +305,7 @@ class PipelineRun(
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
         mode: Optional[str] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
         solid_selection: Optional[List[str]] = None,
         solids_to_execute: Optional[FrozenSet[str]] = None,
         step_keys_to_execute: Optional[List[str]] = None,
@@ -331,6 +337,10 @@ class PipelineRun(
         )
         check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
+        asset_selection = check.opt_nullable_set_param(
+            asset_selection, "asset_selection", of_type=AssetKey
+        )
+
         # Placing this with the other imports causes a cyclic import
         # https://github.com/dagster-io/dagster/issues/3181
         from dagster.core.host_representation.origin import ExternalPipelineOrigin
@@ -353,6 +363,7 @@ class PipelineRun(
             run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
             mode=check.opt_str_param(mode, "mode"),
             solid_selection=solid_selection,
+            asset_selection=asset_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=check.opt_inst_param(

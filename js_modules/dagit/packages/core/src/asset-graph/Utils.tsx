@@ -4,7 +4,10 @@ import uniq from 'lodash/uniq';
 
 import {AssetNodeDefinitionFragment} from '../assets/types/AssetNodeDefinitionFragment';
 
-import {AssetGraphLiveQuery_assetNodes_assetMaterializations} from './types/AssetGraphLiveQuery';
+import {
+  AssetGraphLiveQuery_assetsLatestInfo,
+  AssetGraphLiveQuery_assetNodes_assetMaterializations,
+} from './types/AssetGraphLiveQuery';
 import {
   AssetGraphQuery_assetNodes,
   AssetGraphQuery_assetNodes_assetKey,
@@ -14,7 +17,6 @@ import {
   RepositoryLiveFragment,
   RepositoryLiveFragment_latestRunByStep_run,
 } from './types/RepositoryLiveFragment';
-
 type AssetNode = AssetGraphQuery_assetNodes;
 type AssetKey = AssetGraphQuery_assetNodes_assetKey;
 
@@ -45,8 +47,8 @@ export interface GraphData {
   downstream: {[assetId: GraphId]: {[childAssetId: GraphId]: boolean}};
   upstream: {[assetId: GraphId]: {[parentAssetId: GraphId]: boolean}};
 }
-export const isSourceAsset = (node: {jobNames: string[]; opName: string | null}) => {
-  return node.jobNames.length === 0 && !node.opName;
+export const isSourceAsset = (node: {jobNames: string[]; opNames: string[]}) => {
+  return node.jobNames.length === 0 && !node.opNames.length;
 };
 
 export function identifyBundles(assetIds: string[]) {
@@ -229,6 +231,7 @@ export const buildLiveData = (
   graph: GraphData,
   nodes: AssetNodeLiveFragment[],
   repos: RepositoryLiveFragment[],
+  assetsLatestInfo: AssetGraphLiveQuery_assetsLatestInfo[],
 ) => {
   const data: LiveData = {};
 
@@ -244,8 +247,10 @@ export const buildLiveData = (
     const isPartitioned = graphNode.definition.partitionDefinition;
     const repo = repos.find((r) => r.id === liveNode.repository.id);
 
-    const runs = repo?.inProgressRunsByStep.find((r) => r.stepKey === liveNode.opName);
-    const info = repo?.latestRunByStep.find((r) => r.stepKey === liveNode.opName);
+    const assetLiveRuns = assetsLatestInfo.find(
+      (r) => JSON.stringify(r.assetKey) === JSON.stringify(liveNode.assetKey),
+    );
+    const info = repo?.latestRunByStep.find((r) => liveNode.opNames.includes(r.stepKey));
 
     const latestRunForStepKey = info?.__typename === 'LatestRun' ? info.run : null;
 
@@ -258,8 +263,8 @@ export const buildLiveData = (
     data[graphId] = {
       lastChanged,
       lastMaterialization,
-      inProgressRunIds: runs?.inProgressRuns.map((r) => r.id) || [],
-      unstartedRunIds: runs?.unstartedRuns.map((r) => r.id) || [],
+      inProgressRunIds: assetLiveRuns?.inProgressRunIds || [],
+      unstartedRunIds: assetLiveRuns?.unstartedRunIds || [],
       runWhichFailedToMaterialize,
       computeStatus: isSourceAsset(graphNode.definition)
         ? 'good' // foreign nodes are always considered up-to-date
@@ -311,18 +316,6 @@ export function displayNameForAssetKey(key: {path: string[]}) {
   return key.path.join(' / ');
 }
 
-export const IN_PROGRESS_RUNS_FRAGMENT = gql`
-  fragment InProgressRunsFragment on InProgressRunsByStep {
-    stepKey
-    unstartedRuns {
-      id
-    }
-    inProgressRuns {
-      id
-    }
-  }
-`;
-
 export const LAST_RUNS_WARNINGS_FRAGMENT = gql`
   fragment LastRunsWarningsFragment on LatestRun {
     stepKey
@@ -341,14 +334,10 @@ export const REPOSITORY_LIVE_FRAGMENT = gql`
       id
       name
     }
-    inProgressRunsByStep {
-      ...InProgressRunsFragment
-    }
     latestRunByStep {
       __typename
       ...LastRunsWarningsFragment
     }
   }
-  ${IN_PROGRESS_RUNS_FRAGMENT}
   ${LAST_RUNS_WARNINGS_FRAGMENT}
 `;
