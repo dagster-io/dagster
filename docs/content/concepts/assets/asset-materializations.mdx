@@ -15,6 +15,18 @@ Assets can also have partitions, which refer to slices of the overall asset. The
 
 Dagster lets you track the interactions between ops, outputs, and assets over time and view them in the Dagit [Asset Catalog](/concepts/dagit/dagit#assets). Every asset has a "key", which serves as a unique identifier for that particular entity. The act of creating or updating the contents of an asset is called a "materialization", and Dagster tracks these materializations using <PyObject object="AssetMaterialization" /> events. These events can either be logged by the user at runtime, or automatically created by Dagster in cases where an <PyObject object="AssetKey" /> has been referenced by an op output.
 
+The [Asset Catalog](/concepts/dagit/dagit#assets) shows all assets that have been materialized and allows you to wipe the asset or view other details about the asset.
+
+<!-- Reusing image linked from dagit.mdx -->
+
+<Image
+alt="Dagit Asset Catalog"
+src="/images/concepts/dagit/all-assets.png"
+width={3808}
+height={2414}
+/>
+
+
 ## Relevant APIs
 
 | Name                                                        | Description                                                    |
