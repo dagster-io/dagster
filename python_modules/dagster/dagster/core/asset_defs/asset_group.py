@@ -162,7 +162,7 @@ class AssetGroup:
     def build_job(
         self,
         name: str,
-        selection: Optional[Union[str, List[str], FrozenSet[AssetKey]]] = None,
+        selection: Optional[Union[str, List[str]]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
         tags: Optional[Dict[str, Any]] = None,
         description: Optional[str] = None,
@@ -209,7 +209,8 @@ class AssetGroup:
 
         check.str_param(name, "name")
         check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
-        selected_asset_keys = {}
+
+        selected_asset_keys: FrozenSet[AssetKey] = frozenset()
         if isinstance(selection, str):
             selected_asset_keys = parse_asset_selection(self.assets, [selection])
         elif isinstance(selection, list):
@@ -222,7 +223,8 @@ class AssetGroup:
         executor_def = check.opt_inst_param(
             executor_def, "executor_def", ExecutorDefinition, self.executor_def
         )
-        description = check.opt_str_param(description, "description")
+        description = check.opt_str_param(description, "description", "")
+        tags = check.opt_dict_param(tags, "tags", key_type=str)
 
         return build_asset_selection_job(
             name=name,

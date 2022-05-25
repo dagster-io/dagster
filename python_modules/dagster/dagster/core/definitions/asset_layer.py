@@ -24,7 +24,7 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils.backcompat import ExperimentalWarning
 
-from ..errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
+from ..errors import DagsterInvalidDefinitionError
 from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
@@ -502,7 +502,7 @@ def build_asset_selection_job(
     assets: Sequence["AssetsDefinition"],
     source_assets: Sequence[Union["AssetsDefinition", "SourceAsset"]],
     executor_def: ExecutorDefinition,
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
     description: str,
     tags: Dict[str, Any],
     asset_selection: Optional[FrozenSet[AssetKey]],
@@ -517,9 +517,9 @@ def build_asset_selection_job(
         resource_defs = _build_resource_defs(resource_defs, excluded_assets)
     else:
         included_assets = cast(List["AssetsDefinition"], assets)
-        # Call to list(...) serves as a copy constructor, so that we don't
+        # Slice [:] serves as a copy constructor, so that we don't
         # accidentally add to the original list
-        excluded_assets = list(source_assets)
+        excluded_assets = source_assets[:]
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=ExperimentalWarning)
@@ -541,10 +541,12 @@ def _subset_assets_defs(
     assets: Sequence["AssetsDefinition"],
     source_assets: Sequence[Union["AssetsDefinition", "SourceAsset"]],
     selected_asset_keys: AbstractSet[AssetKey],
-) -> Tuple[Sequence["AssetsDefinition"], Sequence["AssetsDefinition"]]:
+) -> Tuple[Sequence["AssetsDefinition"], Sequence[Union["AssetsDefinition", "SourceAsset"]]]:
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
     """
+    from dagster.core.asset_defs import AssetsDefinition
+
     included_assets: Set[AssetsDefinition] = set()
     excluded_assets: Set[AssetsDefinition] = set()
 
@@ -572,7 +574,7 @@ def _subset_assets_defs(
                 "asset keys produced by this asset."
             )
 
-    all_excluded_assets = list(excluded_assets) + source_assets
+    all_excluded_assets = [*excluded_assets, *source_assets]
 
     return list(included_assets), all_excluded_assets
 

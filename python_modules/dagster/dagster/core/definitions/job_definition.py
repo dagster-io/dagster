@@ -334,8 +334,8 @@ class JobDefinition(PipelineDefinition):
 
         new_job = build_asset_selection_job(
             name=self.name,
-            assets=self.asset_layer._assets_defs,
-            source_assets=self.asset_layer._source_asset_defs,
+            assets=self.asset_layer._assets_defs,  # pylint:disable=protected-access
+            source_assets=self.asset_layer._source_asset_defs,  # pylint:disable=protected-access
             executor_def=self.executor_def,
             resource_defs=self.resource_defs,
             description=self.description,
