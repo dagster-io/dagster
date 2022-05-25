@@ -51,9 +51,8 @@ class LocalExternalStepLauncher(StepLauncher):
     def launch_step(
         self,
         step_context: StepExecutionContext,
-        prior_attempts_count: int,
     ) -> Iterator[DagsterEvent]:
-        step_run_ref = step_context_to_step_run_ref(step_context, prior_attempts_count)
+        step_run_ref = step_context_to_step_run_ref(step_context)
         run_id = step_context.pipeline_run.run_id
 
         step_run_dir = os.path.join(self.scratch_dir, run_id, step_run_ref.step_key)
@@ -108,14 +107,11 @@ def _module_in_package_dir(file_path: str, package_dir: str) -> str:
 
 def step_context_to_step_run_ref(
     step_context: StepExecutionContext,
-    prior_attempts_count: int,
     package_dir: Optional[str] = None,
 ) -> StepRunRef:
     """
     Args:
         step_context (StepExecutionContext): The step context.
-        prior_attempts_count (int): The number of times this time has been tried before in the same
-            pipeline run.
         package_dir (Optional[str]): If set, the reconstruction file code pointer will be converted
             to be relative a module pointer relative to the package root.  This enables executing
             steps in remote setups where the package containing the pipeline resides at a different
@@ -127,7 +123,6 @@ def step_context_to_step_run_ref(
     """
 
     check.inst_param(step_context, "step_context", StepExecutionContext)
-    check.int_param(prior_attempts_count, "prior_attempts_count")
 
     retry_mode = step_context.retry_mode
 
@@ -161,7 +156,6 @@ def step_context_to_step_run_ref(
         step_key=step_context.step.key,
         retry_mode=retry_mode,
         recon_pipeline=recon_pipeline,  # type: ignore
-        prior_attempts_count=prior_attempts_count,
         known_state=step_context.get_known_state(),
     )
 

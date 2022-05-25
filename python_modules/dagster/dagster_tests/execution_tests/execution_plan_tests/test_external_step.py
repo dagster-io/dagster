@@ -69,12 +69,12 @@ def make_run_config(scratch_dir, mode):
 
 
 class RequestRetryLocalExternalStepLauncher(LocalExternalStepLauncher):
-    def launch_step(self, step_context, prior_attempts_count):
-        if prior_attempts_count == 0:
+    def launch_step(self, step_context):
+        if step_context.previous_attempt_count == 0:
             raise RetryRequested()
         else:
             return super(RequestRetryLocalExternalStepLauncher, self).launch_step(
-                step_context, prior_attempts_count
+                step_context, step_context.previous_attempt_count
             )
 
 
@@ -323,7 +323,7 @@ def test_step_context_to_step_run_ref():
     with DagsterInstance.ephemeral() as instance:
         step_context = initialize_step_context("", instance)
         step = step_context.step
-        step_run_ref = step_context_to_step_run_ref(step_context, 0)
+        step_run_ref = step_context_to_step_run_ref(step_context)
         assert step_run_ref.run_config == step_context.pipeline_run.run_config
         assert step_run_ref.run_id == step_context.pipeline_run.run_id
 
@@ -344,7 +344,7 @@ def test_local_external_step_launcher():
             step_context = initialize_step_context(tmpdir, instance)
 
             step_launcher = LocalExternalStepLauncher(tmpdir)
-            events = list(step_launcher.launch_step(step_context, 0))
+            events = list(step_launcher.launch_step(step_context))
             event_types = [event.event_type for event in events]
             assert DagsterEventType.STEP_START in event_types
             assert DagsterEventType.STEP_SUCCESS in event_types
