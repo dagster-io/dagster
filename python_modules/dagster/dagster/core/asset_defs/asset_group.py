@@ -9,6 +9,7 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
+    FrozenSet,
     Generator,
     Iterable,
     List,
@@ -27,10 +28,12 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning
 
+from ..definitions.asset_layer import build_asset_selection_job
 from ..definitions.executor_definition import ExecutorDefinition
 from ..definitions.job_definition import JobDefinition
 from ..definitions.partition import PartitionsDefinition
@@ -159,10 +162,11 @@ class AssetGroup:
     def build_job(
         self,
         name: str,
-        selection: Optional[Union[str, List[str]]] = None,
+        selection: Optional[Union[str, List[str], FrozenSet[AssetKey]]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
         tags: Optional[Dict[str, Any]] = None,
         description: Optional[str] = None,
+        _asset_selection_data: Optional[AssetSelectionData] = None,
     ) -> JobDefinition:
         """Defines an executable job from the provided assets, resources, and executor.
 
@@ -204,72 +208,32 @@ class AssetGroup:
         from dagster.core.selector.subset_selector import parse_asset_selection
 
         check.str_param(name, "name")
-
-        if not isinstance(selection, str):
+        check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
+        selected_asset_keys = {}
+        if isinstance(selection, str):
+            selected_asset_keys = parse_asset_selection(self.assets, [selection])
+        elif isinstance(selection, list):
             selection = check.opt_list_param(selection, "selection", of_type=str)
-        else:
-            selection = [selection]
+            selected_asset_keys = parse_asset_selection(self.assets, selection)
+        elif isinstance(selection, FrozenSet):
+            check.opt_set_param(selection, "selection", of_type=AssetKey)
+            selected_asset_keys = selection
+
         executor_def = check.opt_inst_param(
             executor_def, "executor_def", ExecutorDefinition, self.executor_def
         )
         description = check.opt_str_param(description, "description")
-        resource_defs = build_resource_defs(self.resource_defs, self.source_assets)
 
-        if selection:
-            selected_asset_keys = parse_asset_selection(self.assets, selection)
-            included_assets, excluded_assets = self._subset_assets_defs(selected_asset_keys)
-        else:
-            included_assets = cast(List[AssetsDefinition], self.assets)
-            # Call to list(...) serves as a copy constructor, so that we don't
-            # accidentally add to the original list
-            excluded_assets = list(self.source_assets)
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-            asset_job = build_assets_job(
-                name=name,
-                assets=included_assets,
-                source_assets=excluded_assets,
-                resource_defs=resource_defs,
-                executor_def=executor_def,
-                description=description,
-                tags=tags,
-            )
-        return asset_job
-
-    def _subset_assets_defs(
-        self, selected_asset_keys: AbstractSet[AssetKey]
-    ) -> Tuple[Sequence[AssetsDefinition], Sequence[AssetsDefinition]]:
-        """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
-        representing the included/excluded definitions.
-        """
-        included_assets: Set[AssetsDefinition] = set()
-        excluded_assets: Set[AssetsDefinition] = set()
-
-        for asset in self.assets:
-            # intersection
-            selected_subset = selected_asset_keys & asset.asset_keys
-            # all assets in this def are selected
-            if selected_subset == asset.asset_keys:
-                included_assets.add(asset)
-            # no assets in this def are selected
-            elif len(selected_subset) == 0:
-                excluded_assets.add(asset)
-            elif asset.can_subset:
-                # subset of the asset that we want
-                subset_asset = asset.subset_for(selected_asset_keys)
-                included_assets.add(subset_asset)
-                # subset of the asset that we don't want
-                excluded_assets.add(asset.subset_for(asset.asset_keys - subset_asset.asset_keys))
-            else:
-                raise DagsterInvalidDefinitionError(
-                    f"When building job, the AssetsDefinition '{asset.node_def.name}' "
-                    f"contains asset keys {sorted(list(asset.asset_keys))}, but "
-                    f"attempted to select only {sorted(list(selected_subset))}. "
-                    "This AssetsDefinition does not support subsetting. Please select all "
-                    "asset keys produced by this asset."
-                )
-        return list(included_assets), list(excluded_assets)
+        return build_asset_selection_job(
+            name=name,
+            assets=self.assets,
+            source_assets=self.source_assets,
+            executor_def=executor_def,
+            resource_defs=self.resource_defs,
+            description=description,
+            tags=tags,
+            asset_selection=selected_asset_keys,
+        )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
         """
@@ -616,13 +580,6 @@ class AssetGroup:
             and self.resource_defs == other.resource_defs
             and self.executor_def == other.executor_def
         )
-
-
-def build_resource_defs(resource_defs, source_assets):
-    return {
-        **resource_defs,
-        **{"root_manager": build_root_manager(build_source_assets_by_key(source_assets))},
-    }
 
 
 def _find_assets_in_module(

@@ -1,6 +1,7 @@
 import itertools
 import warnings
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Any,
     Dict,
@@ -45,6 +46,9 @@ from dagster.utils.merger import merge_dicts
 from .asset_partitions import get_upstream_partitions_for_partition_range
 from .assets import AssetsDefinition
 from .source_asset import SourceAsset
+
+if TYPE_CHECKING:
+    from dagster.core.asset_defs import AssetGroup
 
 
 @experimental
@@ -92,6 +96,8 @@ def build_assets_job(
     Returns:
         JobDefinition: A job that materializes the given assets.
     """
+    from dagster.core.asset_defs import AssetGroup
+
     check.str_param(name, "name")
     check.sequence_param(assets, "assets", of_type=AssetsDefinition)
     check.opt_sequence_param(
