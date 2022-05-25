@@ -21,6 +21,7 @@ from dagster.core.errors import (
     DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
 )
+from dagster.core.storage.io_manager import IOManagerDefinition
 from dagster.core.storage.output_manager import IOutputManagerDefinition
 from dagster.core.storage.root_input_manager import (
     IInputManagerDefinition,
@@ -245,6 +246,10 @@ class PipelineDefinition:
                 )
             self._preset_dict[preset.name] = preset
 
+        self._asset_layer = check.opt_inst_param(
+            asset_layer, "asset_layer", AssetLayer, default=AssetLayer.from_graph(self.graph)
+        )
+
         self._resource_requirements = {
             mode_def.name: _checked_resource_reqs_for_mode(
                 self._graph_def,
@@ -254,6 +259,7 @@ class PipelineDefinition:
                 self._graph_def.node_dict,
                 self._hook_defs,
                 self._graph_def._dependency_structure,
+                self._asset_layer,
             )
             for mode_def in self._mode_definitions
         }
@@ -272,10 +278,6 @@ class PipelineDefinition:
 
         if self.version_strategy is not None:
             experimental_class_warning("VersionStrategy")
-
-        self._asset_layer = check.opt_inst_param(
-            asset_layer, "asset_layer", AssetLayer, default=AssetLayer.from_graph(self.graph)
-        )
 
     @property
     def name(self):
@@ -733,6 +735,7 @@ def _checked_resource_reqs_for_mode(
     root_node_dict: Dict[str, Node],
     pipeline_hook_defs: AbstractSet[HookDefinition],
     dependency_structure: DependencyStructure,
+    asset_layer: AssetLayer,
 ) -> Set[str]:
     """
     Calculate the resource requirements for the pipeline in this mode and ensure they are
@@ -784,7 +787,7 @@ def _checked_resource_reqs_for_mode(
     # Validate unsatisfied inputs can be materialized from config
     resource_reqs.update(
         _checked_input_resource_reqs_for_mode(
-            top_level_graph_def, dependency_structure, root_node_dict, mode_def
+            top_level_graph_def, dependency_structure, root_node_dict, mode_def, asset_layer
         )
     )
 
@@ -898,8 +901,10 @@ def _checked_input_resource_reqs_for_mode(
     dependency_structure: DependencyStructure,
     node_dict: Dict[str, Node],
     mode_def: ModeDefinition,
+    asset_layer: AssetLayer,
     outer_dependency_structures: Optional[List[DependencyStructure]] = None,
     outer_solids: Optional[List[Node]] = None,
+    parent_node_handle: Optional[NodeHandle] = None,
 ) -> Set[str]:
     outer_dependency_structures = check.opt_list_param(
         outer_dependency_structures, "outer_dependency_structures", DependencyStructure
@@ -912,8 +917,14 @@ def _checked_input_resource_reqs_for_mode(
         for key, resource_def in mode_def.resource_defs.items()
         if isinstance(resource_def, RootInputManagerDefinition)
     )
+    mode_io_managers = set(
+        key
+        for key, resource_def in mode_def.resource_defs.items()
+        if isinstance(resource_def, IOManagerDefinition)
+    )
 
     for node in node_dict.values():
+        node_handle = NodeHandle(name=node.name, parent=parent_node_handle)
         if node.is_graph:
             graph_def = node.definition.ensure_graph_def()
             # check inner solids
@@ -923,9 +934,11 @@ def _checked_input_resource_reqs_for_mode(
                     dependency_structure=graph_def.dependency_structure,
                     node_dict=graph_def.node_dict,
                     mode_def=mode_def,
+                    asset_layer=asset_layer,
                     outer_dependency_structures=outer_dependency_structures
                     + [dependency_structure],
                     outer_solids=outer_solids + [node],
+                    parent_node_handle=node_handle,
                 )
             )
         for handle in node.input_handles():
@@ -976,10 +989,13 @@ def _checked_input_resource_reqs_for_mode(
             else:
                 # input is not connected to upstream output
                 input_def = handle.input_def
+                input_asset_key = asset_layer.asset_key_for_input(node_handle, input_def.name)
 
                 # Input is not nothing, not resolvable by config, and isn't
                 # mapped from a top-level output.
-                if not _is_input_resolvable(top_level_graph_def, input_def, node, outer_solids):
+                if not _is_input_resolvable(
+                    top_level_graph_def, input_def, node, outer_solids, input_asset_key
+                ):
                     raise DagsterInvalidDefinitionError(
                         f"Input '{input_def.name}' of {node.describe_node()} "
                         "has no upstream output, no default value, and no "
@@ -1004,17 +1020,32 @@ def _checked_input_resource_reqs_for_mode(
                             resource_defs_of_type=mode_root_input_managers,
                         )
                         raise DagsterInvalidDefinitionError(error_msg)
+                # If a root manager is not provided, but the input is associated with an asset, we
+                # can load the input using the io_manager for that asset
+                elif input_asset_key:
+                    io_manager_key = asset_layer.io_manager_key_for_asset(input_asset_key)
+                    resource_reqs.add(io_manager_key)
+                    if io_manager_key not in mode_def.resource_defs:
+                        error_msg = _get_missing_resource_error_msg(
+                            resource_type="io_manager",
+                            resource_key=io_manager_key,
+                            descriptor=f"unsatisfied input '{input_def.name}' of {node.describe_node()} with asset key {input_asset_key}",
+                            mode_def=mode_def,
+                            resource_defs_of_type=mode_io_managers,
+                        )
+                        raise DagsterInvalidDefinitionError(error_msg)
 
     return resource_reqs
 
 
-def _is_input_resolvable(graph_def, input_def, node, upstream_nodes):
+def _is_input_resolvable(graph_def, input_def, node, upstream_nodes, input_asset_key):
     # If input is not loadable via config, check if loadable via top-level input (meaning it is mapped all the way up the graph composition).
     if (
         not input_def.dagster_type.loader
         and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
         and not input_def.root_manager_key
         and not input_def.has_default_value
+        and not input_asset_key
     ):
         return _is_input_resolved_from_top_level(graph_def, input_def, node, upstream_nodes)
     else:
@@ -1124,6 +1155,7 @@ def _create_run_config_schema(
             required_resources=required_resources,
             is_using_graph_job_op_apis=pipeline_def.is_job,
             direct_inputs=get_direct_input_values_from_job(pipeline_def),
+            asset_layer=pipeline_def.asset_layer,
         )
     )
 
