@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import AssetKey, Out, Output, io_manager, IOManager
+from dagster import AssetKey, IOManager, Out, Output, io_manager
 from dagster._check import CheckError
 from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
@@ -231,7 +231,7 @@ def test_asset_with_io_manager_def():
 
     result = AssetGroup([the_asset]).materialize()
     assert result.success
-    assert outputs == ["entered for the_asset"]
+    assert events == ["entered for the_asset"]
 
 
 def test_multiple_assets_io_manager_defs():

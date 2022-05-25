@@ -53,7 +53,7 @@ def asset(
     description: Optional[str] = ...,
     required_resource_keys: Optional[Set[str]] = ...,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
-    io_manager_def: Optional[Union[Mapping[str, IOManagerDefinition], IOManagerDefinition]] = ...,
+    io_manager_def: Optional[IOManagerDefinition] = ...,
     io_manager_key: Optional[str] = ...,
     compute_kind: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
