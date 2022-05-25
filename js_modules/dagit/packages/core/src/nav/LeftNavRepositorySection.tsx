@@ -19,7 +19,7 @@ const LoadedRepositorySection: React.FC<{
   toggleVisible: (repoAddresses: RepoAddress[]) => void;
 }> = ({allRepos, visibleRepos, toggleVisible}) => {
   const location = useLocation();
-  const {flagSectionedLeftNav} = useFeatureFlags();
+  const {flagFlatLeftNav} = useFeatureFlags();
 
   const workspacePath = location.pathname.split('/workspace/').pop();
   const [, repoPath, type, item, tab] =
@@ -36,13 +36,13 @@ const LoadedRepositorySection: React.FC<{
 
   const listContent = () => {
     if (visibleRepos.length) {
-      if (flagSectionedLeftNav) {
-        return <SectionedLeftNav />;
+      if (flagFlatLeftNav) {
+        return (
+          <FlatContentList repoPath={repoPath} selector={selector} repos={visibleRepos} tab={tab} />
+        );
       }
 
-      return (
-        <FlatContentList repoPath={repoPath} selector={selector} repos={visibleRepos} tab={tab} />
-      );
+      return <SectionedLeftNav />;
     }
 
     if (allRepos.length > 0) {
