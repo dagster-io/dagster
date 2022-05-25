@@ -7,9 +7,6 @@ from docs_snippets.concepts.ops_jobs_graphs.dynamic import (
     naive,
     other_arg,
 )
-from docs_snippets.concepts.ops_jobs_graphs.dynamic_pipeline.dynamic_job import (
-    process_directory,
-)
 from docs_snippets.concepts.ops_jobs_graphs.fan_in_job import fan_in
 from docs_snippets.concepts.ops_jobs_graphs.jobs import (
     alias,
@@ -61,18 +58,6 @@ def test_fan_in():
     result = fan_in.execute_in_process()
     assert result.success
     assert result.output_for_node("sum_fan_in") == 10
-
-
-def test_dynamic():
-    result = process_directory.execute_in_process()
-    assert result.success
-
-    assert result.output_for_node("process_file") == {
-        "empty_stuff_bin": 0,
-        "program_py": 34,
-        "words_txt": 40,
-    }
-    assert result.output_for_node("summarize_directory") == 74
 
 
 def test_dep_dsl():

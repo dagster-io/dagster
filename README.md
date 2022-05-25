@@ -1,13 +1,12 @@
 <p align="center">
 <img src="assets/dagster-logo.png" />
 <br /><br />
-<a href="https://badge.fury.io/py/dagster"><img src="https://badge.fury.io/py/dagster.svg"></>
-<a href="https://coveralls.io/github/dagster-io/dagster?branch=master"><img src="https://coveralls.io/repos/github/dagster-io/dagster/badge.svg?branch=master"></a>
-<a href="https://buildkite.com/dagster/dagster"><img src="https://badge.buildkite.com/888545beab829e41e5d7303db15525a2bc3b0f0e33a72759ac.svg?branch=master"></a>
-<a href="https://dagster-slackin.herokuapp.com/"><img src="https://dagster-slackin.herokuapp.com/badge.svg"></a>
+<a href="https://twitter.com/dagsterio"><img src="https://img.shields.io/twitter/follow/dagsterio"></a>
+<a href="https://dagster.io/slack"><img src="https://dagster-slackin.herokuapp.com/badge.svg"></a>
+<a href="https://github.com/dagster-io/dagster"><img src="https://img.shields.io/github/stars/dagster-io/dagster?label=Star&style=social"></a>
 </p>
 
-# Dagster
+# [Dagster](https://dagster.io/) &middot; [![GitHub license](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/dagster-io/dagster/blob/master/LICENSE) [![PyPI Version](https://badge.fury.io/py/dagster.svg)](https://pypi.org/project/dagster/) [![Coveralls coverage](https://coveralls.io/repos/github/dagster-io/dagster/badge.svg?branch=master)](https://coveralls.io/github/dagster-io/dagster?branch=master)
 
 An orchestration platform for the development, production, and observation of data assets.
 

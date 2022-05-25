@@ -1,6 +1,7 @@
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
+import {DAGIT_FLAGS_KEY, FeatureFlag} from '../app/Flags';
 import {TestProvider} from '../testing/TestProvider';
 import {LocationStateChangeEventType} from '../types/globalTypes';
 import {HIDDEN_REPO_KEYS} from '../workspace/WorkspaceContext';
@@ -23,6 +24,14 @@ describe('Repository options', () => {
       eventType: () => LocationStateChangeEventType.LOCATION_UPDATED,
     }),
   };
+
+  beforeEach(() => {
+    window.localStorage.setItem(DAGIT_FLAGS_KEY, JSON.stringify([FeatureFlag.flagFlatLeftNav]));
+  });
+
+  afterEach(() => {
+    window.localStorage.clear();
+  });
 
   it('Correctly displays the current repository state', async () => {
     const mocks = {
@@ -57,10 +66,6 @@ describe('Repository options', () => {
   });
 
   describe('localStorage', () => {
-    beforeEach(() => {
-      window.localStorage.clear();
-    });
-
     const locationOne = 'ipsum';
     const repoOne = 'lorem';
     const locationTwo = 'bar';

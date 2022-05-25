@@ -312,6 +312,15 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
                 selected_outputs.add(output_name)
         return selected_outputs
 
+    def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
+        asset_output_info = self.pipeline_def.asset_layer.asset_info_for_output(
+            node_handle=self.op_handle, output_name=output_name
+        )
+        if asset_output_info is None:
+            check.failed(f"Output '{output_name}' has no asset")
+        else:
+            return asset_output_info.key
+
     def output_asset_partition_key(self, output_name: str = "result") -> str:
         """Returns the asset partition key for the given output. Defaults to "result", which is the
         name of the default output.

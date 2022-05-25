@@ -21825,7 +21825,7 @@ snapshots['test_all_snapshot_ids 29'] = '''{
       }
     ]
   },
-  "description": null,
+  "description": "",
   "graph_def_name": "foo_job",
   "lineage_snapshot": null,
   "mode_def_snaps": [
@@ -23175,7 +23175,7 @@ snapshots['test_all_snapshot_ids 3'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 30'] = '046bc61b12af12c19ec9f2f0e9bbf886b727a1ea'
+snapshots['test_all_snapshot_ids 30'] = '8d28524540c0b45084583be03e12091ad9ab1b5a'
 
 snapshots['test_all_snapshot_ids 31'] = '''{
   "__class__": "PipelineSnapshot",
@@ -24478,7 +24478,7 @@ snapshots['test_all_snapshot_ids 31'] = '''{
       }
     ]
   },
-  "description": null,
+  "description": "",
   "graph_def_name": "hanging_graph_asset_job",
   "lineage_snapshot": null,
   "mode_def_snaps": [
@@ -24773,7 +24773,7 @@ snapshots['test_all_snapshot_ids 31'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 32'] = 'af958a0fa4e0ec4c58474480fd769f01d9706833'
+snapshots['test_all_snapshot_ids 32'] = '049a7c852520e5ba22784c40172825640d0b2ef2'
 
 snapshots['test_all_snapshot_ids 33'] = '''{
   "__class__": "PipelineSnapshot",
