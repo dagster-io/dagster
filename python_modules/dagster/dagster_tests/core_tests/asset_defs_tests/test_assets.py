@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import AssetKey, Out, Output, io_manager
+from dagster import AssetKey, Out, Output, io_manager, IOManager
 from dagster._check import CheckError
 from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
@@ -212,19 +212,26 @@ def test_coerced_asset_keys():
 
 
 def test_asset_with_io_manager_def():
-    io_manager_inst = InMemoryIOManager()
+    events = []
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, _obj):
+            events.append(f"entered for {context.step_key}")
+
+        def load_input(self, _context):
+            pass
 
     @io_manager
     def the_io_manager():
-        return io_manager_inst
+        return MyIOManager()
 
     @asset(io_manager_def=the_io_manager)
     def the_asset():
-        return 5
+        pass
 
-    AssetGroup([the_asset]).materialize()
-
-    assert list(io_manager_inst.values.values())[0] == 5
+    result = AssetGroup([the_asset]).materialize()
+    assert result.success
+    assert outputs == ["entered for the_asset"]
 
 
 def test_multiple_assets_io_manager_defs():
@@ -236,7 +243,8 @@ def test_multiple_assets_io_manager_defs():
         num_times[0] += 1
         return io_manager_inst
 
-    # These will produce different instances of the io manager.
+    # Under the hood, these io managers are mapped to different asset keys, so
+    # we expect the io manager initialization to be called multiple times.
     @asset(io_manager_def=the_io_manager)
     def the_asset():
         return 5
