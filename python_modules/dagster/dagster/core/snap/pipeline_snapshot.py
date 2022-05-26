@@ -96,7 +96,7 @@ def _pipeline_snapshot_from_storage(
     v3:
         - metadata added
     """
-    breakpoint()
+    # breakpoint()
     if graph_def_name is None:
         graph_def_name = name
 
@@ -151,7 +151,7 @@ class PipelineSnapshot(
         graph_def_name: str,
         metadata: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]],
     ):
-        breakpoint()
+        # breakpoint()
         return super(PipelineSnapshot, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -181,7 +181,7 @@ class PipelineSnapshot(
 
     @classmethod
     def from_pipeline_def(cls, pipeline_def: PipelineDefinition) -> "PipelineSnapshot":
-        breakpoint()
+        # breakpoint()
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
         lineage = None
         if isinstance(pipeline_def, PipelineSubsetDefinition):

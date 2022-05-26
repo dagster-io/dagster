@@ -109,7 +109,7 @@ class DagsterGraphQLClient:
             valid_nodes: Iterable[PipelineInfo] = chain(
                 *map(PipelineInfo.from_node, query_res["nodes"])
             )
-            breakpoint()
+            # breakpoint()
             return [info for info in valid_nodes if info.pipeline_name == pipeline_name]
         else:
             raise DagsterGraphQLClientError(repo_connection_status, query_res["message"])
