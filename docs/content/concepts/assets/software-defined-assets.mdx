@@ -75,7 +75,7 @@ Consider the following example:
 2. `downstream_asset` then creates a new table (`shopping_list`) by selecting records from `sugary_cereals`
 
 ```python file=/concepts/assets/non_argument_deps.py startafter=start_marker endbefore=end_marker
-from dagster import asset
+from dagster import asset, resource
 
 
 @asset
@@ -83,7 +83,7 @@ def upstream_asset():
     execute_query("CREATE TABLE sugary_cereals AS SELECT * FROM cereals")
 
 
-@asset(non_argument_deps=["upstream_asset"])
+@asset(non_argument_deps={"upstream_asset"})
 def downstream_asset():
     execute_query("CREATE TABLE shopping_list AS SELECT * FROM sugary_cereals")
 ```
