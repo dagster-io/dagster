@@ -1,7 +1,8 @@
 import io
 import pickle
+from typing import Union
 
-from dagster import Field, MemoizableIOManager, StringSource
+from dagster import Field, InputContext, MemoizableIOManager, OutputContext, StringSource
 from dagster import _check as check
 from dagster import io_manager
 from dagster.utils import PICKLE_PROTOCOL
@@ -19,8 +20,8 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         self.s3 = s3_session
         self.s3.list_objects(Bucket=self.bucket, Prefix=self.s3_prefix, MaxKeys=1)
 
-    def _get_path(self, context):
-        return "/".join([self.s3_prefix, "storage", *context.get_output_identifier()])
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+        return "/".join([self.s3_prefix, "storage", *context.get_identifier()])
 
     def has_output(self, context):
         key = self._get_path(context)
@@ -52,7 +53,7 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         return "s3://" + self.bucket + "/" + "{key}".format(key=key)
 
     def load_input(self, context):
-        key = self._get_path(context.upstream_output)
+        key = self._get_path(context)
         context.log.debug(f"Loading S3 object from: {self._uri_for_key(key)}")
         obj = pickle.loads(self.s3.get_object(Bucket=self.bucket, Key=key)["Body"].read())
 
@@ -110,8 +111,8 @@ def s3_pickle_io_manager(init_context):
 
 
 class PickledObjectS3AssetIOManager(PickledObjectS3IOManager):
-    def _get_path(self, context):
-        return "/".join([self.s3_prefix, *context.get_asset_output_identifier()])
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+        return "/".join([self.s3_prefix, *context.get_asset_identifier()])
 
 
 @io_manager(

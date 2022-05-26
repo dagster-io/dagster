@@ -1,5 +1,6 @@
 import os
 import pickle
+from typing import Union
 
 import dagster._check as check
 from dagster.config import Field
@@ -104,14 +105,19 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         self.write_mode = "wb"
         self.read_mode = "rb"
 
-    def _get_path(self, context):
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         """Automatically construct filepath."""
+<<<<<<< HEAD
         if context.has_asset_key:
             path = context.get_asset_output_identifier()
         else:
             path = context.get_output_identifier()
 
         return os.path.join(self.base_dir, *path)
+=======
+        identifier = context.get_identifier()
+        return os.path.join(self.base_dir, *identifier)
+>>>>>>> d072b4102d60f2a65a0e6709e55e8226a384ef0f
 
     def has_output(self, context):
         filepath = self._get_path(context)
@@ -161,7 +167,7 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         """Unpickle the file and Load it to a data object."""
         check.inst_param(context, "context", InputContext)
 
-        filepath = self._get_path(context.upstream_output)
+        filepath = self._get_path(context)
         context.add_input_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
 
         with open(filepath, self.read_mode) as read_obj:

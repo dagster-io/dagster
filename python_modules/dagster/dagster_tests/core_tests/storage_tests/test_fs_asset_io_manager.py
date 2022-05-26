@@ -2,8 +2,8 @@ import os
 import pickle
 import tempfile
 
-from dagster import DailyPartitionsDefinition
-from dagster.core.asset_defs import AssetIn, asset, build_assets_job
+from dagster import AssetKey, DailyPartitionsDefinition, Out, Output, StaticPartitionsDefinition
+from dagster.core.asset_defs import AssetGroup, AssetIn, asset, build_assets_job, multi_asset
 from dagster.core.storage.fs_io_manager import fs_io_manager
 
 
@@ -83,3 +83,41 @@ def test_fs_io_manager_partitioned():
         assert os.path.isfile(filepath_b)
         with open(filepath_b, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3, 4]
+
+
+def test_fs_io_manager_partitioned_multi_asset():
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
+
+        partitions = StaticPartitionsDefinition(["A"])
+
+        @multi_asset(
+            partitions_def=partitions,
+            outs={
+                "out_1": Out(asset_key=AssetKey("upstream_asset_1")),
+                "out_2": Out(asset_key=AssetKey("upstream_asset_2")),
+            },
+        )
+        def upstream_asset():
+            return (Output(1, output_name="out_1"), Output(2, output_name="out_2"))
+
+        @asset(
+            partitions_def=partitions,
+        )
+        def downstream_asset(upstream_asset_1: int) -> int:
+            del upstream_asset_1
+            return 2
+
+        group = AssetGroup(
+            [upstream_asset, downstream_asset], resource_defs={"io_manager": io_manager_def}
+        )
+
+        job = group.build_job(name="TheJob")
+
+        result = job.execute_in_process(partition_key="A")
+        assert result.success
+
+        handled_output_events = list(
+            filter(lambda evt: evt.is_handled_output, result.all_node_events)
+        )
+        assert len(handled_output_events) == 3

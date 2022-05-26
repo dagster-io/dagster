@@ -43,6 +43,7 @@ def create_creation_data(pipeline_def):
         direct_inputs=pipeline_def._input_values  # pylint: disable = protected-access
         if pipeline_def.is_job
         else {},
+        asset_layer=pipeline_def.asset_layer,
     )
 
 
@@ -289,6 +290,7 @@ def test_solid_config_error():
         parent_handle=None,
         resource_defs={},
         is_using_graph_job_op_apis=False,
+        asset_layer=pipeline_def.asset_layer,
     )
 
     int_solid_config_type = solid_dict_type.fields["int_config_solid"].config_type
