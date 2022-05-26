@@ -33,12 +33,6 @@ export interface AssetObservationFragment_runOrError_Run {
 
 export type AssetObservationFragment_runOrError = AssetObservationFragment_runOrError_RunNotFoundError | AssetObservationFragment_runOrError_Run;
 
-export interface AssetObservationFragment_stepStats {
-  __typename: "RunStepStats";
-  endTime: number | null;
-  startTime: number | null;
-}
-
 export interface AssetObservationFragment_metadataEntries_PathMetadataEntry {
   __typename: "PathMetadataEntry";
   label: string;
@@ -204,7 +198,6 @@ export interface AssetObservationFragment {
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetObservationFragment_stepStats;
   label: string;
   description: string | null;
   metadataEntries: AssetObservationFragment_metadataEntries[];

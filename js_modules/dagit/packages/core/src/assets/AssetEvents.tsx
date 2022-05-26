@@ -364,10 +364,6 @@ const ASSET_EVENTS_QUERY = gql`
     runId
     timestamp
     stepKey
-    stepStats {
-      endTime
-      startTime
-    }
     label
     description
     metadataEntries {
