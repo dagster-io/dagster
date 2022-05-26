@@ -8,7 +8,7 @@ def execute_query(query):
 from dagster import asset, resource
 
 
-@asset()
+@asset
 def upstream_asset():
     execute_query("CREATE TABLE sugary_cereals AS SELECT * FROM cereals")
 
