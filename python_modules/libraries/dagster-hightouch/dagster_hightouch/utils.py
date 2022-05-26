@@ -45,7 +45,7 @@ def parse_sync_run_details(sync_run_details) -> Type[SyncRunParsedOutput]:
 
 def generate_metadata_from_parsed_run(parsed_output: SyncRunParsedOutput):
     return {
-        "elapsed_seconds": MetadataValue.int(parsed_output.elapsed_seconds or 0),
+        "elapsed_seconds": parsed_output.elapsed_seconds or 0,
         "planned_add": parsed_output.planned_add,
         "planned_change": parsed_output.planned_change,
         "planned_remove": parsed_output.planned_remove,
