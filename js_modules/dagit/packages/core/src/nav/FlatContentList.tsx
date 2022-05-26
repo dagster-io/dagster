@@ -5,6 +5,7 @@ import styled from 'styled-components/macro';
 
 import {isAssetGroup} from '../asset-graph/Utils';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
+import {humanCronString} from '../schedules/humanCronString';
 import {InstigationStatus} from '../types/globalTypes';
 import {
   DagsterRepoOption,
@@ -17,6 +18,7 @@ import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {Item, Items} from './RepositoryContentList';
+import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
 
 interface Props {
   selector?: string;
@@ -25,13 +27,14 @@ interface Props {
   repoPath?: string;
 }
 
-type JobItem = {
+export type JobItemType = {
   name: string;
   isJob: boolean;
   label: React.ReactNode;
+  path: string;
   repoAddress: RepoAddress;
-  schedule: WorkspaceRepositorySchedule | null;
-  sensor: WorkspaceRepositorySensor | null;
+  schedules: WorkspaceRepositorySchedule[];
+  sensors: WorkspaceRepositorySensor[];
 };
 
 export const FlatContentList: React.FC<Props> = (props) => {
@@ -45,43 +48,15 @@ export const FlatContentList: React.FC<Props> = (props) => {
   }, [repos]);
 
   const jobs = React.useMemo(() => {
-    const items: JobItem[] = [];
+    const items: JobItemType[] = [];
 
-    for (const {repository, repositoryLocation} of repos) {
+    for (const option of repos) {
+      const {repository, repositoryLocation} = option;
       const address = buildRepoAddress(repository.name, repositoryLocation.name);
       if (!activeRepoAddresses.has(address)) {
         continue;
       }
-
-      const {schedules, sensors} = repository;
-      for (const pipeline of repository.pipelines) {
-        if (isAssetGroup(pipeline.name)) {
-          continue;
-        }
-
-        const {isJob, name} = pipeline;
-        const schedule = schedules.find((schedule) => schedule.pipelineName === name) || null;
-        const sensor =
-          sensors.find((sensor) =>
-            sensor.targets?.map((target) => target.pipelineName).includes(name),
-          ) || null;
-        items.push({
-          name,
-          isJob,
-          label: (
-            <Label $hasIcon={!!(schedule || sensor) || !isJob}>
-              <TruncatingName data-tooltip={name} data-tooltip-style={LabelTooltipStyles}>
-                {name}
-              </TruncatingName>
-              <div style={{flex: 1}} />
-              {isJob ? null : <LegacyPipelineTag />}
-            </Label>
-          ),
-          repoAddress: address,
-          schedule,
-          sensor,
-        });
-      }
+      items.push(...getJobItemsForOption(option));
     }
 
     return items.sort((a, b) =>
@@ -114,54 +89,148 @@ export const FlatContentList: React.FC<Props> = (props) => {
   );
 };
 
+export const getJobItemsForOption = (option: DagsterRepoOption) => {
+  const items: JobItemType[] = [];
+
+  const {repository, repositoryLocation} = option;
+  const address = buildRepoAddress(repository.name, repositoryLocation.name);
+
+  const {schedules, sensors} = repository;
+  for (const pipeline of repository.pipelines) {
+    if (isAssetGroup(pipeline.name)) {
+      continue;
+    }
+
+    const {isJob, name} = pipeline;
+    const schedulesForJob = schedules.filter((schedule) => schedule.pipelineName === name);
+    const sensorsForJob = sensors.filter((sensor) =>
+      sensor.targets?.map((target) => target.pipelineName).includes(name),
+    );
+    items.push({
+      name,
+      isJob,
+      label: (
+        <Label $hasIcon={!!(schedules.length || sensors.length) || !isJob}>
+          <TruncatingName data-tooltip={name} data-tooltip-style={LabelTooltipStyles}>
+            {name}
+          </TruncatingName>
+          <div style={{flex: 1}} />
+          {isJob ? null : <LegacyPipelineTag />}
+        </Label>
+      ),
+      path: workspacePathFromAddress(address, `/${isJob ? 'jobs' : 'pipelines'}/${name}`),
+      repoAddress: address,
+      schedules: schedulesForJob,
+      sensors: sensorsForJob,
+    });
+  }
+
+  return items;
+};
+
 interface JobItemProps {
-  job: JobItem;
+  job: JobItemType;
   repoPath?: string;
   selector?: string;
 }
 
-const JobItem: React.FC<JobItemProps> = (props) => {
+export const JobItem: React.FC<JobItemProps> = (props) => {
   const {job: jobItem, repoPath, selector} = props;
-  const {name, isJob, label, repoAddress, schedule, sensor} = jobItem;
+  const {name, label, path, repoAddress, schedules, sensors} = jobItem;
+
+  const [showDialog, setShowDialog] = React.useState(false);
 
   const jobRepoPath = repoAddressAsString(repoAddress);
 
   const icon = () => {
-    if (!schedule && !sensor) {
+    const scheduleCount = schedules.length;
+    const sensorCount = sensors.length;
+
+    if (!scheduleCount && !sensorCount) {
       return null;
     }
 
-    const whichIcon = schedule ? 'schedule' : 'sensors';
-    const status = schedule ? schedule?.scheduleState.status : sensor?.sensorState.status;
-    const tooltipContent = schedule ? (
-      <>
-        Schedule: <strong>{schedule.name}</strong>
-      </>
-    ) : (
-      <>
-        Sensor: <strong>{sensor?.name}</strong>
-      </>
-    );
-    const path = schedule ? `/schedules/${schedule.name}` : `/sensors/${sensor?.name}`;
+    const whichIcon = scheduleCount ? 'schedule' : 'sensors';
+    const needsDialog = scheduleCount > 1 || sensorCount > 1 || (scheduleCount && sensorCount);
+
+    const status = () => {
+      return schedules.some(
+        (schedule) => schedule.scheduleState.status === InstigationStatus.RUNNING,
+      ) || sensors.some((sensor) => sensor.sensorState.status === InstigationStatus.RUNNING)
+        ? InstigationStatus.RUNNING
+        : InstigationStatus.STOPPED;
+    };
+
+    const tooltipContent = () => {
+      if (scheduleCount && sensorCount) {
+        const scheduleString = scheduleCount > 1 ? `${scheduleCount} schedules` : '1 schedule';
+        const sensorString = sensorCount > 1 ? `${sensorCount} sensors` : '1 sensor';
+        return `${scheduleString}, ${sensorString}`;
+      }
+
+      if (scheduleCount) {
+        return scheduleCount === 1 ? (
+          <div>
+            Schedule: <strong>{humanCronString(schedules[0].cronSchedule)}</strong>
+          </div>
+        ) : (
+          `${scheduleCount} schedules`
+        );
+      }
+
+      return sensorCount === 1 ? (
+        <div>
+          Sensor: <strong>{sensors[0].name}</strong>
+        </div>
+      ) : (
+        `${sensorCount} sensors`
+      );
+    };
+
+    const link = () => {
+      const icon = (
+        <Icon
+          name={whichIcon}
+          color={status() === InstigationStatus.RUNNING ? Colors.Green500 : Colors.Gray600}
+        />
+      );
+
+      if (needsDialog) {
+        return (
+          <SensorScheduleDialogButton onClick={() => setShowDialog(true)}>
+            {icon}
+          </SensorScheduleDialogButton>
+        );
+      }
+
+      const path = scheduleCount
+        ? `/schedules/${schedules[0].name}`
+        : `/sensors/${sensors[0].name}`;
+      return <Link to={workspacePathFromAddress(repoAddress, path)}>{icon}</Link>;
+    };
 
     return (
-      <IconWithTooltip content={tooltipContent}>
-        <Link to={workspacePathFromAddress(repoAddress, path)}>
-          <Icon
-            name={whichIcon}
-            color={status === InstigationStatus.RUNNING ? Colors.Green500 : Colors.Gray600}
+      <>
+        <IconWithTooltip content={tooltipContent()}>{link()}</IconWithTooltip>
+        {needsDialog ? (
+          <ScheduleAndSensorDialog
+            isOpen={showDialog}
+            onClose={() => setShowDialog(false)}
+            repoAddress={repoAddress}
+            schedules={schedules}
+            sensors={sensors}
+            showSwitch
           />
-        </Link>
-      </IconWithTooltip>
+        ) : null}
+      </>
     );
   };
 
   return (
     <ItemContainer>
       <Item
-        key={name}
         className={`${name === selector && repoPath === jobRepoPath ? 'selected' : ''}`}
-        to={workspacePathFromAddress(repoAddress, `/${isJob ? 'jobs' : 'pipelines'}/${name}`)}
+        to={path}
       >
         <div>{label}</div>
       </Item>
@@ -177,6 +246,20 @@ const Label = styled.div<{$hasIcon: boolean}>`
   align-items: center;
   gap: 8px;
   width: ${({$hasIcon}) => ($hasIcon ? '260px' : '280px')};
+`;
+
+const SensorScheduleDialogButton = styled.button`
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  cursor: pointer;
+
+  :focus,
+  :active,
+  :hover {
+    outline: none;
+  }
 `;
 
 const LabelTooltipStyles = JSON.stringify({

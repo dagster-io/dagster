@@ -30,6 +30,11 @@ export interface LaunchPipelineExecution_launchPipelineExecution_PipelineNotFoun
   message: string;
 }
 
+export interface LaunchPipelineExecution_launchPipelineExecution_InvalidSubsetError {
+  __typename: "InvalidSubsetError";
+  message: string;
+}
+
 export interface LaunchPipelineExecution_launchPipelineExecution_RunConfigValidationInvalid_errors {
   __typename: "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "MissingFieldConfigError" | "MissingFieldsConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
   message: string;
@@ -53,7 +58,7 @@ export interface LaunchPipelineExecution_launchPipelineExecution_PythonError {
   cause: LaunchPipelineExecution_launchPipelineExecution_PythonError_cause | null;
 }
 
-export type LaunchPipelineExecution_launchPipelineExecution = LaunchPipelineExecution_launchPipelineExecution_InvalidStepError | LaunchPipelineExecution_launchPipelineExecution_LaunchRunSuccess | LaunchPipelineExecution_launchPipelineExecution_PipelineNotFoundError | LaunchPipelineExecution_launchPipelineExecution_RunConfigValidationInvalid | LaunchPipelineExecution_launchPipelineExecution_PythonError;
+export type LaunchPipelineExecution_launchPipelineExecution = LaunchPipelineExecution_launchPipelineExecution_InvalidStepError | LaunchPipelineExecution_launchPipelineExecution_LaunchRunSuccess | LaunchPipelineExecution_launchPipelineExecution_PipelineNotFoundError | LaunchPipelineExecution_launchPipelineExecution_InvalidSubsetError | LaunchPipelineExecution_launchPipelineExecution_RunConfigValidationInvalid | LaunchPipelineExecution_launchPipelineExecution_PythonError;
 
 export interface LaunchPipelineExecution {
   launchPipelineExecution: LaunchPipelineExecution_launchPipelineExecution;

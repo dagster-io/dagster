@@ -38,6 +38,7 @@ from dagster.core.execution.plan.external_step import (
     step_context_to_step_run_ref,
     step_run_ref_to_step_context,
 )
+from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -311,7 +312,10 @@ def initialize_step_context(scratch_dir, instance):
         pass
     pipeline_context = initialization_manager.get_context()
 
-    step_context = pipeline_context.for_step(plan.get_step_by_key("return_two"))
+    step_context = pipeline_context.for_step(
+        plan.get_step_by_key("return_two"),
+        KnownExecutionState(),
+    )
     return step_context
 
 

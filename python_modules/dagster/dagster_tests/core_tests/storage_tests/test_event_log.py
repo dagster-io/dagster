@@ -84,7 +84,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
     def cmd(self, exceptions, tmpdir_path):
         storage = SqliteEventLogStorage(tmpdir_path)
         try:
-            storage.get_logs_for_run_by_log_id("foo")
+            storage.get_logs_for_run("foo")
         except Exception as exc:
             exceptions.put(exc)
             exc_info = sys.exc_info()

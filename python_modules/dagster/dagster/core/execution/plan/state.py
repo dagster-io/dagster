@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, List, NamedTuple, cast
+from typing import Dict, List, NamedTuple, Optional, Set, cast
 
 import dagster._check as check
 from dagster.core.events.log import EventLogEntry
@@ -40,6 +40,7 @@ class KnownExecutionState(
             ("dynamic_mappings", Dict[str, Dict[str, List[str]]]),
             # step_output_handle -> version
             ("step_output_versions", List[StepOutputVersionData]),
+            ("ready_outputs", Set[StepOutputHandle]),
         ],
     )
 ):
@@ -49,17 +50,26 @@ class KnownExecutionState(
     resolved dynamic outputs.
     """
 
-    def __new__(cls, previous_retry_attempts, dynamic_mappings, step_output_versions=None):
+    def __new__(
+        cls,
+        previous_retry_attempts: Optional[Dict[str, int]] = None,
+        dynamic_mappings: Optional[Dict[str, Dict[str, List[str]]]] = None,
+        step_output_versions: Optional[List[StepOutputVersionData]] = None,
+        ready_outputs: Optional[Set[StepOutputHandle]] = None,
+    ):
 
         return super(KnownExecutionState, cls).__new__(
             cls,
-            check.dict_param(
+            check.opt_dict_param(
                 previous_retry_attempts, "previous_retry_attempts", key_type=str, value_type=int
             ),
-            check.dict_param(dynamic_mappings, "dynamic_mappings", key_type=str, value_type=dict),
+            check.opt_dict_param(
+                dynamic_mappings, "dynamic_mappings", key_type=str, value_type=dict
+            ),
             check.opt_list_param(
                 step_output_versions, "step_output_versions", of_type=StepOutputVersionData
             ),
+            check.opt_set_param(ready_outputs, "ready_outputs", StepOutputHandle),
         )
 
     def get_retry_state(self):

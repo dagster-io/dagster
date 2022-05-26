@@ -102,6 +102,8 @@ export function handleLaunchResult(
       });
     }
     document.dispatchEvent(new CustomEvent('run-launched'));
+  } else if (obj.__typename === 'InvalidSubsetError') {
+    showCustomAlert({body: obj.message});
   } else if (obj.__typename === 'PythonError') {
     showCustomAlert({
       title: 'Error',
@@ -213,6 +215,9 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
       ... on PipelineNotFoundError {
         message
       }
+      ... on InvalidSubsetError {
+        message
+      }
       ... on RunConfigValidationInvalid {
         errors {
           message
@@ -289,6 +294,9 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
         }
       }
       ... on PipelineNotFoundError {
+        message
+      }
+      ... on InvalidSubsetError {
         message
       }
       ... on RunConfigValidationInvalid {

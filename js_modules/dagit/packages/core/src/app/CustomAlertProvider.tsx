@@ -74,5 +74,4 @@ const Body = styled.div`
   white-space: pre-line;
   font-family: ${FontFamily.monospace};
   font-size: 16px;
-  overflow: scroll;
 `;

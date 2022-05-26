@@ -88,16 +88,19 @@ const ROOT_WORKSPACE_QUERY = gql`
                 }
                 schedules {
                   id
+                  cronSchedule
                   mode
                   name
                   pipelineName
                   scheduleState {
                     id
+                    selectorId
                     status
                   }
                 }
                 sensors {
                   id
+                  jobOriginId
                   name
                   targets {
                     mode
@@ -105,6 +108,7 @@ const ROOT_WORKSPACE_QUERY = gql`
                   }
                   sensorState {
                     id
+                    selectorId
                     status
                   }
                 }

@@ -4,13 +4,22 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['test_create_execution_plan_with_dep 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "executor_name": "in_process",
-  "initial_known_state": null,
+  "initial_known_state": {
+    "__class__": "KnownExecutionState",
+    "dynamic_mappings": {},
+    "previous_retry_attempts": {},
+    "ready_outputs": {
+      "__frozenset__": []
+    },
+    "step_output_versions": []
+  },
   "pipeline_snapshot_id": "6a2a98a21d124b9b33998e9b8d9800fbe20e0980",
   "snapshot_version": 1,
   "step_keys_to_execute": [
@@ -135,7 +144,15 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "executor_name": "in_process",
-  "initial_known_state": null,
+  "initial_known_state": {
+    "__class__": "KnownExecutionState",
+    "dynamic_mappings": {},
+    "previous_retry_attempts": {},
+    "ready_outputs": {
+      "__frozenset__": []
+    },
+    "step_output_versions": []
+  },
   "pipeline_snapshot_id": "ee2cf33949005892bccaf73a40525daf95d22e28",
   "snapshot_version": 1,
   "step_keys_to_execute": [
@@ -189,7 +206,15 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "executor_name": "in_process",
-  "initial_known_state": null,
+  "initial_known_state": {
+    "__class__": "KnownExecutionState",
+    "dynamic_mappings": {},
+    "previous_retry_attempts": {},
+    "ready_outputs": {
+      "__frozenset__": []
+    },
+    "step_output_versions": []
+  },
   "pipeline_snapshot_id": "dd175d763d72a98cdef1e74f476b268dc052a9b8",
   "snapshot_version": 1,
   "step_keys_to_execute": [
@@ -257,7 +282,15 @@ snapshots['test_create_with_composite 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "executor_name": "in_process",
-  "initial_known_state": null,
+  "initial_known_state": {
+    "__class__": "KnownExecutionState",
+    "dynamic_mappings": {},
+    "previous_retry_attempts": {},
+    "ready_outputs": {
+      "__frozenset__": []
+    },
+    "step_output_versions": []
+  },
   "pipeline_snapshot_id": "2d9163d17a581046880100f48518bc4f1af1a44b",
   "snapshot_version": 1,
   "step_keys_to_execute": [

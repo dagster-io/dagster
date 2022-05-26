@@ -5,6 +5,7 @@ from typing import Callable, List, MutableMapping, Optional
 
 import dagster._check as check
 from dagster.core.events.log import EventLogEntry
+from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.storage.event_log.polling_event_watcher import CallbackAfterCursor
 
 from ..pynotify import await_pg_notifications
@@ -45,13 +46,16 @@ def watcher_thread(
             dagster_event = gen_event_log_entry_from_cursor(index)
 
             for callback_with_cursor in handlers:
-                if callback_with_cursor.start_cursor < index:
-                    try:
-                        callback_with_cursor.callback(dagster_event)
-                    except Exception:
-                        logging.exception(
-                            "Exception in callback for event watch on run %s.", run_id
+                try:
+                    if (
+                        callback_with_cursor.cursor is None
+                        or EventLogCursor.parse(callback_with_cursor.cursor).storage_id() < index
+                    ):
+                        callback_with_cursor.callback(
+                            dagster_event, str(EventLogCursor.from_storage_id(index))
                         )
+                except:
+                    logging.exception("Exception in callback for event watch on run %s.", run_id)
 
 
 class PostgresEventWatcher:
@@ -75,12 +79,12 @@ class PostgresEventWatcher:
     def watch_run(
         self,
         run_id: str,
-        start_cursor: int,
-        callback: Callable[[EventLogEntry], None],
+        cursor: Optional[str],
+        callback: Callable[[EventLogEntry, str], None],
         start_timeout=15,
     ):
         check.str_param(run_id, "run_id")
-        check.int_param(start_cursor, "start_cursor")
+        check.opt_str_param(cursor, "cursor")
         check.callable_param(callback, "callback")
         if not self._watcher_thread:
             self._watcher_thread_exit = threading.Event()
@@ -108,9 +112,9 @@ class PostgresEventWatcher:
                 raise Exception("Watcher thread never started")
 
         with self._dict_lock:
-            self._handlers_dict[run_id].append(CallbackAfterCursor(start_cursor + 1, callback))
+            self._handlers_dict[run_id].append(CallbackAfterCursor(cursor, callback))
 
-    def unwatch_run(self, run_id: str, handler: Callable[[EventLogEntry], None]):
+    def unwatch_run(self, run_id: str, handler: Callable[[EventLogEntry, str], None]):
         check.str_param(run_id, "run_id")
         check.callable_param(handler, "handler")
         with self._dict_lock:

@@ -1318,6 +1318,16 @@ class DagsterInstance:
     ):
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
 
+    @traced
+    def get_records_for_run(
+        self,
+        run_id: str,
+        cursor: Optional[str] = None,
+        of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None,
+        limit: Optional[int] = None,
+    ):
+        return self._event_storage.get_records_for_run(run_id, cursor, of_type, limit)
+
     def watch_event_logs(self, run_id, cursor, cb):
         return self._event_storage.watch(run_id, cursor, cb)
 

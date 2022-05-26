@@ -19,7 +19,7 @@ export const Default = () => {
 
   return (
     <Group spacing={8} direction="column">
-      {[Colors.Blue500, Colors.ForestGreen, Colors.Gray800].map((fillColor) => (
+      {[Colors.Blue500, Colors.Olive500, Colors.Gray800].map((fillColor) => (
         <Group spacing={24} direction="row" key={fillColor}>
           <Checkbox
             label="Hello world"
@@ -68,6 +68,32 @@ export const Default = () => {
           disabled
           label="Hello world"
           checked={state === 'false' ? false : true}
+          indeterminate={state === 'indeterminate'}
+          onChange={onChange}
+          format="switch"
+        />
+      </Group>
+      <Group spacing={24} direction="row">
+        <Checkbox
+          disabled
+          label="Hello world"
+          checked={state === 'false' ? true : false}
+          indeterminate={state === 'indeterminate'}
+          onChange={onChange}
+          format="check"
+        />
+        <Checkbox
+          disabled
+          label="Hello world"
+          checked={state === 'false' ? true : false}
+          indeterminate={state === 'indeterminate'}
+          onChange={onChange}
+          format="star"
+        />
+        <Checkbox
+          disabled
+          label="Hello world"
+          checked={state === 'false' ? true : false}
           indeterminate={state === 'indeterminate'}
           onChange={onChange}
           format="switch"

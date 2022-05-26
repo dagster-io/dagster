@@ -168,6 +168,19 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["isPipelineConfigValid"]["__typename"] == "RunConfigValidationInvalid"
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
 
+    def test_basic_valid_config_non_dict_config(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name="csv_hello_world",
+            run_config="daggy",
+            mode="default",
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["isPipelineConfigValid"]["__typename"] == "RunConfigValidationInvalid"
+        assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
+
     def test_root_field_not_defined(self, graphql_context):
         result = execute_config_graphql(
             graphql_context,

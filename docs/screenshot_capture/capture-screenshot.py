@@ -13,10 +13,21 @@ import signal
 import subprocess
 import sys
 from time import sleep
-from typing import Any, Mapping, Sequence
+from typing import Any, List, Mapping, Sequence
 
 import yaml
-from selenium import webdriver   # pylint: disable=import-error
+from selenium import webdriver  # pylint: disable=import-error
+from typing_extensions import NotRequired, TypedDict
+
+
+class ScreenshotSpec(TypedDict):
+    path: str
+    defs_file: str
+    url: str
+    steps: NotRequired[List[str]]
+    vetted: NotRequired[bool]
+    width: NotRequired[int]
+    height: NotRequired[int]
 
 
 def load_screenshot_specs(path) -> Sequence[Mapping]:
@@ -24,29 +35,31 @@ def load_screenshot_specs(path) -> Sequence[Mapping]:
         return yaml.safe_load(f)
 
 
-def capture_screenshot(screenshot_spec: Sequence[Mapping[str, str]], save_path: str) -> None:
+WINDOW_SCALE_FACTOR = 1.3
+
+def capture_screenshot(screenshot_spec: Mapping[str, str], save_path: str) -> None:
     dagit_process = None
     try:
-        defs_file = screenshot_spec.get("defs_file")
-        if defs_file:
-            if defs_file.endswith(".py"):
-                command = ["dagit", "-f", defs_file]
-            elif defs_file.endswith(".yaml"):
-                command = ["dagit", "-w", defs_file]
-            else:
-                assert False, "defs_file must be .py or .yaml"
+        assert "defs_file" in screenshot_spec, "spec must define a \"defs_file\""
+        defs_file = screenshot_spec["defs_file"]
+        if defs_file.endswith(".py"):
+            command = ["dagit", "-f", defs_file]
+        elif defs_file.endswith(".yaml"):
+            command = ["dagit", "-w", defs_file]
+        else:
+            raise Exception("defs_file must be .py or .yaml")
 
-            print("Running this command:")
-            print(" ".join(command))
-            dagit_process = subprocess.Popen(command)
-            sleep(6)
+        print("Running this command:")
+        print(" ".join(command))
+        dagit_process = subprocess.Popen(command)
+        sleep(6)  # Wait for the dagit server to start up
 
         driver = webdriver.Chrome()
         driver.set_window_size(
-            screenshot_spec.get("width", 1024 * 1.3), screenshot_spec.get("height", 768 * 1.3)
+            screenshot_spec.get("width", 1024 * WINDOW_SCALE_FACTOR), screenshot_spec.get("height", 768 * WINDOW_SCALE_FACTOR)
         )
         driver.get(screenshot_spec["url"])
-        sleep(screenshot_spec.get("page_load_sleep", 1))
+        sleep(1)  # wait for page to load
 
         if "steps" in screenshot_spec:
             for step in screenshot_spec["steps"]:
