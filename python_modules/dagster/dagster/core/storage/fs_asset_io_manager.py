@@ -1,7 +1,10 @@
 import os
+from typing import Union
 
 from dagster.config import Field
 from dagster.config.source import StringSource
+from dagster.core.execution.context.input import InputContext
+from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.io_manager import io_manager
 
 from .fs_io_manager import PickledObjectFilesystemIOManager
@@ -80,5 +83,6 @@ def fs_asset_io_manager(init_context):
 
 
 class AssetPickledObjectFilesystemIOManager(PickledObjectFilesystemIOManager):
-    def _get_path(self, context):
-        return os.path.join(self.base_dir, *context.get_asset_output_identifier())
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+        identifier = context.get_asset_identifier()
+        return os.path.join(self.base_dir, *identifier)
