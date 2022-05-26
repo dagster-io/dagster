@@ -3,7 +3,7 @@ def execute_query(query):
 
 # start_marker
 
-from dagster import asset, resource
+from dagster import asset
 
 
 @asset
