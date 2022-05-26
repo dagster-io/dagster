@@ -38,7 +38,7 @@ from dagster.core.execution.plan.handle import (
     StepHandle,
     UnresolvedStepHandle,
 )
-from dagster.core.execution.retries import RetryMode, RetryState
+from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.core.system_config.objects import ResolvedRunConfig
@@ -74,7 +74,10 @@ from .step import (
 )
 
 if TYPE_CHECKING:
+    from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
+
     from .active import ActiveExecution
+
 
 StepHandleTypes = (StepHandle, UnresolvedStepHandle, ResolvedFromDynamicStepHandle)
 StepHandleUnion = Union[StepHandle, UnresolvedStepHandle, ResolvedFromDynamicStepHandle]
@@ -99,7 +102,7 @@ class _PlanBuilder:
         pipeline: IPipeline,
         resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[List[str]],
-        known_state,
+        known_state: KnownExecutionState,
         instance_ref: Optional[InstanceRef],
         tags: Dict[str, str],
     ):
@@ -118,7 +121,7 @@ class _PlanBuilder:
         self.step_output_map: Dict[
             SolidOutputHandle, Union[StepOutputHandle, UnresolvedStepOutputHandle]
         ] = dict()
-        self.known_state = known_state
+        self.known_state = check.inst_param(known_state, "known_state", KnownExecutionState)
         self._instance_ref = instance_ref
         self._seen_handles: Set[StepHandleUnion] = set()
         self._tags = check.dict_param(tags, "tags", key_type=str, value_type=str)
@@ -609,14 +612,14 @@ class ExecutionPlan(
 ):
     def __new__(
         cls,
-        step_dict,
-        executable_map,
-        resolvable_map,
-        step_handles_to_execute,
-        known_state=None,
-        artifacts_persisted=False,
-        step_dict_by_key=None,
-        executor_name=None,
+        step_dict: Dict[StepHandleUnion, IExecutionStep],
+        executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
+        resolvable_map: Dict[FrozenSet[str], List[UnresolvedStepHandle]],
+        step_handles_to_execute: List[StepHandleUnion],
+        known_state: KnownExecutionState,
+        artifacts_persisted: bool = False,
+        step_dict_by_key: Optional[Dict[str, IExecutionStep]] = None,
+        executor_name: Optional[str] = None,
     ):
         return super(ExecutionPlan, cls).__new__(
             cls,
@@ -637,7 +640,7 @@ class ExecutionPlan(
                 "step_handles_to_execute",
                 of_type=(StepHandle, UnresolvedStepHandle, ResolvedFromDynamicStepHandle),
             ),
-            known_state=check.opt_inst_param(known_state, "known_state", KnownExecutionState),
+            known_state=check.inst_param(known_state, "known_state", KnownExecutionState),
             artifacts_persisted=check.bool_param(artifacts_persisted, "artifacts_persisted"),
             step_dict_by_key={step.key: step for step in step_dict.values()}
             if step_dict_by_key is None
@@ -814,16 +817,11 @@ class ExecutionPlan(
         # If step output versions were provided when constructing the subset plan, add them to the
         # known state.
         if len(step_output_versions) > 0:
-
-            known_state = KnownExecutionState(
-                previous_retry_attempts=self.known_state.previous_retry_attempts
-                if self.known_state
-                else {},
-                dynamic_mappings=self.known_state.dynamic_mappings if self.known_state else {},
-                step_output_versions=StepOutputVersionData.get_version_list_from_dict(
-                    step_output_versions
-                ),
-            )
+            versions = StepOutputVersionData.get_version_list_from_dict(step_output_versions)
+            if self.known_state:
+                known_state = self.known_state._replace(step_output_versions=versions)
+            else:
+                known_state = KnownExecutionState(step_output_versions=versions)
         else:
             known_state = self.known_state
 
@@ -958,9 +956,7 @@ class ExecutionPlan(
         return ActiveExecution(
             self,
             retry_mode,
-            self.known_state.get_retry_state() if self.known_state else RetryState(),
             sort_key_fn,
-            self.known_state.step_output_versions if self.known_state else [],
         )
 
     def step_handle_for_single_step_plans(
@@ -986,9 +982,9 @@ class ExecutionPlan(
         pipeline: IPipeline,
         resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[List[str]] = None,
-        known_state=None,
-        instance_ref=None,
-        tags=None,
+        known_state: Optional[KnownExecutionState] = None,
+        instance_ref: Optional[InstanceRef] = None,
+        tags: Optional[Dict[str, str]] = None,
     ) -> "ExecutionPlan":
         """Here we build a new ExecutionPlan from a pipeline definition and the resolved run config.
 
@@ -1001,7 +997,13 @@ class ExecutionPlan(
         check.inst_param(pipeline, "pipeline", IPipeline)
         check.inst_param(resolved_run_config, "resolved_run_config", ResolvedRunConfig)
         check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
-        check.opt_inst_param(known_state, "known_state", KnownExecutionState)
+        known_state = check.opt_inst_param(
+            known_state,
+            "known_state",
+            KnownExecutionState,
+            # may be good to force call sites to specify instead of defaulting to unknown
+            default=KnownExecutionState(),
+        )
         tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
 
         plan_builder = _PlanBuilder(
@@ -1048,7 +1050,10 @@ class ExecutionPlan(
             )
 
     @staticmethod
-    def rebuild_from_snapshot(pipeline_name, execution_plan_snapshot):
+    def rebuild_from_snapshot(
+        pipeline_name: str,
+        execution_plan_snapshot: "ExecutionPlanSnapshot",
+    ):
         if not execution_plan_snapshot.can_reconstruct_plan:
             raise DagsterInvariantViolationError(
                 "Tried to reconstruct an old ExecutionPlanSnapshot that was created before snapshots "
@@ -1068,17 +1073,23 @@ class ExecutionPlan(
 
             step_outputs = [
                 StepOutput(
-                    step_output_snap.solid_handle,
+                    check.not_none(step_output_snap.solid_handle),
                     step_output_snap.name,
                     step_output_snap.dagster_type_key,
-                    step_output_snap.properties,
+                    check.not_none(step_output_snap.properties),
                 )
                 for step_output_snap in output_snaps
             ]
 
             if step_snap.kind == StepKind.COMPUTE:
-                step = ExecutionStep(
-                    step_snap.step_handle,
+                step: IExecutionStep = ExecutionStep(
+                    check.inst(
+                        cast(
+                            Union[StepHandle, ResolvedFromDynamicStepHandle],
+                            step_snap.step_handle,
+                        ),
+                        ttype=(StepHandle, ResolvedFromDynamicStepHandle),
+                    ),
                     pipeline_name,
                     step_inputs,
                     step_outputs,
@@ -1086,7 +1097,10 @@ class ExecutionPlan(
                 )
             elif step_snap.kind == StepKind.UNRESOLVED_MAPPED:
                 step = UnresolvedMappedExecutionStep(
-                    step_snap.step_handle,
+                    check.inst(
+                        cast(UnresolvedStepHandle, step_snap.step_handle),
+                        ttype=UnresolvedStepHandle,
+                    ),
                     pipeline_name,
                     step_inputs,
                     step_outputs,
@@ -1094,7 +1108,7 @@ class ExecutionPlan(
                 )
             elif step_snap.kind == StepKind.UNRESOLVED_COLLECT:
                 step = UnresolvedCollectExecutionStep(
-                    step_snap.step_handle,
+                    check.inst(cast(StepHandle, step_snap.step_handle), ttype=StepHandle),
                     pipeline_name,
                     step_inputs,
                     step_outputs,
@@ -1122,7 +1136,8 @@ class ExecutionPlan(
             executable_map,
             resolvable_map,
             step_handles_to_execute,
-            execution_plan_snapshot.initial_known_state,
+            # default to empty known execution state if initial was not persisted
+            execution_plan_snapshot.initial_known_state or KnownExecutionState(),
             execution_plan_snapshot.artifacts_persisted,
             executor_name=execution_plan_snapshot.executor_name,
         )
