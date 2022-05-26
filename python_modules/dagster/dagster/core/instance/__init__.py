@@ -42,6 +42,7 @@ from dagster.core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
+from dagster.core.execution.bulk_actions import BulkAction, BulkActionType
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -2062,16 +2063,30 @@ records = instance.get_event_records(
 
     # backfill
     def get_backfills(self, status=None, cursor=None, limit=None):
-        return self._run_storage.get_backfills(status=status, cursor=cursor, limit=limit)
+        return [
+            action.partition_backfill
+            for action in self._run_storage.get_bulk_actions(
+                action_type=BulkActionType.PARITION_BACKFILL,
+                status=status,
+                cursor=cursor,
+                limit=limit,
+            )
+        ]
 
     def get_backfill(self, backfill_id):
-        return self._run_storage.get_backfill(backfill_id)
+        action = self._run_storage.get_bulk_action(backfill_id)
+        if not action:
+            return None
+        check.invariant(action.action_type == BulkActionType.PARITION_BACKFILL)
+        return action.parition_backfill
 
     def add_backfill(self, partition_backfill):
-        self._run_storage.add_backfill(partition_backfill)
+        self._run_storage.add_bulk_action(BulkAction.from_partition_backfill(partition_backfill))
 
     def update_backfill(self, partition_backfill):
-        return self._run_storage.update_backfill(partition_backfill)
+        return self._run_storage.update_bulk_action(
+            BulkAction.from_partition_backfill(partition_backfill)
+        )
 
     @property
     def should_start_background_run_thread(self) -> bool:

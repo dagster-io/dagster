@@ -19,6 +19,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent, DagsterEventType
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster.core.execution.bulk_actions import BulkAction, BulkActionType
 from dagster.core.snap import (
     ExecutionPlanSnapshot,
     PipelineSnapshot,
@@ -990,14 +991,40 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             # https://stackoverflow.com/a/54386260/324449
             conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
 
-    def get_backfills(
+    def _deserialize_bulk_action_or_backfill_to_bulk_action(self, body):
+        res = deserialize_json_to_dagster_namedtuple(body)
+        if isinstance(res, BulkAction):
+            return res
+
+        check.invariant(
+            isinstance(res, PartitionBackfill), "Expected PartitionBackfill or BulkAction"
+        )
+
+        return BulkAction.from_partition_backfill(res)
+
+    def get_bulk_actions(
         self,
+        action_type: Optional[BulkActionType] = None,
         status: Optional[BulkActionStatus] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> List[PartitionBackfill]:
+    ) -> List[BulkAction]:
         check.opt_inst_param(status, "status", BulkActionStatus)
-        query = db.select([BulkActionsTable.c.body])
+        db.select([BulkActionsTable.c.body])
+
+        if action_type:
+            if action_type == BulkActionType.PARITION_BACKFILL:
+                query = db.select([BulkActionsTable.c.body]).where(
+                    db.or_(
+                        BulkActionsTable.c.action_type == BulkActionType.PARITION_BACKFILL.value,
+                        BulkActionsTable.c.action_type is None,  # backcompat on new column
+                    )
+                )
+            else:
+                query = db.select([BulkActionsTable.c.body]).where(
+                    BulkActionsTable.c.action_type == action_type.value
+                )
+
         if status:
             query = query.where(BulkActionsTable.c.status == status.value)
         if cursor:
@@ -1009,40 +1036,42 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             query = query.limit(limit)
         query = query.order_by(BulkActionsTable.c.id.desc())
         rows = self.fetchall(query)
-        return [deserialize_as(row[0], PartitionBackfill) for row in rows]
 
-    def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
-        check.str_param(backfill_id, "backfill_id")
-        query = db.select([BulkActionsTable.c.body]).where(BulkActionsTable.c.key == backfill_id)
+        return [self._deserialize_bulk_action_or_backfill_to_bulk_action(row[0]) for row in rows]
+
+    def get_bulk_action(self, action_id: str) -> Optional[BulkAction]:
+        check.str_param(action_id, "action_id")
+        query = db.select([BulkActionsTable.c.body]).where(BulkActionsTable.c.key == action_id)
         row = self.fetchone(query)
-        return deserialize_as(row[0], PartitionBackfill) if row else None
+        return self._deserialize_bulk_action_or_backfill_to_bulk_action(row[0]) if row else None
 
-    def add_backfill(self, partition_backfill: PartitionBackfill):
-        check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
+    def add_bulk_action(self, bulk_action: BulkAction):
+        check.inst_param(bulk_action, "bulk_action", BulkAction)
         with self.connect() as conn:
             conn.execute(
                 BulkActionsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    key=partition_backfill.backfill_id,
-                    status=partition_backfill.status.value,
-                    timestamp=utc_datetime_from_timestamp(partition_backfill.backfill_timestamp),
-                    body=serialize_dagster_namedtuple(partition_backfill),
+                    action_type=bulk_action.action_type.value,
+                    key=bulk_action.action_id,
+                    status=bulk_action.status.value,
+                    timestamp=utc_datetime_from_timestamp(bulk_action.timestamp),
+                    body=serialize_dagster_namedtuple(bulk_action),
                 )
             )
 
-    def update_backfill(self, partition_backfill: PartitionBackfill):
-        check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
-        backfill_id = partition_backfill.backfill_id
-        if not self.get_backfill(backfill_id):
+    def update_bulk_action(self, bulk_action: BulkAction):
+        check.inst_param(bulk_action, "bulk_action", BulkAction)
+        action_id = bulk_action.action_id
+        if not self.get_bulk_action(action_id):
             raise DagsterInvariantViolationError(
-                f"Backfill {backfill_id} is not present in storage"
+                f"Bulk action {action_id} is not present in storage"
             )
         with self.connect() as conn:
             conn.execute(
                 BulkActionsTable.update()  # pylint: disable=no-value-for-parameter
-                .where(BulkActionsTable.c.key == backfill_id)
+                .where(BulkActionsTable.c.key == action_id)
                 .values(
-                    status=partition_backfill.status.value,
-                    body=serialize_dagster_namedtuple(partition_backfill),
+                    status=bulk_action.status.value,
+                    body=serialize_dagster_namedtuple(bulk_action),
                 )
             )
 

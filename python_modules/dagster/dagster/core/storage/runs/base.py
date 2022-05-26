@@ -3,6 +3,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster.core.execution.bulk_actions import BulkAction, BulkActionType
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 from dagster.core.storage.pipeline_run import (
@@ -363,27 +364,28 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     def wipe_daemon_heartbeats(self):
         """Wipe all daemon heartbeats"""
 
-    # Backfill storage
+    # Bulk action storage
     @abstractmethod
-    def get_backfills(
+    def get_bulk_actions(
         self,
+        action_type: Optional[BulkActionType] = None,
         status: Optional[BulkActionStatus] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> List[PartitionBackfill]:
-        """Get a list of partition backfills"""
+    ) -> List[BulkAction]:
+        """Get a list of bulk actions"""
 
     @abstractmethod
-    def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
-        """Get the partition backfill of the given backfill id."""
+    def get_bulk_action(self, action_id: str) -> Optional[BulkAction]:
+        """Get the bulk action with the given id."""
 
     @abstractmethod
-    def add_backfill(self, partition_backfill: PartitionBackfill):
-        """Add partition backfill to run storage"""
+    def add_bulk_action(self, bulk_action: BulkAction):
+        """Add bulk action to run storage"""
 
     @abstractmethod
-    def update_backfill(self, partition_backfill: PartitionBackfill):
-        """Update a partition backfill in run storage"""
+    def update_bulk_action(self, bulk_action: BulkAction):
+        """Update a bulk action in run storage"""
 
     def alembic_version(self):
         return None

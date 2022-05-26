@@ -9,6 +9,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent, DagsterEventType
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster.core.execution.bulk_actions import BulkAction, BulkActionType
 from dagster.core.snap import (
     ExecutionPlanSnapshot,
     PipelineSnapshot,
@@ -380,28 +381,31 @@ class InMemoryRunStorage(RunStorage):
             "The dagster daemon lives in a separate process. It cannot use in memory storage."
         )
 
-    def get_backfills(
+    # Bulk actions
+    def get_bulk_actions(
         self,
+        action_type: BulkActionType,
         status: Optional[BulkActionStatus] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> List[PartitionBackfill]:
+    ) -> List[BulkAction]:
         check.opt_inst_param(status, "status", BulkActionStatus)
-        backfills = [
-            backfill
-            for backfill in self._bulk_actions.values()
-            if not status or status == backfill.status
+        actions = [
+            action
+            for action in self._bulk_actions.values()
+            if (not status or status == action.status)
+            and (not action_type or action_type == action.action_type)
         ]
-        return self._slice(backfills[::-1], cursor, limit, key_fn=lambda _: _.backfill_id)
+        return self._slice(actions[::-1], cursor, limit, key_fn=lambda _: _.action_id)
 
-    def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
-        check.str_param(backfill_id, "backfill_id")
-        return self._bulk_actions.get(backfill_id)
+    def get_bulk_action(self, action_id: str) -> Optional[BulkAction]:
+        check.str_param(action_id, "action_id")
+        return self._bulk_actions.get(action_id)
 
-    def add_backfill(self, partition_backfill: PartitionBackfill):
-        check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
-        self._bulk_actions[partition_backfill.backfill_id] = partition_backfill
+    def add_bulk_action(self, bulk_action: BulkAction):
+        check.inst_param(bulk_action, "bulk_action", BulkAction)
+        self._bulk_actions[bulk_action.action_id] = bulk_action
 
-    def update_backfill(self, partition_backfill: PartitionBackfill):
-        check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
-        self._bulk_actions[partition_backfill.backfill_id] = partition_backfill
+    def update_bulk_action(self, bulk_action: BulkAction):
+        check.inst_param(bulk_action, "bulk_action", BulkAction)
+        self._bulk_actions[bulk_action.action_id] = bulk_action
