@@ -355,6 +355,11 @@ def multi_asset(
     asset_deps = check.opt_dict_param(
         internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
     )
+    config_schema = check.opt_dict_param(
+        config_schema,
+        "config_schema",
+        additional_message="Only dicts are supported for asset config_schema.",
+    )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
 
@@ -389,7 +394,7 @@ def multi_asset(
                 description=description,
                 ins=dict(asset_ins.values()),
                 out=outs,
-                config_schema=config_schema,
+                # config_schema=config_schema,
                 required_resource_keys=required_resource_keys,
                 tags={
                     **({"kind": compute_kind} if compute_kind else {}),
@@ -399,7 +404,8 @@ def multi_asset(
                     "assets": {
                         "input_partitions": Field(dict, is_required=False),
                         "output_partitions": Field(dict, is_required=False),
-                    }
+                    },
+                    **config_schema,
                 },
             )(fn)
 
