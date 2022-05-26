@@ -239,6 +239,10 @@ class PipelineDefinition:
                 )
             self._preset_dict[preset.name] = preset
 
+        self._asset_layer = check.opt_inst_param(
+            asset_layer, "asset_layer", AssetLayer, default=AssetLayer.from_graph(self.graph)
+        )
+
         resource_requirements = {}
         for mode_def in self._mode_definitions:
             resource_requirements[mode_def.name] = self._get_resource_requirements_for_mode(
@@ -261,14 +265,10 @@ class PipelineDefinition:
         if self.version_strategy is not None:
             experimental_class_warning("VersionStrategy")
 
-        self._asset_layer = check.opt_inst_param(
-            asset_layer, "asset_layer", AssetLayer, default=AssetLayer.from_graph(self.graph)
-        )
-
     def _get_resource_requirements_for_mode(self, mode_def: ModeDefinition) -> Set[str]:
         from ..execution.resources_init import get_dependencies, resolve_resource_dependencies
 
-        requirements = list(self._graph_def.get_resource_requirements())
+        requirements = list(self._graph_def.get_resource_requirements(self.asset_layer))
         for hook_def in self._hook_defs:
             requirements += list(
                 hook_def.get_resource_requirements(

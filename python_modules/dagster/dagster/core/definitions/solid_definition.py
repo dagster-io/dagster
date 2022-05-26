@@ -42,6 +42,7 @@ from .resource_requirement import (
 from .solid_invocation import solid_invocation_result
 
 if TYPE_CHECKING:
+    from .asset_layer import AssetLayer
     from .decorators.solid_decorator import DecoratedSolidFunction
 
 
@@ -288,8 +289,13 @@ class SolidDefinition(NodeDefinition, RequiresResources):
         outer_context: Optional[object] = None,
     ) -> Iterator[ResourceRequirement]:
         # Outer requiree in this context is the outer-calling node handle. If not provided, then just use the solid name.
-        outer_context = cast(Optional[NodeHandle], outer_context)
-        node_description = f"{self.node_type_str} '{outer_context or self.name}'"
+        outer_context = cast(Optional[Tuple[NodeHandle, "AssetLayer"]], outer_context)
+        if not outer_context:
+            handle = None
+            asset_layer = None
+        else:
+            handle, asset_layer = outer_context
+        node_description = f"{self.node_type_str} '{handle or self.name}'"
         for resource_key in sorted(list(self.required_resource_keys)):
             yield SolidDefinitionResourceRequirement(
                 key=resource_key, node_description=node_description
@@ -301,6 +307,15 @@ class SolidDefinition(NodeDefinition, RequiresResources):
                     node_description=node_description,
                     input_name=input_def.name,
                 )
+            elif asset_layer and handle:
+                input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
+                if input_asset_key:
+                    io_manager_key = asset_layer.io_manager_key_for_asset(input_asset_key)
+                    yield InputManagerRequirement(
+                        key=io_manager_key,
+                        node_description=node_description,
+                        input_name=input_def.name,
+                    )
 
         for output_def in self.output_defs:
             yield OutputManagerRequirement(

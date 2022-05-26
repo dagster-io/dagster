@@ -33,6 +33,7 @@ from .output import OutputDefinition
 from .utils import DEFAULT_OUTPUT, struct_to_string, validate_tags
 
 if TYPE_CHECKING:
+    from .asset_layer import AssetLayer
     from .composition import MappedInputPlaceholder
     from .graph_definition import GraphDefinition
     from .node_definition import NodeDefinition
@@ -247,6 +248,7 @@ class Node:
         self,
         parent_handle: Optional["NodeHandle"] = None,
         outer_container: Optional["GraphDefinition"] = None,
+        asset_layer: Optional["AssetLayer"] = None,
     ) -> Iterator["ResourceRequirement"]:
         from .resource_requirement import InputManagerRequirement
 
@@ -254,7 +256,7 @@ class Node:
 
         if not self.is_graph:
             solid_def = self.definition.ensure_solid_def()
-            for requirement in solid_def.get_resource_requirements(cur_node_handle):
+            for requirement in solid_def.get_resource_requirements((cur_node_handle, asset_layer)):
                 # If requirement is a root input manager requirement, but the corresponding node has an upstream output, then ignore the requirement.
                 if (
                     isinstance(requirement, InputManagerRequirement)
@@ -270,7 +272,7 @@ class Node:
         else:
             graph_def = self.definition.ensure_graph_def()
             for node in graph_def.node_dict.values():
-                yield from node.get_resource_requirements(cur_node_handle, graph_def)
+                yield from node.get_resource_requirements(cur_node_handle, graph_def, asset_layer)
 
 
 class NodeHandleSerializer(DefaultNamedTupleSerializer):

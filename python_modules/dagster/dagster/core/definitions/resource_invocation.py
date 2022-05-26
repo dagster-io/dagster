@@ -57,7 +57,8 @@ def _check_invocation_requirements(
 
     if init_context is not None and resource_def.required_resource_keys:
         ensure_requirements_satisfied(
-            init_context._resource_defs, list(resource_def.get_resource_requirements())
+            init_context._resource_defs,  # pylint: disable=protected-access
+            list(resource_def.get_resource_requirements()),
         )
 
     # Check config requirements
