@@ -77,38 +77,44 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;
 
-  const liveQueryResult = useQuery<
-    AssetNodeDefinitionLiveQuery,
-    AssetNodeDefinitionLiveQueryVariables
-  >(ASSET_NODE_DEFINITION_LIVE_QUERY, {
-    skip: !repoAddress,
-    variables: {
-      repositorySelector: {
-        repositoryLocationName: repoAddress ? repoAddress.location : '',
-        repositoryName: repoAddress ? repoAddress.name : '',
+  const liveQueryResult =
+    definition &&
+    useQuery<AssetNodeDefinitionLiveQuery, AssetNodeDefinitionLiveQueryVariables>(
+      ASSET_NODE_DEFINITION_LIVE_QUERY,
+      {
+        skip: !repoAddress,
+        variables: {
+          repositorySelector: {
+            repositoryLocationName: repoAddress ? repoAddress.location : '',
+            repositoryName: repoAddress ? repoAddress.name : '',
+          },
+          assetKeys: [assetKey],
+        },
+        notifyOnNetworkStatusChange: true,
       },
-      assetKeys: [assetKey],
-    },
-    notifyOnNetworkStatusChange: true,
-  });
+    );
 
-  const refreshState = useMergedRefresh(
-    useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS),
-    useQueryRefreshAtInterval(liveQueryResult, FIFTEEN_SECONDS),
-  );
+  const refreshState = liveQueryResult
+    ? useMergedRefresh(
+        useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS),
+        useQueryRefreshAtInterval(liveQueryResult, FIFTEEN_SECONDS),
+      )
+    : useMergedRefresh(useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS));
 
   // Refresh immediately when a run is launched from this page
   useDidLaunchEvent(queryResult.refetch);
-  useDidLaunchEvent(liveQueryResult.refetch);
+  if (liveQueryResult) {
+    useDidLaunchEvent(liveQueryResult.refetch);
+  }
 
   let liveDataByNode: LiveData = {};
 
   const repo =
-    liveQueryResult.data?.repositoryOrError.__typename === 'Repository'
+    liveQueryResult?.data?.repositoryOrError.__typename === 'Repository'
       ? liveQueryResult.data.repositoryOrError
       : null;
 
-  const assetsLatestInfo = liveQueryResult.data ? liveQueryResult.data.assetsLatestInfo : null;
+  const assetsLatestInfo = liveQueryResult?.data ? liveQueryResult.data.assetsLatestInfo : null;
 
   if (definition && repo && assetsLatestInfo) {
     const nodesWithLatestMaterialization = [
