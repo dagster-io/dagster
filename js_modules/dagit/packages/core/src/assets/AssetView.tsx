@@ -32,6 +32,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {RepoAddress} from '../workspace/types';
 
 import {AssetEvents} from './AssetEvents';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
@@ -77,35 +78,29 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;
 
-  const liveQueryResult =
-    definition &&
-    useQuery<AssetNodeDefinitionLiveQuery, AssetNodeDefinitionLiveQueryVariables>(
-      ASSET_NODE_DEFINITION_LIVE_QUERY,
-      {
-        skip: !repoAddress,
-        variables: {
-          repositorySelector: {
-            repositoryLocationName: repoAddress ? repoAddress.location : '',
-            repositoryName: repoAddress ? repoAddress.name : '',
-          },
-          assetKeys: [assetKey],
-        },
-        notifyOnNetworkStatusChange: true,
+  const liveQueryResult = useQuery<
+    AssetNodeDefinitionLiveQuery,
+    AssetNodeDefinitionLiveQueryVariables
+  >(ASSET_NODE_DEFINITION_LIVE_QUERY, {
+    skip: !definition || !repoAddress,
+    variables: {
+      repositorySelector: {
+        repositoryLocationName: repoAddress ? repoAddress.location : '',
+        repositoryName: repoAddress ? repoAddress.name : '',
       },
-    );
+      assetKeys: [assetKey],
+    },
+    notifyOnNetworkStatusChange: true,
+  });
 
-  const refreshState = liveQueryResult
-    ? useMergedRefresh(
-        useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS),
-        useQueryRefreshAtInterval(liveQueryResult, FIFTEEN_SECONDS),
-      )
-    : useMergedRefresh(useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS));
+  const refreshState = useMergedRefresh(
+    useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS),
+    useQueryRefreshAtInterval(liveQueryResult, FIFTEEN_SECONDS),
+  );
 
   // Refresh immediately when a run is launched from this page
   useDidLaunchEvent(queryResult.refetch);
-  if (liveQueryResult) {
-    useDidLaunchEvent(liveQueryResult.refetch);
-  }
+  useDidLaunchEvent(liveQueryResult.refetch);
 
   let liveDataByNode: LiveData = {};
 
