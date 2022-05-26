@@ -107,17 +107,12 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
 
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         """Automatically construct filepath."""
-<<<<<<< HEAD
         if context.has_asset_key:
-            path = context.get_asset_output_identifier()
+            path = context.get_asset_identifier()
         else:
-            path = context.get_output_identifier()
+            path = context.get_identifier()
 
         return os.path.join(self.base_dir, *path)
-=======
-        identifier = context.get_identifier()
-        return os.path.join(self.base_dir, *identifier)
->>>>>>> d072b4102d60f2a65a0e6709e55e8226a384ef0f
 
     def has_output(self, context):
         filepath = self._get_path(context)
