@@ -1,5 +1,10 @@
 from dagster import AssetMaterialization, Field, In, Noneable, Nothing, Out, Output, op
 
+from dagster_hightouch.utils import (
+    generate_metadata_from_parsed_run,
+    parse_sync_run_details,
+)
+
 from .resources import DEFAULT_POLL_INTERVAL, HightouchOutput
 
 
@@ -53,7 +58,9 @@ def hightouch_sync_op(context):
         AssetMaterialization(
             ["hightouch", "sync_run"],
             description="Hightouch Sync Run Details",
-            metadata=dict(hightouch_output.sync_run_details),
+            metadata=generate_metadata_from_parsed_run(
+                parse_sync_run_details(hightouch_output.sync_run_details)
+            ),
         )
     )
     yield Output(hightouch_output)
