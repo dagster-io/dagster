@@ -24,7 +24,17 @@ def fs_io_manager(init_context):
     your dagster.yaml file (which will be a temporary directory if not explicitly set).
 
     Serializes and deserializes output values using pickling and automatically constructs
-    the filepaths for the assets.
+    the filepaths for ops and assets.
+
+    Assigns each op output to a unique filepath containing run ID, step key, and output name.
+    Assigns each asset to a single filesystem path, at "<base_dir>/<asset_key>". If the asset key
+    has multiple components, the final component is used as the name of the file, and the preceding
+    components as parent directories under the base_dir.
+
+    Subsequent materializations of an asset will overwrite previous materializations of that asset.
+    So, with a base directory of "/my/base/path", an asset with key
+    `AssetKey(["one", "two", "three"])` would be stored in a file called "three" in a directory
+    with path "/my/base/path/one/two/".
 
     Example usage:
 
@@ -96,9 +106,12 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
 
     def _get_path(self, context):
         """Automatically construct filepath."""
-        keys = context.get_output_identifier()
+        if context.has_asset_key:
+            path = context.get_asset_output_identifier()
+        else:
+            path = context.get_output_identifier()
 
-        return os.path.join(self.base_dir, *keys)
+        return os.path.join(self.base_dir, *path)
 
     def has_output(self, context):
         filepath = self._get_path(context)

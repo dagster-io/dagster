@@ -40,7 +40,6 @@ from dagster.core.selector.subset_selector import (
     OpSelectionData,
     parse_op_selection,
 )
-from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.utils import str_format_set
 from dagster.utils import merge_dicts
 
@@ -489,7 +488,7 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: Pipeline
 
     if (
         # pylint: disable=comparison-with-callable
-        resources.get("io_manager") in [default_job_io_manager, fs_asset_io_manager]
+        resources.get("io_manager") in [default_job_io_manager]
         and job.version_strategy is None
     ):
         updated_resources = dict(resources)

@@ -4,7 +4,7 @@ import tempfile
 
 from dagster import DailyPartitionsDefinition
 from dagster.core.asset_defs import AssetIn, asset, build_assets_job
-from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
+from dagster.core.storage.fs_io_manager import fs_io_manager
 
 
 def get_assets_job(io_manager_def, partitions_def=None):
@@ -27,9 +27,9 @@ def get_assets_job(io_manager_def, partitions_def=None):
     )
 
 
-def test_fs_asset_io_manager():
+def test_fs_io_manager():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        io_manager_def = fs_asset_io_manager.configured({"base_dir": tmpdir_path})
+        io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
         job_def = get_assets_job(io_manager_def)
 
         result = job_def.execute_in_process()
@@ -55,9 +55,9 @@ def test_fs_asset_io_manager():
             assert pickle.load(read_obj) == [1, 2, 3, 4]
 
 
-def test_fs_asset_io_manager_partitioned():
+def test_fs_io_manager_partitioned():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        io_manager_def = fs_asset_io_manager.configured({"base_dir": tmpdir_path})
+        io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
         job_def = get_assets_job(
             io_manager_def, partitions_def=DailyPartitionsDefinition(start_date="2020-02-01")
         )

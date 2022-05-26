@@ -14,7 +14,7 @@ from dagster import (
     Out,
     Output,
     ResourceDefinition,
-    fs_asset_io_manager,
+    fs_io_manager,
     graph,
     in_process_executor,
     io_manager,
@@ -644,7 +644,7 @@ def test_default_io_manager():
     group = AssetGroup(assets=[asset_foo])
     assert (
         group.resource_defs["io_manager"]  # pylint: disable=comparison-with-callable
-        == fs_asset_io_manager
+        == fs_io_manager
     )
 
 

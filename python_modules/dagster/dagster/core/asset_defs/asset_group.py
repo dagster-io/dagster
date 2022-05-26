@@ -26,7 +26,7 @@ from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster.core.selector.subset_selector import AssetSelectionData
-from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
+from dagster.core.storage.fs_io_manager import fs_io_manager
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning
 
@@ -125,7 +125,7 @@ class AssetGroup:
         # In the case of collisions, merge_dicts takes values from the
         # dictionary latest in the list, so we place the user provided resource
         # defs after the defaults.
-        resource_defs = merge_dicts({"io_manager": fs_asset_io_manager}, resource_defs)
+        resource_defs = merge_dicts({"io_manager": fs_io_manager}, resource_defs)
 
         _validate_resource_reqs_for_asset_group(
             asset_list=assets, source_assets=source_assets, resource_defs=resource_defs
