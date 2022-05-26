@@ -1,5 +1,3 @@
-# pylint: disable=redefined-outer-name
-
 def execute_query(query):
     pass
 
