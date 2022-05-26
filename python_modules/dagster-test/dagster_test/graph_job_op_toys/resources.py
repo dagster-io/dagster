@@ -40,9 +40,7 @@ def resource_ops():
     one_and_two_and_three()
 
 
-resource_job = resource_ops.to_job(
-    resource_defs=lots_of_resources,
-)
+resource_job = resource_ops.to_job(resource_defs=lots_of_resources)
 
 if __name__ == "__main__":
     result = reconstructable(resource_job).execute_in_process()

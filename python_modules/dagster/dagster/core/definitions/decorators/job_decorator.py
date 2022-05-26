@@ -95,7 +95,6 @@ class _Job:
             config=config_mapping,
             positional_inputs=positional_inputs,
             tags=self.tags,
-            metadata=self.metadata,
         )
 
         job_def = graph_def.to_job(
