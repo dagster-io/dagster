@@ -1,9 +1,10 @@
 import pickle
+from typing import Union
 
 from google.api_core.exceptions import Forbidden, TooManyRequests
 from google.cloud import storage  # type: ignore
 
-from dagster import Field, IOManager, StringSource
+from dagster import Field, IOManager, InputContext, OutputContext, StringSource
 from dagster import _check as check
 from dagster import io_manager
 from dagster.utils import PICKLE_PROTOCOL
@@ -20,8 +21,8 @@ class PickledObjectGCSIOManager(IOManager):
         check.invariant(self.bucket_obj.exists())
         self.prefix = check.str_param(prefix, "prefix")
 
-    def _get_path(self, context):
-        parts = context.get_output_identifier()
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+        parts = context.get_identifier()
         run_id = parts[0]
         output_parts = parts[1:]
         return "/".join([self.prefix, "storage", run_id, "files", *output_parts])
@@ -44,7 +45,7 @@ class PickledObjectGCSIOManager(IOManager):
         return "gs://" + self.bucket + "/" + "{key}".format(key=key)
 
     def load_input(self, context):
-        key = self._get_path(context.upstream_output)
+        key = self._get_path(context)
         context.log.debug(f"Loading GCS object from: {self._uri_for_key(key)}")
 
         bytes_obj = self.bucket_obj.blob(key).download_as_bytes()
@@ -110,8 +111,8 @@ def gcs_pickle_io_manager(init_context):
 
 
 class PickledObjectGCSAssetIOManager(PickledObjectGCSIOManager):
-    def _get_path(self, context):
-        return "/".join([self.prefix, *context.get_asset_output_identifier()])
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+        return "/".join([self.prefix, *context.get_asset_identifier()])
 
 
 @io_manager(
