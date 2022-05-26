@@ -284,30 +284,26 @@ class InputContext:
         if self.upstream_output is None:
             check.failed("InputContext needs upstream_output to get asset_partitions_time_window")
 
-        asset_info = self.upstream_output.asset_info
-        partitions_def = asset_info.partitions_def if asset_info else None
-
-        if not partitions_def:
+        if self.upstream_output.asset_info is None:
             raise ValueError(
                 "Tried to get asset partitions for an output that does not correspond to a "
                 "partitioned asset."
             )
 
-        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+        asset_info = self.upstream_output.asset_info
+
+        if not isinstance(asset_info.partitions_def, TimeWindowPartitionsDefinition):
             raise ValueError(
                 "Tried to get asset partitions for an input that correponds to a partitioned "
                 "asset that is not partitioned with a TimeWindowPartitionsDefinition."
             )
 
+        partitions_def: TimeWindowPartitionsDefinition = asset_info.partitions_def
+
         partition_key_range = self.asset_partition_key_range
         return TimeWindow(
-            # mypy thinks partitions_def is <nothing> here because ????
-            partitions_def.time_window_for_partition_key(
-                partition_key_range.start
-            ).start,  # type: ignore
-            partitions_def.time_window_for_partition_key(
-                partition_key_range.end
-            ).end,  # type: ignore
+            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
+            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
 
     def get_identifier(self) -> List[str]:
