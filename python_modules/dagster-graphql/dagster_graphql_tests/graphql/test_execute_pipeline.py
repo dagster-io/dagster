@@ -382,11 +382,11 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not events_result.errors
         assert events_result.data
-        assert events_result.data["pipelineRunOrError"]["__typename"] == "Run"
+        assert events_result.data["logsForRun"]["__typename"] == "EventConnection"
 
         non_engine_event_types = [
             message["__typename"]
-            for message in events_result.data["pipelineRunOrError"]["eventConnection"]["events"]
+            for message in events_result.data["logsForRun"]["events"]
             if message["__typename"] != "EngineEvent"
         ]
         assert non_engine_event_types == self._csv_hello_world_event_sequence()
@@ -426,10 +426,10 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             )
             assert not events_result.errors
             assert events_result.data
-            assert events_result.data["pipelineRunOrError"]["__typename"] == "Run"
+            assert events_result.data["logsForRun"]["__typename"] == "EventConnection"
             return (
-                events_result.data["pipelineRunOrError"]["eventConnection"]["events"],
-                events_result.data["pipelineRunOrError"]["eventConnection"]["cursor"],
+                events_result.data["logsForRun"]["events"],
+                events_result.data["logsForRun"]["cursor"],
             )
 
         full_logs = []
