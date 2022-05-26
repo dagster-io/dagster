@@ -322,7 +322,7 @@ In this case, it's certainly fair to say that this ML model, which we have assig
 
 Why is that? By specifying the structure of your job, you have already defined data depedencies between these ops. By linking the output of `scrape_users` to the input of `get_prediction_model`, we can now infer that whatever this second op outputs will be some function of its input. Furthermore, since we have linked each of these outputs to external assets, we can use this knowledge to say that the asset associated with the output of `get_prediction_model` depends on the asset associated with the output of `scrape_users`.
 
-This feature is still in its early stages, but for now, this lineage information is surfaced in the [Assets](/concepts/dagit/dagit#assets) page page for each asset ("Parent assets"):
+This feature is still in its early stages, but for now, this lineage information is surfaced in the [Assets](/concepts/dagit/dagit#assets) page for each asset ("Parent assets"):
 
 <!-- This was generated with:
     * `dagit -f materialization_jobs.py -p 3333` inside dagster/examples/docs_snippets/docs_snippets/concepts/assets directory
