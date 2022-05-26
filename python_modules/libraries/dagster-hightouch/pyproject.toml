@@ -1,0 +1,8 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.isort]
+known_first_party = ['dagster']
+profile = "black"
+case_sensitive=true
