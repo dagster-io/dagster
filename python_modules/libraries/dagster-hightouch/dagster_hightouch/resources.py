@@ -13,8 +13,7 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
-from dagster_hightouch import utils
-
+from . import utils
 from .types import HightouchOutput
 
 HIGHTOUCH_API_BASE = "https://api.hightouch.io/api/v1/"

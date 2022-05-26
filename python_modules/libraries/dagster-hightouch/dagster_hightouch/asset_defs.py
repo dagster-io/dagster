@@ -1,8 +1,8 @@
 from typing import Optional, Set
 
 from dagster import AssetKey, AssetMaterialization, AssetsDefinition, Output, asset
-from dagster_hightouch.types import HightouchOutput
-from dagster_hightouch.utils import (
+from .types import HightouchOutput
+from .utils import (
     generate_metadata_from_parsed_run,
     parse_sync_run_details,
 )

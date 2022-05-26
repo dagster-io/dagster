@@ -3,7 +3,7 @@ from typing import Type
 from dateutil import parser
 
 from dagster import MetadataValue
-from dagster_hightouch.types import SyncRunParsedOutput
+from .types import SyncRunParsedOutput
 
 
 def parse_sync_run_details(sync_run_details) -> Type[SyncRunParsedOutput]:

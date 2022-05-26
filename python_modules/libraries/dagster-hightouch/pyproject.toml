@@ -9,3 +9,4 @@ case_sensitive=true
 
 [tool.setuptools_scm]
 write_to = "dagster_hightouch/_version.py"
+local_scheme = "no-local-version"
