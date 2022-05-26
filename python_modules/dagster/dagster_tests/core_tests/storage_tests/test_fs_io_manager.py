@@ -214,7 +214,7 @@ def get_assets_job(io_manager_def, partitions_def=None):
     )
 
 
-def test_fs_io_manager():
+def test_fs_io_manager_handles_assets():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
         job_def = get_assets_job(io_manager_def)
