@@ -329,7 +329,11 @@ class InputContext:
         Returns:
             List[str, ...]: A list of identifiers, i.e. (run_id or version), step_key, and output_name
         """
-        check.invariant(self.upstream_output is not None, "upstream_output field not defined. ")
+        if self.upstream_output is None:
+            raise DagsterInvariantViolationError(
+                "InputContext.upstream_output not defined. " "Cannot compute an identifier"
+            )
+
         return self.upstream_output.get_identifier()
 
     def get_asset_identifier(self) -> Sequence[str]:

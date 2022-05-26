@@ -6,6 +6,7 @@ from typing import Union
 import dagster._check as check
 from dagster.config import Field
 from dagster.config.source import StringSource
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.input import InputContext
 from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.io_manager import IOManager, io_manager
@@ -44,6 +45,12 @@ class VersionedPickledObjectFilesystemIOManager(MemoizableIOManager):
         if isinstance(context, OutputContext):
             output_context = context
         else:
+            if context.upstream_output is None:
+                raise DagsterInvariantViolationError(
+                    "Missing value of InputContext.upstream_output. "
+                    "Cannot compute the input path."
+                )
+
             output_context = context.upstream_output
 
         # automatically construct filepath
