@@ -1,5 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Iterator, List, Mapping, NamedTuple, Optional, Type
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Iterator,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Type,
+)
 
 from ..errors import DagsterInvalidDefinitionError
 
@@ -37,37 +47,24 @@ class ResourceRequirement(ABC):
         )
 
     def keys_of_expected_type(self, resource_defs: Mapping[str, "ResourceDefinition"]) -> List[str]:
+        """Get resource keys that correspond to resource definitions of expected type.
+
+        For example, if this particular ResourceRequirement subclass required an ``IOManagerDefinition``, this method would vend all keys that corresponded to ``IOManagerDefinition``s."""
         return [
             resource_key
             for resource_key, resource_def in resource_defs.items()
             if isinstance(resource_def, self.expected_type)
         ]
 
-    def requirement_satisfied(
+    def resource_is_expected_type(self, resource_defs: Mapping[str, "ResourceDefinition"]) -> bool:
+        # Expects resource key to be in resource_defs
+        return isinstance(resource_defs[self.key], self.expected_type)
+
+    def resources_contain_key(
         self,
         resource_defs: Mapping[str, "ResourceDefinition"],
-        mode_name: Optional[str] = None,
-        error_if_unsatisfied: bool = True,
     ) -> bool:
-        # Always error if resource type mismatches
-        if self.key in resource_defs and not isinstance(
-            resource_defs[self.key], self.expected_type
-        ):
-            raise DagsterInvalidDefinitionError(
-                f"{self.describe_requirement()}, but received {type(resource_defs[self.key])}."
-            )
-
-        # Conditionally error if resource defs don't provide the correct resource key
-        if self.key not in resource_defs:
-            if error_if_unsatisfied:
-                mode_descriptor = (
-                    f" by mode '{mode_name}'" if mode_name and mode_name != "default" else ""
-                )
-                raise DagsterInvalidDefinitionError(
-                    f"{self.describe_requirement()} was not provided{mode_descriptor}. Please provide a {str(self.expected_type)} to key '{self.key}', or change the required key to one of the following keys which points to an {str(self.expected_type)}: {self.keys_of_expected_type(resource_defs)}"
-                )
-            return False
-        return True
+        return self.key in resource_defs
 
 
 class SolidDefinitionResourceRequirement(
@@ -168,3 +165,35 @@ class RequiresResources(ABC):
         self, outer_context: Optional[object] = None
     ) -> Iterator[ResourceRequirement]:
         raise NotImplementedError()
+
+
+def ensure_resources_of_expected_type(
+    resource_defs: Mapping[str, "ResourceDefinition"],
+    requirements: Sequence[ResourceRequirement],
+    mode_name: Optional[str] = None,
+) -> None:
+    mode_descriptor = f" by mode '{mode_name}'" if mode_name and mode_name != "default" else ""
+    for requirement in requirements:
+        if requirement.resources_contain_key(
+            resource_defs
+        ) and not requirement.resource_is_expected_type(resource_defs):
+            raise DagsterInvalidDefinitionError(
+                f"{requirement.describe_requirement()}, but received {type(resource_defs[requirement.key])}{mode_descriptor}."
+            )
+
+
+def ensure_requirements_satisfied(
+    resource_defs: Mapping[str, "ResourceDefinition"],
+    requirements: Sequence[ResourceRequirement],
+    mode_name: Optional[str] = None,
+) -> None:
+    ensure_resources_of_expected_type(resource_defs, requirements, mode_name)
+
+    mode_descriptor = f" by mode '{mode_name}'" if mode_name and mode_name != "default" else ""
+
+    # Error if resource defs don't provide the correct resource key
+    for requirement in requirements:
+        if not requirement.resources_contain_key(resource_defs):
+            raise DagsterInvalidDefinitionError(
+                f"{requirement.describe_requirement()} was not provided{mode_descriptor}. Please provide a {str(requirement.expected_type)} to key '{requirement.key}', or change the required key to one of the following keys which points to an {str(requirement.expected_type)}: {requirement.keys_of_expected_type(resource_defs)}"
+            )

@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, List, Optional
 import dagster._check as check
 
 from ..execution.context.hook import BoundHookContext, UnboundHookContext
+from .resource_requirement import ensure_requirements_satisfied
 
 if TYPE_CHECKING:
     from ..events import DagsterEvent
@@ -21,8 +22,9 @@ def hook_invocation_result(
 
     # Validate that all required resources are provided in the context
     # pylint: disable=protected-access
-    for requirement in hook_def.get_resource_requirements():
-        requirement.requirement_satisfied(hook_context._resource_defs)
+    ensure_requirements_satisfied(
+        hook_context._resource_defs, list(hook_def.get_resource_requirements())
+    )
 
     bound_context = BoundHookContext(
         hook_def=hook_def,

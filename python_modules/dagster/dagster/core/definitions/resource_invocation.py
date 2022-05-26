@@ -7,6 +7,7 @@ from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidInvocat
 
 from ...config import Shape
 from ..decorator_utils import get_function_params
+from .resource_requirement import ensure_requirements_satisfied
 
 if TYPE_CHECKING:
     from dagster.core.definitions.resource_definition import ResourceDefinition
@@ -55,10 +56,9 @@ def _check_invocation_requirements(
         )
 
     if init_context is not None and resource_def.required_resource_keys:
-        for requirement in resource_def.get_resource_requirements():
-            requirement.requirement_satisfied(
-                init_context._resource_defs  # pylint: disable=protected-access
-            )
+        ensure_requirements_satisfied(
+            init_context._resource_defs, list(resource_def.get_resource_requirements())
+        )
 
     # Check config requirements
     if not init_context and resource_def.config_schema.as_field().is_required:

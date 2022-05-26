@@ -42,7 +42,7 @@ from .hook_definition import HookDefinition
 from .mode import ModeDefinition
 from .node_definition import NodeDefinition
 from .preset import PresetDefinition
-from .resource_requirement import ResourceRequirement
+from .resource_requirement import ensure_requirements_satisfied
 from .utils import validate_tags
 from .version_strategy import VersionStrategy
 
@@ -241,15 +241,9 @@ class PipelineDefinition:
 
         resource_requirements = {}
         for mode_def in self._mode_definitions:
-            required_keys = set()
-            for requirement in self._get_resource_requirements_for_mode(mode_def):
-                requirement.requirement_satisfied(
-                    resource_defs=mode_def.resource_defs,
-                    mode_name=mode_def.name,
-                    error_if_unsatisfied=True,
-                )
-                required_keys.add(requirement.key)
-            resource_requirements[mode_def.name] = required_keys
+            resource_requirements[mode_def.name] = self._get_resource_requirements_for_mode(
+                mode_def
+            )
         self._resource_requirements = resource_requirements
 
         # Recursively explore all nodes in the this pipeline
@@ -271,9 +265,7 @@ class PipelineDefinition:
             asset_layer, "asset_layer", AssetLayer, default=AssetLayer.from_graph(self.graph)
         )
 
-    def _get_resource_requirements_for_mode(
-        self, mode_def: ModeDefinition
-    ) -> List[ResourceRequirement]:
+    def _get_resource_requirements_for_mode(self, mode_def: ModeDefinition) -> Set[str]:
         from ..execution.resources_init import get_dependencies, resolve_resource_dependencies
 
         requirements = list(self._graph_def.get_resource_requirements())
@@ -283,8 +275,7 @@ class PipelineDefinition:
                     outer_context=f"{self.target_type} '{self._name}'"
                 )
             )
-        for requirement in requirements:
-            requirement.requirement_satisfied(mode_def.resource_defs)
+        ensure_requirements_satisfied(mode_def.resource_defs, requirements, mode_def.name)
         required_keys = sorted([requirement.key for requirement in requirements])
         resource_dependencies = resolve_resource_dependencies(mode_def.resource_defs)
         seen = set()
@@ -296,12 +287,12 @@ class PipelineDefinition:
             for requirement in mode_def.resource_defs[required_key].get_resource_requirements(
                 outer_context=required_key
             ):
-                requirement.requirement_satisfied(mode_def.resource_defs)
+                ensure_requirements_satisfied(mode_def.resource_defs, [requirement], mode_def.name)
                 requirements.append(requirement)
 
             required_keys += get_dependencies(required_key, resource_dependencies)
 
-        return requirements
+        return set([requirement.key for requirement in requirements])
 
     @property
     def name(self):

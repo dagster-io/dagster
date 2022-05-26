@@ -22,6 +22,7 @@ from dagster.core.definitions.resource_definition import (
     Resources,
     ScopedResourcesBuilder,
 )
+from dagster.core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import (
@@ -303,7 +304,7 @@ def _validate_resource_requirements(
 
     for requirement in solid_def.get_resource_requirements():
         if not requirement.is_io_manager_requirement:
-            requirement.requirement_satisfied(resource_defs)
+            ensure_requirements_satisfied(resource_defs, [requirement])
 
 
 def _resolve_bound_config(solid_config: Any, solid_def: SolidDefinition) -> Any:
