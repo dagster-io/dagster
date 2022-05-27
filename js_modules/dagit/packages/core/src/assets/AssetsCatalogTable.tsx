@@ -8,17 +8,20 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
+  useMergedRefresh,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
-import {tokenForAssetKey} from '../asset-graph/Utils';
+import {toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
+import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {Loading} from '../ui/Loading';
+import {LoadingSpinner} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 
 import {AssetTable, ASSET_TABLE_FRAGMENT} from './AssetTable';
 import {AssetViewModeSwitch} from './AssetViewModeSwitch';
 import {AssetsEmptyState} from './AssetsEmptyState';
+import {AssetKey} from './types';
 import {
   AssetCatalogTableQuery,
   AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes,
@@ -43,7 +46,53 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
     skip: view === 'graph',
   });
 
-  const refreshState = useQueryRefreshAtInterval(assetsQuery, FIFTEEN_SECONDS);
+  const assetsOrError = assetsQuery.data?.assetsOrError;
+  const assets = assetsOrError?.__typename === 'AssetConnection' ? assetsOrError.nodes : undefined;
+
+  const searchSeparatorAgnostic = (search || '')
+    .replace(/(( ?> ?)|\.|\/)/g, '>')
+    .toLowerCase()
+    .trim();
+
+  const filtered = React.useMemo(
+    () =>
+      (assets || []).filter(
+        (a) =>
+          !searchSeparatorAgnostic ||
+          tokenForAssetKey(a.key).toLowerCase().includes(searchSeparatorAgnostic),
+      ),
+    [assets, searchSeparatorAgnostic],
+  );
+
+  const {displayPathForAsset, displayed, nextCursor, prevCursor} =
+    view === 'flat'
+      ? buildFlatProps(filtered, prefixPath, cursor)
+      : buildNamespaceProps(filtered, prefixPath, cursor);
+
+  const displayedKeys = React.useMemo(
+    () => displayed.map<AssetKey>((a) => ({path: a.key.path})),
+    [displayed],
+  );
+  const displayedDefinitionMap = React.useMemo(
+    () =>
+      Object.fromEntries(
+        displayed
+          .filter((n) => n.definition)
+          .map((n) => [toGraphId(n.key), {definition: n.definition!}]),
+      ),
+    [displayed],
+  );
+
+  const {liveDataByNode, liveResult} = useLiveDataForAssetKeys(
+    undefined,
+    displayedDefinitionMap,
+    displayedKeys,
+  );
+
+  const refreshState = useMergedRefresh(
+    useQueryRefreshAtInterval(assetsQuery, FIFTEEN_SECONDS),
+    useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS),
+  );
 
   React.useEffect(() => {
     if (view !== 'directory' && prefixPath.length) {
@@ -55,80 +104,57 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
     return <Redirect to="/instance/asset-graph" />;
   }
 
+  if (assetsOrError?.__typename === 'PythonError') {
+    return <PythonErrorInfo error={assetsOrError} />;
+  }
+  if (!assets) {
+    return <LoadingSpinner purpose="page" />;
+  }
+  if (!assets.length) {
+    return (
+      <Box padding={{vertical: 64}}>
+        <AssetsEmptyState prefixPath={prefixPath} />
+      </Box>
+    );
+  }
+
+  const paginationProps: CursorPaginationProps = {
+    hasPrevCursor: !!prevCursor,
+    hasNextCursor: !!nextCursor,
+    popCursor: () => setCursor(prevCursor),
+    advanceCursor: () => setCursor(nextCursor),
+    reset: () => {
+      setCursor(undefined);
+    },
+  };
+
   return (
     <Wrapper>
-      <Loading allowStaleData queryResult={assetsQuery}>
-        {({assetsOrError}) => {
-          if (assetsOrError.__typename === 'PythonError') {
-            return <PythonErrorInfo error={assetsOrError} />;
-          }
-
-          const assets = assetsOrError.nodes;
-
-          if (!assets.length) {
-            return (
-              <Box padding={{vertical: 64}}>
-                <AssetsEmptyState prefixPath={prefixPath} />
-              </Box>
-            );
-          }
-          const searchSeparatorAgnostic = (search || '')
-            .replace(/(( ?> ?)|\.|\/)/g, '>')
-            .toLowerCase()
-            .trim();
-
-          const filtered = assets.filter(
-            (a) =>
-              !searchSeparatorAgnostic ||
-              tokenForAssetKey(a.key).toLowerCase().includes(searchSeparatorAgnostic),
-          );
-
-          const {displayPathForAsset, displayed, nextCursor, prevCursor} =
-            view === 'flat'
-              ? buildFlatProps(filtered, prefixPath, cursor)
-              : buildNamespaceProps(filtered, prefixPath, cursor);
-
-          console.log(view);
-          const paginationProps: CursorPaginationProps = {
-            hasPrevCursor: !!prevCursor,
-            hasNextCursor: !!nextCursor,
-            popCursor: () => setCursor(prevCursor),
-            advanceCursor: () => setCursor(nextCursor),
-            reset: () => {
-              setCursor(undefined);
-            },
-          };
-
-          return (
+      <StickyTableContainer $top={0}>
+        <AssetTable
+          assets={displayed}
+          liveDataByNode={liveDataByNode}
+          actionBarComponents={
             <>
-              <StickyTableContainer $top={0}>
-                <AssetTable
-                  assets={displayed}
-                  actionBarComponents={
-                    <>
-                      <AssetViewModeSwitch />
-                      <TextInput
-                        value={search || ''}
-                        style={{width: '30vw', minWidth: 150, maxWidth: 400}}
-                        placeholder="Search all asset_keys..."
-                        onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
-                      />
-                      <QueryRefreshCountdown refreshState={refreshState} />
-                    </>
-                  }
-                  prefixPath={prefixPath || []}
-                  displayPathForAsset={displayPathForAsset}
-                  maxDisplayCount={PAGE_SIZE}
-                  requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY}]}
-                />
-              </StickyTableContainer>
-              <Box margin={{vertical: 20}}>
-                <CursorPaginationControls {...paginationProps} />
-              </Box>
+              <AssetViewModeSwitch />
+              <TextInput
+                value={search || ''}
+                style={{width: '30vw', minWidth: 150, maxWidth: 400}}
+                placeholder="Search all asset_keys..."
+                onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
+              />
+              <QueryRefreshCountdown refreshState={refreshState} />
             </>
-          );
-        }}
-      </Loading>
+          }
+          prefixPath={prefixPath || []}
+          displayPathForAsset={displayPathForAsset}
+          maxDisplayCount={PAGE_SIZE}
+          requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY}]}
+        />
+      </StickyTableContainer>
+      <Box margin={{vertical: 20}}>
+        <CursorPaginationControls {...paginationProps} />
+      </Box>
     </Wrapper>
   );
 };

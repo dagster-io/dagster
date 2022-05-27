@@ -118,7 +118,7 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
               </Box>
             </td>
             <td>
-              <Box flex={{direction: 'column', gap: 2}}>
+              <Box flex={{direction: 'column'}}>
                 <RepositoryLink
                   repoAddress={{
                     name: asset.repository.name,

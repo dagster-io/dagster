@@ -4,7 +4,7 @@ import React from 'react';
 import {AssetKeyInput, PipelineSelector} from '../types/globalTypes';
 
 import {ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
-import {buildLiveData, GraphData, REPOSITORY_LIVE_FRAGMENT} from './Utils';
+import {buildLiveData, AssetDefinitionsForLiveData, REPOSITORY_LIVE_FRAGMENT} from './Utils';
 import {AssetGraphLiveQuery, AssetGraphLiveQueryVariables} from './types/AssetGraphLiveQuery';
 
 /** Fetches the last materialization, "upstream changed", and other live state
@@ -14,8 +14,8 @@ import {AssetGraphLiveQuery, AssetGraphLiveQueryVariables} from './types/AssetGr
  * node that has changed is not in scope.
  */
 export function useLiveDataForAssetKeys(
-  pipelineSelector: PipelineSelector | null | undefined,
-  graphData: GraphData | null,
+  pipelineSelector: PipelineSelector | undefined,
+  assets: AssetDefinitionsForLiveData | undefined,
   graphAssetKeys: AssetKeyInput[],
 ) {
   const liveResult = useQuery<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>(
@@ -36,7 +36,7 @@ export function useLiveDataForAssetKeys(
   );
 
   const liveDataByNode = React.useMemo(() => {
-    if (!liveResult.data || !graphData) {
+    if (!liveResult.data || !assets) {
       return {};
     }
 
@@ -44,8 +44,8 @@ export function useLiveDataForAssetKeys(
     const repos =
       repositoriesOrError.__typename === 'RepositoryConnection' ? repositoriesOrError.nodes : [];
 
-    return buildLiveData(graphData, liveAssetNodes, repos, assetsLatestInfo);
-  }, [graphData, liveResult]);
+    return buildLiveData(assets, liveAssetNodes, repos, assetsLatestInfo);
+  }, [assets, liveResult]);
 
   return {
     liveResult,
