@@ -15,7 +15,6 @@ const createRule = ESLintUtils.RuleCreator((name) => name);
  *     If it is then check that the second type argument to useQuery is that SomeQueryVariables.
  *     If not then throw an error.
  *
- * TODO: Add auto-fixer
  */
 
 module.exports = {
@@ -45,15 +44,22 @@ module.exports = {
             return;
           }
           const variablesName = queryName + 'Variables';
-          const importPath = context
+          let queryImportSpecifier = null;
+          const importDeclaration = context
             .getSourceCode()
             .ast.body.find(
               (node) =>
                 node.type === 'ImportDeclaration' &&
                 node.specifiers.find(
-                  (node) => node.type === 'ImportSpecifier' && node.local.name === queryName,
+                  (node) => {
+                    if (node.type === 'ImportSpecifier' && node.local.name === queryName) {
+                      queryImportSpecifier = node;
+                      return true;
+                    }
+                  }
                 ),
-            ).source.value;
+            )
+          const importPath = importDeclaration.source.value;
           const currentPath = context.getFilename().split('/').slice(0, -1).join('/');
           const fullPath = path.join(currentPath, importPath + '.ts');
 
@@ -79,6 +85,10 @@ module.exports = {
                 queryType: queryName,
                 variablesType: variablesName,
               },
+              *fix(fixer) {
+                yield fixer.insertTextAfter(queryImportSpecifier, `, ${variablesName}`);
+                yield fixer.insertTextAfter(queryType, `, ${variablesName}`);
+              },
             });
           }
         },
@@ -86,6 +96,7 @@ module.exports = {
     },
     name: 'missing-graphql-variables-type',
     meta: {
+      fixable: true,
       docs: {
         description: 'useQuery is missing QueryVariables parameter.',
         recommended: 'error',
