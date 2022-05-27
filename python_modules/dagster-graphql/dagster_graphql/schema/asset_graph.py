@@ -118,6 +118,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     partitionKeys = non_null_list(graphene.String)
     partitionDefinition = graphene.String()
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
+    groupName = graphene.String()
 
     class Meta:
         name = "AssetNode"
@@ -153,6 +154,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             assetKey=external_asset_node.asset_key,
             description=external_asset_node.op_description,
             opName=external_asset_node.op_name,
+            assetKeysInGroup=external_asset_node.asset_keys_in_group,
         )
 
     @property

@@ -696,6 +696,7 @@ class ExternalAssetNode(
             ("output_name", Optional[str]),
             ("output_description", Optional[str]),
             ("metadata_entries", Sequence[MetadataEntry]),
+            ("group_name", Optional[str]),
         ],
     )
 ):
@@ -719,6 +720,7 @@ class ExternalAssetNode(
         output_name: Optional[str] = None,
         output_description: Optional[str] = None,
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+        group_name: Optional[str] = None,
     ):
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
@@ -750,6 +752,7 @@ class ExternalAssetNode(
             metadata_entries=check.opt_sequence_param(
                 metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
+            group_name=check.opt_str_param(group_name, "group_name"),
         )
 
 
