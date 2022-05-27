@@ -2,7 +2,7 @@ import logging
 import time
 import warnings
 from collections import OrderedDict, defaultdict
-from typing import Dict, Iterable, Mapping, Optional, Sequence, Set, cast
+from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Set, cast
 
 import dagster._check as check
 from dagster.core.assets import AssetDetails
@@ -332,6 +332,27 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         for event in asset_events:
             asset_keys["/".join(event.asset_key.path)] = event.asset_key
         return list(asset_keys.values())
+
+    def get_asset_keys(
+        self,
+        prefix: Optional[List[str]] = None,
+        limit: Optional[int] = None,
+        cursor: Optional[str] = None,
+    ) -> Iterable[AssetKey]:
+        # Use the existing `all_asset_keys` and filter in-memory
+        asset_keys = sorted(self.all_asset_keys(), key=str)
+        if prefix:
+            asset_keys = [
+                asset_key for asset_key in asset_keys if asset_key.path[: len(prefix)] == prefix
+            ]
+        if cursor:
+            cursor_asset = AssetKey.from_db_string(cursor)
+            if cursor_asset and cursor_asset in asset_keys:
+                idx = asset_keys.index(cursor_asset)
+                asset_keys = asset_keys[idx + 1 :]
+        if limit:
+            asset_keys = asset_keys[:limit]
+        return asset_keys
 
     def get_latest_materialization_events(
         self, asset_keys: Sequence[AssetKey]
