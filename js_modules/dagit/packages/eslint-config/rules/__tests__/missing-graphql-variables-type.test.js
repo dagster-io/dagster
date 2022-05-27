@@ -1,12 +1,15 @@
+/* eslint-disable */
 const {ESLintUtils, AST_NODE_TYPES} = require('@typescript-eslint/utils');
-
 
 const ruleTester = new ESLintUtils.RuleTester({
   parser: '@typescript-eslint/parser',
 });
 
 jest.mock('fs');
+// @ts-expect-error - using require because this package isn't setup for import declarations
 const fs = require('fs');
+
+// @ts-expect-error - using require because this package isn't setup for import declarations
 const {rule} = require('../missing-graphql-variables-type');
 
 fs.readFileSync = (path) => {
@@ -14,13 +17,13 @@ fs.readFileSync = (path) => {
     return `
       export interface SomeQuery {}
       export interface SomeQueryVariables {}
-    `
+    `;
   } else {
     return `
       export interface SomeQuery {}
-    `
+    `;
   }
-}
+};
 
 ruleTester.run('missing-graphql-variables', rule, {
   valid: [

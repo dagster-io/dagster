@@ -6,7 +6,8 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint . --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
-    "test": "jest"
+    "test": "jest",
+    "format": "prettier -w --config ./.prettierrc.js ."
   },
   "peerDependencies": {
     "eslint": "^8.6.0",

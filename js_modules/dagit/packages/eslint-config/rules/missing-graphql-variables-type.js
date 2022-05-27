@@ -1,7 +1,8 @@
-const {ESLintUtils, AST_NODE_TYPES} = require('@typescript-eslint/utils');
+/* eslint-disable */
 
-const fs = require("fs")
-const path = require("path")
+const fs = require('fs');
+const path = require('path');
+const {ESLintUtils, AST_NODE_TYPES} = require('@typescript-eslint/utils');
 
 const createRule = ESLintUtils.RuleCreator((name) => name);
 
@@ -13,11 +14,11 @@ const createRule = ESLintUtils.RuleCreator((name) => name);
  *  3. If it's not then continue
  *     If it is then check that the second type argument to useQuery is that SomeQueryVariables.
  *     If not then throw an error.
- *  
+ *
  * TODO: Add auto-fixer
  */
 
-module.exports = { 
+module.exports = {
   rule: createRule({
     create(context) {
       return {
@@ -30,7 +31,8 @@ module.exports = {
           if (callee.name !== 'useQuery') {
             return;
           }
-          const queryType = node.typeParameters && node.typeParameters.params && node.typeParameters.params[0];
+          const queryType =
+            node.typeParameters && node.typeParameters.params && node.typeParameters.params[0];
           if (!queryType || queryType.type !== 'TSTypeReference') {
             return;
           }
@@ -43,20 +45,23 @@ module.exports = {
             return;
           }
           const variablesName = queryName + 'Variables';
-          const importPath = context.getSourceCode().ast.body.find(node => 
-            node.type === 'ImportDeclaration' && 
-            node.specifiers.find(
-              node => node.type === 'ImportSpecifier' && node.local.name === queryName
-            )
-          ).source.value
+          const importPath = context
+            .getSourceCode()
+            .ast.body.find(
+              (node) =>
+                node.type === 'ImportDeclaration' &&
+                node.specifiers.find(
+                  (node) => node.type === 'ImportSpecifier' && node.local.name === queryName,
+                ),
+            ).source.value;
           const currentPath = context.getFilename().split('/').slice(0, -1).join('/');
-          const fullPath = path.join(currentPath,  importPath + '.ts');
+          const fullPath = path.join(currentPath, importPath + '.ts');
 
-          const graphqlTypeFile = fs.readFileSync(fullPath, {encoding:'utf8'});
-          
+          const graphqlTypeFile = fs.readFileSync(fullPath, {encoding: 'utf8'});
+
           // This part is kind of hacky. I should use the parser service to find the identifier
           // but this is faster then tokenizing the whole file
-          if (!graphqlTypeFile.includes('export interface '+variablesName)) {
+          if (!graphqlTypeFile.includes('export interface ' + variablesName)) {
             return;
           }
           // This is a Query type with a generated QueryVariables type. Make sure we're using it
@@ -73,7 +78,7 @@ module.exports = {
               data: {
                 queryType: queryName,
                 variablesType: variablesName,
-              }
+              },
             });
           }
         },
@@ -86,11 +91,12 @@ module.exports = {
         recommended: 'error',
       },
       messages: {
-        'missing-graphql-variables-type': '`useQuery<{{queryType}}>(...)` should be `useQuery<{{queryType}},{{variablesType}}>(...)`.',
+        'missing-graphql-variables-type':
+          '`useQuery<{{queryType}}>(...)` should be `useQuery<{{queryType}},{{variablesType}}>(...)`.',
       },
       type: 'problem',
       schema: [],
     },
     defaultOptions: [],
-  })
-}
+  }),
+};
