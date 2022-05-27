@@ -50,6 +50,20 @@ ruleTester.run('missing-graphql-variables', rule, {
         type: AST_NODE_TYPES.CallExpression, 
         messageId: 'missing-graphql-variables-type', 
       }],
+    },
+    {
+      code: `
+        import { SomeQuery, SomeQueryVariables } from '../SomeQueryWithVariables';
+        useQuery<SomeQuery>();
+      `,
+      output: `
+        import { SomeQuery, SomeQueryVariables } from '../SomeQueryWithVariables';
+        useQuery<SomeQuery, SomeQueryVariables>();
+      `,
+      errors: [{
+        type: AST_NODE_TYPES.CallExpression, 
+        messageId: 'missing-graphql-variables-type', 
+      }],
     }
   ],
 });

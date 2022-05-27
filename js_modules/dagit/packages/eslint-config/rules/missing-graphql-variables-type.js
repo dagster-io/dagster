@@ -86,7 +86,9 @@ module.exports = {
                 variablesType: variablesName,
               },
               *fix(fixer) {
-                yield fixer.insertTextAfter(queryImportSpecifier, `, ${variablesName}`);
+                if (!importDeclaration.specifiers.find(node => node.type === 'ImportSpecifier' && node.local.name === variablesName)) {
+                  yield fixer.insertTextAfter(queryImportSpecifier, `, ${variablesName}`);
+                }
                 yield fixer.insertTextAfter(queryType, `, ${variablesName}`);
               },
             });
