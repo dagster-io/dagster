@@ -64,7 +64,7 @@ def _select_unique_ids_from_manifest_json(
         from networkx import DiGraph
     except ImportError:
         check.failed(
-            "In order to use the `select` argument on load_assets_from_manifest_json, you must have"
+            "In order to use the `select` argument on load_assets_from_dbt_manifest, you must have"
             "`dbt-core >= 1.0.0` and `networkx` installed."
         )
 
