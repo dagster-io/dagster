@@ -82,7 +82,7 @@ def buildkite_yaml_for_steps(steps) -> str:
             "notify": [
                 {
                     "slack": f"elementl#{slack_channel}",
-                    "if": f"build.creator.email == '{buildkite_email}'",
+                    "if": f"build.creator.email == '{buildkite_email}'  && build.state != 'canceled'",
                 }
                 for buildkite_email, slack_channel in BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP.items()
             ],
