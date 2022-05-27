@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, List, Mapping, Sequence
+from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster.core.definitions.configurable import NamedConfigurableDefinition
@@ -10,6 +10,8 @@ from .hook_definition import HookDefinition
 from .utils import check_valid_name, validate_tags
 
 if TYPE_CHECKING:
+    from .asset_layer import AssetLayer
+    from .dependency import NodeHandle
     from .graph_definition import GraphDefinition
     from .input import InputDefinition
     from .output import OutputDefinition
@@ -147,10 +149,6 @@ class NodeDefinition(NamedConfigurableDefinition):
     def input_supports_dynamic_output_dep(self, input_name):
         raise NotImplementedError()
 
-    @abstractmethod
-    def get_inputs_must_be_resolved_top_level(self) -> List["InputDefinition"]:
-        raise NotImplementedError()
-
     def all_input_output_types(self):
         for input_def in self._input_defs:
             yield input_def.dagster_type
@@ -234,3 +232,9 @@ class NodeDefinition(NamedConfigurableDefinition):
             return self
 
         check.failed(f"{self.name} is not a SolidDefinition")
+
+    @abstractmethod
+    def get_inputs_must_be_resolved_top_level(
+        self, asset_layer: "AssetLayer", handle: Optional["NodeHandle"] = None
+    ) -> List["InputDefinition"]:
+        raise NotImplementedError()

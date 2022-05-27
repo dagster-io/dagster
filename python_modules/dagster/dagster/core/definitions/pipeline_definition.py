@@ -265,6 +265,8 @@ class PipelineDefinition:
         if self.version_strategy is not None:
             experimental_class_warning("VersionStrategy")
 
+        self._graph_def.get_inputs_must_be_resolved_top_level(self._asset_layer)
+
     def _get_resource_requirements_for_mode(self, mode_def: ModeDefinition) -> Set[str]:
         from ..execution.resources_init import get_dependencies, resolve_resource_dependencies
 

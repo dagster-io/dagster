@@ -239,7 +239,10 @@ class SolidDefinition(NodeDefinition, RequiresResources):
     ) -> Tuple[OutputDefinition, NodeHandle]:
         return self.output_def_named(output_name), handle
 
-    def get_inputs_must_be_resolved_top_level(self) -> List[InputDefinition]:
+    def get_inputs_must_be_resolved_top_level(
+        self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
+    ) -> List[InputDefinition]:
+        handle = cast(NodeHandle, check.inst_param(handle, "handle", NodeHandle))
         unresolveable_input_defs = []
         for input_def in self.input_defs:
             if (
@@ -248,6 +251,12 @@ class SolidDefinition(NodeDefinition, RequiresResources):
                 and not input_def.root_manager_key
                 and not input_def.has_default_value
             ):
+                input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
+                # If input_asset_key is present, this input can be resolved
+                # by a source asset, so input does not need to be resolved
+                # at the top level.
+                if input_asset_key:
+                    continue
                 unresolveable_input_defs.append(input_def)
         return unresolveable_input_defs
 

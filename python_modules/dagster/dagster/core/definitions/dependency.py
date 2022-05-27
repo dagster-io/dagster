@@ -246,9 +246,9 @@ class Node:
 
     def get_resource_requirements(
         self,
+        asset_layer: "AssetLayer",
+        outer_container: "GraphDefinition",
         parent_handle: Optional["NodeHandle"] = None,
-        outer_container: Optional["GraphDefinition"] = None,
-        asset_layer: Optional["AssetLayer"] = None,
     ) -> Iterator["ResourceRequirement"]:
         from .resource_requirement import InputManagerRequirement
 
@@ -258,12 +258,10 @@ class Node:
             solid_def = self.definition.ensure_solid_def()
             for requirement in solid_def.get_resource_requirements((cur_node_handle, asset_layer)):
                 # If requirement is a root input manager requirement, but the corresponding node has an upstream output, then ignore the requirement.
-                if (
-                    isinstance(requirement, InputManagerRequirement)
-                    and outer_container
-                    and outer_container.dependency_structure.has_deps(
-                        SolidInputHandle(self, solid_def.input_def_named(requirement.input_name))
-                    )
+                if isinstance(
+                    requirement, InputManagerRequirement
+                ) and outer_container.dependency_structure.has_deps(
+                    SolidInputHandle(self, solid_def.input_def_named(requirement.input_name))
                 ):
                     continue
                 yield requirement
@@ -272,7 +270,11 @@ class Node:
         else:
             graph_def = self.definition.ensure_graph_def()
             for node in graph_def.node_dict.values():
-                yield from node.get_resource_requirements(cur_node_handle, graph_def, asset_layer)
+                yield from node.get_resource_requirements(
+                    asset_layer=asset_layer,
+                    outer_container=graph_def,
+                    parent_handle=cur_node_handle,
+                )
 
 
 class NodeHandleSerializer(DefaultNamedTupleSerializer):

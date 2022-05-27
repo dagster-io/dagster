@@ -229,9 +229,6 @@ class GraphDefinition(NodeDefinition):
         # eager computation to detect cycles
         self.solids_in_topological_order = self._solids_in_topological_order()
 
-        # must happen after base class construction as properties assumed to exist
-        self.get_inputs_must_be_resolved_top_level()
-
     def _solids_in_topological_order(self):
 
         _forward_edges, backward_edges = _create_adjacency_lists(
@@ -245,10 +242,15 @@ class GraphDefinition(NodeDefinition):
 
         return [self.solid_named(solid_name) for solid_name in order]
 
-    def get_inputs_must_be_resolved_top_level(self) -> List[InputDefinition]:
+    def get_inputs_must_be_resolved_top_level(
+        self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
+    ) -> List[InputDefinition]:
         unresolveable_input_defs = []
         for node in self.node_dict.values():
-            for input_def in node.definition.get_inputs_must_be_resolved_top_level():
+            cur_handle = NodeHandle(node.name, handle)
+            for input_def in node.definition.get_inputs_must_be_resolved_top_level(
+                asset_layer, cur_handle
+            ):
                 if self.dependency_structure.has_deps(SolidInputHandle(node, input_def)):
                     continue
                 elif not node.container_maps_input(input_def.name):
@@ -738,9 +740,7 @@ class GraphDefinition(NodeDefinition):
     def is_subselected(self) -> bool:
         return False
 
-    def get_resource_requirements(
-        self, asset_layer: Optional["AssetLayer"] = None
-    ) -> Iterator[ResourceRequirement]:
+    def get_resource_requirements(self, asset_layer: "AssetLayer") -> Iterator[ResourceRequirement]:
         for node in self.node_dict.values():
             yield from node.get_resource_requirements(outer_container=self, asset_layer=asset_layer)
 
