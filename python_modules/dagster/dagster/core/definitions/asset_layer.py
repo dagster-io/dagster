@@ -531,6 +531,12 @@ class AssetLayer:
             NodeOutputHandle(node_handle, output_name)
         )
 
+    def group_names_for_assets(self) -> Mapping[AssetKey, str]:
+        group_names: Mapping[AssetKey, str] = {}
+        for assets_def in self._assets_defs:
+            group_names.update(assets_def.group_names)
+        return group_names
+
 
 def build_asset_selection_job(
     name: str,

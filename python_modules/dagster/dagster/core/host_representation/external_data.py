@@ -798,6 +798,7 @@ def external_asset_graph_from_defs(
     dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
     all_upstream_asset_keys: Set[AssetKey] = set()
     op_names_by_asset_key: Dict[AssetKey, Sequence[str]] = {}
+    group_names: Dict[AssetKey, str] = {}
 
     for pipeline_def in pipelines:
         asset_info_by_node_output = pipeline_def.asset_layer.asset_info_by_node_output_handle
@@ -822,6 +823,8 @@ def external_asset_graph_from_defs(
                     downstream_asset_key=output_key
                 )
 
+        group_names.update(pipeline_def.asset_layer.group_names_for_assets())
+
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
         node_defs_by_asset_key.keys()
     ).difference(source_assets_by_key.keys())
@@ -832,6 +835,7 @@ def external_asset_graph_from_defs(
             dependencies=list(deps[asset_key].values()),
             depended_by=list(dep_by[asset_key].values()),
             job_names=[],
+            group_name=group_names.get(asset_key),
         )
         for asset_key in asset_keys_without_definitions
     ]
@@ -850,6 +854,7 @@ def external_asset_graph_from_defs(
                     job_names=[],
                     op_description=source_asset.description,
                     metadata_entries=metadata_entries,
+                    group_name=group_names.get(source_asset.key),
                 )
             )
 
@@ -909,6 +914,7 @@ def external_asset_graph_from_defs(
                 output_name=output_def.name,
                 output_description=output_def.description,
                 metadata_entries=output_def.metadata_entries,
+                group_name=group_names.get(asset_key),
             )
         )
 

@@ -29,6 +29,7 @@ class AssetsDefinition:
         selected_asset_keys: Optional[AbstractSet[AssetKey]] = None,
         can_subset: bool = False,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        group_names: Optional[Mapping[AssetKey, str]] = None,
         # if adding new fields, make sure to handle them in the with_replaced_asset_keys method
     ):
         self._node_def = node_def
@@ -62,6 +63,7 @@ class AssetsDefinition:
             f"expected keys: {all_asset_keys}",
         )
         self._resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
+        self._group_names = check.opt_mapping_param(group_names, "group_name")
 
         if selected_asset_keys is not None:
             self._selected_asset_keys = selected_asset_keys
@@ -141,6 +143,10 @@ class AssetsDefinition:
     @property
     def can_subset(self) -> bool:
         return self._can_subset
+
+    @property
+    def group_names(self) -> Mapping[AssetKey, str]:
+        return self._group_names
 
     @property
     def op(self) -> OpDefinition:

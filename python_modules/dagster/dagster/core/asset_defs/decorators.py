@@ -60,6 +60,7 @@ def asset(
     partitions_def: Optional[PartitionsDefinition] = ...,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = ...,
     op_tags: Optional[Dict[str, Any]] = ...,
+    group_name: Optional[str] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -200,8 +201,8 @@ class _Asset:
         self.partitions_def = partitions_def
         self.partition_mappings = partition_mappings
         self.op_tags = op_tags
-        self.group_name = group_name
         self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
+        self.group_name = group_name
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -270,6 +271,7 @@ class _Asset:
             if self.partition_mappings
             else None,
             resource_defs=self.resource_defs,
+            group_names={out_asset_key: self.group_name},
         )
 
 
