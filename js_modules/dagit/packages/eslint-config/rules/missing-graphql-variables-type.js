@@ -49,8 +49,8 @@ module.exports = {
               node => node.type === 'ImportSpecifier' && node.local.name === queryName
             )
           ).source.value
-          const currentPath = context.getFilename().split('/').slice(0, -1).join('/')
-            const fullPath = path.join(currentPath,  importPath + '.ts');
+          const currentPath = context.getFilename().split('/').slice(0, -1).join('/');
+          const fullPath = path.join(currentPath,  importPath + '.ts');
 
           const graphqlTypeFile = fs.readFileSync(fullPath, {encoding:'utf8'});
           
