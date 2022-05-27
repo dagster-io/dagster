@@ -317,14 +317,13 @@ const Pre = ({ children, ...props }) => {
   const [code, setCode] = useState(null);
 
   const onClick = () => {
-    console.log(preRef);
     if (preRef.current?.innerText) {
       setCode(preRef.current.innerText);
       setCopied(true);
     }
     setTimeout(() => {
       setCopied(false);
-    }, 3000);
+    }, 1000);
   };
 
   return (
@@ -332,10 +331,10 @@ const Pre = ({ children, ...props }) => {
       <Transition
         show={!copied}
         appear={true}
-        enter="transition ease-out duration-200 transform"
+        enter="transition ease-out duration-150 transform"
         enterFrom="opacity-0 scale-95"
         enterTo="opacity-100 scale-100"
-        leave="transition ease-in duration-200 transform"
+        leave="transition ease-in duration-150 transform"
         leaveFrom="opacity-100 scale-100"
         leaveTo="opacity-0 scale-95"
       >
@@ -361,9 +360,9 @@ const Pre = ({ children, ...props }) => {
       <Transition
         show={copied}
         appear={true}
-        enter="transition ease-out duration-200 transform"
+        enter="transition ease-out duration-150 transform"
         enterFrom="opacity-0 scale-95"
-        enterTo="opacity-100 scale-100"
+        enterTo="opacity-500 scale-100"
         leave="transition ease-in duration-200 transform"
         leaveFrom="opacity-100 scale-100"
         leaveTo="opacity-0 scale-95"
