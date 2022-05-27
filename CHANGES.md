@@ -10,7 +10,7 @@
 * [dagit] In the left navigation, when a job has more than one schedule or sensor, clicking the schedule/sensor icon will now display a dialog containing the full list of schedules and sensors for that job.
 * [dagit] Assets on the runs page are now shown in more scenarios.
 * [dagster-dbt] dbt assets now support subsetting! In dagit, you can launch off a dbt command which will only refresh the selected models, and when you’re building jobs using `AssetGroup.build_job()`, you can define selections which select subsets of the loaded dbt project.
-* [dagster-dbt] [experimental] The `load_assets_from_manifest_json` function now supports an experimental `select` parameter. This allows you to use dbt selection syntax to select from an existing manifest.json file, rather than having Dagster re-compile the project on demand.
+* [dagster-dbt] [experimental] The `load_assets_from_dbt_manifest` function now supports an experimental `select` parameter. This allows you to use dbt selection syntax to select from an existing manifest.json file, rather than having Dagster re-compile the project on demand.
 * For software-defined assets, `OpExecutionContext` now exposes an `asset_key_for_output` method, which returns the asset key that one of the op’s outputs corresponds too.
 * The Backfills tab in Dagit loads much faster when there have been backfills that produced large numbers of runs.
 * Added the ability to run the Dagster Daemon as a Python module, by running `python -m dagster.daemon`.
