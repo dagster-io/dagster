@@ -30,11 +30,7 @@ module.exports = {
           if (callee.name !== 'useQuery') {
             return;
           }
-<<<<<<< Updated upstream
-          const queryType = node.typeParameters?.params?.[0];
-=======
           const queryType = node.typeParameters && node.typeParameters.params && node.typeParameters.params[0];
->>>>>>> Stashed changes
           if (!queryType || queryType.type !== 'TSTypeReference') {
             return;
           }
