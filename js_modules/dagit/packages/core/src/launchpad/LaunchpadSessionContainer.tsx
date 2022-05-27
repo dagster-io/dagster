@@ -16,12 +16,10 @@ import * as yaml from 'yaml';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {
-  applyChangesToSession,
-  applyCreateSession,
+  IExecutionSession,
   IExecutionSessionChanges,
   PipelineRunTag,
   SessionBase,
-  useExecutionSessionStorage,
 } from '../app/ExecutionSessionStorage';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
@@ -45,7 +43,6 @@ import {
 import {ConfigEditorHelp} from './ConfigEditorHelp';
 import {ConfigEditorModePicker} from './ConfigEditorModePicker';
 import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
-import {LaunchpadTabs} from './LaunchpadTabs';
 import {LoadingOverlay} from './LoadingOverlay';
 import {OpSelector} from './OpSelector';
 import {RunPreview, RUN_PREVIEW_VALIDATION_FRAGMENT} from './RunPreview';
@@ -73,6 +70,8 @@ const LOADING_RUN_PREVIEW = `Checking config...`;
 type Preset = ConfigEditorGeneratorPipelineFragment_presets;
 
 interface LaunchpadSessionContainerProps {
+  session: IExecutionSession;
+  onSave: (changes: IExecutionSessionChanges) => void;
   pipeline: LaunchpadSessionContainerPipelineFragment;
   partitionSets: LaunchpadSessionContainerPartitionSetsFragment;
   repoAddress: RepoAddress;
@@ -135,7 +134,7 @@ const initialState: ILaunchpadSessionState = {
 };
 
 const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (props) => {
-  const {partitionSets, pipeline, repoAddress} = props;
+  const {session: currentSession, onSave, partitionSets, pipeline, repoAddress} = props;
 
   const client = useApolloClient();
   const [state, dispatch] = React.useReducer(reducer, initialState);
@@ -145,31 +144,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
   const editorSplitPanelContainer = React.useRef<SplitPanelContainer | null>(null);
   const previewCounter = React.useRef(0);
 
-  const {isJob, presets} = pipeline;
-
-  const initialDataForMode = React.useMemo(() => {
-    const presetsForMode = isJob ? (presets.length ? [presets[0]] : []) : presets;
-    const partitionSetsForMode = partitionSets.results;
-
-    if (presetsForMode.length === 1 && partitionSetsForMode.length === 0) {
-      return {
-        base: {presetName: presetsForMode[0].name, tags: null},
-        runConfigYaml: presetsForMode[0].runConfigYaml,
-      };
-    }
-
-    if (!presetsForMode.length && partitionSetsForMode.length === 1) {
-      return {
-        base: {partitionsSetName: partitionSetsForMode[0].name, partitionName: null, tags: null},
-      };
-    }
-
-    return {};
-  }, [isJob, partitionSets.results, presets]);
-
-  const [data, onSave] = useExecutionSessionStorage(repoAddress, pipeline.name, initialDataForMode);
-
-  const currentSession = data.sessions[data.current];
+  const {isJob} = pipeline;
   const tagsFromSession = React.useMemo(() => currentSession.tags || [], [currentSession]);
 
   const pipelineSelector = {
@@ -197,7 +172,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
   });
 
   const onSaveSession = (changes: IExecutionSessionChanges) => {
-    onSave(applyChangesToSession(data, data.current, changes));
+    onSave(changes);
   };
 
   const onConfigChange = (config: any) => {
@@ -499,10 +474,6 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
   const onConfigLoading = () => dispatch({type: 'toggle-config-loading', payload: true});
   const onConfigLoaded = () => dispatch({type: 'toggle-config-loading', payload: false});
 
-  const onCreateSession = () => {
-    onSave(applyCreateSession(data, initialDataForMode));
-  };
-
   const {
     preview,
     previewLoading,
@@ -526,7 +497,6 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
 
   return (
     <>
-      <LaunchpadTabs data={data} onCreate={onCreateSession} onSave={onSave} />
       <SplitPanelContainer
         axis="vertical"
         identifier="execution"
