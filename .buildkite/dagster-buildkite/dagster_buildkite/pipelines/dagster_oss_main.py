@@ -61,13 +61,7 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
 
     # Full pipeline.
     else:
-        steps += build_dagit_ui_steps()
-        steps += build_dagster_steps()
-        steps += build_integration_steps()
-
-        if do_coverage:
-            steps.append(build_wait_step())
-            steps.append(build_coverage_step())
+        steps = build_dagster_steps()
 
     return steps
 

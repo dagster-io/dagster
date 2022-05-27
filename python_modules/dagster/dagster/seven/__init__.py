@@ -18,11 +18,11 @@ from .compat.pendulum import PendulumDateTime
 from .json import JSONDecodeError, dump, dumps
 from .temp_dir import get_system_temp_directory
 
-IS_WINDOWS = os.name == "nt"
+IS_WINDOWS = True
 
 funcsigs = inspect
 
-IS_WINDOWS = os.name == "nt"
+IS_WINDOWS = True
 
 # TODO implement a generic import by name -- see https://stackoverflow.com/questions/301134/how-to-import-a-module-given-its-name
 

@@ -23,7 +23,7 @@ class AvailablePythonVersion(str, Enum):
 
     @classmethod
     def get_pytest_defaults(cls) -> List["AvailablePythonVersion"]:
-
+        return cls.get_all()
         branch_name = safe_getenv("BUILDKITE_BRANCH")
         commit_message = safe_getenv("BUILDKITE_MESSAGE")
         if branch_name == "master" or is_release_branch(branch_name):

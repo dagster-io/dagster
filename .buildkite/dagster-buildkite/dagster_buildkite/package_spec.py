@@ -1,4 +1,5 @@
 import os
+import uuid
 from typing import Callable, List, Mapping, NamedTuple, Optional, Union
 
 from .python_version import AvailablePythonVersion
@@ -158,7 +159,8 @@ class PackageSpec(
         )
 
     def build_steps(self) -> List[GroupStep]:
-        base_name = self.name or os.path.basename(self.directory)
+        base_name = str(uuid.uuid4())[0:6]
+
         steps: List[BuildkiteLeafStep] = []
 
         supported_python_versions = [
@@ -232,7 +234,7 @@ class PackageSpec(
                         )
                     )
 
-        if self.run_mypy:
+        if self.run_mypy and False:
             steps.append(
                 build_tox_step(
                     self.directory,
@@ -243,7 +245,7 @@ class PackageSpec(
                 )
             )
 
-        if self.run_pylint:
+        if self.run_pylint and False:
             steps.append(
                 build_tox_step(
                     self.directory,

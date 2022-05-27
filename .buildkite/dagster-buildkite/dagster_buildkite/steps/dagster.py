@@ -17,25 +17,11 @@ branch_name = safe_getenv("BUILDKITE_BRANCH")
 def build_dagster_steps() -> List[BuildkiteStep]:
     steps: List[BuildkiteStep] = []
 
-    # Build images containing the dagster-test sample project. This is a dependency of certain
-    # dagster core and extension lib tests.
-    steps += build_test_image_steps()
-
     # "Package" used loosely here to mean roughly "a directory with some python modules". For
     # instances, a directory of unrelated scripts counts as a package. All packages must have a
     # toxfile that defines the tests for that package.
     steps += build_packages_steps()
 
-    # Other linters are run in per-package environments because they rely on the dependencies of the
-    # target. `black`, `isort`, and `check-manifest` are run for the whole repo at once.
-    steps += build_repo_wide_isort_steps()
-    steps += build_repo_wide_black_steps()
-    steps += build_repo_wide_check_manifest_steps()
-
-    steps += build_docs_steps()
-    steps += build_helm_steps()
-    steps += build_sql_schema_check_steps()
-    steps += build_graphql_python_client_backcompat_steps()
 
     return steps
 

@@ -290,24 +290,6 @@ def test_load_with_error(capfd):
             process.terminate()
 
 
-def test_load_with_non_existant_file(capfd):
-    port = find_free_port()
-    # File that will fail if working directory isn't set to default
-    python_file = file_relative_path(__file__, "made_up_file_does_not_exist.py")
-
-    with pytest.raises(subprocess.CalledProcessError):
-        subprocess.check_output(
-            ["dagster", "api", "grpc", "--port", str(port), "--python-file", python_file],
-        )
-
-    _, err = capfd.readouterr()
-
-    if seven.IS_WINDOWS:
-        assert "The system cannot find the file specified" in err
-    else:
-        assert "No such file or directory" in err
-
-
 def test_load_with_empty_working_directory(capfd):
     port = find_free_port()
     # File that will fail if working directory isn't set to default
@@ -370,7 +352,6 @@ def test_load_with_empty_working_directory(capfd):
                 process.terminate()
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Crashes in subprocesses crash test runs on Windows")
 def test_crash_during_load():
     port = find_free_port()
     python_file = file_relative_path(__file__, "crashy_grpc_repo.py")
@@ -443,40 +424,9 @@ def test_load_timeout():
     assert "StatusCode.UNAVAILABLE" in str(timeout_exception)
 
 
-@pytest.mark.skip(reason="Sporadically failing with segfault")
 def test_lazy_load_with_error():
-    port = find_free_port()
-    python_file = file_relative_path(__file__, "grpc_repo_with_error.py")
-
-    subprocess_args = [
-        "dagster",
-        "api",
-        "grpc",
-        "--port",
-        str(port),
-        "--python-file",
-        python_file,
-        "--lazy-load-user-code",
-    ]
-
-    process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE)
-
-    try:
-        wait_for_grpc_server(
-            process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
-        )
-        list_repositories_response = deserialize_json_to_dagster_namedtuple(
-            DagsterGrpcClient(port=port).list_repositories()
-        )
-        assert isinstance(list_repositories_response, SerializableErrorInfo)
-        assert "Dagster recognizes standard cron expressions" in list_repositories_response.message
-    finally:
-        process.terminate()
-
-
-@pytest.mark.skip(reason="Sporadically failing with segfault")
-def test_lazy_load_via_env_var():
-    with environ({"DAGSTER_CLI_API_GRPC_LAZY_LOAD_USER_CODE": "1"}):
+    for trial in range(50):
+        print("TRIAL: " + str(trial))
         port = find_free_port()
         python_file = file_relative_path(__file__, "grpc_repo_with_error.py")
 
@@ -488,26 +438,71 @@ def test_lazy_load_via_env_var():
             str(port),
             "--python-file",
             python_file,
+            "--lazy-load-user-code",
         ]
 
-        process = subprocess.Popen(
-            subprocess_args,
-            stdout=subprocess.PIPE,
-        )
+        print("Opening subprocess")
+        process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE)
+        print("opened subrpcoess")
 
         try:
+            print("WAITING FOR GRPC SERVER")
             wait_for_grpc_server(
                 process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
             )
+            print("WAITED")
             list_repositories_response = deserialize_json_to_dagster_namedtuple(
                 DagsterGrpcClient(port=port).list_repositories()
             )
+            print("GOT RESPONSE")
+
             assert isinstance(list_repositories_response, SerializableErrorInfo)
+            print(list_repositories_response.to_string())
             assert (
                 "Dagster recognizes standard cron expressions" in list_repositories_response.message
             )
         finally:
+            print("TERMINATING")
             process.terminate()
+            print("TERMINATED")
+
+
+def test_lazy_load_via_env_var():
+    for trial in range(50):
+        print("TRIAL: " + str(trial))
+        with environ({"DAGSTER_CLI_API_GRPC_LAZY_LOAD_USER_CODE": "1"}):
+            port = find_free_port()
+            python_file = file_relative_path(__file__, "grpc_repo_with_error.py")
+
+            subprocess_args = [
+                "dagster",
+                "api",
+                "grpc",
+                "--port",
+                str(port),
+                "--python-file",
+                python_file,
+            ]
+
+            process = subprocess.Popen(
+                subprocess_args,
+                stdout=subprocess.PIPE,
+            )
+
+            try:
+                wait_for_grpc_server(
+                    process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
+                )
+                list_repositories_response = deserialize_json_to_dagster_namedtuple(
+                    DagsterGrpcClient(port=port).list_repositories()
+                )
+                assert isinstance(list_repositories_response, SerializableErrorInfo)
+                assert (
+                    "Dagster recognizes standard cron expressions"
+                    in list_repositories_response.message
+                )
+            finally:
+                process.terminate()
 
 
 def test_streaming():
