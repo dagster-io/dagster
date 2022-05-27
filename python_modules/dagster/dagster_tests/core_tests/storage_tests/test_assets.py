@@ -1,20 +1,10 @@
-import pytest
-
 from dagster import AssetKey, AssetMaterialization, Output, job, op
-from dagster._check import CheckError
 from dagster.core.definitions.events import parse_asset_key_string
 from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.utils import file_relative_path
 from dagster.utils.test import copy_directory
-
-
-def test_invalid_asset_key():
-    with pytest.raises(CheckError):
-        AssetKey("")
-    with pytest.raises(CheckError):
-        AssetKey(["foo", "", "bar"])
 
 
 def test_structured_asset_key():
