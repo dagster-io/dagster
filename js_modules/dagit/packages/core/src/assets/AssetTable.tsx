@@ -11,7 +11,6 @@ import {RepositoryLink} from '../nav/RepositoryLink';
 import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
 import {MenuLink} from '../ui/MenuLink';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
-import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
 import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';
@@ -22,13 +21,15 @@ type AssetKey = {path: string[]};
 export const AssetTable = ({
   assets,
   actionBarComponents,
+
   prefixPath,
   displayPathForAsset,
   maxDisplayCount,
   requery,
 }: {
-  actionBarComponents: React.ReactNode;
   assets: Asset[];
+  actionBarComponents: React.ReactNode;
+
   prefixPath: string[];
   displayPathForAsset: (asset: Asset) => string[];
   maxDisplayCount?: number;
@@ -65,7 +66,6 @@ export const AssetTable = ({
           selected={Array.from(checkedAssets)}
           clearSelection={() => onToggleAll(false)}
         />
-        <ReloadAllButton label="Reload definitions" />
       </Box>
       <Table>
         <thead>
