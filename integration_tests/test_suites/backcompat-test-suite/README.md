@@ -38,17 +38,21 @@ Most of the tests are run in subprocesses and inside docker containers, so if yo
 in this setup, you can emulate what the test is doing using two clones of dagster
 
 1. create a new virtualenv running the same python version you usually use
-2. clone dagster into a new folder. we'll call it `dagster_2` here
+2. clone dagster into a new folder. we'll call it `dagster_2` here. We'll call your normal clone of dagster that's on your user branch `dagster`
 3. activate your new virtual env and cd into `dagster_2`
 4. checkout the version of dagster you want to test against (ie. checkout release/0.14.17)
 5. `make dev install` in `dagster_2`
-6.
+6. In `dagster` start up a grpc server pointing at `repo.py` in `dagit_service`: `dagster api grpc --python-file dagit_service/repo.py --host 0.0.0.0 --port 4266`
+7. In `dagster_2` update `integration_tests/test_suites/backcompat-test-suite/dagit_service/workspace.yaml` to tell dagit that the grpc service host is localhost and the port is 4266
+8. In `dagster_2` run dagit: `dagit -w integration_tests/test_suites/backcompat-test-suite/dagit_service/workspace.yaml`
+9. In `dagster` open a python interpreter and run the following
+```python
+from dagster_graphql import DagsterGraphQLClient
 
-in user code run a grpc server (see docs) with python file as repo.py in integration tests
-in dagster 2 update workspace to point at host and port of the grpc server you just started
-in dagster_2 run dagit -w path to integration test workspace yaml
+client = DagsterGraphQLClient("localhost", port_number=3000)
+client.submit_pipeline_execution(pipeline_name="the_job", mode="default", run_config={})
+```
 
-in user code start a python interpreter
-import dagster_graphql dagster graphql client
-setup client with host and port 
-client.submit job
+10. You can modify the args to `submit_pipeline_execution` based on the test that you are debugging
+
+This setup should allow you to set breakpoints in `dagster` and `dagster_2`
