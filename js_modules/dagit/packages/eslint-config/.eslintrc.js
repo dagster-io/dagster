@@ -1,3 +1,3 @@
 module.exports = {
-  extends: './index.ts',
+  extends: './index.js',
 };
