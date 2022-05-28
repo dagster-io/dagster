@@ -46,7 +46,7 @@ if TYPE_CHECKING:
     from .decorators.solid_decorator import DecoratedSolidFunction
 
 
-class SolidDefinition(NodeDefinition, RequiresResources):
+class SolidDefinition(NodeDefinition):
     """
     The definition of a Solid that performs a user-defined computation.
 

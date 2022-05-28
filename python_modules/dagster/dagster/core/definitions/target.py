@@ -4,7 +4,6 @@ import dagster._check as check
 
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
-from .pending_job_definition import PendingJobDefinition  # type: ignore[attr-defined]
 from .pipeline_definition import PipelineDefinition
 
 
@@ -19,20 +18,15 @@ class RepoRelativeTarget(NamedTuple):
 
 
 class DirectTarget(
-    NamedTuple(
-        "_DirectTarget",
-        [("target", Union[GraphDefinition, PipelineDefinition, PendingJobDefinition])],
-    )
+    NamedTuple("_DirectTarget", [("target", Union[GraphDefinition, PipelineDefinition])])
 ):
     """
     The thing to be executed by a schedule or sensor, referenced directly and loaded
     in to any repository the container is included in.
     """
 
-    def __new__(cls, target: Union[GraphDefinition, PipelineDefinition, PendingJobDefinition]):
-        check.inst_param(
-            target, "target", (GraphDefinition, PipelineDefinition, PendingJobDefinition)
-        )
+    def __new__(cls, target: Union[GraphDefinition, PipelineDefinition]):
+        check.inst_param(target, "target", (GraphDefinition, PipelineDefinition))
 
         if isinstance(target, PipelineDefinition) and not len(target.mode_definitions) == 1:
             check.failed(

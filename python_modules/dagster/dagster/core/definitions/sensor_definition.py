@@ -7,7 +7,6 @@ from typing import (
     Callable,
     Iterator,
     List,
-    Mapping,
     NamedTuple,
     Optional,
     Sequence,
@@ -32,10 +31,7 @@ from .events import AssetKey
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .mode import DEFAULT_MODE_NAME
-from .pending_job_definition import PendingJobDefinition  # type: ignore[attr-defined]
 from .pipeline_definition import PipelineDefinition
-from .resource_definition import ResourceDefinition
-from .resource_requirement import ResourceAddable
 from .run_request import PipelineRunReaction, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
@@ -161,7 +157,7 @@ def is_context_provided(
     return len(get_function_params(fn)) == 1
 
 
-class SensorDefinition(ResourceAddable):
+class SensorDefinition:
     """Define a sensor that initiates a set of runs based on some external state
 
     Args:
@@ -198,10 +194,8 @@ class SensorDefinition(ResourceAddable):
         mode: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
-        job: Optional[Union[GraphDefinition, PendingJobDefinition, JobDefinition]] = None,
-        jobs: Optional[
-            Sequence[Union[GraphDefinition, PendingJobDefinition, JobDefinition]]
-        ] = None,
+        job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+        jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
         if evaluation_fn is None:
@@ -408,9 +402,7 @@ class SensorDefinition(ResourceAddable):
                 return True
         return False
 
-    def load_targets(
-        self,
-    ) -> List[Union[PipelineDefinition, PendingJobDefinition, GraphDefinition]]:
+    def load_targets(self) -> List[Union[PipelineDefinition, GraphDefinition]]:
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):
@@ -460,27 +452,6 @@ class SensorDefinition(ResourceAddable):
     @property
     def default_status(self) -> DefaultSensorStatus:
         return self._default_status
-
-    def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "SensorDefinition":
-        if not all([isinstance(target, DirectTarget) for target in self._targets]):
-            raise DagsterInvalidInvocationError(
-                "Attempted to call with_resources on sensor that targets by name. Can only use with sensors that target definitions directly."
-            )
-        new_targets = []
-        for target in self.load_targets():
-            if not isinstance(target, GraphDefinition) and not target.is_job:
-                raise DagsterInvalidInvocationError(
-                    f"Attempted to call with_resources on sensor that targets pipeline {target.name}. Can only use with sensors that target graph and job definitions."
-                )
-            new_targets.append(target.with_resources(resource_defs))
-        return SensorDefinition(
-            name=self.name,
-            evaluation_fn=self._evaluation_fn,
-            jobs=new_targets,
-            minimum_interval_seconds=self._min_interval,
-            description=self._description,
-            default_status=self._default_status,
-        )
 
 
 @whitelist_for_serdes

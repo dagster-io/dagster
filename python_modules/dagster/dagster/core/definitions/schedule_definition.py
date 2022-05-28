@@ -2,19 +2,7 @@ import copy
 from contextlib import ExitStack
 from datetime import datetime
 from enum import Enum
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional, TypeVar, Union, cast
 
 import pendulum
 from typing_extensions import TypeGuard
@@ -37,10 +25,7 @@ from ..instance.ref import InstanceRef
 from ..storage.pipeline_run import PipelineRun
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
-from .pending_job_definition import PendingJobDefinition  # type: ignore[attr-defined]
 from .pipeline_definition import PipelineDefinition
-from .resource_definition import ResourceDefinition
-from .resource_requirement import ResourceAddable
 from .run_request import RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name, validate_tags
@@ -181,7 +166,7 @@ class ScheduleExecutionData(NamedTuple):
     skip_message: Optional[str]
 
 
-class ScheduleDefinition(ResourceAddable):
+class ScheduleDefinition:
     """Define a schedule that targets a job
 
     Args:
@@ -245,7 +230,7 @@ class ScheduleDefinition(ResourceAddable):
             Union[Callable[[ScheduleEvaluationContext], Any], DecoratedScheduleFunction]
         ] = None,
         description: Optional[str] = None,
-        job: Optional[Union[GraphDefinition, PipelineDefinition, PendingJobDefinition]] = None,
+        job: Optional[Union[GraphDefinition, PipelineDefinition]] = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     ):
 
@@ -542,27 +527,3 @@ class ScheduleDefinition(ResourceAddable):
     @property
     def default_status(self) -> DefaultScheduleStatus:
         return self._default_status
-
-    def with_resources(
-        self, resource_defs: Mapping[str, ResourceDefinition]
-    ) -> "ScheduleDefinition":
-        if not isinstance(self._target, DirectTarget):
-            raise DagsterInvalidInvocationError(
-                "Attempted to call with_resources on schedule that targets by name. Can only use with schedules that target definitions directly."
-            )
-        if not isinstance(self.job, GraphDefinition) and not self.job.is_job:
-            raise DagsterInvalidInvocationError(
-                f"Attempted to call with_resources on sensor that targets pipeline {self.job.name}. Can only use with sensors that target graph and job definitions."
-            )
-        new_target = self.job.with_resources(resource_defs)
-        return ScheduleDefinition(
-            name=self.name,
-            cron_schedule=self._cron_schedule,
-            pipeline_name=None,
-            run_config_fn=self._run_config_fn,
-            execution_fn=self._execution_fn,
-            execution_timezone=self._execution_timezone,
-            description=self.description,
-            job=new_target,
-            default_status=self._default_status,
-        )
