@@ -1,18 +1,14 @@
 import datetime
 import logging
 import time
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
 import requests
 
-from dagster import (
-    Failure,
-    Field,
-    StringSource,
-    get_dagster_logger,
-    resource,
-)
+from dagster import Failure, Field, StringSource, get_dagster_logger, resource
+
 from . import utils
 from .types import HightouchOutput
 
@@ -64,7 +60,14 @@ class HightouchResource:
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request
         """
-        headers = {"Authorization": f"Bearer {self._api_key}"}
+
+        try:
+            __version__ = version("dagster_hightouch")
+        except PackageNotFoundError:
+            __version__ = "UnknownVersion"
+
+        user_agent = f"HightouchDagsterOp/" + __version__
+        headers = {"Authorization": f"Bearer {self._api_key}", "User-Agent": user_agent}
 
         num_retries = 0
         while True:

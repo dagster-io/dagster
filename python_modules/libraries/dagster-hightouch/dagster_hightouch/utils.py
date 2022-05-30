@@ -2,7 +2,6 @@ from typing import Type
 
 from dateutil import parser
 
-from dagster import MetadataValue
 from .types import SyncRunParsedOutput
 
 
@@ -12,6 +11,7 @@ def parse_sync_run_details(sync_run_details) -> Type[SyncRunParsedOutput]:
     x.created_at = None
     x.started_at = None
     x.finished_at = None
+    x.elapsed_seconds = None
 
     if sync_run_details.get("createdAt"):
         x.created_at = parser.parse(sync_run_details["createdAt"])
