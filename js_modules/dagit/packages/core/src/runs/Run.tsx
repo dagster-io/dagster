@@ -307,6 +307,7 @@ const RunWithData: React.FC<RunWithDataProps> = ({
               computeLogKey={computeLogKey}
               onSetComputeLogKey={onSetComputeLogKey}
               computeLogUrl={computeLogUrl}
+              counts={logs.counts}
             />
             {logType !== LogType.structured ? (
               <ComputeLogPanel
