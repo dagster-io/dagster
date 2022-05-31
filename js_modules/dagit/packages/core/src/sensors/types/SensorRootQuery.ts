@@ -36,6 +36,9 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_runs {
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks_error_cause {
