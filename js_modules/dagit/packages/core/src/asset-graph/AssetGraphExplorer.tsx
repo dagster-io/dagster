@@ -46,7 +46,7 @@ import {
   LargeDAGNotice,
   LoadingNotice,
 } from '../pipelines/GraphNotices';
-import {ExplorerPath, instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
+import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../pipelines/SidebarPipelineOrJobOverview';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 import {PipelineSelector} from '../types/globalTypes';
@@ -181,8 +181,6 @@ const AssetGraphExplorerWithData: React.FC<
     ? selectedGraphNodes
     : Object.values(assetGraphData.nodes).filter((a) => !isSourceAsset(a.definition));
 
-  const isGlobalGraph = !pipelineSelector;
-
   const onSelectNode = React.useCallback(
     async (
       e: React.MouseEvent<any> | React.KeyboardEvent<any>,
@@ -205,7 +203,7 @@ const AssetGraphExplorerWithData: React.FC<
         clicked = await findJobForAsset(assetKey);
       }
 
-      if (!clicked.opNames.length) {
+      if (!clicked.jobName || !clicked.opNames.length) {
         // This op has no definition in any loaded repository (source asset).
         // The best we can do is show the asset page. This will still be mostly empty,
         // but there can be a description.
@@ -213,21 +211,9 @@ const AssetGraphExplorerWithData: React.FC<
         return;
       }
 
-      if (!clicked.jobName && !isGlobalGraph) {
-        // This asset has a definition (opName) but isn't in any non asset-group jobs.
-        // We can switch to the instance-wide asset graph and see it in context there.
-        history.push(
-          instanceAssetsExplorerPathToURL({
-            opsQuery: `++"${token}"++`,
-            opNames: [token],
-          }),
-        );
-        return;
-      }
-
       // This asset is in different job (and we're in the job explorer),
       // go to the other job.
-      if (!isGlobalGraph && clicked.jobName !== explorerPath.pipelineName) {
+      if (clicked.jobName !== explorerPath.pipelineName) {
         onChangeExplorerPath(
           {...explorerPath, opNames: [token], opsQuery: '', pipelineName: clicked.jobName!},
           'replace',
@@ -265,7 +251,6 @@ const AssetGraphExplorerWithData: React.FC<
       );
     },
     [
-      isGlobalGraph,
       explorerPath,
       onChangeExplorerPath,
       findJobForAsset,
