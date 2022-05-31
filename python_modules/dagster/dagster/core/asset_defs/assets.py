@@ -29,7 +29,7 @@ class AssetsDefinition:
         selected_asset_keys: Optional[AbstractSet[AssetKey]] = None,
         can_subset: bool = False,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        group_names: Optional[Mapping[AssetKey, Optional[str]]] = None,
+        group_names: Optional[Mapping[AssetKey, str]] = None,
         # if adding new fields, make sure to handle them in the with_replaced_asset_keys method
     ):
         self._node_def = node_def
@@ -145,7 +145,7 @@ class AssetsDefinition:
         return self._can_subset
 
     @property
-    def group_names(self) -> Mapping[AssetKey, Optional[str]]:
+    def group_names(self) -> Mapping[AssetKey, str]:
         return self._group_names
 
     @property

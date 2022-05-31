@@ -271,7 +271,7 @@ class _Asset:
             if self.partition_mappings
             else None,
             resource_defs=self.resource_defs,
-            group_names={out_asset_key: self.group_name},
+            group_names={out_asset_key: self.group_name} if self.group_name else None,
         )
 
 
