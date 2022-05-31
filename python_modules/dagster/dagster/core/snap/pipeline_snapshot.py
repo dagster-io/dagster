@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Dict, FrozenSet, List, NamedTuple, Optional, Union, cast
+from typing import AbstractSet, Any, Dict, FrozenSet, List, NamedTuple, Optional, Set, Union, cast
 
 from dagster import Field, Map, Permissive, Selector, Shape
 from dagster import _check as check
@@ -56,6 +56,10 @@ def create_pipeline_snapshot_id(snapshot: "PipelineSnapshot") -> str:
 
 
 class PipelineSnapshotSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def skip_when_empty(cls) -> Set[str]:
+        return {"metadata"}  # Maintain stable snapshot ID for back-compat purposes
+
     @classmethod
     def value_from_storage_dict(
         cls,
