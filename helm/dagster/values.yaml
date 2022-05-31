@@ -235,6 +235,10 @@ dagster-user-deployments:
   # If you plan on deploying user code in a separate Helm release, set this to false.
   enableSubchart: true
 
+  # Specify secrets to run user code server containers based on images in private registries. See:
+  # https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+  imagePullSecrets: []
+
   # List of unique deployments
   deployments:
     - name: "k8s-example-user-code-1"
