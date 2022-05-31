@@ -8,7 +8,7 @@ import {
   displayNameForAssetKey,
   isSourceAsset,
   LiveData,
-  isAssetGroup,
+  isHiddenAssetGroupJob,
   __ASSET_GROUP_PREFIX,
 } from '../asset-graph/Utils';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
@@ -139,7 +139,7 @@ const DefinitionLocation: React.FC<{
 }> = ({assetNode, repoAddress}) => (
   <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}} style={{lineHeight: 0}}>
     {assetNode.jobNames
-      .filter((jobName) => !isAssetGroup(jobName))
+      .filter((jobName) => !isHiddenAssetGroupJob(jobName))
       .map((jobName) => (
         <Mono key={jobName}>
           <PipelineReference

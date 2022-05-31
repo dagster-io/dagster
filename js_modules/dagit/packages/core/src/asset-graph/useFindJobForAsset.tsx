@@ -3,7 +3,7 @@ import React from 'react';
 
 import {AssetKeyInput} from '../types/globalTypes';
 
-import {isAssetGroup} from './Utils';
+import {isHiddenAssetGroupJob} from './Utils';
 import {
   AssetForNavigationQuery,
   AssetForNavigationQueryVariables,
@@ -22,7 +22,7 @@ export function useFindJobForAsset() {
         const def = data.assetOrError.definition;
         return {
           opNames: def.opNames,
-          jobName: def.jobNames.find((jobName) => !isAssetGroup(jobName)) || null,
+          jobName: def.jobNames.find((jobName) => !isHiddenAssetGroupJob(jobName)) || null,
         };
       }
       return {opNames: [], jobName: null};
