@@ -19,13 +19,9 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
-import {
-  buildGraphDataFromSingleNode,
-  buildLiveData,
-  LiveData,
-  displayNameForAssetKey,
-  toGraphId,
-} from '../asset-graph/Utils';
+import {displayNameForAssetKey, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
+import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
+import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -39,10 +35,6 @@ import {AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
-import {
-  AssetNodeDefinitionLiveQuery,
-  AssetNodeDefinitionLiveQueryVariables,
-} from './types/AssetNodeDefinitionLiveQuery';
 import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
 
 interface Props {
@@ -77,43 +69,24 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;
 
-  const liveQueryResult = useQuery<
-    AssetNodeDefinitionLiveQuery,
-    AssetNodeDefinitionLiveQueryVariables
-  >(ASSET_NODE_DEFINITION_LIVE_QUERY, {
-    skip: !repoAddress,
-    variables: {
-      assetKeys: [assetKey],
-    },
-    notifyOnNetworkStatusChange: true,
-  });
+  const {assetGraphData, graphAssetKeys} = useAssetGraphData(
+    null,
+    `++"${tokenForAssetKey({path: assetKey.path})}"++`,
+  );
+
+  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(
+    assetGraphData?.nodes,
+    graphAssetKeys,
+  );
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS),
-    useQueryRefreshAtInterval(liveQueryResult, FIFTEEN_SECONDS),
+    useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS),
   );
 
   // Refresh immediately when a run is launched from this page
   useDidLaunchEvent(queryResult.refetch);
-  useDidLaunchEvent(liveQueryResult.refetch);
-
-  let liveDataByNode: LiveData = {};
-
-  const assetsLatestInfo = liveQueryResult.data ? liveQueryResult.data.assetsLatestInfo : null;
-
-  if (definition && assetsLatestInfo) {
-    const nodesWithLatestMaterialization = [
-      definition,
-      ...definition.dependencies.map((d) => d.asset),
-      ...definition.dependedBy.map((d) => d.asset),
-    ];
-    const graphData = buildGraphDataFromSingleNode(definition);
-    liveDataByNode = buildLiveData(
-      graphData.nodes,
-      nodesWithLatestMaterialization,
-      assetsLatestInfo,
-    );
-  }
+  useDidLaunchEvent(liveResult.refetch);
 
   // Avoid thrashing the materializations UI (which chooses a different default query based on whether
   // data is partitioned) by waiting for the definition to be loaded. (null OR a valid definition)
@@ -205,7 +178,15 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           )
         ) : params.view === 'lineage' ? (
           definition ? (
-            <AssetNodeLineageGraph assetNode={definition} liveDataByNode={liveDataByNode} />
+            assetGraphData ? (
+              <AssetNodeLineageGraph
+                assetNode={definition}
+                liveDataByNode={liveDataByNode}
+                assetGraphData={assetGraphData}
+              />
+            ) : (
+              <Spinner purpose="page" />
+            )
           ) : (
             <AssetNoDefinitionState />
           )
@@ -267,22 +248,6 @@ const ASSET_QUERY = gql`
   }
   ${ASSET_NODE_INSTIGATORS_FRAGMENT}
   ${ASSET_NODE_DEFINITION_FRAGMENT}
-`;
-
-const ASSET_NODE_DEFINITION_LIVE_QUERY = gql`
-  query AssetNodeDefinitionLiveQuery($assetKeys: [AssetKeyInput!]) {
-    assetsLatestInfo(assetKeys: $assetKeys) {
-      assetKey {
-        path
-      }
-      unstartedRunIds
-      inProgressRunIds
-      latestRun {
-        status
-        id
-      }
-    }
-  }
 `;
 
 const HistoricalViewAlert: React.FC<{

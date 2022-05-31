@@ -37,7 +37,7 @@ export const AssetNodeList: React.FC<{
 };
 
 const Container = styled(Box)`
-  height: 124px;
+  height: 144px;
   overflow-x: auto;
   width: 100%;
   white-space: nowrap;
