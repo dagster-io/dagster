@@ -398,9 +398,9 @@ def downstream_asset(upstream):
 
 In this case, `ins={"upstream": AssetIn("upstream_asset")}` declares that the contents of the asset with the key `upstream_asset` will be provided to the function argument named `upstream`.
 
-### Using context in assets
+### Context and configuration
 
-Since a software-defined asset contains an op, all of the typical functionality of an op (like the use of resources) is available to an asset.
+Since a software-defined asset contains an op, all the typical functionality of an op - like the use of [resources](/concepts/resources) - is available to an asset. Supplying the `context` parameter provides access to system information for the op, for example:
 
 ```python file=/concepts/assets/asset_w_context.py startafter=start_w_context endbefore=end_w_context
 @asset(required_resource_keys={"api"})
@@ -408,6 +408,20 @@ def my_asset(context):
     # fetches contents of an asset
     return context.resources.api.fetch_table("my_asset")
 ```
+
+Like ops, configuration is also supported for assets. Configuration is accesible through the asset context at runtime and can be used to specify behavior. Note that asset configuration behaves the same as configuration for ops.
+
+For example, we can define an asset where the API endpoint it queries is defined through its configuration:
+
+```python file=/concepts/assets/asset_config.py startafter=start_example endbefore=end_example
+@asset(config_schema={"api_endpoint": str})
+def my_configurable_asset(context):
+    api_endpoint = context.op_config["api_endpoint"]
+    data = requests.get(f"{api_endpoint}/data").json()
+    return data
+```
+
+We recommend providing a `config_schema` when utilizing configuration for assets. Refer to the [Config schema documentation](/concepts/configuration/config-schema) for more info and examples.
 
 ## Further Reading
 
