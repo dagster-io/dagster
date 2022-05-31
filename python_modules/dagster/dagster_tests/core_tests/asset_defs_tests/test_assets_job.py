@@ -285,7 +285,7 @@ def test_missing_io_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="requires IO Manager for key 'special_io_manager', but none was provided.",
+        match="Error when attempting to build job 'a': IO Manager required for key 'special_io_manager', but none was provided.",
     ):
         build_assets_job(
             "a",
