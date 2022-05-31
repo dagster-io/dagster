@@ -18,7 +18,7 @@ type AssetKey = AssetGraphQuery_assetNodes_assetKey;
 
 export const __ASSET_GROUP_PREFIX = '__ASSET_GROUP';
 
-export function isAssetGroup(jobName: string) {
+export function isHiddenAssetGroupJob(jobName: string) {
   return jobName.startsWith(__ASSET_GROUP_PREFIX);
 }
 

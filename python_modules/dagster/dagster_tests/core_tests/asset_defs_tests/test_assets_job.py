@@ -272,7 +272,8 @@ def test_missing_io_manager():
         return source1
 
     with pytest.raises(
-        Exception, match="'special_io_manager' is required by unsatisfied input 'source1'"
+        DagsterInvalidDefinitionError,
+        match="input manager with key 'special_io_manager' required by input 'source1' of op 'asset1' was not provided",
     ):
         build_assets_job(
             "a",

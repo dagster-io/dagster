@@ -50,6 +50,7 @@ from .logger_definition import LoggerDefinition
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
+from .resource_requirement import ResourceRequirement
 from .solid_container import create_execution_structure, validate_dependency_dict
 from .version_strategy import VersionStrategy
 
@@ -241,6 +242,31 @@ class GraphDefinition(NodeDefinition):
 
         return [self.solid_named(solid_name) for solid_name in order]
 
+    def get_inputs_must_be_resolved_top_level(
+        self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
+    ) -> List[InputDefinition]:
+        unresolveable_input_defs = []
+        for node in self.node_dict.values():
+            cur_handle = NodeHandle(node.name, handle)
+            for input_def in node.definition.get_inputs_must_be_resolved_top_level(
+                asset_layer, cur_handle
+            ):
+                if self.dependency_structure.has_deps(SolidInputHandle(node, input_def)):
+                    continue
+                elif not node.container_maps_input(input_def.name):
+                    raise DagsterInvalidDefinitionError(
+                        f"Input '{input_def.name}' of {node.describe_node()} "
+                        "has no way of being resolved. Must provide a resolution to this "
+                        "input via another op/graph, or via a direct input value mapped from the "
+                        "top-level graph. To "
+                        "learn more, see the docs for unconnected inputs: "
+                        "https://docs.dagster.io/concepts/io-management/unconnected-inputs#unconnected-inputs."
+                    )
+                else:
+                    mapped_input = node.container_mapped_input(input_def.name)
+                    unresolveable_input_defs.append(mapped_input.definition)
+        return unresolveable_input_defs
+
     @property
     def node_type_str(self) -> str:
         return "graph"
@@ -298,6 +324,16 @@ class GraphDefinition(NodeDefinition):
     def iterate_solid_defs(self) -> Iterator["SolidDefinition"]:
         for outer_node_def in self._node_defs:
             yield from outer_node_def.iterate_solid_defs()
+
+    def iterate_node_handles(
+        self, parent_node_handle: Optional[NodeHandle] = None
+    ) -> Iterator[NodeHandle]:
+        for node in self.node_dict.values():
+            cur_node_handle = NodeHandle(node.name, parent_node_handle)
+            if node.is_graph:
+                graph_def = node.definition.ensure_graph_def()
+                yield from graph_def.iterate_node_handles(cur_node_handle)
+            yield cur_node_handle
 
     @property
     def input_mappings(self) -> List[InputMapping]:
@@ -703,6 +739,13 @@ class GraphDefinition(NodeDefinition):
     @property
     def is_subselected(self) -> bool:
         return False
+
+    def get_resource_requirements(self, asset_layer: "AssetLayer") -> Iterator[ResourceRequirement]:
+        for node in self.node_dict.values():
+            yield from node.get_resource_requirements(outer_container=self, asset_layer=asset_layer)
+
+        for dagster_type in self.all_dagster_types():
+            yield from dagster_type.get_resource_requirements()
 
 
 class SubselectedGraphDefinition(GraphDefinition):

@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
-import {isAssetGroup} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
@@ -56,7 +56,7 @@ export const LatestMaterializationMetadata: React.FC<{
                     <Mono>{titleForRun({runId: latestEvent.runId})}</Mono>
                   </Link>
                 </Box>
-                {!isAssetGroup(latestRun.pipelineName) && (
+                {!isHiddenAssetGroupJob(latestRun.pipelineName) && (
                   <>
                     <Box padding={{left: 8, top: 4}}>
                       <PipelineReference
