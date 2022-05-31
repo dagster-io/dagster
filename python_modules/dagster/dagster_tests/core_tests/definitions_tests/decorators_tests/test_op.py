@@ -811,6 +811,10 @@ def test_generic_output_op():
     assert result.success
     assert result.output_for_node("the_op") == "foo"
 
+    result = the_op()
+    assert isinstance(result, Output)
+    assert result.value == "foo"
+
     @op
     def the_op_bad_type_match() -> Output[int]:
         return Output("foo")
@@ -822,6 +826,13 @@ def test_generic_output_op():
     ):
         execute_op_in_graph(the_op_bad_type_match)
 
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for op "the_op_bad_type_match" output "result" - expected type '
+        '"Int". Description: Value "foo" of python type "str" must be a int.',
+    ):
+        the_op_bad_type_match()
+
 
 def test_output_generic_correct_inner_type():
     @op
@@ -831,12 +842,18 @@ def test_output_generic_correct_inner_type():
     result = execute_op_in_graph(the_op_not_using_output)
     assert result.success
 
+    assert the_op_not_using_output() == 42
+
     @op
     def the_op_annotation_not_using_output() -> int:
         return Output(42)
 
     result = execute_op_in_graph(the_op_annotation_not_using_output)
     assert result.success
+
+    result = the_op_annotation_not_using_output()
+    assert isinstance(result, Output)
+    assert result.value == 42
 
 
 def test_output_generic_type_mismatches():
@@ -850,6 +867,12 @@ def test_output_generic_type_mismatches():
     ):
         execute_op_in_graph(the_op_annotation_type_mismatch)
 
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for op "the_op_annotation_type_mismatch" output "result" - expected type "Int". Description: Value "foo" of python type "str" must be a int.',
+    ):
+        the_op_annotation_type_mismatch()
+
     @op
     def the_op_output_annotation_type_mismatch() -> Output[int]:
         return "foo"
@@ -860,6 +883,12 @@ def test_output_generic_type_mismatches():
     ):
         execute_op_in_graph(the_op_output_annotation_type_mismatch)
 
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for op "the_op_output_annotation_type_mismatch" output "result" - expected type "Int". Description: Value "foo" of python type "str" must be a int.',
+    ):
+        the_op_output_annotation_type_mismatch()
+
 
 def test_generic_output_tuple_op():
     @op(out={"out1": Out(), "out2": Out()})
@@ -868,6 +897,12 @@ def test_generic_output_tuple_op():
 
     result = execute_op_in_graph(the_op)
     assert result.success
+
+    result1, result2 = the_op()
+    assert isinstance(result1, Output)
+    assert result1.value == "foo"
+    assert isinstance(result2, Output)
+    assert result2.value == 5
 
     @op(out={"out1": Out(), "out2": Out()})
     def the_op_bad_type_match() -> Tuple[Output[str], Output[int]]:
@@ -880,6 +915,12 @@ def test_generic_output_tuple_op():
     ):
         execute_op_in_graph(the_op_bad_type_match)
 
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for op "the_op_bad_type_match" output "result" - expected type "Int". Description: Value "foo" of python type "str" must be a int.',
+    ):
+        the_op_bad_type_match()
+
 
 def test_generic_output_tuple_complex_types():
     @op(out={"out1": Out(), "out2": Out()})
@@ -888,6 +929,13 @@ def test_generic_output_tuple_complex_types():
 
     result = execute_op_in_graph(the_op)
     assert result.success
+
+    result1, result2 = the_op()
+    assert isinstance(result1, Output)
+    assert isinstance(result2, Output)
+
+    assert result1.value == ["foo"]
+    assert result2.value == {"foo": "bar"}
 
 
 def test_generic_output_name_mismatch():
@@ -900,6 +948,12 @@ def test_generic_output_name_mismatch():
         match="Bad state: Received a tuple of outputs. An output was explicitly named 'out2', which does not match the output definition specified for position 0: 'out1'.",
     ):
         execute_op_in_graph(the_op)
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for op "the_op" output "out2" - expected type "Int". Description: Value "foo" of python type "str" must be a int.',
+    ):
+        the_op()
 
 
 def test_generic_dynamic_output():
