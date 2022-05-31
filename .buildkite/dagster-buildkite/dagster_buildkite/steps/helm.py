@@ -12,6 +12,12 @@ def build_helm_steps() -> List[BuildkiteStep]:
     steps += _build_lint_steps()
     schema_group = PackageSpec(
         os.path.join("helm", "dagster", "schema"),
+        unsupported_python_versions=[
+            # run helm schema tests only once, on the latest python version
+            AvailablePythonVersion.V3_6,
+            AvailablePythonVersion.V3_7,
+            AvailablePythonVersion.V3_8,
+        ],
         name="dagster-helm-schema",
         upload_coverage=False,
         retries=2,
