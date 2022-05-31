@@ -2,7 +2,7 @@
 # start_marker
 from dagster_aws.s3 import s3_pickle_asset_io_manager, s3_resource
 
-from dagster import AssetGroup, asset, fs_asset_io_manager
+from dagster import AssetGroup, asset, fs_io_manager
 
 
 @asset(io_manager_key="s3_io_manager")
@@ -20,7 +20,7 @@ asset_group = AssetGroup(
     resource_defs={
         "s3_io_manager": s3_pickle_asset_io_manager,
         "s3": s3_resource,
-        "fs_io_manager": fs_asset_io_manager,
+        "fs_io_manager": fs_io_manager,
     },
 )
 
