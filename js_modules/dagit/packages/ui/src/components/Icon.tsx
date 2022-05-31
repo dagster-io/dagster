@@ -10,6 +10,7 @@ import arrow_downward from '../icon-svgs/arrow_downward.svg';
 import arrow_drop_down from '../icon-svgs/arrow_drop_down.svg';
 import arrow_forward from '../icon-svgs/arrow_forward.svg';
 import arrow_upward from '../icon-svgs/arrow_upward.svg';
+import asset from '../icon-svgs/asset.svg';
 import assignment from '../icon-svgs/assignment.svg';
 import assignment_turned_in from '../icon-svgs/assignment_turned_in.svg';
 import attach_file from '../icon-svgs/attach_file.svg';
@@ -112,7 +113,8 @@ import {Colors} from './Colors';
 
 export const Icons = {
   // Core icons
-  asset: table_view,
+  asset,
+  asset_group: table_view,
   expectation,
   materialization,
   observation,
