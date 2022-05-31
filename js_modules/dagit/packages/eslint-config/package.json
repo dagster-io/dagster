@@ -1,6 +1,6 @@
 {
   "name": "@dagster-io/eslint-config",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Shared eslint configuration for @dagster-io",
   "license": "Apache-2.0",
   "main": "index.js",
