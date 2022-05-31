@@ -15,7 +15,6 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
-    Sequence,
     Set,
     Union,
     cast,
@@ -60,6 +59,7 @@ if TYPE_CHECKING:
     from dagster.core.definitions.resource_definition import Resources
     from dagster.core.events import DagsterEvent
     from dagster.core.execution.plan.plan import ExecutionPlan
+    from dagster.core.execution.plan.state import KnownExecutionState
     from dagster.core.instance import DagsterInstance
 
     from .hook import HookContext
@@ -295,7 +295,11 @@ class PlanExecutionContext(IPlanContext):
     def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
         return self._output_capture
 
-    def for_step(self, step: ExecutionStep, previous_attempt_count: int = 0) -> IStepContext:
+    def for_step(
+        self,
+        step: ExecutionStep,
+        known_state: Optional["KnownExecutionState"] = None,
+    ) -> IStepContext:
 
         return StepExecutionContext(
             plan_data=self.plan_data,
@@ -303,7 +307,7 @@ class PlanExecutionContext(IPlanContext):
             log_manager=self._log_manager.with_tags(**step.logging_tags),
             step=step,
             output_capture=self.output_capture,
-            previous_attempt_count=previous_attempt_count,
+            known_state=known_state,
         )
 
     @property
@@ -372,7 +376,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         log_manager: DagsterLogManager,
         step: ExecutionStep,
         output_capture: Optional[Dict[StepOutputHandle, Any]],
-        previous_attempt_count: int,
+        known_state: Optional["KnownExecutionState"],
     ):
         from dagster.core.execution.resources_init import get_required_resource_keys_for_step
 
@@ -391,7 +395,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._resources = execution_data.scoped_resources_builder.build(
             self._required_resource_keys
         )
-        self._previous_attempt_count = previous_attempt_count
+        self._known_state = known_state
         self._input_lineage: List[AssetLineageInfo] = []
 
         resources_iter = cast(Iterable, self._resources)
@@ -506,15 +510,36 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     ) -> InputContext:
         if source_handle and artificial_output_context:
             check.failed("Cannot specify both source_handle and artificial_output_context.")
+
+        upstream_output: Optional[OutputContext] = None
+
+        if source_handle is not None:
+            version = self.execution_plan.get_version_for_step_output_handle(source_handle)
+
+            # NOTE: this is using downstream step_context for upstream OutputContext. step_context
+            # will be set to None for 0.15 release.
+            upstream_output = get_output_context(
+                self.execution_plan,
+                self.pipeline_def,
+                self.resolved_run_config,
+                source_handle,
+                self._get_source_run_id(source_handle),
+                log_manager=self.log,
+                step_context=self,
+                resources=None,
+                version=version,
+                warn_on_step_context_use=True,
+            )
+        else:
+            upstream_output = artificial_output_context
+
         return InputContext(
             pipeline_name=self.pipeline_def.name,
             name=name,
             solid_def=self.solid_def,
             config=config,
             metadata=metadata,
-            upstream_output=self.get_output_context(source_handle)
-            if source_handle is not None
-            else artificial_output_context,
+            upstream_output=upstream_output,
             dagster_type=dagster_type,
             log_manager=self.log,
             step_context=self,
@@ -527,19 +552,20 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         return HookContext(self, hook_def)
 
+    def get_known_state(self) -> "KnownExecutionState":
+        if not self._known_state:
+            check.failed(
+                "Attempted to access KnownExecutionState but it was not provided at context creation"
+            )
+        return self._known_state
+
     def can_load(
         self,
         step_output_handle: StepOutputHandle,
-        step_output_events: Sequence["DagsterEvent"],
     ) -> bool:
-        # Whether IO Manager can load the source
-        # FIXME https://github.com/dagster-io/dagster/issues/3511
-        # This is a stopgap which asks the instance to check the event logs to find out step skipping
-
         # can load from upstream in the same run
-        for event in step_output_events:
-            if step_output_handle == event.step_output_data.step_output_handle:
-                return True
+        if step_output_handle in self.get_known_state().ready_outputs:
+            return True
 
         if (
             self._should_load_from_previous_runs(step_output_handle)
@@ -695,7 +721,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def previous_attempt_count(self) -> int:
-        return self._previous_attempt_count
+        return self.get_known_state().get_retry_state().get_attempt_count(self._step.key)
 
     @property
     def op_config(self) -> Any:

@@ -87,9 +87,6 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
         else:
             path = list(check.sequence_param(path, "path", of_type=str))
 
-        check.invariant(
-            all(len(seg) > 0 for seg in path), "Asset key segments must be non-empty strings."
-        )
         return super(AssetKey, cls).__new__(cls, path=path)
 
     def __str__(self):

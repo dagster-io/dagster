@@ -40,9 +40,7 @@ def inner_plan_execution_iterator(
             step = active_execution.get_next_step()
             step_context = cast(
                 StepExecutionContext,
-                pipeline_context.for_step(
-                    step, active_execution.retry_state.get_attempt_count(step.key)
-                ),
+                pipeline_context.for_step(step, active_execution.get_known_state()),
             )
             step_event_list = []
 

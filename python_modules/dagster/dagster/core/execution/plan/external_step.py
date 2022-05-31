@@ -18,6 +18,7 @@ from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context.system import StepExecutionContext
 from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
 from dagster.core.execution.plan.execute_plan import dagster_event_sequence_for_step
+from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
 from dagster.serdes import deserialize_value
@@ -200,7 +201,7 @@ def step_context_to_step_run_ref(
         retry_mode=retry_mode,
         recon_pipeline=recon_pipeline,  # type: ignore
         prior_attempts_count=prior_attempts_count,
-        known_state=step_context.execution_plan.known_state,
+        known_state=step_context.get_known_state(),
         run_group=run_group,
         upstream_output_events=upstream_output_events,
     )
@@ -272,7 +273,8 @@ def step_run_ref_to_step_context(
     execution_step = cast("ExecutionStep", execution_plan.get_step_by_key(step_run_ref.step_key))
 
     step_execution_context = execution_context.for_step(
-        execution_step, step_run_ref.prior_attempts_count
+        execution_step,
+        step_run_ref.known_state or KnownExecutionState(),
     )
     # Since for_step is abstract for IPlanContext, its return type is IStepContext.
     # Since we are launching from a PlanExecutionContext, the type will always be

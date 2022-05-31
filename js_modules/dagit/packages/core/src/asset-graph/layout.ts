@@ -24,8 +24,11 @@ export type AssetGraphLayout = {
   edges: AssetLayoutEdge[];
   nodes: {[id: string]: AssetLayout};
 
-  bundleEdges: AssetLayoutEdge[];
   bundles: {[id: string]: AssetLayout};
+  bundleEdges: AssetLayoutEdge[];
+  bundleMapping: {
+    [prefixId: string]: string[];
+  };
 };
 
 const opts: {margin: number; mini: boolean} = {
@@ -174,6 +177,7 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
     edges,
     bundles,
     bundleEdges,
+    bundleMapping,
     width: maxWidth + opts.margin,
     height: maxHeight + opts.margin,
   };
@@ -196,6 +200,12 @@ export const ASSET_NODE_ICON_WIDTH = 20;
 export const ASSET_NODE_ANNOTATIONS_MAX_WIDTH = 65;
 export const ASSET_NODE_NAME_MAX_LENGTH = 32;
 const DISPLAY_NAME_PX_PER_CHAR = 8.0;
+
+export const assetNameMaxlengthForWidth = (width: number) => {
+  return (
+    (width - ASSET_NODE_ANNOTATIONS_MAX_WIDTH - ASSET_NODE_ICON_WIDTH) / DISPLAY_NAME_PX_PER_CHAR
+  );
+};
 
 export const getAssetNodeDimensions = (def: {
   assetKey: {path: string[]};

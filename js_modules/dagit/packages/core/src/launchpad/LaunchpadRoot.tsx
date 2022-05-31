@@ -17,7 +17,7 @@ import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
 import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadRootQuery';
 
-const LaunchpadSessionContainer = React.lazy(() => import('./LaunchpadSessionContainer'));
+const LaunchpadManySessionsContainer = React.lazy(() => import('./LaunchpadManySessionsContainer'));
 
 export const LaunchpadRoot: React.FC<{repoAddress: RepoAddress}> = (props) => {
   const {repoAddress} = props;
@@ -114,7 +114,7 @@ const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
 
   return (
     <React.Suspense fallback={<div />}>
-      <LaunchpadSessionContainer
+      <LaunchpadManySessionsContainer
         pipeline={pipelineOrError}
         partitionSets={partitionSetsOrError}
         repoAddress={repoAddress}

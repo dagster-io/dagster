@@ -1,6 +1,9 @@
 import {
+  Body,
   Box,
   Checkbox,
+  Colors,
+  Icon,
   MenuItem,
   Mono,
   NonIdealState,
@@ -25,11 +28,12 @@ import {
   QueryRefreshState,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
+import {withMiddleTruncation} from '../app/Util';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
-import {closestNodeInDirection, isNodeOffscreen, isPointWayOffscreen} from '../graph/common';
+import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {
   GraphExplorerOptions,
@@ -51,8 +55,8 @@ import {PipelineSelector} from '../types/globalTypes';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
-import {AssetConnectedEdges, AssetDisconnectedEdges} from './AssetEdges';
-import {AssetNode, AssetNodeMinimal} from './AssetNode';
+import {AssetConnectedEdges} from './AssetEdges';
+import {AssetNode, AssetNodeMinimal, NameMinimal} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
 import {OmittedAssetsNotice} from './OmittedAssetsNotice';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
@@ -319,11 +323,6 @@ const AssetGraphExplorerWithData: React.FC<
     }
   };
 
-  const onGoToPoint = React.useCallback(
-    (p) => viewportEl.current?.zoomToSVGCoords(p.x, p.y, true),
-    [viewportEl],
-  );
-
   const allBundleNames = React.useMemo(() => {
     return Object.keys(identifyBundles(props.allAssetKeys.map((a) => JSON.stringify(a.path))));
   }, [props.allAssetKeys]);
@@ -361,27 +360,7 @@ const AssetGraphExplorerWithData: React.FC<
             >
               {({scale: _scale}, viewportRect) => (
                 <SVGContainer width={layout.width} height={layout.height}>
-                  <AssetConnectedEdges
-                    highlighted={highlighted}
-                    edges={
-                      experiments
-                        ? layout.edges.filter(
-                            (e) =>
-                              !isPointWayOffscreen(e.from, viewportRect) &&
-                              !isPointWayOffscreen(e.to, viewportRect),
-                          )
-                        : layout.edges
-                    }
-                  />
-                  {experiments && (
-                    <AssetDisconnectedEdges
-                      viewport={viewportRect}
-                      layout={layout}
-                      highlighted={highlighted}
-                      setHighlighted={setHighlighted}
-                      onGoToPoint={onGoToPoint}
-                    />
-                  )}
+                  <AssetConnectedEdges highlighted={highlighted} edges={layout.edges} />
 
                   {Object.values(layout.bundles)
                     .sort((a, b) => a.id.length - b.id.length)
@@ -401,13 +380,39 @@ const AssetGraphExplorerWithData: React.FC<
                             }}
                           >
                             <AssetNodeMinimal
-                              color="rgba(248, 223, 196, 0.4)"
-                              definition={{assetKey: {path}}}
-                              fontSize={18 / _scale}
+                              style={{
+                                border: `${2 / _scale}px solid ${Colors.Gray300}`,
+                                background: Colors.White,
+                              }}
                               selected={selectedGraphNodes.some((g) =>
                                 hasPathPrefix(g.assetKey.path, path),
                               )}
-                            />
+                            >
+                              <NameMinimal
+                                style={{
+                                  fontSize: 18 / _scale,
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                }}
+                              >
+                                <div
+                                  style={{display: 'flex', gap: 3 / _scale, alignItems: 'center'}}
+                                >
+                                  <Icon
+                                    name="folder"
+                                    size={Math.round(16 / _scale) as any}
+                                    style={{marginTop: 4}}
+                                  />
+                                  {withMiddleTruncation(displayNameForAssetKey({path}), {
+                                    maxLength: 17,
+                                  })}
+                                </div>
+                                <Body style={{fontSize: 10 / _scale, color: Colors.Gray500}}>
+                                  {layout.bundleMapping[id].length} items
+                                </Body>
+                              </NameMinimal>
+                            </AssetNodeMinimal>
                           </foreignObject>
                         );
                       }
@@ -427,8 +432,11 @@ const AssetGraphExplorerWithData: React.FC<
                                   ? (_scale - EXPERIMENTAL_MINI_SCALE) / 0.2
                                   : 0,
                               fontWeight: 600,
+                              display: 'flex',
+                              gap: 6,
                             }}
                           >
+                            <Icon name="folder" size={20} />
                             {displayNameForAssetKey({path: JSON.parse(id)})}
                           </Mono>
                           <div
@@ -437,8 +445,8 @@ const AssetGraphExplorerWithData: React.FC<
                               top: 24,
                               position: 'absolute',
                               borderRadius: 10,
-                              border: `${3 / _scale}px dashed rgba(0,0,0,0.4)`,
-                              background: `rgba(248, 223, 196, ${
+                              border: `${3 / _scale}px dashed ${Colors.Gray300}`,
+                              background: `rgba(223, 223, 223, ${
                                 0.4 - Math.max(0, _scale - EXPERIMENTAL_MINI_SCALE) * 0.3
                               })`,
                             }}
@@ -487,10 +495,16 @@ const AssetGraphExplorerWithData: React.FC<
                           <ForeignNode assetKey={{path}} />
                         ) : experiments && _scale < EXPERIMENTAL_MINI_SCALE ? (
                           <AssetNodeMinimal
-                            definition={graphNode.definition}
+                            style={{background: Colors.White}}
                             selected={selectedGraphNodes.includes(graphNode)}
-                            fontSize={28}
-                          />
+                          >
+                            <NameMinimal style={{fontSize: 28}}>
+                              {withMiddleTruncation(
+                                displayNameForAssetKey(graphNode.definition.assetKey),
+                                {maxLength: 17},
+                              )}
+                            </NameMinimal>
+                          </AssetNodeMinimal>
                         ) : (
                           <AssetNode
                             definition={graphNode.definition}

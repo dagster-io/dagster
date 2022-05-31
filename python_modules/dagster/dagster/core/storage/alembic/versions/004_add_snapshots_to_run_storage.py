@@ -7,7 +7,7 @@ Create Date: 2020-04-09 05:57:20.639458
 """
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.engine import reflection
+from sqlalchemy import inspect
 
 from dagster.core.storage.migration.utils import has_column, has_table
 
@@ -22,8 +22,7 @@ depends_on = None
 
 
 def upgrade():
-    bind = op.get_context().bind
-    inspector = reflection.Inspector.from_engine(bind)
+    inspector = inspect(op.get_bind())
 
     if not has_table("runs"):
         return
@@ -50,7 +49,8 @@ def upgrade():
                         "snapshot_id",
                         sa.String(255),
                         sa.ForeignKey(
-                            "snapshots.snapshot_id", name="fk_runs_snapshot_id_snapshots_snapshot_id"
+                            "snapshots.snapshot_id",
+                            name="fk_runs_snapshot_id_snapshots_snapshot_id",
                         ),
                     ),
                 )
@@ -63,8 +63,7 @@ def upgrade():
 
 
 def downgrade():
-    bind = op.get_context().bind
-    inspector = reflection.Inspector.from_engine(bind)
+    inspector = inspect(op.get_bind())
 
     if not has_table("runs"):
         return
