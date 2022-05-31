@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, Spinner, Tooltip, FontFamily, Box, CaptionMono} from '@dagster-io/ui';
+import {Colors, Icon, Tooltip, FontFamily, Box, CaptionMono} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React, {CSSProperties} from 'react';
 import {Link} from 'react-router-dom';
@@ -28,110 +28,114 @@ export const AssetNode: React.FC<{
   liveData?: LiveDataForNode;
   computeStatus?: ComputeStatus;
   selected: boolean;
+  padded?: boolean;
   inAssetCatalog?: boolean;
-}> = React.memo(({definition, selected, liveData, inAssetCatalog, computeStatus}) => {
-  const firstOp = definition.opNames.length ? definition.opNames[0] : null;
-  const computeName = definition.graphName || definition.opNames[0] || null;
+}> = React.memo(
+  ({definition, selected, liveData, inAssetCatalog, computeStatus, padded = true}) => {
+    const firstOp = definition.opNames.length ? definition.opNames[0] : null;
+    const computeName = definition.graphName || definition.opNames[0] || null;
 
-  // Used for linking to the run with this step highlighted. We only support highlighting
-  // a single step, so just use the first one.
-  const stepKey = firstOp || '';
+    // Used for linking to the run with this step highlighted. We only support highlighting
+    // a single step, so just use the first one.
+    const stepKey = firstOp || '';
 
-  const displayName = withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {
-    maxLength: ASSET_NODE_NAME_MAX_LENGTH,
-  });
+    const displayName = withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {
+      maxLength: ASSET_NODE_NAME_MAX_LENGTH,
+    });
 
-  const {lastMaterialization} = liveData || MISSING_LIVE_DATA;
+    const {lastMaterialization} = liveData || MISSING_LIVE_DATA;
 
-  return (
-    <AssetNodeContainer $selected={selected}>
-      <AssetNodeBox $selected={selected}>
-        <Name>
-          <span style={{marginTop: 1}}>
-            <Icon name="asset" />
-          </span>
-          <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
-            {displayName}
-          </div>
-          <div style={{flex: 1}} />
-          <div style={{maxWidth: ASSET_NODE_ANNOTATIONS_MAX_WIDTH}}>
-            {computeStatus === 'old' && (
-              <UpstreamNotice>
-                upstream
-                <br />
-                changed
-              </UpstreamNotice>
-            )}
-          </div>
-        </Name>
-        {definition.description && !inAssetCatalog && (
-          <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
-        )}
-        {computeName && displayName !== computeName && (
-          <Description>
-            <Box
-              flex={{gap: 4, alignItems: 'flex-end'}}
-              style={{marginLeft: -2, overflow: 'hidden'}}
-            >
-              <Icon name={definition.graphName ? 'job' : 'op'} size={16} />
-              <div style={{minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis'}}>
-                {computeName}
-              </div>
-            </Box>
-          </Description>
-        )}
+    return (
+      <AssetNodeContainer $selected={selected} $padded={padded}>
+        <AssetNodeBox $selected={selected}>
+          <Name>
+            <span style={{marginTop: 1}}>
+              <Icon name="asset" />
+            </span>
+            <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
+              {displayName}
+            </div>
+            <div style={{flex: 1}} />
+            <div style={{maxWidth: ASSET_NODE_ANNOTATIONS_MAX_WIDTH}}>
+              {computeStatus === 'old' && (
+                <UpstreamNotice>
+                  upstream
+                  <br />
+                  changed
+                </UpstreamNotice>
+              )}
+            </div>
+          </Name>
+          {definition.description && !inAssetCatalog && (
+            <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
+          )}
+          {computeName && displayName !== computeName && (
+            <Description>
+              <Box
+                flex={{gap: 4, alignItems: 'flex-end'}}
+                style={{marginLeft: -2, overflow: 'hidden'}}
+              >
+                <Icon name={definition.graphName ? 'job' : 'op'} size={16} />
+                <div style={{minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis'}}>
+                  {computeName}
+                </div>
+              </Box>
+            </Description>
+          )}
 
-        <Stats>
-          {lastMaterialization ? (
-            <StatsRow>
-              <span>Materialized</span>
-              <CaptionMono>
-                <AssetRunLink
-                  runId={lastMaterialization.runId}
-                  event={{stepKey, timestamp: lastMaterialization.timestamp}}
-                >
-                  <TimestampDisplay
-                    timestamp={Number(lastMaterialization.timestamp) / 1000}
-                    timeFormat={{showSeconds: false, showTimezone: false}}
-                  />
-                </AssetRunLink>
-              </CaptionMono>
-            </StatsRow>
-          ) : (
-            <>
+          <Stats>
+            {lastMaterialization ? (
               <StatsRow>
                 <span>Materialized</span>
-                <span>–</span>
+                <CaptionMono>
+                  <AssetRunLink
+                    runId={lastMaterialization.runId}
+                    event={{stepKey, timestamp: lastMaterialization.timestamp}}
+                  >
+                    <TimestampDisplay
+                      timestamp={Number(lastMaterialization.timestamp) / 1000}
+                      timeFormat={{showSeconds: false, showTimezone: false}}
+                    />
+                  </AssetRunLink>
+                </CaptionMono>
               </StatsRow>
-            </>
-          )}
-          <StatsRow>
-            <span>Latest Run</span>
-            <CaptionMono>
-              <AssetLatestRunWithNotices liveData={liveData} stepKey={stepKey} />
-            </CaptionMono>
-          </StatsRow>
-        </Stats>
-        {definition.computeKind && (
-          <OpTags
-            minified={false}
-            style={{right: -2, paddingTop: 5}}
-            tags={[
-              {
-                label: definition.computeKind,
-                onClick: () => {
-                  window.requestAnimationFrame(() =>
-                    document.dispatchEvent(new Event('show-kind-info')),
-                  );
+            ) : (
+              <>
+                <StatsRow>
+                  <span>Materialized</span>
+                  <span>–</span>
+                </StatsRow>
+              </>
+            )}
+            <StatsRow>
+              <span>Latest Run</span>
+              <CaptionMono>
+                <AssetLatestRunWithNotices liveData={liveData} stepKey={stepKey} />
+              </CaptionMono>
+            </StatsRow>
+          </Stats>
+          {definition.computeKind && (
+            <OpTags
+              minified={false}
+              style={{right: -2, paddingTop: 5}}
+              tags={[
+                {
+                  label: definition.computeKind,
+                  onClick: () => {
+                    window.requestAnimationFrame(() =>
+                      document.dispatchEvent(new Event('show-kind-info')),
+                    );
+                  },
                 },
-              },
-            ]}
-          />
-        )}
-      </AssetNodeBox>
-    </AssetNodeContainer>
-  );
-}, isEqual);
+              ]}
+            />
+          )}
+        </AssetNodeBox>
+      </AssetNodeContainer>
+    );
+  },
+  isEqual,
+);
 
 export const AssetNodeMinimal: React.FC<{
   selected: boolean;
@@ -213,7 +217,7 @@ const BoxColors = {
   Stats: 'rgba(236, 236, 248, 1)',
 };
 
-const AssetNodeContainer = styled.div<{$selected: boolean}>`
+export const AssetNodeContainer = styled.div<{$selected: boolean; $padded?: boolean}>`
   outline: ${(p) => (p.$selected ? `2px dashed ${NodeHighlightColors.Border}` : 'none')};
   border-radius: 6px;
   outline-offset: -1px;
