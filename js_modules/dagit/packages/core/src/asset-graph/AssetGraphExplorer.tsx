@@ -4,11 +4,9 @@ import {
   Checkbox,
   Colors,
   Icon,
-  MenuItem,
   Mono,
   NonIdealState,
   SplitPanelContainer,
-  Suggest,
 } from '@dagster-io/ui';
 import flatMap from 'lodash/flatMap';
 import isEqual from 'lodash/isEqual';
@@ -68,7 +66,6 @@ import {
   isSourceAsset,
   tokenForAssetKey,
   displayNameForAssetKey,
-  identifyBundles,
   buildComputeStatusData,
 } from './Utils';
 import {AssetGraphLayout} from './layout';
@@ -321,10 +318,6 @@ const AssetGraphExplorerWithData: React.FC<
       viewportEl.current.zoomToSVGBox(layout.nodes[nextId].bounds, true);
     }
   };
-
-  const allBundleNames = React.useMemo(() => {
-    return Object.keys(identifyBundles(props.allAssetKeys.map((a) => JSON.stringify(a.path))));
-  }, [props.allAssetKeys]);
 
   const computeStatuses = React.useMemo(
     () => (assetGraphData ? buildComputeStatusData(assetGraphData, liveDataByNode) : {}),
@@ -585,37 +578,6 @@ const AssetGraphExplorerWithData: React.FC<
               onChange={(opsQuery) => onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')}
               popoverPosition="bottom-left"
             />
-            {allBundleNames.length > 0 && (
-              <Suggest<string>
-                inputProps={{placeholder: 'View a folder'}}
-                items={allBundleNames}
-                itemRenderer={(folder, props) => (
-                  <MenuItem
-                    text={displayNameForAssetKey({path: JSON.parse(folder)})}
-                    active={props.modifiers.active}
-                    onClick={props.handleClick}
-                    key={folder}
-                  />
-                )}
-                noResults={<MenuItem disabled={true} text="Loading..." />}
-                inputValueRenderer={(str) => str}
-                selectedItem=""
-                onItemSelect={(item) => {
-                  onChangeExplorerPath(
-                    {
-                      ...explorerPath,
-                      opsQuery: [
-                        explorerPath.opsQuery,
-                        `${displayNameForAssetKey({path: JSON.parse(item)})}/`,
-                      ]
-                        .filter(Boolean)
-                        .join(','),
-                    },
-                    'replace',
-                  );
-                }}
-              />
-            )}
           </QueryOverlay>
         </>
       }
