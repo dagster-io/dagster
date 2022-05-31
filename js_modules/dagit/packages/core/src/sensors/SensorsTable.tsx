@@ -92,7 +92,7 @@ const SensorRow: React.FC<{
           {sensor.metadata.assetKeys && sensor.metadata.assetKeys.length ? (
             <Box flex={{direction: 'column', gap: 2}}>
               {sensor.metadata.assetKeys.map((key) => (
-                <AssetLink key={key.path.join('/')} path={key.path} displayIcon={true} />
+                <AssetLink key={key.path.join('/')} path={key.path} icon="asset" />
               ))}
             </Box>
           ) : null}

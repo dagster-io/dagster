@@ -209,22 +209,79 @@ export const buildSVGPath = pathVerticalDiagonal({
   y: (s: any) => s.y,
 });
 
-export type Status = 'good' | 'old' | 'none' | 'unknown';
+export type ComputeStatus = 'good' | 'old' | 'none' | 'unknown';
 
 export interface LiveDataForNode {
-  computeStatus: Status;
   unstartedRunIds: string[]; // run in progress and step not started
   inProgressRunIds: string[]; // run in progress and step in progress
   runWhichFailedToMaterialize: AssetGraphLiveQuery_assetsLatestInfo_latestRun | null;
   lastMaterialization: AssetGraphLiveQuery_assetNodes_assetMaterializations | null;
-  lastChanged: number;
 }
 export interface LiveData {
   [assetId: GraphId]: LiveDataForNode;
 }
 
+export interface AssetDefinitionsForLiveData {
+  [id: string]: {
+    definition: {
+      partitionDefinition: string | null;
+      jobNames: string[];
+      opNames: string[];
+    };
+  };
+}
+
+export const buildComputeStatusData = (graph: GraphData, liveData: LiveData) => {
+  const statuses: {[assetId: string]: ComputeStatus} = {};
+  const lastChanged: {[assetId: string]: number} = {};
+
+  for (const [graphId, liveNode] of Object.entries(liveData)) {
+    const definition = graph.nodes[graphId]?.definition;
+    if (!definition) {
+      console.warn(`buildUpstreamChangedData could not find the definition matching ${graphId}`);
+      continue;
+    }
+
+    lastChanged[graphId] = Number(liveNode.lastMaterialization?.timestamp || 0) / 1000;
+    statuses[graphId] = isSourceAsset(definition)
+      ? 'good' // foreign nodes are always considered up-to-date
+      : definition.partitionDefinition
+      ? // partitioned nodes are not supported, need to compare materializations
+        // of the same partition key and the API does not make fetching this easy
+        'none'
+      : liveNode.lastMaterialization
+      ? 'unknown' // will resolve to 'good' or 'old' by looking upstream below
+      : 'none';
+  }
+
+  const fillStatusFor = (assetId: string): ComputeStatus => {
+    if (!statuses[assetId]) {
+      // Currently compute status assumes foreign nodes are up to date
+      // and only shows "upstream changed" for upstreams in the same job
+      return 'good';
+    }
+    if (statuses[assetId] !== 'unknown') {
+      return statuses[assetId];
+    }
+
+    const upstreamIds = Object.keys(graph.upstream[assetId] || {});
+
+    return upstreamIds.some((upstreamId) => lastChanged[upstreamId] > lastChanged[assetId])
+      ? 'old'
+      : upstreamIds.some((upstreamId) => fillStatusFor(upstreamId) !== 'good')
+      ? 'old'
+      : 'good';
+  };
+
+  for (const assetId of Object.keys(statuses)) {
+    statuses[assetId] = fillStatusFor(assetId);
+  }
+
+  return statuses;
+};
+
 export const buildLiveData = (
-  graph: GraphData,
+  assets: AssetDefinitionsForLiveData,
   nodes: AssetNodeLiveFragment[],
   assetsLatestInfo: AssetGraphLiveQuery_assetsLatestInfo[],
 ) => {
@@ -232,14 +289,12 @@ export const buildLiveData = (
 
   for (const liveNode of nodes) {
     const graphId = toGraphId(liveNode.assetKey);
-    const graphNode = graph.nodes[graphId];
-    if (!graphNode) {
-      console.warn(`buildLiveData could not find the graph node matching ${graphId}`);
+    const definition = assets[graphId]?.definition;
+    if (!definition) {
+      console.warn(`buildLiveData could not find the definition matching ${graphId}`);
       continue;
     }
     const lastMaterialization = liveNode.assetMaterializations[0] || null;
-    const lastChanged = Number(lastMaterialization?.timestamp || 0) / 1000;
-    const isPartitioned = graphNode.definition.partitionDefinition;
 
     const assetLiveRuns = assetsLatestInfo.find(
       (r) => JSON.stringify(r.assetKey) === JSON.stringify(liveNode.assetKey),
@@ -254,52 +309,15 @@ export const buildLiveData = (
       null;
 
     data[graphId] = {
-      lastChanged,
       lastMaterialization,
       inProgressRunIds: assetLiveRuns?.inProgressRunIds || [],
       unstartedRunIds: assetLiveRuns?.unstartedRunIds || [],
       runWhichFailedToMaterialize,
-      computeStatus: isSourceAsset(graphNode.definition)
-        ? 'good' // foreign nodes are always considered up-to-date
-        : isPartitioned
-        ? // partitioned nodes are not supported, need to compare materializations
-          // of the same partition key and the API does not make fetching this easy
-          'none'
-        : lastMaterialization
-        ? 'unknown' // resolve to 'good' or 'old' by looking upstream
-        : 'none',
     };
-  }
-
-  for (const liveNodeId of Object.keys(data)) {
-    data[liveNodeId].computeStatus = findComputeStatusForId(data, graph.upstream, liveNodeId);
   }
 
   return data;
 };
-
-function findComputeStatusForId(
-  data: LiveData,
-  upstream: {[assetId: string]: {[upstreamAssetId: string]: boolean}},
-  assetId: string,
-): Status {
-  if (!data[assetId]) {
-    // Currently compute status assumes foreign nodes are up to date
-    // and only shows "upstream changed" for upstreams in the same job
-    return 'good';
-  }
-  const ts = data[assetId].lastChanged;
-  const upstreamIds = Object.keys(upstream[assetId] || {});
-  if (data[assetId].computeStatus !== 'unknown') {
-    return data[assetId].computeStatus;
-  }
-
-  return upstreamIds.some((uid) => data[uid]?.lastChanged > ts)
-    ? 'old'
-    : upstreamIds.some((uid) => findComputeStatusForId(data, upstream, uid) !== 'good')
-    ? 'old'
-    : 'good';
-}
 
 export function tokenForAssetKey(key: {path: string[]}) {
   return key.path.join('/');
