@@ -18,7 +18,7 @@ import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {isAssetGroup} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -210,7 +210,7 @@ export const InstanceOverviewPage = () => {
           r.repositoryLocation.name === repoAddress.location,
       ) &&
       job.name.toLocaleLowerCase().includes(searchToLower) &&
-      !isAssetGroup(job.name);
+      !isHiddenAssetGroupJob(job.name);
 
     const {failed, inProgress, queued, succeeded, neverRan} = bucketed;
     return {

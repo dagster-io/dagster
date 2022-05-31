@@ -8,13 +8,11 @@ import {
   displayNameForAssetKey,
   isSourceAsset,
   LiveData,
-  tokenForAssetKey,
-  isAssetGroup,
+  isHiddenAssetGroupJob,
   __ASSET_GROUP_PREFIX,
 } from '../asset-graph/Utils';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
-import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
@@ -89,7 +87,6 @@ export const AssetNodeDefinition: React.FC<{
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Upstream Assets ({assetNode.dependencies.length})</Subheading>
-            <JobGraphLink repoAddress={repoAddress} assetNode={assetNode} direction="upstream" />
           </Box>
           <AssetNodeList items={assetNode.dependencies} liveDataByNode={liveDataByNode} />
 
@@ -99,7 +96,6 @@ export const AssetNodeDefinition: React.FC<{
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Downstream Assets ({assetNode.dependedBy.length})</Subheading>
-            <JobGraphLink repoAddress={repoAddress} assetNode={assetNode} direction="downstream" />
           </Box>
           <AssetNodeList items={assetNode.dependedBy} liveDataByNode={liveDataByNode} />
         </Box>
@@ -137,44 +133,13 @@ export const AssetNodeDefinition: React.FC<{
   );
 };
 
-const JobGraphLink: React.FC<{
-  repoAddress: RepoAddress;
-  assetNode: AssetNodeDefinitionFragment;
-  direction: 'upstream' | 'downstream';
-}> = ({direction, assetNode}) => {
-  if (isSourceAsset(assetNode)) {
-    return null;
-  }
-  const populated =
-    (direction === 'upstream' ? assetNode.dependencies : assetNode.dependedBy).length > 0;
-  if (!populated) {
-    return null;
-  }
-
-  const token = tokenForAssetKey(assetNode.assetKey);
-
-  return (
-    <Link
-      to={instanceAssetsExplorerPathToURL({
-        opNames: [],
-        opsQuery: direction === 'upstream' ? `*"${token}"` : `"${token}"*`,
-      })}
-    >
-      <Box flex={{gap: 4, alignItems: 'center'}}>
-        {direction === 'upstream' ? 'View upstream graph' : 'View downstream graph'}
-        <Icon name="open_in_new" color={Colors.Link} />
-      </Box>
-    </Link>
-  );
-};
-
 const DefinitionLocation: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
   repoAddress: RepoAddress;
 }> = ({assetNode, repoAddress}) => (
   <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}} style={{lineHeight: 0}}>
     {assetNode.jobNames
-      .filter((jobName) => !isAssetGroup(jobName))
+      .filter((jobName) => !isHiddenAssetGroupJob(jobName))
       .map((jobName) => (
         <Mono key={jobName}>
           <PipelineReference

@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {isAssetGroup} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {humanCronString} from '../schedules/humanCronString';
 import {InstigationStatus} from '../types/globalTypes';
@@ -97,7 +97,7 @@ export const getJobItemsForOption = (option: DagsterRepoOption) => {
 
   const {schedules, sensors} = repository;
   for (const pipeline of repository.pipelines) {
-    if (isAssetGroup(pipeline.name)) {
+    if (isHiddenAssetGroupJob(pipeline.name)) {
       continue;
     }
 

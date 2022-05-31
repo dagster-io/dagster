@@ -18,9 +18,11 @@ from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.resource_definition import (
     IContainsGenerator,
+    ResourceDefinition,
     Resources,
     ScopedResourcesBuilder,
 )
+from dagster.core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import (
@@ -29,7 +31,7 @@ from dagster.core.errors import (
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
 )
-from dagster.core.execution.build_resources import build_resources
+from dagster.core.execution.build_resources import build_resources, wrap_resources_for_execution
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -55,7 +57,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
     def __init__(
         self,
         solid_config: Any,
-        resources_dict: Optional[Dict[str, Any]],
+        resources_dict: Dict[str, Any],
         resources_config: Dict[str, Any],
         instance: Optional[DagsterInstance],
         partition_key: Optional[str],
@@ -79,8 +81,9 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         self._resources_config = resources_config
         # Open resource context manager
         self._resources_contain_cm = False
+        self._resource_defs = wrap_resources_for_execution(resources_dict)
         self._resources_cm = build_resources(
-            resources=check.opt_dict_param(resources_dict, "resources_dict", key_type=str),
+            resources=self._resource_defs,
             instance=instance,
             resource_config=resources_config,
         )
@@ -221,7 +224,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
             else solid_def_or_invocation.node_def.ensure_solid_def()
         )
 
-        _validate_resource_requirements(self.resources, solid_def)
+        _validate_resource_requirements(self._resource_defs, solid_def)
 
         solid_config = _resolve_bound_config(self.solid_config, solid_def)
 
@@ -294,18 +297,14 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         return self._mapping_key
 
 
-def _validate_resource_requirements(resources: "Resources", solid_def: SolidDefinition) -> None:
+def _validate_resource_requirements(
+    resource_defs: Dict[str, ResourceDefinition], solid_def: SolidDefinition
+) -> None:
     """Validate correctness of resources against required resource keys"""
 
-    resources_dict = resources._asdict()  # type: ignore[attr-defined]
-
-    required_resource_keys: AbstractSet[str] = solid_def.required_resource_keys or set()
-    for resource_key in required_resource_keys:
-        if resource_key not in resources_dict:
-            raise DagsterInvalidInvocationError(
-                f'{solid_def.node_type_str} "{solid_def.name}" requires resource "{resource_key}", but no resource '
-                "with that key was found on the context."
-            )
+    for requirement in solid_def.get_resource_requirements():
+        if not requirement.is_io_manager_requirement:
+            ensure_requirements_satisfied(resource_defs, [requirement])
 
 
 def _resolve_bound_config(solid_config: Any, solid_def: SolidDefinition) -> Any:

@@ -1,11 +1,12 @@
 import {
+  Body,
   Box,
   Checkbox,
-  MenuItem,
+  Colors,
+  Icon,
   Mono,
   NonIdealState,
   SplitPanelContainer,
-  Suggest,
 } from '@dagster-io/ui';
 import flatMap from 'lodash/flatMap';
 import isEqual from 'lodash/isEqual';
@@ -25,11 +26,12 @@ import {
   QueryRefreshState,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
+import {withMiddleTruncation} from '../app/Util';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
-import {closestNodeInDirection, isNodeOffscreen, isPointWayOffscreen} from '../graph/common';
+import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {
   GraphExplorerOptions,
@@ -44,15 +46,15 @@ import {
   LargeDAGNotice,
   LoadingNotice,
 } from '../pipelines/GraphNotices';
-import {ExplorerPath, instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
+import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../pipelines/SidebarPipelineOrJobOverview';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 import {PipelineSelector} from '../types/globalTypes';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
-import {AssetConnectedEdges, AssetDisconnectedEdges} from './AssetEdges';
-import {AssetNode, AssetNodeMinimal} from './AssetNode';
+import {AssetConnectedEdges} from './AssetEdges';
+import {AssetNode, AssetNodeMinimal, NameMinimal} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
 import {OmittedAssetsNotice} from './OmittedAssetsNotice';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
@@ -64,7 +66,7 @@ import {
   isSourceAsset,
   tokenForAssetKey,
   displayNameForAssetKey,
-  identifyBundles,
+  buildComputeStatusData,
 } from './Utils';
 import {AssetGraphLayout} from './layout';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
@@ -98,11 +100,9 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   } = useAssetGraphData(props.pipelineSelector, props.explorerPath.opsQuery);
 
   const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(
-    props.pipelineSelector,
-    assetGraphData,
+    assetGraphData?.nodes,
     graphAssetKeys,
   );
-
   const liveDataRefreshState = useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS);
 
   useDocumentTitle('Assets');
@@ -181,8 +181,6 @@ const AssetGraphExplorerWithData: React.FC<
     ? selectedGraphNodes
     : Object.values(assetGraphData.nodes).filter((a) => !isSourceAsset(a.definition));
 
-  const isGlobalGraph = !pipelineSelector;
-
   const onSelectNode = React.useCallback(
     async (
       e: React.MouseEvent<any> | React.KeyboardEvent<any>,
@@ -205,7 +203,7 @@ const AssetGraphExplorerWithData: React.FC<
         clicked = await findJobForAsset(assetKey);
       }
 
-      if (!clicked.opNames.length) {
+      if (!clicked.jobName || !clicked.opNames.length) {
         // This op has no definition in any loaded repository (source asset).
         // The best we can do is show the asset page. This will still be mostly empty,
         // but there can be a description.
@@ -213,21 +211,9 @@ const AssetGraphExplorerWithData: React.FC<
         return;
       }
 
-      if (!clicked.jobName && !isGlobalGraph) {
-        // This asset has a definition (opName) but isn't in any non asset-group jobs.
-        // We can switch to the instance-wide asset graph and see it in context there.
-        history.push(
-          instanceAssetsExplorerPathToURL({
-            opsQuery: `++"${token}"++`,
-            opNames: [token],
-          }),
-        );
-        return;
-      }
-
       // This asset is in different job (and we're in the job explorer),
       // go to the other job.
-      if (!isGlobalGraph && clicked.jobName !== explorerPath.pipelineName) {
+      if (clicked.jobName !== explorerPath.pipelineName) {
         onChangeExplorerPath(
           {...explorerPath, opNames: [token], opsQuery: '', pipelineName: clicked.jobName!},
           'replace',
@@ -265,7 +251,6 @@ const AssetGraphExplorerWithData: React.FC<
       );
     },
     [
-      isGlobalGraph,
       explorerPath,
       onChangeExplorerPath,
       findJobForAsset,
@@ -319,14 +304,10 @@ const AssetGraphExplorerWithData: React.FC<
     }
   };
 
-  const onGoToPoint = React.useCallback(
-    (p) => viewportEl.current?.zoomToSVGCoords(p.x, p.y, true),
-    [viewportEl],
+  const computeStatuses = React.useMemo(
+    () => (assetGraphData ? buildComputeStatusData(assetGraphData, liveDataByNode) : {}),
+    [assetGraphData, liveDataByNode],
   );
-
-  const allBundleNames = React.useMemo(() => {
-    return Object.keys(identifyBundles(props.allAssetKeys.map((a) => JSON.stringify(a.path))));
-  }, [props.allAssetKeys]);
 
   return (
     <SplitPanelContainer
@@ -361,27 +342,7 @@ const AssetGraphExplorerWithData: React.FC<
             >
               {({scale: _scale}, viewportRect) => (
                 <SVGContainer width={layout.width} height={layout.height}>
-                  <AssetConnectedEdges
-                    highlighted={highlighted}
-                    edges={
-                      experiments
-                        ? layout.edges.filter(
-                            (e) =>
-                              !isPointWayOffscreen(e.from, viewportRect) &&
-                              !isPointWayOffscreen(e.to, viewportRect),
-                          )
-                        : layout.edges
-                    }
-                  />
-                  {experiments && (
-                    <AssetDisconnectedEdges
-                      viewport={viewportRect}
-                      layout={layout}
-                      highlighted={highlighted}
-                      setHighlighted={setHighlighted}
-                      onGoToPoint={onGoToPoint}
-                    />
-                  )}
+                  <AssetConnectedEdges highlighted={highlighted} edges={layout.edges} />
 
                   {Object.values(layout.bundles)
                     .sort((a, b) => a.id.length - b.id.length)
@@ -401,13 +362,39 @@ const AssetGraphExplorerWithData: React.FC<
                             }}
                           >
                             <AssetNodeMinimal
-                              color="rgba(248, 223, 196, 0.4)"
-                              definition={{assetKey: {path}}}
-                              fontSize={18 / _scale}
+                              style={{
+                                border: `${2 / _scale}px solid ${Colors.Gray300}`,
+                                background: Colors.White,
+                              }}
                               selected={selectedGraphNodes.some((g) =>
                                 hasPathPrefix(g.assetKey.path, path),
                               )}
-                            />
+                            >
+                              <NameMinimal
+                                style={{
+                                  fontSize: 18 / _scale,
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                }}
+                              >
+                                <div
+                                  style={{display: 'flex', gap: 3 / _scale, alignItems: 'center'}}
+                                >
+                                  <Icon
+                                    name="folder"
+                                    size={Math.round(16 / _scale) as any}
+                                    style={{marginTop: 4}}
+                                  />
+                                  {withMiddleTruncation(displayNameForAssetKey({path}), {
+                                    maxLength: 17,
+                                  })}
+                                </div>
+                                <Body style={{fontSize: 10 / _scale, color: Colors.Gray500}}>
+                                  {layout.bundleMapping[id].length} items
+                                </Body>
+                              </NameMinimal>
+                            </AssetNodeMinimal>
                           </foreignObject>
                         );
                       }
@@ -427,8 +414,11 @@ const AssetGraphExplorerWithData: React.FC<
                                   ? (_scale - EXPERIMENTAL_MINI_SCALE) / 0.2
                                   : 0,
                               fontWeight: 600,
+                              display: 'flex',
+                              gap: 6,
                             }}
                           >
+                            <Icon name="folder" size={20} />
                             {displayNameForAssetKey({path: JSON.parse(id)})}
                           </Mono>
                           <div
@@ -437,8 +427,8 @@ const AssetGraphExplorerWithData: React.FC<
                               top: 24,
                               position: 'absolute',
                               borderRadius: 10,
-                              border: `${3 / _scale}px dashed rgba(0,0,0,0.4)`,
-                              background: `rgba(248, 223, 196, ${
+                              border: `${3 / _scale}px dashed ${Colors.Gray300}`,
+                              background: `rgba(223, 223, 223, ${
                                 0.4 - Math.max(0, _scale - EXPERIMENTAL_MINI_SCALE) * 0.3
                               })`,
                             }}
@@ -487,14 +477,21 @@ const AssetGraphExplorerWithData: React.FC<
                           <ForeignNode assetKey={{path}} />
                         ) : experiments && _scale < EXPERIMENTAL_MINI_SCALE ? (
                           <AssetNodeMinimal
-                            definition={graphNode.definition}
+                            style={{background: Colors.White}}
                             selected={selectedGraphNodes.includes(graphNode)}
-                            fontSize={28}
-                          />
+                          >
+                            <NameMinimal style={{fontSize: 28}}>
+                              {withMiddleTruncation(
+                                displayNameForAssetKey(graphNode.definition.assetKey),
+                                {maxLength: 17},
+                              )}
+                            </NameMinimal>
+                          </AssetNodeMinimal>
                         ) : (
                           <AssetNode
                             definition={graphNode.definition}
                             liveData={liveDataByNode[graphNode.id]}
+                            computeStatus={computeStatuses[graphNode.id]}
                             selected={selectedGraphNodes.includes(graphNode)}
                           />
                         )}
@@ -566,37 +563,6 @@ const AssetGraphExplorerWithData: React.FC<
               onChange={(opsQuery) => onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')}
               popoverPosition="bottom-left"
             />
-            {allBundleNames.length > 0 && (
-              <Suggest<string>
-                inputProps={{placeholder: 'View a folder'}}
-                items={allBundleNames}
-                itemRenderer={(folder, props) => (
-                  <MenuItem
-                    text={displayNameForAssetKey({path: JSON.parse(folder)})}
-                    active={props.modifiers.active}
-                    onClick={props.handleClick}
-                    key={folder}
-                  />
-                )}
-                noResults={<MenuItem disabled={true} text="Loading..." />}
-                inputValueRenderer={(str) => str}
-                selectedItem=""
-                onItemSelect={(item) => {
-                  onChangeExplorerPath(
-                    {
-                      ...explorerPath,
-                      opsQuery: [
-                        explorerPath.opsQuery,
-                        `${displayNameForAssetKey({path: JSON.parse(item)})}/`,
-                      ]
-                        .filter(Boolean)
-                        .join(','),
-                    },
-                    'replace',
-                  );
-                }}
-              />
-            )}
           </QueryOverlay>
         </>
       }

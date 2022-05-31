@@ -22,7 +22,6 @@ import {Timestamp} from '../app/time/Timestamp';
 import {
   buildGraphDataFromSingleNode,
   buildLiveData,
-  REPOSITORY_LIVE_FRAGMENT,
   LiveData,
   displayNameForAssetKey,
   toGraphId,
@@ -83,10 +82,6 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   >(ASSET_NODE_DEFINITION_LIVE_QUERY, {
     skip: !repoAddress,
     variables: {
-      repositorySelector: {
-        repositoryLocationName: repoAddress ? repoAddress.location : '',
-        repositoryName: repoAddress ? repoAddress.name : '',
-      },
       assetKeys: [assetKey],
     },
     notifyOnNetworkStatusChange: true,
@@ -103,23 +98,18 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   let liveDataByNode: LiveData = {};
 
-  const repo =
-    liveQueryResult.data?.repositoryOrError.__typename === 'Repository'
-      ? liveQueryResult.data.repositoryOrError
-      : null;
-
   const assetsLatestInfo = liveQueryResult.data ? liveQueryResult.data.assetsLatestInfo : null;
 
-  if (definition && repo && assetsLatestInfo) {
+  if (definition && assetsLatestInfo) {
     const nodesWithLatestMaterialization = [
       definition,
       ...definition.dependencies.map((d) => d.asset),
       ...definition.dependedBy.map((d) => d.asset),
     ];
+    const graphData = buildGraphDataFromSingleNode(definition);
     liveDataByNode = buildLiveData(
-      buildGraphDataFromSingleNode(definition),
+      graphData.nodes,
       nodesWithLatestMaterialization,
-      [repo],
       assetsLatestInfo,
     );
   }
@@ -263,27 +253,19 @@ const ASSET_QUERY = gql`
 `;
 
 const ASSET_NODE_DEFINITION_LIVE_QUERY = gql`
-  query AssetNodeDefinitionLiveQuery(
-    $repositorySelector: RepositorySelector!
-    $assetKeys: [AssetKeyInput!]
-  ) {
-    repositoryOrError(repositorySelector: $repositorySelector) {
-      __typename
-      ... on Repository {
-        id
-        name
-        ...RepositoryLiveFragment
-      }
-    }
+  query AssetNodeDefinitionLiveQuery($assetKeys: [AssetKeyInput!]) {
     assetsLatestInfo(assetKeys: $assetKeys) {
       assetKey {
         path
       }
       unstartedRunIds
       inProgressRunIds
+      latestRun {
+        status
+        id
+      }
     }
   }
-  ${REPOSITORY_LIVE_FRAGMENT}
 `;
 
 const HistoricalViewAlert: React.FC<{

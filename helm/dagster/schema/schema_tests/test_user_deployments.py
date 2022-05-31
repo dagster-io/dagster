@@ -504,7 +504,7 @@ def test_user_deployment_default_image_tag_is_chart_version(
     assert image_tag == chart_version
 
 
-@pytest.mark.parametrize("tag", [5176135, "abc1234"])
+@pytest.mark.parametrize("tag", [5176135, "abc1234", "20220531.1", "1234"])
 def test_user_deployment_tag_can_be_numeric(template: HelmTemplate, tag: Union[str, int]):
     deployment = create_simple_user_deployment("foo")
     deployment.image.tag = tag

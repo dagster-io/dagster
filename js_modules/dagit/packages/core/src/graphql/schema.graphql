@@ -92,7 +92,6 @@ type Repository {
   sensors: [Sensor!]!
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
-  latestRunByStep: [LatestRun!]!
 }
 
 type RepositoryLocation {
@@ -1526,11 +1525,6 @@ type NodeInvocationSite {
   solidHandle: SolidHandle!
 }
 
-type LatestRun {
-  stepKey: String!
-  run: Run
-}
-
 """
 This type represents the fields necessary to identify a repository.
 """
@@ -1963,6 +1957,7 @@ type AssetLatestInfo {
   latestMaterialization: MaterializationEvent
   unstartedRunIds: [String!]!
   inProgressRunIds: [String!]!
+  latestRun: Run
 }
 
 """
