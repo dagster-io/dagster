@@ -15,9 +15,7 @@ import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 export const SearchIndexContext = React.createContext(null);
 import path from "path";
-import CopyToClipboard from "react-copy-to-clipboard";
 import { Transition } from "@headlessui/react";
-import cx from "classnames";
 
 const PyObject: React.FunctionComponent<{
   module: string;
@@ -314,13 +312,15 @@ const Experimental = () => {
 const Pre = ({ children, ...props }) => {
   const preRef = useRef<HTMLPreElement>(null);
   const [copied, setCopied] = useState(false);
-  const [code, setCode] = useState(null);
 
-  const onClick = () => {
-    if (preRef.current?.innerText) {
-      setCode(preRef.current.innerText);
+  const onClick = async () => {
+    try {
+      await navigator.clipboard.writeText(preRef.current?.innerText);
       setCopied(true);
+    } catch (err) {
+      console.log("Fail to copy", err);
     }
+
     setTimeout(() => {
       setCopied(false);
     }, 1000);
@@ -339,22 +339,20 @@ const Pre = ({ children, ...props }) => {
         leaveTo="opacity-0 scale-95"
       >
         <div className="absolute top-0 right-0 mt-2 mr-2">
-          <CopyToClipboard text={code}>
-            <svg
-              className="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-300"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              onClick={onClick}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-              />
-            </svg>
-          </CopyToClipboard>
+          <svg
+            className="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-300"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            onClick={onClick}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+            />
+          </svg>
         </div>
       </Transition>
       <Transition
