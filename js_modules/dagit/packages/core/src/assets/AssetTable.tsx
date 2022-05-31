@@ -1,16 +1,30 @@
 import {gql, RefetchQueriesFunction} from '@apollo/client';
-import {Box, Button, Checkbox, Colors, Icon, MenuItem, Menu, Popover, Table} from '@dagster-io/ui';
+import {
+  Box,
+  Button,
+  Checkbox,
+  Colors,
+  Icon,
+  MenuItem,
+  Menu,
+  Popover,
+  Table,
+  Mono,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
-import {tokenForAssetKey} from '../asset-graph/Utils';
+import {AssetLatestRunWithNotices, AssetRunLink} from '../asset-graph/AssetNode';
+import {LiveData, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {MenuLink} from '../ui/MenuLink';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';
@@ -21,7 +35,7 @@ type AssetKey = {path: string[]};
 export const AssetTable = ({
   assets,
   actionBarComponents,
-
+  liveDataByNode,
   prefixPath,
   displayPathForAsset,
   maxDisplayCount,
@@ -29,7 +43,7 @@ export const AssetTable = ({
 }: {
   assets: Asset[];
   actionBarComponents: React.ReactNode;
-
+  liveDataByNode: LiveData;
   prefixPath: string[];
   displayPathForAsset: (asset: Asset) => string[];
   maxDisplayCount?: number;
@@ -85,6 +99,8 @@ export const AssetTable = ({
             </th>
             <th>Asset Key</th>
             <th style={{width: 340}}>Defined In</th>
+            <th style={{width: 200}}>Materialized</th>
+            <th style={{width: 100}}>Latest Run</th>
             <th style={{width: 80}}>Actions</th>
           </tr>
         </thead>
@@ -97,6 +113,7 @@ export const AssetTable = ({
                   prefixPath={prefixPath}
                   path={JSON.parse(pathStr)}
                   assets={assetGroups[pathStr] || []}
+                  liveDataByNode={liveDataByNode}
                   isSelected={checkedPaths.has(pathStr)}
                   onToggleChecked={onToggleFactory(pathStr)}
                   onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
@@ -138,105 +155,141 @@ const AssetEntryRow: React.FC<{
   isSelected: boolean;
   onToggleChecked: (values: {checked: boolean; shiftKey: boolean}) => void;
   assets: Asset[];
+  liveDataByNode: LiveData;
   onWipe: (assets: Asset[]) => void;
   canWipe?: boolean;
-}> = React.memo(({prefixPath, path, assets, isSelected, onToggleChecked, onWipe, canWipe}) => {
-  const fullPath = [...prefixPath, ...path];
-  const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
+}> = React.memo(
+  ({prefixPath, path, assets, isSelected, onToggleChecked, onWipe, canWipe, liveDataByNode}) => {
+    const fullPath = [...prefixPath, ...path];
+    const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
 
-  const representsSingleAsset =
-    assets.length === 1 && fullPath.join('/') === assets[0].key.path.join('/');
-  const representsAtLeastOneSDA = assets.some((a) => !!a.definition);
-  const asset = representsSingleAsset ? assets[0] : null;
+    const isGroup = assets.length > 1 || fullPath.join('/') !== assets[0].key.path.join('/');
+    const representsAtLeastOneSDA = assets.some((a) => !!a.definition);
+    const asset = !isGroup ? assets[0] : null;
 
-  const onChange = (e: React.FormEvent<HTMLInputElement>) => {
-    if (e.target instanceof HTMLInputElement) {
-      const {checked} = e.target;
-      const shiftKey =
-        e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
-      onToggleChecked({checked, shiftKey});
-    }
-  };
-  return (
-    <tr>
-      <td style={{paddingRight: '4px'}}>
-        <Checkbox checked={isSelected} onChange={onChange} />
-      </td>
-      <td>
-        <AssetLink path={path} url={linkUrl} trailingSlash={!representsSingleAsset} />
-        <Description>
-          {asset?.definition &&
-            asset.definition.description &&
-            markdownToPlaintext(asset.definition.description).split('\n')[0]}
-        </Description>
-      </td>
-      <td>
-        {asset?.definition && (
-          <Box flex={{direction: 'column', gap: 2}}>
-            <RepositoryLink
-              showIcon
-              showRefresh={false}
-              repoAddress={{
-                name: asset.definition.repository.name,
-                location: asset.definition.repository.location.name,
-              }}
-            />
-          </Box>
-        )}
-      </td>
-      <td>
-        {asset ? (
-          <Box flex={{gap: 8, alignItems: 'center'}}>
-            {asset.definition?.opNames.length ? (
-              <Link
-                to={instanceAssetsExplorerPathToURL({
-                  opsQuery: `++"${tokenForAssetKey({path})}"++`,
-                  opNames: [tokenForAssetKey({path})],
-                })}
-              >
-                <Button>View in Asset Graph</Button>
-              </Link>
+    const onChange = (e: React.FormEvent<HTMLInputElement>) => {
+      if (e.target instanceof HTMLInputElement) {
+        const {checked} = e.target;
+        const shiftKey =
+          e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
+        onToggleChecked({checked, shiftKey});
+      }
+    };
+
+    const liveData = asset && liveDataByNode[toGraphId(asset.key)];
+    const stepKey = asset && asset.definition?.opNames[0];
+    const repoAddress = asset?.definition
+      ? buildRepoAddress(
+          asset.definition.repository.name,
+          asset.definition.repository.location.name,
+        )
+      : null;
+
+    return (
+      <tr>
+        <td style={{paddingRight: '4px'}}>
+          <Checkbox checked={isSelected} onChange={onChange} />
+        </td>
+        <td>
+          <AssetLink
+            path={path}
+            url={linkUrl}
+            isGroup={isGroup}
+            icon={isGroup ? 'folder' : asset?.definition ? 'asset' : 'materialization'}
+          />
+          <Description>
+            {asset?.definition &&
+              asset.definition.description &&
+              markdownToPlaintext(asset.definition.description).split('\n')[0]}
+          </Description>
+        </td>
+        <td>
+          {repoAddress && (
+            <Box flex={{direction: 'column'}}>
+              <RepositoryLink showIcon showRefresh={false} repoAddress={repoAddress} />
+            </Box>
+          )}
+        </td>
+        <td>
+          {liveData && stepKey ? (
+            liveData.lastMaterialization ? (
+              <Mono>
+                <AssetRunLink
+                  runId={liveData.lastMaterialization.runId}
+                  event={{stepKey, timestamp: liveData.lastMaterialization.timestamp}}
+                >
+                  <TimestampDisplay
+                    timestamp={Number(liveData.lastMaterialization.timestamp) / 1000}
+                    timeFormat={{showSeconds: false, showTimezone: false}}
+                  />
+                </AssetRunLink>
+              </Mono>
             ) : (
-              <Button disabled={true}>View in Asset Graph</Button>
-            )}
-            <Popover
-              position="bottom-right"
-              content={
-                <Menu>
-                  <MenuLink
-                    text="View details…"
-                    to={`/instance/assets/${path.join('/')}`}
-                    icon="view_list"
-                  />
-                  <MenuItem
-                    text="Wipe Asset…"
-                    icon="delete"
-                    disabled={!canWipe}
-                    intent="danger"
-                    onClick={() => canWipe && onWipe(assets)}
-                  />
-                </Menu>
-              }
+              <span>–</span>
+            )
+          ) : undefined}
+        </td>
+        <td>
+          {liveData && stepKey && (
+            <Mono>
+              <AssetLatestRunWithNotices stepKey={stepKey} liveData={liveData} />
+            </Mono>
+          )}
+        </td>
+        <td>
+          {asset ? (
+            <Box flex={{gap: 8, alignItems: 'center'}}>
+              {asset.definition?.opNames.length ? (
+                <Link
+                  to={instanceAssetsExplorerPathToURL({
+                    opsQuery: `++"${tokenForAssetKey({path})}"++`,
+                    opNames: [tokenForAssetKey({path})],
+                  })}
+                >
+                  <Button>View in Asset Graph</Button>
+                </Link>
+              ) : (
+                <Button disabled={true}>View in Asset Graph</Button>
+              )}
+              <Popover
+                position="bottom-right"
+                content={
+                  <Menu>
+                    <MenuLink
+                      text="View details…"
+                      to={`/instance/assets/${path.join('/')}`}
+                      icon="view_list"
+                    />
+                    <MenuItem
+                      text="Wipe Asset…"
+                      icon="delete"
+                      disabled={!canWipe}
+                      intent="danger"
+                      onClick={() => canWipe && onWipe(assets)}
+                    />
+                  </Menu>
+                }
+              >
+                <Button icon={<Icon name="expand_more" />} />
+              </Popover>
+            </Box>
+          ) : representsAtLeastOneSDA ? (
+            <Link
+              to={instanceAssetsExplorerPathToURL({
+                opsQuery: `${tokenForAssetKey({path})}/`,
+                opNames: [],
+              })}
             >
-              <Button icon={<Icon name="expand_more" />} />
-            </Popover>
-          </Box>
-        ) : representsAtLeastOneSDA ? (
-          <Link
-            to={instanceAssetsExplorerPathToURL({
-              opsQuery: `${tokenForAssetKey({path})}/`,
-              opNames: [],
-            })}
-          >
-            <Button>View in Asset Graph</Button>
-          </Link>
-        ) : (
-          <span />
-        )}
-      </td>
-    </tr>
-  );
-});
+              <Button>View in Asset Graph</Button>
+            </Link>
+          ) : (
+            <span />
+          )}
+        </td>
+      </tr>
+    );
+  },
+);
 
 const AssetBulkActions: React.FC<{
   selected: Asset[];
@@ -293,6 +346,8 @@ export const ASSET_TABLE_FRAGMENT = gql`
     definition {
       id
       opNames
+      jobNames
+      partitionDefinition
       description
       repository {
         id

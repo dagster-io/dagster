@@ -29,6 +29,8 @@ export interface AssetTableFragment_definition {
   __typename: "AssetNode";
   id: string;
   opNames: string[];
+  jobNames: string[];
+  partitionDefinition: string | null;
   description: string | null;
   repository: AssetTableFragment_definition_repository;
 }

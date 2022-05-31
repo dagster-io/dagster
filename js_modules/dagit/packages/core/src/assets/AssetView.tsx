@@ -106,8 +106,9 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       ...definition.dependencies.map((d) => d.asset),
       ...definition.dependedBy.map((d) => d.asset),
     ];
+    const graphData = buildGraphDataFromSingleNode(definition);
     liveDataByNode = buildLiveData(
-      buildGraphDataFromSingleNode(definition),
+      graphData.nodes,
       nodesWithLatestMaterialization,
       assetsLatestInfo,
     );

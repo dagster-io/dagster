@@ -292,8 +292,7 @@ const AssetGrid: React.FC<{
     boxes.find((b) => b.id === expanded)?.contentIds.map((id) => ({path: JSON.parse(id)})) || [];
 
   const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(
-    null,
-    assetGraphData,
+    assetGraphData?.nodes,
     expandedAssetKeys,
   );
 

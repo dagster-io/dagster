@@ -69,6 +69,7 @@ import {
   tokenForAssetKey,
   displayNameForAssetKey,
   identifyBundles,
+  buildComputeStatusData,
 } from './Utils';
 import {AssetGraphLayout} from './layout';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
@@ -102,11 +103,9 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   } = useAssetGraphData(props.pipelineSelector, props.explorerPath.opsQuery);
 
   const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(
-    props.pipelineSelector,
-    assetGraphData,
+    assetGraphData?.nodes,
     graphAssetKeys,
   );
-
   const liveDataRefreshState = useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS);
 
   useDocumentTitle('Assets');
@@ -327,6 +326,11 @@ const AssetGraphExplorerWithData: React.FC<
     return Object.keys(identifyBundles(props.allAssetKeys.map((a) => JSON.stringify(a.path))));
   }, [props.allAssetKeys]);
 
+  const computeStatuses = React.useMemo(
+    () => (assetGraphData ? buildComputeStatusData(assetGraphData, liveDataByNode) : {}),
+    [assetGraphData, liveDataByNode],
+  );
+
   return (
     <SplitPanelContainer
       identifier="explorer"
@@ -509,6 +513,7 @@ const AssetGraphExplorerWithData: React.FC<
                           <AssetNode
                             definition={graphNode.definition}
                             liveData={liveDataByNode[graphNode.id]}
+                            computeStatus={computeStatuses[graphNode.id]}
                             selected={selectedGraphNodes.includes(graphNode)}
                           />
                         )}
