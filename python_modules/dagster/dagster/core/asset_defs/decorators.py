@@ -127,7 +127,7 @@ def asset(
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
-        group_jname (Optional[str]): A string name used to organize multiple assets into groups.
+        group_name (Optional[str]): A string name used to organize multiple assets into groups.
 
     Examples:
 
@@ -289,7 +289,6 @@ def multi_asset(
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     op_tags: Optional[Dict[str, Any]] = None,
     can_subset: bool = False,
-    # TODO - does this need a group name too?
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.

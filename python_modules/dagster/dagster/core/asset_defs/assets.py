@@ -63,7 +63,7 @@ class AssetsDefinition:
             f"expected keys: {all_asset_keys}",
         )
         self._resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
-        self._group_names = check.opt_mapping_param(group_names, "group_name")
+        self._group_names = check.opt_mapping_param(group_names, "group_names")
 
         if selected_asset_keys is not None:
             self._selected_asset_keys = selected_asset_keys

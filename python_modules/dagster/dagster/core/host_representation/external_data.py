@@ -823,7 +823,7 @@ def external_asset_graph_from_defs(
                     downstream_asset_key=output_key
                 )
 
-        group_names.update(pipeline_def.asset_layer.group_names_for_assets())
+        group_names.update(pipeline_def.asset_layer.group_names_by_assets())
 
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
         node_defs_by_asset_key.keys()
