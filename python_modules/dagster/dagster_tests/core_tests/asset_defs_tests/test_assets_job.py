@@ -20,7 +20,6 @@ from dagster import (
     graph,
     in_process_executor,
     io_manager,
-    mem_io_manager,
     multi_asset,
     op,
 )
@@ -1306,9 +1305,7 @@ def test_asset_job_default_io_mgr():
         assert context.resources.io_manager.__class__ == PickledObjectFilesystemIOManager
         return 5
 
-    my_job = AssetGroup([my_asset]).build_job(
-        "my_job"
-    )
+    my_job = AssetGroup([my_asset]).build_job("my_job")
     result = my_job.execute_in_process()
     assert result.success
 

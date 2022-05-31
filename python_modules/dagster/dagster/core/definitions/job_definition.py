@@ -490,8 +490,13 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: Pipeline
 
     # For asset jobs, do not switch the default IO manager to mem_io_manager.
     # Instead, use the default asset io_manager or the user provided io_manager.
+    is_asset_job = (
+        job.asset_layer is not None
+        and job.asset_layer._assets_defs  # pylint: disable=protected-access
+    )
+
     if (
-        job.asset_layer is None
+        not is_asset_job
         and resources.get("io_manager")
         in [default_job_io_manager]  # pylint: disable=comparison-with-callable
         and job.version_strategy is None
