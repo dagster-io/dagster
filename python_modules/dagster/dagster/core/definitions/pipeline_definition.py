@@ -9,6 +9,7 @@ from typing import (
     List,
     Optional,
     Set,
+    Tuple,
     Union,
 )
 
@@ -21,14 +22,7 @@ from dagster.core.errors import (
     DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
 )
-from dagster.core.storage.io_manager import IOManagerDefinition
-from dagster.core.storage.output_manager import IOutputManagerDefinition
-from dagster.core.storage.root_input_manager import (
-    IInputManagerDefinition,
-    RootInputManagerDefinition,
-)
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.core.utils import str_format_set
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.backcompat import experimental_class_warning
@@ -36,20 +30,19 @@ from dagster.utils.backcompat import experimental_class_warning
 from .asset_layer import AssetLayer
 from .dependency import (
     DependencyDefinition,
-    DependencyStructure,
     DynamicCollectDependencyDefinition,
     IDependencyDefinition,
     MultiDependencyDefinition,
     Node,
     NodeHandle,
     NodeInvocation,
-    SolidInputHandle,
 )
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .mode import ModeDefinition
 from .node_definition import NodeDefinition
 from .preset import PresetDefinition
+from .resource_requirement import ensure_requirements_satisfied
 from .utils import validate_tags
 from .version_strategy import VersionStrategy
 
@@ -250,19 +243,12 @@ class PipelineDefinition:
             asset_layer, "asset_layer", AssetLayer, default=AssetLayer.from_graph(self.graph)
         )
 
-        self._resource_requirements = {
-            mode_def.name: _checked_resource_reqs_for_mode(
-                self._graph_def,
-                mode_def,
-                self._current_level_node_defs,
-                self._graph_def._dagster_type_dict,
-                self._graph_def.node_dict,
-                self._hook_defs,
-                self._graph_def._dependency_structure,
-                self._asset_layer,
+        resource_requirements = {}
+        for mode_def in self._mode_definitions:
+            resource_requirements[mode_def.name] = self._get_resource_requirements_for_mode(
+                mode_def
             )
-            for mode_def in self._mode_definitions
-        }
+        self._resource_requirements = resource_requirements
 
         # Recursively explore all nodes in the this pipeline
         self._all_node_defs = _build_all_node_defs(self._current_level_node_defs)
@@ -278,6 +264,37 @@ class PipelineDefinition:
 
         if self.version_strategy is not None:
             experimental_class_warning("VersionStrategy")
+
+        self._graph_def.get_inputs_must_be_resolved_top_level(self._asset_layer)
+
+    def _get_resource_requirements_for_mode(self, mode_def: ModeDefinition) -> Set[str]:
+        from ..execution.resources_init import get_dependencies, resolve_resource_dependencies
+
+        requirements = list(self._graph_def.get_resource_requirements(self.asset_layer))
+        for hook_def in self._hook_defs:
+            requirements += list(
+                hook_def.get_resource_requirements(
+                    outer_context=f"{self.target_type} '{self._name}'"
+                )
+            )
+        ensure_requirements_satisfied(mode_def.resource_defs, requirements, mode_def.name)
+        required_keys = sorted([requirement.key for requirement in requirements])
+        resource_dependencies = resolve_resource_dependencies(mode_def.resource_defs)
+        seen = set()
+        while required_keys:
+            required_key = required_keys.pop()
+            if required_key in seen:
+                continue
+            seen.add(required_key)
+            for requirement in mode_def.resource_defs[required_key].get_resource_requirements(
+                outer_context=required_key
+            ):
+                ensure_requirements_satisfied(mode_def.resource_defs, [requirement], mode_def.name)
+                requirements.append(requirement)
+
+            required_keys += get_dependencies(required_key, resource_dependencies)
+
+        return set([requirement.key for requirement in requirements])
 
     @property
     def name(self):
@@ -727,375 +744,6 @@ def _iterate_all_nodes(root_node_dict: Dict[str, Node]) -> Iterator[Node]:
             yield from _iterate_all_nodes(node.definition.ensure_graph_def().node_dict)
 
 
-def _checked_resource_reqs_for_mode(
-    top_level_graph_def: GraphDefinition,
-    mode_def: ModeDefinition,
-    node_defs: List[NodeDefinition],
-    dagster_type_dict: Dict[str, DagsterType],
-    root_node_dict: Dict[str, Node],
-    pipeline_hook_defs: AbstractSet[HookDefinition],
-    dependency_structure: DependencyStructure,
-    asset_layer: AssetLayer,
-) -> Set[str]:
-    """
-    Calculate the resource requirements for the pipeline in this mode and ensure they are
-    provided by the mode.
-
-    We combine these operations in to one traversal to allow for raising excpetions that provide
-    as much context as possible about where the unsatisfied resource requirement came from.
-    """
-    resource_reqs: Set[str] = set()
-    mode_output_managers = set(
-        key
-        for key, resource_def in mode_def.resource_defs.items()
-        if isinstance(resource_def, IOutputManagerDefinition)
-    )
-    mode_resources = set(mode_def.resource_defs.keys())
-    for node_def in node_defs:
-        for solid_def in node_def.iterate_solid_defs():
-            for required_resource in solid_def.required_resource_keys:
-                resource_reqs.add(required_resource)
-                if required_resource not in mode_resources:
-                    error_msg = _get_missing_resource_error_msg(
-                        resource_type="resource",
-                        resource_key=required_resource,
-                        descriptor=solid_def.describe_node(),
-                        mode_def=mode_def,
-                        resource_defs_of_type=mode_resources,
-                    )
-                    raise DagsterInvalidDefinitionError(error_msg)
-
-            for output_def in solid_def.output_defs:
-                resource_reqs.add(output_def.io_manager_key)
-                if output_def.io_manager_key not in mode_resources:
-                    error_msg = _get_missing_resource_error_msg(
-                        resource_type="IO manager",
-                        resource_key=output_def.io_manager_key,
-                        descriptor=f"output '{output_def.name}' of {solid_def.describe_node()}",
-                        mode_def=mode_def,
-                        resource_defs_of_type=mode_output_managers,
-                    )
-                    raise DagsterInvalidDefinitionError(error_msg)
-
-    resource_reqs.update(
-        _checked_type_resource_reqs_for_mode(
-            mode_def,
-            dagster_type_dict,
-        )
-    )
-
-    # Validate unsatisfied inputs can be materialized from config
-    resource_reqs.update(
-        _checked_input_resource_reqs_for_mode(
-            top_level_graph_def, dependency_structure, root_node_dict, mode_def, asset_layer
-        )
-    )
-
-    for node in _iterate_all_nodes(root_node_dict):
-        for hook_def in node.hook_defs:
-            for required_resource in hook_def.required_resource_keys:
-                resource_reqs.add(required_resource)
-                if required_resource not in mode_resources:
-                    error_msg = _get_missing_resource_error_msg(
-                        resource_type="resource",
-                        resource_key=required_resource,
-                        descriptor=f"hook '{hook_def.name}'",
-                        mode_def=mode_def,
-                        resource_defs_of_type=mode_resources,
-                    )
-                    raise DagsterInvalidDefinitionError(error_msg)
-
-    for hook_def in pipeline_hook_defs:
-        for required_resource in hook_def.required_resource_keys:
-            resource_reqs.add(required_resource)
-            if required_resource not in mode_resources:
-                error_msg = _get_missing_resource_error_msg(
-                    resource_type="resource",
-                    resource_key=required_resource,
-                    descriptor=f"hook '{hook_def.name}'",
-                    mode_def=mode_def,
-                    resource_defs_of_type=mode_resources,
-                )
-                raise DagsterInvalidDefinitionError(error_msg)
-
-    for resource_key, resource in mode_def.resource_defs.items():
-        for required_resource in resource.required_resource_keys:
-            if required_resource not in mode_resources:
-                error_msg = _get_missing_resource_error_msg(
-                    resource_type="resource",
-                    resource_key=required_resource,
-                    descriptor=f"resource at key '{resource_key}'",
-                    mode_def=mode_def,
-                    resource_defs_of_type=mode_resources,
-                )
-                raise DagsterInvalidDefinitionError(error_msg)
-
-    # Finally, recursively add any resources that the set of required resources require
-    while True:
-        new_resources: Set[str] = set()
-        for resource_key in resource_reqs:
-            resource = mode_def.resource_defs[resource_key]
-            new_resources.update(resource.required_resource_keys - resource_reqs)
-
-        if not len(new_resources):
-            break
-
-        resource_reqs.update(new_resources)
-
-    return resource_reqs
-
-
-def _checked_type_resource_reqs_for_mode(
-    mode_def: ModeDefinition,
-    dagster_type_dict: Dict[str, DagsterType],
-) -> Set[str]:
-    """
-    Calculate all the resource requirements related to DagsterTypes for this mode and ensure the
-    mode provides those resources.
-    """
-
-    resource_reqs = set()
-    mode_resources = set(mode_def.resource_defs.keys())
-    for dagster_type in dagster_type_dict.values():
-        for required_resource in dagster_type.required_resource_keys:
-            resource_reqs.add(required_resource)
-            if required_resource not in mode_resources:
-                error_msg = _get_missing_resource_error_msg(
-                    resource_type="resource",
-                    resource_key=required_resource,
-                    descriptor=f"type '{dagster_type.display_name}'",
-                    mode_def=mode_def,
-                    resource_defs_of_type=mode_resources,
-                )
-                raise DagsterInvalidDefinitionError(error_msg)
-        if dagster_type.loader:
-            for required_resource in dagster_type.loader.required_resource_keys():
-                resource_reqs.add(required_resource)
-                if required_resource not in mode_resources:
-                    error_msg = _get_missing_resource_error_msg(
-                        resource_type="resource",
-                        resource_key=required_resource,
-                        descriptor=f"the loader on type '{dagster_type.display_name}'",
-                        mode_def=mode_def,
-                        resource_defs_of_type=mode_resources,
-                    )
-                    raise DagsterInvalidDefinitionError(error_msg)
-        if dagster_type.materializer:
-            for required_resource in dagster_type.materializer.required_resource_keys():
-                resource_reqs.add(required_resource)
-                if required_resource not in mode_resources:
-                    error_msg = _get_missing_resource_error_msg(
-                        resource_type="resource",
-                        resource_key=required_resource,
-                        descriptor=f"the materializer on type '{dagster_type.display_name}'",
-                        mode_def=mode_def,
-                        resource_defs_of_type=mode_resources,
-                    )
-                    raise DagsterInvalidDefinitionError(error_msg)
-
-    return resource_reqs
-
-
-def _checked_input_resource_reqs_for_mode(
-    top_level_graph_def: GraphDefinition,
-    dependency_structure: DependencyStructure,
-    node_dict: Dict[str, Node],
-    mode_def: ModeDefinition,
-    asset_layer: AssetLayer,
-    outer_dependency_structures: Optional[List[DependencyStructure]] = None,
-    outer_solids: Optional[List[Node]] = None,
-    parent_node_handle: Optional[NodeHandle] = None,
-) -> Set[str]:
-    outer_dependency_structures = check.opt_list_param(
-        outer_dependency_structures, "outer_dependency_structures", DependencyStructure
-    )
-    outer_solids = check.opt_list_param(outer_solids, "outer_solids", Node)
-
-    resource_reqs = set()
-    mode_root_input_managers = set(
-        key
-        for key, resource_def in mode_def.resource_defs.items()
-        if isinstance(resource_def, RootInputManagerDefinition)
-    )
-    mode_io_managers = set(
-        key
-        for key, resource_def in mode_def.resource_defs.items()
-        if isinstance(resource_def, IOManagerDefinition)
-    )
-
-    for node in node_dict.values():
-        node_handle = NodeHandle(name=node.name, parent=parent_node_handle)
-        if node.is_graph:
-            graph_def = node.definition.ensure_graph_def()
-            # check inner solids
-            resource_reqs.update(
-                _checked_input_resource_reqs_for_mode(
-                    top_level_graph_def=top_level_graph_def,
-                    dependency_structure=graph_def.dependency_structure,
-                    node_dict=graph_def.node_dict,
-                    mode_def=mode_def,
-                    asset_layer=asset_layer,
-                    outer_dependency_structures=outer_dependency_structures
-                    + [dependency_structure],
-                    outer_solids=outer_solids + [node],
-                    parent_node_handle=node_handle,
-                )
-            )
-        for handle in node.input_handles():
-            source_output_handles = None
-            if dependency_structure.has_deps(handle):
-                # input is connected to outputs from the same dependency structure
-                source_output_handles = dependency_structure.get_deps_list(handle)
-            else:
-                # input is connected to outputs from outer dependency structure, e.g. first solids
-                # in a composite
-                curr_node = node
-                curr_handle = handle
-                curr_index = len(outer_solids) - 1
-
-                # Checks to see if input is mapped to an outer dependency structure
-                while curr_index >= 0 and curr_node.container_maps_input(curr_handle.input_name):
-                    curr_handle = SolidInputHandle(
-                        solid=outer_solids[curr_index],
-                        input_def=curr_node.container_mapped_input(
-                            curr_handle.input_name
-                        ).definition,
-                    )
-
-                    if outer_dependency_structures[curr_index].has_deps(curr_handle):
-                        source_output_handles = outer_dependency_structures[
-                            curr_index
-                        ].get_deps_list(curr_handle)
-                        break
-
-                    curr_node = outer_solids[curr_index]
-                    curr_index -= 1
-
-            if source_output_handles:
-                # input is connected to source output handles within the graph
-                for source_output_handle in source_output_handles:
-                    output_manager_key = source_output_handle.output_def.io_manager_key
-                    output_manager_def = mode_def.resource_defs[output_manager_key]
-                    if not isinstance(output_manager_def, IInputManagerDefinition):
-                        raise DagsterInvalidDefinitionError(
-                            f'Input "{handle.input_def.name}" of {node.describe_node()} is '
-                            f'connected to output "{source_output_handle.output_def.name}" '
-                            f"of {source_output_handle.solid.describe_node()}. That output does not "
-                            "have an output "
-                            f"manager that knows how to load inputs, so we don't know how "
-                            f"to load the input. To address this, assign an IOManager to "
-                            f"the upstream output."
-                        )
-            else:
-                # input is not connected to upstream output
-                input_def = handle.input_def
-                input_asset_key = asset_layer.asset_key_for_input(node_handle, input_def.name)
-
-                # Input is not nothing, not resolvable by config, and isn't
-                # mapped from a top-level output.
-                if not _is_input_resolvable(
-                    top_level_graph_def, input_def, node, outer_solids, input_asset_key
-                ):
-                    raise DagsterInvalidDefinitionError(
-                        f"Input '{input_def.name}' of {node.describe_node()} "
-                        "has no upstream output, no default value, and no "
-                        "dagster type loader. Must provide a value to this "
-                        "input via either a direct input value mapped from the "
-                        "top-level graph, or a root input manager key. To "
-                        "learn more, see the docs for unconnected inputs: "
-                        "https://docs.dagster.io/concepts/io-management/unconnected-inputs#unconnected-inputs."
-                    )
-
-                # If a root manager is provided, it's always used. I.e. it has priority over
-                # the other ways of loading unsatisfied inputs - dagster type loaders and
-                # default values.
-                if input_def.root_manager_key:
-                    resource_reqs.add(input_def.root_manager_key)
-                    if input_def.root_manager_key not in mode_def.resource_defs:
-                        error_msg = _get_missing_resource_error_msg(
-                            resource_type="root input manager",
-                            resource_key=input_def.root_manager_key,
-                            descriptor=f"unsatisfied input '{input_def.name}' of {node.describe_node()}",
-                            mode_def=mode_def,
-                            resource_defs_of_type=mode_root_input_managers,
-                        )
-                        raise DagsterInvalidDefinitionError(error_msg)
-                # If a root manager is not provided, but the input is associated with an asset, we
-                # can load the input using the io_manager for that asset
-                elif input_asset_key:
-                    io_manager_key = asset_layer.io_manager_key_for_asset(input_asset_key)
-                    resource_reqs.add(io_manager_key)
-                    if io_manager_key not in mode_def.resource_defs:
-                        error_msg = _get_missing_resource_error_msg(
-                            resource_type="io_manager",
-                            resource_key=io_manager_key,
-                            descriptor=f"unsatisfied input '{input_def.name}' of {node.describe_node()} with asset key {input_asset_key}",
-                            mode_def=mode_def,
-                            resource_defs_of_type=mode_io_managers,
-                        )
-                        raise DagsterInvalidDefinitionError(error_msg)
-
-    return resource_reqs
-
-
-def _is_input_resolvable(graph_def, input_def, node, upstream_nodes, input_asset_key):
-    # If input is not loadable via config, check if loadable via top-level input (meaning it is mapped all the way up the graph composition).
-    if (
-        not input_def.dagster_type.loader
-        and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-        and not input_def.root_manager_key
-        and not input_def.has_default_value
-        and not input_asset_key
-    ):
-        return _is_input_resolved_from_top_level(graph_def, input_def, node, upstream_nodes)
-    else:
-        return True
-
-
-def _is_input_resolved_from_top_level(graph_def, input_def, node, upstream_nodes):
-    from dagster.core.definitions.input import InputPointer
-
-    input_name = input_def.name
-    node_name = node.name
-
-    # Upstream nodes are in order of composition, with the top-level graph
-    # being first.
-    upstream_nodes = upstream_nodes[::-1]
-    for upstream_node in upstream_nodes:
-        input_mapping = upstream_node.definition.input_mapping_for_pointer(
-            InputPointer(solid_name=node_name, input_name=input_name)
-        )
-        if not input_mapping:
-            return False
-        else:
-            input_name = input_mapping.definition.name
-            node_name = upstream_node.name
-
-    top_level_mapping = graph_def.input_mapping_for_pointer(
-        InputPointer(solid_name=node_name, input_name=input_name)
-    )
-    return bool(top_level_mapping)
-
-
-def _get_missing_resource_error_msg(
-    resource_type, resource_key, descriptor, mode_def, resource_defs_of_type
-):
-    if mode_def.name == "default":
-        return (
-            f"{resource_type} key '{resource_key}' is required by "
-            f"{descriptor}, but is not provided. Provide a {resource_type} for key '{resource_key}',  "
-            f"or change '{resource_key}' to one of the provided {resource_type} keys: "
-            f"{sorted(resource_defs_of_type)}."
-        )
-    else:
-        return (
-            f"{resource_type} key '{resource_key}' is required by "
-            f"{descriptor}, but is not provided by mode '{mode_def.name}'. "
-            f"In mode '{mode_def.name}', provide a {resource_type} for key '{resource_key}', "
-            f"or change '{resource_key}' to one of the provided root input managers keys: {sorted(resource_defs_of_type)}."
-        )
-
-
 def _build_all_node_defs(node_defs: List[NodeDefinition]) -> Dict[str, NodeDefinition]:
     all_defs: Dict[str, NodeDefinition] = {}
     for current_level_node_def in node_defs:
@@ -1178,3 +826,14 @@ def _create_run_config_schema(
         config_type_dict_by_key=config_type_dict_by_key,
         config_mapping=mode_definition.config_mapping,
     )
+
+
+def _add_resource_req(
+    resource_reqs: Dict[str, Tuple[str, Set[str]]],
+    resource_key: str,
+    resource_type: str,
+    requiree_descriptor: str,
+) -> None:
+    if resource_key not in resource_reqs:
+        resource_reqs[resource_key] = (resource_type, set())
+    resource_reqs[resource_key][1].add(requiree_descriptor)
