@@ -1294,9 +1294,9 @@ def test_op_outputs_with_default_asset_io_mgr():
 
     my_job = AssetGroup(
         [AssetsDefinition.from_graph(complicated_graph), my_asset],
-    ).build_job("my_job", executor_def=in_process_executor)
+    ).build_job("my_job")
 
-    result = execute_pipeline(my_job)
+    result = my_job.execute_in_process()
     assert result.success
 
 
@@ -1306,9 +1306,9 @@ def test_asset_job_default_io_mgr():
         assert context.resources.io_manager.__class__ == PickledObjectFilesystemIOManager
         return 5
 
-    my_job = AssetGroup([my_asset], resource_defs={"io_manager": mem_io_manager}).build_job(
+    my_job = AssetGroup([my_asset]).build_job(
         "my_job"
-    )  # confirm that io manager is overriden in execute_in_process
+    )
     result = my_job.execute_in_process()
     assert result.success
 
@@ -1319,8 +1319,6 @@ def test_materialize_with_fs_io_mgr():
         assert context.resources.io_manager.__class__ == PickledObjectFilesystemIOManager
         return 5
 
-    group = AssetGroup(
-        [my_asset], resource_defs={"io_manager": mem_io_manager}
-    )  # confirm that io manager is overriden in execute_in_process
+    group = AssetGroup([my_asset])
     result = group.materialize()
     assert result.success

@@ -46,7 +46,7 @@ from dagster.utils import merge_dicts
 from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping
 from .executor_definition import ExecutorDefinition
-from .graph_definition import GraphDefinition, SubselectedGraphDefinition, default_asset_io_manager
+from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
 from .mode import ModeDefinition
@@ -486,17 +486,14 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: Pipeline
     """
     from dagster.core.storage.mem_io_manager import mem_io_manager
 
-    from .graph_definition import default_asset_io_manager, default_job_io_manager
+    from .graph_definition import default_job_io_manager
 
-    if job.asset_layer:
-        # For asset jobs, use the fs_io_manager as the default IO manager during execute_in_process
-        if resources.get("io_manager") != default_asset_io_manager:
-            updated_resources = dict(resources)
-            updated_resources["io_manager"] = default_asset_io_manager
-            return updated_resources
-    elif (
-        # pylint: disable=comparison-with-callable
-        resources.get("io_manager") in [default_job_io_manager]
+    # For asset jobs, do not switch the default IO manager to mem_io_manager.
+    # Instead, use the default asset io_manager or the user provided io_manager.
+    if (
+        job.asset_layer is None
+        and resources.get("io_manager")
+        in [default_job_io_manager]  # pylint: disable=comparison-with-callable
         and job.version_strategy is None
     ):
         updated_resources = dict(resources)
