@@ -34,6 +34,7 @@ export const AssetNodeDefinition: React.FC<{
 }> = ({assetNode, liveDataByNode}) => {
   const partitionHealthData = usePartitionHealthData([assetNode.assetKey]);
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
+
   const repoAddress = buildRepoAddress(
     assetNode.repository.name,
     assetNode.repository.location.name,
