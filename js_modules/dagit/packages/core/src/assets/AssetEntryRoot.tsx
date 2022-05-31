@@ -35,9 +35,7 @@ export const AssetEntryRoot = () => {
       <AssetsCatalogTable prefixPath={currentPath} />
     </Page>
   ) : (
-    <Page>
-      <AssetView assetKey={{path: currentPath}} />
-    </Page>
+    <AssetView assetKey={{path: currentPath}} />
   );
 };
 

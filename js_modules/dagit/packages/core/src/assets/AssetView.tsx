@@ -35,6 +35,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {AssetEvents} from './AssetEvents';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
 import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
+import {AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
@@ -49,7 +50,7 @@ interface Props {
 }
 
 export interface AssetViewParams {
-  view?: 'activity' | 'definition';
+  view?: 'activity' | 'definition' | 'lineage';
   partition?: string;
   time?: string;
   asOf?: string;
@@ -119,7 +120,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   const isDefinitionLoaded = definition !== undefined;
 
   return (
-    <div>
+    <Box flex={{direction: 'column'}} style={{height: '100%', width: '100%', overflowY: 'auto'}}>
       <AssetPageHeader
         assetKey={assetKey}
         tags={
@@ -147,6 +148,12 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               id="definition"
               title="Definition"
               onClick={() => setParams({...params, view: 'definition'})}
+              disabled={!definition}
+            />
+            <Tab
+              id="lineage"
+              title="Lineage"
+              onClick={() => setParams({...params, view: 'lineage'})}
               disabled={!definition}
             />
           </Tabs>
@@ -194,13 +201,13 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           definition ? (
             <AssetNodeDefinition assetNode={definition} liveDataByNode={liveDataByNode} />
           ) : (
-            <Box padding={{vertical: 32}}>
-              <NonIdealState
-                title="No definition"
-                description="This asset doesn't have a software definition in any of your loaded repositories."
-                icon="materialization"
-              />
-            </Box>
+            <AssetNoDefinitionState />
+          )
+        ) : params.view === 'lineage' ? (
+          definition ? (
+            <AssetNodeLineageGraph assetNode={definition} liveDataByNode={liveDataByNode} />
+          ) : (
+            <AssetNoDefinitionState />
           )
         ) : (
           <AssetEvents
@@ -213,9 +220,19 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
           />
         ))}
-    </div>
+    </Box>
   );
 };
+
+const AssetNoDefinitionState = () => (
+  <Box padding={{vertical: 32}}>
+    <NonIdealState
+      title="No definition"
+      description="This asset doesn't have a software definition in any of your loaded repositories."
+      icon="materialization"
+    />
+  </Box>
+);
 
 const ASSET_QUERY = gql`
   query AssetQuery($assetKey: AssetKeyInput!) {
