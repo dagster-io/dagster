@@ -35,7 +35,7 @@ from .utils import delete_job
         {
             "job_namespace": Field(StringSource, is_required=False),
             "retries": get_retries_config(),
-            "max_concurrency": Field(
+            "max_concurrent": Field(
                 IntSource,
                 is_required=False,
                 description="Limit on the number of pods that will run concurrently within the scope "
