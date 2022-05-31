@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from asyncio import Queue, Task, get_event_loop
 from enum import Enum
-from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union, cast
 
 from dagit.templates.playground import TEMPLATE
 from graphene import Schema
@@ -108,7 +108,7 @@ class GraphQLServer(ABC):
             )
 
         query = data.get("query")
-        variables = data.get("variables")
+        variables: Union[Optional[str], Dict[str, Any]] = data.get("variables")
         operation_name = data.get("operationName")
 
         if query is None:
@@ -119,7 +119,7 @@ class GraphQLServer(ABC):
 
         if isinstance(variables, str):
             try:
-                variables = json.loads(variables)
+                variables = cast(Dict[str, Any], json.loads(variables))
             except json.JSONDecodeError:
                 return PlainTextResponse(
                     f"Malformed GraphQL variables. Passed as string but not valid JSON:\n{variables}",

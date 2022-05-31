@@ -5,7 +5,7 @@
 // For example, if you need to update `PyObject`, rename the existing component to `PyObjectLegacy`
 // and update all existing usage of it
 
-import React, { useContext } from "react";
+import React, { useContext, useRef, useState } from "react";
 
 import Icons from "../Icons";
 import Link from "../Link";
@@ -15,6 +15,7 @@ import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 export const SearchIndexContext = React.createContext(null);
 import path from "path";
+import { Transition } from "@headlessui/react";
 
 const PyObject: React.FunctionComponent<{
   module: string;
@@ -308,6 +309,75 @@ const Experimental = () => {
   );
 };
 
+const Pre = ({ children, ...props }) => {
+  const preRef = useRef<HTMLPreElement>(null);
+  const [copied, setCopied] = useState(false);
+
+  const onClick = async () => {
+    try {
+      await navigator.clipboard.writeText(preRef.current?.innerText);
+      setCopied(true);
+    } catch (err) {
+      console.log("Fail to copy", err);
+    }
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 1000);
+  };
+
+  return (
+    <div className="relative">
+      <Transition
+        show={!copied}
+        appear={true}
+        enter="transition ease-out duration-150 transform"
+        enterFrom="opacity-0 scale-95"
+        enterTo="opacity-100 scale-100"
+        leave="transition ease-in duration-150 transform"
+        leaveFrom="opacity-100 scale-100"
+        leaveTo="opacity-0 scale-95"
+      >
+        <div className="absolute top-0 right-0 mt-2 mr-2">
+          <svg
+            className="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-300"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            onClick={onClick}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+            />
+          </svg>
+        </div>
+      </Transition>
+      <Transition
+        show={copied}
+        appear={true}
+        enter="transition ease-out duration-150 transform"
+        enterFrom="opacity-0 scale-95"
+        enterTo="opacity-500 scale-100"
+        leave="transition ease-in duration-200 transform"
+        leaveFrom="opacity-100 scale-100"
+        leaveTo="opacity-0 scale-95"
+      >
+        <div className="absolute top-0 right-0 mt-1 mr-2">
+          <span className="inline-flex items-center px-2 rounded text-xs font-medium leading-4 bg-gray-100 text-gray-800">
+            Copied
+          </span>
+        </div>
+      </Transition>
+      <pre ref={preRef} {...(props as any)}>
+        {children}
+      </pre>
+    </div>
+  );
+};
+
 export default {
   a: ({ children, ...props }) => {
     // Skip in-page links and external links
@@ -363,6 +433,7 @@ export default {
       </Zoom>
     );
   },
+  pre: Pre,
   PyObject,
   Link,
   Check,
