@@ -15,6 +15,8 @@ Metadata allows you to attach information to a job. This information can be what
 - linking to documentation or other resources
 - displaying the git hash corresponding to the current job definition
 
+Note: If you specify metadata on your jobs, you will need to ensure that you Dagit version is >=0.14.18
+
 ### Specifying Metadata
 
 When you attach metadata to a job, you do it as a dictionary of key value pairs. The keys must be a string, but the values can be any one of the <PyObject object="MetadataValue" /> classes we provide. You can also use primitive python types as values, and dagster will convert them to the appropriate <PyObject object="MetadataValue" />.
