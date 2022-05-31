@@ -16,7 +16,9 @@ from dagster import (
     Output,
     ResourceDefinition,
     StaticPartitionsDefinition,
+    execute_pipeline,
     graph,
+    in_process_executor,
     io_manager,
     multi_asset,
     op,
@@ -1247,4 +1249,42 @@ def test_subset_with_source_asset():
     ).build_job("source_asset_job")
 
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
+    assert result.success
+
+
+def test_op_outputs_with_default_asset_io_mgr():
+    @op
+    def return_stuff():
+        return 12
+
+    @op
+    def transform(data):
+        assert data == 12
+        return data * 2
+
+    @op
+    def one_more_transformation(transformed_data):
+        assert transformed_data == 24
+        return transformed_data + 1
+
+    @graph(
+        out={
+            "asset_1": GraphOut(),
+            "asset_2": GraphOut(),
+        },
+    )
+    def complicated_graph():
+        result = return_stuff()
+        return one_more_transformation(transform(result)), transform(result)
+
+    @asset
+    def my_asset(asset_1):
+        assert asset_1 == 25
+        return asset_1
+
+    my_job = AssetGroup(
+        [AssetsDefinition.from_graph(complicated_graph), my_asset],
+    ).build_job("my_job", executor_def=in_process_executor)
+
+    result = execute_pipeline(my_job)
     assert result.success

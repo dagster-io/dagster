@@ -22,9 +22,7 @@ from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.selector.subset_selector import AssetSelectionData
-from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.utils.backcompat import experimental
-from dagster.utils.merger import merge_dicts
 
 from .asset_partitions import get_upstream_partitions_for_partition_range
 from .assets import AssetsDefinition
@@ -121,7 +119,7 @@ def build_assets_job(
             resolved_source_assets.append(asset)
 
     return graph.to_job(
-        resource_defs=merge_dicts({"io_manager": fs_asset_io_manager}, all_resource_defs),
+        resource_defs=all_resource_defs,
         config=config or partitioned_config,
         tags=tags,
         executor_def=executor_def,
