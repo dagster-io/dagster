@@ -20,6 +20,7 @@ from dagster import (
     graph,
     in_process_executor,
     io_manager,
+    mem_io_manager,
     multi_asset,
     op,
 )
@@ -31,6 +32,7 @@ from dagster.core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_icontains_solids,
 )
+from dagster.core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import safe_tempfile_path
 
@@ -664,14 +666,21 @@ def test_fail_with_get_output_asset_key():
     def bar(foo):
         return foo + 1
 
-    job = build_assets_job("x", [foo, bar], resource_defs={"io_manager": my_io_manager})
+    job = build_assets_job(
+        "x",
+        [foo, bar],
+        resource_defs={"io_manager": my_io_manager},
+        executor_def=in_process_executor,
+    )
     with pytest.raises(
         DagsterInvariantViolationError,
         match=r'The IOManager of output "result" on node "foo" associates it with asset key '
         r"\"AssetKey\(\['hey'\]\)\", but this output has already been defined to produce asset "
         r"\"AssetKey\(\['foo'\]\)\"",
     ):
-        job.execute_in_process()
+        execute_pipeline(
+            job
+        )  # Use execute_pipeline instead of execute_in_process to avoid swapping to fs_io_manager
 
 
 def test_internal_asset_deps():
@@ -1287,4 +1296,30 @@ def test_op_outputs_with_default_asset_io_mgr():
     ).build_job("my_job", executor_def=in_process_executor)
 
     result = execute_pipeline(my_job)
+    assert result.success
+
+
+def test_asset_job_default_io_mgr():
+    @asset
+    def my_asset(context):
+        assert context.resources.io_manager.__class__ == PickledObjectFilesystemIOManager
+        return 5
+
+    my_job = AssetGroup([my_asset], resource_defs={"io_manager": mem_io_manager}).build_job(
+        "my_job"
+    )  # confirm that io manager is overriden in execute_in_process
+    result = my_job.execute_in_process()
+    assert result.success
+
+
+def test_materialize_with_fs_io_mgr():
+    @asset
+    def my_asset(context):
+        assert context.resources.io_manager.__class__ == PickledObjectFilesystemIOManager
+        return 5
+
+    group = AssetGroup(
+        [my_asset], resource_defs={"io_manager": mem_io_manager}
+    )  # confirm that io manager is overriden in execute_in_process
+    result = group.materialize()
     assert result.success

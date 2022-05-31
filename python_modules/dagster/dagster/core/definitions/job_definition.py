@@ -46,7 +46,7 @@ from dagster.utils import merge_dicts
 from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping
 from .executor_definition import ExecutorDefinition
-from .graph_definition import GraphDefinition, SubselectedGraphDefinition
+from .graph_definition import GraphDefinition, SubselectedGraphDefinition, default_asset_io_manager
 from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
 from .mode import ModeDefinition
@@ -481,12 +481,20 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: Pipeline
     """
     Used to create the user facing experience of the default io_manager
     switching to in-memory when using execute_in_process.
+
+    Uses fs_io_manager as the default IO manager for assets.
     """
     from dagster.core.storage.mem_io_manager import mem_io_manager
 
-    from .graph_definition import default_job_io_manager
+    from .graph_definition import default_asset_io_manager, default_job_io_manager
 
-    if (
+    if job.asset_layer:
+        # For asset jobs, use the fs_io_manager as the default IO manager during execute_in_process
+        if resources.get("io_manager") != default_asset_io_manager:
+            updated_resources = dict(resources)
+            updated_resources["io_manager"] = default_asset_io_manager
+            return updated_resources
+    elif (
         # pylint: disable=comparison-with-callable
         resources.get("io_manager") in [default_job_io_manager]
         and job.version_strategy is None

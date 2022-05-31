@@ -1036,3 +1036,10 @@ def default_job_io_manager(init_context):
     from dagster.core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 
     return PickledObjectFilesystemIOManager(base_dir=init_context.instance.storage_directory())
+
+
+@io_manager(description="The default IO manager for assets. Stores assets using filesystem.")
+def default_asset_io_manager(init_context):
+    from dagster.core.storage.fs_io_manager import PickledObjectFilesystemIOManager
+
+    return PickledObjectFilesystemIOManager(base_dir=init_context.instance.storage_directory())
