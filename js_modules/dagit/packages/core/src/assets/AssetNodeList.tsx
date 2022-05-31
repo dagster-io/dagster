@@ -5,18 +5,17 @@ import styled from 'styled-components/macro';
 
 import {AssetNode} from '../asset-graph/AssetNode';
 import {LiveData, toGraphId} from '../asset-graph/Utils';
-
-import {AssetNodeDefinitionFragment_dependencies} from './types/AssetNodeDefinitionFragment';
+import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 
 export const AssetNodeList: React.FC<{
-  items: AssetNodeDefinitionFragment_dependencies[];
+  items: AssetGraphQuery_assetNodes[];
   liveDataByNode: LiveData;
 }> = ({items, liveDataByNode}) => {
   const history = useHistory();
 
   return (
     <Container flex={{gap: 4}} padding={{horizontal: 12}}>
-      {items.map(({asset}) => (
+      {items.map((asset) => (
         <AssetNodeWrapper
           key={asset.id}
           onClick={(e) => {
@@ -46,4 +45,5 @@ const Container = styled(Box)`
 const AssetNodeWrapper = styled.div`
   cursor: pointer;
   width: 240px;
+  flex-shrink: 0;
 `;

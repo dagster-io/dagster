@@ -79,12 +79,6 @@ export interface AssetQuery_assetOrError_Asset_definition_assetKey {
   path: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations {
-  __typename: "MaterializationEvent";
-  timestamp: string;
-  runId: string;
-}
-
 export interface AssetQuery_assetOrError_Asset_definition_metadataEntries_PathMetadataEntry {
   __typename: "PathMetadataEntry";
   label: string;
@@ -2444,92 +2438,6 @@ export interface AssetQuery_assetOrError_Asset_definition_op {
   outputDefinitions: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetKey {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository_location {
-  __typename: "RepositoryLocation";
-  id: string;
-  name: string;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository {
-  __typename: "Repository";
-  id: string;
-  name: string;
-  location: AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository_location;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations {
-  __typename: "MaterializationEvent";
-  timestamp: string;
-  runId: string;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset {
-  __typename: "AssetNode";
-  id: string;
-  opNames: string[];
-  jobNames: string[];
-  graphName: string | null;
-  description: string | null;
-  partitionDefinition: string | null;
-  computeKind: string | null;
-  assetKey: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetKey;
-  repository: AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository;
-  assetMaterializations: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations[];
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependencies {
-  __typename: "AssetDependency";
-  asset: AssetQuery_assetOrError_Asset_definition_dependencies_asset;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetKey {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository_location {
-  __typename: "RepositoryLocation";
-  id: string;
-  name: string;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository {
-  __typename: "Repository";
-  id: string;
-  name: string;
-  location: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository_location;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations {
-  __typename: "MaterializationEvent";
-  timestamp: string;
-  runId: string;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset {
-  __typename: "AssetNode";
-  id: string;
-  opNames: string[];
-  jobNames: string[];
-  graphName: string | null;
-  description: string | null;
-  partitionDefinition: string | null;
-  computeKind: string | null;
-  assetKey: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetKey;
-  repository: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository;
-  assetMaterializations: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations[];
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy {
-  __typename: "AssetDependency";
-  asset: AssetQuery_assetOrError_Asset_definition_dependedBy_asset;
-}
-
 export interface AssetQuery_assetOrError_Asset_definition {
   __typename: "AssetNode";
   id: string;
@@ -2542,11 +2450,8 @@ export interface AssetQuery_assetOrError_Asset_definition {
   jobNames: string[];
   computeKind: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_assetKey;
-  assetMaterializations: AssetQuery_assetOrError_Asset_definition_assetMaterializations[];
   metadataEntries: AssetQuery_assetOrError_Asset_definition_metadataEntries[];
   op: AssetQuery_assetOrError_Asset_definition_op | null;
-  dependencies: AssetQuery_assetOrError_Asset_definition_dependencies[];
-  dependedBy: AssetQuery_assetOrError_Asset_definition_dependedBy[];
 }
 
 export interface AssetQuery_assetOrError_Asset {

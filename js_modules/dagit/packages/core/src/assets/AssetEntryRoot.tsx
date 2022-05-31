@@ -4,6 +4,7 @@ import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
 import {Loading} from '../ui/Loading';
+import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';
@@ -31,7 +32,10 @@ export const AssetEntryRoot = () => {
     </Page>
   ) : queryResult.data?.assetOrError.__typename === 'AssetNotFoundError' ? (
     <Page>
-      <AssetPageHeader assetKey={{path: currentPath}} />
+      <AssetPageHeader
+        assetKey={{path: currentPath}}
+        right={<ReloadAllButton label="Reload definitions" />}
+      />
       <AssetsCatalogTable prefixPath={currentPath} />
     </Page>
   ) : (

@@ -71,6 +71,9 @@ import panel_show_top from '../icon-svgs/panel_show_top.svg';
 import people from '../icon-svgs/people.svg';
 import refresh from '../icon-svgs/refresh.svg';
 import replay from '../icon-svgs/replay.svg';
+import resize_down from '../icon-svgs/resize_down.svg';
+import resize_up from '../icon-svgs/resize_up.svg';
+import resize_updown from '../icon-svgs/resize_updown.svg';
 import schedule from '../icon-svgs/schedule.svg';
 import schema from '../icon-svgs/schema.svg';
 import search from '../icon-svgs/search.svg';
@@ -146,6 +149,10 @@ export const Icons = {
   folder,
   tag,
   slack,
+
+  resize_updown,
+  resize_up,
+  resize_down,
 
   // Material icons
   add_circle,

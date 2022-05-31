@@ -25,12 +25,6 @@ export interface AssetNodeDefinitionFragment_assetKey {
   path: string[];
 }
 
-export interface AssetNodeDefinitionFragment_assetMaterializations {
-  __typename: "MaterializationEvent";
-  timestamp: string;
-  runId: string;
-}
-
 export interface AssetNodeDefinitionFragment_metadataEntries_PathMetadataEntry {
   __typename: "PathMetadataEntry";
   label: string;
@@ -2390,92 +2384,6 @@ export interface AssetNodeDefinitionFragment_op {
   outputDefinitions: AssetNodeDefinitionFragment_op_outputDefinitions[];
 }
 
-export interface AssetNodeDefinitionFragment_dependencies_asset_assetKey {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface AssetNodeDefinitionFragment_dependencies_asset_repository_location {
-  __typename: "RepositoryLocation";
-  id: string;
-  name: string;
-}
-
-export interface AssetNodeDefinitionFragment_dependencies_asset_repository {
-  __typename: "Repository";
-  id: string;
-  name: string;
-  location: AssetNodeDefinitionFragment_dependencies_asset_repository_location;
-}
-
-export interface AssetNodeDefinitionFragment_dependencies_asset_assetMaterializations {
-  __typename: "MaterializationEvent";
-  timestamp: string;
-  runId: string;
-}
-
-export interface AssetNodeDefinitionFragment_dependencies_asset {
-  __typename: "AssetNode";
-  id: string;
-  opNames: string[];
-  jobNames: string[];
-  graphName: string | null;
-  description: string | null;
-  partitionDefinition: string | null;
-  computeKind: string | null;
-  assetKey: AssetNodeDefinitionFragment_dependencies_asset_assetKey;
-  repository: AssetNodeDefinitionFragment_dependencies_asset_repository;
-  assetMaterializations: AssetNodeDefinitionFragment_dependencies_asset_assetMaterializations[];
-}
-
-export interface AssetNodeDefinitionFragment_dependencies {
-  __typename: "AssetDependency";
-  asset: AssetNodeDefinitionFragment_dependencies_asset;
-}
-
-export interface AssetNodeDefinitionFragment_dependedBy_asset_assetKey {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface AssetNodeDefinitionFragment_dependedBy_asset_repository_location {
-  __typename: "RepositoryLocation";
-  id: string;
-  name: string;
-}
-
-export interface AssetNodeDefinitionFragment_dependedBy_asset_repository {
-  __typename: "Repository";
-  id: string;
-  name: string;
-  location: AssetNodeDefinitionFragment_dependedBy_asset_repository_location;
-}
-
-export interface AssetNodeDefinitionFragment_dependedBy_asset_assetMaterializations {
-  __typename: "MaterializationEvent";
-  timestamp: string;
-  runId: string;
-}
-
-export interface AssetNodeDefinitionFragment_dependedBy_asset {
-  __typename: "AssetNode";
-  id: string;
-  opNames: string[];
-  jobNames: string[];
-  graphName: string | null;
-  description: string | null;
-  partitionDefinition: string | null;
-  computeKind: string | null;
-  assetKey: AssetNodeDefinitionFragment_dependedBy_asset_assetKey;
-  repository: AssetNodeDefinitionFragment_dependedBy_asset_repository;
-  assetMaterializations: AssetNodeDefinitionFragment_dependedBy_asset_assetMaterializations[];
-}
-
-export interface AssetNodeDefinitionFragment_dependedBy {
-  __typename: "AssetDependency";
-  asset: AssetNodeDefinitionFragment_dependedBy_asset;
-}
-
 export interface AssetNodeDefinitionFragment {
   __typename: "AssetNode";
   id: string;
@@ -2487,9 +2395,6 @@ export interface AssetNodeDefinitionFragment {
   partitionDefinition: string | null;
   computeKind: string | null;
   assetKey: AssetNodeDefinitionFragment_assetKey;
-  assetMaterializations: AssetNodeDefinitionFragment_assetMaterializations[];
   metadataEntries: AssetNodeDefinitionFragment_metadataEntries[];
   op: AssetNodeDefinitionFragment_op | null;
-  dependencies: AssetNodeDefinitionFragment_dependencies[];
-  dependedBy: AssetNodeDefinitionFragment_dependedBy[];
 }

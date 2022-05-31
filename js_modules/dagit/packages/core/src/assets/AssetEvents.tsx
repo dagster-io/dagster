@@ -257,7 +257,7 @@ export const AssetEvents: React.FC<Props> = ({
         ) : (
           <Box padding={{vertical: 20}} border={{side: 'top', color: Colors.KeylineGray, width: 1}}>
             <NonIdealState
-              icon="asset"
+              icon="materialization"
               title="No materializations"
               description="No materializations were found for this asset."
             />

@@ -29,7 +29,7 @@ export const LatestMaterializationMetadata: React.FC<{
     return (
       <Box padding={{top: 16, bottom: 32}}>
         <NonIdealState
-          icon="asset"
+          icon="materialization"
           title="No materializations"
           description="No materializations were found for this asset."
         />

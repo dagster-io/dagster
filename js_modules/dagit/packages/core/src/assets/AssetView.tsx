@@ -19,7 +19,7 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
-import {displayNameForAssetKey, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
+import {displayNameForAssetKey, GraphData, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -31,7 +31,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {AssetEvents} from './AssetEvents';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
 import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
-import {AssetNodeLineageGraph} from './AssetNodeLineageGraph';
+import {AssetLineageQuery, AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
@@ -43,6 +43,7 @@ interface Props {
 
 export interface AssetViewParams {
   view?: 'activity' | 'definition' | 'lineage';
+  lineageQuery?: AssetLineageQuery;
   partition?: string;
   time?: string;
   asOf?: string;
@@ -64,15 +65,21 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   const viewingMostRecent = !params.asOf || Number(lastMaterializedAt) <= Number(params.asOf);
 
   const definition = asset?.definition;
-
   const repoAddress = definition
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;
 
+  const token = tokenForAssetKey(assetKey);
   const {assetGraphData, graphAssetKeys} = useAssetGraphData(
-    null,
-    `++"${tokenForAssetKey({path: assetKey.path})}"++`,
+    params.view === 'lineage' && params.lineageQuery === 'upstream'
+      ? `*"${token}"`
+      : params.view === 'lineage' && params.lineageQuery === 'downstream'
+      ? `"${token}"*`
+      : `++"${token}"++`,
+    {hideEdgesToNodesOutsideQuery: true},
   );
+
+  const {upstream, downstream} = useNeighborsFromGraph(assetGraphData, assetKey);
 
   const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(
     assetGraphData?.nodes,
@@ -91,7 +98,6 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   // Avoid thrashing the materializations UI (which chooses a different default query based on whether
   // data is partitioned) by waiting for the definition to be loaded. (null OR a valid definition)
   const isDefinitionLoaded = definition !== undefined;
-
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', width: '100%', overflowY: 'auto'}}>
       <AssetPageHeader
@@ -136,10 +142,10 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             <Box margin={{top: 4}}>
               <QueryRefreshCountdown refreshState={refreshState} />
             </Box>
-            {definition && definition.jobNames.length > 0 && repoAddress && (
+            {definition && definition.jobNames.length > 0 && repoAddress && assetGraphData && (
               <LaunchAssetExecutionButton
                 assets={[definition]}
-                upstreamAssetKeys={definition.dependencies.map((d) => d.asset.assetKey)}
+                upstreamAssetKeys={upstream.map((u) => u.assetKey)}
                 preferredJobName={definition.jobNames[0]}
                 title={lastMaterializedAt ? 'Rematerialize' : 'Materialize'}
               />
@@ -172,7 +178,16 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       {isDefinitionLoaded &&
         (params.view === 'definition' ? (
           definition ? (
-            <AssetNodeDefinition assetNode={definition} liveDataByNode={liveDataByNode} />
+            assetGraphData ? (
+              <AssetNodeDefinition
+                assetNode={definition}
+                upstream={upstream}
+                downstream={downstream}
+                liveDataByNode={liveDataByNode}
+              />
+            ) : (
+              <Spinner purpose="page" />
+            )
           ) : (
             <AssetNoDefinitionState />
           )
@@ -181,6 +196,8 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             assetGraphData ? (
               <AssetNodeLineageGraph
                 assetNode={definition}
+                lineageQuery={params.lineageQuery}
+                setLineageQuery={(lineageQuery) => setParams({...params, lineageQuery})}
                 liveDataByNode={liveDataByNode}
                 assetGraphData={assetGraphData}
               />
@@ -214,6 +231,24 @@ const AssetNoDefinitionState = () => (
     />
   </Box>
 );
+
+function useNeighborsFromGraph(graphData: GraphData | null, assetKey: AssetKey) {
+  const graphId = toGraphId(assetKey);
+
+  return React.useMemo(() => {
+    if (!graphData) {
+      return {upstream: [], downstream: []};
+    }
+    return {
+      upstream: Object.values(graphData.nodes)
+        .filter((n) => graphData.upstream[graphId]?.[toGraphId(n.assetKey)])
+        .map((n) => n.definition),
+      downstream: Object.values(graphData.nodes)
+        .filter((n) => graphData.downstream[graphId]?.[toGraphId(n.assetKey)])
+        .map((n) => n.definition),
+    };
+  }, [graphData, graphId]);
+}
 
 const ASSET_QUERY = gql`
   query AssetQuery($assetKey: AssetKeyInput!) {

@@ -133,7 +133,11 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
               <TextInput
                 value={search || ''}
                 style={{width: '30vw', minWidth: 150, maxWidth: 400}}
-                placeholder="Search all asset_keys..."
+                placeholder={
+                  prefixPath.length
+                    ? `Search asset_keys in ${prefixPath.join('/')}…`
+                    : `Search all asset_keys…`
+                }
                 onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
               />
               <QueryRefreshCountdown refreshState={refreshState} />
