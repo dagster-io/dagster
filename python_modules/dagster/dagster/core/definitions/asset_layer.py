@@ -532,7 +532,7 @@ class AssetLayer:
         )
 
     def group_names_by_assets(self) -> Mapping[AssetKey, str]:
-        group_names: Mapping[AssetKey, str] = {}
+        group_names: Dict[AssetKey, str] = {}
         for assets_def in self._assets_defs:
             group_names.update(assets_def.group_names)
         return group_names

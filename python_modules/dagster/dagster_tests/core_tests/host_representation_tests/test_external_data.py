@@ -45,6 +45,7 @@ def test_asset_with_group_name():
 
     assert external_asset_nodes[0].group_name == "group1"
 
+
 def test_asset_missing_group_name():
     @asset
     def asset1():
@@ -54,6 +55,7 @@ def test_asset_missing_group_name():
     external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes[0].group_name is None
+
 
 def test_two_asset_job():
     @asset
