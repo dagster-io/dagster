@@ -51,11 +51,11 @@ const FinalRedirectOrLoadingRoot = () => {
 
   const reposWithAJob = allRepos.filter((r) => r.repository.pipelines.length > 0);
 
-  // If every loaded repo only contains asset jobs, route to the asset graph
+  // If every loaded repo only contains asset jobs, route to the asset catalog
   if (
     reposWithAJob.every(({repository}) => repository.pipelines.every((p) => isAssetGroup(p.name)))
   ) {
-    return <Redirect to="/instance/asset-graph" />;
+    return <Redirect to="/instance/assets" />;
   }
 
   // If we have exactly one repo with one job, route to the job overview

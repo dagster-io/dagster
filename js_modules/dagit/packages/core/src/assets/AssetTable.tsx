@@ -17,10 +17,9 @@ import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
 import {AssetLatestRunWithNotices, AssetRunLink} from '../asset-graph/AssetNode';
-import {LiveData, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
+import {LiveData, toGraphId} from '../asset-graph/Utils';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {MenuLink} from '../ui/MenuLink';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
@@ -164,7 +163,6 @@ const AssetEntryRow: React.FC<{
     const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
 
     const isGroup = assets.length > 1 || fullPath.join('/') !== assets[0].key.path.join('/');
-    const representsAtLeastOneSDA = assets.some((a) => !!a.definition);
     const asset = !isGroup ? assets[0] : null;
 
     const onChange = (e: React.FormEvent<HTMLInputElement>) => {
@@ -239,18 +237,9 @@ const AssetEntryRow: React.FC<{
         <td>
           {asset ? (
             <Box flex={{gap: 8, alignItems: 'center'}}>
-              {asset.definition?.opNames.length ? (
-                <Link
-                  to={instanceAssetsExplorerPathToURL({
-                    opsQuery: `++"${tokenForAssetKey({path})}"++`,
-                    opNames: [tokenForAssetKey({path})],
-                  })}
-                >
-                  <Button>View in Asset Graph</Button>
-                </Link>
-              ) : (
-                <Button disabled={true}>View in Asset Graph</Button>
-              )}
+              <Link to={`/instance/assets/${path.join('/')}`}>
+                <Button>View Details</Button>
+              </Link>
               <Popover
                 position="bottom-right"
                 content={
@@ -273,15 +262,6 @@ const AssetEntryRow: React.FC<{
                 <Button icon={<Icon name="expand_more" />} />
               </Popover>
             </Box>
-          ) : representsAtLeastOneSDA ? (
-            <Link
-              to={instanceAssetsExplorerPathToURL({
-                opsQuery: `${tokenForAssetKey({path})}/`,
-                opNames: [],
-              })}
-            >
-              <Button>View in Asset Graph</Button>
-            </Link>
           ) : (
             <span />
           )}

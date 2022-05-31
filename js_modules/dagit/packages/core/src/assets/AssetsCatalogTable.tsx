@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
-import {Redirect} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Box, CursorPaginationControls, CursorPaginationProps, TextInput} from '../../../ui/src';
@@ -43,7 +42,6 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
 
   const assetsQuery = useQuery<AssetCatalogTableQuery>(ASSET_CATALOG_TABLE_QUERY, {
     notifyOnNetworkStatusChange: true,
-    skip: view === 'graph',
   });
 
   const assetsOrError = assetsQuery.data?.assetsOrError;
@@ -98,10 +96,6 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
       _setView('directory');
     }
   }, [view, _setView, prefixPath]);
-
-  if (view === 'graph' && !prefixPath.length) {
-    return <Redirect to="/instance/asset-graph" />;
-  }
 
   if (assetsOrError?.__typename === 'PythonError') {
     return <PythonErrorInfo error={assetsOrError} />;

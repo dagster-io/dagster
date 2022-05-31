@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, Spinner, Tooltip, FontFamily, Box, CaptionMono} from '@dagster-io/ui';
+import {Colors, Icon, Tooltip, FontFamily, Box, CaptionMono, Spinner} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React, {CSSProperties} from 'react';
 import {Link} from 'react-router-dom';
