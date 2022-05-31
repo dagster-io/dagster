@@ -172,14 +172,19 @@ class GrapheneAsset(graphene.ObjectType):
 
 
 class GrapheneEventConnection(graphene.ObjectType):
+    class Meta:
+        name = "EventConnection"
+
     events = non_null_list(GrapheneDagsterRunEvent)
     cursor = graphene.NonNull(graphene.String)
     hasMore = graphene.NonNull(graphene.Boolean)
+
 
 class GrapheneEventConnectionOrError(graphene.Union):
     class Meta:
         types = (GrapheneEventConnection, GrapheneRunNotFoundError, GraphenePythonError)
         name = "EventConnectionOrError"
+
 
 class GraphenePipelineRun(graphene.Interface):
     id = graphene.NonNull(graphene.ID)
@@ -814,11 +819,3 @@ class GrapheneRunOrError(graphene.Union):
     class Meta:
         types = (GrapheneRun, GrapheneRunNotFoundError, GraphenePythonError)
         name = "RunOrError"
-
-
-class GrapheneLatestRun(graphene.ObjectType):
-    stepKey = graphene.NonNull(graphene.String)
-    run = graphene.Field(GrapheneRun)
-
-    class Meta:
-        name = "LatestRun"

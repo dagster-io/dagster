@@ -396,6 +396,7 @@ type Run implements PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
+  eventConnection(afterCursor: String): EventConnection!
   assetSelection: [AssetKey!]
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
@@ -431,6 +432,7 @@ interface PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
+  eventConnection(afterCursor: String): EventConnection!
 }
 
 type RepositoryOrigin {
@@ -655,6 +657,438 @@ type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
   runOrError: RunOrError!
   stepStats: RunStepStats!
   partition: String
+}
+
+type EventConnection {
+  events: [DagsterRunEvent!]!
+  cursor: String!
+  hasMore: Boolean!
+}
+
+union DagsterRunEvent =
+    ExecutionStepFailureEvent
+  | ExecutionStepInputEvent
+  | ExecutionStepOutputEvent
+  | ExecutionStepSkippedEvent
+  | ExecutionStepStartEvent
+  | ExecutionStepSuccessEvent
+  | ExecutionStepUpForRetryEvent
+  | ExecutionStepRestartEvent
+  | LogMessageEvent
+  | RunFailureEvent
+  | RunStartEvent
+  | RunEnqueuedEvent
+  | RunDequeuedEvent
+  | RunStartingEvent
+  | RunCancelingEvent
+  | RunCanceledEvent
+  | RunSuccessEvent
+  | HandledOutputEvent
+  | LoadedInputEvent
+  | LogsCapturedEvent
+  | ObjectStoreOperationEvent
+  | StepExpectationResultEvent
+  | MaterializationEvent
+  | ObservationEvent
+  | EngineEvent
+  | HookCompletedEvent
+  | HookSkippedEvent
+  | HookErroredEvent
+  | AlertStartEvent
+  | AlertSuccessEvent
+  | AlertFailureEvent
+  | AssetMaterializationPlannedEvent
+
+type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  error: PythonError
+  errorSource: ErrorSource
+  failureMetadata: FailureMetadata
+}
+
+"""
+An enumeration.
+"""
+enum ErrorSource {
+  FRAMEWORK_ERROR
+  USER_CODE_ERROR
+  UNEXPECTED_ERROR
+  INTERRUPT
+}
+
+type FailureMetadata implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [MetadataEntry!]!
+}
+
+type ExecutionStepInputEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  inputName: String!
+  typeCheck: TypeCheck!
+}
+
+type TypeCheck implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  success: Boolean!
+}
+
+type ExecutionStepOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String!
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  outputName: String!
+  typeCheck: TypeCheck!
+}
+
+type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type ExecutionStepStartEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  error: PythonError
+  secondsToWait: Int
+}
+
+type ExecutionStepRestartEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type LogMessageEvent implements MessageEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type RunFailureEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+  error: PythonError
+}
+
+interface RunEvent {
+  pipelineName: String!
+}
+
+type RunStartEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type RunEnqueuedEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type RunDequeuedEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type RunStartingEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type RunCancelingEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type RunCanceledEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type RunSuccessEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type HandledOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String!
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  outputName: String!
+  managerKey: String!
+}
+
+type LoadedInputEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String!
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  inputName: String!
+  managerKey: String!
+  upstreamOutputName: String
+  upstreamStepKey: String
+}
+
+type LogsCapturedEvent implements MessageEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  logKey: String!
+  stepKeys: [String!]
+  pid: Int
+}
+
+type ObjectStoreOperationEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  operationResult: ObjectStoreOperationResult!
+}
+
+type ObjectStoreOperationResult implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  op: ObjectStoreOperationType!
+}
+
+enum ObjectStoreOperationType {
+  SET_OBJECT
+  GET_OBJECT
+  RM_OBJECT
+  CP_OBJECT
+}
+
+type StepExpectationResultEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  expectationResult: ExpectationResult!
+}
+
+type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String!
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  error: PythonError
+  markerStart: String
+  markerEnd: String
+}
+
+type HookCompletedEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type HookSkippedEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type HookErroredEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  error: PythonError
+}
+
+type AlertStartEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type AlertSuccessEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type AlertFailureEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type AssetMaterializationPlannedEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+  assetKey: AssetKey
+  runOrError: RunOrError!
 }
 
 type RunNotFoundError implements PipelineRunNotFoundError & Error {
@@ -1536,438 +1970,6 @@ type AssetLatestInfo {
 }
 
 union EventConnectionOrError = EventConnection | RunNotFoundError | PythonError
-
-type EventConnection {
-  events: [DagsterRunEvent!]!
-  cursor: String!
-  hasMore: Boolean!
-}
-
-union DagsterRunEvent =
-    ExecutionStepFailureEvent
-  | ExecutionStepInputEvent
-  | ExecutionStepOutputEvent
-  | ExecutionStepSkippedEvent
-  | ExecutionStepStartEvent
-  | ExecutionStepSuccessEvent
-  | ExecutionStepUpForRetryEvent
-  | ExecutionStepRestartEvent
-  | LogMessageEvent
-  | RunFailureEvent
-  | RunStartEvent
-  | RunEnqueuedEvent
-  | RunDequeuedEvent
-  | RunStartingEvent
-  | RunCancelingEvent
-  | RunCanceledEvent
-  | RunSuccessEvent
-  | HandledOutputEvent
-  | LoadedInputEvent
-  | LogsCapturedEvent
-  | ObjectStoreOperationEvent
-  | StepExpectationResultEvent
-  | MaterializationEvent
-  | ObservationEvent
-  | EngineEvent
-  | HookCompletedEvent
-  | HookSkippedEvent
-  | HookErroredEvent
-  | AlertStartEvent
-  | AlertSuccessEvent
-  | AlertFailureEvent
-  | AssetMaterializationPlannedEvent
-
-type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  error: PythonError
-  errorSource: ErrorSource
-  failureMetadata: FailureMetadata
-}
-
-"""
-An enumeration.
-"""
-enum ErrorSource {
-  FRAMEWORK_ERROR
-  USER_CODE_ERROR
-  UNEXPECTED_ERROR
-  INTERRUPT
-}
-
-type FailureMetadata implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [MetadataEntry!]!
-}
-
-type ExecutionStepInputEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  inputName: String!
-  typeCheck: TypeCheck!
-}
-
-type TypeCheck implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [MetadataEntry!]!
-  success: Boolean!
-}
-
-type ExecutionStepOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  label: String!
-  description: String
-  metadataEntries: [MetadataEntry!]!
-  outputName: String!
-  typeCheck: TypeCheck!
-}
-
-type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-}
-
-type ExecutionStepStartEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-}
-
-type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-}
-
-type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  error: PythonError
-  secondsToWait: Int
-}
-
-type ExecutionStepRestartEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-}
-
-type LogMessageEvent implements MessageEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-}
-
-type RunFailureEvent implements MessageEvent & RunEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-  error: PythonError
-}
-
-interface RunEvent {
-  pipelineName: String!
-}
-
-type RunStartEvent implements MessageEvent & RunEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type RunEnqueuedEvent implements MessageEvent & RunEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type RunDequeuedEvent implements MessageEvent & RunEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type RunStartingEvent implements MessageEvent & RunEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type RunCancelingEvent implements MessageEvent & RunEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type RunCanceledEvent implements MessageEvent & RunEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type RunSuccessEvent implements MessageEvent & RunEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type HandledOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  label: String!
-  description: String
-  metadataEntries: [MetadataEntry!]!
-  outputName: String!
-  managerKey: String!
-}
-
-type LoadedInputEvent implements MessageEvent & StepEvent & DisplayableEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  label: String!
-  description: String
-  metadataEntries: [MetadataEntry!]!
-  inputName: String!
-  managerKey: String!
-  upstreamOutputName: String
-  upstreamStepKey: String
-}
-
-type LogsCapturedEvent implements MessageEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  logKey: String!
-  stepKeys: [String!]
-  pid: Int
-}
-
-type ObjectStoreOperationEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  operationResult: ObjectStoreOperationResult!
-}
-
-type ObjectStoreOperationResult implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [MetadataEntry!]!
-  op: ObjectStoreOperationType!
-}
-
-enum ObjectStoreOperationType {
-  SET_OBJECT
-  GET_OBJECT
-  RM_OBJECT
-  CP_OBJECT
-}
-
-type StepExpectationResultEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  expectationResult: ExpectationResult!
-}
-
-type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  label: String!
-  description: String
-  metadataEntries: [MetadataEntry!]!
-  error: PythonError
-  markerStart: String
-  markerEnd: String
-}
-
-type HookCompletedEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-}
-
-type HookSkippedEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-}
-
-type HookErroredEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  error: PythonError
-}
-
-type AlertStartEvent implements MessageEvent & RunEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type AlertSuccessEvent implements MessageEvent & RunEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type AlertFailureEvent implements MessageEvent & RunEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-}
-
-type AssetMaterializationPlannedEvent implements MessageEvent & RunEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  pipelineName: String!
-  assetKey: AssetKey
-  runOrError: RunOrError!
-}
 
 """
 Mutations to programatically interact with your Dagster instance.
