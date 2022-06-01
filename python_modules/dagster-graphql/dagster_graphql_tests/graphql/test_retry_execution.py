@@ -414,9 +414,9 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
     def test_pipeline_reexecution_invalid_step_in_subset(self, graphql_context):
         run_id = make_new_run_id()
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
-        execute_dagster_graphql_and_finish_runs(
+        result_one = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 "executionParams": {
                     "selector": selector,
@@ -426,6 +426,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
+        assert result_one.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         # retry
         new_run_id = make_new_run_id()

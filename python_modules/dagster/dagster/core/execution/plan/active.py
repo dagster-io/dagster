@@ -463,6 +463,7 @@ class ActiveExecution:
             dynamic_mappings=dict(self._successful_dynamic_outputs),
             ready_outputs=self._step_outputs,
             step_output_versions=self._plan.known_state.step_output_versions,
+            parent_state=self._plan.known_state.parent_state,
         )
 
     def _prep_for_dynamic_outputs(self, step: ExecutionStep):
