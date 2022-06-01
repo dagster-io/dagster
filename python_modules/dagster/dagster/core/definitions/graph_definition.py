@@ -47,6 +47,7 @@ from .dependency import (
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .logger_definition import LoggerDefinition
+from .metadata import RawMetadataValue
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
@@ -492,6 +493,7 @@ class GraphDefinition(NodeDefinition):
         resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
         config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
         tags: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
@@ -532,10 +534,14 @@ class GraphDefinition(NodeDefinition):
                 values to the base config. The values provided will be viewable and editable in the
                 Dagit playground, so be careful with secrets.
             tags (Optional[Dict[str, Any]]):
-                Arbitrary metadata for any execution of the Job.
+                Arbitrary information that will be attached to the execution of the Job.
                 Values that are not strings will be json encoded and must meet the criteria that
                 `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
                 values provided at invocation time.
+            metadata (Optional[Dict[str, RawMetadataValue]]):
+                Arbitrary information that will be attached to the JobDefinition and be viewable in Dagit.
+                Keys must be strings, and values must be python primitive types or one of the provided
+                MetadataValue types
             logger_defs (Optional[Dict[str, LoggerDefinition]]):
                 A dictionary of string logger identifiers to their implementations.
             executor_def (Optional[ExecutorDefinition]):
@@ -622,6 +628,7 @@ class GraphDefinition(NodeDefinition):
             partitioned_config=partitioned_config,
             preset_defs=presets,
             tags=tags,
+            metadata=metadata,
             hook_defs=hooks,
             version_strategy=version_strategy,
             op_retry_policy=op_retry_policy,

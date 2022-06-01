@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Dict, FrozenSet, List, NamedTuple, Optional, Union, cast
+from typing import AbstractSet, Any, Dict, FrozenSet, List, NamedTuple, Optional, Set, Union, cast
 
 from dagster import Field, Map, Permissive, Selector, Shape
 from dagster import _check as check
@@ -21,6 +21,7 @@ from dagster.config.snap import (
 )
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.job_definition import JobDefinition
+from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster.core.definitions.pipeline_definition import (
     PipelineDefinition,
     PipelineSubsetDefinition,
@@ -56,6 +57,10 @@ def create_pipeline_snapshot_id(snapshot: "PipelineSnapshot") -> str:
 
 class PipelineSnapshotSerializer(DefaultNamedTupleSerializer):
     @classmethod
+    def skip_when_empty(cls) -> Set[str]:
+        return {"metadata"}  # Maintain stable snapshot ID for back-compat purposes
+
+    @classmethod
     def value_from_storage_dict(
         cls,
         storage_dict,
@@ -84,6 +89,7 @@ def _pipeline_snapshot_from_storage(
     mode_def_snaps: List[ModeDefSnap],
     lineage_snapshot: Optional["PipelineSnapshotLineage"] = None,
     graph_def_name: Optional[str] = None,
+    metadata: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
 ) -> "PipelineSnapshot":
     """
     v0
@@ -91,14 +97,20 @@ def _pipeline_snapshot_from_storage(
         - lineage added
     v2:
         - graph_def_name
+    v3:
+        - metadata added
     """
     if graph_def_name is None:
         graph_def_name = name
+
+    if metadata is None:
+        metadata = []
 
     return PipelineSnapshot(
         name=name,
         description=description,
         tags=tags,
+        metadata=metadata,
         config_schema_snapshot=config_schema_snapshot,
         dagster_type_namespace_snapshot=dagster_type_namespace_snapshot,
         solid_definitions_snapshot=solid_definitions_snapshot,
@@ -124,6 +136,7 @@ class PipelineSnapshot(
             ("mode_def_snaps", List[ModeDefSnap]),
             ("lineage_snapshot", Optional["PipelineSnapshotLineage"]),
             ("graph_def_name", str),
+            ("metadata", List[Union[MetadataEntry, PartitionMetadataEntry]]),
         ],
     )
 ):
@@ -139,6 +152,7 @@ class PipelineSnapshot(
         mode_def_snaps: List[ModeDefSnap],
         lineage_snapshot: Optional["PipelineSnapshotLineage"],
         graph_def_name: str,
+        metadata: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]],
     ):
         return super(PipelineSnapshot, cls).__new__(
             cls,
@@ -164,6 +178,7 @@ class PipelineSnapshot(
                 lineage_snapshot, "lineage_snapshot", PipelineSnapshotLineage
             ),
             graph_def_name=check.str_param(graph_def_name, "graph_def_name"),
+            metadata=check.opt_list_param(metadata, "metadata"),
         )
 
     @classmethod
@@ -198,6 +213,7 @@ class PipelineSnapshot(
             name=pipeline_def.name,
             description=pipeline_def.description,
             tags=pipeline_def.tags,
+            metadata=pipeline_def.metadata,
             config_schema_snapshot=build_config_schema_snapshot(pipeline_def),
             dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(pipeline_def),
             solid_definitions_snapshot=build_solid_definitions_snapshot(pipeline_def),

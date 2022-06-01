@@ -57,6 +57,10 @@ class PipelineIndex:
         return self.pipeline_snapshot.tags
 
     @property
+    def metadata(self):
+        return self.pipeline_snapshot.metadata
+
+    @property
     def pipeline_snapshot_id(self):
         if not self._pipeline_snapshot_id:
             self._pipeline_snapshot_id = create_pipeline_snapshot_id(self.pipeline_snapshot)
