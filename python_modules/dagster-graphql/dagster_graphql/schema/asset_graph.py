@@ -24,7 +24,7 @@ from . import external
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
 from .logs.events import GrapheneMaterializationEvent
-from .pipelines.pipeline import GrapheneMaterializationCount, GraphenePipeline
+from .pipelines.pipeline import GrapheneMaterializationCount, GraphenePipeline, GrapheneRun
 from .util import non_null_list
 
 if TYPE_CHECKING:
@@ -81,6 +81,7 @@ class GrapheneAssetLatestInfo(graphene.ObjectType):
     latestMaterialization = graphene.Field(GrapheneMaterializationEvent)
     unstartedRunIds = non_null_list(graphene.String)
     inProgressRunIds = non_null_list(graphene.String)
+    latestRun = graphene.Field(GrapheneRun)
 
     class Meta:
         name = "AssetLatestInfo"
@@ -118,6 +119,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     partitionKeys = non_null_list(graphene.String)
     partitionDefinition = graphene.String()
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
+    groupName = graphene.String()
 
     class Meta:
         name = "AssetNode"
@@ -153,6 +155,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             assetKey=external_asset_node.asset_key,
             description=external_asset_node.op_description,
             opName=external_asset_node.op_name,
+            groupName=external_asset_node.group_name,
         )
 
     @property

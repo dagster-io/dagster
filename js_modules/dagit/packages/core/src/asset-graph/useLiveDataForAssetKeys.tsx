@@ -1,10 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
 import React from 'react';
 
-import {AssetKeyInput, PipelineSelector} from '../types/globalTypes';
+import {AssetKeyInput} from '../types/globalTypes';
 
 import {ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
-import {buildLiveData, GraphData, REPOSITORY_LIVE_FRAGMENT} from './Utils';
+import {buildLiveData, AssetDefinitionsForLiveData} from './Utils';
 import {AssetGraphLiveQuery, AssetGraphLiveQueryVariables} from './types/AssetGraphLiveQuery';
 
 /** Fetches the last materialization, "upstream changed", and other live state
@@ -14,38 +14,27 @@ import {AssetGraphLiveQuery, AssetGraphLiveQueryVariables} from './types/AssetGr
  * node that has changed is not in scope.
  */
 export function useLiveDataForAssetKeys(
-  pipelineSelector: PipelineSelector | null | undefined,
-  graphData: GraphData | null,
+  assets: AssetDefinitionsForLiveData | undefined,
   graphAssetKeys: AssetKeyInput[],
 ) {
   const liveResult = useQuery<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>(
     ASSETS_GRAPH_LIVE_QUERY,
     {
       skip: graphAssetKeys.length === 0,
-      variables: {
-        assetKeys: graphAssetKeys,
-        repositorySelector: pipelineSelector
-          ? {
-              repositoryLocationName: pipelineSelector.repositoryLocationName,
-              repositoryName: pipelineSelector.repositoryName,
-            }
-          : undefined,
-      },
+      variables: {assetKeys: graphAssetKeys},
       notifyOnNetworkStatusChange: true,
     },
   );
 
   const liveDataByNode = React.useMemo(() => {
-    if (!liveResult.data || !graphData) {
+    if (!liveResult.data || !assets) {
       return {};
     }
 
-    const {repositoriesOrError, assetNodes: liveAssetNodes, assetsLatestInfo} = liveResult.data;
-    const repos =
-      repositoriesOrError.__typename === 'RepositoryConnection' ? repositoriesOrError.nodes : [];
+    const {assetNodes: liveAssetNodes, assetsLatestInfo} = liveResult.data;
 
-    return buildLiveData(graphData, liveAssetNodes, repos, assetsLatestInfo);
-  }, [graphData, liveResult]);
+    return buildLiveData(assets, liveAssetNodes, assetsLatestInfo);
+  }, [assets, liveResult]);
 
   return {
     liveResult,
@@ -55,17 +44,7 @@ export function useLiveDataForAssetKeys(
 }
 
 const ASSETS_GRAPH_LIVE_QUERY = gql`
-  query AssetGraphLiveQuery($repositorySelector: RepositorySelector, $assetKeys: [AssetKeyInput!]) {
-    repositoriesOrError(repositorySelector: $repositorySelector) {
-      __typename
-      ... on RepositoryConnection {
-        nodes {
-          __typename
-          id
-          ...RepositoryLiveFragment
-        }
-      }
-    }
+  query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]) {
     assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
       id
       ...AssetNodeLiveFragment
@@ -76,8 +55,11 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
       }
       unstartedRunIds
       inProgressRunIds
+      latestRun {
+        status
+        id
+      }
     }
   }
-  ${REPOSITORY_LIVE_FRAGMENT}
   ${ASSET_NODE_LIVE_FRAGMENT}
 `;

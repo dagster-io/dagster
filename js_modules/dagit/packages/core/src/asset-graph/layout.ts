@@ -2,7 +2,7 @@ import * as dagre from 'dagre';
 
 import {IBounds, IPoint} from '../graph/common';
 
-import {GraphData, GraphNode, GraphId, displayNameForAssetKey, identifyBundles} from './Utils';
+import {GraphData, GraphNode, GraphId, displayNameForAssetKey} from './Utils';
 
 export interface AssetLayout {
   id: GraphId;
@@ -23,9 +23,6 @@ export type AssetGraphLayout = {
   height: number;
   edges: AssetLayoutEdge[];
   nodes: {[id: string]: AssetLayout};
-
-  bundleEdges: AssetLayoutEdge[];
-  bundles: {[id: string]: AssetLayout};
 };
 
 const opts: {margin: number; mini: boolean} = {
@@ -85,19 +82,6 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
     g.setNode(id, getForeignNodeDimensions(id));
   });
 
-  // Create "parent" nodes for nodes with a shared ID (path) prefix (eg: s3>a, s3>b),
-  // and then place the children inside. Note that the bundles are identified in order
-  // and bundleMapping can reference bundles as children - this code can create multiple
-  // layers of parents!
-  const bundleMapping = identifyBundles(g.nodes());
-
-  for (const [parentId, nodeIds] of Object.entries(bundleMapping)) {
-    g.setNode(parentId, {});
-    for (const nodeId of nodeIds) {
-      g.setParent(nodeId, parentId);
-    }
-  }
-
   dagre.layout(g);
 
   const dagreNodesById: {[id: string]: dagre.Node} = {};
@@ -113,7 +97,6 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
   let maxHeight = 0;
 
   const nodes: {[id: string]: AssetLayout} = {};
-  const bundles: {[id: string]: AssetLayout} = {};
 
   Object.keys(dagreNodesById).forEach((id) => {
     const dagreNode = dagreNodesById[id];
@@ -123,57 +106,27 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
       width: dagreNode.width,
       height: dagreNode.height,
     };
-    if (bundleMapping[id]) {
-      return;
-    }
     nodes[id] = {id, bounds};
 
-    // If this node was inside one or more parent nodes, upsert the parent box
-    // into the bundles result set and expand it to include the child. Note:
-    // dagre does give us "parent" node dimensions, but sometimes they're randomly
-    // much larger than the contents.
-    let bundleId = g.parent(id);
-    while (bundleId) {
-      bundles[bundleId] = bundles[bundleId] || {id: bundleId, bounds};
-      bundles[bundleId].bounds = extendBounds(bundles[bundleId].bounds, {
-        x: bounds.x - opts.margin / 4,
-        y: bounds.y - opts.margin / 4,
-        width: bounds.width + opts.margin / 2,
-        height: bounds.height + opts.margin / 2,
-      });
-      bundleId = g.parent(bundleId);
-    }
     maxWidth = Math.max(maxWidth, dagreNode.x + dagreNode.width / 2);
     maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height / 2);
   });
 
   const edges: AssetLayoutEdge[] = [];
-  const bundleEdges: AssetLayoutEdge[] = [];
 
   g.edges().forEach((e) => {
     const points = g.edge(e).points;
-    if (bundles[e.v] || bundles[e.w]) {
-      bundleEdges.push({
-        from: points[0],
-        fromId: e.v,
-        to: points[points.length - 1],
-        toId: e.w,
-      });
-    } else {
-      edges.push({
-        from: points[0],
-        fromId: e.v,
-        to: points[points.length - 1],
-        toId: e.w,
-      });
-    }
+    edges.push({
+      from: points[0],
+      fromId: e.v,
+      to: points[points.length - 1],
+      toId: e.w,
+    });
   });
 
   return {
     nodes,
     edges,
-    bundles,
-    bundleEdges,
     width: maxWidth + opts.margin,
     height: maxHeight + opts.margin,
   };
@@ -196,6 +149,12 @@ export const ASSET_NODE_ICON_WIDTH = 20;
 export const ASSET_NODE_ANNOTATIONS_MAX_WIDTH = 65;
 export const ASSET_NODE_NAME_MAX_LENGTH = 32;
 const DISPLAY_NAME_PX_PER_CHAR = 8.0;
+
+export const assetNameMaxlengthForWidth = (width: number) => {
+  return (
+    (width - ASSET_NODE_ANNOTATIONS_MAX_WIDTH - ASSET_NODE_ICON_WIDTH) / DISPLAY_NAME_PX_PER_CHAR
+  );
+};
 
 export const getAssetNodeDimensions = (def: {
   assetKey: {path: string[]};

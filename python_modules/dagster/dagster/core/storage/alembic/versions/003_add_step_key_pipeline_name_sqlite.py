@@ -7,7 +7,7 @@ Create Date: 2020-03-31 11:01:42.609069
 """
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.engine import reflection
+from sqlalchemy import inspect
 
 # pylint: disable=no-member
 
@@ -19,8 +19,7 @@ depends_on = None
 
 
 def upgrade():
-    bind = op.get_context().bind
-    inspector = reflection.Inspector.from_engine(bind)
+    inspector = inspect(op.get_bind())
     has_tables = inspector.get_table_names()
     if "event_logs" in has_tables:
         columns = [x.get("name") for x in inspector.get_columns("event_logs")]
@@ -29,8 +28,7 @@ def upgrade():
 
 
 def downgrade():
-    bind = op.get_context().bind
-    inspector = reflection.Inspector.from_engine(bind)
+    inspector = inspect(op.get_bind())
     has_tables = inspector.get_table_names()
     if "event_logs" in has_tables:
         columns = [x.get("name") for x in inspector.get_columns("event_logs")]

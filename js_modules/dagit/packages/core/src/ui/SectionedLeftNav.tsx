@@ -3,7 +3,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
-import {isAssetGroup} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {getJobItemsForOption, JobItem} from '../nav/FlatContentList';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
@@ -62,7 +62,7 @@ export const SectionedLeftNav = () => {
     const reposWithoutJobs = [];
     for (const repo of alphaSorted) {
       const jobs = repo.repository.pipelines;
-      if (jobs.length > 0 && jobs.some((job) => !isAssetGroup(job.name))) {
+      if (jobs.length > 0 && jobs.some((job) => !isHiddenAssetGroupJob(job.name))) {
         reposWithJobs.push(repo);
       } else {
         reposWithoutJobs.push(repo);

@@ -29,6 +29,8 @@ export interface AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes_defi
   __typename: "AssetNode";
   id: string;
   opNames: string[];
+  jobNames: string[];
+  partitionDefinition: string | null;
   description: string | null;
   repository: AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes_definition_repository;
 }

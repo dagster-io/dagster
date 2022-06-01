@@ -3,7 +3,7 @@ import Fuse from 'fuse.js';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {displayNameForAssetKey, isAssetGroup} from '../asset-graph/Utils';
+import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
@@ -44,7 +44,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
         const repoPath = buildRepoPath(repoName, locationName);
 
         const allPipelinesAndJobs = pipelines
-          .filter((item) => !isAssetGroup(item.name))
+          .filter((item) => !isHiddenAssetGroupJob(item.name))
           .reduce((flat, pipelineOrJob) => {
             const {name, isJob} = pipelineOrJob;
             return [
@@ -81,7 +81,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
         }));
 
         const allPartitionSets: SearchResult[] = partitionSets
-          .filter((item) => !isAssetGroup(item.pipelineName))
+          .filter((item) => !isHiddenAssetGroupJob(item.pipelineName))
           .map((partitionSet) => ({
             label: partitionSet.name,
             description: manyRepos ? `Partition set in ${repoPath}` : 'Partition set',
