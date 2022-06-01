@@ -34,6 +34,7 @@ def pg_config():
                 "db_name": StringSource,
                 "port": Field(IntSource, is_required=False, default_value=5432),
                 "params": Field(Permissive(), is_required=False, default_value={}),
+                "scheme": Field(StringSource, is_required=False, default_value="postgresql"),
             },
             is_required=False,
         ),
@@ -58,8 +59,10 @@ def pg_url_from_config(config_value):
         return get_conn_string(**config_value["postgres_db"])
 
 
-def get_conn_string(username, password, hostname, db_name, port="5432", params=None):
-    uri = f"postgresql://{quote(username)}:{quote(password)}@{hostname}:{port}/{db_name}"
+def get_conn_string(
+    username, password, hostname, db_name, port="5432", params=None, scheme="postgresql"
+):
+    uri = f"{scheme}://{quote(username)}:{quote(password)}@{hostname}:{port}/{db_name}"
 
     if params:
         query_string = f"{urlencode(params, quote_via=quote)}"
