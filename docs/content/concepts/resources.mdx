@@ -51,7 +51,7 @@ Representing external dependencies as resources, in conjunction with jobs, has v
 
 ---
 
-## Defining a Resource
+## Defining a resource
 
 To define a resource, use the <PyObject object="resource" decorator/> decorator. Wrap a function that takes an `init_context` as the first parameter, which is an instance of <PyObject object="InitResourceContext"/>. From this function, return or yield the object that you would like to be available as a resource.
 
@@ -84,7 +84,6 @@ def op_requires_resources(context):
     context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
 ```
 
-## Providing Resources to a Job
 
 Jobs provide resources to the ops inside them. A job has a dictionary that maps resource keys to resource definitions. You can supply this dictionary to the `resource_defs` argument when using either of the ways to construct a job: <PyObject object="GraphDefinition" method="to_job" /> or <PyObject object="job" decorator />.
 
@@ -118,10 +117,11 @@ def do_database_stuff_job():
     op_requires_resources()
 ```
 
-## Resource Configuration
+---
 
-<PyObject object="ResourceDefinition" pluralize /> can have a config schema, which
-allows you to customize behavior at runtime through run configuration.
+## Resource configuration
+
+<PyObject object="ResourceDefinition" pluralize /> can have a config schema, which allows you to customize behavior at runtime through run configuration.
 
 For example, let's say we wanted to pass a connection string to our `DatabaseConnection` resource.
 
@@ -137,7 +137,9 @@ def db_resource(init_context):
     return DatabaseConnection(connection)
 ```
 
-## Context Manager Resources
+---
+
+## Context manager resources
 
 Dagster resources can serve as context managers, for scenarios where it is necessary to perform some sort of cleanup of the resource after execution. Let’s take the example of a database connection. We might want to clean up the connection once we are done using it. We can incorporate this into our resource like so:
 
@@ -165,7 +167,9 @@ Once execution finishes, the finally block of the resource init function will ru
 
 An important nuance is that resources are initialized (and torn down) once per process. This means that if using the in-process executor, which runs all steps in a single process, resources will be initialized at the beginning of execution, and torn down after every single step is finished executing. In contrast, when using the multiprocess executor (or other out-of-process executors), where there is a single process for each step, at the beginning of each step execution, the resource will be initialized, and at the end of that step’s execution, the finally block will be run.
 
-## Testing Resource Initialization
+---
+
+## Testing resource initialization
 
 You can test the initialization of a resource by invoking the resource definition. This will run the underlying decorated function.
 
@@ -218,7 +222,9 @@ def test_cm_resource():
         assert initialized_resource == "foo"
 ```
 
-## Initializing Resources Outside of Execution
+---
+
+## Initializing resources outside of execution
 
 There are scenarios where you might want to reuse the code written within your resources outside of the context of execution. Consider a case where you have a resource `db_connection`, and you want to use that resource outside of the context of an execution. You can use the <PyObject object="build_resources"/> API to initialize this resource outside of execution.
 
@@ -244,7 +250,9 @@ def uses_db_connection():
         ...
 ```
 
-## Resource to Resource Dependencies
+---
+
+## Resource-to-resource dependencies
 
 Resources can depend upon other resources. Use the `required_resource_keys` parameter of the <PyObject object="resource" decorator/> decorator to specify which resources to depend upon. Access the required resources through the context object provided to the wrapped function.
 
@@ -263,7 +271,7 @@ def client(init_context):
     return Client(username, password)
 ```
 
-Now, consider an op that will use the `client` resource.
+Now, consider an op that will use the `client` resource:
 
 ```python file=/concepts/resources/resources.py startafter=start_resource_dep_op endbefore=end_resource_dep_op
 from dagster import graph, op
@@ -281,6 +289,8 @@ When constructing a job that includes that op, we provide the resource `client`,
 def connect():
     get_client()
 ```
+
+---
 
 ## See it in action
 
