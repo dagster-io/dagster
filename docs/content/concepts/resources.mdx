@@ -5,7 +5,7 @@ description: Resources enable you to separate graph logic from environment, and 
 
 # Resources
 
-Resources provide a way to manage dependencies to external components and share implementations across multiple ops or assets in a job.
+Resources provide a way to manage dependencies to external components and share implementations across multiple [ops](/concepts/ops-jobs-graphs/ops) or [assets](/concepts/assets/software-defined-assets) in a [job](/concepts/ops-jobs-graphs/jobs-graphs).
 
 Using resources, you could:
 
@@ -69,7 +69,14 @@ def cereal_fetcher(init_context):
     return ExternalCerealFetcher()
 ```
 
-## Accessing Resources in Ops
+---
+
+## Accessing resources
+
+- [In ops](#in-ops)
+- [In assets](#in-assets)
+
+### In ops
 
 Ops use resource keys to access resources, like so:
 
@@ -84,6 +91,13 @@ def op_requires_resources(context):
     context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
 ```
 
+### In assets
+
+<TODO />
+
+---
+
+## Providing resources to a job
 
 Jobs provide resources to the ops inside them. A job has a dictionary that maps resource keys to resource definitions. You can supply this dictionary to the `resource_defs` argument when using either of the ways to construct a job: <PyObject object="GraphDefinition" method="to_job" /> or <PyObject object="job" decorator />.
 
