@@ -1,7 +1,7 @@
 # isort: skip_file
 # pylint: disable=unnecessary-ellipsis
 
-from dagster import repository, DefaultSensorStatus, SkipReason, AssetGroup
+from dagster import repository, DefaultSensorStatus, SkipReason, AssetGroup, asset
 
 
 # start_sensor_job_marker
@@ -43,8 +43,14 @@ def my_directory_sensor():
 
 # end_directory_sensor_marker
 
+
+@asset
+def my_asset():
+    return 1
+
+
 # start_asset_job_sensor_marker
-asset_job = AssetGroup([...]).build_job("asset_job")
+asset_job = AssetGroup([my_asset]).build_job("asset_job")
 
 
 @sensor(job=asset_job)
