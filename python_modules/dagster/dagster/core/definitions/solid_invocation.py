@@ -1,5 +1,5 @@
 import inspect
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Union, cast
 
 import dagster._check as check
 from dagster.core.errors import (
@@ -9,6 +9,7 @@ from dagster.core.errors import (
 )
 
 from .events import (
+    DEFAULT_OUTPUT,
     AssetMaterialization,
     AssetObservation,
     DynamicOutput,
@@ -355,7 +356,33 @@ def _type_check_output(
 
     op_label = context.describe_op()
 
-    if isinstance(output, (Output, DynamicOutput)):
+    if isinstance(output, list) and all([isinstance(inner, DynamicOutput) for inner in output]):
+        dagster_type = output_def.dagster_type
+        output_list = cast(List[DynamicOutput], output)
+        for dyn_output in output_list:
+            if (
+                not dyn_output.output_name == DEFAULT_OUTPUT
+                and dyn_output.output_name != output_def.name
+            ):
+                raise DagsterInvariantViolationError(
+                    f"Received dynamic output with name '{dyn_output.output_name}' that does not exist."
+                )
+            type_check = do_type_check(
+                context.for_type(dagster_type), dagster_type, dyn_output.value
+            )
+            if not type_check.success:
+                raise DagsterTypeCheckDidNotPass(
+                    description=(
+                        f'Type check failed for {op_label} dynamic output "{dyn_output.output_name}" with mapping key "{dyn_output.mapping_key}" - '
+                        f'expected type "{dagster_type.display_name}". '
+                        f"Description: {type_check.description}"
+                    ),
+                    metadata_entries=type_check.metadata_entries,
+                    dagster_type=dagster_type,
+                )
+            context.observe_output(output_def.name, dyn_output.mapping_key)
+        return output
+    elif isinstance(output, (Output, DynamicOutput)):
         dagster_type = output_def.dagster_type
         type_check = do_type_check(context.for_type(dagster_type), dagster_type, output.value)
         if not type_check.success:
@@ -370,7 +397,7 @@ def _type_check_output(
             )
 
         context.observe_output(
-            output.output_name, output.mapping_key if isinstance(output, DynamicOutput) else None
+            output_def.name, output.mapping_key if isinstance(output, DynamicOutput) else None
         )
         return output
     else:

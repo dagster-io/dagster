@@ -8,7 +8,7 @@ import {
   displayNameForAssetKey,
   isSourceAsset,
   LiveData,
-  isAssetGroup,
+  isHiddenAssetGroupJob,
   __ASSET_GROUP_PREFIX,
 } from '../asset-graph/Utils';
 import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
@@ -37,6 +37,7 @@ export const AssetNodeDefinition: React.FC<{
 }> = ({assetNode, upstream, downstream, liveDataByNode}) => {
   const partitionHealthData = usePartitionHealthData([assetNode.assetKey]);
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
+
   const repoAddress = buildRepoAddress(
     assetNode.repository.name,
     assetNode.repository.location.name,
@@ -142,7 +143,7 @@ const DefinitionLocation: React.FC<{
 }> = ({assetNode, repoAddress}) => (
   <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}} style={{lineHeight: 0}}>
     {assetNode.jobNames
-      .filter((jobName) => !isAssetGroup(jobName))
+      .filter((jobName) => !isHiddenAssetGroupJob(jobName))
       .map((jobName) => (
         <Mono key={jobName}>
           <PipelineReference

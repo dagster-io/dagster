@@ -1,15 +1,5 @@
-import {
-  Body,
-  Box,
-  Checkbox,
-  Colors,
-  Icon,
-  Mono,
-  NonIdealState,
-  SplitPanelContainer,
-} from '@dagster-io/ui';
+import {Box, Checkbox, Colors, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import flatMap from 'lodash/flatMap';
-import isEqual from 'lodash/isEqual';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import uniqBy from 'lodash/uniqBy';
@@ -18,7 +8,6 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {
   FIFTEEN_SECONDS,
@@ -168,7 +157,6 @@ export const AssetGraphExplorerWithData: React.FC<
 
   const history = useHistory();
   const findJobForAsset = useFindJobForAsset();
-  const {flagExperimentalAssetDAG: experiments} = useFeatureFlags();
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
@@ -207,7 +195,7 @@ export const AssetGraphExplorerWithData: React.FC<
         clicked = await findJobForAsset(assetKey);
       }
 
-      if (!clicked.opNames.length) {
+      if (!clicked.jobName || !clicked.opNames.length) {
         // This op has no definition in any loaded repository (source asset).
         // The best we can do is show the asset page. This will still be mostly empty,
         // but there can be a description.
@@ -350,111 +338,9 @@ export const AssetGraphExplorerWithData: React.FC<
                 <SVGContainer width={layout.width} height={layout.height}>
                   <AssetConnectedEdges highlighted={highlighted} edges={layout.edges} />
 
-                  {Object.values(layout.bundles)
-                    .sort((a, b) => a.id.length - b.id.length)
-                    .map(({id, bounds}) => {
-                      if (experiments && _scale < EXPERIMENTAL_MINI_SCALE) {
-                        const path = JSON.parse(id);
-                        return (
-                          <foreignObject
-                            x={bounds.x}
-                            y={bounds.y}
-                            width={bounds.width}
-                            height={bounds.height + 10}
-                            key={id}
-                            onDoubleClick={(e) => {
-                              viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
-                              e.stopPropagation();
-                            }}
-                          >
-                            <AssetNodeMinimal
-                              style={{
-                                border: `${2 / _scale}px solid ${Colors.Gray300}`,
-                                background: Colors.White,
-                              }}
-                              selected={selectedGraphNodes.some((g) =>
-                                hasPathPrefix(g.assetKey.path, path),
-                              )}
-                            >
-                              <NameMinimal
-                                style={{
-                                  fontSize: 18 / _scale,
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                }}
-                              >
-                                <div
-                                  style={{display: 'flex', gap: 3 / _scale, alignItems: 'center'}}
-                                >
-                                  <Icon
-                                    name="folder"
-                                    size={Math.round(16 / _scale) as any}
-                                    style={{marginTop: 4}}
-                                  />
-                                  {withMiddleTruncation(displayNameForAssetKey({path}), {
-                                    maxLength: 17,
-                                  })}
-                                </div>
-                                <Body style={{fontSize: 10 / _scale, color: Colors.Gray500}}>
-                                  {layout.bundleMapping[id].length} items
-                                </Body>
-                              </NameMinimal>
-                            </AssetNodeMinimal>
-                          </foreignObject>
-                        );
-                      }
-                      return (
-                        <foreignObject
-                          x={bounds.x}
-                          y={bounds.y}
-                          width={bounds.width}
-                          height={bounds.height + 10}
-                          style={{pointerEvents: 'none'}}
-                          key={id}
-                        >
-                          <Mono
-                            style={{
-                              opacity:
-                                _scale > EXPERIMENTAL_MINI_SCALE
-                                  ? (_scale - EXPERIMENTAL_MINI_SCALE) / 0.2
-                                  : 0,
-                              fontWeight: 600,
-                              display: 'flex',
-                              gap: 6,
-                            }}
-                          >
-                            <Icon name="folder" size={20} />
-                            {displayNameForAssetKey({path: JSON.parse(id)})}
-                          </Mono>
-                          <div
-                            style={{
-                              inset: 0,
-                              top: 24,
-                              position: 'absolute',
-                              borderRadius: 10,
-                              border: `${3 / _scale}px dashed ${Colors.Gray300}`,
-                              background: `rgba(223, 223, 223, ${
-                                0.4 - Math.max(0, _scale - EXPERIMENTAL_MINI_SCALE) * 0.3
-                              })`,
-                            }}
-                          />
-                        </foreignObject>
-                      );
-                    })}
-
                   {Object.values(layout.nodes).map(({id, bounds}) => {
                     const graphNode = assetGraphData.nodes[id];
                     const path = JSON.parse(id);
-
-                    if (experiments) {
-                      const isWithinBundle = Object.keys(layout.bundles).some((bundleId) =>
-                        hasPathPrefix(path, JSON.parse(bundleId)),
-                      );
-                      if (isWithinBundle && _scale < EXPERIMENTAL_MINI_SCALE) {
-                        return null;
-                      }
-                    }
 
                     return (
                       <foreignObject
@@ -471,7 +357,7 @@ export const AssetGraphExplorerWithData: React.FC<
                       >
                         {!graphNode || !graphNode.definition.opNames.length ? (
                           <ForeignNode assetKey={{path}} />
-                        ) : experiments && _scale < EXPERIMENTAL_MINI_SCALE ? (
+                        ) : _scale < EXPERIMENTAL_MINI_SCALE ? (
                           <AssetNodeMinimal
                             style={{background: Colors.White}}
                             selected={selectedGraphNodes.includes(graphNode)}
@@ -596,10 +482,6 @@ const SVGContainer = styled.svg`
 `;
 
 // Helpers
-
-const hasPathPrefix = (path: string[], prefix: string[]) => {
-  return isEqual(prefix, path.slice(0, prefix.length));
-};
 
 const graphDirectionOf = ({
   graph,

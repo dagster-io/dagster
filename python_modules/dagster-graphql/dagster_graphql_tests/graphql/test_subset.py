@@ -71,7 +71,4 @@ class TestSolidSelections(NonLaunchableGraphQLContextTestMatrix):
         error_msg = result.data["runConfigSchemaOrError"]["message"]
 
         assert "DagsterInvalidSubsetError" in error_msg
-        assert (
-            "Input 'some_input' of solid 'fail_subset' has no upstream output, no default value, and no dagster type loader."
-            in error_msg
-        )
+        assert "Input 'some_input' of solid 'fail_subset' has no way of being resolved" in error_msg

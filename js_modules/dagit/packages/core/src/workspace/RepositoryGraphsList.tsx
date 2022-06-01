@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {isAssetGroup} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
@@ -83,7 +83,9 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
       return null;
     }
     const jobGraphNames = new Set<string>(
-      repo.pipelines.filter((p) => p.isJob && !isAssetGroup(p.name)).map((p) => p.graphName),
+      repo.pipelines
+        .filter((p) => p.isJob && !isHiddenAssetGroupJob(p.name))
+        .map((p) => p.graphName),
     );
     const items: Item[] = Array.from(jobGraphNames).map((graphName) => ({
       name: graphName,
