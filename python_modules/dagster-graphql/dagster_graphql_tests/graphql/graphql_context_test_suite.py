@@ -857,10 +857,22 @@ ExecutingGraphQLContextTestMatrix = make_graphql_context_test_suite(
 )
 
 
-all_repos_loadable_target = LoadableTargetOrigin(
-    executable_path=sys.executable,
-    python_file=file_relative_path(__file__, "cross_repo_asset_deps.py"),
+def get_loadable_target_for_file(filename: str) -> LoadableTargetOrigin:
+    return LoadableTargetOrigin(
+        executable_path=sys.executable,
+        python_file=file_relative_path(__file__, filename),
+    )
+
+
+CrossRepoDepsGraphQLContextTestMatrix = make_graphql_context_test_suite(
+    context_variants=GraphQLContextVariant.all_executing_variants(
+        target=get_loadable_target_for_file("cross_repo_asset_deps.py")
+    )
 )
-AllRepositoryGraphQLContextTestMatrix = make_graphql_context_test_suite(
-    context_variants=GraphQLContextVariant.all_executing_variants(target=all_repos_loadable_target)
+
+# Repository for testing named asset groups
+NamedAssetGroupsGraphQLContextTestMatrix = make_graphql_context_test_suite(
+    context_variants=GraphQLContextVariant.all_executing_variants(
+        target=get_loadable_target_for_file("named_asset_groups_repo.py")
+    )
 )

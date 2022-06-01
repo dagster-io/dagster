@@ -17,8 +17,9 @@ from dagster.utils import safe_tempfile_path
 
 # from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 from .graphql_context_test_suite import (
-    AllRepositoryGraphQLContextTestMatrix,
+    CrossRepoDepsGraphQLContextTestMatrix,
     ExecutingGraphQLContextTestMatrix,
+    NamedAssetGroupsGraphQLContextTestMatrix,
 )
 
 GET_ASSET_KEY_QUERY = """
@@ -262,6 +263,21 @@ CROSS_REPO_ASSET_GRAPH = """
             }
             dependedByKeys {
                 path
+            }
+        }
+    }
+"""
+
+GET_REPO_ASSET_GROUPS = """
+    query($repositorySelector: RepositorySelector!) {
+        repositoryOrError(repositorySelector:$repositorySelector) {
+            ... on Repository {
+                assetGroups {
+                    groupName
+                    assetKeys {
+                    path
+                    }
+                }
             }
         }
     }
@@ -1044,7 +1060,7 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert assets_live_info[0]["inProgressRunIds"] == []
 
 
-class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
+class TestCrossRepoAssetDependedBy(CrossRepoDepsGraphQLContextTestMatrix):
     def test_cross_repo_assets(self, graphql_context):
         repository_location = graphql_context.get_repository_location("test")
         repository = repository_location.get_repository("upstream_assets_repository")
@@ -1064,3 +1080,29 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
             upstream_asset["dependedByKeys"], key=lambda node: node.get("path")[0]
         )
         assert result_dependent_keys == dependent_asset_keys
+
+
+class TestNamedGroups(NamedAssetGroupsGraphQLContextTestMatrix):
+    def test_repo_asset_groups(self, graphql_context):
+        repository_location = graphql_context.get_repository_location("test")
+        repository = repository_location.get_repository("named_asset_groups_repo")
+
+        selector = {
+            "repositoryLocationName": repository_location.name,
+            "repositoryName": repository.name,
+        }
+        result = execute_dagster_graphql(
+            graphql_context, GET_REPO_ASSET_GROUPS, variables={"repositorySelector": selector}
+        )
+
+        asset_groups_list = result.data["repositoryOrError"]["assetGroups"]
+        # normalize for easy comparison
+        asset_groups = sorted(
+            (group["groupName"], sorted(key["path"] for key in group["assetKeys"]))
+            for group in asset_groups_list
+        )
+        expected_asset_groups = [
+            ("group_1", [["grouped_asset_1"], ["grouped_asset_2"]]),
+            ("group_2", [["grouped_asset_4"]]),
+        ]
+        assert asset_groups == expected_asset_groups
