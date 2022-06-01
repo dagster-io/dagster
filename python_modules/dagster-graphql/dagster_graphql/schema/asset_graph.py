@@ -407,7 +407,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
 
 class GrapheneAssetGroup(graphene.ObjectType):
-    groupName = graphene.String()
+    groupName = graphene.NonNull(graphene.String)
     assetKeys = non_null_list(GrapheneAssetKey)
 
     class Meta:
