@@ -139,6 +139,27 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
             {
                 'key': {
                     'path': [
+                        'grouped_asset_1'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'grouped_asset_2'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'grouped_asset_4'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'hanging_asset'
                     ]
                 }
@@ -161,6 +182,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
                 'key': {
                     'path': [
                         'unconnected'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'ungrouped_asset_3'
                     ]
                 }
             },
@@ -322,6 +350,27 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
             {
                 'key': {
                     'path': [
+                        'grouped_asset_1'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'grouped_asset_2'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'grouped_asset_4'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'hanging_asset'
                     ]
                 }
@@ -344,6 +393,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
                 'key': {
                     'path': [
                         'unconnected'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'ungrouped_asset_3'
                     ]
                 }
             },
@@ -505,6 +561,27 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
             {
                 'key': {
                     'path': [
+                        'grouped_asset_1'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'grouped_asset_2'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'grouped_asset_4'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'hanging_asset'
                     ]
                 }
@@ -527,6 +604,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
                 'key': {
                     'path': [
                         'unconnected'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'ungrouped_asset_3'
                     ]
                 }
             },
@@ -688,6 +772,27 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
             {
                 'key': {
                     'path': [
+                        'grouped_asset_1'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'grouped_asset_2'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'grouped_asset_4'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'hanging_asset'
                     ]
                 }
@@ -710,6 +815,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
                 'key': {
                     'path': [
                         'unconnected'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'ungrouped_asset_3'
                     ]
                 }
             },
