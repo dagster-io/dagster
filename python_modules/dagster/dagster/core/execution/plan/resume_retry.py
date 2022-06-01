@@ -10,7 +10,7 @@ from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.plan.step import ResolvedFromDynamicStepHandle
 from dagster.core.host_representation import ExternalExecutionPlan
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.pipeline_run import DagsterRun
 
 
 def _update_tracking_dict(tracking, handle):
@@ -37,19 +37,21 @@ class ReexecutionStrategy(enum.Enum):
 
 
 def get_retry_steps_from_parent_run(
-    instance, parent_run_id: str = None, parent_run: PipelineRun = None
+    instance: DagsterInstance,
+    parent_run: DagsterRun,
 ) -> Tuple[List[str], Optional[KnownExecutionState]]:
     check.inst_param(instance, "instance", DagsterInstance)
+    check.opt_inst_param(parent_run, "parent_run", DagsterRun)
 
-    check.invariant(
-        bool(parent_run_id) != bool(parent_run), "Must provide one of parent_run_id or parent_run"
-    )
-    check.opt_str_param(parent_run_id, "parent_run_id")
-    check.opt_inst_param(parent_run, "parent_run", PipelineRun)
-
-    parent_run = parent_run or instance.get_run_by_id(parent_run_id)
     parent_run_id = parent_run.run_id
-    parent_run_logs = instance.all_logs(parent_run_id)
+    parent_run_logs = instance.all_logs(
+        parent_run_id,
+        of_type={
+            DagsterEventType.STEP_FAILURE,
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.STEP_SKIPPED,
+        },
+    )
 
     execution_plan_snapshot = instance.get_execution_plan_snapshot(
         parent_run.execution_plan_snapshot_id
@@ -140,4 +142,7 @@ def get_retry_steps_from_parent_run(
         step_handle.to_key() for step_set in to_retry.values() for step_handle in step_set
     ]
 
-    return steps_to_retry, KnownExecutionState.for_reexecution(parent_run_logs, steps_to_retry)
+    return steps_to_retry, KnownExecutionState.build_for_reexecution(
+        instance,
+        parent_run,
+    ).update_for_step_selection(steps_to_retry)

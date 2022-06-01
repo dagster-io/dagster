@@ -13,6 +13,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
   "initial_known_state": {
     "__class__": "KnownExecutionState",
     "dynamic_mappings": {},
+    "parent_state": null,
     "previous_retry_attempts": {},
     "ready_outputs": {
       "__frozenset__": []
@@ -146,6 +147,7 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
   "initial_known_state": {
     "__class__": "KnownExecutionState",
     "dynamic_mappings": {},
+    "parent_state": null,
     "previous_retry_attempts": {},
     "ready_outputs": {
       "__frozenset__": []
@@ -208,6 +210,7 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
   "initial_known_state": {
     "__class__": "KnownExecutionState",
     "dynamic_mappings": {},
+    "parent_state": null,
     "previous_retry_attempts": {},
     "ready_outputs": {
       "__frozenset__": []
@@ -284,6 +287,7 @@ snapshots['test_create_with_composite 1'] = '''{
   "initial_known_state": {
     "__class__": "KnownExecutionState",
     "dynamic_mappings": {},
+    "parent_state": null,
     "previous_retry_attempts": {},
     "ready_outputs": {
       "__frozenset__": []

@@ -1051,7 +1051,7 @@ class DagsterInstance:
 
     def create_reexecuted_run(
         self,
-        parent_run: PipelineRun,
+        parent_run: DagsterRun,
         repo_location: "RepositoryLocation",
         external_pipeline: "ExternalPipeline",
         strategy: "ReexecutionStrategy",
@@ -1059,14 +1059,14 @@ class DagsterInstance:
         run_config: Optional[Dict[str, Any]] = None,
         mode: Optional[str] = None,
         use_parent_run_tags: bool = False,
-    ) -> PipelineRun:
+    ) -> DagsterRun:
         from dagster.core.execution.plan.resume_retry import (
             ReexecutionStrategy,
             get_retry_steps_from_parent_run,
         )
         from dagster.core.host_representation import ExternalPipeline, RepositoryLocation
 
-        check.inst_param(parent_run, "parent_run", PipelineRun)
+        check.inst_param(parent_run, "parent_run", DagsterRun)
         check.inst_param(repo_location, "repo_location", RepositoryLocation)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.inst_param(strategy, "strategy", ReexecutionStrategy)
@@ -1100,7 +1100,8 @@ class DagsterInstance:
             )
 
             step_keys_to_execute, known_state = get_retry_steps_from_parent_run(
-                self, parent_run=parent_run
+                self,
+                parent_run=parent_run,
             )
             tags[RESUME_RETRY_TAG] = "true"
         elif strategy == ReexecutionStrategy.ALL_STEPS:
