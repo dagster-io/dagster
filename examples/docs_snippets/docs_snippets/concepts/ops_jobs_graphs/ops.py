@@ -1,5 +1,5 @@
 # isort: skip_file
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,reimported
 
 import requests
 
@@ -130,7 +130,7 @@ def return_annotation_op() -> int:
 
 # end_return_annotation
 # start_generic_tuple
-from dagster import Output, op
+from dagster import op
 from typing import Tuple
 
 
@@ -142,7 +142,7 @@ def my_multiple_output_annotation_op() -> Tuple[int, str]:
 # end_generic_tuple
 
 # start_single_output_tuple
-from dagster import Output, op
+from dagster import op
 from typing import Tuple
 
 

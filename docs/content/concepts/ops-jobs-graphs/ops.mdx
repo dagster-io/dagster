@@ -113,7 +113,7 @@ def my_multi_output_op():
 Return type annotations can be used directly on ops. For a single output, the return annotation will be used directly for type checking.
 
 ```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_generic_tuple endbefore=end_generic_tuple
-from dagster import Output, op
+from dagster import op
 from typing import Tuple
 
 
@@ -125,7 +125,7 @@ def my_multiple_output_annotation_op() -> Tuple[int, str]:
 If there are multiple outputs, a tuple annotation can be specified. Each inner type of the tuple annotation should correspond to an output in the op.
 
 ```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_generic_tuple endbefore=end_generic_tuple
-from dagster import Output, op
+from dagster import op
 from typing import Tuple
 
 
@@ -139,7 +139,7 @@ Outputs are expected to follow the order they are specified in the op's `out` di
 Note that if you would like to specify a single tuple output and still utilize generic type annotations, this can be done by providing either a single <PyObject object="Out" /> to the op, or none.
 
 ```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_single_output_tuple endbefore=end_single_output_tuple
-from dagster import Output, op
+from dagster import op
 from typing import Tuple
 
 

@@ -1,3 +1,5 @@
+# isort: skip_file
+
 from dagster import DynamicOut, DynamicOutput, job, op
 
 
@@ -149,3 +151,23 @@ def multiple():
 
 
 # dyn_mult_end
+
+
+def get_pages():
+    return [("1", "foo")]
+
+
+# dyn_out_return_start
+from dagster import DynamicOut, DynamicOutput, op
+from typing import List
+
+
+@op(out=DynamicOut())
+def return_dynamic() -> List[DynamicOutput[str]]:
+    outputs = []
+    for idx, page_key in get_pages():
+        outputs.append(DynamicOutput(page_key, mapping_key=idx))
+    return outputs
+
+
+# dyn_out_return_end
