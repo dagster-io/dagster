@@ -36,12 +36,12 @@ Yielding events from within the body of an op is a useful way of communicating w
 
 ### Output Objects
 
-Because returning a value from an op is such a fundamental part of creating a data pipeline, we have a few different interfaces for this functionality, to help ease transition into writing Dagster-specific code.
+Because returning a value from an op is such a fundamental part of creating a data pipeline, we have a few different interfaces for this functionality.
 
-For many use cases, Dagster ops can be used directly with python's native type annotations without additional modification. Check out the docs on [Op Outputs](/concepts/ops-jobs-graphs/ops#outputs) to learn more about this functionality. Dagster also provides the <PyObject object="Output"/> object, which opens up additional functionality to outputs when using Dagster, such as [specifying output metadata](/concepts/ops-jobs-graphs/op-events#attaching-metadata-to-outputs) and [conditional branching](/concepts/ops-jobs-graphs/jobs-grapha#conditional-branching), all while maintaining coherent type annotations.
+For many use cases, Dagster ops can be used directly with python's native type annotations without additional modification. Check out the docs on [Op Outputs](/concepts/ops-jobs-graphs/ops#outputs) to learn more about this functionality. Dagster also provides the <PyObject object="Output"/> object, which opens up additional functionality to outputs when using Dagster, such as [specifying output metadata](/concepts/ops-jobs-graphs/op-events#attaching-metadata-to-outputs) and [conditional branching](/concepts/ops-jobs-graphs/jobs-graphs#conditional-branching), all while maintaining coherent type annotations.
 
-<PyObject object="Output" /> objects can be either returned or yielded. When they
-are returned, they can be used for type annotation:
+<PyObject object="Output" /> objects can be either returned or yielded. The Output
+type is also generic, for use with return annotations:
 
 ```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_op_output_4 endbefore=end_op_output_4
 from dagster import Output, op
@@ -50,22 +50,22 @@ from typing import Tuple
 # Using Output as type annotation without inner type
 @op
 def my_output_op() -> Output:
-    return "some_value"
+    return Output("some_value")
 
 
-# A single generic output
+# A single output with a parameterized type annotation
 @op
 def my_output_generic_op() -> Output[int]:
     return Output(5)
 
 
-# Multiple generic outputs
+# Multiple outputs using parameterized type annotation
 @op(out={"int_out": Out(), "str_out": Out()})
 def my_multiple_generic_output_op() -> Tuple[Output[int], Output[str]]:
     return (Output(5), Output("foo"))
 ```
 
-When Output objects are yielded, type annotations cannot be used. Instead, type information can be specified using the `out` argument of the op decorator.
+When <PyObject object="Output" /> objects are yielded, type annotations cannot be used. Instead, type information can be specified using the `out` argument of the op decorator.
 
 ```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_yield_outputs endbefore=end_yield_outputs
 from dagster import Output, op

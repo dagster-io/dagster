@@ -112,19 +112,18 @@ def my_multi_output_op():
 
 Return type annotations can be used directly on ops. For a single output, the return annotation will be used directly for type checking.
 
-```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_generic_tuple endbefore=end_generic_tuple
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_return_annotation endbefore=end_return_annotation
 from dagster import op
-from typing import Tuple
 
 
-@op(out={"int_output": Out(), "str_output": Out()})
-def my_multiple_output_annotation_op() -> Tuple[int, str]:
-    return (5, "foo")
+@op
+def return_annotation_op() -> int:
+    return 5
 ```
 
 If there are multiple outputs, a tuple annotation can be specified. Each inner type of the tuple annotation should correspond to an output in the op.
 
-```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_generic_tuple endbefore=end_generic_tuple
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_tuple_return endbefore=end_tuple_return
 from dagster import op
 from typing import Tuple
 
@@ -136,7 +135,7 @@ def my_multiple_output_annotation_op() -> Tuple[int, str]:
 
 Outputs are expected to follow the order they are specified in the op's `out` dictionary. In the above example, the `int` output corresponds to `int_output`, and the `str` output corresponds to `str_output`.
 
-Note that if you would like to specify a single tuple output and still utilize generic type annotations, this can be done by providing either a single <PyObject object="Out" /> to the op, or none.
+Note that if you would like to specify a single tuple output and still utilize type annotations, this can be done by providing either a single <PyObject object="Out" /> to the op, or none.
 
 ```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_single_output_tuple endbefore=end_single_output_tuple
 from dagster import op

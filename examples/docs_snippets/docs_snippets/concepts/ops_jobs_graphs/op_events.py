@@ -67,16 +67,16 @@ from typing import Tuple
 # Using Output as type annotation without inner type
 @op
 def my_output_op() -> Output:
-    return "some_value"
+    return Output("some_value")
 
 
-# A single generic output
+# A single output with a parameterized type annotation
 @op
 def my_output_generic_op() -> Output[int]:
     return Output(5)
 
 
-# Multiple generic outputs
+# Multiple outputs using parameterized type annotation
 @op(out={"int_out": Out(), "str_out": Out()})
 def my_multiple_generic_output_op() -> Tuple[Output[int], Output[str]]:
     return (Output(5), Output("foo"))

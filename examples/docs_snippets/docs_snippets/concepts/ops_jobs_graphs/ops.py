@@ -129,7 +129,7 @@ def return_annotation_op() -> int:
 
 
 # end_return_annotation
-# start_generic_tuple
+# start_tuple_return
 from dagster import op
 from typing import Tuple
 
@@ -139,7 +139,7 @@ def my_multiple_output_annotation_op() -> Tuple[int, str]:
     return (5, "foo")
 
 
-# end_generic_tuple
+# end_tuple_return
 
 # start_single_output_tuple
 from dagster import op
