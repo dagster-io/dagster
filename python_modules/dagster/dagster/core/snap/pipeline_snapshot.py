@@ -90,6 +90,7 @@ def _pipeline_snapshot_from_storage(
     lineage_snapshot: Optional["PipelineSnapshotLineage"] = None,
     graph_def_name: Optional[str] = None,
     metadata: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+    **kwargs,  # pylint: disable=unused-argument
 ) -> "PipelineSnapshot":
     """
     v0
@@ -99,6 +100,10 @@ def _pipeline_snapshot_from_storage(
         - graph_def_name
     v3:
         - metadata added
+    v4:
+        - add kwargs so that if future versions add new args, this version of deserialization will
+        be able to ignore them. previously, new args would be passed to old versions and cause
+        deserialization errors
     """
     if graph_def_name is None:
         graph_def_name = name
