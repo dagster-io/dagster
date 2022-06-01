@@ -400,31 +400,12 @@ In this case, `ins={"upstream": AssetIn("upstream_asset")}` declares that the co
 
 ### Attaching metadata
 
-Dagster supports attaching arbitrary [metadata](/_apidocs/ops#dagster.MetadataEntry) to assets. To attach metadata, supply a `metadata` dictionary to the asset:
+Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataEntry) to assets. To attach metadata, supply a `metadata` dictionary to the asset:
 
-```python file=/concepts/assets/asset_metadata.py startafter=start_simple_metadata endbefore=end_simple_metadata
-from dagster import asset
-
-@asset(
-    metadata={
-        "cereal_name": "Sugar Sprinkles"
-    },
-)
-```
-
-To specify data types for metadata values, use the <PyObject object="MetadataValue"/> class:
-
-```python file=/concepts/assets/asset_metadata.py startafter=start_typed_metadata endbefore=end_typed_metadata
-from dagster import asset, MetadataValue
-
-@asset(
-    metadata={
-        "cereal_name": "Sugar Sparkles",
-        "description": "Sparkly, sugary delight!",
-        "path": MetadataValue.path("/sugar_sparkles"),
-        "sales_dashboard_url": MetadataValue.url("http://mycoolsite.com/sugar_sparkle_sales")
-    },
-)
+```python file=/concepts/assets/asset_metadata.py startafter=start_example endbefore=end_example
+@asset(metadata={"cereal_name": "Sugar Sprinkles"})
+def cereal_asset():
+    return 5
 ```
 
 Asset metadata can be viewed in Dagit on the \[TODO: PAGE]
