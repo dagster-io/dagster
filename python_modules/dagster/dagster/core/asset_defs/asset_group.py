@@ -26,7 +26,7 @@ from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster.core.selector.subset_selector import AssetSelectionData
-from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
+from dagster.core.storage.fs_io_manager import fs_io_manager
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning
 
@@ -37,7 +37,7 @@ from ..definitions.partition import PartitionsDefinition
 from ..definitions.resource_definition import ResourceDefinition
 from ..errors import DagsterInvalidDefinitionError
 from .assets import AssetsDefinition
-from .assets_job import build_assets_job, build_root_manager, build_source_assets_by_key
+from .assets_job import build_assets_job
 from .source_asset import SourceAsset
 
 ASSET_GROUP_BASE_JOB_PREFIX = "__ASSET_GROUP"
@@ -115,17 +115,10 @@ class AssetGroup:
         )
         executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
 
-        if "root_manager" in resource_defs:
-            raise DagsterInvalidDefinitionError(
-                "Resource dictionary included resource with key 'root_manager', "
-                "which is a reserved resource keyword in Dagster. Please change "
-                "this key, and then change all places that require this key to "
-                "a new value."
-            )
         # In the case of collisions, merge_dicts takes values from the
         # dictionary latest in the list, so we place the user provided resource
         # defs after the defaults.
-        resource_defs = merge_dicts({"io_manager": fs_asset_io_manager}, resource_defs)
+        resource_defs = merge_dicts({"io_manager": fs_io_manager}, resource_defs)
 
         _validate_resource_reqs_for_asset_group(
             asset_list=assets, source_assets=source_assets, resource_defs=resource_defs
@@ -395,7 +388,7 @@ class AssetGroup:
         )
 
     def materialize(
-        self, selection: Optional[Union[str, List[str]]] = None
+        self, selection: Optional[Union[str, List[str]]] = None, run_config: Optional[Any] = None
     ) -> ExecuteInProcessResult:
         """
         Executes an in-process run that materializes all assets in the group.
@@ -411,6 +404,7 @@ class AssetGroup:
                     - ``['*some_asset_key']`` select ``some_asset_key`` and all its ancestors (upstream dependencies).
                     - ``['*some_asset_key+++']`` select ``some_asset_key``, all its ancestors, and its descendants (downstream dependencies) within 3 levels down.
                     - ``['*some_asset_key', 'other_asset_key_a', 'other_asset_key_b+']`` select ``some_asset_key`` and all its ancestors, ``other_asset_key_a`` itself, and ``other_asset_key_b`` and its direct child asset keys. When subselecting into a multi-asset, all of the asset keys in that multi-asset must be selected.
+            run_config (Optional[Any]): The run config to use for the run that materializes the assets.
 
         Returns:
             ExecuteInProcessResult: The result of the execution.
@@ -424,7 +418,7 @@ class AssetGroup:
 
         return self.build_job(
             name="in_process_materialization_job", selection=selection
-        ).execute_in_process()
+        ).execute_in_process(run_config=run_config)
 
     def get_base_jobs(self) -> Sequence[JobDefinition]:
         """For internal use only."""
@@ -455,12 +449,7 @@ class AssetGroup:
                                 f"{ASSET_GROUP_BASE_JOB_PREFIX}_{i}",
                                 assets=assets_with_partitions + unpartitioned_assets,
                                 source_assets=[*self.source_assets, *self.assets],
-                                resource_defs={
-                                    **self.resource_defs,
-                                    "root_manager": build_root_manager(
-                                        build_source_assets_by_key(self.source_assets)
-                                    ),
-                                },
+                                resource_defs=self.resource_defs,
                                 executor_def=self.executor_def,
                             )
                         )

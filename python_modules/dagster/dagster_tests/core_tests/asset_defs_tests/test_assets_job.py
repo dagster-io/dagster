@@ -9,6 +9,7 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DependencyDefinition,
+    Field,
     GraphIn,
     GraphOut,
     IOManager,
@@ -16,11 +17,14 @@ from dagster import (
     Output,
     ResourceDefinition,
     StaticPartitionsDefinition,
+    execute_pipeline,
     graph,
+    in_process_executor,
     io_manager,
     multi_asset,
     op,
 )
+from dagster.config.source import StringSource
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.errors import DagsterInvalidSubsetError
@@ -67,6 +71,18 @@ def test_two_asset_pipeline():
         "asset2": {"asset1": DependencyDefinition("asset1", "result")},
     }
     assert job.execute_in_process().success
+
+
+def test_single_asset_pipeline_with_config():
+    @asset(config_schema={"foo": Field(StringSource)})
+    def asset1(context):
+        return context.op_config["foo"]
+
+    job = build_assets_job("a", [asset1])
+    assert job.graph.node_defs == [asset1.op]
+    assert job.execute_in_process(
+        run_config={"ops": {"asset1": {"config": {"foo": "bar"}}}}
+    ).success
 
 
 def test_fork():
@@ -260,6 +276,22 @@ def test_source_asset():
     result = job.execute_in_process()
     assert result.success
     assert _asset_keys_for_node(result, "asset1") == {AssetKey("asset1")}
+
+
+def test_missing_io_manager():
+    @asset
+    def asset1(source1):
+        return source1
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="input manager with key 'special_io_manager' required by input 'source1' of op 'asset1' was not provided",
+    ):
+        build_assets_job(
+            "a",
+            [asset1],
+            source_assets=[SourceAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
+        )
 
 
 def test_source_op_asset():
@@ -1232,4 +1264,42 @@ def test_subset_with_source_asset():
     ).build_job("source_asset_job")
 
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
+    assert result.success
+
+
+def test_op_outputs_with_default_asset_io_mgr():
+    @op
+    def return_stuff():
+        return 12
+
+    @op
+    def transform(data):
+        assert data == 12
+        return data * 2
+
+    @op
+    def one_more_transformation(transformed_data):
+        assert transformed_data == 24
+        return transformed_data + 1
+
+    @graph(
+        out={
+            "asset_1": GraphOut(),
+            "asset_2": GraphOut(),
+        },
+    )
+    def complicated_graph():
+        result = return_stuff()
+        return one_more_transformation(transform(result)), transform(result)
+
+    @asset
+    def my_asset(asset_1):
+        assert asset_1 == 25
+        return asset_1
+
+    my_job = AssetGroup(
+        [AssetsDefinition.from_graph(complicated_graph), my_asset],
+    ).build_job("my_job", executor_def=in_process_executor)
+
+    result = execute_pipeline(my_job)
     assert result.success

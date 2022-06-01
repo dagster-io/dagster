@@ -22,19 +22,6 @@ export const isHighlighted = (edges: Edge[], {a, b}: Edge) =>
 export const isOpHighlighted = (edges: Edge[], name: string) =>
   edges.some((h) => h.a.split(':')[0] === name || h.b.split(':')[0] === name);
 
-export const isPointWayOffscreen = (
-  p: {x: number; y: number},
-  viewportRect: {top: number; left: number; right: number; bottom: number},
-  thresholdDistanceOffscreen = viewportRect.right - viewportRect.left,
-) => {
-  return (
-    p.x < viewportRect.left - thresholdDistanceOffscreen ||
-    p.x > viewportRect.right + thresholdDistanceOffscreen ||
-    p.y < viewportRect.top - thresholdDistanceOffscreen ||
-    p.y > viewportRect.bottom + thresholdDistanceOffscreen
-  );
-};
-
 export const isNodeOffscreen = (
   layoutNode: {x: number; y: number; width: number; height: number},
   viewportRect: {top: number; left: number; right: number; bottom: number},

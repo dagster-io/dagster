@@ -1,9 +1,10 @@
 import pickle
 from contextlib import contextmanager
+from typing import Union
 
 from dagster_azure.adls2.utils import ResourceNotFoundError
 
-from dagster import Field, IOManager, StringSource
+from dagster import Field, IOManager, InputContext, OutputContext, StringSource
 from dagster import _check as check
 from dagster import io_manager
 from dagster.utils import PICKLE_PROTOCOL
@@ -26,8 +27,8 @@ class PickledObjectADLS2IOManager(IOManager):
         self.lease_duration = _LEASE_DURATION
         self.file_system_client.get_file_system_properties()
 
-    def _get_path(self, context):
-        keys = context.get_output_identifier()
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+        keys = context.get_identifier()
         run_id = keys[0]
         output_identifiers = keys[1:]  # variable length because of mapping key
         return "/".join(
@@ -81,7 +82,7 @@ class PickledObjectADLS2IOManager(IOManager):
                 lease_client.release()
 
     def load_input(self, context):
-        key = self._get_path(context.upstream_output)
+        key = self._get_path(context)
         context.log.debug(f"Loading ADLS2 object from: {self._uri_for_key(key)}")
         file = self.file_system_client.get_file_client(key)
         stream = file.download_file()
@@ -155,8 +156,8 @@ def adls2_pickle_io_manager(init_context):
 
 
 class PickledObjectADLS2AssetIOManager(PickledObjectADLS2IOManager):
-    def _get_path(self, context):
-        return "/".join([self.prefix, *context.get_asset_output_identifier()])
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+        return "/".join([self.prefix, *context.get_asset_identifier()])
 
 
 @io_manager(

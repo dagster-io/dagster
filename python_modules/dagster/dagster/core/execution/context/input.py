@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey, AssetObservation
@@ -221,8 +221,7 @@ class InputContext:
         )
         if result is None:
             raise DagsterInvariantViolationError(
-                "Attempting to access asset_key, "
-                "but it was not provided when constructing the InputContext"
+                "Attempting to access asset_key, but no asset is associated with this input"
             )
 
         return result
@@ -285,27 +284,62 @@ class InputContext:
         if self.upstream_output is None:
             check.failed("InputContext needs upstream_output to get asset_partitions_time_window")
 
-        asset_info = self.upstream_output.asset_info
-        partitions_def = asset_info.partitions_def if asset_info else None
-
-        if not partitions_def:
+        if self.upstream_output.asset_info is None:
             raise ValueError(
                 "Tried to get asset partitions for an output that does not correspond to a "
                 "partitioned asset."
             )
 
-        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+        asset_info = self.upstream_output.asset_info
+
+        if not isinstance(asset_info.partitions_def, TimeWindowPartitionsDefinition):
             raise ValueError(
                 "Tried to get asset partitions for an input that correponds to a partitioned "
                 "asset that is not partitioned with a TimeWindowPartitionsDefinition."
             )
 
+        partitions_def: TimeWindowPartitionsDefinition = asset_info.partitions_def
+
         partition_key_range = self.asset_partition_key_range
         return TimeWindow(
-            # mypy thinks partitions_def is <nothing> here because ????
-            partitions_def.time_window_for_partition_key(partition_key_range.start).start,  # type: ignore
-            partitions_def.time_window_for_partition_key(partition_key_range.end).end,  # type: ignore
+            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
+            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
+
+    def get_identifier(self) -> List[str]:
+        """Utility method to get a collection of identifiers that as a whole represent a unique
+        step input.
+
+        If not using memoization, the unique identifier collection consists of
+
+        - ``run_id``: the id of the run which generates the input.
+            Note: This method also handles the re-execution memoization logic. If the step that
+            generates the input is skipped in the re-execution, the ``run_id`` will be the id
+            of its parent run.
+        - ``step_key``: the key for a compute step.
+        - ``name``: the name of the output. (default: 'result').
+
+        If using memoization, the ``version`` corresponding to the step output is used in place of
+        the ``run_id``.
+
+        Returns:
+            List[str, ...]: A list of identifiers, i.e. (run_id or version), step_key, and output_name
+        """
+        if self.upstream_output is None:
+            raise DagsterInvariantViolationError(
+                "InputContext.upstream_output not defined. " "Cannot compute an identifier"
+            )
+
+        return self.upstream_output.get_identifier()
+
+    def get_asset_identifier(self) -> Sequence[str]:
+        if self.asset_key is not None:
+            if self.has_asset_partitions:
+                return self.asset_key.path + [self.asset_partition_key]
+            else:
+                return self.asset_key.path
+        else:
+            check.failed("Can't get asset identifier for an input with no asset key")
 
     def consume_events(self) -> Iterator["DagsterEvent"]:
         """Pops and yields all user-generated events that have been recorded from this context.

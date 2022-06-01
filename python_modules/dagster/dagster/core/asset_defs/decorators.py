@@ -17,6 +17,7 @@ from typing import (
 import dagster._check as check
 from dagster.builtins import Nothing
 from dagster.config import Field
+from dagster.config.config_schema import ConfigSchemaType
 from dagster.core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster.core.definitions.decorators.op_decorator import _Op
 from dagster.core.definitions.events import AssetKey
@@ -26,6 +27,7 @@ from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.utils import NoValueSentinel
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.storage.io_manager import IOManagerDefinition
 from dagster.core.types.dagster_type import DagsterType
 from dagster.seven import funcsigs
 from dagster.utils.backcompat import ExperimentalWarning, experimental_decorator
@@ -50,14 +52,17 @@ def asset(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     metadata: Optional[Mapping[str, Any]] = ...,
     description: Optional[str] = ...,
+    config_schema: Optional[ConfigSchemaType] = None,
     required_resource_keys: Optional[Set[str]] = ...,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
+    io_manager_def: Optional[IOManagerDefinition] = ...,
     io_manager_key: Optional[str] = ...,
     compute_kind: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
     partitions_def: Optional[PartitionsDefinition] = ...,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = ...,
     op_tags: Optional[Dict[str, Any]] = ...,
+    group_name: Optional[str] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -70,14 +75,17 @@ def asset(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
     description: Optional[str] = None,
+    config_schema: Optional[ConfigSchemaType] = None,
     required_resource_keys: Optional[Set[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    io_manager_def: Optional[IOManagerDefinition] = None,
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     op_tags: Optional[Dict[str, Any]] = None,
+    group_name: Optional[str] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -99,11 +107,16 @@ def asset(
             and namespaces.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are
             upstream dependencies, but do not pass an input to the asset.
+        config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
+            op. If set, Dagster will check that config provided for the op matches this schema and fail
+            if it does not. If not set, Dagster will accept any config provided for the op.
         metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
-        io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
-            output of the op as an asset, and for loading it in downstream ops
-            (default: "io_manager").
+        io_manager_key (Optional[str]): The resource key of the IOManager used
+            for storing the output of the op as an asset, and for loading it in downstream ops (default: "io_manager"). Only one of io_manager_key and io_manager_def can be provided.
+        io_manager_def (Optional[IOManagerDefinition]): The definition of the IOManager used for
+            storing the output of the op as an asset,  and for loading it in
+            downstream ops. Only one of io_manager_def and io_manager_key can be provided.
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
             the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
         dagster_type (Optional[DagsterType]): Allows specifying type validation functions that
@@ -120,6 +133,7 @@ def asset(
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
+        group_name (Optional[str]): A string name used to organize multiple assets into groups.
 
     Examples:
 
@@ -133,6 +147,10 @@ def asset(
         return _Asset()(name)
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
+        check.invariant(
+            not (io_manager_key and io_manager_def),
+            "Both io_manager_key and io_manager_def were provided to `@asset` decorator. Please provide one or the other. ",
+        )
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             namespace=namespace,
@@ -140,14 +158,16 @@ def asset(
             non_argument_deps=_make_asset_keys(non_argument_deps),
             metadata=metadata,
             description=description,
+            config_schema=config_schema,
             required_resource_keys=required_resource_keys,
             resource_defs=resource_defs,
-            io_manager_key=io_manager_key,
+            io_manager=io_manager_def or io_manager_key,
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             dagster_type=dagster_type,
             partitions_def=partitions_def,
             partition_mappings=partition_mappings,
             op_tags=op_tags,
+            group_name=group_name,
         )(fn)
 
     return inner
@@ -162,14 +182,16 @@ class _Asset:
         non_argument_deps: Optional[Set[AssetKey]] = None,
         metadata: Optional[Mapping[str, Any]] = None,
         description: Optional[str] = None,
+        config_schema: Optional[ConfigSchemaType] = None,
         required_resource_keys: Optional[Set[str]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        io_manager_key: Optional[str] = None,
+        io_manager: Optional[Union[str, IOManagerDefinition]] = None,
         compute_kind: Optional[str] = None,
         dagster_type: Optional[DagsterType] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         op_tags: Optional[Dict[str, Any]] = None,
+        group_name: Optional[str] = None,
     ):
         self.name = name
         # if user inputs a single string, coerce to list
@@ -181,13 +203,19 @@ class _Asset:
         self.required_resource_keys = check.opt_set_param(
             required_resource_keys, "required_resource_keys"
         )
-        self.io_manager_key = io_manager_key
+        self.io_manager = io_manager
+        self.config_schema = check.opt_dict_param(
+            config_schema,
+            "config_schema",
+            additional_message="Only dicts are supported for asset config_schema.",
+        )
         self.compute_kind = compute_kind
         self.dagster_type = dagster_type
         self.partitions_def = partitions_def
         self.partition_mappings = partition_mappings
         self.op_tags = op_tags
-        self.resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
+        self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
+        self.group_name = group_name
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -198,9 +226,21 @@ class _Asset:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
+            if isinstance(self.io_manager, str):
+                io_manager_key = cast(str, self.io_manager)
+            elif self.io_manager is not None:
+                io_manager_def = check.inst_param(
+                    self.io_manager, "io_manager", IOManagerDefinition
+                )
+                out_asset_resource_key = "__".join(out_asset_key.path)
+                io_manager_key = f"{out_asset_resource_key}__io_manager"
+                self.resource_defs[io_manager_key] = cast(ResourceDefinition, io_manager_def)
+            else:
+                io_manager_key = "io_manager"
+
             out = Out(
                 metadata=self.metadata or {},
-                io_manager_key=self.io_manager_key,
+                io_manager_key=io_manager_key,
                 dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
                 description=self.description,
             )
@@ -210,7 +250,6 @@ class _Asset:
                 required_resource_keys.add(key)
             for key in self.resource_defs.keys():
                 required_resource_keys.add(key)
-
             op = _Op(
                 name="__".join(out_asset_key.path).replace("-", "_"),
                 description=self.description,
@@ -225,7 +264,8 @@ class _Asset:
                     "assets": {
                         "input_partitions": Field(dict, is_required=False),
                         "output_partitions": Field(dict, is_required=False),
-                    }
+                    },
+                    **self.config_schema,
                 },
             )(fn)
 
@@ -244,6 +284,7 @@ class _Asset:
             if self.partition_mappings
             else None,
             resource_defs=self.resource_defs,
+            group_names={out_asset_key: self.group_name} if self.group_name else None,
         )
 
 
@@ -254,6 +295,7 @@ def multi_asset(
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     description: Optional[str] = None,
+    config_schema: Optional[ConfigSchemaType] = None,
     required_resource_keys: Optional[Set[str]] = None,
     compute_kind: Optional[str] = None,
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
@@ -274,6 +316,10 @@ def multi_asset(
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
             and namespaces.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are upstream dependencies,
+        config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
+            op. If set, Dagster will check that config provided for the op matches this schema and fail
+            if it does not. If not set, Dagster will accept any config provided for the op.
+        non_argument_deps (Optional[Set[AssetKey]]): Set of asset keys that are upstream dependencies,
             but do not pass an input to the multi_asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
         io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
@@ -308,6 +354,11 @@ def multi_asset(
     )
     asset_deps = check.opt_dict_param(
         internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
+    )
+    config_schema = check.opt_dict_param(
+        config_schema,
+        "config_schema",
+        additional_message="Only dicts are supported for asset config_schema.",
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
@@ -352,7 +403,9 @@ def multi_asset(
                     "assets": {
                         "input_partitions": Field(dict, is_required=False),
                         "output_partitions": Field(dict, is_required=False),
-                    }
+                    },
+                    # Mypy scoping bug causing incorrect type inference here
+                    **config_schema,  # type: ignore
                 },
             )(fn)
 
@@ -430,10 +483,7 @@ def build_asset_ins(
             list(filter(None, [*(namespace or asset_namespace or []), input_name]))
         )
 
-        ins_by_asset_key[asset_key] = (
-            input_name.replace("-", "_"),
-            In(metadata=metadata, root_manager_key="root_manager"),
-        )
+        ins_by_asset_key[asset_key] = (input_name.replace("-", "_"), In(metadata=metadata))
 
     for asset_key in non_argument_deps:
         stringified_asset_key = "_".join(asset_key.path).replace("-", "_")

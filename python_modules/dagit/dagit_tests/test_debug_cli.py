@@ -34,5 +34,6 @@ def test_roundtrip(monkeypatch):
         monkeypatch.setattr(uvicorn, "run", lambda *args, **kwargs: None)
 
         debug_result = runner.invoke(dagit_debug_command, [file_path])
+        assert debug_result.exit_code == 0, debug_result.exception
         assert file_path in debug_result.output
         assert "run_id: {}".format(run_result.run_id) in debug_result.output

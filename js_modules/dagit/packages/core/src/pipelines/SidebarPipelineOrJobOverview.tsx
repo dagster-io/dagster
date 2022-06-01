@@ -1,8 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box} from '@dagster-io/ui';
+import {Box, MetadataTable} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {METADATA_ENTRY_FRAGMENT, MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineSelector} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -42,6 +43,13 @@ export const SidebarPipelineOrJobOverview: React.FC<{
 
         const modes = pipelineSnapshotOrError.modes;
 
+        const metadataRows = pipelineSnapshotOrError.metadataEntries.map((entry) => {
+          return {
+            key: entry.label,
+            value: <MetadataEntry entry={entry} />,
+          };
+        });
+
         return (
           <>
             <SidebarSection title="Description">
@@ -56,6 +64,11 @@ export const SidebarPipelineOrJobOverview: React.FC<{
                 {modes.map((mode) => (
                   <SidebarModeSection mode={mode} key={mode.name} />
                 ))}
+              </Box>
+            </SidebarSection>
+            <SidebarSection title="Metadata">
+              <Box padding={{vertical: 16, horizontal: 24}}>
+                <MetadataTable rows={metadataRows} />
               </Box>
             </SidebarSection>
           </>
@@ -76,6 +89,9 @@ const JOB_OVERVIEW_SIDEBAR_QUERY = gql`
           id
           ...SidebarModeInfoFragment
         }
+        metadataEntries {
+          ...MetadataEntryFragment
+        }
       }
       ... on PipelineNotFoundError {
         message
@@ -86,6 +102,7 @@ const JOB_OVERVIEW_SIDEBAR_QUERY = gql`
       ...PythonErrorFragment
     }
   }
+  ${METADATA_ENTRY_FRAGMENT}
   ${SIDEBAR_MODE_INFO_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;

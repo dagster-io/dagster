@@ -92,7 +92,6 @@ type Repository {
   sensors: [Sensor!]!
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
-  latestRunByStep: [LatestRun!]!
 }
 
 type RepositoryLocation {
@@ -116,6 +115,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
   tags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
@@ -264,6 +264,7 @@ type AssetNode {
   partitionKeys: [String!]!
   partitionDefinition: String
   repository: Repository!
+  groupName: String
 }
 
 type AssetKey {
@@ -1186,6 +1187,7 @@ interface IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
@@ -1496,6 +1498,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
   tags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
@@ -1521,11 +1524,6 @@ An invocation of a solid within a repo.
 type NodeInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
-}
-
-type LatestRun {
-  stepKey: String!
-  run: Run
 }
 
 """
@@ -1602,6 +1600,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
   tags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
@@ -1959,6 +1958,7 @@ type AssetLatestInfo {
   latestMaterialization: MaterializationEvent
   unstartedRunIds: [String!]!
   inProgressRunIds: [String!]!
+  latestRun: Run
 }
 
 """

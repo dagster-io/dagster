@@ -33,6 +33,7 @@ from .resource_definition import ResourceDefinition
 
 if TYPE_CHECKING:
     from dagster.core.asset_defs import AssetGroup, AssetsDefinition, SourceAsset
+    from dagster.core.asset_defs.source_asset import SourceAsset
     from dagster.core.execution.context.output import OutputContext
 
     from .job_definition import JobDefinition
@@ -284,6 +285,7 @@ def _asset_mappings_for_node(
     Mapping[NodeInputHandle, AssetKey],
     Mapping[NodeOutputHandle, AssetOutputInfo],
     Mapping[AssetKey, AbstractSet[AssetKey]],
+    Mapping[AssetKey, str],
 ]:
     """
     Recursively iterate through all the sub-nodes of a Node to find any ops with asset info
@@ -295,6 +297,7 @@ def _asset_mappings_for_node(
     asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
     asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
     asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
+    io_manager_by_asset: Dict[AssetKey, str] = {}
     if not isinstance(node_def, GraphDefinition):
         # must be in an op (or solid)
         if node_handle is None:
@@ -320,18 +323,26 @@ def _asset_mappings_for_node(
                 )
                 # assume output depends on all inputs
                 asset_deps[output_key] = input_asset_keys
+
+                io_manager_by_asset[output_key] = output_def.io_manager_key
     else:
         # keep recursing through structure
         for sub_node_name, sub_node in node_def.node_dict.items():
-            n_asset_key_by_input, n_asset_info_by_output, n_asset_deps = _asset_mappings_for_node(
+            (
+                n_asset_key_by_input,
+                n_asset_info_by_output,
+                n_asset_deps,
+                n_io_manager_by_asset,
+            ) = _asset_mappings_for_node(
                 node_def=sub_node.definition,
                 node_handle=NodeHandle(sub_node_name, parent=node_handle),
             )
             asset_key_by_input.update(n_asset_key_by_input)
             asset_info_by_output.update(n_asset_info_by_output)
             asset_deps.update(n_asset_deps)
+            io_manager_by_asset.update(n_io_manager_by_asset)
 
-    return asset_key_by_input, asset_info_by_output, asset_deps
+    return asset_key_by_input, asset_info_by_output, asset_deps, io_manager_by_asset
 
 
 class AssetLayer:
@@ -359,6 +370,7 @@ class AssetLayer:
         dependency_node_handles_by_asset_key: Optional[Mapping[AssetKey, Set[NodeHandle]]] = None,
         assets_defs: Optional[List["AssetsDefinition"]] = None,
         source_asset_defs: Optional[Sequence[Union["SourceAsset", "AssetsDefinition"]]] = None,
+        io_manager_keys_by_asset_key: Optional[Mapping[AssetKey, str]] = None,
     ):
         from dagster.core.asset_defs import AssetsDefinition, SourceAsset
 
@@ -394,22 +406,32 @@ class AssetLayer:
             if asset_info.is_required:
                 self._asset_keys_by_node_handle[node_output_handle.node_handle].add(asset_info.key)
 
+        self._io_manager_keys_by_asset_key = check.opt_dict_param(
+            io_manager_keys_by_asset_key,
+            "io_manager_keys_by_asset_key",
+            key_type=AssetKey,
+            value_type=str,
+        )
+
     @staticmethod
     def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
         """Scrape asset info off of InputDefinition/OutputDefinition instances"""
         check.inst_param(graph_def, "graph_def", GraphDefinition)
-        asset_by_input, asset_by_output, asset_deps = _asset_mappings_for_node(graph_def, None)
+        asset_by_input, asset_by_output, asset_deps, io_manager_by_asset = _asset_mappings_for_node(
+            graph_def, None
+        )
         return AssetLayer(
             asset_keys_by_node_input_handle=asset_by_input,
             asset_info_by_node_output_handle=asset_by_output,
             asset_deps=asset_deps,
+            io_manager_keys_by_asset_key=io_manager_by_asset,
         )
 
     @staticmethod
     def from_graph_and_assets_node_mapping(
         graph_def: GraphDefinition,
         assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
-        source_assets: Optional[Sequence[Union["SourceAsset", "AssetsDefinition"]]] = None,
+        source_assets: Sequence[Union["SourceAsset"]],
     ) -> "AssetLayer":
         """
         Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
@@ -429,10 +451,14 @@ class AssetLayer:
         asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
         asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
         asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
+        io_manager_by_asset: Dict[AssetKey, str] = {
+            source_asset.key: source_asset.io_manager_key for source_asset in source_assets
+        }
         for node_handle, assets_def in assets_defs_by_node_handle.items():
             asset_deps.update(assets_def.asset_deps)
 
             for input_name, asset_key in assets_def.node_asset_keys_by_input_name.items():
+                asset_key_by_input[NodeInputHandle(node_handle, input_name)] = asset_key
                 # resolve graph input to list of op inputs that consume it
                 node_input_handles = _resolve_input_to_destinations(
                     input_name, assets_def.node_def, node_handle
@@ -453,6 +479,7 @@ class AssetLayer:
                     partitions_def=assets_def.partitions_def,
                     is_required=asset_key in assets_def.asset_keys,
                 )
+                io_manager_by_asset[asset_key] = inner_output_def.io_manager_key
         return AssetLayer(
             asset_keys_by_node_input_handle=asset_key_by_input,
             asset_info_by_node_output_handle=asset_info_by_output,
@@ -462,11 +489,16 @@ class AssetLayer:
             ),
             assets_defs=[assets_def for assets_def in assets_defs_by_node_handle.values()],
             source_asset_defs=source_assets,
+            io_manager_keys_by_asset_key=io_manager_by_asset,
         )
 
     @property
     def asset_info_by_node_output_handle(self) -> Mapping[NodeOutputHandle, AssetOutputInfo]:
         return self._asset_info_by_node_output_handle
+
+    @property
+    def io_manager_keys_by_asset_key(self) -> Mapping[AssetKey, str]:
+        return self._io_manager_keys_by_asset_key
 
     def upstream_assets_for_asset(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         check.invariant(
@@ -489,12 +521,21 @@ class AssetLayer:
     def asset_key_for_input(self, node_handle: NodeHandle, input_name: str) -> Optional[AssetKey]:
         return self._asset_keys_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))
 
+    def io_manager_key_for_asset(self, asset_key: AssetKey) -> str:
+        return self._io_manager_keys_by_asset_key.get(asset_key, "io_manager")
+
     def asset_info_for_output(
         self, node_handle: NodeHandle, output_name: str
     ) -> Optional[AssetOutputInfo]:
         return self._asset_info_by_node_output_handle.get(
             NodeOutputHandle(node_handle, output_name)
         )
+
+    def group_names_by_assets(self) -> Mapping[AssetKey, str]:
+        group_names: Dict[AssetKey, str] = {}
+        for assets_def in self._assets_defs:
+            group_names.update(assets_def.group_names)
+        return group_names
 
 
 def build_asset_selection_job(
@@ -514,7 +555,6 @@ def build_asset_selection_job(
         included_assets, excluded_assets = _subset_assets_defs(
             assets, source_assets, asset_selection
         )
-        resource_defs = _build_resource_defs(resource_defs, excluded_assets)
     else:
         included_assets = cast(List["AssetsDefinition"], assets)
         # Slice [:] serves as a copy constructor, so that we don't
@@ -577,12 +617,3 @@ def _subset_assets_defs(
     all_excluded_assets = [*excluded_assets, *source_assets]
 
     return list(included_assets), all_excluded_assets
-
-
-def _build_resource_defs(resource_defs, source_assets):
-    from dagster.core.asset_defs.assets_job import build_root_manager, build_source_assets_by_key
-
-    return {
-        **resource_defs,
-        **{"root_manager": build_root_manager(build_source_assets_by_key(source_assets))},
-    }
