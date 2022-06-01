@@ -264,6 +264,7 @@ type AssetNode {
   partitionKeys: [String!]!
   partitionDefinition: String
   repository: Repository!
+  groupName: String
 }
 
 type AssetKey {
