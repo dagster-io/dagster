@@ -936,7 +936,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert events[0].get_dagster_event().asset_key == AssetKey("bar")
         assert run.asset_selection == {AssetKey("bar")}
 
-    def test_named_groups(self, graphql_context, snapshot):
+    def test_named_groups(self, graphql_context):
         _create_run(graphql_context, "named_groups_job")
         selector = {
             "repositoryLocationName": "test",
