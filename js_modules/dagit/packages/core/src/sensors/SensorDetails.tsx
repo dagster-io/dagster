@@ -196,7 +196,7 @@ export const SensorDetails: React.FC<{
               <td>
                 <Box flex={{direction: 'column', gap: 2}}>
                   {metadata.assetKeys.map((key) => (
-                    <AssetLink key={key.path.join('/')} path={key.path} displayIcon={true} />
+                    <AssetLink key={key.path.join('/')} path={key.path} icon="asset" />
                   ))}
                 </Box>
               </td>

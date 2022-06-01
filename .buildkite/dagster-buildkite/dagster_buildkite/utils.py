@@ -5,6 +5,11 @@ from typing import Dict, List, Optional, Union
 import yaml
 from typing_extensions import Literal, TypeAlias, TypedDict
 
+BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
+    "rex@elementl.com": "eng-buildkite-rex",
+    "dish@elementl.com": "eng-buildkite-dish",
+}
+
 # ########################
 # ##### BUILDKITE STEP DATA STRUCTURES
 # ########################
@@ -74,6 +79,13 @@ def buildkite_yaml_for_steps(steps) -> str:
                 "CI_PULL_REQUEST": "$BUILDKITE_PULL_REQUEST",
             },
             "steps": steps,
+            "notify": [
+                {
+                    "slack": f"elementl#{slack_channel}",
+                    "if": f"build.creator.email == '{buildkite_email}'  && build.state != 'canceled'",
+                }
+                for buildkite_email, slack_channel in BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP.items()
+            ],
         },
         default_flow_style=False,
     )

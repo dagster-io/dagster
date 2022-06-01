@@ -800,11 +800,3 @@ class GrapheneRunOrError(graphene.Union):
     class Meta:
         types = (GrapheneRun, GrapheneRunNotFoundError, GraphenePythonError)
         name = "RunOrError"
-
-
-class GrapheneLatestRun(graphene.ObjectType):
-    stepKey = graphene.NonNull(graphene.String)
-    run = graphene.Field(GrapheneRun)
-
-    class Meta:
-        name = "LatestRun"

@@ -1,5 +1,42 @@
 # Changelog
 
+# 0.14.17
+
+### New
+
+* Added a pin to `protobuf` version 3 due to a backwards incompatible change in the `probobuf` version 4 release.
+* [helm] The name of the Dagit deployment can now be overridden in the Dagster Helm chart.
+* [dagit] The left navigation now shows jobs as expandable lists grouped by repository. You can opt out of this change using the feature flag in User Settings.
+* [dagit] In the left navigation, when a job has more than one schedule or sensor, clicking the schedule/sensor icon will now display a dialog containing the full list of schedules and sensors for that job.
+* [dagit] Assets on the runs page are now shown in more scenarios.
+* [dagster-dbt] dbt assets now support subsetting! In dagit, you can launch off a dbt command which will only refresh the selected models, and when you’re building jobs using `AssetGroup.build_job()`, you can define selections which select subsets of the loaded dbt project.
+* [dagster-dbt] [experimental] The `load_assets_from_dbt_manifest` function now supports an experimental `select` parameter. This allows you to use dbt selection syntax to select from an existing manifest.json file, rather than having Dagster re-compile the project on demand.
+* For software-defined assets, `OpExecutionContext` now exposes an `asset_key_for_output` method, which returns the asset key that one of the op’s outputs corresponds too.
+* The Backfills tab in Dagit loads much faster when there have been backfills that produced large numbers of runs.
+* Added the ability to run the Dagster Daemon as a Python module, by running `python -m dagster.daemon`.
+* The `non_argument_deps` parameter for the `asset` and `multi_asset` decorators can now be a set of strings in addition to a set of `AssetKey`.
+
+### Bugfixes
+
+* [dagit] In cases where Dagit is unable to make successful WebSocket connections, run logs could become stuck in a loading state. Dagit will now time out on the WebSocket connection attempt after a brief period of time. This allows run logs to fall back to http requests and move past the loading state.
+* In version 0.14.16, launching an asset materialization run with source assets would error with an `InvalidSubsetError`. This is now fixed.
+* Empty strings are no longer allowed as `AssetKey`s.
+* Fixed an issue where schedules built from partitioned job config always ran at midnight, ignoring any hour or minute offset that was specified on the config.
+* Fixed an issue where if the scheduler was interrupted and resumed in the middle of running a schedule tick that produced multiple RunRequests, it would show the same run ID multiple times on the list of runs for the schedule tick.
+* Fixed an issue where Dagit would raise a GraphQL error when a non-dictionary YAML string was entered into the Launchpad.
+* Fixed an issue where Dagster gRPC servers would sometimes raise an exception when loading repositories with many partition sets.
+* Fixed an issue where the `snowflake_io_manager` would sometimes raise an error with `pandas` 1.4 or later installed.
+* Fixed an issue where re-executing an entire set of dynamic steps together with their upstream step resulted in `DagsterExecutionStepNotFoundError`. This is now fixed.
+* [dagit] Added loading indicator for job-scoped partition backfills.
+* Fixed an issue that made it impossible to have graph-backed assets with upstream SourceAssets.
+
+### Community Contributions
+
+* `AssetIn` can now accept a string that will be coerced to an `AssetKey`. Thanks [@aroig](https://github.com/aroig)!
+* Runtime type checks improved for some asset-related functions. Thanks [@aroig](https://github.com/aroig)!
+* Docs grammar fixes. Thanks [@dwinston](https://github.com/dwinston)!
+* Dataproc ops for `dagster-gcp` now have user-configurable timeout length. Thanks [@3cham](https://github.com/3cham)!
+
 # 0.14.16
 
 ### New

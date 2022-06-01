@@ -10,7 +10,16 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "executor_name": "in_process",
-  "initial_known_state": null,
+  "initial_known_state": {
+    "__class__": "KnownExecutionState",
+    "dynamic_mappings": {},
+    "parent_state": null,
+    "previous_retry_attempts": {},
+    "ready_outputs": {
+      "__frozenset__": []
+    },
+    "step_output_versions": []
+  },
   "pipeline_snapshot_id": "330e31c23c3edacaa7a9224039b53a703f011788",
   "snapshot_version": 1,
   "step_keys_to_execute": [
@@ -135,7 +144,16 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "executor_name": "in_process",
-  "initial_known_state": null,
+  "initial_known_state": {
+    "__class__": "KnownExecutionState",
+    "dynamic_mappings": {},
+    "parent_state": null,
+    "previous_retry_attempts": {},
+    "ready_outputs": {
+      "__frozenset__": []
+    },
+    "step_output_versions": []
+  },
   "pipeline_snapshot_id": "7ffd65ba8633d4c172a7b15dfee5927bed301724",
   "snapshot_version": 1,
   "step_keys_to_execute": [
@@ -189,7 +207,16 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "executor_name": "in_process",
-  "initial_known_state": null,
+  "initial_known_state": {
+    "__class__": "KnownExecutionState",
+    "dynamic_mappings": {},
+    "parent_state": null,
+    "previous_retry_attempts": {},
+    "ready_outputs": {
+      "__frozenset__": []
+    },
+    "step_output_versions": []
+  },
   "pipeline_snapshot_id": "b96bfd4d61336a6ed2016679d1467c3e1daa3285",
   "snapshot_version": 1,
   "step_keys_to_execute": [
@@ -257,7 +284,16 @@ snapshots['test_create_with_composite 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "executor_name": "in_process",
-  "initial_known_state": null,
+  "initial_known_state": {
+    "__class__": "KnownExecutionState",
+    "dynamic_mappings": {},
+    "parent_state": null,
+    "previous_retry_attempts": {},
+    "ready_outputs": {
+      "__frozenset__": []
+    },
+    "step_output_versions": []
+  },
   "pipeline_snapshot_id": "7bb46b4373672e250386288663f7eca81f0a0a02",
   "snapshot_version": 1,
   "step_keys_to_execute": [

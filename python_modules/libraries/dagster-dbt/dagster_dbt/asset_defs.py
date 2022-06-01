@@ -25,6 +25,7 @@ from dagster import (
 from dagster import _check as check
 from dagster import get_dagster_logger, op
 from dagster.core.definitions.metadata import RawMetadataValue
+from dagster.core.errors import DagsterInvalidSubsetError
 
 
 def _load_manifest_for_project(
@@ -50,6 +51,50 @@ def _load_manifest_for_project(
     manifest_path = os.path.join(target_dir, "manifest.json")
     with open(manifest_path, "r", encoding="utf8") as f:
         return json.load(f), cli_output
+
+
+def _select_unique_ids_from_manifest_json(
+    manifest_json: Mapping[str, Any], select: str
+) -> AbstractSet[str]:
+    """Method to apply a selection string to an existing manifest.json file."""
+    try:
+        import dbt.graph.cli as graph_cli
+        import dbt.graph.selector as graph_selector
+        from dbt.contracts.graph.manifest import Manifest
+        from networkx import DiGraph
+    except ImportError:
+        check.failed(
+            "In order to use the `select` argument on load_assets_from_dbt_manifest, you must have"
+            "`dbt-core >= 1.0.0` and `networkx` installed."
+        )
+
+    class _DictShim(dict):
+        """Shim to enable hydrating a dictionary into a dot-accessible object"""
+
+        def __getattr__(self, item):
+            ret = super().get(item)
+            # allow recursive access e.g. foo.bar.baz
+            return _DictShim(ret) if isinstance(ret, dict) else ret
+
+    # generate a dbt-compatible graph from the existing child map
+    graph = graph_selector.Graph(DiGraph(incoming_graph_data=manifest_json["child_map"]))
+    manifest = Manifest(
+        # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
+        nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},
+        sources={
+            unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()
+        },
+    )
+
+    # create a parsed selection from the select string
+    parsed_spec = graph_cli.parse_union([select], True)
+
+    # execute this selection against the graph
+    selector = graph_selector.NodeSelector(graph, manifest)
+    selected, _ = selector.select_nodes(parsed_spec)
+    if len(selected) == 0:
+        raise DagsterInvalidSubsetError(f"No dbt models match the selection string '{select}'.")
+    return selected
 
 
 def _get_node_name(node_info: Mapping[str, Any]):
@@ -97,12 +142,13 @@ def _dbt_nodes_to_assets(
     for unique_id in selected_unique_ids:
         cur_asset_deps = set()
         node_info = dbt_nodes[unique_id]
+        if node_info["resource_type"] != "model":
+            continue
         package_name = node_info.get("package_name", package_name)
 
         for dep_name in node_info["depends_on"]["nodes"]:
             dep_type = dbt_nodes[dep_name]["resource_type"]
-
-            # ignore seeds/snapshots
+            # ignore seeds/snapshots/tests
             if dep_type not in ["source", "model"]:
                 continue
             dep_asset_key = node_info_to_asset_key(dbt_nodes[dep_name])
@@ -299,6 +345,7 @@ def load_assets_from_dbt_manifest(
     ] = None,
     io_manager_key: Optional[str] = None,
     selected_unique_ids: Optional[AbstractSet[str]] = None,
+    select: Optional[str] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
     use_build_command: bool = False,
 ) -> Sequence[AssetsDefinition]:
@@ -328,20 +375,19 @@ def load_assets_from_dbt_manifest(
     check.dict_param(manifest_json, "manifest_json", key_type=str)
     dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"]}
 
-    def _unique_id_to_selector(uid):
-        # take the fully-qualified node name and use it to select the model
-        return ".".join(dbt_nodes[uid]["fqn"])
+    if select is None:
+        if selected_unique_ids:
+            # generate selection string from unique ids
+            select = " ".join(".".join(dbt_nodes[uid]["fqn"]) for uid in selected_unique_ids)
+        else:
+            # if no selection specified, default to "*"
+            select = "*"
+            selected_unique_ids = manifest_json["nodes"].keys()
 
-    select = (
-        "*"
-        if selected_unique_ids is None
-        else " ".join(_unique_id_to_selector(uid) for uid in selected_unique_ids)
-    )
-    selected_unique_ids = selected_unique_ids or set(
-        unique_id
-        for unique_id, node_info in dbt_nodes.items()
-        if node_info["resource_type"] == "model"
-    )
+    if selected_unique_ids is None:
+        # must resolve the selection string using the existing manifest.json data (hacky)
+        selected_unique_ids = _select_unique_ids_from_manifest_json(manifest_json, select)
+
     return [
         _dbt_nodes_to_assets(
             dbt_nodes,

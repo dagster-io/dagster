@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
-import {isAssetGroup} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -241,7 +241,7 @@ const RunRow: React.FC<{
       </td>
       <td>
         <Box flex={{direction: 'column', gap: 5}}>
-          {isAssetGroup(run.pipelineName) ? (
+          {isHiddenAssetGroupJob(run.pipelineName) ? (
             <RunAssetKeyTags assetKeys={assetKeysForRun(run)} />
           ) : (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>

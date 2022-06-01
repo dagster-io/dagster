@@ -435,6 +435,12 @@
             ],
             "additionalProperties": false
         },
+        "SecretRef": {
+            "title": "SecretRef",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+        },
         "UserDeploymentIncludeConfigInLaunchedRuns": {
             "title": "UserDeploymentIncludeConfigInLaunchedRuns",
             "type": "object",
@@ -577,6 +583,13 @@
                     "title": "Enablesubchart",
                     "type": "boolean"
                 },
+                "imagePullSecrets": {
+                    "title": "Imagepullsecrets",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SecretRef"
+                    }
+                },
                 "deployments": {
                     "title": "Deployments",
                     "type": "array",
@@ -588,6 +601,7 @@
             "required": [
                 "enabled",
                 "enableSubchart",
+                "imagePullSecrets",
                 "deployments"
             ]
         },
@@ -1037,12 +1051,6 @@
                 "readOnlyDagit",
                 "flower"
             ]
-        },
-        "SecretRef": {
-            "title": "SecretRef",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
         },
         "ComputeLogManagerType": {
             "title": "ComputeLogManagerType",
