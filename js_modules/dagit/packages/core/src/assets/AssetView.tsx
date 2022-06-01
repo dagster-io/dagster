@@ -31,7 +31,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {AssetEvents} from './AssetEvents';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
 import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
-import {AssetLineageQuery, AssetNodeLineageGraph} from './AssetNodeLineageGraph';
+import {AssetLineageScope, AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
@@ -43,7 +43,7 @@ interface Props {
 
 export interface AssetViewParams {
   view?: 'activity' | 'definition' | 'lineage';
-  lineageQuery?: AssetLineageQuery;
+  lineageScope?: AssetLineageScope;
   partition?: string;
   time?: string;
   asOf?: string;
@@ -71,9 +71,9 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   const token = tokenForAssetKey(assetKey);
   const {assetGraphData, graphAssetKeys} = useAssetGraphData(
-    params.view === 'lineage' && params.lineageQuery === 'upstream'
+    params.view === 'lineage' && params.lineageScope === 'upstream'
       ? `*"${token}"`
-      : params.view === 'lineage' && params.lineageQuery === 'downstream'
+      : params.view === 'lineage' && params.lineageScope === 'downstream'
       ? `"${token}"*`
       : `++"${token}"++`,
     {hideEdgesToNodesOutsideQuery: true},
@@ -142,7 +142,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             <Box margin={{top: 4}}>
               <QueryRefreshCountdown refreshState={refreshState} />
             </Box>
-            {definition && definition.jobNames.length > 0 && repoAddress && assetGraphData && (
+            {definition && definition.jobNames.length > 0 && repoAddress && upstream && (
               <LaunchAssetExecutionButton
                 assets={[definition]}
                 upstreamAssetKeys={upstream.map((u) => u.assetKey)}
@@ -178,16 +178,12 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       {isDefinitionLoaded &&
         (params.view === 'definition' ? (
           definition ? (
-            assetGraphData ? (
-              <AssetNodeDefinition
-                assetNode={definition}
-                upstream={upstream}
-                downstream={downstream}
-                liveDataByNode={liveDataByNode}
-              />
-            ) : (
-              <Spinner purpose="page" />
-            )
+            <AssetNodeDefinition
+              assetNode={definition}
+              upstream={upstream}
+              downstream={downstream}
+              liveDataByNode={liveDataByNode}
+            />
           ) : (
             <AssetNoDefinitionState />
           )
@@ -196,13 +192,15 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             assetGraphData ? (
               <AssetNodeLineageGraph
                 assetNode={definition}
-                lineageQuery={params.lineageQuery}
-                setLineageQuery={(lineageQuery) => setParams({...params, lineageQuery})}
+                lineageScope={params.lineageScope}
+                setLineageScope={(lineageScope) => setParams({...params, lineageScope})}
                 liveDataByNode={liveDataByNode}
                 assetGraphData={assetGraphData}
               />
             ) : (
-              <Spinner purpose="page" />
+              <Box style={{flex: 1}} flex={{alignItems: 'center', justifyContent: 'center'}}>
+                <Spinner purpose="page" />
+              </Box>
             )
           ) : (
             <AssetNoDefinitionState />
@@ -237,7 +235,7 @@ function useNeighborsFromGraph(graphData: GraphData | null, assetKey: AssetKey) 
 
   return React.useMemo(() => {
     if (!graphData) {
-      return {upstream: [], downstream: []};
+      return {upstream: null, downstream: null};
     }
     return {
       upstream: Object.values(graphData.nodes)

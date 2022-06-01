@@ -31,8 +31,8 @@ import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeDefinition: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
-  upstream: AssetGraphQuery_assetNodes[];
-  downstream: AssetGraphQuery_assetNodes[];
+  upstream: AssetGraphQuery_assetNodes[] | null;
+  downstream: AssetGraphQuery_assetNodes[] | null;
   liveDataByNode: LiveData;
 }> = ({assetNode, upstream, downstream, liveDataByNode}) => {
   const partitionHealthData = usePartitionHealthData([assetNode.assetKey]);
@@ -90,16 +90,31 @@ export const AssetNodeDefinition: React.FC<{
             border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
             flex={{justifyContent: 'space-between', gap: 8}}
           >
-            <Subheading>Upstream Assets ({upstream.length})</Subheading>
+            <Subheading>
+              Upstream Assets{upstream?.length ? ` (${upstream.length})` : ''}
+            </Subheading>
+            <Link to="?view=lineage&lineageScope=upstream">
+              <Box flex={{gap: 4, alignItems: 'center'}}>
+                View upstream graph
+                <Icon name="open_in_new" color={Colors.Link} />
+              </Box>
+            </Link>
           </Box>
           <AssetNodeList items={upstream} liveDataByNode={liveDataByNode} />
-
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
             flex={{justifyContent: 'space-between', gap: 8}}
           >
-            <Subheading>Downstream Assets ({downstream.length})</Subheading>
+            <Subheading>
+              Downstream Assets{downstream?.length ? ` (${downstream.length})` : ''}
+            </Subheading>
+            <Link to="?view=lineage&lineageScope=downstream">
+              <Box flex={{gap: 4, alignItems: 'center'}}>
+                View downstream graph
+                <Icon name="open_in_new" color={Colors.Link} />
+              </Box>
+            </Link>
           </Box>
           <AssetNodeList items={downstream} liveDataByNode={liveDataByNode} />
         </Box>

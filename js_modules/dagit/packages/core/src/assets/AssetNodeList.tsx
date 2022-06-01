@@ -1,4 +1,4 @@
-import {Box} from '@dagster-io/ui';
+import {Box, Spinner} from '@dagster-io/ui';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -8,10 +8,18 @@ import {LiveData, toGraphId} from '../asset-graph/Utils';
 import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 
 export const AssetNodeList: React.FC<{
-  items: AssetGraphQuery_assetNodes[];
+  items: AssetGraphQuery_assetNodes[] | null;
   liveDataByNode: LiveData;
 }> = ({items, liveDataByNode}) => {
   const history = useHistory();
+
+  if (items === null) {
+    return (
+      <Container flex={{alignItems: 'center', justifyContent: 'center'}}>
+        <Spinner purpose="section" />
+      </Container>
+    );
+  }
 
   return (
     <Container flex={{gap: 4}} padding={{horizontal: 12}}>

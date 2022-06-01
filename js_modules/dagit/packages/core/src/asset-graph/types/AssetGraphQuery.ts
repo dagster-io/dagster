@@ -9,6 +9,16 @@ import { PipelineSelector } from "./../../types/globalTypes";
 // GraphQL query operation: AssetGraphQuery
 // ====================================================
 
+export interface AssetGraphQuery_assetNodes_dependencyKeys {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetGraphQuery_assetNodes_dependedByKeys {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface AssetGraphQuery_assetNodes_assetKey {
   __typename: "AssetKey";
   path: string[];
@@ -27,29 +37,19 @@ export interface AssetGraphQuery_assetNodes_repository {
   location: AssetGraphQuery_assetNodes_repository_location;
 }
 
-export interface AssetGraphQuery_assetNodes_dependencyKeys {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface AssetGraphQuery_assetNodes_dependedByKeys {
-  __typename: "AssetKey";
-  path: string[];
-}
-
 export interface AssetGraphQuery_assetNodes {
   __typename: "AssetNode";
   id: string;
+  dependencyKeys: AssetGraphQuery_assetNodes_dependencyKeys[];
+  dependedByKeys: AssetGraphQuery_assetNodes_dependedByKeys[];
   graphName: string | null;
+  jobNames: string[];
   opNames: string[];
   description: string | null;
   partitionDefinition: string | null;
   computeKind: string | null;
   assetKey: AssetGraphQuery_assetNodes_assetKey;
   repository: AssetGraphQuery_assetNodes_repository;
-  jobNames: string[];
-  dependencyKeys: AssetGraphQuery_assetNodes_dependencyKeys[];
-  dependedByKeys: AssetGraphQuery_assetNodes_dependedByKeys[];
 }
 
 export interface AssetGraphQuery {

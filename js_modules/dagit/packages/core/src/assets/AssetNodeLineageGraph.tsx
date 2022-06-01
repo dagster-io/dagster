@@ -3,17 +3,10 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {withMiddleTruncation} from '../app/Util';
 import {AssetConnectedEdges} from '../asset-graph/AssetEdges';
-import {AssetNodeMinimal, NameMinimal, AssetNode} from '../asset-graph/AssetNode';
+import {AssetNodeMinimal, AssetNode} from '../asset-graph/AssetNode';
 import {ForeignNode} from '../asset-graph/ForeignNode';
-import {
-  buildComputeStatusData,
-  displayNameForAssetKey,
-  GraphData,
-  LiveData,
-  toGraphId,
-} from '../asset-graph/Utils';
+import {buildComputeStatusData, GraphData, LiveData, toGraphId} from '../asset-graph/Utils';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 
@@ -22,15 +15,15 @@ import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 const EXPERIMENTAL_MINI_SCALE = 0.5;
 
-export type AssetLineageQuery = 'neighbors' | 'upstream' | 'downstream';
+export type AssetLineageScope = 'neighbors' | 'upstream' | 'downstream';
 
 export const AssetNodeLineageGraph: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
   assetGraphData: GraphData;
   liveDataByNode: LiveData;
-  lineageQuery?: AssetLineageQuery;
-  setLineageQuery: (q: AssetLineageQuery) => void;
-}> = ({assetNode, assetGraphData, liveDataByNode, lineageQuery, setLineageQuery}) => {
+  lineageScope?: AssetLineageScope;
+  setLineageScope: (q: AssetLineageScope) => void;
+}> = ({assetNode, assetGraphData, liveDataByNode, lineageScope, setLineageScope}) => {
   const assetGraphId = toGraphId(assetNode.assetKey);
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
@@ -56,7 +49,11 @@ export const AssetNodeLineageGraph: React.FC<{
   );
 
   if (!layout || loading) {
-    return <Spinner purpose="page" />;
+    return (
+      <Box style={{flex: 1}} flex={{alignItems: 'center', justifyContent: 'center'}}>
+        <Spinner purpose="page" />
+      </Box>
+    );
   }
 
   return (
@@ -65,14 +62,14 @@ export const AssetNodeLineageGraph: React.FC<{
         padding={{horizontal: 24, vertical: 12}}
         border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
       >
-        <ButtonGroup<AssetLineageQuery>
-          activeItems={new Set([lineageQuery || 'neighbors'])}
+        <ButtonGroup<AssetLineageScope>
+          activeItems={new Set([lineageScope || 'neighbors'])}
           buttons={[
             {id: 'neighbors', label: 'Nearest Neighbors', icon: 'resize_updown'},
             {id: 'upstream', label: 'Upstream', icon: 'resize_up'},
             {id: 'downstream', label: 'Downstream', icon: 'resize_down'},
           ]}
-          onClick={setLineageQuery}
+          onClick={setLineageScope}
         />
       </Box>
       <SVGViewport
@@ -112,18 +109,9 @@ export const AssetNodeLineageGraph: React.FC<{
                     <ForeignNode assetKey={{path}} />
                   ) : _scale < EXPERIMENTAL_MINI_SCALE ? (
                     <AssetNodeMinimal
-                      style={{background: Colors.White}}
+                      definition={graphNode.definition}
                       selected={graphNode.id === assetGraphId}
-                    >
-                      <NameMinimal style={{fontSize: 28}}>
-                        {withMiddleTruncation(
-                          displayNameForAssetKey(graphNode.definition.assetKey),
-                          {
-                            maxLength: 17,
-                          },
-                        )}
-                      </NameMinimal>
-                    </AssetNodeMinimal>
+                    />
                   ) : (
                     <AssetNode
                       definition={graphNode.definition}

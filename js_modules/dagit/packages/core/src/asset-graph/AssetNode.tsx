@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {Colors, Icon, Tooltip, FontFamily, Box, CaptionMono, Spinner} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
-import React, {CSSProperties} from 'react';
+import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
@@ -135,21 +135,31 @@ export const AssetNode: React.FC<{
 
 export const AssetNodeMinimal: React.FC<{
   selected: boolean;
-  style?: CSSProperties;
-}> = ({selected, style, children}) => {
+  definition: AssetNodeFragment;
+}> = ({selected, definition}) => {
   return (
-    <AssetNodeContainer $selected={selected} style={{position: 'absolute', borderRadius: 12}}>
+    <AssetNodeContainer
+      $selected={selected}
+      style={{
+        position: 'absolute',
+        borderRadius: 12,
+        outlineOffset: 2,
+        outlineWidth: 4,
+      }}
+    >
       <AssetNodeBox
         $selected={selected}
         style={{
+          background: Colors.White,
           border: `4px solid ${Colors.Blue200}`,
           borderRadius: 10,
           position: 'absolute',
           inset: 4,
-          ...style,
         }}
       >
-        {children}
+        <NameMinimal style={{fontSize: 28}}>
+          {withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {maxLength: 17})}
+        </NameMinimal>
       </AssetNodeBox>
     </AssetNodeContainer>
   );
@@ -189,6 +199,7 @@ export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeFragment on AssetNode {
     id
     graphName
+    jobNames
     opNames
     description
     partitionDefinition

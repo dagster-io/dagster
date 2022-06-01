@@ -1,4 +1,4 @@
-import {Box, Checkbox, Colors, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
+import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import flatMap from 'lodash/flatMap';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
@@ -15,7 +15,6 @@ import {
   QueryRefreshState,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
-import {withMiddleTruncation} from '../app/Util';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
@@ -43,7 +42,7 @@ import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
 import {AssetConnectedEdges} from './AssetEdges';
-import {AssetNode, AssetNodeMinimal, NameMinimal} from './AssetNode';
+import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
 import {OmittedAssetsNotice} from './OmittedAssetsNotice';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
@@ -54,7 +53,6 @@ import {
   GraphNode,
   isSourceAsset,
   tokenForAssetKey,
-  displayNameForAssetKey,
   buildComputeStatusData,
 } from './Utils';
 import {AssetGraphLayout} from './layout';
@@ -359,16 +357,9 @@ export const AssetGraphExplorerWithData: React.FC<
                           <ForeignNode assetKey={{path}} />
                         ) : _scale < EXPERIMENTAL_MINI_SCALE ? (
                           <AssetNodeMinimal
-                            style={{background: Colors.White}}
+                            definition={graphNode.definition}
                             selected={selectedGraphNodes.includes(graphNode)}
-                          >
-                            <NameMinimal style={{fontSize: 28}}>
-                              {withMiddleTruncation(
-                                displayNameForAssetKey(graphNode.definition.assetKey),
-                                {maxLength: 17},
-                              )}
-                            </NameMinimal>
-                          </AssetNodeMinimal>
+                          />
                         ) : (
                           <AssetNode
                             definition={graphNode.definition}

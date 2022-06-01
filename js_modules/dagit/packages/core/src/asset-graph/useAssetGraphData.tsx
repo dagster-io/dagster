@@ -132,14 +132,13 @@ const ASSET_GRAPH_QUERY = gql`
   query AssetGraphQuery($pipelineSelector: PipelineSelector) {
     assetNodes(pipeline: $pipelineSelector) {
       id
-      ...AssetNodeFragment
-      jobNames
       dependencyKeys {
         path
       }
       dependedByKeys {
         path
       }
+      ...AssetNodeFragment
     }
   }
   ${ASSET_NODE_FRAGMENT}
