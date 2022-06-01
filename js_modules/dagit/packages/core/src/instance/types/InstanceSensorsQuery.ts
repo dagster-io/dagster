@@ -79,6 +79,9 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error_cause {
@@ -198,6 +201,9 @@ export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_Instiga
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause {
