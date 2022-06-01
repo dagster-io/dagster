@@ -22,7 +22,9 @@ def repository_b_asset(repository_a_asset):
     return 6
 
 
-repository_b_asset_group = AssetGroup(assets=[repository_b_asset], source_assets=[repository_a_source_asset])
+repository_b_asset_group = AssetGroup(
+    assets=[repository_b_asset], source_assets=[repository_a_source_asset]
+)
 
 
 @repository
