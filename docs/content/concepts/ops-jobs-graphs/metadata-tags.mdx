@@ -1,0 +1,113 @@
+---
+title: Metadata & Tags | Dagster
+description: Metadata and tags provide two ways to attach information in Dagster
+---
+
+# Metadata & Tags
+
+Metadata and tags provide two different ways for you to attach information to your jobs and the runs launched from those jobs. The main difference between metadata and tags is what "object" the information is attached to. Metadata is attached to JobDefinitions (specified using the @job decorator) and tags are attached to runs that are created by executing a job.
+
+## Metadata
+
+Metadata allows you to attach information to a job. This information can be whatever you want, but possible cases include:
+
+- keeping track of the team responsible for maintaining a job
+- linking to documentation or other resources
+- displaying the git hash corresponding to the current job definition
+
+Note: If you are running Dagster using separate Dagit and user code installations (more info [here](/deployment/overview)), then your Dagit installation must be >=0.14.18 to use metadata on jobs.
+
+### Specifying Metadata
+
+When you attach metadata to a job, you do it as a dictionary of key value pairs. The keys must be a string, but the values can be any one of the <PyObject object="MetadataValue" /> classes we provide. You can also use primitive python types as values, and dagster will convert them to the appropriate <PyObject object="MetadataValue" />.
+
+```python file=/concepts/ops_jobs_graphs/metadata_tags.py startafter=start_metadata_on_job endbefore=end_metadata_on_job
+@op
+def my_op():
+    return "Hello World!"
+
+
+@job(
+    metadata={
+        "owner": "data team",  # will be converted to MetadataValue.text
+        "docs": MetadataValue.url("https://docs.dagster.io"),
+    }
+)
+def my_job_with_metadata():
+    my_op()
+```
+
+In addition to adding metadata on the `@job` decorator, you can also add metadata using the <PyObject object="GraphDefinition" method="to_job" /> method.
+
+```python file=/concepts/ops_jobs_graphs/metadata_tags.py startafter=start_metadata_on_graph_to_job endbefore=end_metadata_on_graph_to_job
+@graph
+def my_graph():
+    my_op()
+
+
+my_second_job_with_metadata = my_graph.to_job(
+    metadata={"owner": "api team", "docs": MetadataValue.url("https://docs.dagster.io")}
+)
+```
+
+### Viewing Metadata
+
+After attaching metadata to a job, you can view it in dagit by navigating to the job overview page. Metadata will be displayed in the right pane.
+
+<img
+alt="job-metadata.png"
+src="/images/concepts/ops-jobs-graphs/job-metadata.png"
+/>
+
+## Tags
+
+Tags allow you to attach information to the run created when you execute a job. Tags can contain any information you want, and dagster will also attach some tags to your runs (we'll cover these later).
+
+### Specifying Tags
+
+You can specify tags you want attached to every run by adding them to a job. Tags are specified as a dictionary of key value pairs where the key must be a string and the value must be a string or json that is serializable to a string.
+
+```python file=/concepts/ops_jobs_graphs/metadata_tags.py startafter=start_tags_on_job endbefore=end_tags_on_job
+@job(tags={"foo": "bar"})
+def my_job_with_tags():
+    my_op()
+```
+
+In addition to adding tags on the `@job` decorator, you can also add metadata using the <PyObject object="GraphDefinition" method="to_job" /> method.
+
+```python file=/concepts/ops_jobs_graphs/metadata_tags.py startafter=start_tags_on_graph_to_job endbefore=end_tags_on_graph_to_job
+my_second_job_with_tags = my_graph.to_job(tags={"foo": "bar"})
+```
+
+When executing a job, you can add tags to the run using the Launchpad in Dagit <img
+alt="tag-adder.png"
+src="/images/concepts/ops-jobs-graphs/tag-adder.png"
+/>
+
+### Viewing Tags
+
+You can view the tags that have been attached to runs by going to the Runs page in Dagit <img
+alt="tags-viewer.png"
+src="/images/concepts/ops-jobs-graphs/tags-viewer.png"
+/>
+
+### Dagster provided tags
+
+Dagster will automatically add tags to your runs in some cases including:
+
+- The solid selection for the run, if applicable
+- The partition set and partition of the run, if applicable
+- The schedule that triggered the run, if applicable
+- The backfill ID, if applicable
+- The parent run of a re-executed run
+- The docker image tag
+
+### Using tags to affect run execution
+
+Some features of dagster are controlled using the tags attached to a run. Some examples include:
+
+- [Customizing kubernetes config](/deployment/guides/kubernetes/customizing-your-deployment)
+- [Specifying celery config](/deployment/guides/kubernetes/deploying-with-helm-advanced#configuring-celery-queues)
+- [Turning run memoization on or off](/guides/dagster/memoization#disabling-memoization)
+- [Setting concurrency limits when using the QueuedRunCoordinator](/deployment/run-coordinator#usage)
+- [Setting the priority of different runs](/deployment/run-coordinator#priorities)
