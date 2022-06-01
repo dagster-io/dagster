@@ -1082,17 +1082,27 @@ class TestCrossRepoAssetDependedBy(CrossRepoDepsGraphQLContextTestMatrix):
         assert result_dependent_keys == dependent_asset_keys
 
 
-class TestNamedGroups(NamedAssetGroupsGraphQLContextTestMatrix):
-    def test_repo_asset_groups(self, graphql_context):
+class TestNamedGroups(ExecutingGraphQLContextTestMatrix):
+    def test_named_groups(self, graphql_context, snapshot):
+        # Generate materializations for bar asset
+        _create_run(graphql_context, "named_groups_job")
+        selector = infer_job_or_pipeline_selector(
+            graphql_context, "named_groups_job", asset_selection=[{"path": ["bar"]}]
+        )
         repository_location = graphql_context.get_repository_location("test")
-        repository = repository_location.get_repository("named_asset_groups_repo")
+        repository = repository_location.get_repository("test_repo")
 
         selector = {
             "repositoryLocationName": repository_location.name,
             "repositoryName": repository.name,
         }
+
         result = execute_dagster_graphql(
-            graphql_context, GET_REPO_ASSET_GROUPS, variables={"repositorySelector": selector}
+            graphql_context,
+            GET_REPO_ASSET_GROUPS,
+            variables={
+                "repositorySelector": selector,
+            },
         )
 
         asset_groups_list = result.data["repositoryOrError"]["assetGroups"]
