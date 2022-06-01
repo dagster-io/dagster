@@ -781,6 +781,17 @@ def test_materialize():
     assert result.success
 
 
+def test_materialize_with_config():
+    @asset(config_schema={"foo": str})
+    def asset_foo(context):
+        return context.op_config["foo"]
+
+    group = AssetGroup(assets=[asset_foo])
+
+    result = group.materialize(run_config={"ops": {"asset_foo": {"config": {"foo": "bar"}}}})
+    assert result.success
+
+
 def test_materialize_with_out_of_process_executor():
     @asset
     def asset_foo():

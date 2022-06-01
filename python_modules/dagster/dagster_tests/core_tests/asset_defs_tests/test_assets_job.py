@@ -9,9 +9,9 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DependencyDefinition,
+    Field,
     GraphIn,
     GraphOut,
-    Field,
     IOManager,
     Out,
     Output,
@@ -76,7 +76,7 @@ def test_two_asset_pipeline():
 def test_single_asset_pipeline_with_config():
     @asset(config_schema={"foo": Field(StringSource)})
     def asset1(context):
-        return context.config["foo"]
+        return context.op_config["foo"]
 
     job = build_assets_job("a", [asset1])
     assert job.graph.node_defs == [asset1.op]
