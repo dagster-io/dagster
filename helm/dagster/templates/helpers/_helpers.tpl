@@ -33,7 +33,8 @@ If release name contains chart name it will be used as a full name.
   {{- $ := index . 0 }}
 
   {{- with index . 1 }}
-    {{- $tag := .tag | default $.Chart.Version | toYaml }}
+    {{- /* Filter the tag to parse strings, string integers, and string floats. */}}
+    {{- $tag := .tag | default $.Chart.Version | toYaml | trimAll "\"" }}
     {{- printf "%s:%s" .repository $tag }}
   {{- end }}
 {{- end }}

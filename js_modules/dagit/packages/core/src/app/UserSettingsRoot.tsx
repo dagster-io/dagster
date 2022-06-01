@@ -125,16 +125,6 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
               ),
             },
             {
-              key: 'Experimental asset graph display',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(FeatureFlag.flagExperimentalAssetDAG)}
-                  onChange={() => toggleFlag(FeatureFlag.flagExperimentalAssetDAG)}
-                />
-              ),
-            },
-            {
               key: 'New partitions view (experimental)',
               value: (
                 <Checkbox

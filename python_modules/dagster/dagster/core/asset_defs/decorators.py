@@ -60,6 +60,7 @@ def asset(
     partitions_def: Optional[PartitionsDefinition] = ...,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = ...,
     op_tags: Optional[Dict[str, Any]] = ...,
+    group_name: Optional[str] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -81,6 +82,7 @@ def asset(
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     op_tags: Optional[Dict[str, Any]] = None,
+    group_name: Optional[str] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -125,6 +127,7 @@ def asset(
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
+        group_name (Optional[str]): A string name used to organize multiple assets into groups.
 
     Examples:
 
@@ -157,6 +160,7 @@ def asset(
             partitions_def=partitions_def,
             partition_mappings=partition_mappings,
             op_tags=op_tags,
+            group_name=group_name,
         )(fn)
 
     return inner
@@ -179,6 +183,7 @@ class _Asset:
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         op_tags: Optional[Dict[str, Any]] = None,
+        group_name: Optional[str] = None,
     ):
         self.name = name
         # if user inputs a single string, coerce to list
@@ -197,6 +202,7 @@ class _Asset:
         self.partition_mappings = partition_mappings
         self.op_tags = op_tags
         self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
+        self.group_name = group_name
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -265,6 +271,7 @@ class _Asset:
             if self.partition_mappings
             else None,
             resource_defs=self.resource_defs,
+            group_names={out_asset_key: self.group_name} if self.group_name else None,
         )
 
 

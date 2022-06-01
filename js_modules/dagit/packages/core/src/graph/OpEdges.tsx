@@ -1,20 +1,13 @@
-import {pathVerticalDiagonal} from '@vx/shape';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {weakmapMemoize} from '../app/Util';
+import {buildSVGPath} from '../asset-graph/Utils';
 
 import {OpGraphLayout, OpLayout, OpLayoutEdge} from './asyncGraphLayout';
 import {OpGraphOpFragment} from './types/OpGraphOpFragment';
 
 export type Edge = {a: string; b: string};
-
-const buildSVGPath = pathVerticalDiagonal({
-  source: (s: any) => s.source,
-  target: (s: any) => s.target,
-  x: (s: any) => s.x,
-  y: (s: any) => s.y,
-});
 
 const buildSVGPaths = weakmapMemoize((edges: OpLayoutEdge[], nodes: {[name: string]: OpLayout}) =>
   edges.map(({from, to}) => {

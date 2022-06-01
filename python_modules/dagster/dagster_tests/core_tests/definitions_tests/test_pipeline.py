@@ -179,11 +179,9 @@ def test_unconfigurable_inputs_pipeline():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Input '_' of solid 'noop' has no upstream output, no default "
-        "value, and no dagster type loader. Must provide a value to this input "
-        "via either a direct input value mapped from the top-level graph, or a "
-        "root input manager key. To learn more, see the docs for unconnected "
-        "inputs: https://docs.dagster.io/concepts/io-management/unconnected-inputs#unconnected-inputs.",
+        match="Input '_' of solid 'noop' has no way of being resolved. Must "
+        "provide a resolution to this input via another op/graph, or via a "
+        "direct input value mapped from the top-level graph.",
     ):
 
         @pipeline

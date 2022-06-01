@@ -3,7 +3,11 @@ from contextlib import contextmanager
 import pytest
 
 from dagster import Field, Noneable, Selector, build_init_resource_context, resource
-from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
+from dagster.core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+)
 
 
 def test_resource_invocation_no_arg():
@@ -58,9 +62,8 @@ def test_resource_invocation_with_resources():
     context = build_init_resource_context()
 
     with pytest.raises(
-        DagsterInvalidInvocationError,
-        match='Resource requires resource "foo", but no resource '
-        "with that key was found on the context.",
+        DagsterInvalidDefinitionError,
+        match="resource with key 'foo' required was not provided.",
     ):
         resource_reqs_resources(context)
 

@@ -5,6 +5,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterator,
     List,
     Optional,
     Union,
@@ -32,6 +33,11 @@ from .definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
 from .resource_invocation import resource_invocation_result
+from .resource_requirement import (
+    RequiresResources,
+    ResourceDependencyRequirement,
+    ResourceRequirement,
+)
 
 # pylint: disable=unused-import
 from .scoped_resources_builder import (  # type: ignore
@@ -48,7 +54,7 @@ def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
     return len(params) >= 1
 
 
-class ResourceDefinition(AnonymousConfigurableDefinition):
+class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
     """Core class for defining resources.
 
     Resources are scoped ways to make external resources (like database connections) available to
@@ -211,6 +217,13 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
                 return resource_invocation_result(self, kwargs[context_param_name])
         else:
             return resource_invocation_result(self, None)
+
+    def get_resource_requirements(
+        self, outer_context: Optional[object] = None
+    ) -> Iterator[ResourceRequirement]:
+        source_key = cast(str, outer_context)
+        for resource_key in sorted(list(self.required_resource_keys)):
+            yield ResourceDependencyRequirement(key=resource_key, source_key=source_key)
 
 
 class _ResourceDecoratorCallable:
