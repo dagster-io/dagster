@@ -8,7 +8,6 @@ import {
   PageHeader,
   Spinner,
   Table,
-  Tag,
   Body,
   Heading,
   TextInput,
@@ -22,7 +21,6 @@ import {isAssetGroup} from '../asset-graph/Utils';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {RunStatusPezList} from '../runs/RunStatusPez';
 import {
   failedStatuses,
@@ -31,12 +29,10 @@ import {
   successStatuses,
 } from '../runs/RunStatuses';
 import {RunTimelineContainer, TimelineJob, makeJobKey, HourWindow} from '../runs/RunTimeline';
-import {RunStateSummary, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {RunTimeFragment} from '../runs/types/RunTimeFragment';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
-import {RunStatus} from '../types/globalTypes';
-import {AnchorButton} from '../ui/AnchorButton';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -46,9 +42,9 @@ import {workspacePipelinePath} from '../workspace/workspacePath';
 
 import {InstanceTabs} from './InstanceTabs';
 import {JobMenu} from './JobMenu';
+import {LastRunSummary} from './LastRunSummary';
 import {NextTick, SCHEDULE_FUTURE_TICKS_FRAGMENT} from './NextTick';
 import {RepoFilterButton} from './RepoFilterButton';
-import {StepSummaryForRun} from './StepSummaryForRun';
 import {
   InstanceOverviewInitialQuery,
   InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules as Schedule,
@@ -56,19 +52,6 @@ import {
 } from './types/InstanceOverviewInitialQuery';
 import {LastTenRunsPerJobQuery} from './types/LastTenRunsPerJobQuery';
 import {OverviewJobFragment} from './types/OverviewJobFragment';
-
-const intent = (status: RunStatus) => {
-  switch (status) {
-    case RunStatus.SUCCESS:
-      return 'success';
-    case RunStatus.CANCELED:
-    case RunStatus.CANCELING:
-    case RunStatus.FAILURE:
-      return 'danger';
-    default:
-      return 'none';
-  }
-};
 
 type JobItem = {
   job: OverviewJobFragment;
@@ -510,30 +493,7 @@ const JobSection = (props: JobSectionProps) => {
                   )}
                 </td>
                 <td>
-                  <Box
-                    flex={{
-                      direction: 'row',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                    }}
-                  >
-                    <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 8}}>
-                      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                        <Tag intent={intent(job.runs[0].status)}>
-                          <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                            <RunStatusIndicator status={job.runs[0].status} size={10} />
-                            <RunTime run={job.runs[0]} />
-                          </Box>
-                        </Tag>
-                        <RunStateSummary run={job.runs[0]} />
-                      </Box>
-                      {failedStatuses.has(job.runs[0].status) ||
-                      inProgressStatuses.has(job.runs[0].status) ? (
-                        <StepSummaryForRun runId={job.runs[0].id} />
-                      ) : undefined}
-                    </Box>
-                    <AnchorButton to={`/instance/runs/${job.runs[0].id}`}>View run</AnchorButton>
-                  </Box>
+                  <LastRunSummary run={job.runs[0]} />
                 </td>
                 <td>
                   <JobMenu job={job} repoAddress={repoAddress} />
