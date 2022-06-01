@@ -394,7 +394,6 @@ def multi_asset(
                 description=description,
                 ins=dict(asset_ins.values()),
                 out=outs,
-                # config_schema=config_schema,
                 required_resource_keys=required_resource_keys,
                 tags={
                     **({"kind": compute_kind} if compute_kind else {}),
@@ -405,7 +404,8 @@ def multi_asset(
                         "input_partitions": Field(dict, is_required=False),
                         "output_partitions": Field(dict, is_required=False),
                     },
-                    **config_schema,
+                    # Mypy scoping bug causing incorrect type inference here
+                    **config_schema,  # type: ignore
                 },
             )(fn)
 

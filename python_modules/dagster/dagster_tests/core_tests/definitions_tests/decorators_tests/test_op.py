@@ -257,7 +257,6 @@ def test_op_config():
     @op(config_schema={"conf_str": str})
     def my_op(context):
         assert context.op_config == {"conf_str": "foo"}
-        assert context.config == context.op_config
 
     my_op(build_op_context(config={"conf_str": "foo"}))
 
