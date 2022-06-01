@@ -670,7 +670,6 @@ def test_fail_with_get_output_asset_key():
         "x",
         [foo, bar],
         resource_defs={"io_manager": my_io_manager},
-        executor_def=in_process_executor,
     )
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -678,9 +677,7 @@ def test_fail_with_get_output_asset_key():
         r"\"AssetKey\(\['hey'\]\)\", but this output has already been defined to produce asset "
         r"\"AssetKey\(\['foo'\]\)\"",
     ):
-        execute_pipeline(
-            job
-        )  # Use execute_pipeline instead of execute_in_process to avoid swapping to fs_io_manager
+        job.execute_in_process()
 
 
 def test_internal_asset_deps():
