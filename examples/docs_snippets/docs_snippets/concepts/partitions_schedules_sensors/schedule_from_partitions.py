@@ -1,5 +1,6 @@
 # isort: skip_file
 
+from numpy import partition
 from .partitioned_job import my_partitioned_config
 
 # start_marker
@@ -16,6 +17,19 @@ do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
 )
 
 # end_marker
+
+# start_partitioned_asset_schedule
+from dagster import build_schedule_from_partitioned_job, AssetGroup
+
+partitioned_asset_job = AssetGroup([...]).build_job("partitioned_job")
+
+
+asset_partitioned_schedule = build_schedule_from_partitioned_job(
+    partitioned_asset_job,
+)
+
+# end_partitioned_asset_schedule
+
 
 from .static_partitioned_job import continent_job, CONTINENTS
 
