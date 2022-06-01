@@ -400,7 +400,7 @@ In this case, `ins={"upstream": AssetIn("upstream_asset")}` declares that the co
 
 ### Attaching metadata
 
-Dagster supports attaching arbitrary metadata to assets. To attach arbitrary metadata, supply a `metadata` dictionary to the asset:
+Dagster supports attaching arbitrary [metadata](/_apidocs/ops#dagster.MetadataEntry) to assets. To attach metadata, supply a `metadata` dictionary to the asset:
 
 ```python file=/concepts/assets/asset_metadata.py startafter=start_simple_metadata endbefore=end_simple_metadata
 from dagster import asset
@@ -426,10 +426,6 @@ from dagster import asset, MetadataValue
     },
 )
 ```
-
-If a type is provided using <PyObject object="MetadataValue"/>, Dagster will use it to validate the metadata value.
-
-If a type isn't provided - such as `cereal_name` in the above example - Dagster will attempt validation using each supported <PyObject object="MetadataValue"/> type. If validation fails, the value will be typed as a string.
 
 Asset metadata can be viewed in Dagit on the \[TODO: PAGE]
 
