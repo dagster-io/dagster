@@ -204,8 +204,10 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         # the container context off of our pipeline origin because we don't actually need
         # it to launch the run; we only needed it to create the task definition.
         repository_origin = pipeline_origin.repository_origin
+        # pylint: disable=protected-access
         stripped_repository_origin = repository_origin._replace(container_context={})
         pipeline_origin = pipeline_origin._replace(repository_origin=stripped_repository_origin)
+        # pylint: enable=protected-access
 
         args = ExecuteRunArgs(
             pipeline_origin=pipeline_origin,
