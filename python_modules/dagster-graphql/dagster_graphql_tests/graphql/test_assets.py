@@ -17,9 +17,8 @@ from dagster.utils import safe_tempfile_path
 
 # from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 from .graphql_context_test_suite import (
-    CrossRepoDepsGraphQLContextTestMatrix,
+    AllRepositoryGraphQLContextTestMatrix,
     ExecutingGraphQLContextTestMatrix,
-    NamedAssetGroupsGraphQLContextTestMatrix,
 )
 
 GET_ASSET_KEY_QUERY = """
@@ -1060,7 +1059,7 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert assets_live_info[0]["inProgressRunIds"] == []
 
 
-class TestCrossRepoAssetDependedBy(CrossRepoDepsGraphQLContextTestMatrix):
+class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
     def test_cross_repo_assets(self, graphql_context):
         repository_location = graphql_context.get_repository_location("test")
         repository = repository_location.get_repository("upstream_assets_repository")
