@@ -1083,17 +1083,10 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
 
 class TestNamedGroups(ExecutingGraphQLContextTestMatrix):
     def test_named_groups(self, graphql_context, snapshot):
-        # Generate materializations for bar asset
         _create_run(graphql_context, "named_groups_job")
-        selector = infer_job_or_pipeline_selector(
-            graphql_context, "named_groups_job", asset_selection=[{"path": ["bar"]}]
-        )
-        repository_location = graphql_context.get_repository_location("test")
-        repository = repository_location.get_repository("test_repo")
-
         selector = {
-            "repositoryLocationName": repository_location.name,
-            "repositoryName": repository.name,
+            "repositoryLocationName": "test",
+            "repositoryName": "test_repo",
         }
 
         result = execute_dagster_graphql(
