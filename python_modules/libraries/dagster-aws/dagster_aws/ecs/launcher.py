@@ -206,11 +206,13 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         repository_origin = pipeline_origin.repository_origin
         # pylint: disable=protected-access
         stripped_repository_origin = repository_origin._replace(container_context={})
-        pipeline_origin = pipeline_origin._replace(repository_origin=stripped_repository_origin)
+        stripped_pipeline_origin = pipeline_origin._replace(
+            repository_origin=stripped_repository_origin
+        )
         # pylint: enable=protected-access
 
         args = ExecuteRunArgs(
-            pipeline_origin=pipeline_origin,
+            pipeline_origin=stripped_pipeline_origin,
             pipeline_run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         )
