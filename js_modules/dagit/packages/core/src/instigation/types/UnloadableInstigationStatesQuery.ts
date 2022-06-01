@@ -27,6 +27,9 @@ export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrE
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause {

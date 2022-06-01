@@ -49,6 +49,9 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_run
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks_error_cause {
@@ -146,6 +149,9 @@ export interface SensorsRootQuery_unloadableInstigationStatesOrError_Instigation
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause {
