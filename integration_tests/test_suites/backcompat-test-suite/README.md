@@ -34,6 +34,28 @@ where:
 
 ## Debugging tips
 
+### Option 1:
+To view the logs of the docker containers that are spun up during testing, you'll need to comment out a line in the
+test suite so that the containers are not removed. In `tests/test_backcompat.py` in `docker_service_up()` the final lines will be
+```python
+    try:
+        yield
+    finally:
+        subprocess.check_output(["docker-compose", "-f", docker_compose_file, "stop"])
+        subprocess.check_output(["docker-compose", "-f", docker_compose_file, "rm", "-f"])
+```
+change them to
+```python
+    try:
+        yield
+    finally:
+        subprocess.check_output(["docker-compose", "-f", docker_compose_file, "stop"])
+      #  subprocess.check_output(["docker-compose", "-f", docker_compose_file, "rm", "-f"])
+```
+When you run the backcompat test, you can view the docker containers using `docker container ls -a` and view the logs for the container in
+question using `docker logs <CONTAINER ID>`
+
+### Option 2:
 Most of the tests are run in subprocesses and inside docker containers, so if you're having trouble debugging
 in this setup, you can emulate what the test is doing using two clones of dagster
 
