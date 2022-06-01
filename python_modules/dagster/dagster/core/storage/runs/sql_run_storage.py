@@ -18,7 +18,7 @@ from dagster.core.errors import (
     DagsterSnapshotDoesNotExist,
 )
 from dagster.core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent, DagsterEventType
-from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster.core.execution.backfill import BulkActionStatus, BulkActionType, PartitionBackfill
 from dagster.core.snap import (
     ExecutionPlanSnapshot,
     PipelineSnapshot,
@@ -941,6 +941,13 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
             return "start_time" in column_names and "end_time" in column_names
 
+    def has_bulk_actions_selector_cols(self):
+        with self.connect() as conn:
+            column_names = [
+                x.get("name") for x in db.inspect(conn).get_columns(BulkActionsTable.name)
+            ]
+            return "selector_id" in column_names
+
     # Daemon heartbeats
 
     def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat):
@@ -1019,14 +1026,20 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def add_backfill(self, partition_backfill: PartitionBackfill):
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
+        values = dict(
+            key=partition_backfill.backfill_id,
+            status=partition_backfill.status.value,
+            timestamp=utc_datetime_from_timestamp(partition_backfill.backfill_timestamp),
+            body=serialize_dagster_namedtuple(partition_backfill),
+        )
+
+        if self.has_bulk_actions_selector_cols():
+            values["selector_id"] = partition_backfill.selector_id
+            values["action_type"] = BulkActionType.BACKFILL.value
+
         with self.connect() as conn:
             conn.execute(
-                BulkActionsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    key=partition_backfill.backfill_id,
-                    status=partition_backfill.status.value,
-                    timestamp=utc_datetime_from_timestamp(partition_backfill.backfill_timestamp),
-                    body=serialize_dagster_namedtuple(partition_backfill),
-                )
+                BulkActionsTable.insert().values(**values)  # pylint: disable=no-value-for-parameter
             )
 
     def update_backfill(self, partition_backfill: PartitionBackfill):

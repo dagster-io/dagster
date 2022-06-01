@@ -6,26 +6,29 @@ from tqdm import tqdm
 import dagster._check as check
 from dagster.serdes import deserialize_as
 
+from ...execution.backfill import BulkActionType, PartitionBackfill
 from ..pipeline_run import PipelineRun, PipelineRunStatus
 from ..runs.base import RunStorage
-from ..runs.schema import RunTagsTable, RunsTable
+from ..runs.schema import BulkActionsTable, RunTagsTable, RunsTable
 from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, REPOSITORY_LABEL_TAG
 
 RUN_PARTITIONS = "run_partitions"
 RUN_START_END = "run_start_end_overwritten"  # was run_start_end, but renamed to overwrite bad timestamps written
 RUN_REPO_LABEL_TAGS = "run_repo_label_tags"
+BULK_ACTION_TYPES = "bulk_action_types"
 
 # for `dagster instance migrate`, paired with schema changes
 REQUIRED_DATA_MIGRATIONS = {
     RUN_PARTITIONS: lambda: migrate_run_partition,
     RUN_REPO_LABEL_TAGS: lambda: migrate_run_repo_tags,
+    BULK_ACTION_TYPES: lambda: migrate_bulk_actions,
 }
 # for `dagster instance reindex`, optionally run for better read performance
 OPTIONAL_DATA_MIGRATIONS = {
     RUN_START_END: lambda: migrate_run_start_end,
 }
 
-RUN_CHUNK_SIZE = 100
+CHUNK_SIZE = 100
 
 UNSTARTED_RUN_STATUSES = {
     PipelineRunStatus.QUEUED,
@@ -35,7 +38,7 @@ UNSTARTED_RUN_STATUSES = {
 }
 
 
-def chunked_run_iterator(storage, print_fn=None, chunk_size=RUN_CHUNK_SIZE):
+def chunked_run_iterator(storage, print_fn=None, chunk_size=CHUNK_SIZE):
     with ExitStack() as stack:
         if print_fn:
             run_count = storage.get_runs_count()
@@ -58,7 +61,7 @@ def chunked_run_iterator(storage, print_fn=None, chunk_size=RUN_CHUNK_SIZE):
                 progress.update(len(chunk))  # pylint: disable=no-member
 
 
-def chunked_run_records_iterator(storage, print_fn=None, chunk_size=RUN_CHUNK_SIZE):
+def chunked_run_records_iterator(storage, print_fn=None, chunk_size=CHUNK_SIZE):
     with ExitStack() as stack:
         if print_fn:
             run_count = storage.get_runs_count()
@@ -165,7 +168,7 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn=None):
         )
         .where(subquery.c.tags_run_id == None)
         .order_by(db.asc(RunsTable.c.id))
-        .limit(RUN_CHUNK_SIZE)
+        .limit(CHUNK_SIZE)
     )
 
     cursor = None
@@ -181,7 +184,7 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn=None):
             rows = result_proxy.fetchall()
             result_proxy.close()
 
-            has_more = len(rows) >= RUN_CHUNK_SIZE
+            has_more = len(rows) >= CHUNK_SIZE
             for row in rows:
                 run = deserialize_as(row[0], PipelineRun)
                 cursor = row[1]
@@ -205,3 +208,46 @@ def write_repo_tag(conn, run: PipelineRun):
     except db.exc.IntegrityError:
         # tag already exists, swallow
         pass
+
+
+def migrate_bulk_actions(run_storage: RunStorage, print_fn=None):
+    from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
+
+    if not isinstance(run_storage, SqlRunStorage):
+        return
+
+    if print_fn:
+        print_fn("Querying run storage.")
+
+    base_query = (
+        db.select([BulkActionsTable.c.body, BulkActionsTable.c.id])
+        .where(BulkActionsTable.c.action_type == None)
+        .order_by(db.asc(BulkActionsTable.c.id))
+        .limit(CHUNK_SIZE)
+    )
+
+    cursor = None
+    has_more = True
+    while has_more:
+        if cursor:
+            query = base_query.where(BulkActionsTable.c.id > cursor)
+        else:
+            query = base_query
+
+        with run_storage.connect() as conn:
+            result_proxy = conn.execute(query)
+            rows = result_proxy.fetchall()
+            result_proxy.close()
+
+            has_more = len(rows) >= CHUNK_SIZE
+            for row in rows:
+                backfill = deserialize_as(row[0], PartitionBackfill)
+                storage_id = row[1]
+                conn.execute(
+                    BulkActionsTable.update()
+                    .values(
+                        selector_id=backfill.selector_id, action_type=BulkActionType.BACKFILL.value
+                    )
+                    .where(BulkActionsTable.c.id == storage_id)
+                )
+                cursor = storage_id
