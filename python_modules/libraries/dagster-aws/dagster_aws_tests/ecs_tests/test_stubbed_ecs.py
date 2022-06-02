@@ -371,6 +371,15 @@ def test_run_task(ecs, ec2, subnet):
     assert response["tasks"][0]["overrides"]["cpu"] == "512"
     assert response["tasks"][0]["overrides"]["memory"] == "1024"
 
+    # With very long overrides
+    with pytest.raises(Exception):
+        ecs.run_task(
+            taskDefinition="container",
+            # overrides is limited to 8192 characters including json formatting
+            # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
+            overrides={"containerOverrides": ["boom" for i in range(10000)]},
+        )
+
 
 def test_stop_task(ecs):
     with pytest.raises(ClientError):
