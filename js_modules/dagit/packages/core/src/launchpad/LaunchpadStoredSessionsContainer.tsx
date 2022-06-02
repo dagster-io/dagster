@@ -9,19 +9,21 @@ import {
 } from '../app/ExecutionSessionStorage';
 import {RepoAddress} from '../workspace/types';
 
-import LaunchpadSessionContainer from './LaunchpadSessionContainer';
+import {LaunchpadType} from './LaunchpadRoot';
+import LaunchpadSession from './LaunchpadSession';
 import {LaunchpadTabs} from './LaunchpadTabs';
-import {LaunchpadSessionContainerPartitionSetsFragment} from './types/LaunchpadSessionContainerPartitionSetsFragment';
-import {LaunchpadSessionContainerPipelineFragment} from './types/LaunchpadSessionContainerPipelineFragment';
+import {LaunchpadSessionPartitionSetsFragment} from './types/LaunchpadSessionPartitionSetsFragment';
+import {LaunchpadSessionPipelineFragment} from './types/LaunchpadSessionPipelineFragment';
 
 interface Props {
-  pipeline: LaunchpadSessionContainerPipelineFragment;
-  partitionSets: LaunchpadSessionContainerPartitionSetsFragment;
+  launchpadType: LaunchpadType;
+  pipeline: LaunchpadSessionPipelineFragment;
+  partitionSets: LaunchpadSessionPartitionSetsFragment;
   repoAddress: RepoAddress;
 }
 
-export const LaunchpadManySessionsContainer = (props: Props) => {
-  const {pipeline, partitionSets, repoAddress} = props;
+export const LaunchpadStoredSessionsContainer = (props: Props) => {
+  const {launchpadType, pipeline, partitionSets, repoAddress} = props;
 
   const initialDataForMode = useInitialDataForMode(pipeline, partitionSets);
   const [data, onSave] = useExecutionSessionStorage(repoAddress, pipeline.name, initialDataForMode);
@@ -39,7 +41,8 @@ export const LaunchpadManySessionsContainer = (props: Props) => {
   return (
     <>
       <LaunchpadTabs data={data} onCreate={onCreateSession} onSave={onSave} />
-      <LaunchpadSessionContainer
+      <LaunchpadSession
+        launchpadType={launchpadType}
         session={currentSession}
         onSave={onSaveSession}
         pipeline={pipeline}
@@ -51,4 +54,4 @@ export const LaunchpadManySessionsContainer = (props: Props) => {
 };
 
 // eslint-disable-next-line import/no-default-export
-export default LaunchpadManySessionsContainer;
+export default LaunchpadStoredSessionsContainer;
