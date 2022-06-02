@@ -4,8 +4,8 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {AssetEvents} from '../assets/AssetEvents';
 import {ASSET_NODE_CONFIG_FRAGMENT, configSchemaForAssetNode} from '../assets/AssetConfig';
+import {AssetEvents} from '../assets/AssetEvents';
 import {
   AssetMetadataTable,
   ASSET_NODE_OP_METADATA_FRAGMENT,
@@ -23,11 +23,7 @@ import {ConfigTypeSchema} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {LiveDataForNode, displayNameForAssetKey} from './Utils';
-import {
-  SidebarAssetQuery,
-  SidebarAssetQueryVariables,
-  SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType as CompositeConfigType,
-} from './types/SidebarAssetQuery';
+import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetQuery';
 
 export const SidebarAssetInfo: React.FC<{
   assetKey: AssetKey;
@@ -90,7 +86,10 @@ export const SidebarAssetInfo: React.FC<{
       {assetConfigSchema && (
         <SidebarSection title="Config">
           <Box padding={{vertical: 16, horizontal: 24}}>
-            <ConfigTypeSchema type={assetConfigSchema} typesInScope={assetConfigSchema.recursiveConfigTypes} />
+            <ConfigTypeSchema
+              type={assetConfigSchema}
+              typesInScope={assetConfigSchema.recursiveConfigTypes}
+            />
           </Box>
         </SidebarSection>
       )}

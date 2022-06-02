@@ -61,24 +61,22 @@ export const LaunchAssetExecutionButton: React.FC<{
       disabledReason || 'Assets must be in the same job to be materialized together.';
   }
 
-  const assetsWithConfig = assets.filter((a) => configSchemaForAssetNode(a));
-  const anyAssetsHaveConfig = assetsWithConfig.length > 0;
+  const anyAssetsHaveConfig = assets.some((a) => configSchemaForAssetNode(a));
 
   if (anyAssetsHaveConfig && partitionDefinition) {
     disabledReason =
-      disabledReason || 'Cannot materialize assets using both asset config and partitions';
+      disabledReason || 'Cannot materialize assets using both asset config and partitions.';
   }
 
   title = title || 'Refresh';
 
   let tooltipChildren: React.ReactNode;
   if (anyAssetsHaveConfig) {
-    const assetOpNames = assets.map(({opNames}) => (opNames as string[])[0]);
+    const assetOpNames = assets.flatMap((a) => a.opNames || []);
     const sessionPresets = {
       solidSelection: assetOpNames,
       solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(' '),
     };
-    const jobName = '__ASSET_GROUP';
     tooltipChildren = (
       <>
         <Button
@@ -147,11 +145,13 @@ export const LaunchAssetExecutionButton: React.FC<{
               ],
             },
             runConfigData: {},
-            stepKeys: assets.map((o) => o.opNames).flat(),
             selector: {
               repositoryLocationName: repoAddress.location,
               repositoryName: repoAddress.name,
               pipelineName: jobName,
+              assetSelection: assets.map((asset) => ({
+                path: asset.assetKey.path,
+              })),
             },
           },
         })}

@@ -32,15 +32,13 @@ export const LaunchpadTransientSessionContainer = (props: Props) => {
   };
 
   return (
-    <>
-      <LaunchpadSession
-        launchpadType={launchpadType}
-        session={session}
-        onSave={onSaveSession}
-        pipeline={pipeline}
-        partitionSets={partitionSets}
-        repoAddress={repoAddress}
-      />
-    </>
+    <LaunchpadSession
+      launchpadType={launchpadType}
+      session={session}
+      onSave={onSaveSession}
+      pipeline={pipeline}
+      partitionSets={partitionSets}
+      repoAddress={repoAddress}
+    />
   );
 };

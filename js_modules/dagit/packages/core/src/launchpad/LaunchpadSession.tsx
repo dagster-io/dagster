@@ -127,6 +127,27 @@ const reducer = (state: ILaunchpadSessionState, action: Action) => {
   }
 };
 
+const LaunchButtonContainer: React.FC<{launchpadType: LaunchpadType}> = ({
+  launchpadType,
+  children,
+}) => {
+  if (launchpadType === 'asset') {
+    return (
+      <Box
+        flex={{direction: 'row'}}
+        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+        padding={{right: 12, vertical: 8}}
+      >
+        <div style={{flexGrow: 1}} />
+        {children}
+      </Box>
+    );
+  } else {
+    // job
+    return <div style={{position: 'absolute', bottom: 12, right: 12, zIndex: 1}}>{children}</div>;
+  }
+};
+
 const initialState: ILaunchpadSessionState = {
   preview: null,
   previewLoading: false,
@@ -505,24 +526,6 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     return null;
   }, [currentSession]);
 
-  const LaunchButtonContainer: React.FC = ({children}) => {
-    if (launchpadType === 'asset') {
-      return (
-        <Box
-          flex={{direction: 'row'}}
-          border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-          padding={{right: 12, vertical: 8}}
-        >
-          <div style={{flexGrow: 1}} />
-          {children}
-        </Box>
-      );
-    } else {
-      // job
-      return <div style={{position: 'absolute', bottom: 12, right: 12, zIndex: 1}}>{children}</div>;
-    }
-  };
-
   let launchButtonTitle: string | undefined;
   if (launchpadType === 'asset') {
     launchButtonTitle = 'Materialize';
@@ -684,7 +687,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
         }
       />
 
-      <LaunchButtonContainer>
+      <LaunchButtonContainer launchpadType={launchpadType}>
         <LaunchRootExecutionButton
           title={launchButtonTitle}
           pipelineName={pipeline.name}

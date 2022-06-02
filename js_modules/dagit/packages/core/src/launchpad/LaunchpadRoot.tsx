@@ -39,7 +39,7 @@ export const AssetLaunchpad: React.FC<{
 
   return (
     <Dialog
-      style={{height: '1000px', width: '80%'}}
+      style={{height: '90vh', width: '80%'}}
       isOpen={open}
       canEscapeKeyClose={true}
       canOutsideClickClose={true}
