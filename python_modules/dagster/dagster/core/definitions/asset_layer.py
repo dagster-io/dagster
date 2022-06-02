@@ -25,7 +25,7 @@ from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils.backcompat import ExperimentalWarning
 
 from ..errors import DagsterInvalidDefinitionError
-from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
+from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle, SolidOutputHandle
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition
@@ -99,6 +99,42 @@ def _resolve_input_to_destinations(
             handle=NodeHandle(mapping.maps_to.solid_name, parent=handle),
         )
     return all_destinations
+
+
+def _resolve_output_to_destinations(output_name, asset_key, node_def, handle):
+    node_input_handle_to_upstream_output_asset_key = {}
+    if not isinstance(node_def, GraphDefinition):
+        # must be in the op definition
+        return node_input_handle_to_upstream_output_asset_key
+
+    for mapping in node_def.output_mappings:
+        if mapping.definition.name != output_name:
+            continue
+        output_pointer = mapping.maps_from
+        output_node = node_def.solid_named(output_pointer.solid_name)
+
+        output_def = output_node.definition.output_def_named(output_pointer.output_name)
+        downstream_input_handles = (
+            node_def.dependency_structure.output_to_downstream_inputs_for_solid(
+                output_pointer.solid_name
+            ).get(SolidOutputHandle(output_node, output_def), [])
+        )
+        for input_handle in downstream_input_handles:
+            node_input_handle_to_upstream_output_asset_key[
+                NodeInputHandle(
+                    NodeHandle(input_handle.solid_name, parent=handle), input_handle.input_name
+                )
+            ] = asset_key
+
+        # node_input_handle_to_upstream_output_asset_key.update(
+        #     _resolve_output_to_destinations(
+        #         output_pointer.output_name,
+        #         asset_key,
+        #         output_node.definition,
+        #         NodeHandle(output_pointer.solid_name, parent=handle),
+        #     )
+        # )
+    return node_input_handle_to_upstream_output_asset_key
 
 
 def _build_graph_dependencies(
@@ -374,6 +410,9 @@ class AssetLayer:
     ):
         from dagster.core.asset_defs import AssetsDefinition, SourceAsset
 
+        print(asset_keys_by_node_input_handle)
+        print(asset_info_by_node_output_handle)
+
         self._asset_keys_by_node_input_handle = check.opt_dict_param(
             asset_keys_by_node_input_handle,
             "asset_keys_by_node_input_handle",
@@ -480,6 +519,11 @@ class AssetLayer:
                     is_required=asset_key in assets_def.asset_keys,
                 )
                 io_manager_by_asset[asset_key] = inner_output_def.io_manager_key
+                asset_key_by_input.update(
+                    _resolve_output_to_destinations(
+                        output_name, asset_key, assets_def.node_def, node_handle
+                    )
+                )
         return AssetLayer(
             asset_keys_by_node_input_handle=asset_key_by_input,
             asset_info_by_node_output_handle=asset_info_by_output,
