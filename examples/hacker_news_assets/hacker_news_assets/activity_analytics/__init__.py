@@ -3,7 +3,6 @@ import os
 
 from dagster_dbt import dbt_cli_resource
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
-from hacker_news_assets.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
 from hacker_news_assets.sensors.hn_tables_updated_sensor import make_hn_tables_updated_sensor
 
 from dagster import AssetGroup
@@ -26,43 +25,13 @@ dbt_assets = load_assets_from_dbt_manifest(
     io_manager_key="warehouse_io_manager",
 )
 
-activity_analytics_assets_prod = AssetGroup.from_package_module(
-    package_module=assets, resource_defs=RESOURCES_PROD
-).prefixed("activity_analytics") + AssetGroup(dbt_assets, resource_defs=RESOURCES_PROD)
-
-activity_analytics_assets_staging = AssetGroup.from_package_module(
-    package_module=assets, resource_defs=RESOURCES_STAGING
-).prefixed("activity_analytics") + AssetGroup(dbt_assets, resource_defs=RESOURCES_STAGING)
-
-activity_analytics_assets_local = AssetGroup.from_package_module(
-    package_module=assets, resource_defs=RESOURCES_LOCAL
-).prefixed("activity_analytics") + AssetGroup(dbt_assets, resource_defs=RESOURCES_LOCAL)
-
-
-activity_analytics_assets_sensor_prod = make_hn_tables_updated_sensor(
-    activity_analytics_assets_prod.build_job(name="story_activity_analytics_job")
+activity_analytics_assets = (
+    load_asets_from_package({assets}, prefix="activity_analytics") + dbt_assets
 )
 
-activity_analytics_assets_sensor_staging = make_hn_tables_updated_sensor(
-    activity_analytics_assets_staging.build_job(name="story_activity_analytics_job")
+activity_analytics_job_spec = JobSpec(
+    selection="++story_recommender/activity_forecast", name="activity_analytics_job"
+)  # probably want to do better here
+activity_analytics_assets_sensor = make_hn_tables_updated_sensor(
+    job_name=activity_analytics_job_spec.name
 )
-
-activity_analytics_assets_sensor_local = make_hn_tables_updated_sensor(
-    activity_analytics_assets_local.build_job(name="story_activity_analytics_job")
-)
-
-activity_analytics_definitions_prod = [
-    activity_analytics_assets_prod,
-    activity_analytics_assets_sensor_prod,
-]
-
-
-activity_analytics_definitions_staging = [
-    activity_analytics_assets_staging,
-    activity_analytics_assets_sensor_staging,
-]
-
-activity_analytics_definitions_local = [
-    activity_analytics_assets_local,
-    activity_analytics_assets_sensor_local,
-]
