@@ -411,9 +411,6 @@ class AssetLayer:
     ):
         from dagster.core.asset_defs import AssetsDefinition, SourceAsset
 
-        print(asset_keys_by_node_input_handle)
-        print(asset_info_by_node_output_handle)
-
         self._asset_keys_by_node_input_handle = check.opt_dict_param(
             asset_keys_by_node_input_handle,
             "asset_keys_by_node_input_handle",
