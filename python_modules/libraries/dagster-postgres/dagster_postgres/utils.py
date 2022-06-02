@@ -137,15 +137,8 @@ def pg_alembic_config(dunder_file, script_location=None):
 
 
 @contextmanager
-def create_pg_connection(engine, _alembic_config, storage_type_desc=None):
+def create_pg_connection(engine):
     check.inst_param(engine, "engine", sqlalchemy.engine.Engine)
-    check.opt_str_param(storage_type_desc, "storage_type_desc", "")
-
-    if storage_type_desc:
-        storage_type_desc += " "
-    else:
-        storage_type_desc = ""
-
     conn = None
     try:
         # Retry connection to gracefully handle transient connection issues

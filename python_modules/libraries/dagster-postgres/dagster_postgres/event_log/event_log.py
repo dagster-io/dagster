@@ -214,7 +214,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             conn.execute(query)
 
     def _connect(self):
-        return create_pg_connection(self._engine, pg_alembic_config(__file__), "event log")
+        return create_pg_connection(self._engine)
 
     def run_connection(self, run_id=None):
         return self._connect()
