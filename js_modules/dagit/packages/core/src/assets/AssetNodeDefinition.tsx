@@ -46,7 +46,7 @@ export const AssetNodeDefinition: React.FC<{
   return (
     <>
       <AssetDefinedInMultipleReposNotice assetId={assetNode.id} loadedFromRepo={repoAddress} />
-      <Box flex={{direction: 'row'}}>
+      <Box flex={{direction: 'row'}} style={{flex: 1}}>
         <Box
           style={{flex: 1, minWidth: 0}}
           flex={{direction: 'column'}}
@@ -117,6 +117,8 @@ export const AssetNodeDefinition: React.FC<{
             </Link>
           </Box>
           <AssetNodeList items={downstream} liveDataByNode={liveDataByNode} />
+          {/** Ensures the line between the left and right columns goes to the bottom of the page */}
+          <div style={{flex: 1}} />
         </Box>
         <Box style={{flex: 0.5, minWidth: 0}} flex={{direction: 'column'}}>
           <Box
