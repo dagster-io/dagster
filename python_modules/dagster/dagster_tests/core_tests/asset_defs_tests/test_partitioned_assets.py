@@ -23,7 +23,6 @@ from dagster.core.asset_defs.partition_mapping import PartitionMapping
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.time_window_partitions import TimeWindow
-from dagster.core.test_utils import instance_for_test
 
 
 def test_assets_with_same_partitioning():
@@ -140,26 +139,22 @@ def test_single_partitioned_asset_job():
 
 
 def test_two_partitioned_assets_job():
-    with instance_for_test() as instance:
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
+    def upstream():
+        pass
 
-        @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
-        def upstream():
-            pass
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
+    def downstream(upstream):
+        assert upstream is None
 
-        @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
-        def downstream(upstream):
-            assert upstream is None
-
-        my_job = build_assets_job("my_job", assets=[upstream, downstream])
-        result = my_job.execute_in_process(instance=instance, partition_key="b")
-
-        upstream_materialization = result.asset_materializations_for_node("upstream")[0]
-        assert upstream_materialization.asset_key == AssetKey(["upstream"])
-        assert upstream_materialization.partition == "b"
-
-        downstram_materialization = result.asset_materializations_for_node("downstream")[0]
-        assert downstram_materialization.asset_key == AssetKey(["downstream"])
-        assert downstram_materialization.partition == "b"
+    my_job = build_assets_job("my_job", assets=[upstream, downstream])
+    result = my_job.execute_in_process(partition_key="b")
+    assert result.asset_materializations_for_node("upstream") == [
+        AssetMaterialization(AssetKey(["upstream"]), partition="b")
+    ]
+    assert result.asset_materializations_for_node("downstream") == [
+        AssetMaterialization(AssetKey(["downstream"]), partition="b")
+    ]
 
 
 def test_assets_job_with_different_partitions_defs():
@@ -556,19 +551,18 @@ def test_two_partitioned_multi_assets_job():
     )
     result = my_job.execute_in_process(partition_key="b")
 
-    upstream_materializations = result.asset_materializations_for_node("upstream_asset")
-    assert upstream_materializations[0].asset_key == AssetKey(["upstream_asset_1"])
-    assert upstream_materializations[0].partition == "b"
-    assert upstream_materializations[1].asset_key == AssetKey(["upstream_asset_2"])
-    assert upstream_materializations[1].partition == "b"
+    assert result.asset_materializations_for_node("upstream_asset") == [
+        AssetMaterialization(AssetKey(["upstream_asset_1"]), partition="b"),
+        AssetMaterialization(AssetKey(["upstream_asset_2"]), partition="b"),
+    ]
 
-    downstream_1_materializations = result.asset_materializations_for_node("downstream_asset_1")
-    assert downstream_1_materializations[0].asset_key == AssetKey(["downstream_asset_1"])
-    assert downstream_1_materializations[0].partition == "b"
+    assert result.asset_materializations_for_node("downstream_asset_1") == [
+        AssetMaterialization(AssetKey(["downstream_asset_1"]), partition="b")
+    ]
 
-    downstream_2_materializations = result.asset_materializations_for_node("downstream_asset_2")
-    assert downstream_2_materializations[0].asset_key == AssetKey(["downstream_asset_2"])
-    assert downstream_2_materializations[0].partition == "b"
+    assert result.asset_materializations_for_node("downstream_asset_2") == [
+        AssetMaterialization(AssetKey(["downstream_asset_2"]), partition="b")
+    ]
 
 
 def test_multi_asset_non_identity_partition_mapping():

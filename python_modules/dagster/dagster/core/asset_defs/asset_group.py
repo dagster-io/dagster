@@ -23,10 +23,10 @@ import dagster._check as check
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.executor_definition import in_process_executor
+from dagster.core.definitions.graph_definition import default_job_io_manager
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster.core.selector.subset_selector import AssetSelectionData
-from dagster.core.storage.fs_io_manager import fs_io_manager
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning
 
@@ -118,7 +118,7 @@ class AssetGroup:
         # In the case of collisions, merge_dicts takes values from the
         # dictionary latest in the list, so we place the user provided resource
         # defs after the defaults.
-        resource_defs = merge_dicts({"io_manager": fs_io_manager}, resource_defs)
+        resource_defs = merge_dicts({"io_manager": default_job_io_manager}, resource_defs)
 
         _validate_resource_reqs_for_asset_group(
             asset_list=assets, source_assets=source_assets, resource_defs=resource_defs
@@ -417,7 +417,7 @@ class AssetGroup:
 
         return self.build_job(
             name="in_process_materialization_job", selection=selection
-        ).execute_in_process()
+        ).execute_in_process(_called_from_materialize=True)
 
     def get_base_jobs(self) -> Sequence[JobDefinition]:
         """For internal use only."""

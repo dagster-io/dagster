@@ -32,6 +32,7 @@ from dagster.core.snap.dep_snapshot import (
     build_dep_structure_snapshot_from_icontains_solids,
 )
 from dagster.core.storage.fs_io_manager import PickledObjectFilesystemIOManager
+from dagster.core.storage.mem_io_manager import InMemoryIOManager
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import safe_tempfile_path
 
@@ -1299,7 +1300,7 @@ def test_op_outputs_with_default_asset_io_mgr():
 def test_asset_job_default_io_mgr():
     @asset
     def my_asset(context):
-        assert context.resources.io_manager.__class__ == PickledObjectFilesystemIOManager
+        assert context.resources.io_manager.__class__ == InMemoryIOManager
         return 5
 
     my_job = AssetGroup([my_asset]).build_job("my_job")

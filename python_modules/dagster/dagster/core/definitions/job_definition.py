@@ -163,6 +163,7 @@ class JobDefinition(PipelineDefinition):
         asset_selection: Optional[List[AssetKey]] = None,
         run_id: Optional[str] = None,
         input_values: Optional[Mapping[str, object]] = None,
+        _called_from_materialize: Optional[bool] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute the Job in-process, gathering results in-memory.
@@ -201,7 +202,9 @@ class JobDefinition(PipelineDefinition):
         run_config = check.opt_dict_param(run_config, "run_config")
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
         asset_selection = check.opt_list_param(asset_selection, "asset_selection", AssetKey)
-
+        called_from_materialize = check.opt_bool_param(
+            _called_from_materialize, "_called_from_materialize", default=False
+        )
         check.invariant(
             not (op_selection and asset_selection),
             "op_selection and asset_selection cannot both be provided as args to execute_in_process",
@@ -220,7 +223,9 @@ class JobDefinition(PipelineDefinition):
         ephemeral_job = JobDefinition(
             name=self._name,
             graph_def=self._graph_def,
-            resource_defs=_swap_default_io_man(resource_defs, self),
+            resource_defs=_swap_default_io_man(resource_defs, self)
+            if not called_from_materialize
+            else resource_defs,
             executor_def=execute_in_process_executor,
             logger_defs=logger_defs,
             hook_defs=self.hook_defs,
@@ -481,24 +486,14 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: Pipeline
     """
     Used to create the user facing experience of the default io_manager
     switching to in-memory when using execute_in_process.
-
-    Uses fs_io_manager as the default IO manager for assets.
     """
     from dagster.core.storage.mem_io_manager import mem_io_manager
 
     from .graph_definition import default_job_io_manager
 
-    # For asset jobs, do not switch the default IO manager to mem_io_manager.
-    # Instead, use the default asset io_manager or the user provided io_manager.
-    is_asset_job = (
-        job.asset_layer is not None
-        and job.asset_layer._assets_defs  # pylint: disable=protected-access
-    )
-
     if (
-        not is_asset_job
-        and resources.get("io_manager")
-        in [default_job_io_manager]  # pylint: disable=comparison-with-callable
+        # pylint: disable=comparison-with-callable
+        resources.get("io_manager") in [default_job_io_manager]
         and job.version_strategy is None
     ):
         updated_resources = dict(resources)
