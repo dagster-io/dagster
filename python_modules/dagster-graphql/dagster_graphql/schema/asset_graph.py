@@ -172,6 +172,16 @@ class GrapheneAssetNode(graphene.ObjectType):
     def external_asset_node(self) -> ExternalAssetNode:
         return self._external_asset_node
 
+    def get_op_definition(
+        self,
+    ) -> Optional[Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]]:
+        if len(self._external_asset_node.job_names) >= 1:
+            pipeline_name = self._external_asset_node.job_names[0]
+            pipeline = self._external_repository.get_full_external_pipeline(pipeline_name)
+            return build_solid_definition(pipeline, self._external_asset_node.op_name)
+        else:
+            return None
+
     def get_partition_keys(self) -> Sequence[str]:
         # TODO: Add functionality for dynamic partitions definition
         partitions_def_data = self._external_asset_node.partitions_def_data
@@ -230,11 +240,8 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     # TODO: Prob want a more efficient way of resolving this
     def resolve_configField(self, _graphene_info) -> Optional[GrapheneConfigTypeField]:
-        op = self.resolve_op(_graphene_info)
-        if op:
-            return op.resolve_config_field(_graphene_info)
-        else:
-            return None
+        op = self.get_op_definition()
+        return op.resolve_config_field(_graphene_info) if op else None
 
     def resolve_computeKind(self, _graphene_info) -> Optional[str]:
         return self._external_asset_node.compute_kind
@@ -388,12 +395,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_op(
         self, _graphene_info
     ) -> Optional[Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]]:
-        if len(self._external_asset_node.job_names) >= 1:
-            pipeline_name = self._external_asset_node.job_names[0]
-            pipeline = self._external_repository.get_full_external_pipeline(pipeline_name)
-            return build_solid_definition(pipeline, self._external_asset_node.op_name)
-        else:
-            return None
+        return self.get_op_definition()
 
     def resolve_opNames(self, _graphene_info) -> Sequence[str]:
         return self._external_asset_node.op_names or []
