@@ -23,19 +23,21 @@ export const Items = styled.div`
   }
 `;
 
-export const Item = styled(Link)`
+export const Item = styled(Link)<{$active: boolean}>`
+  background-color: ${({$active}) => ($active ? Colors.Blue50 : 'transparent')};
   border-radius: 8px;
   font-size: 14px;
   text-overflow: ellipsis;
   overflow: hidden;
   padding: 6px 12px;
   display: block;
-  color: ${Colors.Gray900} !important;
+  color: ${({$active}) => ($active ? Colors.Blue700 : Colors.Dark)} !important;
   user-select: none;
+  transition: background 50ms linear, color 50ms linear;
 
   &:hover {
     text-decoration: none;
-    background-color: ${Colors.Gray10};
+    background-color: ${({$active}) => ($active ? Colors.Blue50 : Colors.Gray10)};
   }
 
   &:focus {
@@ -44,9 +46,5 @@ export const Item = styled(Link)`
 
   &.focused {
     border-left: 4px solid ${Colors.Gray400};
-  }
-
-  &.selected {
-    background: ${Colors.Gray200};
   }
 `;
