@@ -1,10 +1,11 @@
-import {Box, Heading, Page, PageHeader, Tabs} from '@dagster-io/ui';
+import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {RepositoryLink} from '../nav/RepositoryLink';
 import {explorerPathFromString, explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {TabLink} from '../ui/TabLink';
 import {RepoAddress} from '../workspace/types';
@@ -20,7 +21,7 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
 
   useDocumentTitle(`Asset Group: ${groupName}`);
 
-  const [tab = 'lineage'] = useQueryPersistedState<'lineage' | 'assets'>({queryKey: 'tab'});
+  const [tab = 'lineage'] = useQueryPersistedState<'lineage' | 'list'>({queryKey: 'tab'});
   const groupSelector = React.useMemo(
     () => ({
       groupName,
@@ -34,11 +35,16 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
       <PageHeader
         title={<Heading>{groupName}</Heading>}
+        tags={
+          <Tag icon="asset_group">
+            Asset Group in <RepositoryLink repoAddress={repoAddress} />
+          </Tag>
+        }
         tabs={
           <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
             <Tabs selectedTabId={tab}>
               <TabLink id="lineage" title="Lineage" to="?tab=lineage" />
-              <TabLink id="assets" title="Assets" to="?tab=assets" />
+              <TabLink id="list" title="List" to="?tab=list" />
             </Tabs>
           </Box>
         }
