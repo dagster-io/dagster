@@ -176,7 +176,7 @@ class DagsterKubernetesClient:
         start = start_time or self.timer()
 
         while not job:
-            if self.timer() - start > wait_timeout:
+            if wait_timeout and (self.timer() - start > wait_timeout):
                 raise DagsterK8sTimeoutError(
                     "Timed out while waiting for job {job_name}"
                     " to launch".format(job_name=job_name)
@@ -248,10 +248,32 @@ class DagsterKubernetesClient:
             start_time=start,
         )
 
+        self.wait_for_running_job_to_succeed(
+            job_name,
+            namespace,
+            instance,
+            run_id,
+            wait_timeout,
+            wait_time_between_attempts,
+            num_pods_to_wait_for,
+            start=start,
+        )
+
+    def wait_for_running_job_to_succeed(
+        self,
+        job_name,
+        namespace,
+        instance=None,
+        run_id=None,
+        wait_timeout=DEFAULT_WAIT_TIMEOUT,
+        wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+        num_pods_to_wait_for=DEFAULT_JOB_POD_COUNT,
+        start=None,
+    ):
         # Wait for the job status to be completed. We check the status every
         # wait_time_between_attempts seconds
         while True:
-            if self.timer() - start > wait_timeout:
+            if wait_timeout and (self.timer() - start > wait_timeout):
                 raise DagsterK8sTimeoutError(
                     "Timed out while waiting for job {job_name}"
                     " to complete".format(job_name=job_name)

@@ -37,7 +37,11 @@ def dagster_home():
 
 
 cluster_provider = define_cluster_provider_fixture(
-    additional_kind_images=["docker.io/bitnami/rabbitmq", "docker.io/bitnami/postgresql"]
+    additional_kind_images=[
+        "docker.io/busybox",
+        "docker.io/bitnami/rabbitmq",
+        "docker.io/bitnami/postgresql",
+    ]
 )
 
 
