@@ -535,7 +535,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         step_keys_by_asset: Dict[AssetKey, List[str]] = {
             node.external_asset_node.asset_key: node.external_asset_node.op_names
             for node in results
-            if not asset_keys or node.assetKey in asset_keys
+            if node.assetKey in asset_keys
         }
 
         return get_assets_live_info(graphene_info, step_keys_by_asset)
