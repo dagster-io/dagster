@@ -6,9 +6,9 @@ from hacker_news.ops.recommender_model import (
 )
 from hacker_news.ops.user_story_matrix import build_user_story_matrix
 from hacker_news.ops.user_top_recommended_stories import build_user_top_recommended_stories
-from hacker_news.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
 
 from dagster import ResourceDefinition, graph
+from ..sensors.hn_tables_updated_sensor import make_hn_tables_updated_sensor
 
 
 @graph
@@ -26,22 +26,15 @@ def story_recommender():
 
 
 story_recommender_prod_job = story_recommender.to_job(
-    resource_defs={
-        **RESOURCES_PROD,
-        **{"partition_bounds": ResourceDefinition.none_resource()},
-    }
+    resource_defs={"partition_bounds": ResourceDefinition.none_resource()}
 )
 
 story_recommender_staging_job = story_recommender.to_job(
-    resource_defs={
-        **RESOURCES_STAGING,
-        **{"partition_bounds": ResourceDefinition.none_resource()},
-    }
+    resource_defs={"partition_bounds": ResourceDefinition.none_resource()}
 )
 
 story_recommender_local_job = story_recommender.to_job(
-    resource_defs={
-        **RESOURCES_LOCAL,
-        **{"partition_bounds": ResourceDefinition.none_resource()},
-    }
+    resource_defs={"partition_bounds": ResourceDefinition.none_resource()}
 )
+
+recommender_schedule = make_hn_tables_updated_sensor("story_recommender_job")

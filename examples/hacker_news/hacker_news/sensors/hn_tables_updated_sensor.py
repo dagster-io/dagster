@@ -11,7 +11,7 @@ from dagster import (
 )
 
 
-def make_hn_tables_updated_sensor(job: JobDefinition) -> SensorDefinition:
+def make_hn_tables_updated_sensor(job_name: str) -> SensorDefinition:
     """
     Returns a sensor that launches the given job when the HN "comments" and "stories" tables have
     both been updated.
@@ -19,7 +19,7 @@ def make_hn_tables_updated_sensor(job: JobDefinition) -> SensorDefinition:
 
     @sensor(
         name=f"{job.name}_on_hn_tables_updated",
-        job=job,
+        pipeline_name=job_name,
     )
     def hn_tables_updated_sensor(context):
         cursor_dict = json.loads(context.cursor) if context.cursor else {}
