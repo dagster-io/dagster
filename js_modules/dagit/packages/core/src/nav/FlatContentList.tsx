@@ -113,6 +113,7 @@ export const getLeftNavItemsForOption = (option: DagsterRepoOption) => {
       isJob,
       label: (
         <Label $hasIcon={!!(schedules.length || sensors.length) || !isJob}>
+          <Icon name="job" />
           <TruncatingName data-tooltip={name} data-tooltip-style={LabelTooltipStyles}>
             {name}
           </TruncatingName>
@@ -127,7 +128,26 @@ export const getLeftNavItemsForOption = (option: DagsterRepoOption) => {
     });
   }
 
-  return items;
+  for (const {groupName} of repository.assetGroups) {
+    items.push({
+      name: groupName || '',
+      isJob: false,
+      schedules: [],
+      sensors: [],
+      repoAddress: address,
+      path: workspacePathFromAddress(address, `/asset-groups/${groupName}`),
+      label: (
+        <Label $hasIcon={false}>
+          <Icon name="asset" />
+          <TruncatingName data-tooltip={groupName} data-tooltip-style={LabelTooltipStyles}>
+            {groupName}
+          </TruncatingName>
+        </Label>
+      ),
+    });
+  }
+
+  return items.sort((a, b) => a.name.localeCompare(b.name));
 };
 
 interface LeftNavItemProps {

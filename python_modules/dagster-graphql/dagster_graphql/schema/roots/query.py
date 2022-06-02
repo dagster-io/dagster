@@ -59,6 +59,7 @@ from ..external import (
     GrapheneWorkspaceOrError,
 )
 from ..inputs import (
+    GrapheneAssetGroupSelector,
     GrapheneAssetKeyInput,
     GrapheneGraphSelector,
     GrapheneInstigationSelector,
@@ -247,6 +248,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     assetNodes = graphene.Field(
         non_null_list(GrapheneAssetNode),
+        group=graphene.Argument(GrapheneAssetGroupSelector),
         pipeline=graphene.Argument(GraphenePipelineSelector),
         assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
         loadMaterializations=graphene.Boolean(default_value=False),
@@ -454,7 +456,22 @@ class GrapheneDagitQuery(graphene.ObjectType):
             AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
         )
 
-        if "pipeline" in kwargs:
+        if "group" in kwargs:
+            group_name = kwargs.get("group").get("groupName")
+            repo_sel = RepositorySelector.from_graphql_input(kwargs.get("group"))
+            repo_loc = graphene_info.context.get_repository_location(repo_sel.location_name)
+            repo = repo_loc.get_repository(repo_sel.repository_name)
+            external_asset_nodes = repo.get_external_asset_nodes()
+            results = (
+                [
+                    GrapheneAssetNode(repo_loc, repo, asset_node)
+                    for asset_node in external_asset_nodes
+                    if asset_node.group_name == group_name
+                ]
+                if external_asset_nodes
+                else []
+            )
+        elif "pipeline" in kwargs:
             pipeline_name = kwargs.get("pipeline").get("pipelineName")
             repo_sel = RepositorySelector.from_graphql_input(kwargs.get("pipeline"))
             repo_loc = graphene_info.context.get_repository_location(repo_sel.location_name)

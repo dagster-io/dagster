@@ -316,6 +316,24 @@ const AssetBulkActions: React.FC<{
   );
 });
 
+export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
+  fragment AssetTableDefinitionFragment on AssetNode {
+    id
+    opNames
+    jobNames
+    partitionDefinition
+    description
+    repository {
+      id
+      name
+      location {
+        id
+        name
+      }
+    }
+  }
+`;
+
 export const ASSET_TABLE_FRAGMENT = gql`
   fragment AssetTableFragment on Asset {
     __typename
@@ -325,20 +343,10 @@ export const ASSET_TABLE_FRAGMENT = gql`
     }
     definition {
       id
-      opNames
-      jobNames
-      partitionDefinition
-      description
-      repository {
-        id
-        name
-        location {
-          id
-          name
-        }
-      }
+      ...AssetTableDefinitionFragment
     }
   }
+  ${ASSET_TABLE_DEFINITION_FRAGMENT}
 `;
 
 const Description = styled.div`

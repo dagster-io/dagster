@@ -21,10 +21,9 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
-import {displayNameForAssetKey, GraphData, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
+import {GraphData, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {useDidLaunchEvent} from '../runs/RunUtils';
@@ -53,8 +52,6 @@ export interface AssetViewParams {
 }
 
 export const AssetView: React.FC<Props> = ({assetKey}) => {
-  useDocumentTitle(`Asset: ${displayNameForAssetKey(assetKey)}`);
-
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
 
   const queryResult = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {

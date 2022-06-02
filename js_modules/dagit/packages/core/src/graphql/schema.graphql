@@ -57,6 +57,7 @@ type DagitQuery {
   assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
   assetNodes(
+    group: AssetGroupSelector
     pipeline: PipelineSelector
     assetKeys: [AssetKeyInput!]
     loadMaterializations: Boolean = false
@@ -1943,6 +1944,16 @@ type AssetNotFoundError implements Error {
 
 input AssetKeyInput {
   path: [String!]!
+}
+
+"""
+This type represents the fields necessary to identify
+        an asset group.
+"""
+input AssetGroupSelector {
+  groupName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
 }
 
 union AssetNodeOrError = AssetNode | AssetNotFoundError
