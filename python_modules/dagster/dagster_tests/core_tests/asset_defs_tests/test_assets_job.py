@@ -1303,3 +1303,52 @@ def test_op_outputs_with_default_asset_io_mgr():
 
     result = execute_pipeline(my_job)
     assert result.success
+
+
+def test_graph_output_is_input_within_graph():
+    @op
+    def return_stuff():
+        return 1
+
+    @op
+    def transform(data):
+        return data * 2
+
+    @op
+    def one_more_transformation(transformed_data):
+        return transformed_data + 1
+
+    @graph(
+        out={
+            "one": GraphOut(),
+            "two": GraphOut(),
+        },
+    )
+    def nested():
+        result = transform(return_stuff())
+        return one_more_transformation(result), result
+
+    @graph(
+        out={
+            "asset_1": GraphOut(),
+            "asset_2": GraphOut(),
+            "asset_3": GraphOut(),
+        },
+    )
+    def complicated_graph():
+        one, two = nested()
+        return one, two, transform(two)
+
+    my_job = AssetGroup(
+        [AssetsDefinition.from_graph(complicated_graph)],
+    ).build_job("my_job")
+
+    result = my_job.execute_in_process()
+    assert result.success
+
+    assert result.output_for_node("complicated_graph.nested", "one") == 3
+    assert result.output_for_node("complicated_graph.nested", "two") == 2
+
+    assert result.output_for_node("complicated_graph", "asset_1") == 3
+    assert result.output_for_node("complicated_graph", "asset_2") == 2
+    assert result.output_for_node("complicated_graph", "asset_3") == 4

@@ -113,6 +113,15 @@ def _resolve_output_to_destinations(output_name, asset_key, node_def, handle):
         output_pointer = mapping.maps_from
         output_node = node_def.solid_named(output_pointer.solid_name)
 
+        node_input_handle_to_upstream_output_asset_key.update(
+            _resolve_output_to_destinations(
+                output_pointer.output_name,
+                asset_key,
+                output_node.definition,
+                NodeHandle(output_pointer.solid_name, parent=handle),
+            )
+        )
+
         output_def = output_node.definition.output_def_named(output_pointer.output_name)
         downstream_input_handles = (
             node_def.dependency_structure.output_to_downstream_inputs_for_solid(
@@ -126,14 +135,6 @@ def _resolve_output_to_destinations(output_name, asset_key, node_def, handle):
                 )
             ] = asset_key
 
-        # node_input_handle_to_upstream_output_asset_key.update(
-        #     _resolve_output_to_destinations(
-        #         output_pointer.output_name,
-        #         asset_key,
-        #         output_node.definition,
-        #         NodeHandle(output_pointer.solid_name, parent=handle),
-        #     )
-        # )
     return node_input_handle_to_upstream_output_asset_key
 
 
