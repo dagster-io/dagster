@@ -13,7 +13,11 @@ export interface HasConfigField {
 export function configSchemaForAssetNode(assetNode: HasConfigField): AssetConfigSchema | null {
   if (assetNode.configField) {
     const configSchema = assetNode.configField.configType as AssetConfigSchema;
-    return configSchema.fields.length > 1 ? configSchema : null;
+    if (configSchema.fields) {
+      return configSchema.fields.length > 1 ? configSchema : null;
+    } else {
+      return null;
+    }
   } else {
     return null;
   }
@@ -21,6 +25,7 @@ export function configSchemaForAssetNode(assetNode: HasConfigField): AssetConfig
 
 export const ASSET_NODE_CONFIG_FRAGMENT = gql`
   fragment AssetNodeConfigFragment on AssetNode {
+    id
     configField {
       name
       configType {

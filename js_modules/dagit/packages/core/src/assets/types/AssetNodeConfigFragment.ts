@@ -476,5 +476,6 @@ export interface AssetNodeConfigFragment_configField {
 
 export interface AssetNodeConfigFragment {
   __typename: "AssetNode";
+  id: string;
   configField: AssetNodeConfigFragment_configField | null;
 }

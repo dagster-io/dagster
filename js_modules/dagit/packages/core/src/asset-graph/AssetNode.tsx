@@ -6,6 +6,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
+import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {NodeHighlightColors} from '../graph/OpNode';
 import {OpTags} from '../graph/OpTags';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
@@ -15,7 +16,6 @@ import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 import {ComputeStatus, displayNameForAssetKey, LiveDataForNode} from './Utils';
 import {ASSET_NODE_ANNOTATIONS_MAX_WIDTH, ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
-import { ASSET_NODE_CONFIG_FRAGMENT } from '../assets/AssetConfig';
 
 const MISSING_LIVE_DATA = {
   unstartedRunIds: [],

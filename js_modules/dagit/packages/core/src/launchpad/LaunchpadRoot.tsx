@@ -20,7 +20,9 @@ import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
 import {LaunchpadTransientSessionContainer} from './LaunchpadTransientSessionContainer';
 import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadRootQuery';
 
-const LaunchpadStoredSessionsContainer = React.lazy(() => import('./LaunchpadStoredSessionsContainer'));
+const LaunchpadStoredSessionsContainer = React.lazy(
+  () => import('./LaunchpadStoredSessionsContainer'),
+);
 
 export type LaunchpadType = 'asset' | 'job';
 
