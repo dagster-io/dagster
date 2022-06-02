@@ -119,11 +119,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         return PostgresRunStorage(postgres_url, should_autocreate_tables)
 
     def connect(self):
-        return create_pg_connection(
-            self._engine,
-            pg_alembic_config(__file__),
-            "run",
-        )
+        return create_pg_connection(self._engine)
 
     def upgrade(self):
         with self.connect() as conn:
