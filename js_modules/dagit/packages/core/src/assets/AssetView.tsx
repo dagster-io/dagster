@@ -13,6 +13,7 @@ import {
   Tag,
 } from '@dagster-io/ui';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 
 import {
   FIFTEEN_SECONDS,
@@ -28,6 +29,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetEvents} from './AssetEvents';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
@@ -113,6 +115,18 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             )}
             {definition && repoAddress && (
               <AssetNodeInstigatorTag assetNode={definition} repoAddress={repoAddress} />
+            )}
+            {definition && repoAddress && definition.groupName && (
+              <Tag icon="asset_group">
+                <Link
+                  to={workspacePathFromAddress(
+                    repoAddress,
+                    `/asset-groups/${definition.groupName}`,
+                  )}
+                >
+                  {definition.groupName}
+                </Link>
+              </Tag>
             )}
           </>
         }
@@ -291,6 +305,7 @@ const ASSET_QUERY = gql`
 
         definition {
           id
+          groupName
           partitionDefinition
           repository {
             id
