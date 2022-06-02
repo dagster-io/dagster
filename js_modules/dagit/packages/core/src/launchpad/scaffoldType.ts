@@ -21,8 +21,7 @@ export const scaffoldType = (
       const config = {};
       for (const field of type.fields) {
         const {name, isRequired, configTypeKey} = field;
-        // if (isRequired) {
-        if (true) {
+        if (isRequired) {
           config[name] = scaffoldType(configTypeKey, typeLookup);
         }
       }
