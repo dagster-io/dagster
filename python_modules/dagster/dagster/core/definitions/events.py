@@ -299,6 +299,11 @@ class DynamicOutput(Generic[T]):
         return self._output_name
 
 
+class SkippedOutput(Output):
+    def __init__(self):
+        super().__init__(value=None)
+
+
 @whitelist_for_serdes
 class AssetObservation(
     NamedTuple(
