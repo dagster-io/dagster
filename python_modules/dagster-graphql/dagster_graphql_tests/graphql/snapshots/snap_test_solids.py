@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['test_query_all_solids 1'] = {
@@ -749,6 +750,54 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'get_input_two'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'grouped_asset_1'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'named_groups_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'grouped_asset_1'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'grouped_asset_2'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'named_groups_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'grouped_asset_2'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'grouped_asset_4'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'named_groups_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'grouped_asset_4'
                         }
                     }
                 ]
@@ -1765,6 +1814,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'unconnected'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'ungrouped_asset_3'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'named_groups_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'ungrouped_asset_3'
                         }
                     }
                 ]
