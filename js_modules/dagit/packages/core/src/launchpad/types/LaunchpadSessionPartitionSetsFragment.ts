@@ -4,10 +4,10 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: LaunchpadSessionContainerPartitionSetsFragment
+// GraphQL fragment: LaunchpadSessionPartitionSetsFragment
 // ====================================================
 
-export interface LaunchpadSessionContainerPartitionSetsFragment_results {
+export interface LaunchpadSessionPartitionSetsFragment_results {
   __typename: "PartitionSet";
   id: string;
   name: string;
@@ -15,7 +15,7 @@ export interface LaunchpadSessionContainerPartitionSetsFragment_results {
   solidSelection: string[] | null;
 }
 
-export interface LaunchpadSessionContainerPartitionSetsFragment {
+export interface LaunchpadSessionPartitionSetsFragment {
   __typename: "PartitionSets";
-  results: LaunchpadSessionContainerPartitionSetsFragment_results[];
+  results: LaunchpadSessionPartitionSetsFragment_results[];
 }
