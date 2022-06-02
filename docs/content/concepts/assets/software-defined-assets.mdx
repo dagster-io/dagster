@@ -67,7 +67,7 @@ The [explicit dependencies](#explicit-dependencies) example covers an alternativ
 
 ### Asset context
 
-Since a software-defined asset contains an op, all the typical functionality of an op - like the use of [resources](/concepts/resources) - is available to an asset. Supplying the `context` parameter provides access to system information for the op, for example:
+Since a software-defined asset contains an op, all the typical functionality of an op - like the use of [resources](/concepts/resources) and [configuration](#asset-configuration) - is available to an asset. Supplying the `context` parameter provides access to system information for the op, for example:
 
 ```python file=/concepts/assets/asset_w_context.py startafter=start_w_context endbefore=end_w_context
 @asset(required_resource_keys={"api"})
@@ -80,7 +80,7 @@ def my_asset(context):
 
 Like ops, configuration is also supported for assets. Configuration is accessible through the asset context at runtime and can be used to specify behavior. Note that asset configuration behaves the same as configuration for ops.
 
-For example, we can define an asset where the API endpoint it queries is defined through its configuration:
+For example, the following asset queries an API endpoint defined through configuration:
 
 ```python file=/concepts/assets/asset_config.py startafter=start_example endbefore=end_example
 @asset(config_schema={"api_endpoint": str})
