@@ -440,18 +440,30 @@ class FromStepOutput(
         from dagster.core.events import DagsterEvent
 
         source_handle = self.step_output_handle
-        manager_key = step_context.execution_plan.get_manager_key(
-            source_handle, step_context.pipeline_def
-        )
-        input_manager = step_context.get_io_manager(source_handle)
-        check.invariant(
-            isinstance(input_manager, IOManager),
-            f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
-            f'the manager of upstream output "{source_handle.output_name}" from step '
-            f'"{source_handle.step_key}" to load it, but that manager is not an IOManager. '
-            f"Please ensure that the resource returned for resource key "
-            f'"{manager_key}" is an IOManager.',
-        )
+
+        if input_def.input_manager_key is not None:
+            manager_key = input_def.input_manager_key
+            input_manager = getattr(step_context.resources, manager_key)
+            check.invariant(
+                isinstance(input_manager, IOManager),
+                f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
+                f'the manager "{manager_key}" to load it, but it is not an IOManager. '
+                f"Please ensure that the resource returned for resource key "
+                f'"{manager_key}" is an IOManager.',
+            )
+        else:
+            manager_key = step_context.execution_plan.get_manager_key(
+                source_handle, step_context.pipeline_def
+            )
+            input_manager = step_context.get_io_manager(source_handle)
+            check.invariant(
+                isinstance(input_manager, IOManager),
+                f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
+                f'the manager of upstream output "{source_handle.output_name}" from step '
+                f'"{source_handle.step_key}" to load it, but that manager is not an IOManager. '
+                f"Please ensure that the resource returned for resource key "
+                f'"{manager_key}" is an IOManager.',
+            )
         load_input_context = self.get_load_context(step_context, input_def)
         yield from _load_input_with_input_manager(input_manager, load_input_context)
 

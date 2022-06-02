@@ -83,6 +83,7 @@ class InputDefinition:
         metadata=None,
         asset_key=None,
         asset_partitions=None,
+        input_manager_key=None
         # when adding new params, make sure to update combine_with_inferred below
     ):
         self._name = check_valid_name(name) if name else None
@@ -98,6 +99,8 @@ class InputDefinition:
             experimental_arg_warning("root_manager_key", "InputDefinition.__init__")
 
         self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
+
+        self._input_manager_key = check.opt_str_param(input_manager_key, "input_manager_key")
 
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         self._metadata_entries = check.is_list(
@@ -151,6 +154,10 @@ class InputDefinition:
     @property
     def root_manager_key(self):
         return self._root_manager_key
+
+    @property
+    def input_manager_key(self):
+        return self._input_manager_key
 
     @property
     def metadata(self):
@@ -271,6 +278,7 @@ class InputDefinition:
             metadata=self._metadata,
             asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
+            input_manager_key=self._input_manager_key,
         )
 
 
@@ -357,6 +365,7 @@ class In(
             ("metadata", Optional[Mapping[str, Any]]),
             ("asset_key", Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]),
             ("asset_partitions", Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]]),
+            ("input_manager_key", Optional[str]),
         ],
     )
 ):
@@ -393,6 +402,7 @@ class In(
         metadata: Optional[Mapping[str, Any]] = None,
         asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
         asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
+        input_manager_key: Optional[str] = None,
     ):
         return super(In, cls).__new__(
             cls,
@@ -405,6 +415,7 @@ class In(
             metadata=check.opt_dict_param(metadata, "metadata", key_type=str),
             asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),
             asset_partitions=asset_partitions,
+            input_manager_key=input_manager_key,
         )
 
     @staticmethod
@@ -417,6 +428,7 @@ class In(
             metadata=input_def.metadata,
             asset_key=input_def._asset_key,  # pylint: disable=protected-access
             asset_partitions=input_def._asset_partitions_fn,  # pylint: disable=protected-access
+            input_manager_key=input_def.input_manager_key,
         )
 
     def to_definition(self, name: str) -> InputDefinition:
@@ -430,6 +442,7 @@ class In(
             metadata=self.metadata,
             asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,
+            input_manager_key=self.input_manager_key,
         )
 
 

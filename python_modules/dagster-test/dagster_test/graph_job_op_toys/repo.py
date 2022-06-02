@@ -24,6 +24,7 @@ from dagster_test.graph_job_op_toys.error_monster import (
     error_monster_passing_job,
 )
 from dagster_test.graph_job_op_toys.hammer import hammer_default_executor_job
+from dagster_test.graph_job_op_toys.input_managers import df_stats_job
 from dagster_test.graph_job_op_toys.log_asset import log_asset_job
 from dagster_test.graph_job_op_toys.log_file import log_file_job
 from dagster_test.graph_job_op_toys.log_s3 import log_s3_job
@@ -87,6 +88,7 @@ def toys_repository():
             hello_world_notebook_pipeline,
             software_defined_assets,
             with_metadata,
+            df_stats_job,
         ]
         + get_toys_schedules()
         + get_toys_sensors()
