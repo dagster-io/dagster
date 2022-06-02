@@ -27,7 +27,9 @@ GrapheneDagsterTypeUnion = Union[
 ]
 
 
-def config_type_for_schema(pipeline_snapshot: PipelineSnapshot, schema_key: str) -> Optional[GrapheneConfigTypeUnion]:
+def config_type_for_schema(
+    pipeline_snapshot: PipelineSnapshot, schema_key: Optional[str]
+) -> Optional[GrapheneConfigTypeUnion]:
     return (
         to_config_type(pipeline_snapshot.config_schema_snapshot, schema_key) if schema_key else None
     )

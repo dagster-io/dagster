@@ -20,6 +20,7 @@ GrapheneConfigTypeUnion = Union[
     "GrapheneScalarUnionConfigType",
 ]
 
+
 def to_config_type(
     config_schema_snapshot: ConfigSchemaSnapshot, config_type_key: str
 ) -> GrapheneConfigTypeUnion:
@@ -94,7 +95,9 @@ navigating the full schema client-side and not innerTypes.
 
 
 class ConfigTypeMixin:
-    def __init__(self, config_schema_snapshot: ConfigSchemaSnapshot, config_type_snap: ConfigTypeSnap):
+    def __init__(
+        self, config_schema_snapshot: ConfigSchemaSnapshot, config_type_snap: ConfigTypeSnap
+    ):
         self._config_type_snap = check.inst_param(
             config_type_snap, "config_type_snap", ConfigTypeSnap
         )
@@ -226,7 +229,7 @@ class GrapheneEnumConfigType(ConfigTypeMixin, graphene.ObjectType):
     def resolve_values(self, _graphene_info) -> List[GrapheneEnumConfigValue]:
         return [
             GrapheneEnumConfigValue(value=ev.value, description=ev.description)
-            for ev in self._config_type_snap.enum_values
+            for ev in check.not_none(self._config_type_snap.enum_values)
         ]
 
     def resolve_given_name(self, _):
@@ -251,7 +254,9 @@ class GrapheneConfigTypeField(graphene.ObjectType):
         self._config_schema_snapshot = check.inst_param(
             config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
         )
-        self._field_snap: ConfigFieldSnap = check.inst_param(field_snap, "field_snap", ConfigFieldSnap)
+        self._field_snap: ConfigFieldSnap = check.inst_param(
+            field_snap, "field_snap", ConfigFieldSnap
+        )
         super().__init__(
             name=field_snap.name,
             description=field_snap.description,

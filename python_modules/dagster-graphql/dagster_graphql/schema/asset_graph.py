@@ -1,9 +1,9 @@
 # pylint: disable=missing-graphene-docstring
 from typing import TYPE_CHECKING, List, Optional, Sequence, Union
-from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.schema.solids import (
     GrapheneCompositeSolidDefinition,

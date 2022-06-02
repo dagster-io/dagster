@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import dagster._check as check
 from dagster.config.snap import ConfigSchemaSnapshot
@@ -9,14 +9,14 @@ from dagster.core.snap import (
 )
 from dagster.core.snap.dagster_types import DagsterTypeSnap
 from dagster.core.snap.mode import ModeDefSnap
-from dagster.core.snap.solid import SolidDefSnap
+from dagster.core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
 
 
 class PipelineIndex:
 
     pipeline_snapshot: PipelineSnapshot
     parent_pipeline_snapshot: Optional[PipelineSnapshot]
-    _node_defs_snaps_index: Dict[str, SolidDefSnap]
+    _node_defs_snaps_index: Dict[str, Union[SolidDefSnap, CompositeSolidDefSnap]]
     _dagster_type_snaps_by_name_index: Dict[str, DagsterTypeSnap]
     dep_structure_index: DependencyStructureIndex
     _comp_dep_structures: Dict[str, DependencyStructureIndex]
@@ -40,13 +40,11 @@ class PipelineIndex:
                 "Can not create PipelineIndex for pipeline_snapshot with lineage without parent_pipeline_snapshot",
             )
 
-        self._node_defs_snaps_index = {
-            sd.name: sd
-            for sd in [
-                *pipeline_snapshot.solid_definitions_snapshot.solid_def_snaps,
-                *pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps,
-            ]
-        }
+        node_def_snaps: List[Union[SolidDefSnap, CompositeSolidDefSnap]] = [
+            *pipeline_snapshot.solid_definitions_snapshot.solid_def_snaps,
+            *pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps,
+        ]
+        self._node_defs_snaps_index = {sd.name: sd for sd in node_def_snaps}
 
         self._dagster_type_snaps_by_name_index = {
             dagster_type_snap.name: dagster_type_snap
@@ -93,7 +91,7 @@ class PipelineIndex:
     def get_dagster_type_from_name(self, type_name: str) -> DagsterTypeSnap:
         return self._dagster_type_snaps_by_name_index[type_name]
 
-    def get_node_def_snap(self, node_def_name: str) -> SolidDefSnap:
+    def get_node_def_snap(self, node_def_name: str) -> Union[SolidDefSnap, CompositeSolidDefSnap]:
         check.str_param(node_def_name, "node_def_name")
         return self._node_defs_snaps_index[node_def_name]
 

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, List, Optional
+from typing import AbstractSet, List, Optional, Union
 
 import dagster._check as check
 from dagster.config.snap import ConfigSchemaSnapshot
@@ -7,7 +7,7 @@ from dagster.core.snap.dagster_types import DagsterTypeSnap
 from dagster.core.snap.dep_snapshot import DependencyStructureIndex
 from dagster.core.snap.mode import ModeDefSnap
 from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
-from dagster.core.snap.solid import SolidDefSnap
+from dagster.core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
 
 from .pipeline_index import PipelineIndex
 
@@ -110,7 +110,7 @@ class RepresentedPipeline(ABC):
         return self._pipeline_index.dep_structure_index
 
     # Solids
-    def get_node_def_snap(self, solid_def_name: str) -> SolidDefSnap:
+    def get_node_def_snap(self, solid_def_name: str) -> Union[SolidDefSnap, CompositeSolidDefSnap]:
         check.str_param(solid_def_name, "solid_def_name")
         return self._pipeline_index.get_node_def_snap(solid_def_name)
 
