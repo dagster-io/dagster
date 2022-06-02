@@ -43,6 +43,7 @@ import {
 import {ConfigEditorHelp} from './ConfigEditorHelp';
 import {ConfigEditorModePicker} from './ConfigEditorModePicker';
 import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
+import {LaunchpadType} from './LaunchpadRoot';
 import {LoadingOverlay} from './LoadingOverlay';
 import {OpSelector} from './OpSelector';
 import {RunPreview, RUN_PREVIEW_VALIDATION_FRAGMENT} from './RunPreview';
@@ -54,8 +55,8 @@ import {
   ConfigPartitionSelectionQuery,
   ConfigPartitionSelectionQueryVariables,
 } from './types/ConfigPartitionSelectionQuery';
-import {LaunchpadSessionContainerPartitionSetsFragment} from './types/LaunchpadSessionContainerPartitionSetsFragment';
-import {LaunchpadSessionContainerPipelineFragment} from './types/LaunchpadSessionContainerPipelineFragment';
+import {LaunchpadSessionPartitionSetsFragment} from './types/LaunchpadSessionPartitionSetsFragment';
+import {LaunchpadSessionPipelineFragment} from './types/LaunchpadSessionPipelineFragment';
 import {
   PipelineExecutionConfigSchemaQuery,
   PipelineExecutionConfigSchemaQueryVariables,
@@ -69,12 +70,14 @@ const LOADING_RUN_PREVIEW = `Checking config...`;
 
 type Preset = ConfigEditorGeneratorPipelineFragment_presets;
 
-interface LaunchpadSessionContainerProps {
+interface LaunchpadSessionProps {
   session: IExecutionSession;
   onSave: (changes: IExecutionSessionChanges) => void;
-  pipeline: LaunchpadSessionContainerPipelineFragment;
-  partitionSets: LaunchpadSessionContainerPartitionSetsFragment;
+  launchpadType: LaunchpadType;
+  pipeline: LaunchpadSessionPipelineFragment;
+  partitionSets: LaunchpadSessionPartitionSetsFragment;
   repoAddress: RepoAddress;
+  initialExecutionSessionState?: Partial<IExecutionSession>;
 }
 
 interface ILaunchpadSessionState {
@@ -124,6 +127,27 @@ const reducer = (state: ILaunchpadSessionState, action: Action) => {
   }
 };
 
+const LaunchButtonContainer: React.FC<{launchpadType: LaunchpadType}> = ({
+  launchpadType,
+  children,
+}) => {
+  if (launchpadType === 'asset') {
+    return (
+      <Box
+        flex={{direction: 'row'}}
+        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+        padding={{right: 12, vertical: 8}}
+      >
+        <div style={{flexGrow: 1}} />
+        {children}
+      </Box>
+    );
+  } else {
+    // job
+    return <div style={{position: 'absolute', bottom: 12, right: 12, zIndex: 1}}>{children}</div>;
+  }
+};
+
 const initialState: ILaunchpadSessionState = {
   preview: null,
   previewLoading: false,
@@ -133,8 +157,15 @@ const initialState: ILaunchpadSessionState = {
   tagEditorOpen: false,
 };
 
-const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (props) => {
-  const {session: currentSession, onSave, partitionSets, pipeline, repoAddress} = props;
+const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
+  const {
+    launchpadType,
+    session: currentSession,
+    onSave,
+    partitionSets,
+    pipeline,
+    repoAddress,
+  } = props;
 
   const client = useApolloClient();
   const [state, dispatch] = React.useReducer(reducer, initialState);
@@ -495,6 +526,11 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     return null;
   }, [currentSession]);
 
+  let launchButtonTitle: string | undefined;
+  if (launchpadType === 'asset') {
+    launchButtonTitle = 'Materialize';
+  }
+
   return (
     <>
       <SplitPanelContainer
@@ -650,21 +686,23 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
           </>
         }
       />
-      <div style={{position: 'absolute', bottom: 12, right: 12, zIndex: 1}}>
+
+      <LaunchButtonContainer launchpadType={launchpadType}>
         <LaunchRootExecutionButton
+          title={launchButtonTitle}
           pipelineName={pipeline.name}
           getVariables={buildExecutionVariables}
           disabled={preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'}
           behavior="open"
         />
-      </div>
+      </LaunchButtonContainer>
     </>
   );
 };
 
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export
-export default LaunchpadSessionContainer;
+export default LaunchpadSession;
 
 // This helper removes __typename, which prevents tags from being passed back to GraphQL
 const onlyKeyAndValue = ({key, value}: {key: string; value: string}) => ({key, value});
@@ -708,7 +746,7 @@ const SessionSettingsSpacer = styled.div`
 `;
 
 const RUN_CONFIG_SCHEMA_OR_ERROR_FRAGMENT = gql`
-  fragment LaunchpadSessionContainerRunConfigSchemaFragment on RunConfigSchemaOrError {
+  fragment LaunchpadSessionRunConfigSchemaFragment on RunConfigSchemaOrError {
     __typename
     ... on RunConfigSchema {
       ...ConfigEditorRunConfigSchemaFragment
@@ -720,10 +758,10 @@ const RUN_CONFIG_SCHEMA_OR_ERROR_FRAGMENT = gql`
   ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
 `;
 
-const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
+export const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
   query PipelineExecutionConfigSchemaQuery($selector: PipelineSelector!, $mode: String) {
     runConfigSchemaOrError(selector: $selector, mode: $mode) {
-      ...LaunchpadSessionContainerRunConfigSchemaFragment
+      ...LaunchpadSessionRunConfigSchemaFragment
     }
   }
 

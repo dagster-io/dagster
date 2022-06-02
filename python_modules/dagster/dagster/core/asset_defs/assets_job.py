@@ -98,6 +98,18 @@ def build_assets_job(
         config=None,
     )
 
+    # turn any AssetsDefinitions into SourceAssets
+    resolved_source_assets: List[SourceAsset] = []
+    for asset in source_assets or []:
+        if isinstance(asset, AssetsDefinition):
+            resolved_source_assets += asset.to_source_assets()
+        elif isinstance(asset, SourceAsset):
+            resolved_source_assets.append(asset)
+
+    asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
+        graph, assets_defs_by_node_handle, resolved_source_assets
+    )
+
     all_resource_defs = dict(resource_defs)
     for asset_def in assets:
         for resource_key, resource_def in asset_def.resource_defs.items():
@@ -110,22 +122,25 @@ def build_assets_job(
                 )
             all_resource_defs[resource_key] = resource_def
 
-    # turn any AssetsDefinitions into SourceAssets
-    resolved_source_assets: List[SourceAsset] = []
-    for asset in source_assets or []:
-        if isinstance(asset, AssetsDefinition):
-            resolved_source_assets += asset.to_source_assets()
-        elif isinstance(asset, SourceAsset):
-            resolved_source_assets.append(asset)
+    required_io_manager_keys = set()
+    for source_asset in resolved_source_assets:
+        if not source_asset.io_manager_def:
+            required_io_manager_keys.add(source_asset.get_io_manager_key())
+        else:
+            all_resource_defs[source_asset.get_io_manager_key()] = source_asset.io_manager_def
+
+    for required_key in sorted(list(required_io_manager_keys)):
+        if required_key not in all_resource_defs and required_key != "io_manager":
+            raise DagsterInvalidDefinitionError(
+                f"Error when attempting to build job '{name}': IO Manager required for key '{required_key}', but none was provided."
+            )
 
     return graph.to_job(
         resource_defs=all_resource_defs,
         config=config or partitioned_config,
         tags=tags,
         executor_def=executor_def,
-        asset_layer=AssetLayer.from_graph_and_assets_node_mapping(
-            graph, assets_defs_by_node_handle, resolved_source_assets
-        ),
+        asset_layer=asset_layer,
         _asset_selection_data=_asset_selection_data,
     )
 

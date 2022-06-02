@@ -9,6 +9,7 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DependencyDefinition,
+    Field,
     GraphIn,
     GraphOut,
     IOManager,
@@ -21,6 +22,7 @@ from dagster import (
     multi_asset,
     op,
 )
+from dagster.config.source import StringSource
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.errors import DagsterInvalidSubsetError
@@ -69,6 +71,18 @@ def test_two_asset_pipeline():
         "asset2": {"asset1": DependencyDefinition("asset1", "result")},
     }
     assert job.execute_in_process().success
+
+
+def test_single_asset_pipeline_with_config():
+    @asset(config_schema={"foo": Field(StringSource)})
+    def asset1(context):
+        return context.op_config["foo"]
+
+    job = build_assets_job("a", [asset1])
+    assert job.graph.node_defs == [asset1.op]
+    assert job.execute_in_process(
+        run_config={"ops": {"asset1": {"config": {"foo": "bar"}}}}
+    ).success
 
 
 def test_fork():
@@ -271,7 +285,7 @@ def test_missing_io_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="input manager with key 'special_io_manager' required by input 'source1' of op 'asset1' was not provided",
+        match="Error when attempting to build job 'a': IO Manager required for key 'special_io_manager', but none was provided.",
     ):
         build_assets_job(
             "a",
@@ -1315,3 +1329,89 @@ def test_materialize_with_fs_io_mgr():
     group = AssetGroup([my_asset])
     result = group.materialize()
     assert result.success
+
+
+def test_source_asset_io_manager_def():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return 5
+
+    @io_manager
+    def the_manager():
+        return MyIOManager()
+
+    my_source_asset = SourceAsset(key=AssetKey("my_source_asset"), io_manager_def=the_manager)
+
+    @asset
+    def my_derived_asset(my_source_asset):
+        return my_source_asset + 4
+
+    source_asset_job = AssetGroup(
+        assets=[my_derived_asset],
+        source_assets=[my_source_asset],
+    ).build_job("source_asset_job")
+
+    result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
+    assert result.success
+    assert result.output_for_node("my_derived_asset") == 9
+
+
+def test_source_asset_io_manager_not_provided():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return 5
+
+    @io_manager
+    def the_manager():
+        return MyIOManager()
+
+    my_source_asset = SourceAsset(key=AssetKey("my_source_asset"))
+
+    @asset
+    def my_derived_asset(my_source_asset):
+        return my_source_asset + 4
+
+    source_asset_job = AssetGroup(
+        assets=[my_derived_asset],
+        source_assets=[my_source_asset],
+        resource_defs={"io_manager": the_manager},
+    ).build_job("source_asset_job")
+
+    result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
+    assert result.success
+    assert result.output_for_node("my_derived_asset") == 9
+
+
+def test_source_asset_io_manager_key_provided():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return 5
+
+    @io_manager
+    def the_manager():
+        return MyIOManager()
+
+    my_source_asset = SourceAsset(key=AssetKey("my_source_asset"), io_manager_key="some_key")
+
+    @asset
+    def my_derived_asset(my_source_asset):
+        return my_source_asset + 4
+
+    source_asset_job = AssetGroup(
+        assets=[my_derived_asset],
+        source_assets=[my_source_asset],
+        resource_defs={"some_key": the_manager},
+    ).build_job("source_asset_job")
+
+    result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
+    assert result.success
+    assert result.output_for_node("my_derived_asset") == 9

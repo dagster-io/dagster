@@ -388,7 +388,7 @@ class AssetGroup:
         )
 
     def materialize(
-        self, selection: Optional[Union[str, List[str]]] = None
+        self, selection: Optional[Union[str, List[str]]] = None, run_config: Optional[Any] = None
     ) -> ExecuteInProcessResult:
         """
         Executes an in-process run that materializes all assets in the group.
@@ -404,6 +404,7 @@ class AssetGroup:
                     - ``['*some_asset_key']`` select ``some_asset_key`` and all its ancestors (upstream dependencies).
                     - ``['*some_asset_key+++']`` select ``some_asset_key``, all its ancestors, and its descendants (downstream dependencies) within 3 levels down.
                     - ``['*some_asset_key', 'other_asset_key_a', 'other_asset_key_b+']`` select ``some_asset_key`` and all its ancestors, ``other_asset_key_a`` itself, and ``other_asset_key_b`` and its direct child asset keys. When subselecting into a multi-asset, all of the asset keys in that multi-asset must be selected.
+            run_config (Optional[Any]): The run config to use for the run that materializes the assets.
 
         Returns:
             ExecuteInProcessResult: The result of the execution.
@@ -417,7 +418,7 @@ class AssetGroup:
 
         return self.build_job(
             name="in_process_materialization_job", selection=selection
-        ).execute_in_process(_called_from_materialize=True)
+        ).execute_in_process(run_config=run_config, _called_from_materialize=True)
 
     def get_base_jobs(self) -> Sequence[JobDefinition]:
         """For internal use only."""

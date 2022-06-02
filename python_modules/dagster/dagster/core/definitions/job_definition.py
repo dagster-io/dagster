@@ -49,6 +49,7 @@ from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
+from .metadata import RawMetadataValue
 from .mode import ModeDefinition
 from .partition import PartitionSetDefinition, PartitionedConfig, PartitionsDefinition
 from .pipeline_definition import PipelineDefinition
@@ -76,6 +77,7 @@ class JobDefinition(PipelineDefinition):
         description: Optional[str] = None,
         preset_defs: Optional[List[PresetDefinition]] = None,
         tags: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
@@ -115,6 +117,7 @@ class JobDefinition(PipelineDefinition):
             mode_defs=[mode_def],
             preset_defs=preset_defs,
             tags=tags,
+            metadata=metadata,
             hook_defs=hook_defs,
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,
