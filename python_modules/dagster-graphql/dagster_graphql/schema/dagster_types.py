@@ -18,6 +18,7 @@ from .errors import (
 )
 from .util import non_null_list
 
+
 def config_type_for_schema(
     pipeline_snapshot: PipelineSnapshot, schema_key: Optional[str]
 ) -> Optional[GrapheneConfigTypeUnion]:
