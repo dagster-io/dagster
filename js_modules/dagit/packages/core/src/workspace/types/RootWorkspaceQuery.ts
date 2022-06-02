@@ -79,7 +79,7 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_l
 
 export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_assetGroups {
   __typename: "AssetGroup";
-  groupName: string | null;
+  groupName: string;
 }
 
 export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_location {

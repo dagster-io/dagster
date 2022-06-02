@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, Tooltip} from '@dagster-io/ui';
+import {Box, Colors, Icon, IconName, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -30,6 +30,7 @@ interface Props {
 export type LeftNavItemType = {
   name: string;
   isJob: boolean;
+  leftIcon: IconName;
   label: React.ReactNode;
   path: string;
   repoAddress: RepoAddress;
@@ -56,7 +57,7 @@ export const FlatContentList: React.FC<Props> = (props) => {
       if (!activeRepoAddresses.has(address)) {
         continue;
       }
-      items.push(...getLeftNavItemsForOption(option));
+      items.push(...getJobItemsForOption(option));
     }
 
     return items.sort((a, b) =>
@@ -81,7 +82,7 @@ export const FlatContentList: React.FC<Props> = (props) => {
           return (
             <LeftNavItem
               key={`${job.name}-${repoString}`}
-              job={job}
+              item={job}
               active={!!(repoPath && repoString === repoPath && selector === job.name)}
             />
           );
@@ -91,7 +92,35 @@ export const FlatContentList: React.FC<Props> = (props) => {
   );
 };
 
-export const getLeftNavItemsForOption = (option: DagsterRepoOption) => {
+export const getAssetGroupItemsForOption = (option: DagsterRepoOption) => {
+  const items: LeftNavItemType[] = [];
+
+  const {repository, repositoryLocation} = option;
+  const address = buildRepoAddress(repository.name, repositoryLocation.name);
+
+  for (const {groupName} of repository.assetGroups) {
+    items.push({
+      name: groupName || '',
+      leftIcon: 'asset_group',
+      isJob: false,
+      schedules: [],
+      sensors: [],
+      repoAddress: address,
+      path: workspacePathFromAddress(address, `/asset-groups/${groupName}`),
+      label: (
+        <Label $hasIcon={false}>
+          <TruncatingName data-tooltip={groupName} data-tooltip-style={LabelTooltipStyles}>
+            {groupName}
+          </TruncatingName>
+        </Label>
+      ),
+    });
+  }
+
+  return items.sort((a, b) => a.name.localeCompare(b.name));
+};
+
+export const getJobItemsForOption = (option: DagsterRepoOption) => {
   const items: LeftNavItemType[] = [];
 
   const {repository, repositoryLocation} = option;
@@ -111,9 +140,9 @@ export const getLeftNavItemsForOption = (option: DagsterRepoOption) => {
     items.push({
       name,
       isJob,
+      leftIcon: 'job',
       label: (
         <Label $hasIcon={!!(schedules.length || sensors.length) || !isJob}>
-          <Icon name="job" />
           <TruncatingName data-tooltip={name} data-tooltip-style={LabelTooltipStyles}>
             {name}
           </TruncatingName>
@@ -128,41 +157,22 @@ export const getLeftNavItemsForOption = (option: DagsterRepoOption) => {
     });
   }
 
-  for (const {groupName} of repository.assetGroups) {
-    items.push({
-      name: groupName || '',
-      isJob: false,
-      schedules: [],
-      sensors: [],
-      repoAddress: address,
-      path: workspacePathFromAddress(address, `/asset-groups/${groupName}`),
-      label: (
-        <Label $hasIcon={false}>
-          <Icon name="asset" />
-          <TruncatingName data-tooltip={groupName} data-tooltip-style={LabelTooltipStyles}>
-            {groupName}
-          </TruncatingName>
-        </Label>
-      ),
-    });
-  }
-
   return items.sort((a, b) => a.name.localeCompare(b.name));
 };
 
 interface LeftNavItemProps {
   active: boolean;
-  job: LeftNavItemType;
+  item: LeftNavItemType;
 }
 
 export const LeftNavItem = React.forwardRef(
   (props: LeftNavItemProps, ref: React.ForwardedRef<HTMLDivElement>) => {
-    const {active, job: LeftNavItem} = props;
-    const {label, path, repoAddress, schedules, sensors} = LeftNavItem;
+    const {active, item} = props;
+    const {label, leftIcon, path, repoAddress, schedules, sensors} = item;
 
     const [showDialog, setShowDialog] = React.useState(false);
 
-    const icon = () => {
+    const rightIcon = () => {
       const scheduleCount = schedules.length;
       const sensorCount = sensors.length;
 
@@ -249,9 +259,10 @@ export const LeftNavItem = React.forwardRef(
     return (
       <ItemContainer ref={ref}>
         <Item $active={active} to={path}>
+          <Icon name={leftIcon} color={active ? Colors.Blue700 : Colors.Dark} />
           <div>{label}</div>
         </Item>
-        {icon()}
+        {rightIcon()}
       </ItemContainer>
     );
   },
