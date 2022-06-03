@@ -105,7 +105,7 @@ def backcompat_post_cmds() -> List[str]:
         "docker logs docker_daemon > .docker_logs/docker_daemon_logs 2>&1",
         "docker logs dagster_grpc_server > .docker_logs/dagster_grpc_server_logs 2>&1",
         "docker logs docker_postgresql > .docker_logs/docker_postgresql_logs 2>&1",
-        "buildkite-agent artifact upload .docker_logs",
+        "buildkite-agent artifact upload .docker_logs/**/*",
         "rm -rf .docker_logs",
     ]
 
