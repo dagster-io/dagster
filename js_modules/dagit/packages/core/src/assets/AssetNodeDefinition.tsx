@@ -15,10 +15,12 @@ import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {ConfigTypeSchema} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
+import {ASSET_NODE_CONFIG_FRAGMENT, configSchemaForAssetNode} from './AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
 import {
   AssetMetadataTable,
@@ -38,6 +40,7 @@ export const AssetNodeDefinition: React.FC<{
   const partitionHealthData = usePartitionHealthData([assetNode.assetKey]);
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
 
+  const assetConfigSchema = configSchemaForAssetNode(assetNode);
   const repoAddress = buildRepoAddress(
     assetNode.repository.name,
     assetNode.repository.location.name,
@@ -120,6 +123,27 @@ export const AssetNodeDefinition: React.FC<{
           {/** Ensures the line between the left and right columns goes to the bottom of the page */}
           <div style={{flex: 1}} />
         </Box>
+        {assetConfigSchema ? (
+          <Box
+            border={{side: 'vertical', width: 1, color: Colors.KeylineGray}}
+            style={{flex: 0.5, minWidth: 0}}
+            flex={{direction: 'column'}}
+          >
+            <Box
+              padding={{vertical: 16, horizontal: 24}}
+              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            >
+              <Subheading>Config</Subheading>
+            </Box>
+            <Box padding={{vertical: 16, horizontal: 24}}>
+              <ConfigTypeSchema
+                type={assetConfigSchema}
+                typesInScope={assetConfigSchema.recursiveConfigTypes}
+              />
+            </Box>
+          </Box>
+        ) : null}
+
         <Box style={{flex: 0.5, minWidth: 0}} flex={{direction: 'column'}}>
           <Box
             padding={{vertical: 16, horizontal: 24}}
@@ -224,6 +248,7 @@ const OpNamesDisplay = (props: {
 export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
+    ...AssetNodeConfigFragment
     description
     graphName
     opNames
@@ -239,6 +264,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     ...AssetNodeFragment
     ...AssetNodeOpMetadataFragment
   }
+  ${ASSET_NODE_CONFIG_FRAGMENT}
   ${ASSET_NODE_FRAGMENT}
   ${ASSET_NODE_OP_METADATA_FRAGMENT}
 `;

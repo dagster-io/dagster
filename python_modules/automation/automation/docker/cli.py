@@ -80,6 +80,12 @@ opt_push_dagster_version = click.option(
     required=True,
     help="Version of image to push",
 )
+opt_set_latest = click.option(
+    "--set-latest",
+    is_flag=True,
+    default=False,
+    help="Whether to tag the image as latest",
+)
 
 
 @cli.command()
@@ -118,12 +124,17 @@ def push_to_registry(name: str, tags: List[str]) -> None:
 @cli.command()
 @opt_push_name
 @opt_push_dagster_version
-def push_dockerhub(name: str, dagster_version: str):
+@opt_set_latest
+def push_dockerhub(name: str, dagster_version: str, set_latest: bool):
     """Used for pushing k8s images to Docker Hub. Must be logged in to Docker Hub for this to
     succeed.
     """
 
-    tags = [f"dagster/{name}:{dagster_version}", f"dagster/{name}:latest"]
+    tags = [
+        f"dagster/{name}:{dagster_version}",
+    ]
+    if set_latest:
+        tags.append(f"dagster/{name}:latest")
 
     push_to_registry(name, tags)
 
@@ -131,7 +142,8 @@ def push_dockerhub(name: str, dagster_version: str):
 @cli.command()
 @opt_push_name
 @opt_push_dagster_version
-def push_ecr(name: str, dagster_version: str):
+@opt_set_latest
+def push_ecr(name: str, dagster_version: str, set_latest: bool):
     """Used for pushing k8s images to our public ECR.
 
     You must be authed for ECR. Run:
@@ -141,8 +153,9 @@ def push_ecr(name: str, dagster_version: str):
 
     tags = [
         f"{AWS_ECR_REGISTRY}/{name}:{dagster_version}",
-        f"{AWS_ECR_REGISTRY}/{name}:latest",
     ]
+    if set_latest:
+        tags.append(f"{AWS_ECR_REGISTRY}/{name}:latest")
 
     push_to_registry(name, tags)
 

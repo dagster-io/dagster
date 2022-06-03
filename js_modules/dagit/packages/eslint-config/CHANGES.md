@@ -1,3 +1,7 @@
+## 1.0.5 (June 2, 2022)
+
+- Add rule to require GraphQL query variables
+
 ## 1.0.4 (May 16, 2022)
 
 - Add recommended Jest lint configuration
