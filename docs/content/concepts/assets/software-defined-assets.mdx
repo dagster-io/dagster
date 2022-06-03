@@ -91,14 +91,15 @@ In this case, `ins={"upstream": AssetIn("upstream_asset")}` declares that the co
 Asset keys can also be provided to <PyObject object="AssetIn" /> to explicitly identify the asset. For example:
 
 ```python file=/concepts/assets/explicit_asset_dependency.py startafter=start_explicit_asset_key_example endbefore=end_explicit_asset_key_example
-@asset
-def upstream_asset():
-    return [1, 2, 3]
+# One way of providing explicit asset keys:
 
 
 @asset(ins={"upstream": AssetIn(asset_key="upstream_asset")})
 def downstream_asset(upstream):
     return upstream + [4]
+
+
+# Another way:
 
 
 @asset(ins={"upstream": AssetIn(asset_key=AssetKey("upstream_asset"))})
@@ -123,7 +124,7 @@ def my_derived_asset(a_source_asset):
     return a_source_asset + [4]
 
 
-asset_group = AssetGroup(assets=[my_derived_asset], source_assets=[a_source_asset])
+asset_group = AssetGroup(assets=[my_derived_asset], source_assets=[my_source_asset])
 ```
 
 **Note**: The source asset's asset key must be provided as the argument to downstream assets. In the previous example, the asset key is `a_source_asset` and not `my_source_asset`.

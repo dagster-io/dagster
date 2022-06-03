@@ -17,15 +17,15 @@ def downstream_asset(upstream):
 
 # start_explicit_asset_key_example
 
-
-@asset
-def upstream_asset():
-    return [1, 2, 3]
+# One way of providing explicit asset keys:
 
 
 @asset(ins={"upstream": AssetIn(asset_key="upstream_asset")})
 def downstream_asset(upstream):
     return upstream + [4]
+
+
+# Another way:
 
 
 @asset(ins={"upstream": AssetIn(asset_key=AssetKey("upstream_asset"))})

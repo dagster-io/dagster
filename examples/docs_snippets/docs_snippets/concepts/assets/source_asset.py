@@ -10,6 +10,6 @@ def my_derived_asset(a_source_asset):
     return a_source_asset + [4]
 
 
-asset_group = AssetGroup(assets=[my_derived_asset], source_assets=[a_source_asset])
+asset_group = AssetGroup(assets=[my_derived_asset], source_assets=[my_source_asset])
 
 # end_marker
