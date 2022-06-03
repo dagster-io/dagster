@@ -20,6 +20,11 @@ export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_rep
   repositoryLocationName: string;
 }
 
+export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_assetSelection {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_tags {
   __typename: "PipelineTag";
   key: string;
@@ -40,6 +45,7 @@ export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results {
   pipelineName: string;
   repositoryOrigin: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_repositoryOrigin | null;
   solidSelection: string[] | null;
+  assetSelection: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_assetSelection[] | null;
   tags: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_tags[];
   startTime: number | null;
   endTime: number | null;

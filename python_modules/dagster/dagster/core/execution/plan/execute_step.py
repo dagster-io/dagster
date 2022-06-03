@@ -443,6 +443,8 @@ def _asset_key_and_partitions_for_output(
                 "means that you should use an IOManager that does not specify an AssetKey in its "
                 "get_output_asset_key() function for this output."
             )
+        if not output_asset_info.is_required:
+            output_context.log.warn(f"Materializing unexpected asset key: {output_asset_info.key}.")
         return (
             output_asset_info.key,
             output_asset_info.partitions_fn(output_context) or set(),

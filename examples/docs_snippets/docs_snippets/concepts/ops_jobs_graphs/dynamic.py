@@ -27,18 +27,6 @@ def dynamic_values():
         yield DynamicOutput(i, mapping_key=f"num_{i}")
 
 
-@op(
-    out={
-        "values": DynamicOut(),
-        "negatives": DynamicOut(),
-    },
-)
-def multiple_dynamic_values():
-    for i in range(2):
-        yield DynamicOutput(i, output_name="values", mapping_key=f"num_{i}")
-        yield DynamicOutput(-i, output_name="negatives", mapping_key=f"neg_{i}")
-
-
 class BigData:
     def __init__(self):
         self._data = {}
@@ -135,15 +123,29 @@ def other_arg():
 
 # dyn_add_end
 # dyn_mult_start
+@op(
+    out={
+        "values": DynamicOut(),
+        "negatives": DynamicOut(),
+    },
+)
+def multiple_dynamic_values():
+    for i in range(2):
+        yield DynamicOutput(i, output_name="values", mapping_key=f"num_{i}")
+        yield DynamicOutput(-i, output_name="negatives", mapping_key=f"neg_{i}")
+
+
 @job
 def multiple():
     # can unpack on assignment (order based)
-    values, _ = multiple_dynamic_values()
+    values, negatives = multiple_dynamic_values()
     process(values.collect())
+    process(negatives.map(echo).collect())  # can use map or collect as usual
 
     # or access by name
     outs = multiple_dynamic_values()
     process(outs.values.collect())
+    process(outs.negatives.map(echo).collect())
 
 
 # dyn_mult_end

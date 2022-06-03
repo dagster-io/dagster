@@ -3,7 +3,7 @@ import * as React from 'react';
 import {AppContext} from '../app/AppContext';
 import {RepositoryLocationErrorDialog} from '../workspace/RepositoryLocationErrorDialog';
 
-import {useRepositoryLocationReload} from './useRepositoryLocationReload';
+import {buildReloadFnForLocation, useRepositoryLocationReload} from './useRepositoryLocationReload';
 
 type ChildProps = {
   tryReload: () => void;
@@ -21,7 +21,11 @@ export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
 
   const {basePath} = React.useContext(AppContext);
 
-  const {reloading, error, tryReload} = useRepositoryLocationReload(location);
+  const reloadFn = React.useMemo(() => buildReloadFnForLocation(location), [location]);
+  const {reloading, error, tryReload} = useRepositoryLocationReload({
+    scope: 'location',
+    reloadFn,
+  });
 
   React.useEffect(() => setShown(!!error), [error]);
 

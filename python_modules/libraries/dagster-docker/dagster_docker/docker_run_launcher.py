@@ -140,7 +140,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
     def launch_run(self, context: LaunchRunContext) -> None:
         run = context.pipeline_run
-        pipeline_code_origin = context.pipeline_code_origin
+        pipeline_code_origin = check.not_none(context.pipeline_code_origin)
         docker_image = self._get_docker_image(pipeline_code_origin)
 
         command = ExecuteRunArgs(
@@ -157,7 +157,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
     def resume_run(self, context: ResumeRunContext) -> None:
         run = context.pipeline_run
-        pipeline_code_origin = context.pipeline_code_origin
+        pipeline_code_origin = check.not_none(context.pipeline_code_origin)
         docker_image = self._get_docker_image(pipeline_code_origin)
 
         command = ResumeRunArgs(
@@ -183,10 +183,6 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             return self._get_client(container_context).containers.get(container_id)
         except Exception:
             return None
-
-    def can_terminate(self, run_id):
-        run = self._instance.get_run_by_id(run_id)
-        return self._get_container(run) != None
 
     def terminate(self, run_id):
         run = self._instance.get_run_by_id(run_id)

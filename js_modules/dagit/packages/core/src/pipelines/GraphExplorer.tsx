@@ -32,6 +32,7 @@ import {GraphExplorerSolidHandleFragment} from './types/GraphExplorerSolidHandle
 export interface GraphExplorerOptions {
   explodeComposites: boolean;
   preferAssetRendering: boolean;
+  enableSidebar: boolean;
 }
 
 interface GraphExplorerProps {
@@ -152,7 +153,8 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
 
   const solids = React.useMemo(() => handles.map((h) => h.solid), [handles]);
   const solidsQueryEnabled = !parentHandle && !explorerPath.snapshotId;
-  const showAssetRenderingOption = solids.some((s) => s.definition.assetNodes.length > 0);
+  const showAssetRenderingOption =
+    !isGraph && solids.some((s) => s.definition.assetNodes.length > 0);
   const explodeCompositesEnabled =
     !parentHandle &&
     (options.explodeComposites ||
@@ -279,25 +281,27 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
         </>
       }
       second={
-        <RightInfoPanel>
-          <Route
-            // eslint-disable-next-line react/no-children-prop
-            children={({location}: {location: any}) => (
-              <SidebarTabbedContainer
-                pipeline={pipelineOrGraph}
-                explorerPath={explorerPath}
-                opHandleID={selectedHandle && selectedHandle.handleID}
-                parentOpHandleID={parentHandle && parentHandle.handleID}
-                getInvocations={getInvocations}
-                onEnterSubgraph={handleEnterCompositeSolid}
-                onClickOp={handleClickOp}
-                repoAddress={repoAddress}
-                isGraph={isGraph}
-                {...qs.parse(location.search || '', {ignoreQueryPrefix: true})}
-              />
-            )}
-          />
-        </RightInfoPanel>
+        options.enableSidebar ? (
+          <RightInfoPanel>
+            <Route
+              // eslint-disable-next-line react/no-children-prop
+              children={({location}: {location: any}) => (
+                <SidebarTabbedContainer
+                  pipeline={pipelineOrGraph}
+                  explorerPath={explorerPath}
+                  opHandleID={selectedHandle && selectedHandle.handleID}
+                  parentOpHandleID={parentHandle && parentHandle.handleID}
+                  getInvocations={getInvocations}
+                  onEnterSubgraph={handleEnterCompositeSolid}
+                  onClickOp={handleClickOp}
+                  repoAddress={repoAddress}
+                  isGraph={isGraph}
+                  {...qs.parse(location.search || '', {ignoreQueryPrefix: true})}
+                />
+              )}
+            />
+          </RightInfoPanel>
+        ) : undefined
       }
     />
   );
@@ -316,7 +320,6 @@ export const GRAPH_EXPLORER_FRAGMENT = gql`
 export const GRAPH_EXPLORER_ASSET_NODE_FRAGMENT = gql`
   fragment GraphExplorerAssetNodeFragment on AssetNode {
     id
-    opName
     opNames
     assetKey {
       path

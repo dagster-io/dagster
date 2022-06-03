@@ -11,7 +11,6 @@ from dagster.core.storage.sql import (
     check_alembic_revision,
     create_engine,
     get_alembic_config,
-    handle_schema_errors,
     run_alembic_downgrade,
     run_alembic_upgrade,
     stamp_alembic_rev,
@@ -101,8 +100,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         engine = create_engine(self._conn_string, poolclass=NullPool)
         conn = engine.connect()
         try:
-            with handle_schema_errors(conn, get_alembic_config(__file__)):
-                yield conn
+            yield conn
         finally:
             conn.close()
 
@@ -161,3 +159,8 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         with self.connect() as conn:
             conn.execute(remove_tags)
             conn.execute(remove_run)
+
+    def alembic_version(self):
+        alembic_config = get_alembic_config(__file__)
+        with self.connect() as conn:
+            return check_alembic_revision(alembic_config, conn)

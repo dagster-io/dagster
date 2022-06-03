@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel  # pylint: disable=no-name-in-module
+from pydantic import BaseModel
 
 from ...utils import kubernetes
 
@@ -36,4 +36,5 @@ class UserDeployment(BaseModel):
 class UserDeployments(BaseModel):
     enabled: bool
     enableSubchart: bool
+    imagePullSecrets: List[kubernetes.SecretRef]
     deployments: List[UserDeployment]

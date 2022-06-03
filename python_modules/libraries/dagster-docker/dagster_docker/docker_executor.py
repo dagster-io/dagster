@@ -58,12 +58,14 @@ def docker_executor(init_context: InitExecutorContext) -> Executor:
     launcher will also be set on the containers that are created for each step.
     """
 
-    image = init_context.executor_config.get("image")
-    registry = init_context.executor_config.get("registry")
-    env_vars = init_context.executor_config.get("env_vars")
-    network = init_context.executor_config.get("network")
-    networks = init_context.executor_config.get("networks")
-    container_kwargs = init_context.executor_config.get("container_kwargs")
+    config = init_context.executor_config
+    image = check.opt_str_elem(config, "image")
+    registry = check.opt_dict_elem(config, "registry", key_type=str)
+    env_vars = check.opt_list_elem(config, "env_vars", of_type=str)
+    network = check.opt_str_elem(config, "network")
+    networks = check.opt_list_elem(config, "networks", of_type=str)
+    container_kwargs = check.opt_dict_elem(config, "container_kwargs", key_type=str)
+    retries = check.dict_elem(config, "retries", key_type=str)
 
     validate_docker_config(network, networks, container_kwargs)
 
@@ -79,7 +81,7 @@ def docker_executor(init_context: InitExecutorContext) -> Executor:
 
     return StepDelegatingExecutor(
         DockerStepHandler(image, container_context),
-        retries=RetryMode.from_config(init_context.executor_config["retries"]),
+        retries=check.not_none(RetryMode.from_config(retries)),
     )
 
 
@@ -190,10 +192,11 @@ class DockerStepHandler(StepHandler):
                 network = client.networks.get(network_name)
                 network.connect(step_container)
 
-        assert (
-            len(step_handler_context.execute_step_args.step_keys_to_execute) == 1
-        ), "Launching multiple steps is not currently supported"
-        step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
+        step_keys_to_execute = check.not_none(
+            step_handler_context.execute_step_args.step_keys_to_execute
+        )
+        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
+        step_key = step_keys_to_execute[0]
 
         events = [
             DagsterEvent(
@@ -215,7 +218,10 @@ class DockerStepHandler(StepHandler):
         return events
 
     def check_step_health(self, step_handler_context: StepHandlerContext) -> List[DagsterEvent]:
-        step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
+        step_keys_to_execute = check.not_none(
+            step_handler_context.execute_step_args.step_keys_to_execute
+        )
+        step_key = step_keys_to_execute[0]
         container_context = self._get_docker_container_context(step_handler_context)
 
         client = self._get_client(container_context)
@@ -281,10 +287,11 @@ class DockerStepHandler(StepHandler):
     def terminate_step(self, step_handler_context: StepHandlerContext) -> List[DagsterEvent]:
         container_context = self._get_docker_container_context(step_handler_context)
 
-        assert (
-            len(step_handler_context.execute_step_args.step_keys_to_execute) == 1
-        ), "Launching multiple steps is not currently supported"
-        step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
+        step_keys_to_execute = check.not_none(
+            step_handler_context.execute_step_args.step_keys_to_execute
+        )
+        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
+        step_key = step_keys_to_execute[0]
 
         events = [
             DagsterEvent(
@@ -302,7 +309,7 @@ class DockerStepHandler(StepHandler):
             container = client.containers.get(
                 self._get_container_name(
                     step_handler_context.execute_step_args.pipeline_run_id,
-                    step_handler_context.execute_step_args.step_keys_to_execute[0],
+                    step_keys_to_execute[0],
                 )
             )
             container.stop()

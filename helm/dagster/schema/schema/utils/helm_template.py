@@ -24,7 +24,7 @@ class HelmTemplate:
     subchart_paths: List[str]
     output: Optional[str] = None
     model: Optional[Any] = None
-    name: str = "release-name"
+    release_name: str = "release-name"
     api_client: ApiClient = ApiClient()
 
     def render(
@@ -44,21 +44,23 @@ class HelmTemplate:
             command = [
                 "helm",
                 "template",
-                self.name,
+                self.release_name,
                 helm_dir_path,
                 "--debug",
-                *["--values", tmp_file.name],
+                "--values",
+                tmp_file.name,
             ]
-
-            if self.output:
-                ## Uncomment to render all templates before filtering to surface Helm templating
-                ## errors with better error messages
-                # subprocess.check_output(command)
-
-                command += ["--show-only", self.output]
 
             with self._with_chart_yaml(helm_dir_path, chart_version):
                 templates = subprocess.check_output(command)
+
+                # HACK! Helm's --show-only option doesn't surface errors. For tests where we want to
+                # assert on things like {{ fail ... }}, we need to render the chart without --show-only.
+                # If that succeeds, we then carry on to calling with --show-only so that we can
+                # assert on specific objects in the chart.
+                if self.output:
+                    command += ["--show-only", self.output]
+                    templates = subprocess.check_output(command)
 
             print("\n--- Helm Templates ---")  # pylint: disable=print-call
             print(templates.decode())  # pylint: disable=print-call

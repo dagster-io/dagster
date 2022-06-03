@@ -33,6 +33,11 @@ const WS_EVENTS = [
 // Delay informing listeners of websocket status change so that we don't thrash.
 const DEBOUNCE_TIME = 5000;
 
+// The amount of time we're willing to wait for the server to ack the WS connection
+// before we give up and call WebSockets unavailable. This can occur when the connection
+// just hangs but never closes or errors.
+const TIME_TO_WAIT_FOR_ACK = 10000;
+
 interface Props {
   websocketClient: SubscriptionClient;
 }
@@ -76,6 +81,7 @@ export const WebSocketProvider: React.FC<Props> = (props) => {
     const unlisten = () => {
       availabilityListeners.forEach((u) => u());
     };
+
     const setFinalAvailability = (value: Availability) => {
       unlisten();
       setAvailability(value);
@@ -95,6 +101,24 @@ export const WebSocketProvider: React.FC<Props> = (props) => {
       statusListeners.forEach((u) => u());
     };
   }, [debouncedSetter, websocketClient]);
+
+  // Wait a little while for the server to ack the WebSocket connection. If it never
+  // acks, never closes, and never errors, we shouldn't keep the app waiting to connect
+  // forever. Instead, set WebSocket availability as `unavailable` and let use cases
+  // fall back to non-WS implementations.
+  React.useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    if (availability === 'attempting-to-connect') {
+      timeout = setTimeout(() => {
+        console.log('[WebSockets] Timed out waiting for WS connection.');
+        setAvailability('unavailable');
+      }, TIME_TO_WAIT_FOR_ACK);
+    }
+
+    return () => {
+      timeout && clearTimeout(timeout);
+    };
+  }, [availability]);
 
   return <WebSocketContext.Provider value={value}>{children}</WebSocketContext.Provider>;
 };

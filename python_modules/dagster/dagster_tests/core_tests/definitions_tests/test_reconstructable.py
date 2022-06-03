@@ -127,10 +127,10 @@ def test_inner_decorator():
 
 def test_solid_selection():
     recon_pipe = reconstructable(get_the_pipeline)
-    sub_pipe_full = recon_pipe.subset_for_execution(["the_solid"])
+    sub_pipe_full = recon_pipe.subset_for_execution(["the_solid"], asset_selection=None)
     assert sub_pipe_full.solids_to_execute == {"the_solid"}
 
-    sub_pipe_unresolved = recon_pipe.subset_for_execution(["the_solid+"])
+    sub_pipe_unresolved = recon_pipe.subset_for_execution(["the_solid+"], asset_selection=None)
     assert sub_pipe_unresolved.solids_to_execute == {"the_solid"}
 
 

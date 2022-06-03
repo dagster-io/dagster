@@ -59,7 +59,7 @@ const initialState: State = {
 export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlaceholder}) => {
   const location = useLocation();
   const history = useHistory();
-  const {loading, performSearch} = useRepoSearch();
+  const {performBootstrapQuery, loading, performSearch} = useRepoSearch();
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {shown, queryString, results, highlight, loaded} = state;
@@ -67,7 +67,11 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
   const renderedResults = results.slice(0, MAX_DISPLAYED_RESULTS);
   const numRenderedResults = renderedResults.length;
 
-  const openSearch = React.useCallback(() => dispatch({type: 'show-dialog'}), []);
+  const openSearch = React.useCallback(() => {
+    performBootstrapQuery();
+    dispatch({type: 'show-dialog'});
+  }, [performBootstrapQuery]);
+
   const onChange = React.useCallback((e) => {
     dispatch({type: 'change-query', queryString: e.target.value});
   }, []);

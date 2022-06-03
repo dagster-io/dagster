@@ -5,6 +5,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterator,
     List,
     Optional,
     Union,
@@ -13,6 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster.config.config_schema import ConfigSchemaType
 from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
@@ -31,6 +33,11 @@ from .definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
 from .resource_invocation import resource_invocation_result
+from .resource_requirement import (
+    RequiresResources,
+    ResourceDependencyRequirement,
+    ResourceRequirement,
+)
 
 # pylint: disable=unused-import
 from .scoped_resources_builder import (  # type: ignore
@@ -47,7 +54,7 @@ def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
     return len(params) >= 1
 
 
-class ResourceDefinition(AnonymousConfigurableDefinition):
+class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
     """Core class for defining resources.
 
     Resources are scoped ways to make external resources (like database connections) available to
@@ -80,7 +87,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
     def __init__(
         self,
         resource_fn: Callable[["InitResourceContext"], Any],
-        config_schema: Optional[Union[Any, IDefinitionConfigSchema]] = None,
+        config_schema: Optional[Union[Any, ConfigSchemaType]] = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[AbstractSet[str]] = None,
         version: Optional[str] = None,
@@ -211,6 +218,13 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
         else:
             return resource_invocation_result(self, None)
 
+    def get_resource_requirements(
+        self, outer_context: Optional[object] = None
+    ) -> Iterator[ResourceRequirement]:
+        source_key = cast(str, outer_context)
+        for resource_key in sorted(list(self.required_resource_keys)):
+            yield ResourceDependencyRequirement(key=resource_key, source_key=source_key)
+
 
 class _ResourceDecoratorCallable:
     def __init__(
@@ -270,7 +284,7 @@ def resource(config_schema=Callable[["InitResourceContext"], Any]) -> ResourceDe
 
 @overload
 def resource(
-    config_schema: Optional[Union[IDefinitionConfigSchema, Dict[str, Any]]] = ...,
+    config_schema: Optional[ConfigSchemaType] = ...,
     description: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
     version: Optional[str] = ...,
@@ -279,9 +293,7 @@ def resource(
 
 
 def resource(
-    config_schema: Optional[
-        Union[Callable[["InitResourceContext"], Any], IDefinitionConfigSchema, Dict[str, Any]]
-    ] = None,
+    config_schema: Union[Callable[["InitResourceContext"], Any], Optional[ConfigSchemaType]] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     version: Optional[str] = None,
@@ -312,7 +324,7 @@ def resource(
     # This case is for when decorator is used bare, without arguments.
     # E.g. @resource versus @resource()
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
-        return _ResourceDecoratorCallable()(config_schema)
+        return _ResourceDecoratorCallable()(config_schema)  # type: ignore
 
     def _wrap(resource_fn: Callable[["InitResourceContext"], Any]) -> "ResourceDefinition":
         return _ResourceDecoratorCallable(

@@ -93,9 +93,9 @@ spec:
               mountPath: "{{ .Values.global.dagsterHome }}/dagster.yaml"
               subPath: dagster.yaml
             {{- if $userDeployments.enabled }}
+            # Do not use `subPath` to allow the configmap to update if modified
             - name: dagster-workspace-yaml
-              mountPath: "/dagster-workspace/workspace.yaml"
-              subPath: workspace.yaml
+              mountPath: "/dagster-workspace/"
             {{- end }}
           ports:
             - name: http
@@ -128,7 +128,7 @@ spec:
         {{- if $userDeployments.enabled }}
         - name: dagster-workspace-yaml
           configMap:
-            name: {{ template "dagster.fullname" . }}-workspace-yaml
+            name: {{ include "dagit.workspace.configmapName" . }}
         {{- end }}
     {{- with .Values.dagit.affinity }}
       affinity:

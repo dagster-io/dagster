@@ -38,7 +38,7 @@ from dagster.core.execution.plan.handle import (
     StepHandle,
     UnresolvedStepHandle,
 )
-from dagster.core.execution.retries import RetryMode, RetryState
+from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.core.system_config.objects import ResolvedRunConfig
@@ -50,10 +50,12 @@ from .compute import create_step_outputs
 from .inputs import (
     FromConfig,
     FromDefaultValue,
+    FromDirectInputValue,
     FromDynamicCollect,
     FromMultipleSources,
     FromPendingDynamicStepOutput,
     FromRootInputManager,
+    FromSourceAsset,
     FromStepOutput,
     FromUnresolvedStepOutput,
     StepInput,
@@ -72,7 +74,10 @@ from .step import (
 )
 
 if TYPE_CHECKING:
+    from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
+
     from .active import ActiveExecution
+
 
 StepHandleTypes = (StepHandle, UnresolvedStepHandle, ResolvedFromDynamicStepHandle)
 StepHandleUnion = Union[StepHandle, UnresolvedStepHandle, ResolvedFromDynamicStepHandle]
@@ -97,7 +102,7 @@ class _PlanBuilder:
         pipeline: IPipeline,
         resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[List[str]],
-        known_state,
+        known_state: KnownExecutionState,
         instance_ref: Optional[InstanceRef],
         tags: Dict[str, str],
     ):
@@ -116,7 +121,7 @@ class _PlanBuilder:
         self.step_output_map: Dict[
             SolidOutputHandle, Union[StepOutputHandle, UnresolvedStepOutputHandle]
         ] = dict()
-        self.known_state = known_state
+        self.known_state = check.inst_param(known_state, "known_state", KnownExecutionState)
         self._instance_ref = instance_ref
         self._seen_handles: Set[StepHandleUnion] = set()
         self._tags = check.dict_param(tags, "tags", key_type=str, value_type=str)
@@ -173,6 +178,7 @@ class _PlanBuilder:
 
             input_source = get_root_graph_input_source(
                 plan_builder=self,
+                pipeline_def=pipeline_def,
                 input_name=input_name,
                 input_def=input_def,
             )
@@ -305,7 +311,11 @@ class _PlanBuilder:
                         )
                     )
                 else:
-                    check.inst_param(step_input_source, "step_input_source", StepInputSource)
+                    check.inst_param(
+                        step_input_source,
+                        "step_input_source",
+                        StepInputSource,
+                    )
                     step_inputs.append(
                         StepInput(
                             name=input_name,
@@ -405,12 +415,18 @@ def get_root_graph_input_source(
     plan_builder: _PlanBuilder,
     input_name: str,
     input_def: InputDefinition,
-) -> Optional[FromConfig]:
+    pipeline_def: PipelineDefinition,
+) -> Optional[Union[FromConfig, FromDirectInputValue]]:
+    from dagster.core.definitions.job_definition import get_direct_input_values_from_job
+
+    input_values = get_direct_input_values_from_job(pipeline_def)
+    if input_values and input_name in input_values:
+        return FromDirectInputValue(input_name=input_name)
 
     input_config = plan_builder.resolved_run_config.inputs
 
     if input_config and input_name in input_config:
-        return FromConfig(solid_handle=None, input_name=input_name)
+        return FromConfig(input_name=input_name, solid_handle=None)
 
     if input_def.dagster_type.is_nothing:
         return None
@@ -454,15 +470,19 @@ def get_step_input_source(
     solid_config = plan_builder.resolved_run_config.solids.get(str(handle))
 
     input_def = solid.definition.input_def_named(input_name)
+    asset_layer = plan_builder.pipeline.get_definition().asset_layer
 
     if (
-        input_def.root_manager_key
         # input is unconnected inside the current dependency structure
-        and not dependency_structure.has_deps(input_handle)
-    ):
+        not dependency_structure.has_deps(input_handle)
+        and
         #  make sure input is unconnected in the outer dependency structure too
-        if not solid.container_maps_input(input_handle.input_name):
+        not solid.container_maps_input(input_handle.input_name)
+    ):
+        if input_def.root_manager_key:
             return FromRootInputManager(solid_handle=handle, input_name=input_name)
+        elif asset_layer.asset_key_for_input(handle, input_handle.input_name):
+            return FromSourceAsset(solid_handle=handle, input_name=input_name)
 
     if dependency_structure.has_direct_dep(input_handle):
         solid_output_handle = dependency_structure.get_direct_dep(input_handle)
@@ -592,14 +612,14 @@ class ExecutionPlan(
 ):
     def __new__(
         cls,
-        step_dict,
-        executable_map,
-        resolvable_map,
-        step_handles_to_execute,
-        known_state=None,
-        artifacts_persisted=False,
-        step_dict_by_key=None,
-        executor_name=None,
+        step_dict: Dict[StepHandleUnion, IExecutionStep],
+        executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
+        resolvable_map: Dict[FrozenSet[str], List[UnresolvedStepHandle]],
+        step_handles_to_execute: List[StepHandleUnion],
+        known_state: KnownExecutionState,
+        artifacts_persisted: bool = False,
+        step_dict_by_key: Optional[Dict[str, IExecutionStep]] = None,
+        executor_name: Optional[str] = None,
     ):
         return super(ExecutionPlan, cls).__new__(
             cls,
@@ -620,7 +640,7 @@ class ExecutionPlan(
                 "step_handles_to_execute",
                 of_type=(StepHandle, UnresolvedStepHandle, ResolvedFromDynamicStepHandle),
             ),
-            known_state=check.opt_inst_param(known_state, "known_state", KnownExecutionState),
+            known_state=check.inst_param(known_state, "known_state", KnownExecutionState),
             artifacts_persisted=check.bool_param(artifacts_persisted, "artifacts_persisted"),
             step_dict_by_key={step.key: step for step in step_dict.values()}
             if step_dict_by_key is None
@@ -746,12 +766,40 @@ class ExecutionPlan(
         step_output_versions = check.opt_dict_param(
             step_output_versions, "step_output_versions", key_type=StepOutputHandle, value_type=str
         )
-        step_handles_to_execute = [StepHandle.parse_from_key(key) for key in step_keys_to_execute]
 
+        step_handles_to_validate_set: Set[StepHandleUnion] = {
+            StepHandle.parse_from_key(key) for key in step_keys_to_execute
+        }
+        step_handles_to_execute: List[StepHandleUnion] = []
         bad_keys = []
-        for handle in step_handles_to_execute:
+
+        for handle in step_handles_to_validate_set:
+
             if handle not in self.step_dict:
+                # Ok if the entire dynamic step is selected to execute.
+                # https://github.com/dagster-io/dagster/issues/8000
+                # Note: the assumption here is when the entire dynamic step is selected,
+                # the step_keys_to_execute will include both unresolved step (i.e. [?])
+                # and all the resolved steps (i.e. [0], ... [n]). Given that at this point
+                # we no longer track the parent known state (we don't know what "n" was),
+                # solely from the resolved handles, we can't tell if an entire dynamic
+                # node is being selected, so the best bet here is to check both unresolved
+                # and resolved handles exist. Examples:
+                # * `generate_subtasks, subtask[?], subtask[0], subtask[1], subtask[2]` will pass
+                # * `generate_subtasks, subtask[0], subtask[1], subtask[2]` will result in 3 bad
+                #   keys `subtask[0], subtask[1], subtask[2]`
+                if isinstance(handle, ResolvedFromDynamicStepHandle):
+                    unresolved_handle = handle.unresolved_form
+                    if (
+                        unresolved_handle in self.step_dict
+                        and unresolved_handle in step_handles_to_validate_set
+                    ):
+                        continue
+
                 bad_keys.append(handle.to_key())
+
+            # Add the handle to the ready-to-execute list once it's validated
+            step_handles_to_execute.append(handle)
 
         if bad_keys:
             raise DagsterExecutionStepNotFoundError(
@@ -769,16 +817,11 @@ class ExecutionPlan(
         # If step output versions were provided when constructing the subset plan, add them to the
         # known state.
         if len(step_output_versions) > 0:
-
-            known_state = KnownExecutionState(
-                previous_retry_attempts=self.known_state.previous_retry_attempts
-                if self.known_state
-                else {},
-                dynamic_mappings=self.known_state.dynamic_mappings if self.known_state else {},
-                step_output_versions=StepOutputVersionData.get_version_list_from_dict(
-                    step_output_versions
-                ),
-            )
+            versions = StepOutputVersionData.get_version_list_from_dict(step_output_versions)
+            if self.known_state:
+                known_state = self.known_state._replace(step_output_versions=versions)
+            else:
+                known_state = KnownExecutionState(step_output_versions=versions)
         else:
             known_state = self.known_state
 
@@ -913,9 +956,7 @@ class ExecutionPlan(
         return ActiveExecution(
             self,
             retry_mode,
-            self.known_state.get_retry_state() if self.known_state else RetryState(),
             sort_key_fn,
-            self.known_state.step_output_versions if self.known_state else [],
         )
 
     def step_handle_for_single_step_plans(
@@ -941,9 +982,9 @@ class ExecutionPlan(
         pipeline: IPipeline,
         resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[List[str]] = None,
-        known_state=None,
-        instance_ref=None,
-        tags=None,
+        known_state: Optional[KnownExecutionState] = None,
+        instance_ref: Optional[InstanceRef] = None,
+        tags: Optional[Dict[str, str]] = None,
     ) -> "ExecutionPlan":
         """Here we build a new ExecutionPlan from a pipeline definition and the resolved run config.
 
@@ -956,7 +997,13 @@ class ExecutionPlan(
         check.inst_param(pipeline, "pipeline", IPipeline)
         check.inst_param(resolved_run_config, "resolved_run_config", ResolvedRunConfig)
         check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
-        check.opt_inst_param(known_state, "known_state", KnownExecutionState)
+        known_state = check.opt_inst_param(
+            known_state,
+            "known_state",
+            KnownExecutionState,
+            # may be good to force call sites to specify instead of defaulting to unknown
+            default=KnownExecutionState(),
+        )
         tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
 
         plan_builder = _PlanBuilder(
@@ -1003,7 +1050,10 @@ class ExecutionPlan(
             )
 
     @staticmethod
-    def rebuild_from_snapshot(pipeline_name, execution_plan_snapshot):
+    def rebuild_from_snapshot(
+        pipeline_name: str,
+        execution_plan_snapshot: "ExecutionPlanSnapshot",
+    ):
         if not execution_plan_snapshot.can_reconstruct_plan:
             raise DagsterInvariantViolationError(
                 "Tried to reconstruct an old ExecutionPlanSnapshot that was created before snapshots "
@@ -1023,17 +1073,23 @@ class ExecutionPlan(
 
             step_outputs = [
                 StepOutput(
-                    step_output_snap.solid_handle,
+                    check.not_none(step_output_snap.solid_handle),
                     step_output_snap.name,
                     step_output_snap.dagster_type_key,
-                    step_output_snap.properties,
+                    check.not_none(step_output_snap.properties),
                 )
                 for step_output_snap in output_snaps
             ]
 
             if step_snap.kind == StepKind.COMPUTE:
-                step = ExecutionStep(
-                    step_snap.step_handle,
+                step: IExecutionStep = ExecutionStep(
+                    check.inst(
+                        cast(
+                            Union[StepHandle, ResolvedFromDynamicStepHandle],
+                            step_snap.step_handle,
+                        ),
+                        ttype=(StepHandle, ResolvedFromDynamicStepHandle),
+                    ),
                     pipeline_name,
                     step_inputs,
                     step_outputs,
@@ -1041,7 +1097,10 @@ class ExecutionPlan(
                 )
             elif step_snap.kind == StepKind.UNRESOLVED_MAPPED:
                 step = UnresolvedMappedExecutionStep(
-                    step_snap.step_handle,
+                    check.inst(
+                        cast(UnresolvedStepHandle, step_snap.step_handle),
+                        ttype=UnresolvedStepHandle,
+                    ),
                     pipeline_name,
                     step_inputs,
                     step_outputs,
@@ -1049,7 +1108,7 @@ class ExecutionPlan(
                 )
             elif step_snap.kind == StepKind.UNRESOLVED_COLLECT:
                 step = UnresolvedCollectExecutionStep(
-                    step_snap.step_handle,
+                    check.inst(cast(StepHandle, step_snap.step_handle), ttype=StepHandle),
                     pipeline_name,
                     step_inputs,
                     step_outputs,
@@ -1077,7 +1136,8 @@ class ExecutionPlan(
             executable_map,
             resolvable_map,
             step_handles_to_execute,
-            execution_plan_snapshot.initial_known_state,
+            # default to empty known execution state if initial was not persisted
+            execution_plan_snapshot.initial_known_state or KnownExecutionState(),
             execution_plan_snapshot.artifacts_persisted,
             executor_name=execution_plan_snapshot.executor_name,
         )

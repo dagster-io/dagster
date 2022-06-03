@@ -1,23 +1,10 @@
 import itertools
-import warnings
-from typing import (
-    AbstractSet,
-    Any,
-    Dict,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
 
 import dagster._check as check
 from dagster.config import Shape
 from dagster.core.definitions.asset_layer import AssetLayer
 from dagster.core.definitions.config import ConfigMapping
-from dagster.core.definitions.decorators.op_decorator import op
 from dagster.core.definitions.dependency import (
     DependencyDefinition,
     IDependencyDefinition,
@@ -29,17 +16,13 @@ from dagster.core.definitions.executor_definition import ExecutorDefinition
 from dagster.core.definitions.graph_definition import GraphDefinition
 from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.node_definition import NodeDefinition
-from dagster.core.definitions.output import Out, OutputDefinition
+from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.partition import PartitionedConfig, PartitionsDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.execution.context.input import InputContext, build_input_context
-from dagster.core.execution.context.output import build_output_context
-from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
-from dagster.core.storage.root_input_manager import RootInputManagerDefinition, root_input_manager
-from dagster.utils.backcompat import ExperimentalWarning, experimental
-from dagster.utils.merger import merge_dicts
+from dagster.core.selector.subset_selector import AssetSelectionData
+from dagster.utils.backcompat import experimental
 
 from .asset_partitions import get_upstream_partitions_for_partition_range
 from .assets import AssetsDefinition
@@ -56,6 +39,7 @@ def build_assets_job(
     config: Optional[Union[ConfigMapping, Dict[str, Any], PartitionedConfig]] = None,
     tags: Optional[Dict[str, Any]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
+    _asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
 
@@ -90,17 +74,19 @@ def build_assets_job(
     Returns:
         JobDefinition: A job that materializes the given assets.
     """
+
     check.str_param(name, "name")
     check.sequence_param(assets, "assets", of_type=AssetsDefinition)
     check.opt_sequence_param(
         source_assets, "source_assets", of_type=(SourceAsset, AssetsDefinition)
     )
     check.opt_str_param(description, "description")
+    check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
     source_assets_by_key = build_source_assets_by_key(source_assets)
 
     deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
-    root_manager = build_root_manager(source_assets_by_key)
     partitioned_config = build_job_partitions_from_assets(assets, source_assets or [])
+    resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
 
     graph = GraphDefinition(
         name=name,
@@ -112,16 +98,50 @@ def build_assets_job(
         config=None,
     )
 
+    # turn any AssetsDefinitions into SourceAssets
+    resolved_source_assets: List[SourceAsset] = []
+    for asset in source_assets or []:
+        if isinstance(asset, AssetsDefinition):
+            resolved_source_assets += asset.to_source_assets()
+        elif isinstance(asset, SourceAsset):
+            resolved_source_assets.append(asset)
+
+    asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
+        graph, assets_defs_by_node_handle, resolved_source_assets
+    )
+
+    all_resource_defs = dict(resource_defs)
+    for asset_def in assets:
+        for resource_key, resource_def in asset_def.resource_defs.items():
+            if (
+                resource_key in all_resource_defs
+                and all_resource_defs[resource_key] != resource_def
+            ):
+                raise DagsterInvalidDefinitionError(
+                    f"When attempting to build job, asset {asset_def.asset_key} had a conflicting version of the same resource key {resource_key}. Please resolve this conflict by giving different keys to each resource definition."
+                )
+            all_resource_defs[resource_key] = resource_def
+
+    required_io_manager_keys = set()
+    for source_asset in resolved_source_assets:
+        if not source_asset.io_manager_def:
+            required_io_manager_keys.add(source_asset.get_io_manager_key())
+        else:
+            all_resource_defs[source_asset.get_io_manager_key()] = source_asset.io_manager_def
+
+    for required_key in sorted(list(required_io_manager_keys)):
+        if required_key not in all_resource_defs and required_key != "io_manager":
+            raise DagsterInvalidDefinitionError(
+                f"Error when attempting to build job '{name}': IO Manager required for key '{required_key}', but none was provided."
+            )
+
     return graph.to_job(
-        resource_defs=merge_dicts(
-            {"io_manager": fs_asset_io_manager}, resource_defs or {}, {"root_manager": root_manager}
-        ),
+        resource_defs=all_resource_defs,
         config=config or partitioned_config,
         tags=tags,
         executor_def=executor_def,
-        asset_layer=AssetLayer.from_graph_and_assets_node_mapping(
-            graph, assets_defs_by_node_handle
-        ),
+        asset_layer=asset_layer,
+        _asset_selection_data=_asset_selection_data,
     )
 
 
@@ -265,7 +285,9 @@ def build_deps(
             node_key = node_name
         deps[node_key] = {}
         assets_defs_by_node_handle[NodeHandle(alias, parent=None)] = assets_def
-        for input_name, asset_key in assets_def.asset_keys_by_input_name.items():
+        for input_name, asset_key in sorted(
+            assets_def.asset_keys_by_input_name.items(), key=lambda input: input[0]
+        ):  # sort so that input definition order is deterministic
             if asset_key in node_outputs_by_asset:
                 node_def, output_name = node_outputs_by_asset[asset_key]
                 deps[node_key][input_name] = DependencyDefinition(node_def.name, output_name)
@@ -280,62 +302,3 @@ def build_deps(
                     )
 
     return deps, assets_defs_by_node_handle
-
-
-def build_root_manager(
-    source_assets_by_key: Mapping[AssetKey, Union[SourceAsset, OutputDefinition]]
-) -> RootInputManagerDefinition:
-    source_asset_io_manager_keys = {
-        source_asset.io_manager_key for source_asset in source_assets_by_key.values()
-    }
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
-
-        @root_input_manager(required_resource_keys=source_asset_io_manager_keys)
-        def _root_manager(input_context: InputContext) -> Any:
-            source_asset_key = cast(AssetKey, input_context.asset_key)
-            source_asset = source_assets_by_key[source_asset_key]
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=ExperimentalWarning)
-
-                @op(out={source_asset_key.path[-1]: Out(asset_key=source_asset_key)})
-                def _op():
-                    pass
-
-            step_context = input_context.step_context
-            resource_config = step_context.resolved_run_config.resources[
-                source_asset.io_manager_key
-            ].config
-            io_manager_def = (
-                step_context.pipeline.get_definition()
-                .mode_definitions[0]
-                .resource_defs[source_asset.io_manager_key]
-            )
-            resources = step_context.scoped_resources_builder.build(
-                io_manager_def.required_resource_keys
-            )
-
-            output_context = build_output_context(
-                name=source_asset_key.path[-1],
-                step_key="none",
-                solid_def=_op,
-                metadata=cast(Dict[str, Any], source_asset.metadata),
-                resource_config=resource_config,
-                resources=cast(NamedTuple, resources)._asdict(),
-            )
-            input_context_with_upstream = build_input_context(
-                name=input_context.name,
-                metadata=input_context.metadata,
-                config=input_context.config,
-                dagster_type=input_context.dagster_type,
-                upstream_output=output_context,
-                op_def=input_context.op_def,
-                step_context=input_context.step_context,
-                resource_config=resource_config,
-                resources=cast(NamedTuple, resources)._asdict(),
-            )
-
-            io_manager = getattr(cast(Any, input_context.resources), source_asset.io_manager_key)
-            return io_manager.load_input(input_context_with_upstream)
-
-    return _root_manager

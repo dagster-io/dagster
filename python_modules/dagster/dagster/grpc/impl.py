@@ -8,6 +8,7 @@ import pendulum
 
 import dagster._check as check
 from dagster.core.definitions import ScheduleEvaluationContext
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster.core.definitions.sensor_definition import SensorEvaluationContext
 from dagster.core.errors import (
@@ -199,14 +200,19 @@ def start_run_in_subprocess(
 
 
 def get_external_pipeline_subset_result(
-    recon_pipeline: ReconstructablePipeline, solid_selection: Optional[List[str]]
+    recon_pipeline: ReconstructablePipeline,
+    solid_selection: Optional[List[str]],
+    asset_selection: Optional[List[AssetKey]],
 ):
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
     check.opt_list_param(solid_selection, "solid_selection", str)
-
-    if solid_selection:
+    check.opt_list_param(asset_selection, "asset_selection", AssetKey)
+    if solid_selection or asset_selection:
         try:
-            sub_pipeline = recon_pipeline.subset_for_execution(solid_selection)
+            sub_pipeline = recon_pipeline.subset_for_execution(
+                solid_selection=solid_selection,
+                asset_selection=frozenset(asset_selection) if asset_selection else None,
+            )
             definition = sub_pipeline.get_definition()
         except Exception:
             return ExternalPipelineSubsetResult(
@@ -214,7 +220,6 @@ def get_external_pipeline_subset_result(
             )
     else:
         definition = recon_pipeline.get_definition()
-
     external_pipeline_data = external_pipeline_data_from_def(definition)
     return ExternalPipelineSubsetResult(success=True, external_pipeline_data=external_pipeline_data)
 
@@ -356,11 +361,12 @@ def get_external_execution_plan_snapshot(recon_pipeline, args):
     check.inst_param(args, "args", ExecutionPlanSnapshotArgs)
 
     try:
-        pipeline = (
-            recon_pipeline.subset_for_execution(args.solid_selection)
-            if args.solid_selection
-            else recon_pipeline
-        )
+        pipeline = recon_pipeline
+
+        if args.solid_selection or args.asset_selection:
+            pipeline = pipeline.subset_for_execution(
+                solid_selection=args.solid_selection, asset_selection=args.asset_selection
+            )
 
         return snapshot_from_execution_plan(
             create_execution_plan(

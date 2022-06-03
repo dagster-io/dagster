@@ -424,7 +424,6 @@ def test_terminated_run(get_workspace, run_config):  # pylint: disable=redefined
             poll_for_step_start(instance, run_id)
 
             launcher = instance.run_launcher
-            assert launcher.can_terminate(run_id)
             assert launcher.terminate(run_id)
 
             terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
@@ -740,5 +739,4 @@ def test_not_initialized():  # pylint: disable=redefined-outer-name
     run_id = "dummy"
 
     assert run_launcher.join() is None
-    assert run_launcher.can_terminate(run_id) is False
     assert run_launcher.terminate(run_id) is False

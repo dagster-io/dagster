@@ -408,7 +408,7 @@ class TestEventLogStorage:
             pytest.skip("storage cannot watch runs")
 
         watched = []
-        watcher = lambda x: watched.append(x)  # pylint: disable=unnecessary-lambda
+        watcher = lambda x, y: watched.append(x)  # pylint: disable=unnecessary-lambda
 
         assert len(storage.get_logs_for_run(test_run_id)) == 0
 
@@ -416,7 +416,9 @@ class TestEventLogStorage:
         assert len(storage.get_logs_for_run(test_run_id)) == 1
         assert len(watched) == 0
 
-        storage.watch(test_run_id, 0, watcher)
+        conn = storage.get_records_for_run(test_run_id)
+        assert len(conn.records) == 1
+        storage.watch(test_run_id, conn.cursor, watcher)
 
         storage.store_event(create_test_event_log_record(str(2), test_run_id))
         storage.store_event(create_test_event_log_record(str(3), test_run_id))
@@ -757,7 +759,7 @@ class TestEventLogStorage:
 
         event_list = []
 
-        storage.watch(test_run_id, -1, lambda x: event_list.append(x))
+        storage.watch(test_run_id, None, lambda x, _y: event_list.append(x))
 
         events, _ = _synthesize_events(return_one_solid_func, run_id=test_run_id)
         for event in events:
@@ -780,7 +782,7 @@ class TestEventLogStorage:
         with create_and_delete_test_runs(instance, [run_id_one, run_id_two]):
             # only watch one of the runs
             event_list = []
-            storage.watch(run_id_two, -1, lambda x: event_list.append(x))
+            storage.watch(run_id_two, None, lambda x, _y: event_list.append(x))
 
             events_one, _result_one = _synthesize_events(return_one_solid_func, run_id=run_id_one)
             for event in events_one:
@@ -809,8 +811,8 @@ class TestEventLogStorage:
 
         with create_and_delete_test_runs(instance, [run_id_one, run_id_two]):
 
-            storage.watch(run_id_one, -1, lambda x: event_list_one.append(x))
-            storage.watch(run_id_two, -1, lambda x: event_list_two.append(x))
+            storage.watch(run_id_one, None, lambda x, _y: event_list_one.append(x))
+            storage.watch(run_id_two, None, lambda x, _y: event_list_two.append(x))
 
             events_one, _result_one = _synthesize_events(return_one_solid_func, run_id=run_id_one)
             for event in events_one:
@@ -899,7 +901,11 @@ class TestEventLogStorage:
                 event.dagster_event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION.value
             )
 
-            records = storage.get_event_records(EventRecordsFilter(asset_key=asset_key))
+            records = storage.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION, asset_key=asset_key
+                )
+            )
             assert len(records) == 1
             record = records[0]
             assert isinstance(record, EventLogRecord)
@@ -1147,7 +1153,7 @@ class TestEventLogStorage:
     @pytest.mark.parametrize(
         "cursor_dt", cursor_datetime_args()
     )  # test both tz-aware and naive datetimes
-    def test_get_event_records(self, storage, cursor_dt, test_run_id):
+    def test_get_event_records(self, storage, instance, cursor_dt):
         if isinstance(storage, SqliteEventLogStorage):
             # test sqlite in test_get_event_records_sqlite
             pytest.skip()
@@ -1170,57 +1176,58 @@ class TestEventLogStorage:
         def _solids():
             materialize_one()
 
-        events, _ = _synthesize_events(_solids, run_id=test_run_id)
+        def _store_run_events(run_id):
+            events, _ = _synthesize_events(_solids, run_id=run_id)
+            for event in events:
+                storage.store_event(event)
 
-        for event in events:
-            storage.store_event(event)
+        # store events for three runs
+        [run_id_1, run_id_2, run_id_3] = [make_new_run_id(), make_new_run_id(), make_new_run_id()]
 
-        all_records = storage.get_event_records()
-        # all logs returned in descending order
-        assert all_records
-        min_record_num = all_records[-1].storage_id
-        max_record_num = min_record_num + len(all_records) - 1
-        assert [r[0] for r in all_records] == list(range(max_record_num, min_record_num - 1, -1))
-        assert _event_types([all_records[0].event_log_entry]) == [DagsterEventType.PIPELINE_SUCCESS]
-        assert _event_types([all_records[-1].event_log_entry]) == [DagsterEventType.PIPELINE_START]
+        with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3]):
+            _store_run_events(run_id_1)
+            _store_run_events(run_id_2)
+            _store_run_events(run_id_3)
 
-        # after cursor
-        def _build_cursor(record_id_cursor, run_cursor_dt):
-            if not run_cursor_dt:
-                return record_id_cursor
-            return RunShardedEventsCursor(id=record_id_cursor, run_updated_after=run_cursor_dt)
-
-        assert not list(
-            filter(
-                lambda r: r.storage_id <= 2,
-                storage.get_event_records(
-                    EventRecordsFilter(after_cursor=_build_cursor(2, cursor_dt))
-                ),
+            all_success_events = storage.get_event_records(
+                EventRecordsFilter(event_type=DagsterEventType.RUN_SUCCESS)
             )
-        )
-        assert [
-            i.storage_id
-            for i in storage.get_event_records(
-                EventRecordsFilter(after_cursor=_build_cursor(min_record_num + 2, cursor_dt)),
-                ascending=True,
-                limit=2,
-            )
-        ] == [min_record_num + 3, min_record_num + 4]
-        assert [
-            i.storage_id
-            for i in storage.get_event_records(
-                EventRecordsFilter(after_cursor=_build_cursor(min_record_num + 2, cursor_dt)),
-                ascending=False,
-                limit=2,
-            )
-        ] == [max_record_num, max_record_num - 1]
 
-        filtered_records = storage.get_event_records(
-            EventRecordsFilter(event_type=DagsterEventType.PIPELINE_SUCCESS)
-        )
-        assert _event_types([r.event_log_entry for r in filtered_records]) == [
-            DagsterEventType.PIPELINE_SUCCESS
-        ]
+            assert len(all_success_events) == 3
+            min_success_record_id = all_success_events[-1].storage_id
+
+            # after cursor
+            def _build_cursor(record_id_cursor, run_cursor_dt):
+                if not run_cursor_dt:
+                    return record_id_cursor
+                return RunShardedEventsCursor(id=record_id_cursor, run_updated_after=run_cursor_dt)
+
+            assert not list(
+                filter(
+                    lambda r: r.storage_id <= min_success_record_id,
+                    storage.get_event_records(
+                        EventRecordsFilter(
+                            event_type=DagsterEventType.RUN_SUCCESS,
+                            after_cursor=_build_cursor(min_success_record_id, cursor_dt),
+                        )
+                    ),
+                )
+            )
+            assert [
+                i.storage_id
+                for i in storage.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.RUN_SUCCESS,
+                        after_cursor=_build_cursor(min_success_record_id, cursor_dt),
+                    ),
+                    ascending=True,
+                    limit=2,
+                )
+            ] == [record.storage_id for record in all_success_events[:2][::-1]]
+
+            assert set(_event_types([r.event_log_entry for r in all_success_events])) == {
+                DagsterEventType.RUN_SUCCESS
+            }
 
     def test_get_event_records_sqlite(self, storage):
         if not isinstance(storage, SqliteEventLogStorage):
@@ -1268,15 +1275,6 @@ class TestEventLogStorage:
 
             run_records = instance.get_run_records()
             assert len(run_records) == 1
-
-            # all logs returned in descending order
-            all_event_records = storage.get_event_records()
-            assert _event_types([all_event_records[0].event_log_entry]) == [
-                DagsterEventType.PIPELINE_SUCCESS
-            ]
-            assert _event_types([all_event_records[-1].event_log_entry]) == [
-                DagsterEventType.PIPELINE_START
-            ]
 
             # second run
             events = []
@@ -1343,6 +1341,17 @@ class TestEventLogStorage:
             ]
             assert [r.event_log_entry.run_id for r in filtered_records] == ["2", "3"]
 
+            # use invalid cursor
+            with pytest.raises(
+                Exception, match="Add a RunShardedEventsCursor to your query filter"
+            ):
+                storage.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.PIPELINE_SUCCESS,
+                        after_cursor=0,
+                    ),
+                )
+
     def test_watch_exc_recovery(self, storage):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -1355,7 +1364,7 @@ class TestEventLogStorage:
         class CBException(Exception):
             pass
 
-        def _throw(_):
+        def _throw(_x, _y):
             raise CBException("problem in watch callback")
 
         err_events, _ = _synthesize_events(return_one_solid_func, run_id=err_run_id)
@@ -1363,8 +1372,8 @@ class TestEventLogStorage:
 
         event_list = []
 
-        storage.watch(err_run_id, -1, _throw)
-        storage.watch(safe_run_id, -1, lambda x: event_list.append(x))
+        storage.watch(err_run_id, None, _throw)
+        storage.watch(safe_run_id, None, lambda x, _y: event_list.append(x))
 
         for event in err_events:
             storage.store_event(event)
@@ -1392,7 +1401,7 @@ class TestEventLogStorage:
         err_run_id = make_new_run_id()
         safe_run_id = make_new_run_id()
 
-        def _unsub(_):
+        def _unsub(_x, _y):
             storage.end_watch(err_run_id, _unsub)
 
         err_events, _ = _synthesize_events(return_one_solid_func, run_id=err_run_id)
@@ -1402,10 +1411,10 @@ class TestEventLogStorage:
 
         # Direct end_watch emulates behavior of clean up on exception downstream
         # of the subscription in the dagit webserver.
-        storage.watch(err_run_id, -1, _unsub)
+        storage.watch(err_run_id, None, _unsub)
 
         # Other active watches should proceed correctly.
-        storage.watch(safe_run_id, -1, lambda x: event_list.append(x))
+        storage.watch(safe_run_id, None, lambda x, _y: event_list.append(x))
 
         for event in err_events:
             storage.store_event(event)

@@ -10,8 +10,14 @@ from dagster.core.storage.event_log import (
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
+from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
+from dagster.core.storage.sql import (
+    check_alembic_revision,
+    create_engine,
+    run_alembic_upgrade,
+    stamp_alembic_rev,
+)
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, deserialize_as
 
 from ..utils import (
@@ -208,7 +214,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             conn.execute(query)
 
     def _connect(self):
-        return create_pg_connection(self._engine, pg_alembic_config(__file__), "event log")
+        return create_pg_connection(self._engine)
 
     def run_connection(self, run_id=None):
         return self._connect()
@@ -228,7 +234,10 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]
 
-    def watch(self, run_id, start_cursor, callback):
+    def watch(self, run_id, cursor, callback):
+        if cursor and EventLogCursor.parse(cursor).is_offset_cursor():
+            check.failed("Cannot call `watch` with an offset cursor")
+
         if self._event_watcher is None:
             self._event_watcher = PostgresEventWatcher(
                 self.postgres_url,
@@ -236,7 +245,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 self._gen_event_log_entry_from_cursor,
             )
 
-        self._event_watcher.watch_run(run_id, start_cursor, callback)
+        self._event_watcher.watch_run(run_id, cursor, callback)
 
     def _gen_event_log_entry_from_cursor(self, cursor) -> EventLogEntry:
         with self._engine.connect() as conn:
@@ -262,3 +271,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self._disposed = True
             if self._event_watcher:
                 self._event_watcher.close()
+
+    def alembic_version(self):
+        alembic_config = pg_alembic_config(__file__)
+        with self._connect() as conn:
+            return check_alembic_revision(alembic_config, conn)

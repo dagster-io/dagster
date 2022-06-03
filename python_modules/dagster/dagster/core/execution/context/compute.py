@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterator, List, Mapping, Optional, cast
+from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, cast
 
 import dagster._check as check
 from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.definitions.events import (
+    AssetKey,
     AssetMaterialization,
     AssetObservation,
     ExpectationResult,
@@ -293,6 +294,32 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         definition is not a TimeWindowPartitionsDefinition.
         """
         return self._step_execution_context.partition_time_window
+
+    @property
+    def selected_asset_keys(self) -> AbstractSet[AssetKey]:
+        return self.job_def.asset_layer.asset_keys_for_node(self.solid_handle)
+
+    @property
+    def selected_output_names(self) -> AbstractSet[str]:
+        # map selected asset keys to the output names they correspond to
+        selected_asset_keys = self.selected_asset_keys
+        selected_outputs = set()
+        for output_name in self.op.output_dict.keys():
+            asset_info = self.job_def.asset_layer.asset_info_for_output(
+                self.solid_handle, output_name
+            )
+            if asset_info and asset_info.key in selected_asset_keys:
+                selected_outputs.add(output_name)
+        return selected_outputs
+
+    def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
+        asset_output_info = self.pipeline_def.asset_layer.asset_info_for_output(
+            node_handle=self.op_handle, output_name=output_name
+        )
+        if asset_output_info is None:
+            check.failed(f"Output '{output_name}' has no asset")
+        else:
+            return asset_output_info.key
 
     def output_asset_partition_key(self, output_name: str = "result") -> str:
         """Returns the asset partition key for the given output. Defaults to "result", which is the

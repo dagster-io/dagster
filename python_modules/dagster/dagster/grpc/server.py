@@ -19,7 +19,10 @@ import dagster.seven as seven
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.core.host_representation.external_data import external_repository_data_from_def
+from dagster.core.host_representation.external_data import (
+    ExternalRepositoryErrorData,
+    external_repository_data_from_def,
+)
 from dagster.core.host_representation.origin import ExternalPipelineOrigin, ExternalRepositoryOrigin
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
@@ -108,8 +111,10 @@ class LoadedRepositories:
                 entry_point=entry_point,
             )
             repo_def = recon_repo.get_definition()
-            # force load of all lazy constructed jobs/pipelines
-            repo_def.get_all_pipelines()
+            # force load of all lazy constructed code artifacts to prevent
+            # any thread-safety issues loading them later on when serving
+            # definitions from multiple threads
+            repo_def.load_all_definitions()
 
             self._code_pointers_by_repo_name[repo_def.name] = pointer
             self._recon_repos_by_name[repo_def.name] = recon_repo
@@ -129,6 +134,10 @@ class LoadedRepositories:
         return self._code_pointers_by_repo_name
 
     def get_recon_repo(self, name: str) -> ReconstructableRepository:
+
+        if name not in self._recon_repos_by_name:
+            raise Exception(f'Could not find a repository called "{name}"')
+
         return self._recon_repos_by_name[name]
 
 
@@ -459,20 +468,26 @@ class DagsterApiServer(DagsterApiServicer):
                 get_external_pipeline_subset_result(
                     self._recon_pipeline_from_origin(pipeline_subset_snapshot_args.pipeline_origin),
                     pipeline_subset_snapshot_args.solid_selection,
+                    pipeline_subset_snapshot_args.asset_selection,
                 )
             )
         )
 
     def _get_serialized_external_repository_data(self, request):
-        repository_origin = deserialize_json_to_dagster_namedtuple(
-            request.serialized_repository_python_origin
-        )
+        try:
+            repository_origin = deserialize_json_to_dagster_namedtuple(
+                request.serialized_repository_python_origin
+            )
 
-        check.inst_param(repository_origin, "repository_origin", ExternalRepositoryOrigin)
-        recon_repo = self._recon_repository_from_origin(repository_origin)
-        return serialize_dagster_namedtuple(
-            external_repository_data_from_def(recon_repo.get_definition())
-        )
+            check.inst_param(repository_origin, "repository_origin", ExternalRepositoryOrigin)
+            recon_repo = self._recon_repository_from_origin(repository_origin)
+            return serialize_dagster_namedtuple(
+                external_repository_data_from_def(recon_repo.get_definition())
+            )
+        except Exception:
+            return serialize_dagster_namedtuple(
+                ExternalRepositoryErrorData(serializable_error_info_from_exc_info(sys.exc_info()))
+            )
 
     def ExternalRepository(self, request, _context):
         serialized_external_repository_data = self._get_serialized_external_repository_data(request)

@@ -69,6 +69,7 @@ type DagitQuery {
     limit: Int
   ): PartitionBackfillsOrError!
   permissions: [GraphenePermission!]!
+  assetsLatestInfo(assetKeys: [AssetKeyInput!]): [AssetLatestInfo!]!
 }
 
 union RepositoriesOrError = RepositoryConnection | PythonError
@@ -91,8 +92,7 @@ type Repository {
   sensors: [Sensor!]!
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
-  inProgressRunsByStep: [InProgressRunsByStep!]!
-  latestRunByStep: [LatestRun!]!
+  assetGroups: [AssetGroup!]!
 }
 
 type RepositoryLocation {
@@ -116,6 +116,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
   tags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
@@ -246,6 +247,7 @@ type AssetNode {
     limit: Int
   ): [MaterializationEvent!]!
   computeKind: String
+  configField: ConfigTypeField
   dependedBy: [AssetDependency!]!
   dependedByKeys: [AssetKey!]!
   dependencies: [AssetDependency!]!
@@ -264,6 +266,7 @@ type AssetNode {
   partitionKeys: [String!]!
   partitionDefinition: String
   repository: Repository!
+  groupName: String
 }
 
 type AssetKey {
@@ -392,7 +395,8 @@ type Run implements PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  events(after: Cursor): [DagsterRunEvent!]!
+  eventConnection(afterCursor: String): GrapheneEventConnection!
+  assetSelection: [AssetKey!]
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
   startTime: Float
@@ -427,7 +431,7 @@ interface PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  events(after: Cursor): [DagsterRunEvent!]!
+  eventConnection(afterCursor: String): GrapheneEventConnection!
 }
 
 type RepositoryOrigin {
@@ -652,6 +656,12 @@ type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
   runOrError: RunOrError!
   stepStats: RunStepStats!
   partition: String
+}
+
+type GrapheneEventConnection {
+  events: [DagsterRunEvent!]!
+  cursor: String!
+  hasMore: Boolean!
 }
 
 union DagsterRunEvent =
@@ -1080,8 +1090,6 @@ type AssetMaterializationPlannedEvent implements MessageEvent & RunEvent {
   runOrError: RunOrError!
 }
 
-scalar Cursor
-
 type RunNotFoundError implements PipelineRunNotFoundError & Error {
   runId: String!
   message: String!
@@ -1097,6 +1105,15 @@ type AssetLineageInfo {
   partitions: [String!]!
 }
 
+type ConfigTypeField {
+  name: String!
+  description: String
+  configType: ConfigType!
+  configTypeKey: String!
+  isRequired: Boolean!
+  defaultValueAsJson: String
+}
+
 type AssetDependency {
   asset: AssetNode!
   inputName: String!
@@ -1105,15 +1122,6 @@ type AssetDependency {
 type MaterializationCountByPartition {
   partition: String!
   materializationCount: Int!
-}
-
-type ConfigTypeField {
-  name: String!
-  description: String
-  configType: ConfigType!
-  configTypeKey: String!
-  isRequired: Boolean!
-  defaultValueAsJson: String
 }
 
 type ResourceRequirement {
@@ -1181,6 +1189,7 @@ interface IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
@@ -1404,7 +1413,9 @@ type PartitionRun {
 type PartitionBackfill {
   backfillId: String!
   status: BulkActionStatus!
+  backfillStatus: BackfillStatus!
   partitionNames: [String!]!
+  numPartitions: Int!
   numRequested: Int!
   fromFailure: Boolean!
   reexecutionSteps: [String!]!
@@ -1412,7 +1423,9 @@ type PartitionBackfill {
   timestamp: Float!
   partitionSet: PartitionSet
   runs(limit: Int): [Run!]!
+  unfinishedRuns(limit: Int): [Run!]!
   error: PythonError
+  partitionRunStats: BackfillRunStats!
 }
 
 enum BulkActionStatus {
@@ -1420,6 +1433,24 @@ enum BulkActionStatus {
   COMPLETED
   FAILED
   CANCELED
+}
+
+enum BackfillStatus {
+  REQUESTED
+  FAILED
+  CANCELED
+  IN_PROGRESS
+  COMPLETED
+  INCOMPLETE
+}
+
+type BackfillRunStats {
+  numQueued: Int!
+  numInProgress: Int!
+  numSucceeded: Int!
+  numFailed: Int!
+  numPartitionsWithRuns: Int!
+  numTotalRuns: Int!
 }
 
 type FutureInstigationTicks {
@@ -1469,6 +1500,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
   tags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
@@ -1496,15 +1528,9 @@ type NodeInvocationSite {
   solidHandle: SolidHandle!
 }
 
-type InProgressRunsByStep {
-  stepKey: String!
-  unstartedRuns: [Run!]!
-  inProgressRuns: [Run!]!
-}
-
-type LatestRun {
-  stepKey: String!
-  run: Run
+type AssetGroup {
+  groupName: String!
+  assetKeys: [AssetKey!]!
 }
 
 """
@@ -1581,6 +1607,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
   tags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
@@ -1933,6 +1960,14 @@ type GraphenePermission {
   value: Boolean!
 }
 
+type AssetLatestInfo {
+  assetKey: AssetKey!
+  latestMaterialization: MaterializationEvent
+  unstartedRunIds: [String!]!
+  inProgressRunIds: [String!]!
+  latestRun: Run
+}
+
 """
 Mutations to programatically interact with your Dagster instance.
 """
@@ -2046,6 +2081,7 @@ union LaunchRunResult =
   | RunConflict
   | UnauthorizedError
   | PythonError
+  | InvalidSubsetError
   | PresetNotFoundError
   | ConflictingExecutionParamsError
   | NoModeProvidedError
@@ -2128,6 +2164,7 @@ input JobOrPipelineSelector {
   repositoryName: String!
   repositoryLocationName: String!
   solidSelection: [String!]
+  assetSelection: [AssetKeyInput!]
 }
 
 input ExecutionMetadata {
@@ -2158,6 +2195,7 @@ union LaunchRunReexecutionResult =
   | RunConflict
   | UnauthorizedError
   | PythonError
+  | InvalidSubsetError
   | PresetNotFoundError
   | ConflictingExecutionParamsError
   | NoModeProvidedError
@@ -2313,6 +2351,7 @@ union LaunchBackfillResult =
   | RunConflict
   | UnauthorizedError
   | PythonError
+  | InvalidSubsetError
   | PresetNotFoundError
   | ConflictingExecutionParamsError
   | NoModeProvidedError
@@ -2366,7 +2405,7 @@ type LogTelemetrySuccess {
 }
 
 type DagitSubscription {
-  pipelineRunLogs(runId: ID!, after: Cursor): PipelineRunLogsSubscriptionPayload!
+  pipelineRunLogs(runId: ID!, cursor: String): PipelineRunLogsSubscriptionPayload!
   computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
   locationStateChangeEvents: LocationStateChangeSubscription!
 }
@@ -2379,6 +2418,7 @@ type PipelineRunLogsSubscriptionSuccess {
   run: Run!
   messages: [DagsterRunEvent!]!
   hasMorePastEvents: Boolean!
+  cursor: String!
 }
 
 type PipelineRunLogsSubscriptionFailure {
@@ -2411,12 +2451,6 @@ enum LocationStateChangeEventType {
 
 type MissingRunIdErrorEvent {
   invalidRunId: String!
-}
-
-type ConfigTypeNotFoundError implements Error {
-  message: String!
-  pipeline: Pipeline!
-  configTypeName: String!
 }
 
 type FieldNotDefinedConfigError implements PipelineConfigValidationError {
@@ -2670,6 +2704,12 @@ type RegularConfigType implements ConfigType {
   typeParamKeys: [String!]!
   isSelector: Boolean!
   givenName: String!
+}
+
+type ConfigTypeNotFoundError implements Error {
+  message: String!
+  pipeline: Pipeline!
+  configTypeName: String!
 }
 
 type ArrayConfigType implements ConfigType & WrappingConfigType {
@@ -2980,6 +3020,8 @@ type AssetMetadataEntry implements MetadataEntry {
   description: String
   assetKey: AssetKey!
 }
+
+scalar Cursor
 
 type RunGroups {
   results: [RunGroup!]!

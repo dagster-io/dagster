@@ -177,8 +177,13 @@ def test_unconfigurable_inputs_pipeline():
     def noop(_):
         pass
 
-    with pytest.raises(DagsterInvalidDefinitionError):
-        # NewType is not connect and can not be provided with config
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Input '_' of solid 'noop' has no way of being resolved. Must "
+        "provide a resolution to this input via another op/graph, or via a "
+        "direct input value mapped from the top-level graph.",
+    ):
+
         @pipeline
         def _bad_inputs():
             noop()

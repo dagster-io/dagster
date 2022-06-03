@@ -1,4 +1,5 @@
 import json
+import logging
 import platform
 import sys
 import time
@@ -140,8 +141,8 @@ class DbtRpcResource(DbtResource):
         return self._jsonrpc_version
 
     @property
-    def logger(self) -> Optional[Any]:
-        """Optional[Any]: A property for injecting a logger dependency."""
+    def logger(self) -> logging.Logger:
+        """logging.Logger: A property for injecting a logger dependency."""
         return self._logger
 
     @property
@@ -518,10 +519,11 @@ class DbtRpcSyncResource(DbtRpcResource):
         self.poll_interval = poll_interval
 
     def _get_result(self, data: Optional[str] = None) -> DbtRpcOutput:
-        """Sends a request to the dbt RPC server and continuously polls for the status of a request until the state is ``success``."""
+        """Sends a request to the dbt RPC server and continuously polls for the status of a request
+        until the state is ``success``."""
 
         out = super()._get_result(data)
-        request_token = out.result.get("request_token")
+        request_token: str = check.not_none(out.result.get("request_token"))
 
         logs_start = 0
 
@@ -574,7 +576,7 @@ def dbt_rpc_resource(context) -> DbtRpcResource:
     """This resource defines a dbt RPC client.
 
     To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/overview/configuration#configured>`_ method.
+    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
 
     Examples:
 
@@ -611,7 +613,7 @@ def dbt_rpc_sync_resource(
     and waits for the request to complete before returning.
 
     To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/overview/configuration#configured>`_ method.
+    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
 
     Examples:
 

@@ -1,4 +1,5 @@
 import warnings
+from datetime import datetime
 
 import pytest
 
@@ -162,3 +163,24 @@ def test_job_run_request():
         assert run_request.run_config == partition_fn(partition_key)
         assert run_request.tags
         assert run_request.tags.get(PARTITION_NAME_TAG) == partition_key
+
+
+# Datetime is not serializable
+@op
+def op_expects_date(the_date: datetime) -> str:
+    return the_date.strftime("%m/%d/%Y")
+
+
+@job(input_values={"the_date": datetime.now()})
+def pass_from_job(the_date):
+    op_expects_date(the_date)
+
+
+def test_job_input_values_out_of_process():
+    # Test job execution with non-serializable input type out-of-process
+
+    assert pass_from_job.execute_in_process().success
+
+    with instance_for_test() as instance:
+        result = execute_pipeline(reconstructable(pass_from_job), instance=instance)
+        assert result.success

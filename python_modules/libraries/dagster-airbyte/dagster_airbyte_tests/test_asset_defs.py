@@ -56,7 +56,6 @@ def test_assets(schema_prefix):
         json=get_sample_job_json(schema_prefix=schema_prefix),
         status=200,
     )
-    responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
 
     ab_job = build_assets_job(
         "ab_job",

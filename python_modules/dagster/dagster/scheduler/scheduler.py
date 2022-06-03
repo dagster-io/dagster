@@ -421,7 +421,7 @@ def _schedule_runs_at_time(
         solid_selection=external_schedule.solid_selection,
     )
 
-    repo_location = workspace.get_location(
+    repo_location = workspace.get_repository_location(
         schedule_origin.external_repository_origin.repository_location_origin.location_name
     )
 

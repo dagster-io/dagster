@@ -13,6 +13,7 @@ from dagster.core.code_pointer import (
     ModuleCodePointer,
     get_python_file_from_target,
 )
+from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
@@ -128,6 +129,7 @@ class ReconstructablePipeline(
             ("pipeline_name", str),
             ("solid_selection_str", Optional[str]),
             ("solids_to_execute", Optional[FrozenSet[str]]),
+            ("asset_selection", Optional[FrozenSet[AssetKey]]),
         ],
     ),
     IPipeline,
@@ -144,6 +146,8 @@ class ReconstructablePipeline(
             be run.
         solids_to_execute (Optional[FrozenSet[str]]): A set of solid/op names to execute. None if no selection
             is specified, i.e. the entire pipeline/job will be run.
+        asset_selection (Optional[FrozenSet[AssetKey]]) A set of assets to execute. None if no selection
+            is specified, i.e. the entire job will be run.
     """
 
     def __new__(
@@ -152,14 +156,17 @@ class ReconstructablePipeline(
         pipeline_name,
         solid_selection_str=None,
         solids_to_execute=None,
+        asset_selection=None,
     ):
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+        check.opt_set_param(asset_selection, "asset_selection", AssetKey)
         return super(ReconstructablePipeline, cls).__new__(
             cls,
             repository=check.inst_param(repository, "repository", ReconstructableRepository),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             solid_selection_str=check.opt_str_param(solid_selection_str, "solid_selection_str"),
             solids_to_execute=solids_to_execute,
+            asset_selection=asset_selection,
         )
 
     @property
@@ -174,10 +181,14 @@ class ReconstructablePipeline(
 
         if isinstance(defn, JobDefinition):
             return (
-                self.repository.get_definition().get_pipeline(self.pipeline_name)
-                # jobs use pre-resolved selection
-                .get_job_def_for_op_selection(self.solid_selection)
+                self.repository.get_definition()
+                .get_pipeline(self.pipeline_name)
+                .get_job_def_for_subset_selection(self.solid_selection, self.asset_selection)
             )
+
+        check.invariant(
+            self.asset_selection == None, "Asset selection cannot be provided with a pipeline"
+        )
         return (
             self.repository.get_definition().get_pipeline(self.pipeline_name)
             # pipelines use post-resolved selection
@@ -191,9 +202,10 @@ class ReconstructablePipeline(
         self,
         solids_to_execute: Optional[Optional[FrozenSet[str]]],
         solid_selection: Optional[List[str]],
+        asset_selection: Optional[FrozenSet[AssetKey]],
     ) -> "ReconstructablePipeline":
         # no selection
-        if solid_selection is None and solids_to_execute is None:
+        if solid_selection is None and solids_to_execute is None and asset_selection is None:
             return ReconstructablePipeline(
                 repository=self.repository,
                 pipeline_name=self.pipeline_name,
@@ -203,6 +215,7 @@ class ReconstructablePipeline(
 
         pipeline_def = self.get_definition()
         if isinstance(pipeline_def, JobDefinition):
+            # jobs use pre-resolved selection
             # when subselecting a job
             # * job subselection depend on solid_selection rather than solids_to_execute
             # * we'll resolve the op selection later in the stack
@@ -213,8 +226,9 @@ class ReconstructablePipeline(
             return ReconstructablePipeline(
                 repository=self.repository,
                 pipeline_name=self.pipeline_name,
-                solid_selection_str=seven.json.dumps(solid_selection),
+                solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
                 solids_to_execute=None,
+                asset_selection=asset_selection,
             )
         elif isinstance(pipeline_def, PipelineDefinition):
             # when subselecting a pipeline
@@ -234,21 +248,44 @@ class ReconstructablePipeline(
             raise Exception(f"Unexpected pipeline/job type {pipeline_def.__class__.__name__}")
 
     def subset_for_execution(
-        self, solid_selection: Optional[List[str]]
+        self,
+        solid_selection: Optional[List[str]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ) -> "ReconstructablePipeline":
         # take a list of unresolved selection queries
         check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
 
-        return self._subset_for_execution(solids_to_execute=None, solid_selection=solid_selection)
+        check.invariant(
+            not (solid_selection and asset_selection),
+            "solid_selection and asset_selection cannot both be provided as arguments",
+        )
+
+        return self._subset_for_execution(
+            solids_to_execute=None, solid_selection=solid_selection, asset_selection=asset_selection
+        )
 
     def subset_for_execution_from_existing_pipeline(
-        self, solids_to_execute: Optional[FrozenSet[str]]
+        self,
+        solids_to_execute: Optional[FrozenSet[str]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ) -> "ReconstructablePipeline":
         # take a frozenset of resolved solid names from an existing pipeline
         # so there's no need to parse the selection
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
 
-        return self._subset_for_execution(solids_to_execute=solids_to_execute, solid_selection=None)
+        check.invariant(
+            not (solids_to_execute and asset_selection),
+            "solids_to_execute and asset_selection cannot both be provided as arguments",
+        )
+
+        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
+
+        return self._subset_for_execution(
+            solids_to_execute=solids_to_execute,
+            solid_selection=None,
+            asset_selection=asset_selection,
+        )
 
     def describe(self):
         return '"{name}" in repository ({repo})'.format(

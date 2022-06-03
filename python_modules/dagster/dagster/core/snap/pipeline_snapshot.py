@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Union, cast
+from typing import AbstractSet, Any, Dict, FrozenSet, List, NamedTuple, Optional, Set, Union, cast
 
 from dagster import Field, Map, Permissive, Selector, Shape
 from dagster import _check as check
@@ -19,7 +19,9 @@ from dagster.config.snap import (
     ConfigType,
     ConfigTypeSnap,
 )
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.job_definition import JobDefinition
+from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster.core.definitions.pipeline_definition import (
     PipelineDefinition,
     PipelineSubsetDefinition,
@@ -55,6 +57,10 @@ def create_pipeline_snapshot_id(snapshot: "PipelineSnapshot") -> str:
 
 class PipelineSnapshotSerializer(DefaultNamedTupleSerializer):
     @classmethod
+    def skip_when_empty(cls) -> Set[str]:
+        return {"metadata"}  # Maintain stable snapshot ID for back-compat purposes
+
+    @classmethod
     def value_from_storage_dict(
         cls,
         storage_dict,
@@ -83,6 +89,8 @@ def _pipeline_snapshot_from_storage(
     mode_def_snaps: List[ModeDefSnap],
     lineage_snapshot: Optional["PipelineSnapshotLineage"] = None,
     graph_def_name: Optional[str] = None,
+    metadata: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+    **kwargs,  # pylint: disable=unused-argument
 ) -> "PipelineSnapshot":
     """
     v0
@@ -90,14 +98,24 @@ def _pipeline_snapshot_from_storage(
         - lineage added
     v2:
         - graph_def_name
+    v3:
+        - metadata added
+    v4:
+        - add kwargs so that if future versions add new args, this version of deserialization will
+        be able to ignore them. previously, new args would be passed to old versions and cause
+        deserialization errors
     """
     if graph_def_name is None:
         graph_def_name = name
+
+    if metadata is None:
+        metadata = []
 
     return PipelineSnapshot(
         name=name,
         description=description,
         tags=tags,
+        metadata=metadata,
         config_schema_snapshot=config_schema_snapshot,
         dagster_type_namespace_snapshot=dagster_type_namespace_snapshot,
         solid_definitions_snapshot=solid_definitions_snapshot,
@@ -123,6 +141,7 @@ class PipelineSnapshot(
             ("mode_def_snaps", List[ModeDefSnap]),
             ("lineage_snapshot", Optional["PipelineSnapshotLineage"]),
             ("graph_def_name", str),
+            ("metadata", List[Union[MetadataEntry, PartitionMetadataEntry]]),
         ],
     )
 ):
@@ -138,6 +157,7 @@ class PipelineSnapshot(
         mode_def_snaps: List[ModeDefSnap],
         lineage_snapshot: Optional["PipelineSnapshotLineage"],
         graph_def_name: str,
+        metadata: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]],
     ):
         return super(PipelineSnapshot, cls).__new__(
             cls,
@@ -163,6 +183,7 @@ class PipelineSnapshot(
                 lineage_snapshot, "lineage_snapshot", PipelineSnapshotLineage
             ),
             graph_def_name=check.str_param(graph_def_name, "graph_def_name"),
+            metadata=check.opt_list_param(metadata, "metadata"),
         )
 
     @classmethod
@@ -170,7 +191,6 @@ class PipelineSnapshot(
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
         lineage = None
         if isinstance(pipeline_def, PipelineSubsetDefinition):
-
             lineage = PipelineSnapshotLineage(
                 parent_snapshot_id=create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.parent_pipeline_def)
@@ -179,7 +199,6 @@ class PipelineSnapshot(
                 solids_to_execute=pipeline_def.solids_to_execute,
             )
         if isinstance(pipeline_def, JobDefinition) and pipeline_def.op_selection_data:
-
             lineage = PipelineSnapshotLineage(
                 parent_snapshot_id=create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.op_selection_data.parent_job_def)
@@ -187,11 +206,19 @@ class PipelineSnapshot(
                 solid_selection=sorted(pipeline_def.op_selection_data.op_selection),
                 solids_to_execute=pipeline_def.op_selection_data.resolved_op_selection,
             )
+        if isinstance(pipeline_def, JobDefinition) and pipeline_def.asset_selection_data:
+            lineage = PipelineSnapshotLineage(
+                parent_snapshot_id=create_pipeline_snapshot_id(
+                    cls.from_pipeline_def(pipeline_def.asset_selection_data.parent_job_def)
+                ),
+                asset_selection=pipeline_def.asset_selection_data.asset_selection,
+            )
 
         return PipelineSnapshot(
             name=pipeline_def.name,
             description=pipeline_def.description,
             tags=pipeline_def.tags,
+            metadata=pipeline_def.metadata,
             config_schema_snapshot=build_config_schema_snapshot(pipeline_def),
             dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(pipeline_def),
             solid_definitions_snapshot=build_solid_definitions_snapshot(pipeline_def),
@@ -423,6 +450,7 @@ class PipelineSnapshotLineage(
             ("parent_snapshot_id", str),
             ("solid_selection", Optional[List[str]]),
             ("solids_to_execute", Optional[AbstractSet[str]]),
+            ("asset_selection", Optional[FrozenSet[AssetKey]]),
         ],
     )
 ):
@@ -431,6 +459,7 @@ class PipelineSnapshotLineage(
         parent_snapshot_id: str,
         solid_selection: Optional[List[str]] = None,
         solids_to_execute: Optional[AbstractSet[str]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ):
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         return super(PipelineSnapshotLineage, cls).__new__(
@@ -438,4 +467,5 @@ class PipelineSnapshotLineage(
             check.str_param(parent_snapshot_id, parent_snapshot_id),
             solid_selection,
             solids_to_execute,
+            asset_selection,
         )

@@ -61,7 +61,6 @@ if __name__ == "__main__":
             "coloredlogs>=6.1, <=14.0",
             "contextvars; python_version < '3.7'",
             "Jinja2",
-            "markupsafe<=2.0.1",
             "PyYAML>=5.1",
             # core (not explicitly expressed atm)
             # alembic 1.6.3 broke our migrations: https://github.com/sqlalchemy/alembic/issues/848
@@ -73,7 +72,7 @@ if __name__ == "__main__":
             "packaging>=20.9",
             "pendulum",
             "pep562",
-            "protobuf>=3.13.0",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
+            "protobuf>=3.13.0,<4",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
             "python-dateutil",
             "pytz",
             "requests",

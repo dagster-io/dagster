@@ -61,7 +61,7 @@ class DbtCloudResourceV2:
         endpoint: str,
         data: Optional[Dict[str, Any]] = None,
         return_text: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> Any:
         """
         Creates and sends a request to the desired dbt Cloud API endpoint.
 
@@ -181,7 +181,7 @@ class DbtCloudResourceV2:
         order_by: Optional[str] = "-id",
         offset: int = 0,
         limit: int = 100,
-    ) -> List[Dict[str, any]]:
+    ) -> List[Dict[str, object]]:
         """
         Returns a list of runs from dbt Cloud. This can be optionally filtered to a specific job
         using the job_definition_id. It supports pagination using offset and limit as well and
@@ -381,8 +381,9 @@ class DbtCloudResourceV2:
                 See: https://docs.getdbt.com/dbt-cloud/api-v2#operation/getRunById for schema.
         """
 
-        if not href:
+        if href is None:
             href = self.get_run(run_id).get("href")
+        assert isinstance(href, str), "Run must have an href"
 
         poll_start = datetime.datetime.now()
         while True:
@@ -489,6 +490,11 @@ class DbtCloudResourceV2:
             default_value=0.25,
             description="Time (in seconds) to wait between each request retry.",
         ),
+        "dbt_cloud_host": Field(
+            config=StringSource,
+            default_value=DBT_DEFAULT_HOST,
+            description="The hostname where dbt cloud is being hosted (e.g. https://my_org.cloud.getdbt.com/).",
+        ),
     },
     description="This resource helps interact with dbt Cloud connectors",
 )
@@ -502,7 +508,7 @@ def dbt_cloud_resource(context) -> DbtCloudResourceV2:
     response JSON schemae, see the `dbt Cloud API Docs <https://docs.getdbt.com/dbt-cloud/api-v2>`_.
 
     To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/overview/configuration#configured>`_ method.
+    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
 
     **Examples:**
 
@@ -529,4 +535,5 @@ def dbt_cloud_resource(context) -> DbtCloudResourceV2:
         request_max_retries=context.resource_config["request_max_retries"],
         request_retry_delay=context.resource_config["request_retry_delay"],
         log=context.log,
+        dbt_cloud_host=context.resource_config["dbt_cloud_host"],
     )

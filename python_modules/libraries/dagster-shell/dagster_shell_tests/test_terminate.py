@@ -91,7 +91,6 @@ def test_terminate_kills_subproc():
             time.sleep(0.5)
 
             launcher = instance.run_launcher
-            assert launcher.can_terminate(run_id)
             assert launcher.terminate(run_id)
 
             terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)

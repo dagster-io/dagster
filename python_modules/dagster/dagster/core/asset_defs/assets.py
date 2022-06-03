@@ -2,7 +2,13 @@ import warnings
 from typing import AbstractSet, Dict, Iterable, Mapping, Optional, Sequence, Set, cast
 
 import dagster._check as check
-from dagster.core.definitions import GraphDefinition, NodeDefinition, NodeHandle, OpDefinition
+from dagster.core.definitions import (
+    GraphDefinition,
+    NodeDefinition,
+    NodeHandle,
+    OpDefinition,
+    ResourceDefinition,
+)
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.utils.backcompat import ExperimentalWarning, experimental
@@ -20,6 +26,10 @@ class AssetsDefinition:
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]] = None,
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
+        selected_asset_keys: Optional[AbstractSet[AssetKey]] = None,
+        can_subset: bool = False,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        group_names: Optional[Mapping[AssetKey, str]] = None,
         # if adding new fields, make sure to handle them in the with_replaced_asset_keys method
     ):
         self._node_def = node_def
@@ -52,6 +62,14 @@ class AssetsDefinition:
             f"asset_deps keys: {set(self._asset_deps.keys())} \n"
             f"expected keys: {all_asset_keys}",
         )
+        self._resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
+        self._group_names = check.opt_mapping_param(group_names, "group_names")
+
+        if selected_asset_keys is not None:
+            self._selected_asset_keys = selected_asset_keys
+        else:
+            self._selected_asset_keys = all_asset_keys
+        self._can_subset = can_subset
 
     def __call__(self, *args, **kwargs):
         return self._node_def(*args, **kwargs)
@@ -84,6 +102,7 @@ class AssetsDefinition:
             partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
                 compose the assets.
         """
+        graph_def = check.inst_param(graph_def, "graph_def", GraphDefinition)
         asset_keys_by_input_name = check.opt_dict_param(
             asset_keys_by_input_name, "asset_keys_by_input_name", key_type=str, value_type=AssetKey
         )
@@ -122,6 +141,14 @@ class AssetsDefinition:
         )
 
     @property
+    def can_subset(self) -> bool:
+        return self._can_subset
+
+    @property
+    def group_names(self) -> Mapping[AssetKey, str]:
+        return self._group_names
+
+    @property
     def op(self) -> OpDefinition:
         check.invariant(
             isinstance(self._node_def, OpDefinition),
@@ -140,32 +167,58 @@ class AssetsDefinition:
     @property
     def asset_key(self) -> AssetKey:
         check.invariant(
-            len(self._asset_keys_by_output_name) == 1,
+            len(self.asset_keys) == 1,
             "Tried to retrieve asset key from an assets definition with multiple asset keys: "
             + ", ".join([str(ak.to_string()) for ak in self._asset_keys_by_output_name.values()]),
         )
 
-        return next(iter(self._asset_keys_by_output_name.values()))
+        return next(iter(self.asset_keys))
+
+    @property
+    def resource_defs(self) -> Mapping[str, ResourceDefinition]:
+        return self._resource_defs
 
     @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
-        return set(self.asset_keys_by_output_name.values())
+        return self._selected_asset_keys
 
     @property
-    def asset_keys_by_output_name(self) -> Mapping[str, AssetKey]:
+    def dependency_asset_keys(self) -> Iterable[AssetKey]:
+        # the input asset keys that are directly upstream of a selected asset key
+        upstream_keys = set().union(*(self.asset_deps[key] for key in self.asset_keys))
+        input_keys = set(self._asset_keys_by_input_name.values())
+        return upstream_keys.intersection(input_keys)
+
+    @property
+    def node_asset_keys_by_output_name(self) -> Mapping[str, AssetKey]:
+        """AssetKey for each output on the underlying NodeDefinition"""
         return self._asset_keys_by_output_name
 
     @property
-    def asset_keys_by_input_name(self) -> Mapping[str, AssetKey]:
+    def node_asset_keys_by_input_name(self) -> Mapping[str, AssetKey]:
+        """AssetKey for each input on the underlying NodeDefinition"""
         return self._asset_keys_by_input_name
+
+    @property
+    def asset_keys_by_output_name(self) -> Mapping[str, AssetKey]:
+        return {
+            name: key
+            for name, key in self.node_asset_keys_by_output_name.items()
+            if key in self.asset_keys
+        }
+
+    @property
+    def asset_keys_by_input_name(self) -> Mapping[str, AssetKey]:
+        upstream_keys = set().union(*(self.asset_deps[key] for key in self.asset_keys))
+        return {
+            name: key
+            for name, key in self.node_asset_keys_by_input_name.items()
+            if key in upstream_keys
+        }
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         return self._partitions_def
-
-    @property
-    def dependency_asset_keys(self) -> Iterable[AssetKey]:
-        return self._asset_keys_by_input_name.values()
 
     def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
         if self._partitions_def is None:
@@ -187,16 +240,57 @@ class AssetsDefinition:
             return self.__class__(
                 asset_keys_by_input_name={
                     input_name: input_asset_key_replacements.get(key, key)
-                    for input_name, key in self.asset_keys_by_input_name.items()
+                    for input_name, key in self._asset_keys_by_input_name.items()
                 },
                 asset_keys_by_output_name={
                     output_name: output_asset_key_replacements.get(key, key)
-                    for output_name, key in self.asset_keys_by_output_name.items()
+                    for output_name, key in self._asset_keys_by_output_name.items()
                 },
                 node_def=self.node_def,
                 partitions_def=self.partitions_def,
                 partition_mappings=self._partition_mappings,
+                asset_deps={
+                    # replace both the keys and the values in this mapping
+                    output_asset_key_replacements.get(key, key): {
+                        input_asset_key_replacements.get(
+                            upstream_key,
+                            output_asset_key_replacements.get(upstream_key, upstream_key),
+                        )
+                        for upstream_key in value
+                    }
+                    for key, value in self.asset_deps.items()
+                },
+                can_subset=self.can_subset,
+                selected_asset_keys={
+                    output_asset_key_replacements.get(key, key) for key in self._selected_asset_keys
+                },
+                resource_defs=self.resource_defs,
             )
+
+    def subset_for(self, selected_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
+        """
+        Create a subset of this AssetsDefinition that will only materialize the assets in the
+        selected set.
+
+        Args:
+            selected_asset_keys (AbstractSet[AssetKey]): The total set of asset keys
+        """
+        check.invariant(
+            self.can_subset,
+            f"Attempted to subset AssetsDefinition for {self.node_def.name}, but can_subset=False.",
+        )
+        return AssetsDefinition(
+            # keep track of the original mapping
+            asset_keys_by_input_name=self._asset_keys_by_input_name,
+            asset_keys_by_output_name=self._asset_keys_by_output_name,
+            # TODO: subset this properly for graph-backed-assets
+            node_def=self.node_def,
+            partitions_def=self.partitions_def,
+            partition_mappings=self._partition_mappings,
+            asset_deps=self._asset_deps,
+            can_subset=self.can_subset,
+            selected_asset_keys=selected_asset_keys & self.asset_keys,
+        )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
         result = []

@@ -130,3 +130,6 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
 
     def optimize_for_dagit(self, statement_timeout: int):
         """Allows for optimizing database connection / use in the context of a long lived dagit process"""
+
+    def alembic_version(self):
+        return None

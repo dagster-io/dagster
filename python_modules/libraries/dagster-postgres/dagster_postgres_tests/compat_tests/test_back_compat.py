@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 
 import pytest
-from sqlalchemy import create_engine
+import sqlalchemy as db
 
 from dagster import (
     AssetKey,
@@ -20,7 +20,6 @@ from dagster import (
     reconstructable,
     solid,
 )
-from dagster.core.errors import DagsterInstanceSchemaOutdated
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.core.storage.pipeline_run import RunsFilter
@@ -58,7 +57,7 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
             noop_solid()
 
         with pytest.raises(
-            DagsterInstanceSchemaOutdated, match=_migration_regex(current_revision=None)
+            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
             execute_pipeline(noop_pipeline, instance=instance)
 
@@ -118,8 +117,7 @@ def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
             asset_solid()
 
         with pytest.raises(
-            DagsterInstanceSchemaOutdated,
-            match=_migration_regex(current_revision="c9159e740d7e"),
+            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
             execute_pipeline(asset_pipeline, instance=instance)
 
@@ -157,8 +155,7 @@ def test_0_9_22_postgres_pre_run_partition(hostname, conn_string):
         tags = {PARTITION_NAME_TAG: "my_partition", PARTITION_SET_TAG: "my_partition_set"}
 
         with pytest.raises(
-            DagsterInstanceSchemaOutdated,
-            match=_migration_regex(current_revision="3e0770016702"),
+            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
             execute_pipeline(simple_pipeline, tags=tags, instance=instance)
 
@@ -204,7 +201,9 @@ def test_0_10_6_add_bulk_actions_table(hostname, conn_string):
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
-        with pytest.raises(DagsterInstanceSchemaOutdated):
+        with pytest.raises(
+            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
+        ):
             with DagsterInstance.from_config(tempdir) as instance:
                 instance.get_backfills()
 
@@ -233,8 +232,7 @@ def test_0_11_0_add_asset_details(hostname, conn_string):
         with DagsterInstance.from_config(tempdir) as instance:
             storage = instance._event_storage
             with pytest.raises(
-                DagsterInstanceSchemaOutdated,
-                match=_migration_regex(current_revision="3e71cf573ba6"),
+                (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
             ):
                 storage.all_asset_keys()
             instance.upgrade()
@@ -279,8 +277,7 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
         # Ensure that migration required exception throws, since you are trying to use the
         # migration-required column.
         with pytest.raises(
-            DagsterInstanceSchemaOutdated,
-            match=_migration_regex(current_revision="7cba9eeaaf1d"),
+            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
             instance.get_runs(filters=RunsFilter(mode="the_mode"))
 
@@ -380,7 +377,7 @@ def test_0_12_0_asset_observation_backcompat(hostname, conn_string):
 
 
 def _reconstruct_from_file(hostname, conn_string, path, username="test", password="test"):
-    engine = create_engine(conn_string)
+    engine = db.create_engine(conn_string)
     engine.execute("drop schema public cascade;")
     engine.execute("create schema public;")
     env = os.environ.copy()
@@ -513,8 +510,6 @@ def test_instigators_table_backcompat(hostname, conn_string):
 
 
 def test_jobs_selector_id_migration(hostname, conn_string):
-    import sqlalchemy as db
-
     from dagster.core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
     from dagster.core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
 

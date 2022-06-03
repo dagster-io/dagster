@@ -389,6 +389,10 @@ class DagsterUserCodeProcessError(DagsterError):
         super(DagsterUserCodeProcessError, self).__init__(*args, **kwargs)
 
 
+class DagsterRepositoryLocationNotFoundError(DagsterError):
+    pass
+
+
 class DagsterRepositoryLocationLoadError(DagsterError):
     def __init__(self, *args, **kwargs):
         from dagster.utils.error import SerializableErrorInfo
@@ -427,23 +431,6 @@ class DagsterBackfillFailedError(DagsterError):
             SerializableErrorInfo,
         )
         super(DagsterBackfillFailedError, self).__init__(*args, **kwargs)
-
-
-class DagsterInstanceSchemaOutdated(DagsterError):
-    """Indicates that the dagster instance must be migrated."""
-
-    def __init__(self, db_revision=None, head_revision=None):
-        super(DagsterInstanceSchemaOutdated, self).__init__(
-            "Raised an exception that may indicate that the Dagster database needs to be be migrated."
-            "{revision_clause} To migrate, run `dagster instance migrate`.".format(
-                revision_clause=(
-                    " Database is at revision {db_revision}, head is "
-                    "{head_revision}.".format(db_revision=db_revision, head_revision=head_revision)
-                    if db_revision or head_revision
-                    else ""
-                ),
-            )
-        )
 
 
 class DagsterRunAlreadyExists(DagsterError):

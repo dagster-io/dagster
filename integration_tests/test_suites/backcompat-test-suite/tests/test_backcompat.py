@@ -112,7 +112,7 @@ def graphql_client(release_test_map, retrying_requests):
     user_code_version = release_test_map["user_code"]
 
     with docker_service_up(
-        file_relative_path(__file__, "./dagit_service/docker-compose.yml"),
+        os.path.join(os.getcwd(), "dagit_service", "docker-compose.yml"),
         build_args=[dagit_version, user_code_version],
     ):
         result = retrying_requests.get(f"http://{dagit_host}:3000/dagit_info")

@@ -207,6 +207,17 @@
                     "items": {
                         "$ref": "#/definitions/Server"
                     }
+                },
+                "externalConfigmap": {
+                    "title": "Externalconfigmap",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -297,6 +308,10 @@
                 "image": {
                     "$ref": "#/definitions/Image"
                 },
+                "nameOverride": {
+                    "title": "Nameoverride",
+                    "type": "string"
+                },
                 "service": {
                     "$ref": "#/definitions/schema__charts__utils__kubernetes__Service"
                 },
@@ -382,11 +397,23 @@
                             "type": "null"
                         }
                     ]
+                },
+                "logLevel": {
+                    "title": "Loglevel",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
                 "replicaCount",
                 "image",
+                "nameOverride",
                 "service",
                 "workspace",
                 "env",
@@ -407,6 +434,12 @@
                 "enableReadOnly"
             ],
             "additionalProperties": false
+        },
+        "SecretRef": {
+            "title": "SecretRef",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
         },
         "UserDeploymentIncludeConfigInLaunchedRuns": {
             "title": "UserDeploymentIncludeConfigInLaunchedRuns",
@@ -550,6 +583,13 @@
                     "title": "Enablesubchart",
                     "type": "boolean"
                 },
+                "imagePullSecrets": {
+                    "title": "Imagepullsecrets",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SecretRef"
+                    }
+                },
                 "deployments": {
                     "title": "Deployments",
                     "type": "array",
@@ -561,6 +601,7 @@
             "required": [
                 "enabled",
                 "enableSubchart",
+                "imagePullSecrets",
                 "deployments"
             ]
         },
@@ -630,6 +671,10 @@
                     "title": "Postgresqlparams",
                     "type": "object"
                 },
+                "postgresqlScheme": {
+                    "title": "Postgresqlscheme",
+                    "type": "string"
+                },
                 "service": {
                     "$ref": "#/definitions/schema__charts__dagster__subschema__postgresql__Service"
                 }
@@ -642,6 +687,7 @@
                 "postgresqlPassword",
                 "postgresqlDatabase",
                 "postgresqlParams",
+                "postgresqlScheme",
                 "service"
             ]
         },
@@ -1011,18 +1057,11 @@
                 "flower"
             ]
         },
-        "SecretRef": {
-            "title": "SecretRef",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
-        },
         "ComputeLogManagerType": {
             "title": "ComputeLogManagerType",
             "description": "An enumeration.",
             "enum": [
                 "NoOpComputeLogManager",
-                "LocalComputeLogManager",
                 "AzureBlobComputeLogManager",
                 "GCSComputeLogManager",
                 "S3ComputeLogManager",

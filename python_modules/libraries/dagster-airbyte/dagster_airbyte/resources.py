@@ -97,7 +97,7 @@ class AirbyteResource:
         self.make_request(endpoint="/jobs/cancel", data={"id": job_id})
 
     def get_job_status(self, job_id: int) -> dict:
-        return check.is_dict(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
+        return check.not_none(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
 
     def start_sync(self, connection_id: str) -> Dict[str, object]:
         return check.not_none(
@@ -138,6 +138,7 @@ class AirbyteResource:
         start = time.monotonic()
         logged_attempts = 0
         logged_lines = 0
+        state = None
 
         try:
             while True:
@@ -177,9 +178,10 @@ class AirbyteResource:
                 else:
                     raise Failure(f"Encountered unexpected state `{state}` for job_id {job_id}")
         finally:
-            # make sure that the Airbyte job does not outlive the python process
-            # cancelling a successfully completed job has no effect
-            self.cancel_job(job_id)
+            # if Airbyte sync has not completed, make sure to cancel it so that it doesn't outlive
+            # the python process
+            if state not in (AirbyteState.SUCCEEDED, AirbyteState.ERROR, AirbyteState.CANCELLED):
+                self.cancel_job(job_id)
 
         return AirbyteOutput(job_details=job_details, connection_details=connection_details)
 
@@ -225,7 +227,7 @@ def airbyte_resource(context) -> AirbyteResource:
     schema, see the `Airbyte API Docs <https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#overview>`_.
 
     To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/overview/configuration#configured>`_ method.
+    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
 
     **Examples:**
 

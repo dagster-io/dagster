@@ -2,6 +2,7 @@ import {gql} from '@apollo/client';
 import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
 import React from 'react';
 
+import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {GanttChartLayout} from '../gantt/Constants';
 import {GanttChartMode} from '../gantt/GanttChart';
@@ -92,6 +93,33 @@ function buildMatrixData(
       runs: [],
     };
     const steps = layout.boxes.map(({node}) => {
+      const blankState = {
+        name: node.name,
+        color: 'MISSING' as StatusSquareColor,
+        unix: 0,
+      };
+
+      if (!partition.runs.length) {
+        return blankState;
+      }
+
+      if (featureEnabled(FeatureFlag.flagNewPartitionsView)) {
+        const lastRun = partition.runs[partition.runs.length - 1];
+        const lastRunStepStatus = lastRun.stepStats.find((stats) =>
+          isStepKeyForNode(node.name, stats.stepKey),
+        )?.status;
+
+        if (!lastRunStepStatus || lastRunStepStatus === StepEventStatus.IN_PROGRESS) {
+          return blankState;
+        }
+
+        return {
+          name: node.name,
+          unix: getStartTime(lastRun),
+          color: lastRunStepStatus,
+        };
+      }
+
       const datapoints = partition.runs
         .map((r, idx) => ({
           runIdx: idx,
@@ -102,12 +130,9 @@ function buildMatrixData(
             !!s.status && s.status !== StepEventStatus.IN_PROGRESS,
         )
         .reverse();
+
       if (datapoints.length === 0) {
-        return {
-          name: node.name,
-          color: 'MISSING' as StatusSquareColor,
-          unix: 0,
-        };
+        return blankState;
       }
 
       // Calculate the box color for this step. CSS classes are in the "previous-final" format, and we'll
@@ -120,7 +145,6 @@ function buildMatrixData(
       const color = prev
         ? (`${prev.status}-${datapoints[0].status}` as StatusSquareColor)
         : datapoints[0].status;
-
       return {
         name: node.name,
         unix: getStartTime(partition.runs[datapoints[0].runIdx]),

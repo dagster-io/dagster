@@ -5,6 +5,7 @@ import {useHistory, useParams} from 'react-router-dom';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {Loading} from '../ui/Loading';
 import {buildPipelineSelector} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
@@ -51,6 +52,7 @@ export const PipelineExplorerContainer: React.FC<{
   const [options, setOptions] = React.useState<GraphExplorerOptions>({
     explodeComposites: explorerPath.explodeComposites ?? false,
     preferAssetRendering: true,
+    enableSidebar: true,
   });
 
   const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
@@ -82,7 +84,6 @@ export const PipelineExplorerContainer: React.FC<{
         const assetNodesPresent = result.solidHandles.some(
           (h) => h.solid.definition.assetNodes.length > 0,
         );
-
         if (options.preferAssetRendering && assetNodesPresent) {
           return (
             <AssetGraphExplorer
@@ -132,6 +133,9 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       ... on PipelineSnapshot {
         id
         name
+        metadataEntries {
+          ...MetadataEntryFragment
+        }
         ...GraphExplorerFragment
 
         solidHandle(handleID: $rootHandleID) {
@@ -160,6 +164,7 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       ...PythonErrorFragment
     }
   }
+  ${METADATA_ENTRY_FRAGMENT}
   ${GRAPH_EXPLORER_FRAGMENT}
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
   ${GRAPH_EXPLORER_ASSET_NODE_FRAGMENT}

@@ -7,6 +7,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Mapping,
     Optional,
     Set,
     Tuple,
@@ -26,6 +27,7 @@ from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.utils import check_valid_name
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.core.storage.io_manager import io_manager
 from dagster.core.types.dagster_type import (
     DagsterType,
@@ -45,9 +47,11 @@ from .dependency import (
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .logger_definition import LoggerDefinition
+from .metadata import RawMetadataValue
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
+from .resource_requirement import ResourceRequirement
 from .solid_container import create_execution_structure, validate_dependency_dict
 from .version_strategy import VersionStrategy
 
@@ -239,6 +243,31 @@ class GraphDefinition(NodeDefinition):
 
         return [self.solid_named(solid_name) for solid_name in order]
 
+    def get_inputs_must_be_resolved_top_level(
+        self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
+    ) -> List[InputDefinition]:
+        unresolveable_input_defs = []
+        for node in self.node_dict.values():
+            cur_handle = NodeHandle(node.name, handle)
+            for input_def in node.definition.get_inputs_must_be_resolved_top_level(
+                asset_layer, cur_handle
+            ):
+                if self.dependency_structure.has_deps(SolidInputHandle(node, input_def)):
+                    continue
+                elif not node.container_maps_input(input_def.name):
+                    raise DagsterInvalidDefinitionError(
+                        f"Input '{input_def.name}' of {node.describe_node()} "
+                        "has no way of being resolved. Must provide a resolution to this "
+                        "input via another op/graph, or via a direct input value mapped from the "
+                        "top-level graph. To "
+                        "learn more, see the docs for unconnected inputs: "
+                        "https://docs.dagster.io/concepts/io-management/unconnected-inputs#unconnected-inputs."
+                    )
+                else:
+                    mapped_input = node.container_mapped_input(input_def.name)
+                    unresolveable_input_defs.append(mapped_input.definition)
+        return unresolveable_input_defs
+
     @property
     def node_type_str(self) -> str:
         return "graph"
@@ -296,6 +325,16 @@ class GraphDefinition(NodeDefinition):
     def iterate_solid_defs(self) -> Iterator["SolidDefinition"]:
         for outer_node_def in self._node_defs:
             yield from outer_node_def.iterate_solid_defs()
+
+    def iterate_node_handles(
+        self, parent_node_handle: Optional[NodeHandle] = None
+    ) -> Iterator[NodeHandle]:
+        for node in self.node_dict.values():
+            cur_node_handle = NodeHandle(node.name, parent_node_handle)
+            if node.is_graph:
+                graph_def = node.definition.ensure_graph_def()
+                yield from graph_def.iterate_node_handles(cur_node_handle)
+            yield cur_node_handle
 
     @property
     def input_mappings(self) -> List[InputMapping]:
@@ -454,6 +493,7 @@ class GraphDefinition(NodeDefinition):
         resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
         config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
         tags: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
@@ -462,6 +502,8 @@ class GraphDefinition(NodeDefinition):
         op_selection: Optional[List[str]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         asset_layer: Optional["AssetLayer"] = None,
+        input_values: Optional[Mapping[str, object]] = None,
+        _asset_selection_data: Optional[AssetSelectionData] = None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -492,10 +534,14 @@ class GraphDefinition(NodeDefinition):
                 values to the base config. The values provided will be viewable and editable in the
                 Dagit playground, so be careful with secrets.
             tags (Optional[Dict[str, Any]]):
-                Arbitrary metadata for any execution of the Job.
+                Arbitrary information that will be attached to the execution of the Job.
                 Values that are not strings will be json encoded and must meet the criteria that
                 `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
                 values provided at invocation time.
+            metadata (Optional[Dict[str, RawMetadataValue]]):
+                Arbitrary information that will be attached to the JobDefinition and be viewable in Dagit.
+                Keys must be strings, and values must be python primitive types or one of the provided
+                MetadataValue types
             logger_defs (Optional[Dict[str, LoggerDefinition]]):
                 A dictionary of string logger identifiers to their implementations.
             executor_def (Optional[ExecutorDefinition]):
@@ -512,6 +558,8 @@ class GraphDefinition(NodeDefinition):
                 argument can't also be supplied.
             asset_layer (Optional[AssetLayer]): Top level information about the assets this job
                 will produce. Generally should not be set manually.
+            input_values (Optional[Mapping[str, Any]]):
+                A dictionary that maps python objects to the top-level inputs of a job.
 
         Returns:
             JobDefinition
@@ -526,6 +574,7 @@ class GraphDefinition(NodeDefinition):
         executor_def = check.opt_inst_param(
             executor_def, "executor_def", ExecutorDefinition, default=multi_or_in_process_executor
         )
+        input_values = check.opt_mapping_param(input_values, "input_values")
 
         if resource_defs and "io_manager" in resource_defs:
             resource_defs_with_defaults = resource_defs
@@ -579,11 +628,14 @@ class GraphDefinition(NodeDefinition):
             partitioned_config=partitioned_config,
             preset_defs=presets,
             tags=tags,
+            metadata=metadata,
             hook_defs=hooks,
             version_strategy=version_strategy,
             op_retry_policy=op_retry_policy,
             asset_layer=asset_layer,
-        ).get_job_def_for_op_selection(op_selection)
+            _input_values=input_values,
+            _subset_selection_data=_asset_selection_data,
+        ).get_job_def_for_subset_selection(op_selection)
 
     def coerce_to_job(self):
         # attempt to coerce a Graph in to a Job, raising a useful error if it doesn't work
@@ -623,6 +675,7 @@ class GraphDefinition(NodeDefinition):
         raise_on_error: bool = True,
         op_selection: Optional[List[str]] = None,
         run_id: Optional[str] = None,
+        input_values: Optional[Mapping[str, object]] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute this graph in-process, collecting results in-memory.
@@ -646,6 +699,8 @@ class GraphDefinition(NodeDefinition):
                 (downstream dependencies) within 3 levels down.
                 * ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
+            input_values (Optional[Mapping[str, Any]]):
+                A dictionary that maps python objects to the top-level inputs of the graph.
 
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
@@ -659,6 +714,7 @@ class GraphDefinition(NodeDefinition):
 
         instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         resources = check.opt_dict_param(resources, "resources", key_type=str)
+        input_values = check.opt_mapping_param(input_values, "input_values")
 
         resource_defs = wrap_resources_for_execution(resources)
 
@@ -667,7 +723,8 @@ class GraphDefinition(NodeDefinition):
             graph_def=self,
             executor_def=execute_in_process_executor,
             resource_defs=resource_defs,
-        ).get_job_def_for_op_selection(op_selection)
+            _input_values=input_values,
+        ).get_job_def_for_subset_selection(op_selection)
 
         run_config = run_config if run_config is not None else {}
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
@@ -689,6 +746,13 @@ class GraphDefinition(NodeDefinition):
     @property
     def is_subselected(self) -> bool:
         return False
+
+    def get_resource_requirements(self, asset_layer: "AssetLayer") -> Iterator[ResourceRequirement]:
+        for node in self.node_dict.values():
+            yield from node.get_resource_requirements(outer_container=self, asset_layer=asset_layer)
+
+        for dagster_type in self.all_dagster_types():
+            yield from dagster_type.get_resource_requirements()
 
 
 class SubselectedGraphDefinition(GraphDefinition):

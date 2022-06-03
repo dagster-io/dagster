@@ -84,7 +84,10 @@ class _Op:
         inferred_out = infer_output_props(fn)
 
         if self.ins is not None:
-            input_defs = [inp.to_definition(name) for name, inp in self.ins.items()]
+            input_defs = [
+                inp.to_definition(name)
+                for name, inp in sorted(self.ins.items(), key=lambda input: input[0])
+            ]  # sort so that input definition order is deterministic
         else:
             input_defs = check.opt_list_param(
                 self.input_defs, "input_defs", of_type=InputDefinition

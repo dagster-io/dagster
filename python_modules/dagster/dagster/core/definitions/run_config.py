@@ -1,9 +1,10 @@
-from typing import Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, cast
+from typing import Any, Dict, Iterator, List, Mapping, NamedTuple, Optional, Set, Tuple, cast
 
 from dagster.config import Field, Permissive, Selector
 from dagster.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
 from dagster.config.field_utils import Shape
 from dagster.config.iterate_types import iterate_config_types
+from dagster.core.definitions.asset_layer import AssetLayer
 from dagster.core.definitions.executor_definition import (
     ExecutorDefinition,
     execute_in_process_executor,
@@ -73,6 +74,8 @@ class RunConfigSchemaCreationData(NamedTuple):
     ignored_solids: List[Node]
     required_resources: Set[str]
     is_using_graph_job_op_apis: bool
+    direct_inputs: Mapping[str, Any]
+    asset_layer: AssetLayer
 
 
 def define_logger_dictionary_cls(creation_data: RunConfigSchemaCreationData) -> Shape:
@@ -134,9 +137,12 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         ),
         "inputs": get_inputs_field(
             solid=top_level_node,
+            handle=NodeHandle(top_level_node.name, parent=None),
             dependency_structure=creation_data.dependency_structure,
             resource_defs=creation_data.mode_definition.resource_defs,
             solid_ignored=False,
+            direct_inputs=creation_data.direct_inputs,
+            asset_layer=creation_data.asset_layer,
         ),
     }
 
@@ -151,6 +157,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
                 dependency_structure=creation_data.dependency_structure,
                 resource_defs=creation_data.mode_definition.resource_defs,
                 is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
+                asset_layer=creation_data.asset_layer,
             )
         )
 
@@ -175,15 +182,23 @@ def selector_for_named_defs(named_defs) -> Selector:
 
 def get_inputs_field(
     solid: Node,
+    handle: NodeHandle,
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
     solid_ignored: bool,
+    asset_layer: AssetLayer,
+    direct_inputs: Optional[Mapping[str, Any]] = None,
 ):
+    direct_inputs = check.opt_mapping_param(direct_inputs, "direct_inputs")
     inputs_field_fields = {}
     for name, inp in solid.definition.input_dict.items():
         inp_handle = SolidInputHandle(solid, inp)
         has_upstream = input_has_upstream(dependency_structure, inp_handle, solid, name)
-        if inp.root_manager_key and not has_upstream:
+        if asset_layer.asset_key_for_input(handle, name) and not has_upstream:
+            input_field = None
+        elif name in direct_inputs and not has_upstream:
+            input_field = None
+        elif inp.root_manager_key and not has_upstream:
             input_field = get_input_manager_input_field(solid, inp, resource_defs)
         elif inp.dagster_type.loader and not has_upstream:
             input_field = get_type_loader_input_field(solid, name, inp)
@@ -336,19 +351,18 @@ def solid_config_field(
 
 def construct_leaf_solid_config(
     solid: Node,
+    handle: NodeHandle,
     dependency_structure: DependencyStructure,
     config_schema: Optional[IDefinitionConfigSchema],
     resource_defs: Dict[str, ResourceDefinition],
     ignored: bool,
     is_using_graph_job_op_apis: bool,
+    asset_layer: AssetLayer,
 ) -> Optional[Field]:
     return solid_config_field(
         {
             "inputs": get_inputs_field(
-                solid,
-                dependency_structure,
-                resource_defs,
-                ignored,
+                solid, handle, dependency_structure, resource_defs, ignored, asset_layer
             ),
             "outputs": get_outputs_field(solid, resource_defs),
             "config": config_schema.as_field() if config_schema else None,
@@ -365,6 +379,7 @@ def define_isolid_field(
     resource_defs: Dict[str, ResourceDefinition],
     ignored: bool,
     is_using_graph_job_op_apis: bool,
+    asset_layer: AssetLayer,
 ) -> Optional[Field]:
 
     # All solids regardless of compositing status get the same inputs and outputs
@@ -380,11 +395,13 @@ def define_isolid_field(
     if isinstance(solid.definition, SolidDefinition):
         return construct_leaf_solid_config(
             solid,
+            handle,
             dependency_structure,
             solid.definition.config_schema,
             resource_defs,
             ignored,
             is_using_graph_job_op_apis,
+            asset_layer,
         )
 
     graph_def = solid.definition.ensure_graph_def()
@@ -394,12 +411,14 @@ def define_isolid_field(
         # be `configured`)...
         return construct_leaf_solid_config(
             solid,
+            handle,
             dependency_structure,
             # ...and in both cases, the correct schema for 'config' key is exposed by this property:
             graph_def.config_schema,
             resource_defs,
             ignored,
             is_using_graph_job_op_apis,
+            asset_layer,
         )
         # This case omits a 'solids' key, thus if a composite solid is `configured` or has a field
         # mapping, the user cannot stub any config, inputs, or outputs for inner (child) solids.
@@ -407,9 +426,11 @@ def define_isolid_field(
         fields = {
             "inputs": get_inputs_field(
                 solid,
+                handle,
                 dependency_structure,
                 resource_defs,
                 ignored,
+                asset_layer,
             ),
             "outputs": get_outputs_field(solid, resource_defs),
         }
@@ -421,6 +442,7 @@ def define_isolid_field(
                 parent_handle=handle,
                 resource_defs=resource_defs,
                 is_using_graph_job_op_apis=is_using_graph_job_op_apis,
+                asset_layer=asset_layer,
             )
         )
         if is_using_graph_job_op_apis:
@@ -439,6 +461,7 @@ def define_solid_dictionary_cls(
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
     is_using_graph_job_op_apis: bool,
+    asset_layer: AssetLayer,
     parent_handle: Optional[NodeHandle] = None,
 ) -> Shape:
     ignored_solids = check.opt_list_param(ignored_solids, "ignored_solids", of_type=Node)
@@ -452,6 +475,7 @@ def define_solid_dictionary_cls(
             resource_defs,
             ignored=False,
             is_using_graph_job_op_apis=is_using_graph_job_op_apis,
+            asset_layer=asset_layer,
         )
 
         if solid_field:
@@ -465,6 +489,7 @@ def define_solid_dictionary_cls(
             resource_defs,
             ignored=True,
             is_using_graph_job_op_apis=is_using_graph_job_op_apis,
+            asset_layer=asset_layer,
         )
         if solid_field:
             fields[solid.name] = solid_field

@@ -3,6 +3,7 @@ import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
+import {__ASSET_GROUP_PREFIX} from '../asset-graph/Utils';
 
 import {DagsterTag, RunTag, TagType} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
@@ -44,11 +45,16 @@ export const RunTags: React.FC<{
     return list;
   }, [copy, onSetFilter]);
 
-  const sortedTags = React.useMemo(() => {
+  const displayedTags = React.useMemo(() => {
     const priority = [];
     const others = [];
     for (const tag of tags) {
-      if (priorityTagSet.has(tag.key)) {
+      if (
+        tag.value.startsWith(__ASSET_GROUP_PREFIX) &&
+        (tag.key === DagsterTag.PartitionSet || tag.key === DagsterTag.StepSelection)
+      ) {
+        continue;
+      } else if (priorityTagSet.has(tag.key)) {
         priority.push(tag);
       } else {
         others.push(tag);
@@ -64,7 +70,7 @@ export const RunTags: React.FC<{
   return (
     <Box flex={{direction: 'row', wrap: 'wrap', gap: 4}}>
       {mode ? <RunTag tag={{key: 'mode', value: mode}} /> : null}
-      {sortedTags.map((tag, idx) => (
+      {displayedTags.map((tag, idx) => (
         <RunTag tag={tag} key={idx} actions={actions} />
       ))}
     </Box>

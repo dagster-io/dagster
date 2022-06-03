@@ -127,7 +127,7 @@ class RepositoryLocation(AbstractContextManager):
         need to implement get_subset_external_pipeline_result to handle the case where
         a solid selection is specified, which requires access to the underlying PipelineDefinition
         to generate the subsetted pipeline snapshot."""
-        if not selector.solid_selection:
+        if not selector.solid_selection and not selector.asset_selection:
             return self.get_repository(selector.repository_name).get_full_external_pipeline(
                 selector.pipeline_name
             )
@@ -347,7 +347,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
         from dagster.grpc.impl import get_external_pipeline_subset_result
 
         return get_external_pipeline_subset_result(
-            self.get_reconstructable_pipeline(selector.pipeline_name), selector.solid_selection
+            self.get_reconstructable_pipeline(selector.pipeline_name),
+            selector.solid_selection,
+            selector.asset_selection,
         )
 
     def get_external_execution_plan(
@@ -369,7 +371,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
         execution_plan = create_execution_plan(
             pipeline=self.get_reconstructable_pipeline(
                 external_pipeline.name
-            ).subset_for_execution_from_existing_pipeline(external_pipeline.solids_to_execute),
+            ).subset_for_execution_from_existing_pipeline(
+                external_pipeline.solids_to_execute, external_pipeline.asset_selection
+            ),
             run_config=run_config,
             mode=mode,
             step_keys_to_execute=step_keys_to_execute,
@@ -691,6 +695,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             run_config=run_config,
             mode=mode,
             pipeline_snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
+            asset_selection=external_pipeline.asset_selection,
             solid_selection=external_pipeline.solid_selection,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
@@ -713,7 +718,10 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         external_repository = self.get_repository(selector.repository_name)
         pipeline_handle = PipelineHandle(selector.pipeline_name, external_repository.handle)
         return sync_get_external_pipeline_subset_grpc(
-            self.client, pipeline_handle.get_external_origin(), selector.solid_selection
+            self.client,
+            pipeline_handle.get_external_origin(),
+            selector.solid_selection,
+            selector.asset_selection,
         )
 
     def get_external_partition_config(

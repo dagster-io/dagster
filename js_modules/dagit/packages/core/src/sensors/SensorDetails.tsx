@@ -168,24 +168,24 @@ export const SensorDetails: React.FC<{
               </td>
             </tr>
           ) : null}
-          {cursor ? (
-            <tr>
-              <td>Cursor</td>
-              <td>
-                {isCursorEditing ? (
-                  <EditCursorDialog
-                    sensorSelector={sensorSelector}
-                    cursor={cursor}
-                    onClose={() => setCursorEditing(false)}
-                  />
-                ) : null}
-                <Box flex={{direction: 'row', alignItems: 'center'}}>
-                  <Box style={{fontFamily: FontFamily.monospace, marginRight: 10}}>{cursor}</Box>
-                  <Button onClick={() => setCursorEditing(true)}>Edit</Button>
+          <tr>
+            <td>Cursor</td>
+            <td>
+              {isCursorEditing ? (
+                <EditCursorDialog
+                  sensorSelector={sensorSelector}
+                  cursor={cursor ? cursor : ''}
+                  onClose={() => setCursorEditing(false)}
+                />
+              ) : null}
+              <Box flex={{direction: 'row', alignItems: 'center'}}>
+                <Box style={{fontFamily: FontFamily.monospace, marginRight: 10}}>
+                  {cursor ? cursor : 'None'}
                 </Box>
-              </td>
-            </tr>
-          ) : null}
+                <Button onClick={() => setCursorEditing(true)}>Edit</Button>
+              </Box>
+            </td>
+          </tr>
           <tr>
             <td>Frequency</td>
             <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
@@ -196,7 +196,7 @@ export const SensorDetails: React.FC<{
               <td>
                 <Box flex={{direction: 'column', gap: 2}}>
                   {metadata.assetKeys.map((key) => (
-                    <AssetLink key={key.path.join('/')} path={key.path} displayIcon={true} />
+                    <AssetLink key={key.path.join('/')} path={key.path} icon="asset" />
                   ))}
                 </Box>
               </td>

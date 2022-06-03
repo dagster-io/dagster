@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {TestProvider} from '../testing/TestProvider';
 
-import {useRepositoryLocationReload} from './useRepositoryLocationReload';
+import {buildReloadFnForLocation, useRepositoryLocationReload} from './useRepositoryLocationReload';
 
 describe('useRepositoryReloadLocation', () => {
   jest.useFakeTimers();
@@ -25,7 +25,11 @@ describe('useRepositoryReloadLocation', () => {
   };
 
   const Test = () => {
-    const {reloading, error, tryReload} = useRepositoryLocationReload(LOCATION);
+    const reloadFn = React.useMemo(() => buildReloadFnForLocation(LOCATION), []);
+    const {reloading, error, tryReload} = useRepositoryLocationReload({
+      scope: 'location',
+      reloadFn,
+    });
     return (
       <div>
         <div>{`Reloading: ${reloading}`}</div>

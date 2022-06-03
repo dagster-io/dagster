@@ -18,7 +18,7 @@ def _connect_snowflake(context: Union[InputContext, OutputContext], table_slice:
             **cast(Mapping[str, str], context.resource_config),
         ),
         context.log,
-    ).get_connection()
+    ).get_connection(raw_conn=False)
 
 
 class SnowflakePandasTypeHandler(DbTypeHandler[DataFrame]):
@@ -49,7 +49,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[DataFrame]):
             with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
             with_uppercase_cols.to_sql(
                 table_slice.table,
-                con=con,
+                con=con.engine,
                 if_exists="append",
                 index=False,
                 method=pd_writer,
@@ -72,3 +72,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[DataFrame]):
             result = read_sql(sql=SnowflakeDbClient.get_select_statement(table_slice), con=con)
             result.columns = map(str.lower, result.columns)
             return result
+
+    @property
+    def supported_types(self):
+        return [DataFrame]

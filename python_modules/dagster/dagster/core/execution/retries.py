@@ -24,9 +24,10 @@ class RetryMode(Enum):
     DEFERRED = "deferred"
 
     @staticmethod
-    def from_config(config_value: Dict[str, Dict]):
+    def from_config(config_value: Dict[str, Dict]) -> Optional["RetryMode"]:
         for selector, _ in config_value.items():
             return RetryMode(selector)
+        return None
 
     @property
     def enabled(self) -> bool:

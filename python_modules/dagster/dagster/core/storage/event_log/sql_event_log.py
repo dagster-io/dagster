@@ -1,4 +1,5 @@
 import logging
+import warnings
 from abc import abstractmethod
 from collections import OrderedDict
 from datetime import datetime
@@ -15,7 +16,11 @@ from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.stats import build_run_step_stats_from_events
-from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster.serdes import (
+    deserialize_as,
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+)
 from dagster.serdes.errors import DeserializationError
 from dagster.utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
 
@@ -23,6 +28,8 @@ from ..pipeline_run import PipelineRunStatsSnapshot
 from .base import (
     AssetEntry,
     AssetRecord,
+    EventLogConnection,
+    EventLogCursor,
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
@@ -225,26 +232,35 @@ class SqlEventLogStorage(EventLogStorage):
         ):
             self.store_asset_event(event)
 
-    def get_logs_for_run_by_log_id(
+    def get_records_for_run(
         self,
         run_id,
-        cursor=-1,
-        dagster_event_type=None,
+        cursor=None,
+        of_type=None,
         limit=None,
-    ):
+    ) -> EventLogConnection:
+        """Get all of the logs corresponding to a run.
+
+        Args:
+            run_id (str): The id of the run for which to fetch logs.
+            cursor (Optional[int]): Zero-indexed logs will be returned starting from cursor + 1,
+                i.e., if cursor is -1, all logs will be returned. (default: -1)
+            of_type (Optional[DagsterEventType]): the dagster event type to filter the logs.
+            limit (Optional[int]): the maximum number of events to fetch
+        """
         check.str_param(run_id, "run_id")
-        check.int_param(cursor, "cursor")
+        check.opt_str_param(cursor, "cursor")
+
         check.invariant(
-            cursor >= -1,
-            "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
+            not of_type
+            or isinstance(of_type, DagsterEventType)
+            or isinstance(of_type, (frozenset, set))
         )
 
         dagster_event_types = (
-            {dagster_event_type}
-            if isinstance(dagster_event_type, DagsterEventType)
-            else check.opt_set_param(
-                dagster_event_type, "dagster_event_type", of_type=DagsterEventType
-            )
+            {of_type}
+            if isinstance(of_type, DagsterEventType)
+            else check.opt_set_param(of_type, "dagster_event_type", of_type=DagsterEventType)
         )
 
         query = (
@@ -260,7 +276,12 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
         # adjust 0 based index cursor to SQL offset
-        query = query.offset(cursor + 1)
+        if cursor is not None:
+            cursor_obj = EventLogCursor.parse(cursor)
+            if cursor_obj.is_offset_cursor():
+                query = query.offset(cursor_obj.offset())
+            elif cursor_obj.is_id_cursor():
+                query = query.where(SqlEventLogStorageTable.c.id > cursor_obj.storage_id())
 
         if limit:
             query = query.limit(limit)
@@ -268,51 +289,37 @@ class SqlEventLogStorage(EventLogStorage):
         with self.run_connection(run_id) as conn:
             results = conn.execute(query).fetchall()
 
-        events = {}
+        last_record_id = None
         try:
+            records = []
             for (
                 record_id,
                 json_str,
             ) in results:
-                events[record_id] = check.inst_param(
-                    deserialize_json_to_dagster_namedtuple(json_str), "event", EventLogEntry
+                records.append(
+                    EventLogRecord(
+                        storage_id=record_id,
+                        event_log_entry=deserialize_as(json_str, EventLogEntry),
+                    )
                 )
+                last_record_id = record_id
         except (seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
-        return events
+        if last_record_id is not None:
+            next_cursor = EventLogCursor.from_storage_id(last_record_id).to_string()
+        elif cursor:
+            # record fetch returned no new logs, return the same cursor
+            next_cursor = cursor
+        else:
+            # rely on the fact that all storage ids will be positive integers
+            next_cursor = EventLogCursor.from_storage_id(-1).to_string()
 
-    def get_logs_for_run(
-        self,
-        run_id,
-        cursor=-1,
-        of_type=None,
-        limit=None,
-    ):
-        """Get all of the logs corresponding to a run.
-
-        Args:
-            run_id (str): The id of the run for which to fetch logs.
-            cursor (Optional[int]): Zero-indexed logs will be returned starting from cursor + 1,
-                i.e., if cursor is -1, all logs will be returned. (default: -1)
-            of_type (Optional[DagsterEventType]): the dagster event type to filter the logs.
-            limit (Optional[int]): the maximum number of events to fetch
-        """
-        check.str_param(run_id, "run_id")
-        check.int_param(cursor, "cursor")
-        check.invariant(
-            cursor >= -1,
-            "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
+        return EventLogConnection(
+            records=records,
+            cursor=next_cursor,
+            has_more=bool(limit and len(results) == limit),
         )
-
-        check.invariant(
-            not of_type
-            or isinstance(of_type, DagsterEventType)
-            or isinstance(of_type, (frozenset, set))
-        )
-
-        events_by_id = self.get_logs_for_run_by_log_id(run_id, cursor, of_type, limit)
-        return [event for id, event in sorted(events_by_id.items(), key=lambda x: x[0])]
 
     def get_stats_for_run(self, run_id):
         check.str_param(run_id, "run_id")
@@ -673,6 +680,12 @@ class SqlEventLogStorage(EventLogStorage):
         check.opt_inst_param(event_records_filter, "event_records_filter", EventRecordsFilter)
         check.opt_int_param(limit, "limit")
         check.bool_param(ascending, "ascending")
+
+        if not event_records_filter:
+            warnings.warn(
+                "The use of `get_event_records` without an `EventRecordsFilter` is deprecated and "
+                "will begin erroring starting in 0.15.0"
+            )
 
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
         if event_records_filter and event_records_filter.asset_key:

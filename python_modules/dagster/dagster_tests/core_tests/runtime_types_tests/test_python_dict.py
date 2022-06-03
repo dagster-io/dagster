@@ -200,9 +200,7 @@ def test_dict_type_loader_typing_fail():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Input 'dict_input' in solid "
-        "'emit_dict' is not connected to the output of a previous node and can not be loaded "
-        "from configuration, making it impossible to execute. Possible solutions are:",
+        match="Input 'dict_input' of solid 'emit_dict' has no way of being resolved.",
     ):
         execute_solid(
             emit_dict,

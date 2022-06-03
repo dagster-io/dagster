@@ -1,20 +1,24 @@
 from contextlib import ExitStack
 
+import sqlalchemy as db
 from tqdm import tqdm
 
 import dagster._check as check
+from dagster.serdes import deserialize_as
 
-from ..pipeline_run import PipelineRunStatus
+from ..pipeline_run import PipelineRun, PipelineRunStatus
 from ..runs.base import RunStorage
-from ..runs.schema import RunsTable
-from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
+from ..runs.schema import RunTagsTable, RunsTable
+from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, REPOSITORY_LABEL_TAG
 
 RUN_PARTITIONS = "run_partitions"
 RUN_START_END = "run_start_end_overwritten"  # was run_start_end, but renamed to overwrite bad timestamps written
+RUN_REPO_LABEL_TAGS = "run_repo_label_tags"
 
 # for `dagster instance migrate`, paired with schema changes
 REQUIRED_DATA_MIGRATIONS = {
     RUN_PARTITIONS: lambda: migrate_run_partition,
+    RUN_REPO_LABEL_TAGS: lambda: migrate_run_repo_tags,
 }
 # for `dagster instance reindex`, optionally run for better read performance
 OPTIONAL_DATA_MIGRATIONS = {
@@ -138,3 +142,66 @@ def add_run_stats(run_storage: RunStorage, run_id: str) -> None:
                 end_time=run_stats.end_time,
             )
         )
+
+
+def migrate_run_repo_tags(run_storage: RunStorage, print_fn=None):
+    from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
+
+    if not isinstance(run_storage, SqlRunStorage):
+        return
+
+    if print_fn:
+        print_fn("Querying run storage.")
+
+    subquery = (
+        db.select([RunTagsTable.c.run_id.label("tags_run_id")])
+        .where(RunTagsTable.c.key == REPOSITORY_LABEL_TAG)
+        .alias("tag_subquery")
+    )
+    base_query = (
+        db.select([RunsTable.c.run_body, RunsTable.c.id])
+        .select_from(
+            RunsTable.join(subquery, RunsTable.c.run_id == subquery.c.tags_run_id, isouter=True)
+        )
+        .where(subquery.c.tags_run_id == None)
+        .order_by(db.asc(RunsTable.c.id))
+        .limit(RUN_CHUNK_SIZE)
+    )
+
+    cursor = None
+    has_more = True
+    while has_more:
+        if cursor:
+            query = base_query.where(RunsTable.c.id > cursor)
+        else:
+            query = base_query
+
+        with run_storage.connect() as conn:
+            result_proxy = conn.execute(query)
+            rows = result_proxy.fetchall()
+            result_proxy.close()
+
+            has_more = len(rows) >= RUN_CHUNK_SIZE
+            for row in rows:
+                run = deserialize_as(row[0], PipelineRun)
+                cursor = row[1]
+                write_repo_tag(conn, run)
+
+
+def write_repo_tag(conn, run: PipelineRun):
+    if not run.external_pipeline_origin:
+        # nothing to do
+        return
+
+    repository_label = run.external_pipeline_origin.external_repository_origin.get_label()
+    try:
+        conn.execute(
+            RunTagsTable.insert().values(  # pylint: disable=no-value-for-parameter
+                run_id=run.run_id,
+                key=REPOSITORY_LABEL_TAG,
+                value=repository_label,
+            )
+        )
+    except db.exc.IntegrityError:
+        # tag already exists, swallow
+        pass

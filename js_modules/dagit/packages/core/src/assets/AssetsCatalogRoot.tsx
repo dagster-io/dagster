@@ -1,7 +1,9 @@
-import {PageHeader, Heading} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
+import {ReloadAllButton} from '../workspace/ReloadAllButton';
+
+import {AssetPageHeader} from './AssetPageHeader';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 
 export const AssetsCatalogRoot = () => {
@@ -13,7 +15,10 @@ export const AssetsCatalogRoot = () => {
 
   return (
     <div>
-      <PageHeader title={<Heading>Assets</Heading>} />
+      <AssetPageHeader
+        assetKey={{path: []}}
+        right={<ReloadAllButton label="Reload definitions" />}
+      />
       <AssetsCatalogTable prefixPath={prefixPath} />
     </div>
   );

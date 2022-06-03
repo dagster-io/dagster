@@ -68,8 +68,16 @@ def prepare_dbt_cli(conn_string):  # pylint: disable=unused-argument, redefined-
         yield
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="session")
 def dbt_seed(
     prepare_dbt_cli, dbt_executable, dbt_config_dir
 ):  # pylint: disable=unused-argument, redefined-outer-name
     subprocess.run([dbt_executable, "seed", "--profiles-dir", dbt_config_dir], check=True)
+
+
+@pytest.fixture(scope="session")
+def dbt_build(
+    prepare_dbt_cli, dbt_executable, dbt_config_dir
+):  # pylint: disable=unused-argument, redefined-outer-name
+    subprocess.run([dbt_executable, "seed", "--profiles-dir", dbt_config_dir], check=True)
+    subprocess.run([dbt_executable, "run", "--profiles-dir", dbt_config_dir], check=True)

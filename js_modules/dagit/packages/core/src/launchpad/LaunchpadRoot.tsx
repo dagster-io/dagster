@@ -1,7 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
+import {Dialog, DialogHeader} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
+import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
@@ -15,11 +17,48 @@ import {
 } from './ConfigEditorConfigPicker';
 import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
+import {LaunchpadTransientSessionContainer} from './LaunchpadTransientSessionContainer';
 import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadRootQuery';
 
-const LaunchpadSessionContainer = React.lazy(() => import('./LaunchpadSessionContainer'));
+const LaunchpadStoredSessionsContainer = React.lazy(
+  () => import('./LaunchpadStoredSessionsContainer'),
+);
 
-export const LaunchpadRoot: React.FC<{repoAddress: RepoAddress}> = (props) => {
+export type LaunchpadType = 'asset' | 'job';
+
+// ########################
+// ##### LAUNCHPAD ROOTS
+// ########################
+
+export const AssetLaunchpad: React.FC<{
+  repoAddress: RepoAddress;
+  sessionPresets?: Partial<IExecutionSession>;
+  assetJobName: string;
+  open: boolean;
+  setOpen: (open: boolean) => void;
+}> = ({repoAddress, sessionPresets, assetJobName, open, setOpen}) => {
+  const title = 'Launchpad (configure assets)';
+
+  return (
+    <Dialog
+      style={{height: '90vh', width: '80%'}}
+      isOpen={open}
+      canEscapeKeyClose={true}
+      canOutsideClickClose={true}
+      onClose={() => setOpen(false)}
+    >
+      <DialogHeader icon="layers" label={title} />
+      <LaunchpadAllowedRoot
+        launchpadType="asset"
+        pipelinePath={assetJobName}
+        repoAddress={repoAddress}
+        sessionPresets={sessionPresets}
+      />
+    </Dialog>
+  );
+};
+
+export const JobLaunchpad: React.FC<{repoAddress: RepoAddress}> = (props) => {
   const {repoAddress} = props;
   const {pipelinePath, repoPath} = useParams<{repoPath: string; pipelinePath: string}>();
   const {canLaunchPipelineExecution} = usePermissions();
@@ -28,16 +67,28 @@ export const LaunchpadRoot: React.FC<{repoAddress: RepoAddress}> = (props) => {
     return <Redirect to={`/workspace/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
   }
 
-  return <LaunchpadAllowedRoot pipelinePath={pipelinePath} repoAddress={repoAddress} />;
+  return (
+    <LaunchpadAllowedRoot
+      launchpadType="job"
+      pipelinePath={pipelinePath}
+      repoAddress={repoAddress}
+    />
+  );
 };
 
+// ########################
+// ##### LAUNCHPAD ALLOWED ROOT
+// ########################
+
 interface Props {
+  launchpadType: LaunchpadType;
   pipelinePath: string;
   repoAddress: RepoAddress;
+  sessionPresets?: Partial<IExecutionSession>;
 }
 
 const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
-  const {pipelinePath, repoAddress} = props;
+  const {pipelinePath, repoAddress, launchpadType, sessionPresets} = props;
   const explorerPath = explorerPathFromString(pipelinePath);
   const {pipelineName} = explorerPath;
 
@@ -89,11 +140,11 @@ const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
     );
   }
 
-  if (pipelineOrError && pipelineOrError.__typename === 'InvalidSubsetError') {
+  if (pipelineOrError.__typename === 'InvalidSubsetError') {
     throw new Error(`Should never happen because we do not request a subset`);
   }
 
-  if (pipelineOrError && pipelineOrError.__typename === 'PythonError') {
+  if (pipelineOrError.__typename === 'PythonError') {
     return (
       <LaunchpadSessionError
         icon="error"
@@ -112,19 +163,33 @@ const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
     );
   }
 
-  return (
-    <React.Suspense fallback={<div />}>
-      <LaunchpadSessionContainer
+  if (launchpadType === 'asset') {
+    return (
+      <LaunchpadTransientSessionContainer
+        launchpadType={launchpadType}
         pipeline={pipelineOrError}
         partitionSets={partitionSetsOrError}
         repoAddress={repoAddress}
+        sessionPresets={sessionPresets || {}}
       />
-    </React.Suspense>
-  );
+    );
+  } else {
+    // job
+    return (
+      <React.Suspense fallback={<div />}>
+        <LaunchpadStoredSessionsContainer
+          launchpadType={launchpadType}
+          pipeline={pipelineOrError}
+          partitionSets={partitionSetsOrError}
+          repoAddress={repoAddress}
+        />
+      </React.Suspense>
+    );
+  }
 };
 
 const EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT = gql`
-  fragment LaunchpadSessionContainerPipelineFragment on Pipeline {
+  fragment LaunchpadSessionPipelineFragment on Pipeline {
     id
     isJob
     ...ConfigEditorGeneratorPipelineFragment
@@ -138,7 +203,7 @@ const EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT = gql`
 `;
 
 const EXECUTION_SESSION_CONTAINER_PARTITION_SETS_FRAGMENT = gql`
-  fragment LaunchpadSessionContainerPartitionSetsFragment on PartitionSets {
+  fragment LaunchpadSessionPartitionSetsFragment on PartitionSets {
     ...ConfigEditorGeneratorPartitionSetsFragment
   }
   ${CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT}
@@ -163,7 +228,7 @@ const PIPELINE_EXECUTION_ROOT_QUERY = gql`
       ...PythonErrorFragment
       ... on Pipeline {
         id
-        ...LaunchpadSessionContainerPipelineFragment
+        ...LaunchpadSessionPipelineFragment
       }
     }
     partitionSetsOrError(
@@ -174,7 +239,7 @@ const PIPELINE_EXECUTION_ROOT_QUERY = gql`
       }
     ) {
       __typename
-      ...LaunchpadSessionContainerPartitionSetsFragment
+      ...LaunchpadSessionPartitionSetsFragment
       ... on PipelineNotFoundError {
         message
       }
