@@ -139,30 +139,13 @@ export const AssetNodeMinimal: React.FC<{
   definition: AssetNodeFragment;
 }> = ({selected, definition}) => {
   return (
-    <AssetNodeContainer
-      $selected={selected}
-      style={{
-        position: 'absolute',
-        borderRadius: 12,
-        outlineOffset: 2,
-        outlineWidth: 4,
-      }}
-    >
-      <AssetNodeBox
-        $selected={selected}
-        style={{
-          background: Colors.White,
-          border: `4px solid ${Colors.Blue200}`,
-          borderRadius: 10,
-          position: 'absolute',
-          inset: 4,
-        }}
-      >
-        <NameMinimal style={{fontSize: 28}}>
+    <MinimalAssetNodeContainer $selected={selected}>
+      <MinimalAssetNodeBox $selected={selected}>
+        <MinimalName style={{fontSize: 28}}>
           {withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {maxLength: 17})}
-        </NameMinimal>
-      </AssetNodeBox>
-    </AssetNodeContainer>
+        </MinimalName>
+      </MinimalAssetNodeBox>
+    </MinimalAssetNodeContainer>
   );
 };
 
@@ -240,7 +223,7 @@ const AssetNodeContainer = styled.div<{$selected: boolean}>`
   margin-bottom: 2px;
 `;
 
-export const AssetNodeBox = styled.div<{$selected: boolean}>`
+const AssetNodeBox = styled.div<{$selected: boolean}>`
   border: 2px solid ${(p) => (p.$selected ? Colors.Blue500 : Colors.Blue200)};
   background: ${BoxColors.Stats};
   border-radius: 5px;
@@ -262,7 +245,22 @@ const Name = styled.div`
   gap: 4px;
 `;
 
-export const NameMinimal = styled(Name)`
+const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
+  position: absolute;
+  border-radius: 12px;
+  outline-offset: 2px;
+  outline-width: 4px;
+`;
+
+const MinimalAssetNodeBox = styled(AssetNodeBox)`
+  background: ${Colors.White};
+  border: 4px solid ${Colors.Blue200};
+  border-radius: 10px;
+  position: absolute;
+  inset: 4px;
+`;
+
+const MinimalName = styled(Name)`
   font-weight: 600;
   white-space: nowrap;
   position: absolute;
