@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 
-import {useFeatureFlags} from './Flags';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 function useMatchMedia(query: string) {
   const match = React.useRef(matchMedia(query));
@@ -22,7 +22,7 @@ function useMatchMedia(query: string) {
 type LayoutContextValue = {
   nav: {
     isOpen: boolean;
-    isCollapsible: boolean;
+    isSmallScreen: boolean;
     open: () => void;
     close: () => void;
   };
@@ -31,34 +31,59 @@ type LayoutContextValue = {
 export const LayoutContext = React.createContext<LayoutContextValue>({
   nav: {
     isOpen: false,
-    isCollapsible: false,
+    isSmallScreen: false,
     open: () => {},
     close: () => {},
   },
 });
 
+const STORAGE_KEY = 'large-screen-nav-open';
+
 export const LayoutProvider: React.FC = (props) => {
-  const [navOpen, setNavOpen] = React.useState(false);
-  const flags = useFeatureFlags();
+  const [navOpenIfLargeScreen, setNavOpenIfLargeScreen] = useStateWithStorage(
+    STORAGE_KEY,
+    (json: any) => {
+      if (typeof json !== 'boolean') {
+        return false;
+      }
+      return json;
+    },
+  );
+
+  const [navOpenIfSmallScreen, setNavOpenIfSmallScreen] = React.useState(false);
   const location = useLocation();
   const isSmallScreen = useMatchMedia('(max-width: 1440px)');
-  const isInstancePage = location.pathname.startsWith('/instance');
-  const isCollapsible = flags.flagAlwaysCollapseNavigation || isInstancePage || isSmallScreen;
+
+  const open = React.useCallback(() => {
+    setNavOpenIfSmallScreen(true);
+    if (!isSmallScreen) {
+      setNavOpenIfLargeScreen(true);
+    }
+  }, [isSmallScreen, setNavOpenIfLargeScreen]);
+
+  const close = React.useCallback(() => {
+    setNavOpenIfSmallScreen(false);
+    if (!isSmallScreen) {
+      setNavOpenIfLargeScreen(false);
+    }
+  }, [isSmallScreen, setNavOpenIfLargeScreen]);
 
   React.useEffect(() => {
-    setNavOpen(false);
+    setNavOpenIfSmallScreen(false);
   }, [location]);
+
+  const isOpen = isSmallScreen ? navOpenIfSmallScreen : navOpenIfLargeScreen;
 
   const value = React.useMemo(
     () => ({
       nav: {
-        isOpen: navOpen,
-        isCollapsible,
-        open: () => setNavOpen(true),
-        close: () => setNavOpen(false),
+        isOpen,
+        isSmallScreen,
+        open,
+        close,
       },
     }),
-    [navOpen, isCollapsible],
+    [isOpen, isSmallScreen, open, close],
   );
 
   return <LayoutContext.Provider value={value}>{props.children}</LayoutContext.Provider>;
