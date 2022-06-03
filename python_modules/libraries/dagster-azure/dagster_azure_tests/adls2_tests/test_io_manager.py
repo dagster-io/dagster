@@ -1,4 +1,5 @@
 from uuid import uuid4
+from dagster.core.asset_defs.assets import AssetsDefinition
 
 import pytest
 from azure.storage.filedatalake import DataLakeLeaseClient
@@ -6,13 +7,14 @@ from dagster_azure.adls2 import create_adls2_client
 from dagster_azure.adls2.fake_adls2_resource import fake_adls2_resource
 from dagster_azure.adls2.io_manager import (
     PickledObjectADLS2IOManager,
-    adls2_pickle_asset_io_manager,
     adls2_pickle_io_manager,
 )
 from dagster_azure.adls2.resources import adls2_resource
 from dagster_azure.blob import create_blob_client
 
 from dagster import (
+    GraphIn,
+    GraphOut,
     AssetGroup,
     AssetIn,
     AssetKey,
@@ -230,9 +232,23 @@ def test_asset_io_manager(storage_account, file_system, credential):
         assert upstream == 2
         return 1 + upstream
 
+    @op
+    def first_op(first_input):
+        assert first_input == 3
+        return first_input * 2
+
+    @op
+    def second_op(second_input):
+        assert second_input == 6
+        return second_input + 3
+
+    @graph(ins={'downstream': GraphIn()}, out={'asset3': GraphOut()})
+    def graph_asset(downstream):
+        return second_op(first_op(downstream))
+
     asset_group = AssetGroup(
-        [upstream, downstream],
-        resource_defs={"io_manager": adls2_pickle_asset_io_manager, "adls2": adls2_resource},
+        [upstream, downstream, AssetsDefinition.from_graph(graph_asset)],
+        resource_defs={"io_manager": adls2_pickle_io_manager, "adls2": adls2_resource},
     )
     asset_job = asset_group.build_job(name="my_asset_job")
 

@@ -2,9 +2,7 @@ from .compute_log_manager import S3ComputeLogManager
 from .file_cache import S3FileCache, s3_file_cache
 from .file_manager import S3FileHandle, S3FileManager
 from .io_manager import (
-    PickledObjectS3AssetIOManager,
     PickledObjectS3IOManager,
-    s3_pickle_asset_io_manager,
     s3_pickle_io_manager,
 )
 from .ops import S3Coordinate, file_handle_to_s3
