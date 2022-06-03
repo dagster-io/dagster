@@ -92,7 +92,7 @@ GET_ASSET_MATERIALIZATION_TIMESTAMP = """
 """
 
 GET_ASSET_IN_PROGRESS_RUNS = """
-    query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]) {
+    query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]!) {
         assetsLatestInfo(assetKeys: $assetKeys) {
             assetKey {
                 path
@@ -109,7 +109,7 @@ GET_ASSET_IN_PROGRESS_RUNS = """
 
 
 GET_ASSET_LATEST_RUN_STATS = """
-    query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]) {
+    query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]!) {
         assetsLatestInfo(assetKeys: $assetKeys) {
             assetKey {
                 path
