@@ -39,52 +39,59 @@ def hello_dagster():
 
 Save the code above in a file named `hello_world.py`.
 
-You can execute the job in three different ways: [Dagit](/concepts/dagit/dagit), [Dagster Python API](/concepts/ops-jobs-graphs/job-execution#python-apis), or [Dagster CLI](/\_apidocs/cli#dagster-pipeline-execute).
+## Running the job
 
-## Running the Job in Dagit
+In Dagster, jobs can be executed using the:
 
-Dagit is a web-based interface for viewing and interacting with Dagster objects.
+- [Dagit](#using-dagit)
+- [Dagster Python API](#using-the-dagster-python-api)
+- [Dagster CLI](#using-the-dagster-cli)
 
-```bash
-pip install dagit
-```
+### Using Dagit
 
-To visualize your job in Dagit, run the following command:
+1. [Dagit](/concepts/dagit/dagit) is a web-based interface for viewing and interacting with Dagster objects. To install Dagit, run:
 
-```bash
-dagit -f hello_world.py
-```
+   ```bash
+   pip install dagit
+   ```
 
-Then navigate to <http://localhost:3000> to start using Dagit:
+1. To visualize your job in Dagit:
 
-<Image
-alt="dagit-def"
-src="/images/getting-started/dagit-def.png"
-width={4032}
-height={2454}
-/>
+   ```bash
+   dagit -f hello_world.py
+   ```
 
-Click on the "Launchpad" tab, then press the "Launch Run" button to launch the job.
+1. Navigate to <http://localhost:3000> to start using Dagit.
+1. Click the **Launchpad** tab:
 
-<Image
-alt="dagit-run"
-src="/images/getting-started/dagit-run.png"
-width={4032}
-height={2454}
-/>
+   <Image
+   alt="dagit-def"
+   src="/images/getting-started/dagit-def.png"
+   width={4032}
+   height={2454}
+   />
 
-## Running the Job Programmatically
+1. Lastly, click the **Launch Run** button in the bottom right corner to launch the job:
 
-You can also execute the job without the UI.
+   <Image
+   alt="dagit-run"
+   src="/images/getting-started/dagit-run.png"
+   width={4032}
+   height={2454}
+   />
 
-**Dagster Python API**
+### Using the Dagster Python API
+
+You can also use the [Dagster Python API](/concepts/ops-jobs-graphs/job-execution#python-apis) to execute jobs:
 
 ```python file=/getting_started/hello_world.py startafter=start_execute_marker endbefore=end_execute_marker
 if __name__ == "__main__":
     result = hello_dagster.execute_in_process()
 ```
 
-**Dagster CLI**
+### Using the Dagster CLI
+
+Or the [Dagster CLI](/\_apidocs/cli#dagster-pipeline-execute):
 
 ```bash
 dagster job execute -f hello_world.py
