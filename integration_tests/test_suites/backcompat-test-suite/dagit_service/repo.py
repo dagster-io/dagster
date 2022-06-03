@@ -21,9 +21,7 @@ def my_op():
     return 5
 
 
-@op(
-    unknown_field="hello",
-)
+@op
 def ingest(x):
     return x + 5
 
