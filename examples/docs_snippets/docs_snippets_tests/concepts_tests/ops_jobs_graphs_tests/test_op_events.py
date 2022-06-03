@@ -8,10 +8,11 @@ from docs_snippets.concepts.ops_jobs_graphs.op_events import (
     my_failure_op,
     my_metadata_expectation_op,
     my_metadata_output,
-    my_named_yield_op,
+    my_multiple_generic_output_op,
+    my_op_yields,
+    my_output_generic_op,
+    my_output_op,
     my_retry_op,
-    my_simple_return_op,
-    my_simple_yield_op,
 )
 
 
@@ -43,14 +44,15 @@ def generate_stub_input_values(op):
 
 def test_ops_compile_and_execute():
     ops = [
-        my_simple_yield_op,
-        my_simple_return_op,
-        my_named_yield_op,
         my_metadata_output,
         my_metadata_expectation_op,
         my_retry_op,
         my_asset_op,
+        my_output_generic_op,
         my_expectation_op,
+        my_multiple_generic_output_op,
+        my_output_op,
+        my_op_yields,
     ]
 
     for op in ops:
