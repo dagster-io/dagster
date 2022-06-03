@@ -1,5 +1,5 @@
 import os
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Union
 
 from ..defines import GCP_CREDS_LOCAL_FILE, LATEST_DAGSTER_RELEASE
 from ..package_spec import PackageSpec
@@ -180,6 +180,7 @@ def build_integration_suite_steps(
     pytest_tox_factors: Optional[List[str]],
     upload_coverage: bool,
     pytest_extra_cmds: Optional[Callable] = None,
+    pytest_post_cmds: Optional[Union[List[str], Callable]] = None,
     queue=None,
 ) -> List[GroupStep]:
     pytest_extra_cmds = pytest_extra_cmds or default_integration_suite_pytest_extra_cmds
@@ -195,6 +196,7 @@ def build_integration_suite_steps(
         ],
         upload_coverage=upload_coverage,
         pytest_extra_cmds=pytest_extra_cmds,
+        pytest_post_cmds=pytest_post_cmds,
         pytest_step_dependencies=test_image_depends_fn,
         pytest_tox_factors=pytest_tox_factors,
         retries=2,
