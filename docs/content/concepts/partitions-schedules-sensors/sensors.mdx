@@ -83,7 +83,7 @@ def my_directory_sensor():
 
 This sensor iterates through all the files in `MY_DIRECTORY` and `yields` a <PyObject object="RunRequest"/> for each file. Note that despite the `yield` syntax, the function will run to completion before any runs are submitted.
 
-In order to write a sensor that materializes assets, you can [build a job that materializes assets](/concepts/assets/software-defined-assets#building-jobs-that-materialize-assets):
+To write a sensor that materializes assets, you can [build a job that materializes assets](/concepts/assets/software-defined-assets#building-jobs-that-materialize-assets):
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_job_sensor_marker endbefore=end_asset_job_sensor_marker
 asset_job = AssetGroup([my_asset]).build_job("asset_job")
@@ -112,7 +112,7 @@ A useful pattern is to create a sensor that checks for new <PyObject object="Ass
 
 One benefit of this pattern is that it enables cross-job and even cross-repository dependencies. Each job run instigated by an asset sensor is agnostic to the job that caused it.
 
-Dagster provides a special asset sensor definition format for sensors that fire a single RunRequest based on a single asset materialization. Here is an example of a sensor that generates a RunRequest for every materialization for the asset key `my_table`:
+Dagster provides a special asset sensor definition format for sensors that fire a single <PyObject object="RunRequest"/> based on a single asset materialization. Here is an example of a sensor that generates a <PyObject object="RunRequest"/> for every materialization for the asset key `my_table`:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_sensor_marker endbefore=end_asset_sensor_marker
 from dagster import AssetKey, asset_sensor
