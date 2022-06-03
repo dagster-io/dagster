@@ -23,28 +23,28 @@
     ]
   },
   {
-    "title": "Tutorial",
+    "title": "Tutorials",
     "icon": "AcademicCap",
     "path": "/tutorial",
     "children": [
       {
-        "title": "Intro Tutorial",
+        "title": "Intro Tutorials",
         "children": [
           {
-            "title": "Setup for the Tutorial",
+            "title": "Setup",
             "path": "/tutorial/intro-tutorial/setup"
           },
           {
-            "title": "A Single-Op Job",
-            "path": "/tutorial/intro-tutorial/single-op-job"
+            "title": "Defining An Asset",
+            "path": "/guides/dagster/asset-tutorial/defining-an-asset"
           },
           {
-            "title": "Connecting Ops in Jobs",
-            "path": "/tutorial/intro-tutorial/connecting-ops"
+            "title": "Building Graphs of Assets",
+            "path": "/guides/dagster/asset-tutorial/asset-graph"
           },
           {
-            "title": "Testing Ops and Jobs",
-            "path": "/tutorial/intro-tutorial/testable"
+            "title": "Testing Assets",
+            "path": "/guides/dagster/asset-tutorial/testing-assets"
           }
         ]
       },
@@ -403,24 +403,6 @@
       {
         "title": "Versioning and Memoization (Experimental)",
         "path": "/guides/dagster/memoization"
-      },
-      {
-        "title": "Software-Defined Assets Tutorial (Experimental)",
-        "path": "/guides/dagster/asset-tutorial",
-        "children": [
-          {
-            "title": "Defining an Asset",
-            "path": "/guides/dagster/asset-tutorial/defining-an-asset"
-          },
-          {
-            "title": "Building Graphs of Assets",
-            "path": "/guides/dagster/asset-tutorial/asset-graph"
-          },
-          {
-            "title": "Testing Assets",
-            "path": "/guides/dagster/asset-tutorial/testing-assets"
-          }
-        ]
       },
       {
         "title": "Software-Defined Assets with Pandas and PySpark (Experimental)",
