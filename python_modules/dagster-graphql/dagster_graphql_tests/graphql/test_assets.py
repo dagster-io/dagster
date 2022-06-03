@@ -267,6 +267,21 @@ CROSS_REPO_ASSET_GRAPH = """
     }
 """
 
+GET_REPO_ASSET_GROUPS = """
+    query($repositorySelector: RepositorySelector!) {
+        repositoryOrError(repositorySelector:$repositorySelector) {
+            ... on Repository {
+                assetGroups {
+                    groupName
+                    assetKeys {
+                    path
+                    }
+                }
+            }
+        }
+    }
+"""
+
 
 GET_RUN_MATERIALIZATIONS = """
     query RunAssetsQuery {
@@ -920,6 +935,33 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(events) == 1
         assert events[0].get_dagster_event().asset_key == AssetKey("bar")
         assert run.asset_selection == {AssetKey("bar")}
+
+    def test_named_groups(self, graphql_context):
+        _create_run(graphql_context, "named_groups_job")
+        selector = {
+            "repositoryLocationName": "test",
+            "repositoryName": "test_repo",
+        }
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_REPO_ASSET_GROUPS,
+            variables={
+                "repositorySelector": selector,
+            },
+        )
+
+        asset_groups_list = result.data["repositoryOrError"]["assetGroups"]
+        # normalize for easy comparison
+        asset_groups = sorted(
+            (group["groupName"], sorted(key["path"] for key in group["assetKeys"]))
+            for group in asset_groups_list
+        )
+        expected_asset_groups = [
+            ("group_1", [["grouped_asset_1"], ["grouped_asset_2"]]),
+            ("group_2", [["grouped_asset_4"]]),
+        ]
+        assert asset_groups == expected_asset_groups
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
