@@ -14,9 +14,13 @@ pip install dagster
 
 This will install the latest stable version of the core Dagster packages in your current Python environment.
 
-## Writing a Job
+---
 
-Let's get your first job up and running.
+## Writing a job
+
+To get started, we'll write some simple [ops](/concepts/ops-jobs-graphs/ops) and use them to create a [job](/concepts/ops-jobs-graphs/jobs-graphs). Dagster also offers a way to produce data artifacts like tables and files using [software-defined assets](/concepts/assets/software-defined-assets), but for simplicity we'll focus on ops.
+
+Copy the following code and save it in a file named `hello_world.py`:
 
 ```python file=/getting_started/hello_world.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
 from dagster import job, op
@@ -37,7 +41,7 @@ def hello_dagster():
     hello(get_name())
 ```
 
-Save the code above in a file named `hello_world.py`.
+---
 
 ## Running the job
 
