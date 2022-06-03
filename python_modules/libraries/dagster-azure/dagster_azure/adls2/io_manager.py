@@ -29,7 +29,7 @@ class PickledObjectADLS2IOManager(IOManager):
 
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         if context.has_asset_key:
-            path = context.get_asset_identifier
+            path = context.get_asset_identifier()
         else:
             keys = context.get_identifier()
             run_id = keys[0]

@@ -1,26 +1,21 @@
 from uuid import uuid4
-from dagster.core.asset_defs.assets import AssetsDefinition
 
 import pytest
 from azure.storage.filedatalake import DataLakeLeaseClient
 from dagster_azure.adls2 import create_adls2_client
 from dagster_azure.adls2.fake_adls2_resource import fake_adls2_resource
-from dagster_azure.adls2.io_manager import (
-    PickledObjectADLS2IOManager,
-    adls2_pickle_io_manager,
-)
+from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
 from dagster_azure.adls2.resources import adls2_resource
 from dagster_azure.blob import create_blob_client
 
 from dagster import (
-    GraphIn,
-    GraphOut,
     AssetGroup,
     AssetIn,
     AssetKey,
     DagsterInstance,
     DynamicOutput,
     DynamicOutputDefinition,
+    GraphOut,
     InputDefinition,
     Int,
     OutputDefinition,
@@ -32,6 +27,7 @@ from dagster import (
     op,
     resource,
 )
+from dagster.core.asset_defs.assets import AssetsDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import execute_plan
@@ -221,30 +217,32 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 def test_asset_io_manager(storage_account, file_system, credential):
     _id = f"{uuid4()}".replace("-", "")
 
-    @asset(name=f"upstream_{_id}")
-    def upstream():
-        return 2
+    @op
+    def first_op():
+        return 5
+
+    @op
+    def second_op(op_1):
+        assert op_1 == 5
+        return op_1 + 1
+
+    @graph(name=f"graph_asset_{_id}", out={"asset3": GraphOut()})
+    def graph_asset():
+        return second_op(first_op())
+
+    @asset(
+        name=f"upstream_{_id}",
+        ins={"asset3": AssetIn(asset_key=AssetKey(["asset3"]))},
+    )
+    def upstream(asset3):
+        return asset3 + 1
 
     @asset(
         name=f"downstream_{_id}", ins={"upstream": AssetIn(asset_key=AssetKey([f"upstream_{_id}"]))}
     )
     def downstream(upstream):
-        assert upstream == 2
+        assert upstream == 7
         return 1 + upstream
-
-    @op
-    def first_op(first_input):
-        assert first_input == 3
-        return first_input * 2
-
-    @op
-    def second_op(second_input):
-        assert second_input == 6
-        return second_input + 3
-
-    @graph(ins={'downstream': GraphIn()}, out={'asset3': GraphOut()})
-    def graph_asset(downstream):
-        return second_op(first_op(downstream))
 
     asset_group = AssetGroup(
         [upstream, downstream, AssetsDefinition.from_graph(graph_asset)],

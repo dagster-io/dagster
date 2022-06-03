@@ -1,8 +1,9 @@
-from dagster.core.asset_defs.assets import AssetsDefinition
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_aws.s3.utils import construct_s3_client
 
 from dagster import (
+    GraphIn,
+    GraphOut,
     In,
     Int,
     Out,
@@ -11,13 +12,12 @@ from dagster import (
     VersionStrategy,
     asset,
     build_assets_job,
+    graph,
     job,
     op,
     resource,
-    graph,
-    GraphIn,
-    GraphOut,
 )
+from dagster.core.asset_defs.assets import AssetsDefinition
 from dagster.core.test_utils import instance_for_test
 
 
@@ -144,7 +144,7 @@ def define_assets_job(bucket):
         assert asset1 == 1
         return asset1 + 1
 
-    @graph(ins={'asset2': GraphIn()}, out={'asset3': GraphOut()})
+    @graph(ins={"asset2": GraphIn()}, out={"asset3": GraphOut()})
     def graph_asset(asset2):
         return second_op(first_op(asset2))
 
