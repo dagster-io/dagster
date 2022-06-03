@@ -1,0 +1,312 @@
+# Software-Defined Assets for Existing Dagster Users
+
+This guide is aimed at helping existing Dagster users understand when, why, and how to use software-defined assets. It may also be useful to new Dagster users as well, who want a better understanding of the relationships between software-defined assets and other Dagster concepts like ops and graphs.
+
+Before we jump in, some basic terminology:
+
+- An **asset** is a persistent object in storage - e.g. a table, ML model, or file.
+- An **op** is the core unit of computation in Dagster - e.g. an op might accept tabular data as input and produce transformed tabular data as output.
+- A **graph** is a directed acyclic graph of ops or other graphs, which execute in order and pass data to each other.
+- A **software-defined asset** is a declaration of an asset that should exist and a description of how to compute it: the op or graph that needs to run and the upstream assets that it should run on.
+
+Software-defined assets aren't a replacement for Dagster's core computational concepts: graphs, jobs, and ops. Rather, they're a layer on top that links those computations to the long-lived objects they interact with. Using software-defined assets means building your Dagster jobs in a way that declares _ahead of time_ what assets they produce and consume. This is different than using the `AssetMaterialization` API, which only tells Dagster at runtime about what assets a job interacted with.
+
+## Why use software-defined assets?
+
+Declaring assets ahead of time has offers some big advantages:
+
+### Lineage
+
+Software-defined assets know what other assets they depend on, and you can see that lineage when you look up an asset in Dagit. Assets help track and define cross-job dependencies - when viewing a job that materializes assets, you can navigate to the jobs that produce the assets that it depends on. When an upstream asset was updated more recently than a downstream asset, Dagster can indicate that the downstream asset might be out of date.
+
+### Operate assets directly
+
+When you use software-defined assets, the asset catalog becomes more than just a place to understand the history of materializations for an asset: you can use it to discover when an asset will be materialized next, as well as directly launch runs to materialize it. Each Asset Details page shows the sensors or schedules for any jobs that target the asset, and it includes a "(Re)Materialize" button. You can also launch a run that rematerializes the asset and all of its ancestors or all of its descendants.
+
+### Improved code ergonomics
+
+Using software-defined assets often means writing less code: when you specify the inputs to a software-defined asset, you're specifying the assets it depends on, so you don't need to use `@graph` / `@job` to wire up dependencies between your ops. The name of each assets only needs to appear in your codebase half as many times. The IO manager-based example below illustrates this.
+
+This makes your codebase more scaleable. Without software-defined assets, you're often forced to choose between:
+
+- Keeping everything inside a single mega-job, which makes it easy to track dependencies, but requires maintaining a huge, unwieldy object.
+- Splitting up your data pipeline into smaller jobs, which makes it more manageable, but makes tracking dependencies across the jobs difficult.
+
+With software-defined assets, each asset tracks its own dependencies, so you you can avoid interruptions in the dependency graph without needing it define it in a single large graph object. This eliminates the need for an awkward concepts that often appears at Dagster job boundaries: root input managers.
+
+## When is it appropriate to use software-defined assets?
+
+You should use software-defined assets when you’re using Dagster to produce or maintain assets and you know what those assets will be before you launch any runs. **Using software-defined assets in one job doesn’t mean you need to use them in all your jobs.**
+
+Here are some examples of use cases that are a good fit for software-defined assets:
+
+- Every day, I want to drop and recreate the `users` table and the `user_recommender_model` that depends on it.
+- Every hour, I want to add a partition to the `events` table.
+- I want to be able to click a button that refreshes the `recommender` model.
+
+Here are some examples of use cases that are not a good fit for software-defined assets, but are a good fit for Dagster graphs and ops:
+
+| Use Case                                                                                                  | Why not a good fit?                                              |
+| --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Every day, I want to send emails to a set of users                                                        | No assets are being updated                                      |
+| Every day, I want to read a file of user IDs and change the value of a particular column for each user    | The set of assets to update is not known before running the job. |
+| Every day, I want to scan my warehouse for tables that have not been used in a long time and delete them. | The set of assets to update is not known before running the job. |
+
+## How to upgrade jobs to use software-defined assets
+
+If you’ve written jobs that fit the above criteria for when it’s appropriate to use software-defined assets, and you want to enrich them to use software-defined assets, what does that look like?
+
+In general, you should have a software-defined asset for every op output in your job that corresponds to a long-lived object in storage. Below are a few examples of "realistic" Dagster jobs, without and with software-defined assets.
+
+### A job that materializes two tables that depend on each other
+
+Here's a vanilla op-based job that follows the idiomatic practice of delegating all IO to IO managers and root input managers. The goal of each of the ops in this job is to produce an asset, but, because it doesn't use the software-defined asset APIs, Dagster doesn't know that.
+
+```python file=/guides/dagster/enriching_with_software_defined_assets/vanilla_io_manager.py
+from pandas import DataFrame
+
+from dagster import In, Out, job, op, repository
+
+from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
+
+
+@op(
+    ins={"raw_users": In(root_manager_key="warehouse")},
+    out={"users": Out(io_manager_key="warehouse")},
+)
+def build_users(raw_users: DataFrame) -> DataFrame:
+    users_df = raw_users.dropna()
+    return users_df
+
+
+@op(out={"users_recommender_model": Out(io_manager_key="object_store")})
+def build_user_recommender_model(users: DataFrame):
+    users_recommender_model = train_recommender_model(users)
+    return users_recommender_model
+
+
+@job(resource_defs={"warehouse": snowflake_io_manager, "object_store": s3_io_manager})
+def users_recommender_job():
+    build_user_recommender_model(build_users())
+
+
+@repository
+def repo():
+    return [users_recommender_job]
+```
+
+Here's what an equivalent job looks like with software-defined assets:
+
+```python file=/guides/dagster/enriching_with_software_defined_assets/sda_io_manager.py
+from pandas import DataFrame
+
+from dagster import AssetSelection, SourceAsset, asset, repository, with_resources
+
+from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
+
+raw_users = SourceAsset(key="raw_users", io_manager_key="warehouse")
+
+
+@asset(io_manager_key="warehouse")
+def users(raw_users: DataFrame) -> DataFrame:
+    users_df = raw_users.dropna()
+    return users_df
+
+
+@asset(io_manager_key="object_store")
+def user_recommender_model(users: DataFrame):
+    users_recommender_model = train_recommender_model(users)
+    return users_recommender_model
+
+
+@repository
+def repo():
+    return [
+        with_resources(
+            [users, user_recommender_model],
+            resource_defs={
+                "warehouse": snowflake_io_manager,
+                "object_store": s3_io_manager,
+            },
+        ),
+        AssetSelection.all().to_job("users_recommender_job"),
+    ]
+```
+
+### A job that materializes two tables that depend on each other - no IO managers
+
+Here's a vanilla op-based job that does the same things as the examples above, but which does IO inside of the ops instead of delegating it to IO managers and root input managers.
+
+```python file=/guides/dagster/enriching_with_software_defined_assets/vanilla_nothing.py
+from pandas import read_sql
+
+from dagster import In, Nothing, job, op, repository
+
+from .mylib import create_db_connection, pickle_to_s3, train_recommender_model
+
+
+@op
+def build_users():
+    raw_users_df = read_sql(f"select * from raw_users", con=create_db_connection())
+    users_df = raw_users_df.dropna()
+    users_df.to_sql(name="users", con=create_db_connection())
+
+
+@op(ins={"users": In(Nothing)})
+def build_user_recommender_model():
+    users_df = read_sql(f"select * from users", con=create_db_connection())
+    users_recommender_model = train_recommender_model(users_df)
+    pickle_to_s3(users_recommender_model, key="users_recommender_model")
+
+
+@job
+def users_recommender_job():
+    build_user_recommender_model(build_users())
+
+
+@repository
+def repo():
+    return [users_recommender_job]
+```
+
+Below is what an equivalent job looks like with software-defined assets.
+
+```python file=/guides/dagster/enriching_with_software_defined_assets/sda_nothing.py
+from mylib import create_db_connection, pickle_to_s3, train_recommender_model
+from pandas import read_sql
+
+from dagster import AssetSelection, asset, assets_from_current_module, repository
+
+
+@asset(non_argument_deps={"raw_users"})
+def users():
+    raw_users_df = read_sql(f"select * from raw_users", con=create_db_connection())
+    users_df = raw_users_df.dropna()
+    users_df.to_sql(name="users", con=create_db_connection())
+
+
+@asset(non_argument_deps={"users"})
+def user_recommender_model():
+    users_df = read_sql(f"select * from users", con=create_db_connection())
+    users_recommender_model = train_recommender_model(users_df)
+    pickle_to_s3(users_recommender_model, key="users_recommender_model")
+
+
+@repository
+def repo():
+    assets = assets_from_current_module()
+    return [assets, AssetSelection.all().to_job("users_recommender_job")]
+```
+
+### A job where not all ops produce assets
+
+Here's a job where some of the ops - `extract_products` and `get_categories` don't producing an asset of its own - they just produce transient data that downstream ops will use to produce assets:
+
+```python file=/guides/dagster/enriching_with_software_defined_assets/vanilla_graph.py
+from pandas import DataFrame
+
+from dagster import job, op, repository
+
+from .mylib import create_db_connection, fetch_products
+
+
+@op
+def extract_products() -> DataFrame:
+    return fetch_products()
+
+
+@op
+def get_categories(products: DataFrame) -> DataFrame:
+    return DataFrame({"category": products["category"].unique()})
+
+
+@op
+def write_products_table(products: DataFrame) -> None:
+    products.to_sql(name="categories", con=create_db_connection())
+
+
+@op
+def write_categories_table(categories: DataFrame) -> None:
+    categories.to_sql(name="categories", con=create_db_connection())
+
+
+@job
+def ingest_products_and_categories():
+    products = extract_products()
+    product_categories = get_categories(products)
+    return write_products_table(products), write_categories_table(product_categories)
+
+
+@repository
+def repo():
+    return [ingest_products_and_categories]
+```
+
+Here's an equivalent job with software-defined assets. Note that, because not all the ops correspond to assets, it makes use of the `@op` and `@graph` APIs and uses `from_graph` to wrap a graph in a software-defined asset.
+
+```python file=/guides/dagster/enriching_with_software_defined_assets/sda_graph.py
+from pandas import DataFrame
+
+from dagster import AssetSelection, AssetsDefinition, GraphOut, graph, op, repository
+
+from .mylib import create_db_connection, fetch_products
+
+
+@op
+def extract_products() -> DataFrame:
+    return fetch_products()
+
+
+@op
+def get_categories(products: DataFrame) -> DataFrame:
+    return DataFrame({"category": products["category"].unique()})
+
+
+@op
+def write_products_table(products: DataFrame) -> None:
+    products.to_sql(name="categories", con=create_db_connection())
+
+
+@op
+def write_categories_table(categories: DataFrame) -> None:
+    categories.to_sql(name="categories", con=create_db_connection())
+
+
+@graph(out={"products": GraphOut(), "categories": GraphOut()})
+def ingest_graph():
+    products = extract_products()
+    product_categories = get_categories(products)
+    return write_products_table(products), write_categories_table(product_categories)
+
+
+two_tables = AssetsDefinition.from_graph(ingest_graph)
+
+
+@repository
+def repo():
+    return [two_tables, AssetSelection.all().to_job("products_and_categories")]
+```
+
+## Future work: jobs that run ops after assets
+
+In the future, you'll be able to define jobs that materialize software-defined assets and then run arbitrary ops afterwards. If this is something you think you might use, we'd love to hear from you in Slack or in a Github discussion.
+
+## Concept mapping
+
+Here's how each of Dagster's concepts relates to the world of software-defined assets:
+
+| Without software-defined assets                                                                                                               | With software-defined assets                                                                                                                                                  |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| An [op]() is the basic unit of computation.                                                                                                   | Every software-defined asset includes a graph or an op.                                                                                                                       |
+| A [graph]() is a composite unit of computation that connects multiple ops.                                                                    | Every software-defined asset includes a graph or an op.                                                                                                                       |
+| Ops can have multiple outputs                                                                                                                 | The `@multi_asset` decorator enables defining multiple assets that are produced by a single op.                                                                               |
+| The `Nothing` Dagster type enables declaring that Dagster need not store or load the object corresponding to a particular op output or input. | The `non_argument_deps` argument when defining an asset enables specifying dependencies without relying on Dagster to store or load objects corresponding to that dependency. |
+| Partitioned jobs.                                                                                                                             | Partitioned assets.                                                                                                                                                           |
+| Op config.                                                                                                                                    | Asset config.                                                                                                                                                                 |
+| A job targets a graph of ops.                                                                                                                 | An asset job targets a selection of software-defined assets.                                                                                                                  |
+| Jobs can be put on schedules or sensors.                                                                                                      | Asset jobs can be put on schedules or sensors.                                                                                                                                |
+| Ops can require resources                                                                                                                     | Software-defined assets can require resources                                                                                                                                 |
+| IO managers can control how op inputs and outputs are loaded and stored.                                                                      | IO managers can control how assets are loaded and stored.                                                                                                                     |
+| Repositories can contain jobs, schedules, and sensors.                                                                                        | Repositories can also contain assets.                                                                                                                                         |
+| You can test an op by directly invoking it.                                                                                                   | You can test an asset by direcly invoking it.                                                                                                                                 |
+| Op outputs and inputs can have Dagster Types.                                                                                                 | Software-defined assets can have Dagster Types.                                                                                                                               |
