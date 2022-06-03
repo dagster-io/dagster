@@ -52,6 +52,7 @@ export const PipelineExplorerContainer: React.FC<{
   const [options, setOptions] = React.useState<GraphExplorerOptions>({
     explodeComposites: explorerPath.explodeComposites ?? false,
     preferAssetRendering: true,
+    enableSidebar: true,
   });
 
   const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
@@ -83,7 +84,6 @@ export const PipelineExplorerContainer: React.FC<{
         const assetNodesPresent = result.solidHandles.some(
           (h) => h.solid.definition.assetNodes.length > 0,
         );
-
         if (options.preferAssetRendering && assetNodesPresent) {
           return (
             <AssetGraphExplorer

@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {Colors, Icon, Tooltip, FontFamily, Box, CaptionMono, Spinner} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
-import React, {CSSProperties} from 'react';
+import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
@@ -136,23 +136,16 @@ export const AssetNode: React.FC<{
 
 export const AssetNodeMinimal: React.FC<{
   selected: boolean;
-  style?: CSSProperties;
-}> = ({selected, style, children}) => {
+  definition: AssetNodeFragment;
+}> = ({selected, definition}) => {
   return (
-    <AssetNodeContainer $selected={selected} style={{position: 'absolute', borderRadius: 12}}>
-      <AssetNodeBox
-        $selected={selected}
-        style={{
-          border: `4px solid ${Colors.Blue200}`,
-          borderRadius: 10,
-          position: 'absolute',
-          inset: 4,
-          ...style,
-        }}
-      >
-        {children}
-      </AssetNodeBox>
-    </AssetNodeContainer>
+    <MinimalAssetNodeContainer $selected={selected}>
+      <MinimalAssetNodeBox $selected={selected}>
+        <MinimalName style={{fontSize: 28}}>
+          {withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {maxLength: 17})}
+        </MinimalName>
+      </MinimalAssetNodeBox>
+    </MinimalAssetNodeContainer>
   );
 };
 
@@ -191,6 +184,7 @@ export const ASSET_NODE_FRAGMENT = gql`
     id
     ...AssetNodeConfigFragment
     graphName
+    jobNames
     opNames
     description
     partitionDefinition
@@ -229,7 +223,7 @@ const AssetNodeContainer = styled.div<{$selected: boolean}>`
   margin-bottom: 2px;
 `;
 
-export const AssetNodeBox = styled.div<{$selected: boolean}>`
+const AssetNodeBox = styled.div<{$selected: boolean}>`
   border: 2px solid ${(p) => (p.$selected ? Colors.Blue500 : Colors.Blue200)};
   background: ${BoxColors.Stats};
   border-radius: 5px;
@@ -251,7 +245,22 @@ const Name = styled.div`
   gap: 4px;
 `;
 
-export const NameMinimal = styled(Name)`
+const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
+  position: absolute;
+  border-radius: 12px;
+  outline-offset: 2px;
+  outline-width: 4px;
+`;
+
+const MinimalAssetNodeBox = styled(AssetNodeBox)`
+  background: ${Colors.White};
+  border: 4px solid ${Colors.Blue200};
+  border-radius: 10px;
+  position: absolute;
+  inset: 4px;
+`;
+
+const MinimalName = styled(Name)`
   font-weight: 600;
   white-space: nowrap;
   position: absolute;
