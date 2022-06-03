@@ -11,6 +11,7 @@ from dagster.core.definitions.metadata import (
 )
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.resource_requirement import ResourceAddable
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import IOManagerDefinition
 
 
@@ -86,6 +87,10 @@ class SourceAsset(
             return self
 
         io_manager_def = resource_defs.get(self.get_io_manager_key())
+        if not io_manager_def and self.get_io_manager_key() != "io_manager":
+            raise DagsterInvalidDefinitionError(
+                f"SourceAsset with asset key {self.key} requires IO manager with key '{self.get_io_manager_key()}', but none was provided."
+            )
 
         return SourceAsset(
             key=self.key,

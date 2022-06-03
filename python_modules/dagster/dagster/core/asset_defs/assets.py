@@ -14,7 +14,11 @@ from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning, experimental
 
-from ..definitions.resource_requirement import ResourceAddable, ResourceRequirement
+from ..definitions.resource_requirement import (
+    ResourceAddable,
+    ResourceRequirement,
+    ensure_requirements_satisfied,
+)
 from .partition_mapping import PartitionMapping
 from .source_asset import SourceAsset
 
@@ -320,6 +324,16 @@ class AssetsDefinition(ResourceAddable):
     def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
 
         merged_resource_defs = merge_dicts(resource_defs, self.resource_defs)
+        ensure_requirements_satisfied(
+            merged_resource_defs,
+            list(
+                [
+                    requirement
+                    for requirement in self.get_resource_requirements()
+                    if requirement.key != "io_manager"
+                ]
+            ),
+        )
 
         return AssetsDefinition(
             asset_keys_by_input_name=self._asset_keys_by_input_name,

@@ -4,21 +4,16 @@ from dagster import (
     AssetKey,
     DagsterInvalidDefinitionError,
     IOManager,
-    JobDefinition,
     ResourceDefinition,
-    graph,
     io_manager,
     job,
     mem_io_manager,
-    op,
-    schedule,
-    sensor,
 )
 from dagster.core.asset_defs import AssetsDefinition, SourceAsset, asset, build_assets_job
 from dagster.core.execution.with_resources import with_resources
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
 
-# pylint: disable=comparison-with-callable
+# pylint: disable=comparison-with-callable,unbalanced-tuple-unpacking
 
 
 def test_assets_direct():
@@ -49,7 +44,7 @@ def test_assets_direct():
 
 def test_asset_requires_io_manager_key():
     @asset(io_manager_key="the_manager")
-    def the_asset(context):
+    def the_asset():
         return 5
 
     in_mem = InMemoryIOManager()
@@ -188,3 +183,30 @@ def test_source_assets_manager_def_provided():
     result = the_job.execute_in_process()
     assert result.success
     assert result.output_for_node("my_derived_asset") == 9
+
+
+def test_asset_def_partial_application():
+    @asset(required_resource_keys={"foo", "bar"})
+    def the_asset():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'bar' required by op 'the_asset' was not provided.",
+    ):
+        with_resources([the_asset], {"foo": ResourceDefinition.hardcoded_resource("foo")})
+
+
+def test_source_asset_no_manager_def():
+    the_source_asset = SourceAsset(key=AssetKey("my_source_asset"))
+    # Ensure we don't error when no manager def is provided for default key,
+    # because io manager def can utilize default.
+    with_resources([the_source_asset], {})
+
+    the_source_asset = SourceAsset(key=AssetKey("my_source_asset"), io_manager_key="foo")
+    # Ensure error when io manager key is provided and resources don't satisfy.
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="requires IO manager with key 'foo', but none was provided.",
+    ):
+        with_resources([the_source_asset], {})
