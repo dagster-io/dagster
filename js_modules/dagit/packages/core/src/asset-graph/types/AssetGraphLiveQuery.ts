@@ -59,5 +59,5 @@ export interface AssetGraphLiveQuery {
 }
 
 export interface AssetGraphLiveQueryVariables {
-  assetKeys?: AssetKeyInput[] | null;
+  assetKeys: AssetKeyInput[];
 }

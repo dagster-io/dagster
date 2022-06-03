@@ -273,7 +273,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     assetsLatestInfo = graphene.Field(
         non_null_list(GrapheneAssetLatestInfo),
-        assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
+        assetKeys=graphene.Argument(non_null_list(GrapheneAssetKeyInput)),
     )
 
     def resolve_repositoriesOrError(self, graphene_info, **kwargs):
@@ -525,7 +525,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_assetsLatestInfo(self, graphene_info, **kwargs):
         asset_keys = set(
-            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
+            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys")
         )
 
         results = get_asset_nodes(graphene_info)
@@ -535,7 +535,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         step_keys_by_asset: Dict[AssetKey, List[str]] = {
             node.external_asset_node.asset_key: node.external_asset_node.op_names
             for node in results
-            if not asset_keys or node.assetKey in asset_keys
+            if node.assetKey in asset_keys
         }
 
         return get_assets_live_info(graphene_info, step_keys_by_asset)
