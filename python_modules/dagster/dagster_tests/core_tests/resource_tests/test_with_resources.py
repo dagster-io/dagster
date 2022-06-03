@@ -6,7 +6,6 @@ from dagster import (
     IOManager,
     ResourceDefinition,
     io_manager,
-    job,
     mem_io_manager,
 )
 from dagster.core.asset_defs import AssetsDefinition, SourceAsset, asset, build_assets_job
@@ -84,7 +83,9 @@ def test_assets_direct_resource_conflicts():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="had a conflicting version of the same resource key foo. Please resolve this conflict by giving different keys to each resource definition.",
+        match="had a conflicting version of the same resource key foo. Please "
+        "resolve this conflict by giving different keys to each resource "
+        "definition.",
     ):
         build_assets_job("the_job", [transformed_asset, other_transformed_asset])
 
@@ -111,7 +112,8 @@ def test_source_assets_no_key_provided():
         [my_source_asset, my_derived_asset], resource_defs={"io_manager": the_manager}
     )
 
-    # When an io manager definition is provided using the generic key, that generic key is used as the io manager key for the source asset.
+    # When an io manager definition is provided using the generic key, that
+    # generic key is used as the io manager key for the source asset.
     assert transformed_source.get_io_manager_key() == "io_manager"
 
     the_job = build_assets_job("the_job", [transformed_derived], source_assets=[transformed_source])
@@ -143,7 +145,8 @@ def test_source_assets_key_provided():
         [my_source_asset, my_derived_asset], resource_defs={"the_manager": the_manager}
     )
 
-    # When an io manager definition is provided using the generic key, that generic key is used as the io manager key for the source asset.
+    # When an io manager definition is provided using the generic key, that
+    # generic key is used as the io manager key for the source asset.
     assert transformed_source.get_io_manager_key() == "the_manager"
 
     the_job = build_assets_job("the_job", [transformed_derived], source_assets=[transformed_source])
@@ -175,7 +178,8 @@ def test_source_assets_manager_def_provided():
         [my_source_asset, my_derived_asset], resource_defs={"io_manager": mem_io_manager}
     )
 
-    # When an io manager definition has already been provided, it will use an override key.
+    # When an io manager definition has already been provided, it will use an
+    # override key.
     assert transformed_source.io_manager_def == the_manager
 
     the_job = build_assets_job("the_job", [transformed_derived], source_assets=[transformed_source])

@@ -35,7 +35,6 @@ from .output import OutputDefinition, OutputMapping
 from .resource_requirement import (
     InputManagerRequirement,
     OutputManagerRequirement,
-    RequiresResources,
     ResourceRequirement,
     SolidDefinitionResourceRequirement,
 )

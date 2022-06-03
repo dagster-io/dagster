@@ -46,7 +46,7 @@ from dagster.utils import merge_dicts
 from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping
 from .executor_definition import ExecutorDefinition
-from .graph_definition import GraphDefinition, SubselectedGraphDefinition, default_job_io_manager
+from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
 from .metadata import RawMetadataValue

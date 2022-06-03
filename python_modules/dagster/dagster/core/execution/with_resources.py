@@ -1,8 +1,7 @@
-from typing import Any, Dict, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, Mapping, Optional, Sequence
 
 from dagster import _check as check
 
-from ..asset_defs import AssetsDefinition
 from ..definitions import ResourceDefinition
 from ..definitions.resource_requirement import ResourceAddable
 

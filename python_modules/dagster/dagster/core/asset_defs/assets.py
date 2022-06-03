@@ -326,13 +326,11 @@ class AssetsDefinition(ResourceAddable):
         merged_resource_defs = merge_dicts(resource_defs, self.resource_defs)
         ensure_requirements_satisfied(
             merged_resource_defs,
-            list(
-                [
-                    requirement
-                    for requirement in self.get_resource_requirements()
-                    if requirement.key != "io_manager"
-                ]
-            ),
+            [
+                requirement
+                for requirement in self.get_resource_requirements()
+                if requirement.key != "io_manager"
+            ],
         )
 
         return AssetsDefinition(
