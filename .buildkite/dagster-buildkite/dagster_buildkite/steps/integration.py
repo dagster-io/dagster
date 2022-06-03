@@ -52,6 +52,7 @@ def build_backcompat_suite_steps() -> List[GroupStep]:
     return build_integration_suite_steps(
         os.path.join("integration_tests", "test_suites", "backcompat-test-suite"),
         pytest_extra_cmds=backcompat_extra_cmds,
+        pytest_post_cmds=backcompat_post_cmds(),
         pytest_tox_factors=tox_factors,
         upload_coverage=False,
     )
@@ -94,6 +95,18 @@ def backcompat_extra_cmds(_, factor: str) -> List[str]:
             "BACKCOMPAT_TESTS_DAGIT_HOST",
         ),
         "popd",
+    ]
+
+
+def backcompat_post_cmds() -> List[str]:
+    return [
+        "mkdir .docker_logs",
+        "docker logs dagit > .docker_logs/dagit_logs 2>&1",
+        "docker logs docker_daemon > .docker_logs/docker_daemon_logs 2>&1",
+        "docker logs dagster_grpc_server > .docker_logs/dagster_grpc_server_logs 2>&1",
+        "docker logs docker_postgresql > .docker_logs/docker_postgresql_logs 2>&1",
+        "buildkite-agent artifact upload .docker_logs",
+        "rm -rf .docker_logs",
     ]
 
 
