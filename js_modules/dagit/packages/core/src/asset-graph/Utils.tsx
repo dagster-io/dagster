@@ -1,7 +1,5 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 
-import {AssetNodeDefinitionFragment} from '../assets/types/AssetNodeDefinitionFragment';
-
 import {
   AssetGraphLiveQuery_assetsLatestInfo,
   AssetGraphLiveQuery_assetsLatestInfo_latestRun,
@@ -29,7 +27,7 @@ export function isHiddenAssetGroupJob(jobName: string) {
 // because JSON.stringify's whitespace behavior is different than Python's.
 //
 export type GraphId = string;
-export const toGraphId = (key: AssetKey): GraphId => JSON.stringify(key.path);
+export const toGraphId = (key: {path: string[]}): GraphId => JSON.stringify(key.path);
 
 export interface GraphNode {
   id: GraphId;
@@ -81,47 +79,6 @@ export const buildGraphData = (assetNodes: AssetNode[]) => {
   });
 
   return data;
-};
-
-export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragment) => {
-  const id = toGraphId(assetNode.assetKey);
-  const graphData: GraphData = {
-    downstream: {
-      [id]: {},
-    },
-    nodes: {
-      [id]: {
-        id,
-        assetKey: assetNode.assetKey,
-        definition: {...assetNode, dependencyKeys: [], dependedByKeys: []},
-      },
-    },
-    upstream: {
-      [id]: {},
-    },
-  };
-
-  for (const {asset} of assetNode.dependencies) {
-    const depId = toGraphId(asset.assetKey);
-    graphData.upstream[id][depId] = true;
-    graphData.downstream[depId] = {...graphData.downstream[depId], [id]: true};
-    graphData.nodes[depId] = {
-      id: depId,
-      assetKey: asset.assetKey,
-      definition: {...asset, dependencyKeys: [], dependedByKeys: []},
-    };
-  }
-  for (const {asset} of assetNode.dependedBy) {
-    const depId = toGraphId(asset.assetKey);
-    graphData.upstream[depId] = {...graphData.upstream[depId], [id]: true};
-    graphData.downstream[id][depId] = true;
-    graphData.nodes[depId] = {
-      id: depId,
-      assetKey: asset.assetKey,
-      definition: {...asset, dependencyKeys: [], dependedByKeys: []},
-    };
-  }
-  return graphData;
 };
 
 export const graphHasCycles = (graphData: GraphData) => {

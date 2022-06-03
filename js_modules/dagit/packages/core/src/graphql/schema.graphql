@@ -92,6 +92,7 @@ type Repository {
   sensors: [Sensor!]!
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
+  assetGroups: [AssetGroup!]!
 }
 
 type RepositoryLocation {
@@ -1525,6 +1526,11 @@ An invocation of a solid within a repo.
 type NodeInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
+}
+
+type AssetGroup {
+  groupName: String!
+  assetKeys: [AssetKey!]!
 }
 
 """

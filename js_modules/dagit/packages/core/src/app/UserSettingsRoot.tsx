@@ -105,16 +105,6 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
               ),
             },
             {
-              key: 'Always collapse left navigation',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(FeatureFlag.flagAlwaysCollapseNavigation)}
-                  onChange={() => toggleFlag(FeatureFlag.flagAlwaysCollapseNavigation)}
-                />
-              ),
-            },
-            {
               key: 'Disable WebSockets',
               value: (
                 <Checkbox

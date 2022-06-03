@@ -3,7 +3,7 @@ import {Box, Colors, Icon, Caption, Subheading, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../asset-graph/AssetNode';
+import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {
   displayNameForAssetKey,
   isSourceAsset,
@@ -11,6 +11,7 @@ import {
   isHiddenAssetGroupJob,
   __ASSET_GROUP_PREFIX,
 } from '../asset-graph/Utils';
+import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -32,8 +33,10 @@ import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeDefinition: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
+  upstream: AssetGraphQuery_assetNodes[] | null;
+  downstream: AssetGraphQuery_assetNodes[] | null;
   liveDataByNode: LiveData;
-}> = ({assetNode, liveDataByNode}) => {
+}> = ({assetNode, upstream, downstream, liveDataByNode}) => {
   const partitionHealthData = usePartitionHealthData([assetNode.assetKey]);
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
 
@@ -46,7 +49,7 @@ export const AssetNodeDefinition: React.FC<{
   return (
     <>
       <AssetDefinedInMultipleReposNotice assetId={assetNode.id} loadedFromRepo={repoAddress} />
-      <Box flex={{direction: 'row'}}>
+      <Box flex={{direction: 'row'}} style={{flex: 1}}>
         <Box
           style={{flex: 1, minWidth: 0}}
           flex={{direction: 'column'}}
@@ -90,18 +93,35 @@ export const AssetNodeDefinition: React.FC<{
             border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
             flex={{justifyContent: 'space-between', gap: 8}}
           >
-            <Subheading>Upstream Assets ({assetNode.dependencies.length})</Subheading>
+            <Subheading>
+              Upstream Assets{upstream?.length ? ` (${upstream.length})` : ''}
+            </Subheading>
+            <Link to="?view=lineage&lineageScope=upstream">
+              <Box flex={{gap: 4, alignItems: 'center'}}>
+                View upstream graph
+                <Icon name="open_in_new" color={Colors.Link} />
+              </Box>
+            </Link>
           </Box>
-          <AssetNodeList items={assetNode.dependencies} liveDataByNode={liveDataByNode} />
-
+          <AssetNodeList items={upstream} liveDataByNode={liveDataByNode} />
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
             flex={{justifyContent: 'space-between', gap: 8}}
           >
-            <Subheading>Downstream Assets ({assetNode.dependedBy.length})</Subheading>
+            <Subheading>
+              Downstream Assets{downstream?.length ? ` (${downstream.length})` : ''}
+            </Subheading>
+            <Link to="?view=lineage&lineageScope=downstream">
+              <Box flex={{gap: 4, alignItems: 'center'}}>
+                View downstream graph
+                <Icon name="open_in_new" color={Colors.Link} />
+              </Box>
+            </Link>
           </Box>
-          <AssetNodeList items={assetNode.dependedBy} liveDataByNode={liveDataByNode} />
+          <AssetNodeList items={downstream} liveDataByNode={liveDataByNode} />
+          {/** Ensures the line between the left and right columns goes to the bottom of the page */}
+          <div style={{flex: 1}} />
         </Box>
         {assetConfigSchema ? (
           <Box
@@ -241,32 +261,10 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
         name
       }
     }
-
     ...AssetNodeFragment
-    ...AssetNodeLiveFragment
     ...AssetNodeOpMetadataFragment
-
-    dependencies {
-      asset {
-        id
-        opNames
-        jobNames
-        ...AssetNodeFragment
-        ...AssetNodeLiveFragment
-      }
-    }
-    dependedBy {
-      asset {
-        id
-        opNames
-        jobNames
-        ...AssetNodeFragment
-        ...AssetNodeLiveFragment
-      }
-    }
   }
   ${ASSET_NODE_CONFIG_FRAGMENT}
   ${ASSET_NODE_FRAGMENT}
-  ${ASSET_NODE_LIVE_FRAGMENT}
   ${ASSET_NODE_OP_METADATA_FRAGMENT}
 `;

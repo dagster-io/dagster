@@ -186,7 +186,7 @@ const ScaffoldConfigButton = ({
 
   return (
     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-      <Button disabled={false} onClick={onClick}>
+      <Button disabled={disabled} onClick={onClick}>
         Scaffold missing config
       </Button>
       {disabled ? (

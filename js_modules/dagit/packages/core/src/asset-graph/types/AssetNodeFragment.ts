@@ -497,6 +497,7 @@ export interface AssetNodeFragment {
   id: string;
   configField: AssetNodeFragment_configField | null;
   graphName: string | null;
+  jobNames: string[];
   opNames: string[];
   description: string | null;
   partitionDefinition: string | null;

@@ -418,6 +418,14 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
 
 
+class GrapheneAssetGroup(graphene.ObjectType):
+    groupName = graphene.NonNull(graphene.String)
+    assetKeys = non_null_list(GrapheneAssetKey)
+
+    class Meta:
+        name = "AssetGroup"
+
+
 class GrapheneAssetNodeOrError(graphene.Union):
     class Meta:
         types = (GrapheneAssetNode, GrapheneAssetNotFoundError)
