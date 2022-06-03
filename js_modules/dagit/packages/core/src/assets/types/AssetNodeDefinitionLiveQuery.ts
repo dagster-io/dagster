@@ -33,5 +33,5 @@ export interface AssetNodeDefinitionLiveQuery {
 }
 
 export interface AssetNodeDefinitionLiveQueryVariables {
-  assetKeys?: AssetKeyInput[] | null;
+  assetKeys: AssetKeyInput[];
 }

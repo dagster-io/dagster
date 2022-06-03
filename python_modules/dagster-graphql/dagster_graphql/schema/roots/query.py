@@ -273,7 +273,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     assetsLatestInfo = graphene.Field(
         non_null_list(GrapheneAssetLatestInfo),
-        assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
+        assetKeys=graphene.Argument(non_null_list(GrapheneAssetKeyInput)),
     )
 
     def resolve_repositoriesOrError(self, graphene_info, **kwargs):
@@ -525,7 +525,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_assetsLatestInfo(self, graphene_info, **kwargs):
         asset_keys = set(
-            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
+            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys")
         )
 
         results = get_asset_nodes(graphene_info)

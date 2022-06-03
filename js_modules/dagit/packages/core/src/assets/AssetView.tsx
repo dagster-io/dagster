@@ -253,7 +253,7 @@ const ASSET_QUERY = gql`
 `;
 
 const ASSET_NODE_DEFINITION_LIVE_QUERY = gql`
-  query AssetNodeDefinitionLiveQuery($assetKeys: [AssetKeyInput!]) {
+  query AssetNodeDefinitionLiveQuery($assetKeys: [AssetKeyInput!]!) {
     assetsLatestInfo(assetKeys: $assetKeys) {
       assetKey {
         path
