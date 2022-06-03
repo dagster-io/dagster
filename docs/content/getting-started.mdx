@@ -26,7 +26,7 @@ This installs the latest stable version of the core Dagster packages in your cur
 
 To get started, we'll write some simple [ops](/concepts/ops-jobs-graphs/ops) and use them to create a [job](/concepts/ops-jobs-graphs/jobs-graphs). Dagster also offers a way to produce data artifacts like tables and files using [software-defined assets](/concepts/assets/software-defined-assets), but for simplicity we'll focus on ops.
 
-Copy the following code and save it in a file named `hello_world.py`:
+Copy the following code. In the directory where Dagster is installed, save this into a file named `hello_world.py`:
 
 ```python file=/getting_started/hello_world.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
 from dagster import job, op
@@ -65,29 +65,30 @@ In Dagster, jobs can be executed using the:
    pip install dagit
    ```
 
-1. To visualize your job in Dagit:
+2. To visualize your job in Dagit:
 
    ```bash
    dagit -f hello_world.py
    ```
 
-1. Navigate to <http://localhost:3000> to start using Dagit.
-1. Click the **Launchpad** tab:
+3. Navigate to <http://localhost:3000> to start using Dagit.
+
+4. Click the **Launchpad** tab:
 
    <Image
-   alt="dagit-def"
-   src="/images/getting-started/dagit-def.png"
-   width={4032}
-   height={2454}
+     alt="dagit-def"
+     src="/images/getting-started/dagit-def.png"
+     width={4032}
+     height={2454}
    />
 
-1. Lastly, click the **Launch Run** button in the bottom right corner to launch the job:
+5. Lastly, click the **Launch Run** button in the bottom right corner to launch the job:
 
    <Image
-   alt="dagit-run"
-   src="/images/getting-started/dagit-run.png"
-   width={4032}
-   height={2454}
+     alt="dagit-run"
+     src="/images/getting-started/dagit-run.png"
+     width={4032}
+     height={2454}
    />
 
 ### Using the Dagster Python API
@@ -101,7 +102,7 @@ if __name__ == "__main__":
 
 ### Using the Dagster CLI
 
-Or the [Dagster CLI](/\_apidocs/cli#dagster-pipeline-execute):
+Or the [Dagster CLI](/_apidocs/cli#dagster-pipeline-execute):
 
 ```bash
 dagster job execute -f hello_world.py
