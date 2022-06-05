@@ -372,31 +372,12 @@ class AssetLayer:
     ):
         from dagster.core.asset_defs import AssetsDefinition, SourceAsset
 
-        self._asset_keys_by_node_input_handle = check.opt_dict_param(
-            asset_keys_by_node_input_handle,
-            "asset_keys_by_node_input_handle",
-            key_type=NodeInputHandle,
-            value_type=AssetKey,
-        )
-        self._asset_info_by_node_output_handle = check.dict_param(
-            asset_info_by_node_output_handle,
-            "asset_info_by_node_output_handle",
-            key_type=NodeOutputHandle,
-            value_type=AssetOutputInfo,
-        )
-        self._asset_deps = check.dict_param(
-            asset_deps, "asset_deps", key_type=AssetKey, value_type=set
-        )
-        self._dependency_node_handles_by_asset_key = check.opt_dict_param(
-            dependency_node_handles_by_asset_key,
-            "dependency_node_handles_by_asset_key",
-            key_type=AssetKey,
-            value_type=Set,
-        )
-        self._assets_defs = check.opt_list_param(assets_defs, "assets_defs")
-        self._source_asset_defs = check.opt_list_param(
-            source_asset_defs, "source_assets", of_type=(SourceAsset, AssetsDefinition)
-        )
+        self._asset_keys_by_node_input_handle = (asset_keys_by_node_input_handle,)
+        self._asset_info_by_node_output_handle = (asset_info_by_node_output_handle,)
+        self._asset_deps = asset_deps
+        self._dependency_node_handles_by_asset_key = dependency_node_handles_by_asset_key
+        self._assets_defs = assets_defs
+        self._source_asset_defs = source_asset_defs
 
         # keep an index from node handle to all keys expected to be generated in that node
         self._asset_keys_by_node_handle: Dict[NodeHandle, Set[AssetKey]] = defaultdict(set)
@@ -404,17 +385,11 @@ class AssetLayer:
             if asset_info.is_required:
                 self._asset_keys_by_node_handle[node_output_handle.node_handle].add(asset_info.key)
 
-        self._io_manager_keys_by_asset_key = check.opt_dict_param(
-            io_manager_keys_by_asset_key,
-            "io_manager_keys_by_asset_key",
-            key_type=AssetKey,
-            value_type=str,
-        )
+        self._io_manager_keys_by_asset_key = io_manager_keys_by_asset_key
 
     @staticmethod
     def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
         """Scrape asset info off of InputDefinition/OutputDefinition instances"""
-        check.inst_param(graph_def, "graph_def", GraphDefinition)
         asset_by_input, asset_by_output, asset_deps, io_manager_by_asset = _asset_mappings_for_node(
             graph_def, None
         )
@@ -441,11 +416,6 @@ class AssetLayer:
             assets_defs_by_node_handle (Mapping[NodeHandle, AssetsDefinition]): A mapping from
                 a NodeHandle pointing to the node in the graph where the AssetsDefinition ended up.
         """
-        check.inst_param(graph_def, "graph_def", GraphDefinition)
-        check.dict_param(
-            assets_defs_by_node_handle, "assets_defs_by_node_handle", key_type=NodeHandle
-        )
-
         asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
         asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
         asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
@@ -501,7 +471,7 @@ class AssetLayer:
     def upstream_assets_for_asset(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         check.invariant(
             asset_key in self._asset_deps,
-            "AssetKey '{asset_key}' is not produced by this JobDefinition.",
+            f"AssetKey '{asset_key}' is not produced by this JobDefinition.",
         )
         return self._asset_deps[asset_key]
 
