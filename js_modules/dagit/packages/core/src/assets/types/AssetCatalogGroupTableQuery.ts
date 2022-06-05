@@ -33,6 +33,7 @@ export interface AssetCatalogGroupTableQuery_assetNodes {
   assetKey: AssetCatalogGroupTableQuery_assetNodes_assetKey;
   opNames: string[];
   jobNames: string[];
+  groupName: string | null;
   partitionDefinition: string | null;
   description: string | null;
   repository: AssetCatalogGroupTableQuery_assetNodes_repository;
