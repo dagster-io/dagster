@@ -9,7 +9,7 @@ import {
   Icon,
   Colors,
 } from '@dagster-io/ui';
-import {isEqual} from 'lodash';
+import isEqual from 'lodash/isEqual';
 import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -191,6 +191,7 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
     <Wrapper>
       <StickyTableContainer $top={0}>
         <AssetTable
+          view={view}
           assets={displayed}
           liveDataByNode={liveDataByNode}
           actionBarComponents={
@@ -255,9 +256,9 @@ const AssetGroupSuggest: React.FC<{
         style: {width: 220},
         placeholder: 'Filter asset groups…',
         rightElement: value ? (
-          <Box padding={4} margin={2} onClick={() => onChange(null)}>
+          <div style={{marginTop: 6.5, marginRight: 6}} onClick={() => onChange(null)}>
             <Icon name="cancel" color={Colors.Gray400} />
-          </Box>
+          </div>
         ) : undefined,
       }}
       inputValueRenderer={(partition) => partition.groupName}

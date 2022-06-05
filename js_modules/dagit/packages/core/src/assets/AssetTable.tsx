@@ -29,10 +29,12 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';
 import {AssetTableFragment as Asset} from './types/AssetTableFragment';
+import {AssetViewType} from './useAssetView';
 
 type AssetKey = {path: string[]};
 
 export const AssetTable = ({
+  view,
   assets,
   actionBarComponents,
   liveDataByNode,
@@ -41,6 +43,7 @@ export const AssetTable = ({
   maxDisplayCount,
   requery,
 }: {
+  view: AssetViewType;
   assets: Asset[];
   actionBarComponents: React.ReactNode;
   liveDataByNode: LiveData;
@@ -100,7 +103,7 @@ export const AssetTable = ({
                 }}
               />
             </th>
-            <th>Asset Key</th>
+            <th>{view === 'directory' ? 'Asset Key Prefix' : 'Asset Key'}</th>
             <th style={{width: 340}}>Defined In</th>
             <th style={{width: 200}}>Materialized</th>
             <th style={{width: 100}}>Latest Run</th>
@@ -189,7 +192,7 @@ const AssetEntryRow: React.FC<{
 
     return (
       <tr>
-        <td style={{paddingRight: '4px'}}>
+        <td style={{paddingRight: 8}}>
           <Checkbox checked={isSelected} onChange={onChange} />
         </td>
         <td>
