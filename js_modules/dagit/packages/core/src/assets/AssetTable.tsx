@@ -24,6 +24,7 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {MenuLink} from '../ui/MenuLink';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';
@@ -206,8 +207,20 @@ const AssetEntryRow: React.FC<{
         </td>
         <td>
           {repoAddress && (
-            <Box flex={{direction: 'column'}}>
+            <Box flex={{direction: 'column', gap: 4}}>
               <RepositoryLink showIcon showRefresh={false} repoAddress={repoAddress} />
+              {asset?.definition && asset?.definition.groupName ? (
+                <Link
+                  to={workspacePathFromAddress(
+                    repoAddress,
+                    `/asset-groups/${asset.definition.groupName}`,
+                  )}
+                >
+                  <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+                    <Icon color={Colors.Gray400} name="asset_group" /> {asset.definition.groupName}
+                  </Box>
+                </Link>
+              ) : undefined}
             </Box>
           )}
         </td>
@@ -324,6 +337,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
     id
     opNames
     jobNames
+    groupName
     partitionDefinition
     description
     repository {

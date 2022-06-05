@@ -25,6 +25,7 @@ export interface AssetTableDefinitionFragment {
   id: string;
   opNames: string[];
   jobNames: string[];
+  groupName: string | null;
   partitionDefinition: string | null;
   description: string | null;
   repository: AssetTableDefinitionFragment_repository;
