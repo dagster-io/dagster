@@ -12,7 +12,8 @@ from dagster_graphql.test.utils import (
     infer_repository_selector,
 )
 
-from dagster import AssetKey, DagsterEventType
+from dagster import AssetKey, DagsterEventType, PipelineRunStatus
+from dagster.core.test_utils import poll_for_finished_run
 from dagster.utils import safe_tempfile_path
 
 # from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
@@ -318,8 +319,9 @@ def _create_run(
         variables={"executionParams": {"selector": selector, "mode": mode, "stepKeys": step_keys}},
     )
     assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-    graphql_context.instance.run_launcher.join()
-    return result.data["launchPipelineExecution"]["run"]["runId"]
+    run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+    poll_for_finished_run(graphql_context.instance, run_id)
+    return run_id
 
 
 def _get_sorted_materialization_events(graphql_context, run_id):
@@ -384,8 +386,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             variables={"executionParams": {"selector": selector, "mode": "default"}},
         )
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
-        graphql_context.instance.run_launcher.join()
+        poll_for_finished_run(graphql_context.instance, run_id)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -403,8 +406,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             variables={"executionParams": {"selector": selector, "mode": "default"}},
         )
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-
-        graphql_context.instance.run_launcher.join()
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        poll_for_finished_run(graphql_context.instance, run_id)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -843,6 +846,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         run_id = _create_run(graphql_context, "foo_job", asset_selection=[{"path": ["bar"]}])
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run.is_finished
+        assert run.status == PipelineRunStatus.SUCCESS
         assert run.asset_selection == {AssetKey("bar")}
 
     def test_execute_pipeline_subset(self, graphql_context):
@@ -927,8 +931,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 },
             },
         )
-        graphql_context.instance.run_launcher.join()
         run_id = result.data["launchPipelineReexecution"]["run"]["runId"]
+        poll_for_finished_run(graphql_context.instance, run_id)
+
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run.is_finished
         events = _get_sorted_materialization_events(graphql_context, run_id)
@@ -967,7 +972,6 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
     def test_asset_in_progress(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "hanging_job")
-        run_id = "foo"
 
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
@@ -980,13 +984,14 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
                         "runConfigData": {
                             "resources": {"hanging_asset_resource": {"config": {"file": path}}}
                         },
-                        "executionMetadata": {"runId": run_id},
                     }
                 },
             )
 
             assert not result.errors
             assert result.data
+
+            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
             # ensure the execution has happened
             while not os.path.exists(path):
@@ -1014,23 +1019,22 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert len(assets_live_info) == 3
 
             assert assets_live_info[0]["assetKey"]["path"] == ["first_asset"]
-            assert assets_live_info[0]["latestMaterialization"]["runId"] == "foo"
+            assert assets_live_info[0]["latestMaterialization"]["runId"] == run_id
             assert assets_live_info[0]["unstartedRunIds"] == []
             assert assets_live_info[0]["inProgressRunIds"] == []
 
             assert assets_live_info[1]["assetKey"]["path"] == ["hanging_asset"]
             assert assets_live_info[1]["latestMaterialization"] == None
             assert assets_live_info[1]["unstartedRunIds"] == []
-            assert assets_live_info[1]["inProgressRunIds"] == ["foo"]
+            assert assets_live_info[1]["inProgressRunIds"] == [run_id]
 
             assert assets_live_info[2]["assetKey"]["path"] == ["never_runs_asset"]
             assert assets_live_info[2]["latestMaterialization"] == None
-            assert assets_live_info[2]["unstartedRunIds"] == ["foo"]
+            assert assets_live_info[2]["unstartedRunIds"] == [run_id]
             assert assets_live_info[2]["inProgressRunIds"] == []
 
     def test_graph_asset_in_progress(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "hanging_graph_asset_job")
-        run_id = "foo"
 
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
@@ -1043,13 +1047,14 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
                         "runConfigData": {
                             "resources": {"hanging_asset_resource": {"config": {"file": path}}}
                         },
-                        "executionMetadata": {"runId": run_id},
                     }
                 },
             )
 
             assert not result.errors
             assert result.data
+
+            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
             # ensure the execution has happened
             while not os.path.exists(path):
@@ -1078,17 +1083,17 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert assets_live_info[1]["assetKey"]["path"] == ["hanging_graph"]
             assert assets_live_info[1]["latestMaterialization"] == None
             assert assets_live_info[1]["unstartedRunIds"] == []
-            assert assets_live_info[1]["inProgressRunIds"] == ["foo"]
+            assert assets_live_info[1]["inProgressRunIds"] == [run_id]
 
             assert assets_live_info[0]["assetKey"]["path"] == ["downstream_asset"]
             assert assets_live_info[0]["latestMaterialization"] == None
-            assert assets_live_info[0]["unstartedRunIds"] == ["foo"]
+            assert assets_live_info[0]["unstartedRunIds"] == [run_id]
             assert assets_live_info[0]["inProgressRunIds"] == []
 
 
 class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
     def test_cross_repo_assets(self, graphql_context):
-        repository_location = graphql_context.get_repository_location("test")
+        repository_location = graphql_context.get_repository_location("cross_asset_repos")
         repository = repository_location.get_repository("upstream_assets_repository")
 
         selector = {
