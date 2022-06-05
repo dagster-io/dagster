@@ -352,21 +352,19 @@ class AssetLayer:
     dependencies between each asset.
 
     Args:
-        asset_key_by_node_input_handle (Mapping[NodeInputHandle, AssetOutputInfo], optional): A mapping
+        asset_key_by_node_input_handle (Mapping[NodeInputHandle, AssetOutputInfo]): A mapping
             from a unique input in the underlying graph to the associated AssetKey that it loads from.
-        asset_info_by_node_output_handle (Mapping[NodeOutputHandle, AssetOutputInfo], optional): A mapping
+        asset_info_by_node_output_handle (Mapping[NodeOutputHandle, AssetOutputInfo]): A mapping
             from a unique output in the underlying graph to the associated AssetOutputInfo.
-        asset_deps (Mapping[AssetKey, AbstractSet[AssetKey]], optional): Records the upstream asset
+        asset_deps (Mapping[AssetKey, AbstractSet[AssetKey]]): Records the upstream asset
             keys for each asset key produced by this job.
     """
 
     def __init__(
         self,
-        asset_keys_by_node_input_handle: Optional[Mapping[NodeInputHandle, AssetKey]] = None,
-        asset_info_by_node_output_handle: Optional[
-            Mapping[NodeOutputHandle, AssetOutputInfo]
-        ] = None,
-        asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
+        asset_keys_by_node_input_handle: Mapping[NodeInputHandle, AssetKey],
+        asset_info_by_node_output_handle: Mapping[NodeOutputHandle, AssetOutputInfo],
+        asset_deps: Mapping[AssetKey, AbstractSet[AssetKey]] = None,
         dependency_node_handles_by_asset_key: Optional[Mapping[AssetKey, Set[NodeHandle]]] = None,
         assets_defs: Optional[List["AssetsDefinition"]] = None,
         source_asset_defs: Optional[Sequence[Union["SourceAsset", "AssetsDefinition"]]] = None,
@@ -380,13 +378,13 @@ class AssetLayer:
             key_type=NodeInputHandle,
             value_type=AssetKey,
         )
-        self._asset_info_by_node_output_handle = check.opt_dict_param(
+        self._asset_info_by_node_output_handle = check.dict_param(
             asset_info_by_node_output_handle,
             "asset_info_by_node_output_handle",
             key_type=NodeOutputHandle,
             value_type=AssetOutputInfo,
         )
-        self._asset_deps = check.opt_dict_param(
+        self._asset_deps = check.dict_param(
             asset_deps, "asset_deps", key_type=AssetKey, value_type=set
         )
         self._dependency_node_handles_by_asset_key = check.opt_dict_param(
