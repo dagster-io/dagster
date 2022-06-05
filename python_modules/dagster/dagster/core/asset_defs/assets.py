@@ -327,6 +327,7 @@ class AssetsDefinition(ResourceAddable):
                     metadata=output_def.metadata,
                     io_manager_key=output_def.io_manager_key,
                     description=output_def.description,
+                    partitions_def=self.partitions_def,
                 )
             )
 

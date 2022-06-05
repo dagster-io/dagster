@@ -1,4 +1,3 @@
-import itertools
 from collections import defaultdict
 from typing import (
     AbstractSet,
@@ -12,13 +11,11 @@ from typing import (
     Set,
     Tuple,
     Union,
-    cast,
 )
 
 from toposort import CircularDependencyError, toposort
 
 import dagster._check as check
-from dagster.config import Shape
 from dagster.core.definitions.asset_layer import AssetLayer
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.dependency import (
@@ -33,13 +30,11 @@ from dagster.core.definitions.graph_definition import GraphDefinition
 from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.partition import PartitionedConfig, PartitionsDefinition
-from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils.backcompat import experimental
 
-from .asset_partitions import get_upstream_partitions_for_partition_range
 from .assets import AssetsDefinition
 from .source_asset import SourceAsset
 
@@ -99,7 +94,8 @@ def build_assets_job(
     check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
     source_assets_by_key = build_source_assets_by_key(source_assets)
 
-    partitioned_config = build_job_partitions_from_assets(assets, source_assets or [])
+    partitions_def = build_job_partitions_from_assets(assets, source_assets or [])
+    deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
 
     deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
@@ -157,7 +153,8 @@ def build_assets_job(
 
     return graph.to_job(
         resource_defs=all_resource_defs,
-        config=config or partitioned_config,
+        config=config,
+        partitions_def=partitions_def,
         tags=tags,
         executor_def=executor_def,
         asset_layer=asset_layer,
@@ -168,7 +165,7 @@ def build_assets_job(
 def build_job_partitions_from_assets(
     assets: Iterable[AssetsDefinition],
     source_assets: Sequence[Union[SourceAsset, AssetsDefinition]],
-) -> Optional[PartitionedConfig]:
+) -> Optional[PartitionsDefinition]:
     assets_with_partitions_defs = [assets_def for assets_def in assets if assets_def.partitions_def]
 
     if len(assets_with_partitions_defs) == 0:
@@ -185,72 +182,7 @@ def build_job_partitions_from_assets(
                 f"'{second_asset_key}' have different partitions definitions. "
             )
 
-    partitions_defs_by_asset_key: Dict[AssetKey, PartitionsDefinition] = {}
-    asset: Union[AssetsDefinition, SourceAsset]
-    for asset in itertools.chain.from_iterable([assets, source_assets]):
-        if isinstance(asset, AssetsDefinition) and asset.partitions_def is not None:
-            for asset_key in asset.asset_keys:
-                partitions_defs_by_asset_key[asset_key] = asset.partitions_def
-        elif isinstance(asset, SourceAsset) and asset.partitions_def is not None:
-            partitions_defs_by_asset_key[asset.key] = asset.partitions_def
-
-    def asset_partitions_for_job_partition(
-        job_partition_key: str,
-    ) -> Mapping[AssetKey, PartitionKeyRange]:
-        return {
-            asset_key: PartitionKeyRange(job_partition_key, job_partition_key)
-            for assets_def in assets
-            for asset_key in assets_def.asset_keys
-            if assets_def.partitions_def
-        }
-
-    def run_config_for_partition_fn(partition_key: str) -> Dict[str, Any]:
-        ops_config: Dict[str, Any] = {}
-        asset_partitions_by_asset_key = asset_partitions_for_job_partition(partition_key)
-
-        for assets_def in assets:
-            outputs_dict: Dict[str, Dict[str, Any]] = {}
-            if assets_def.partitions_def is not None:
-                for output_name, asset_key in assets_def.asset_keys_by_output_name.items():
-                    asset_partition_key_range = asset_partitions_by_asset_key[asset_key]
-                    outputs_dict[output_name] = {
-                        "start": asset_partition_key_range.start,
-                        "end": asset_partition_key_range.end,
-                    }
-
-            inputs_dict: Dict[str, Dict[str, Any]] = {}
-            for input_name, in_asset_key in assets_def.asset_keys_by_input_name.items():
-                upstream_partitions_def = partitions_defs_by_asset_key.get(in_asset_key)
-                if assets_def.partitions_def is not None and upstream_partitions_def is not None:
-                    upstream_partition_key_range = get_upstream_partitions_for_partition_range(
-                        assets_def, upstream_partitions_def, in_asset_key, asset_partition_key_range
-                    )
-                    inputs_dict[input_name] = {
-                        "start": upstream_partition_key_range.start,
-                        "end": upstream_partition_key_range.end,
-                    }
-
-            config_schema = assets_def.node_def.config_schema
-            if (
-                config_schema
-                and isinstance(config_schema.config_type, Shape)
-                and "assets" in config_schema.config_type.fields
-            ):
-                ops_config[assets_def.node_def.name] = {
-                    "config": {
-                        "assets": {
-                            "input_partitions": inputs_dict,
-                            "output_partitions": outputs_dict,
-                        }
-                    }
-                }
-
-        return {"ops": ops_config}
-
-    return PartitionedConfig(
-        partitions_def=cast(PartitionsDefinition, first_assets_with_partitions_def.partitions_def),
-        run_config_for_partition_fn=lambda p: run_config_for_partition_fn(p.name),
-    )
+    return first_assets_with_partitions_def.partitions_def
 
 
 def build_source_assets_by_key(
