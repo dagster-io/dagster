@@ -1,12 +1,15 @@
 # pylint: disable=missing-graphene-docstring
 import json
+import sys
 
 import graphene
 from graphene.types.generic import GenericScalar
 
 import dagster._check as check
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 from ..implementation.fetch_runs import get_runs, get_runs_count
+from ..implementation.utils import UserFacingGraphQLError
 from .errors import (
     GrapheneInvalidPipelineRunsFilterError,
     GraphenePythonError,
@@ -150,7 +153,9 @@ def parse_run_config_input(run_config, raise_on_error: bool):
             return json.loads(run_config)
         except json.JSONDecodeError:
             if raise_on_error:
-                raise
+                raise UserFacingGraphQLError(
+                    GraphenePythonError(serializable_error_info_from_exc_info(sys.exc_info()))
+                )
             # Pass the config through as a string so that it will return a useful validation error
             return run_config
     return run_config

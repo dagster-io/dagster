@@ -11,6 +11,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_s
 from graphql import parse
 
 from dagster.core.storage.pipeline_run import RunsFilter
+from dagster.core.test_utils import wait_for_runs_to_finish
 from dagster.utils import file_relative_path
 from dagster.utils.test import get_temp_file_name
 
@@ -128,9 +129,11 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         )
 
         assert not result.errors
-        assert result.data["launchPipelineExecution"]["run"]["tags"] == [
-            {"key": "tag_key", "value": "tag_value"}
-        ]
+        tags_by_key = {
+            tag["key"]: tag["value"]
+            for tag in result.data["launchPipelineExecution"]["run"]["tags"]
+        }
+        assert tags_by_key["tag_key"] == "tag_value"
 
         # just test existence
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
@@ -156,9 +159,12 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         )
 
         assert not result.errors
-        assert result.data["launchPipelineExecution"]["run"]["tags"] == [
-            {"key": "tag_key", "value": "new_tag_value"}
-        ]
+
+        tags_by_key = {
+            tag["key"]: tag["value"]
+            for tag in result.data["launchPipelineExecution"]["run"]["tags"]
+        }
+        assert tags_by_key["tag_key"] == "new_tag_value"
 
     def test_basic_start_pipeline_execution_with_non_existent_preset(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
@@ -300,6 +306,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
     def _csv_hello_world_event_sequence(self):
         # expected non engine event sequence from executing csv_hello_world pipeline
+
         return [
             "RunStartingEvent",
             "RunStartEvent",
@@ -342,7 +349,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         non_engine_event_types = [
             message["__typename"]
             for message in run_logs["messages"]
-            if message["__typename"] != "EngineEvent"
+            if message["__typename"] not in ("EngineEvent", "RunEnqueuedEvent", "RunDequeuedEvent")
         ]
 
         assert non_engine_event_types == self._csv_hello_world_event_sequence()
@@ -372,7 +379,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         # block until run finishes
-        graphql_context.instance.run_launcher.join()
+        wait_for_runs_to_finish(graphql_context.instance)
 
         events_result = execute_dagster_graphql(
             graphql_context,
@@ -387,7 +394,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         non_engine_event_types = [
             message["__typename"]
             for message in events_result.data["pipelineRunOrError"]["eventConnection"]["events"]
-            if message["__typename"] != "EngineEvent"
+            if message["__typename"] not in ("EngineEvent", "RunEnqueuedEvent", "RunDequeuedEvent")
         ]
         assert non_engine_event_types == self._csv_hello_world_event_sequence()
 
@@ -445,12 +452,14 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             time.sleep(0.05)  # 50ms
 
         # block until run finishes
-        graphql_context.instance.run_launcher.join()
+        wait_for_runs_to_finish(graphql_context.instance)
         _events, _cursor = _fetch_events(cursor)
         full_logs.extend(_events)
 
         non_engine_event_types = [
-            message["__typename"] for message in full_logs if message["__typename"] != "EngineEvent"
+            message["__typename"]
+            for message in full_logs
+            if message["__typename"] not in ("EngineEvent", "RunEnqueuedEvent", "RunDequeuedEvent")
         ]
         assert non_engine_event_types == self._csv_hello_world_event_sequence()
 
