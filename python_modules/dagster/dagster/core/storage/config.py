@@ -28,6 +28,7 @@ def pg_config():
                 "db_name": StringSource,
                 "port": Field(IntSource, is_required=False, default_value=5432),
                 "params": Field(Permissive(), is_required=False, default_value={}),
+                "scheme": Field(StringSource, is_required=False, default_value="postgresql"),
             },
             is_required=False,
         ),
