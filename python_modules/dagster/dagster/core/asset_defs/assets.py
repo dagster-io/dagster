@@ -13,7 +13,6 @@ from dagster.core.definitions import (
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.utils import validate_group_name
-from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.core.execution.context.compute import OpExecutionContext
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning, experimental
@@ -94,11 +93,10 @@ class AssetsDefinition(ResourceAddable):
 
     def __call__(self, *args, **kwargs):
         from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
-        from dagster.core.execution.context.compute import OpExecutionContext
 
         if isinstance(self.node_def, GraphDefinition):
             return self._node_def(*args, **kwargs)
-        solid_def = self.node_def.ensure_solid_def()
+        solid_def = self.op
         provided_context: Optional[OpExecutionContext] = None
         if len(args) > 0 and isinstance(args[0], OpExecutionContext):
             provided_context = _build_invocation_context_with_included_resources(
@@ -449,17 +447,27 @@ def _infer_asset_keys_by_output_names(
 
 def _build_invocation_context_with_included_resources(
     resource_defs: Dict[str, ResourceDefinition], context: OpExecutionContext
-):
-    from dagster.core.execution.context.invocation import build_op_context
+) -> OpExecutionContext:
+    from dagster.core.execution.context.invocation import (
+        UnboundSolidExecutionContext,
+        build_op_context,
+    )
 
     override_resources = context.resources._asdict()
     all_resources = merge_dicts(resource_defs, override_resources)
-    # pylint: disable=protected-access
-    return build_op_context(
-        resources=all_resources,
-        config=context.solid_config,
-        resources_config=context._resources_config,
-        instance=context._instance,
-        partition_key=context._partition_key,
-        mapping_key=context._mapping_key,
-    )
+
+    if isinstance(context, UnboundSolidExecutionContext):
+        context = cast(UnboundSolidExecutionContext, context)
+        # pylint: disable=protected-access
+        return build_op_context(
+            resources=all_resources,
+            config=context.solid_config,
+            resources_config=context._resources_config,
+            instance=context._instance,
+            partition_key=context._partition_key,
+            mapping_key=context._mapping_key,
+        )
+    else:
+        # If user is mocking OpExecutionContext, send it through (we don't know
+        # what modifications they might be making, and we don't want to override)
+        return context
