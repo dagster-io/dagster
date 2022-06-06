@@ -1,5 +1,5 @@
 # start_basic_multi_asset
-from dagster import multi_asset, Out
+from dagster import Out, multi_asset
 
 
 @multi_asset(
@@ -15,7 +15,7 @@ def my_function():
 # end_basic_multi_asset
 
 # start_io_manager_multi_asset
-from dagster import multi_asset, Out
+from dagster import Out, multi_asset
 
 
 @multi_asset(
@@ -31,7 +31,7 @@ def my_assets():
 # end_io_manager_multi_asset
 
 # start_subsettable_multi_asset
-from dagster import multi_asset, Out, Output
+from dagster import Out, Output, multi_asset
 
 
 @multi_asset(
@@ -51,7 +51,7 @@ def split_actions(context):
 # end_subsettable_multi_asset
 
 # start_asset_deps_multi_asset
-from dagster import multi_asset, Out, Output, AssetKey
+from dagster import AssetKey, Out, Output, multi_asset
 
 
 @multi_asset(

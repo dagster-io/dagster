@@ -32,7 +32,7 @@ The function responsible for computing the contents of any software-defined asse
 The easiest way to create a multi-asset is with the <PyObject object="multi_asset" decorator /> decorator. This decorator functions similarly to the <PyObject object="asset" decorator /> decorator, but requires an `outs` parameter specifying each output asset of the function.
 
 ```python file=/concepts/assets/multi_assets.py startafter=start_basic_multi_asset endbefore=end_basic_multi_asset
-from dagster import multi_asset, Out
+from dagster import Out, multi_asset
 
 
 @multi_asset(
@@ -52,7 +52,7 @@ By default, the names of the outputs will be used to form the asset keys of the 
 As with regular assets, you can customize how each asset is materialized with [IO managers](/concepts/io-management/io-managers). To do this, specify an `io_manager_key` on each output of the multi-asset.
 
 ```python file=/concepts/assets/multi_assets.py startafter=start_io_manager_multi_asset endbefore=end_io_manager_multi_asset
-from dagster import multi_asset, Out
+from dagster import Out, multi_asset
 
 
 @multi_asset(
@@ -74,7 +74,7 @@ Sometimes, the underlying computation is sufficiently flexible to allow for comp
 Inside the body of the function, we can use `context.selected_output_names` or `context.selected_asset_keys` to find out which computations should be run.
 
 ```python file=/concepts/assets/multi_assets.py startafter=start_subsettable_multi_asset endbefore=end_subsettable_multi_asset
-from dagster import multi_asset, Out, Output
+from dagster import Out, Output, multi_asset
 
 
 @multi_asset(
@@ -100,7 +100,7 @@ When a multi-asset is created, it is assumed that each output asset depends on a
 In these situations, you may optionally provide a mapping from each output asset to the set of <PyObject object="AssetKey" />s that it depends on. This information is used to display lineage information in Dagit and for parsing selections over your asset graph.
 
 ```python file=/concepts/assets/multi_assets.py startafter=start_asset_deps_multi_asset endbefore=end_asset_deps_multi_asset
-from dagster import multi_asset, Out, Output, AssetKey
+from dagster import AssetKey, Out, Output, multi_asset
 
 
 @multi_asset(
