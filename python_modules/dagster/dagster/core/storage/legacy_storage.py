@@ -325,7 +325,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def get_logs_for_run(
         self,
         run_id: str,
-        cursor: Optional[int] = -1,
+        cursor: Optional[Union[str, int]] = None,
         of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None,
         limit: Optional[int] = None,
     ) -> Iterable["EventLogEntry"]:
