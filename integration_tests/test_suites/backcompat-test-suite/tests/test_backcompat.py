@@ -1,7 +1,10 @@
+# pylint: disable=print-call
+
 import os
 import subprocess
 import time
 from contextlib import contextmanager
+from pathlib import Path
 
 import packaging
 import pytest
@@ -74,8 +77,47 @@ def release_test_map(request, dagster_most_recent_release):
 @contextmanager
 def docker_service_up(docker_compose_file, build_args=None):
     if IS_BUILDKITE:
-        yield  # buildkite pipeline handles the service
-        return
+        try:
+            yield  # buildkite pipeline handles the service
+        finally:
+            # collect logs from the containers and upload to buildkite
+            containers = ["dagit", "docker_daemon", "dagster_grpc_server", "docker_postgresql"]
+            logs_dir = ".docker_logs"
+
+            p = subprocess.Popen([f"rm -rf {logs_dir}"])
+            assert p.returncode == 0
+
+            Path(logs_dir).mkdir(parents=True, exist_ok=True)
+
+            for c in containers:
+                with open(
+                    f"{logs_dir}/{c}-logs.txt",
+                    "w",
+                    encoding="utf8",
+                ) as log:
+                    p = subprocess.Popen(
+                        ["docker", "logs", c],
+                        stdout=log,
+                        stderr=log,
+                    )
+                    p.communicate()
+                    print(f"container({c}) logs dumped")
+                    assert p.returncode == 0
+
+            p = subprocess.Popen(
+                [
+                    "buildkite-agent",
+                    "artifact",
+                    "upload",
+                    f"{logs_dir}/**/*",
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            stdout, stderr = p.communicate()
+            print("Buildkite artifact added with stdout: ", stdout)
+            print("Buildkite artifact added with stderr: ", stderr)
+            assert p.returncode == 0
 
     try:
         subprocess.check_output(["docker-compose", "-f", docker_compose_file, "stop"])
