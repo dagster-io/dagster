@@ -2,8 +2,8 @@ import os
 import subprocess
 from distutils import spawn
 
-import pytest
 import psycopg2
+import pytest
 
 from dagster.utils import file_relative_path, pushd
 from dagster.utils.test.postgres_instance import TestPostgresInstance
@@ -18,6 +18,11 @@ TEST_PYTHON_PROJECT_DIR = file_relative_path(__file__, "dagster_dbt_python_test_
 DBT_PYTHON_CONFIG_DIR = os.path.join(TEST_PYTHON_PROJECT_DIR, "dbt_config")
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+
+
+@pytest.fixture(scope="session")
+def test_project_dir():
+    return TEST_PROJECT_DIR
 
 
 @pytest.fixture(scope="session")
@@ -77,14 +82,14 @@ def prepare_dbt_cli(conn_string):  # pylint: disable=unused-argument, redefined-
         yield
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="session")
 def dbt_seed(
     prepare_dbt_cli, dbt_executable, dbt_config_dir
 ):  # pylint: disable=unused-argument, redefined-outer-name
     subprocess.run([dbt_executable, "seed", "--profiles-dir", dbt_config_dir], check=True)
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="session")
 def dbt_build(
     prepare_dbt_cli, dbt_executable, dbt_config_dir
 ):  # pylint: disable=unused-argument, redefined-outer-name
@@ -105,14 +110,7 @@ def dbt_python_sources(conn_string):
         cur.execute("CREATE TABLE raw_data.events (day integer, user_id integer, event_id integer)")
         cur.execute("CREATE TABLE raw_data.users (day integer, user_id integer)")
         cur.executemany(
-            "INSERT INTO raw_data.users VALUES(%s, %s)",
-            [
-                (
-                    n / 10,
-                    n,
-                )
-                for n in range(100)
-            ],
+            "INSERT INTO raw_data.users VALUES(%s, %s)", [(n / 10, n) for n in range(100)]
         )
         cur.executemany(
             "INSERT INTO raw_data.events VALUES(%s, %s, %s)",

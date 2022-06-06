@@ -116,6 +116,19 @@ def test_models_default_run(
     assert len(dbt_result.result["results"]) == 1
 
 
+def test_docs_url_run(
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir
+):  # pylint: disable=unused-argument
+    @solid(required_resource_keys={"dbt"})
+    def my_dbt_solid(context):
+        return context.resources.dbt.run()
+
+    context = get_dbt_solid_context(test_project_dir, dbt_config_dir, docs_url="foo.com")
+    dbt_result = my_dbt_solid(context)
+    assert len(dbt_result.result["results"]) == 4
+    assert dbt_result.docs_url == "foo.com"
+
+
 def test_models_override_run(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir
 ):  # pylint: disable=unused-argument

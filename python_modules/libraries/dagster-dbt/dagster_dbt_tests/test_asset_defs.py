@@ -1,8 +1,8 @@
 import json
 from unittest.mock import MagicMock
 
-import pytest
 import psycopg2
+import pytest
 from dagster_dbt import dbt_cli_resource
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError
@@ -11,12 +11,12 @@ from dagster_dbt.types import DbtOutput
 from dagster import (
     AssetGroup,
     AssetKey,
+    IOManager,
     MetadataEntry,
     ResourceDefinition,
     asset,
-    repository,
     io_manager,
-    IOManager,
+    repository,
 )
 from dagster.core.asset_defs import build_assets_job
 from dagster.utils import file_relative_path
@@ -377,6 +377,104 @@ def test_subsetting(
     }
     expected_keys = {AssetKey(["test-schema", name]) for name in expected_asset_names.split(",")}
     assert all_keys == expected_keys
+
+
+@pytest.mark.parametrize("load_from_manifest", [True, False])
+@pytest.mark.parametrize(
+    "select,expected_asset_names",
+    [
+        (
+            "*",
+            {
+                "sort_by_calories",
+                "sort_cold_cereals_by_calories",
+                "least_caloric",
+                "sort_hot_cereals_by_calories",
+            },
+        ),
+        (
+            "+least_caloric",
+            {"sort_by_calories", "least_caloric"},
+        ),
+        (
+            "sort_by_calories least_caloric",
+            {"sort_by_calories", "least_caloric"},
+        ),
+        (
+            "tag:bar+",
+            {
+                "sort_by_calories",
+                "sort_cold_cereals_by_calories",
+                "least_caloric",
+                "sort_hot_cereals_by_calories",
+            },
+        ),
+        (
+            "tag:foo",
+            {"sort_by_calories", "sort_cold_cereals_by_calories"},
+        ),
+        (
+            "tag:foo,tag:bar",
+            {"sort_by_calories"},
+        ),
+    ],
+)
+def test_dbt_selects(
+    dbt_build,
+    conn_string,
+    test_project_dir,
+    dbt_config_dir,
+    load_from_manifest,
+    select,
+    expected_asset_names,
+):  # pylint: disable=unused-argument
+    if load_from_manifest:
+        manifest_path = file_relative_path(__file__, "sample_manifest.json")
+        with open(manifest_path, "r", encoding="utf8") as f:
+            manifest_json = json.load(f)
+
+        dbt_assets = load_assets_from_dbt_manifest(manifest_json, select=select)
+    else:
+        dbt_assets = load_assets_from_dbt_project(
+            project_dir=test_project_dir, profiles_dir=dbt_config_dir, select=select
+        )
+
+    expected_asset_keys = {AssetKey(["test-schema", key]) for key in expected_asset_names}
+    assert dbt_assets[0].asset_keys == expected_asset_keys
+
+    result = (
+        AssetGroup(
+            dbt_assets,
+            resource_defs={
+                "dbt": dbt_cli_resource.configured(
+                    {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+                )
+            },
+        )
+        .build_job(name="dbt_job")
+        .execute_in_process()
+    )
+
+    assert result.success
+    all_keys = {
+        event.event_specific_data.materialization.asset_key
+        for event in result.all_events
+        if event.event_type_value == "ASSET_MATERIALIZATION"
+    }
+    assert all_keys == expected_asset_keys
+
+
+@pytest.mark.parametrize(
+    "select,error_match",
+    [("tag:nonexist", "No dbt models match"), ("asjdlhalskujh:z", "not a valid method name")],
+)
+def test_static_select_invalid_selection(select, error_match):
+    manifest_path = file_relative_path(__file__, "sample_manifest.json")
+    with open(manifest_path, "r", encoding="utf8") as f:
+        manifest_json = json.load(f)
+
+    with pytest.raises(Exception, match=error_match):
+        load_assets_from_dbt_manifest(manifest_json, select=select)
 
 
 def test_python_interleaving(

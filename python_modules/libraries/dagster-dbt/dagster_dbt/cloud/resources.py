@@ -490,6 +490,11 @@ class DbtCloudResourceV2:
             default_value=0.25,
             description="Time (in seconds) to wait between each request retry.",
         ),
+        "dbt_cloud_host": Field(
+            config=StringSource,
+            default_value=DBT_DEFAULT_HOST,
+            description="The hostname where dbt cloud is being hosted (e.g. https://my_org.cloud.getdbt.com/).",
+        ),
     },
     description="This resource helps interact with dbt Cloud connectors",
 )
@@ -503,7 +508,7 @@ def dbt_cloud_resource(context) -> DbtCloudResourceV2:
     response JSON schemae, see the `dbt Cloud API Docs <https://docs.getdbt.com/dbt-cloud/api-v2>`_.
 
     To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/overview/configuration#configured>`_ method.
+    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
 
     **Examples:**
 
@@ -530,4 +535,5 @@ def dbt_cloud_resource(context) -> DbtCloudResourceV2:
         request_max_retries=context.resource_config["request_max_retries"],
         request_retry_delay=context.resource_config["request_retry_delay"],
         log=context.log,
+        dbt_cloud_host=context.resource_config["dbt_cloud_host"],
     )

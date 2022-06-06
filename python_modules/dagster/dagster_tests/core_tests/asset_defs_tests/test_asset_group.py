@@ -383,7 +383,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         ),
     ],
 )
-def test_asset_group_build_subset_job_errors(job_selection, use_multi, expected_error):
+def test_asset_group_build_subset_joob_errors(job_selection, use_multi, expected_error):
     group = AssetGroup(_get_assets_defs(use_multi=use_multi))
 
     if expected_error:
@@ -603,6 +603,9 @@ def test_subset_cycle_resolution_embed_assets_in_complex_graph():
         x: [a]
         y: [e, f]
     """
+    io_manager_obj, io_manager_def = asset_aware_io_manager()
+    for item in "abcdefghxy":
+        io_manager_obj.db[AssetKey(item)] = None
 
     @multi_asset(
         outs={name: Out(is_required=False) for name in "a,b,c,d,e,f,g,h".split(",")},
@@ -653,7 +656,7 @@ def test_subset_cycle_resolution_embed_assets_in_complex_graph():
     def y(e, f):
         return e + f
 
-    job = AssetGroup([foo, x, y]).build_job("job")
+    job = AssetGroup([foo, x, y], resource_defs={"io_manager": io_manager_def}).build_job("job")
 
     # should produce a job with foo(a,b,c,d,f) -> x -> foo(e,g) -> y -> foo(h)
     assert len(list(job.graph.iterate_solid_defs())) == 5
@@ -680,6 +683,9 @@ def test_subset_cycle_resolution_complex():
         x: [a]
         y: [b, c]
     """
+    io_manager_obj, io_manager_def = asset_aware_io_manager()
+    for item in "abcdefxy":
+        io_manager_obj.db[AssetKey(item)] = None
 
     @multi_asset(
         outs={name: Out(is_required=False) for name in "a,b,c,d,e,f".split(",")},
@@ -717,7 +723,7 @@ def test_subset_cycle_resolution_complex():
     def y(b, c):
         return b + c
 
-    job = AssetGroup([foo, x, y]).build_job("job")
+    job = AssetGroup([foo, x, y], resource_defs={"io_manager": io_manager_def}).build_job("job")
 
     # should produce a job with foo -> x -> foo -> y -> foo
     assert len(list(job.graph.iterate_solid_defs())) == 5
@@ -735,21 +741,28 @@ def test_subset_cycle_resolution_basic():
         foo produces: a, b
         foo_prime produces: a', b'
     Assets:
-        a -> a' -> b -> b'
+        s -> a -> a' -> b -> b'
     """
+    io_manager_obj, io_manager_def = asset_aware_io_manager()
+    for item in "a,b,a_prime,b_prime".split(","):
+        io_manager_obj.db[AssetKey(item)] = None
+    # some value for the source
+    io_manager_obj.db[AssetKey("s")] = 0
+
+    s = SourceAsset("s")
 
     @multi_asset(
         outs={"a": Out(is_required=False), "b": Out(is_required=False)},
         internal_asset_deps={
-            "a": set(),
+            "a": {AssetKey("s")},
             "b": {AssetKey("a_prime")},
         },
         can_subset=True,
     )
-    def foo(context, a_prime):
+    def foo(context, s, a_prime):
         context.log.info(context.selected_asset_keys)
         if AssetKey("a") in context.selected_asset_keys:
-            yield Output(1, "a")
+            yield Output(s + 1, "a")
         if AssetKey("b") in context.selected_asset_keys:
             yield Output(a_prime + 1, "b")
 
@@ -768,7 +781,9 @@ def test_subset_cycle_resolution_basic():
         if AssetKey("b_prime") in context.selected_asset_keys:
             yield Output(b + 1, "b_prime")
 
-    job = AssetGroup([foo, foo_prime]).build_job("job")
+    job = AssetGroup(
+        [foo, foo_prime], source_assets=[s], resource_defs={"io_manager": io_manager_def}
+    ).build_job("job")
 
     # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
     assert len(list(job.graph.iterate_solid_defs())) == 4
@@ -785,6 +800,26 @@ def test_subset_cycle_resolution_basic():
         AssetKey("a_prime"),
         AssetKey("b_prime"),
     }
+
+
+def test_cycle_resolution_impossible():
+    from toposort import CircularDependencyError
+
+    @asset
+    def a(s, c):
+        return c + x
+
+    @asset
+    def b(a):
+        return a + 1
+
+    @asset
+    def c(b):
+        return b + 1
+
+    s = SourceAsset(key="s")
+    with pytest.raises(CircularDependencyError):
+        AssetGroup([a, b, c], source_assets=[s]).build_job("job")
 
 
 def test_asset_group_build_job_selection_multi_component():
