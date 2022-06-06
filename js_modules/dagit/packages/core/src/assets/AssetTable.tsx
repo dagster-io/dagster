@@ -51,22 +51,25 @@ export const AssetTable = ({
   const [toWipe, setToWipe] = React.useState<AssetKey[] | undefined>();
   const {canWipeAssets} = usePermissions();
 
-  const assetGroups: {[key: string]: Asset[]} = {};
+  const groupedByFirstComponent: {[pathComponent: string]: Asset[]} = {};
   const checkedAssets: Asset[] = [];
 
   assets.forEach((asset) => {
     const displayPathKey = JSON.stringify(displayPathForAsset(asset));
-    assetGroups[displayPathKey] = [...(assetGroups[displayPathKey] || []), asset];
+    groupedByFirstComponent[displayPathKey] = [
+      ...(groupedByFirstComponent[displayPathKey] || []),
+      asset,
+    ];
   });
 
   const [{checkedIds: checkedPaths}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
-    Object.keys(assetGroups),
+    Object.keys(groupedByFirstComponent),
   );
 
-  const pageDisplayPathKeys = Object.keys(assetGroups).sort().slice(0, maxDisplayCount);
+  const pageDisplayPathKeys = Object.keys(groupedByFirstComponent).sort().slice(0, maxDisplayCount);
   pageDisplayPathKeys.forEach((pathKey) => {
     if (checkedPaths.has(pathKey)) {
-      checkedAssets.push(...(assetGroups[pathKey] || []));
+      checkedAssets.push(...(groupedByFirstComponent[pathKey] || []));
     }
   });
 
@@ -111,7 +114,7 @@ export const AssetTable = ({
                   key={idx}
                   prefixPath={prefixPath}
                   path={JSON.parse(pathStr)}
-                  assets={assetGroups[pathStr] || []}
+                  assets={groupedByFirstComponent[pathStr] || []}
                   liveDataByNode={liveDataByNode}
                   isSelected={checkedPaths.has(pathStr)}
                   onToggleChecked={onToggleFactory(pathStr)}

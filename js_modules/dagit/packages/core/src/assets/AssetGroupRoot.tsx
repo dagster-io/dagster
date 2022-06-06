@@ -43,8 +43,16 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
         tabs={
           <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
             <Tabs selectedTabId={tab}>
-              <TabLink id="lineage" title="Lineage" to="?tab=lineage" />
-              <TabLink id="list" title="List" to="?tab=list" />
+              <TabLink
+                id="lineage"
+                title="Lineage"
+                to={workspacePathFromAddress(repoAddress, `/asset-groups/${groupName}?tab=lineage`)}
+              />
+              <TabLink
+                id="list"
+                title="List"
+                to={workspacePathFromAddress(repoAddress, `/asset-groups/${groupName}?tab=list`)}
+              />
             </Tabs>
           </Box>
         }
