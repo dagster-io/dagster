@@ -1,3 +1,5 @@
+import pytest
+
 from dagster import AssetKey, AssetsDefinition, GraphOut, In, Out, graph, job, op
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -10,7 +12,6 @@ from dagster.core.host_representation.external_data import (
     external_asset_graph_from_defs,
 )
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
-import pytest
 
 
 def test_single_asset_job():
