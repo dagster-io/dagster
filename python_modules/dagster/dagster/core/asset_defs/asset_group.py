@@ -39,6 +39,10 @@ from ..errors import DagsterInvalidDefinitionError
 from .assets import AssetsDefinition
 from .assets_job import build_assets_job
 from .source_asset import SourceAsset
+from .assets_from_module import (
+    assets_from_modules,
+    assets_from_package_module,
+)
 
 ASSET_GROUP_BASE_JOB_PREFIX = "__ASSET_GROUP"
 
@@ -262,11 +266,12 @@ class AssetGroup:
         Returns:
             AssetGroup: An asset group with all the assets in the package.
         """
-        return AssetGroup.from_modules(
-            _find_modules_in_package(package_module),
+        assets, source_assets = assets_from_package_module(package_module, extra_source_assets)
+        return AssetGroup(
+            assets=assets,
+            source_assets=source_assets,
             resource_defs=resource_defs,
             executor_def=executor_def,
-            extra_source_assets=extra_source_assets,
         )
 
     @staticmethod
@@ -323,33 +328,7 @@ class AssetGroup:
         Returns:
             AssetGroup: An asset group with all the assets defined in the given modules.
         """
-        asset_ids: Set[int] = set()
-        asset_keys: Dict[AssetKey, ModuleType] = dict()
-        source_assets: List[SourceAsset] = list(
-            check.opt_sequence_param(
-                extra_source_assets, "extra_source_assets", of_type=SourceAsset
-            )
-        )
-        assets: List[AssetsDefinition] = []
-        for module in modules:
-            for asset in _find_assets_in_module(module):
-                if id(asset) not in asset_ids:
-                    asset_ids.add(id(asset))
-                    keys = asset.asset_keys if isinstance(asset, AssetsDefinition) else [asset.key]
-                    for key in keys:
-                        if key in asset_keys:
-                            modules_str = ", ".join(
-                                set([asset_keys[key].__name__, module.__name__])
-                            )
-                            raise DagsterInvalidDefinitionError(
-                                f"Asset key {key} is defined multiple times. Definitions found in modules: {modules_str}."
-                            )
-                        else:
-                            asset_keys[key] = module
-                    if isinstance(asset, SourceAsset):
-                        source_assets.append(asset)
-                    else:
-                        assets.append(asset)
+        assets, source_assets = assets_from_modules(modules, extra_source_assets)
 
         return AssetGroup(
             assets=assets,
@@ -567,38 +546,6 @@ class AssetGroup:
             and self.source_assets == other.source_assets
             and self.resource_defs == other.resource_defs
             and self.executor_def == other.executor_def
-        )
-
-
-def _find_assets_in_module(
-    module: ModuleType,
-) -> Generator[Union[AssetsDefinition, SourceAsset], None, None]:
-    """
-    Finds assets in the given module and adds them to the given sets of assets and source assets.
-    """
-    for attr in dir(module):
-        value = getattr(module, attr)
-        if isinstance(value, (AssetsDefinition, SourceAsset)):
-            yield value
-        elif isinstance(value, list) and all(
-            isinstance(el, (AssetsDefinition, SourceAsset)) for el in value
-        ):
-            yield from value
-
-
-def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:
-    yield package_module
-    package_path = package_module.__file__
-    if package_path:
-        for _, modname, is_pkg in pkgutil.walk_packages([os.path.dirname(package_path)]):
-            submodule = import_module(f"{package_module.__name__}.{modname}")
-            if is_pkg:
-                yield from _find_modules_in_package(submodule)
-            else:
-                yield submodule
-    else:
-        raise ValueError(
-            f"Tried to find modules in package {package_module}, but its __file__ is None"
         )
 
 

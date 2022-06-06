@@ -27,6 +27,10 @@ from dagster.core.asset_defs import (
     asset,
     build_assets_job,
     multi_asset,
+    assets_from_modules,
+    assets_from_current_module,
+    assets_from_package_module,
+    assets_from_package_name,
 )
 from dagster.core.definitions import (
     AssetKey,
@@ -545,6 +549,10 @@ __all__ = [
     "config_from_yaml_strings",
     "configured",
     "build_assets_job",
+    "assets_from_module",
+    "assets_from_current_module",
+    "assets_from_package_module",
+    "assets_from_package_name",
     # types
     "Any",
     "Bool",
