@@ -12,7 +12,7 @@ from typing import (
     Union,
 )
 
-from dagster import check
+from dagster import _check as check
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
 from .base_storage import DagsterStorage
@@ -358,7 +358,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return self._storage.event_storage.wipe()
 
     def watch(self, run_id: str, cursor: str, callback: Callable):
-        return self._storage.event_storage.watch(run_id, start_cursor, callback)
+        return self._storage.event_storage.watch(run_id, cursor, callback)
 
     def end_watch(self, run_id: str, handler: Callable):
         return self._storage.event_storage.end_watch(run_id, handler)
