@@ -1,15 +1,17 @@
 import re
+
 import pytest
+
 from dagster import (
-    asset,
     AssetKey,
-    SourceAsset,
+    AssetsDefinition,
     DagsterInvalidDefinitionError,
-    assets_from_modules,
+    SourceAsset,
+    asset,
     assets_from_current_module,
+    assets_from_modules,
     assets_from_package_module,
     assets_from_package_name,
-    AssetsDefinition,
 )
 
 get_unique_asset_identifier = (
@@ -17,7 +19,7 @@ get_unique_asset_identifier = (
 )
 
 
-def test_asset_group_from_package_name():
+def test_assets_from_package_name():
     from . import asset_package
 
     assets_defs = assets_from_package_name(asset_package.__name__)
@@ -33,7 +35,7 @@ def test_asset_group_from_package_name():
     assert assets_1 == assets_2
 
 
-def test_asset_group_from_package_module():
+def test_assets_from_package_module():
     from . import asset_package
 
     assets_1 = assets_from_package_module(asset_package)
@@ -49,7 +51,7 @@ def test_asset_group_from_package_module():
     assert assets_1 == assets_2
 
 
-def test_asset_group_from_modules(monkeypatch):
+def test_assets_from_modules(monkeypatch):
     from . import asset_package
     from .asset_package import module_with_assets
 
@@ -88,7 +90,7 @@ def asset_in_current_module():
 source_asset_in_current_module = SourceAsset(AssetKey("source_asset_in_current_module"))
 
 
-def test_asset_group_from_current_module():
+def test_assets_from_current_module():
     assets = assets_from_current_module()
     assets = [get_unique_asset_identifier(asset) for asset in assets]
     assert assets == ["asset_in_current_module", AssetKey("source_asset_in_current_module")]

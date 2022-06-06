@@ -3,12 +3,14 @@ import os
 import pkgutil
 from importlib import import_module
 from types import ModuleType
-from typing import Dict, Iterable, Mapping, Optional, Generator, Sequence, Set, List, Union, Tuple
+from typing import Dict, Generator, Iterable, List, Optional, Sequence, Set, Tuple, Union
+
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey
+
+from ..errors import DagsterInvalidDefinitionError
 from .assets import AssetsDefinition
 from .source_asset import SourceAsset
-from ..errors import DagsterInvalidDefinitionError
 
 
 def _find_assets_in_module(
