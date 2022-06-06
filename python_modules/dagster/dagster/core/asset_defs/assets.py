@@ -16,6 +16,8 @@ from dagster.utils.backcompat import ExperimentalWarning, experimental
 from .partition_mapping import PartitionMapping
 from .source_asset import SourceAsset
 
+DEFAULT_GROUP_NAME = "default"
+
 
 class AssetsDefinition:
     def __init__(
@@ -63,7 +65,13 @@ class AssetsDefinition:
             f"expected keys: {all_asset_keys}",
         )
         self._resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
-        self._group_names = check.opt_mapping_param(group_names, "group_names")
+
+        group_names = check.mapping_param(group_names, "group_names") if group_names else {}
+        self._group_names = {}
+        # assets that don't have a group name get a DEFAULT_GROUP_NAME
+        for key in all_asset_keys:
+            group_name = group_names.get(key)
+            self._group_names[key] = group_name if group_name else DEFAULT_GROUP_NAME
 
         if selected_asset_keys is not None:
             self._selected_asset_keys = selected_asset_keys
