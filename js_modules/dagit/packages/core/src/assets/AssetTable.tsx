@@ -338,8 +338,6 @@ const AssetBulkActions: React.FC<{
 export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
   fragment AssetTableDefinitionFragment on AssetNode {
     id
-    opNames
-    jobNames
     groupName
     partitionDefinition
     description
