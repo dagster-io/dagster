@@ -3,9 +3,7 @@ import {Box, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
-import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {Loading} from '../ui/Loading';
@@ -13,7 +11,6 @@ import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {PartitionView} from './PartitionView';
 import {PartitionViewNew} from './PartitionViewNew';
 import {
   PipelinePartitionsRootQuery,
@@ -47,9 +44,6 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
       fetchPolicy: 'network-only',
     },
   );
-  const [selected = undefined, setSelected] = useQueryPersistedState<string>({
-    queryKey: 'partitionSet',
-  });
 
   return (
     <Loading queryResult={queryResult}>
@@ -83,22 +77,9 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
           );
         }
 
-        const selectionHasMatch =
-          selected && !!partitionSetsOrError.results.filter((x) => x.name === selected).length;
-        const partitionSet =
-          selectionHasMatch && selected
-            ? partitionSetsOrError.results.filter((x) => x.name === selected)[0]
-            : partitionSetsOrError.results[0];
-
-        if (featureEnabled(FeatureFlag.flagNewPartitionsView)) {
-          return <PartitionViewNew partitionSet={partitionSet} repoAddress={repoAddress} />;
-        }
         return (
-          <PartitionView
-            partitionSet={partitionSet}
-            partitionSets={partitionSetsOrError.results}
-            onChangePartitionSet={(x) => setSelected(x.name)}
-            pipelineName={pipelineName}
+          <PartitionViewNew
+            partitionSet={partitionSetsOrError.results[0]}
             repoAddress={repoAddress}
           />
         );
