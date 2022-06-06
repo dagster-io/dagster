@@ -83,10 +83,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     applyingEmptyDefault,
   } = useAssetGraphData(props.explorerPath.opsQuery, props.fetchOptions);
 
-  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(
-    assetGraphData?.nodes,
-    graphAssetKeys,
-  );
+  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(graphAssetKeys);
   const liveDataRefreshState = useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS);
 
   useDocumentTitle('Assets');
