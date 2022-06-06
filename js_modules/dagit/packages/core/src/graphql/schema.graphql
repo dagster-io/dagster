@@ -70,6 +70,7 @@ type DagitQuery {
   ): PartitionBackfillsOrError!
   permissions: [GraphenePermission!]!
   assetsLatestInfo(assetKeys: [AssetKeyInput!]): [AssetLatestInfo!]!
+  logsForRun(runId: ID!, afterCursor: String, limit: Int): EventConnectionOrError!
 }
 
 union RepositoriesOrError = RepositoryConnection | PythonError
@@ -394,7 +395,7 @@ type Run implements PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  eventConnection(afterCursor: String): GrapheneEventConnection!
+  eventConnection(afterCursor: String): EventConnection!
   assetSelection: [AssetKey!]
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
@@ -430,7 +431,7 @@ interface PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  eventConnection(afterCursor: String): GrapheneEventConnection!
+  eventConnection(afterCursor: String): EventConnection!
 }
 
 type RepositoryOrigin {
@@ -657,7 +658,7 @@ type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
   partition: String
 }
 
-type GrapheneEventConnection {
+type EventConnection {
   events: [DagsterRunEvent!]!
   cursor: String!
   hasMore: Boolean!
@@ -1961,6 +1962,8 @@ type AssetLatestInfo {
   inProgressRunIds: [String!]!
   latestRun: Run
 }
+
+union EventConnectionOrError = EventConnection | RunNotFoundError | PythonError
 
 """
 Mutations to programatically interact with your Dagster instance.

@@ -60,6 +60,7 @@ const pipelineStatusFromMessages = (messages: RunDagsterRunEventFragment[]) => {
 };
 
 const BATCH_INTERVAL = 100;
+const QUERY_LOG_LIMIT = 10000;
 
 type State = {
   nodes: Nodes;
@@ -204,16 +205,23 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
     RUN_LOGS_QUERY,
     {
       notifyOnNetworkStatusChange: true,
-      variables: {runId, cursor},
+      variables: {runId, cursor, limit: QUERY_LOG_LIMIT},
       pollInterval: POLL_INTERVAL,
       onCompleted: (data: RunLogsQuery) => {
         // We have to stop polling in order to update the `after` value.
         stopPolling();
 
+        if (
+          data?.pipelineRunOrError.__typename !== 'Run' ||
+          data?.logsForRun.__typename !== 'EventConnection'
+        ) {
+          return;
+        }
+
         const slice = () => {
           const count = nodes.length;
-          if (data?.pipelineRunOrError.__typename === 'Run') {
-            return data?.pipelineRunOrError.eventConnection.events.map((event, ii) => ({
+          if (data?.logsForRun.__typename === 'EventConnection') {
+            return data?.logsForRun.events.map((event, ii) => ({
               ...event,
               clientsideKey: `csk${count + ii}`,
             }));
@@ -223,9 +231,7 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
 
         const newSlice = slice();
         setNodes((current) => [...current, ...newSlice]);
-        if (data?.pipelineRunOrError.__typename === 'Run') {
-          setCursor(data.pipelineRunOrError.eventConnection.cursor);
-        }
+        setCursor(data.logsForRun.cursor);
 
         const status =
           data?.pipelineRunOrError.__typename === 'Run' ? data?.pipelineRunOrError.status : null;
@@ -303,23 +309,29 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
 `;
 
 const RUN_LOGS_QUERY = gql`
-  query RunLogsQuery($runId: ID!, $cursor: String) {
+  query RunLogsQuery($runId: ID!, $cursor: String, $limit: Int) {
     pipelineRunOrError(runId: $runId) {
       ... on Run {
         id
         runId
         status
         canTerminate
-        eventConnection(afterCursor: $cursor) {
-          events {
-            __typename
-            ... on MessageEvent {
-              runId
-            }
-            ...RunDagsterRunEventFragment
+      }
+    }
+    logsForRun(runId: $runId, afterCursor: $cursor, limit: $limit) {
+      ... on EventConnection {
+        events {
+          __typename
+          ... on MessageEvent {
+            runId
           }
-          cursor
+          ...RunDagsterRunEventFragment
         }
+        cursor
+      }
+      ... on PythonError {
+        message
+        stack
       }
     }
   }

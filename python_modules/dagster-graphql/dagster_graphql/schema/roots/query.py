@@ -30,6 +30,7 @@ from ...implementation.fetch_pipelines import (
 )
 from ...implementation.fetch_runs import (
     get_execution_plan,
+    get_logs_for_run,
     get_run_by_id,
     get_run_group,
     get_run_groups,
@@ -77,7 +78,7 @@ from ..instigation import (
 from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
 from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
-from ..pipelines.pipeline import GrapheneRunOrError
+from ..pipelines.pipeline import GrapheneEventConnectionOrError, GrapheneRunOrError
 from ..pipelines.snapshot import GraphenePipelineSnapshotOrError
 from ..run_config import GrapheneRunConfigSchemaOrError
 from ..runs import (
@@ -274,6 +275,13 @@ class GrapheneDagitQuery(graphene.ObjectType):
     assetsLatestInfo = graphene.Field(
         non_null_list(GrapheneAssetLatestInfo),
         assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
+    )
+
+    logsForRun = graphene.Field(
+        graphene.NonNull(GrapheneEventConnectionOrError),
+        runId=graphene.NonNull(graphene.ID),
+        afterCursor=graphene.String(),
+        limit=graphene.Int(),
     )
 
     def resolve_repositoriesOrError(self, graphene_info, **kwargs):
@@ -539,3 +547,6 @@ class GrapheneDagitQuery(graphene.ObjectType):
         }
 
         return get_assets_live_info(graphene_info, step_keys_by_asset)
+
+    def resolve_logsForRun(self, graphene_info, runId, afterCursor=None, limit=None):
+        return get_logs_for_run(graphene_info, runId, afterCursor, limit)
