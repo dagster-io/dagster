@@ -84,14 +84,14 @@ def docker_service_up(docker_compose_file, build_args=None):
             containers = ["dagit", "docker_daemon", "dagster_grpc_server", "docker_postgresql"]
             logs_dir = ".docker_logs"
 
-            p = subprocess.Popen([f"rm -rf {logs_dir} || true"])
+            p = subprocess.Popen(["rm", "-rf",  "{dir}".format(dir=logs_dir)])
             assert p.returncode == 0
 
             Path(logs_dir).mkdir(parents=True, exist_ok=True)
 
             for c in containers:
                 with open(
-                    f"{logs_dir}/{c}-logs.txt",
+                    "{dir}/{contianer}-logs.txt".format(dir=logs_dir, container=c),
                     "w",
                     encoding="utf8",
                 ) as log:
@@ -109,7 +109,7 @@ def docker_service_up(docker_compose_file, build_args=None):
                     "buildkite-agent",
                     "artifact",
                     "upload",
-                    f"{logs_dir}/**/*",
+                    "{dir}/**/*".format(dir=logs_dir),
                 ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
