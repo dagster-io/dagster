@@ -1,23 +1,9 @@
 import inspect
-import os
-import pkgutil
 import warnings
 from collections import defaultdict
 from importlib import import_module
 from types import ModuleType
-from typing import (
-    Any,
-    Dict,
-    FrozenSet,
-    Generator,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-)
+from typing import Any, Dict, FrozenSet, Iterable, List, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
 from dagster.core.definitions.dependency import NodeHandle
@@ -37,12 +23,12 @@ from ..definitions.partition import PartitionsDefinition
 from ..definitions.resource_definition import ResourceDefinition
 from ..errors import DagsterInvalidDefinitionError
 from .assets import AssetsDefinition
-from .assets_job import build_assets_job
-from .source_asset import SourceAsset
-from .assets_from_module import (
+from .assets_from_modules import (
     assets_and_source_assets_from_modules,
     assets_and_source_assets_from_package_module,
 )
+from .assets_job import build_assets_job
+from .source_asset import SourceAsset
 
 ASSET_GROUP_BASE_JOB_PREFIX = "__ASSET_GROUP"
 

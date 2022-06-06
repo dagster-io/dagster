@@ -1,15 +1,17 @@
 import re
+
 import pytest
+
 from dagster import (
-    asset,
     AssetKey,
-    SourceAsset,
+    AssetsDefinition,
     DagsterInvalidDefinitionError,
-    assets_from_modules,
+    SourceAsset,
+    asset,
     assets_from_current_module,
+    assets_from_modules,
     assets_from_package_module,
     assets_from_package_name,
-    AssetsDefinition,
 )
 
 get_unique_asset_identifier = (
