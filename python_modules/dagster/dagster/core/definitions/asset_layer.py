@@ -619,13 +619,13 @@ class AssetLayer:
 
 def build_asset_selection_job(
     name: str,
-    assets: Iterable["AssetsDefinition"],
-    source_assets: Iterable["SourceAsset"],
-    executor_def: ExecutorDefinition,
-    resource_defs: Mapping[str, ResourceDefinition],
-    description: str,
-    tags: Dict[str, Any],
-    asset_selection: Optional[FrozenSet[AssetKey]],
+    assets: Sequence["AssetsDefinition"],
+    source_assets: Sequence[Union["AssetsDefinition", "SourceAsset"]],
+    executor_def: Optional[ExecutorDefinition] = None,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    description: Optional[str] = None,
+    tags: Optional[Dict[str, Any]] = None,
+    asset_selection: Optional[FrozenSet[AssetKey]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
 ):
     from dagster.core.asset_defs import build_assets_job

@@ -1,11 +1,11 @@
-from typing import NamedTuple, Dict, Optional, Any, TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional, Sequence
 
-from dagster.core.definitions.asset_layer import build_asset_selection_job
 import dagster._check as check
+from dagster.core.definitions.asset_layer import build_asset_selection_job
 
 if TYPE_CHECKING:
     from dagster.core.asset_defs import AssetsDefinition, SourceAsset
-    from dagster.core.definitions import JobDefinition, ExecutorDefinition
+    from dagster.core.definitions import ExecutorDefinition, JobDefinition
 
 
 class UnresolvedAssetJobDefinition(
@@ -56,6 +56,4 @@ class UnresolvedAssetJobDefinition(
             description=self.description,
             tags=self.tags,
             asset_selection=selected_asset_keys,
-            # all assets have resources bound
-            resource_defs={},
         )

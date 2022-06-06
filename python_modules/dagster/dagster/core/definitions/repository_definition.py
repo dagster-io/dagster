@@ -11,7 +11,6 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Sequence,
     Type,
     TypeVar,
     Union,
@@ -36,7 +35,6 @@ from .utils import check_valid_name
 if TYPE_CHECKING:
     from dagster.core.asset_defs.asset_group import AssetGroup
     from dagster.core.asset_defs.assets import AssetsDefinition
-    from dagster.core.asset_defs.source_asset import SourceAsset
 
 VALID_REPOSITORY_DATA_DICT_KEYS = {
     "pipelines",
@@ -743,7 +741,7 @@ class CachingRepositoryData(RepositoryData):
                 pipelines_or_jobs[job_def.name] = job_def
 
             assets = combined_asset_group.assets
-            source_assets = {
+            source_assets_by_key = {
                 source_asset.key: source_asset
                 for source_asset in combined_asset_group.source_assets
             }
