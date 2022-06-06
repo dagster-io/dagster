@@ -1,5 +1,8 @@
+import pytest
+
 from dagster import AssetKey, AssetsDefinition, GraphOut, In, Out, graph, job, op
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.host_representation.external_data import (
     ExternalAssetDependedBy,
     ExternalAssetDependency,
@@ -55,6 +58,20 @@ def test_asset_missing_group_name():
     external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes[0].group_name is None
+
+
+def test_asset_invalid_group_name():
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @asset(group_name="group/with/slashes")
+        def asset2():
+            return 1
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @asset(group_name="group.with.dots")
+        def asset3():
+            return 1
 
 
 def test_two_asset_job():
