@@ -20,6 +20,10 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 EARLIEST_TESTED_RELEASE = os.getenv("EARLIEST_TESTED_RELEASE")
 MOST_RECENT_RELEASE_PLACEHOLDER = "most_recent"
 
+print(f"ENVIRON: job id {os.getenv('BUILDKITE_JOB_ID')} is buildkite {os.getenv('BUILDKITE')}")
+
+JOB_ID = os.getenv('BUILDKITE_JOB_ID')
+
 pytest_plugins = ["dagster_test.fixtures"]
 
 
@@ -80,7 +84,7 @@ def docker_service_up(docker_compose_file, build_args=None):
         try:
             yield  # buildkite pipeline handles the service
         finally:
-            print(f"ENVIRON: {os.getenv('BUILDKITE_JOB_ID')}")
+
             # collect logs from the containers and upload to buildkite
             containers = ["dagit", "docker_daemon", "dagster_grpc_server", "docker_postgresql"]
             logs_dir = ".docker_logs"
@@ -111,6 +115,7 @@ def docker_service_up(docker_compose_file, build_args=None):
                     "buildkite-agent",
                     "artifact",
                     "upload",
+                    "--job {job}".format(job=JOB_ID),
                     "{dir}/**/*".format(dir=logs_dir),
                 ],
                 stdout=subprocess.PIPE,
