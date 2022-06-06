@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional, Sequence, Union
+from typing import Dict, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey, CoerceableToAssetKey
@@ -13,6 +13,7 @@ from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.resource_requirement import ResourceAddable
 from dagster.core.definitions.utils import validate_group_name
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.storage.io_manager import IOManagerDefinition
 
 
@@ -27,6 +28,7 @@ class SourceAsset(
             ("description", Optional[str]),
             ("partitions_def", Optional[PartitionsDefinition]),
             ("group_name", str),
+            ("resource_defs", Dict[str, ResourceDefinition]),
         ],
     ),
     ResourceAddable,
@@ -55,11 +57,14 @@ class SourceAsset(
         partitions_def: Optional[PartitionsDefinition] = None,
         _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         group_name: Optional[str] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ):
 
         key = AssetKey.from_coerceable(key)
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         metadata_entries = _metadata_entries or normalize_metadata(metadata, [], allow_invalid=True)
+        metadata_entries = normalize_metadata(metadata, [], allow_invalid=True)
+        resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         return super().__new__(
             cls,
             key=key,
@@ -73,6 +78,7 @@ class SourceAsset(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
             group_name=validate_group_name(group_name),
+            resource_defs=resource_defs,
         )
 
     @property

@@ -2,12 +2,14 @@ from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Dict,
     Iterator,
     List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     Type,
 )
 
@@ -205,3 +207,30 @@ def ensure_requirements_satisfied(
             raise DagsterInvalidDefinitionError(
                 f"{requirement.describe_requirement()} was not provided{mode_descriptor}. Please provide a {str(requirement.expected_type)} to key '{requirement.key}', or change the required key to one of the following keys which points to an {str(requirement.expected_type)}: {requirement.keys_of_expected_type(resource_defs)}"
             )
+
+
+def get_and_validate_transitive_resource_dependencies(
+    resource_defs: Dict[str, "ResourceDefinition"],
+    required_resource_keys=Set[str],
+    mode_name: Optional[str] = None,
+) -> Set[str]:
+    from ..execution.resources_init import get_dependencies, resolve_resource_dependencies
+
+    requirements = []
+    resource_dependencies = resolve_resource_dependencies(resource_defs)
+    required_keys = sorted(list(required_resource_keys))
+    seen = set()
+    while required_keys:
+        required_key = required_keys.pop()
+        if required_key in seen:
+            continue
+        seen.add(required_key)
+        for requirement in resource_defs[required_key].get_resource_requirements(
+            outer_context=required_key
+        ):
+            ensure_requirements_satisfied(resource_defs, [requirement], mode_name)
+            requirements.append(requirement)
+
+        required_keys += get_dependencies(required_key, resource_dependencies)
+
+    return seen

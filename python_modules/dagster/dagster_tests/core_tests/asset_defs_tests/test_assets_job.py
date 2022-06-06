@@ -23,6 +23,7 @@ from dagster import (
     io_manager,
     multi_asset,
     op,
+    resource,
 )
 from dagster.config.source import StringSource
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
@@ -1444,3 +1445,101 @@ def test_source_asset_io_manager_key_provided():
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
     assert result.success
     assert result.output_for_node("my_derived_asset") == 9
+
+
+def test_source_asset_requires_resource_defs():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return 5
+
+    @io_manager(required_resource_keys={"foo"})
+    def the_manager(context):
+        context.resources.foo == "blah"
+        return MyIOManager()
+
+    my_source_asset = SourceAsset(
+        key=AssetKey("my_source_asset"),
+        io_manager_def=the_manager,
+        resource_defs={"foo": ResourceDefinition.hardcoded_resource("blah")},
+    )
+
+    @asset
+    def my_derived_asset(my_source_asset):
+        return my_source_asset + 4
+
+    source_asset_job = AssetGroup(
+        assets=[my_derived_asset],
+        source_assets=[my_source_asset],
+    ).build_job("source_asset_job")
+
+    result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
+    assert result.success
+    assert result.output_for_node("my_derived_asset") == 9
+
+
+def test_other_asset_provides_req():
+    @asset(required_resource_keys={"foo"})
+    def asset_reqs_foo():
+        pass
+
+    @asset(resource_defs={"foo": ResourceDefinition.hardcoded_resource("blah")})
+    def asset_provides_foo():
+        pass
+
+    the_job = build_assets_job(name="test", assets=[asset_reqs_foo, asset_provides_foo])
+    assert the_job.execute_in_process().success
+
+
+def test_transitive_deps_not_provided():
+    @resource(required_resource_keys={"foo"})
+    def unused_resource():
+        pass
+
+    @asset(resource_defs={"unused": unused_resource})
+    def the_asset():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'foo' required by resource with key 'unused' was not provided.",
+    ):
+        build_assets_job(name="test", assets=[the_asset])
+
+
+def test_transitive_resource_deps_provided():
+    @resource(required_resource_keys={"foo"})
+    def used_resource(context):
+        assert context.resources.foo == "blah"
+
+    @asset(
+        resource_defs={"used": used_resource, "foo": ResourceDefinition.hardcoded_resource("blah")}
+    )
+    def the_asset(context):
+        pass
+
+    the_job = build_assets_job(name="test", assets=[the_asset])
+    assert the_job.execute_in_process().success
+
+
+def test_transitive_io_manager_dep_not_provided():
+    @io_manager(required_resource_keys={"foo"})
+    def the_manager(context):
+        pass
+
+    my_source_asset = SourceAsset(
+        key=AssetKey("my_source_asset"),
+        io_manager_def=the_manager,
+    )
+
+    @asset
+    def my_derived_asset(my_source_asset):
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="IO manager for source asset with key AssetKey\(\['my_source_asset'\]\) requires resource with key foo, but none provided.",
+    ):
+        build_assets_job(name="test", assets=[my_derived_asset], source_assets=[my_source_asset])

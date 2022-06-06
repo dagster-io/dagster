@@ -359,6 +359,7 @@ class AssetsDefinition(ResourceAddable):
 
         return result
 
+<<<<<<< HEAD
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
         yield from self.node_def.get_resource_requirements()  # type: ignore[attr-defined]
         for source_key, resource_def in self.resource_defs.items():
@@ -387,6 +388,16 @@ class AssetsDefinition(ResourceAddable):
             can_subset=self._can_subset,
             resource_defs=merged_resource_defs,
         )
+=======
+    @property
+    def required_resource_keys(self) -> Set[str]:
+        if isinstance(self.node_def, GraphDefinition):
+            graph_def = self.node_def.ensure_graph_def()
+            return {requirement.key for requirement in graph_def.get_resource_requirements()}
+        else:
+            solid_def = self.node_def.ensure_solid_def()
+            return solid_def.required_resource_keys
+>>>>>>> Add resource defs to source asset, handle transitive dependencies
 
 
 def _infer_asset_keys_by_input_names(

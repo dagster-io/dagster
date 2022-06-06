@@ -35,6 +35,9 @@ from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.partition import PartitionedConfig, PartitionsDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.resource_definition import ResourceDefinition
+from dagster.core.definitions.resource_requirement import (
+    get_and_validate_transitive_resource_dependencies,
+)
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils.backcompat import experimental
@@ -131,14 +134,20 @@ def build_assets_job(
     )
 
     all_resource_defs = dict(resource_defs)
-    for asset_def in assets:
-        for resource_key, resource_def in asset_def.resource_defs.items():
+    for assets_def in assets:
+        # Until we remove the ability to specify resource defs externally here, cannot check all asset defs for satisfying their resource requirements.
+        if assets_def.resource_defs:
+            get_and_validate_transitive_resource_dependencies(
+                assets_def.resource_defs, assets_def.required_resource_keys
+            )
+        for resource_key, resource_def in assets_def.resource_defs.items():
             if (
                 resource_key in all_resource_defs
                 and all_resource_defs[resource_key] != resource_def
             ):
+                asset_keys_str = ", ".join([key for key in assets_def.asset_keys])
                 raise DagsterInvalidDefinitionError(
-                    f"When attempting to build job, asset {asset_def.asset_key} had a conflicting version of the same resource key {resource_key}. Please resolve this conflict by giving different keys to each resource definition."
+                    f"When attempting to build job, asset keys {asset_keys_str} had a conflicting version of the same resource key {resource_key}. Please resolve this conflict by giving different keys to each resource definition."
                 )
             all_resource_defs[resource_key] = resource_def
 
@@ -147,7 +156,26 @@ def build_assets_job(
         if not source_asset.io_manager_def:
             required_io_manager_keys.add(source_asset.get_io_manager_key())
         else:
+            # Explicitly check top-level dependencies so we can give error
+            # message in terms of asset key, and not system-provided resource key.
+            for requirement in source_asset.io_manager_def.get_resource_requirements():
+                if not requirement.resources_contain_key(source_asset.resource_defs):
+                    raise DagsterInvalidDefinitionError(
+                        f"IO manager for source asset with key {source_asset.key} requires resource with key {requirement.key}, but none provided."
+                    )
+            get_and_validate_transitive_resource_dependencies(
+                source_asset.resource_defs, source_asset.io_manager_def.required_resource_keys
+            )
             all_resource_defs[source_asset.get_io_manager_key()] = source_asset.io_manager_def
+        for resource_key, resource_def in source_asset.resource_defs.items():
+            if (
+                resource_key in all_resource_defs
+                and all_resource_defs[resource_key] != resource_def
+            ):
+                raise DagsterInvalidDefinitionError(
+                    f"When attempting to build job, asset {source_asset.key} had a conflicting version of the same resource key {resource_key}. Please resolve this conflict by giving different keys to each resource definition."
+                )
+            all_resource_defs[resource_key] = resource_def
 
     for required_key in sorted(list(required_io_manager_keys)):
         if required_key not in all_resource_defs and required_key != "io_manager":

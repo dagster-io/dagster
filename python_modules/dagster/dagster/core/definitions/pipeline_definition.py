@@ -42,7 +42,10 @@ from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue, n
 from .mode import ModeDefinition
 from .node_definition import NodeDefinition
 from .preset import PresetDefinition
-from .resource_requirement import ensure_requirements_satisfied
+from .resource_requirement import (
+    ensure_requirements_satisfied,
+    get_and_validate_transitive_resource_dependencies,
+)
 from .utils import validate_tags
 from .version_strategy import VersionStrategy
 
@@ -283,23 +286,14 @@ class PipelineDefinition:
                 )
             )
         ensure_requirements_satisfied(mode_def.resource_defs, requirements, mode_def.name)
-        required_keys = sorted([requirement.key for requirement in requirements])
-        resource_dependencies = resolve_resource_dependencies(mode_def.resource_defs)
-        seen = set()
-        while required_keys:
-            required_key = required_keys.pop()
-            if required_key in seen:
-                continue
-            seen.add(required_key)
-            for requirement in mode_def.resource_defs[required_key].get_resource_requirements(
-                outer_context=required_key
-            ):
-                ensure_requirements_satisfied(mode_def.resource_defs, [requirement], mode_def.name)
-                requirements.append(requirement)
-
-            required_keys += get_dependencies(required_key, resource_dependencies)
-
-        return set([requirement.key for requirement in requirements])
+        required_keys = {requirement.key for requirement in requirements}
+        return required_keys.union(
+            get_and_validate_transitive_resource_dependencies(
+                mode_def.resource_defs,
+                required_resource_keys=required_keys,
+                mode_name=mode_def.name,
+            )
+        )
 
     @property
     def name(self):
