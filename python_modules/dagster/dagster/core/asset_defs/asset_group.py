@@ -40,8 +40,8 @@ from .assets import AssetsDefinition
 from .assets_job import build_assets_job
 from .source_asset import SourceAsset
 from .assets_from_module import (
-    assets_from_modules,
-    assets_from_package_module,
+    assets_and_source_assets_from_modules,
+    assets_and_source_assets_from_package_module,
 )
 
 ASSET_GROUP_BASE_JOB_PREFIX = "__ASSET_GROUP"
@@ -266,7 +266,9 @@ class AssetGroup:
         Returns:
             AssetGroup: An asset group with all the assets in the package.
         """
-        assets, source_assets = assets_from_package_module(package_module, extra_source_assets)
+        assets, source_assets = assets_and_source_assets_from_package_module(
+            package_module, extra_source_assets
+        )
         return AssetGroup(
             assets=assets,
             source_assets=source_assets,
@@ -328,7 +330,7 @@ class AssetGroup:
         Returns:
             AssetGroup: An asset group with all the assets defined in the given modules.
         """
-        assets, source_assets = assets_from_modules(modules, extra_source_assets)
+        assets, source_assets = assets_and_source_assets_from_modules(modules, extra_source_assets)
 
         return AssetGroup(
             assets=assets,

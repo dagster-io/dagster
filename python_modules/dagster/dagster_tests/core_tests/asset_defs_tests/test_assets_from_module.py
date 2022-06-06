@@ -9,45 +9,44 @@ from dagster import (
     assets_from_current_module,
     assets_from_package_module,
     assets_from_package_name,
+    AssetsDefinition,
+)
+
+get_unique_asset_identifier = (
+    lambda asset: asset.op.name if isinstance(asset, AssetsDefinition) else asset.key
 )
 
 
 def test_asset_group_from_package_name():
     from . import asset_package
 
-    assets, source_assets = assets_from_package_name(asset_package.__name__)
-    assert len(assets) == 6
+    assets_defs = assets_from_package_name(asset_package.__name__)
+    assert len(assets_defs) == 10
 
-    assets_1 = [asset.op.name for asset in assets]
-    source_assets_1 = [source_asset.key for source_asset in source_assets]
+    assets_1 = [get_unique_asset_identifier(asset) for asset in assets_defs]
 
-    assets_2, source_assets_2 = assets_from_package_name(asset_package.__name__)
-    assert len(assets_2) == 6
+    assets_defs_2 = assets_from_package_name(asset_package.__name__)
+    assert len(assets_defs_2) == 10
 
-    assets_2 = [asset.op.name for asset in assets_2]
-    source_assets_2 = [source_asset.key for source_asset in source_assets_2]
+    assets_2 = [get_unique_asset_identifier(asset) for asset in assets_defs]
 
     assert assets_1 == assets_2
-    assert source_assets_1 == source_assets_2
 
 
 def test_asset_group_from_package_module():
     from . import asset_package
 
-    assets_1, source_assets_1 = assets_from_package_module(asset_package)
-    assert len(assets_1) == 6
+    assets_1 = assets_from_package_module(asset_package)
+    assert len(assets_1) == 10
 
-    assets_1 = [asset.op.name for asset in assets_1]
-    source_assets_1 = [source_asset.key for source_asset in source_assets_1]
+    assets_1 = [get_unique_asset_identifier(asset) for asset in assets_1]
 
-    assets_2, source_assets_2 = assets_from_package_module(asset_package)
-    assert len(assets_2) == 6
+    assets_2 = assets_from_package_module(asset_package)
+    assert len(assets_2) == 10
 
-    assets_2 = [asset.op.name for asset in assets_2]
-    source_assets_2 = [source_asset.key for source_asset in source_assets_2]
+    assets_2 = [get_unique_asset_identifier(asset) for asset in assets_2]
 
     assert assets_1 == assets_2
-    assert source_assets_1 == source_assets_2
 
 
 def test_asset_group_from_modules(monkeypatch):
@@ -56,16 +55,13 @@ def test_asset_group_from_modules(monkeypatch):
 
     collection_1 = assets_from_modules([asset_package, module_with_assets])
 
-    assets_1 = [asset.op.name for asset in collection_1[0]]
-    source_assets_1 = [source_asset.key for source_asset in collection_1[1]]
+    assets_1 = [get_unique_asset_identifier(asset) for asset in collection_1]
 
     collection_2 = assets_from_modules([asset_package, module_with_assets])
 
-    assets_2 = [asset.op.name for asset in collection_2[0]]
-    source_assets_2 = [source_asset.key for source_asset in collection_2[1]]
+    assets_2 = [get_unique_asset_identifier(asset) for asset in collection_2]
 
     assert assets_1 == assets_2
-    assert source_assets_1 == source_assets_2
 
     with monkeypatch.context() as m:
 
@@ -93,10 +89,7 @@ source_asset_in_current_module = SourceAsset(AssetKey("source_asset_in_current_m
 
 
 def test_asset_group_from_current_module():
-    assets, source_assets = assets_from_current_module()
-    assert {asset.op.name for asset in assets} == {"asset_in_current_module"}
-    assert len(assets) == 1
-    assert {source_asset.key for source_asset in source_assets} == {
-        AssetKey("source_asset_in_current_module")
-    }
-    assert len(source_assets) == 1
+    assets = assets_from_current_module()
+    assets = [get_unique_asset_identifier(asset) for asset in assets]
+    assert assets == ["asset_in_current_module", AssetKey("source_asset_in_current_module")]
+    assert len(assets) == 2
