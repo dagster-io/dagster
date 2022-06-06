@@ -27,7 +27,6 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.executor_definition import ExecutorDefinition
 from dagster.core.definitions.graph_definition import GraphDefinition
 from dagster.core.definitions.job_definition import JobDefinition
-from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.partition import PartitionedConfig, PartitionsDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
@@ -284,13 +283,12 @@ def build_deps(
 ]:
     # sort so that nodes get a consistent name
     assets_defs = sorted(assets_defs, key=lambda ad: (sorted((ak for ak in ad.asset_keys))))
-    node_outputs_by_asset: Dict[AssetKey, Tuple[NodeDefinition, str]] = {}
-    assets_defs_by_node_handle: Dict[NodeHandle, AssetsDefinition] = {}
 
-    # if the same graph/op is used in multiple assets_definitions, their invocations much have
+    # if the same graph/op is used in multiple assets_definitions, their invocations must have
     # different names. we keep track of definitions that share a name and add a suffix to their
     # invocations to solve this issue
     collisions: Dict[str, int] = {}
+    assets_defs_by_node_handle: Dict[NodeHandle, AssetsDefinition] = {}
     node_alias_and_output_by_asset_key: Dict[AssetKey, Tuple[str, str]] = {}
     for assets_def in assets_defs:
         node_name = assets_def.node_def.name
@@ -397,7 +395,9 @@ def _attempt_resolve_cycles(
     for root_name in toposorted[0]:
         _dfs(root_name, 0)
 
-    color_mapping_by_assets_defs = defaultdict(lambda: defaultdict(set))
+    color_mapping_by_assets_defs: Dict[AssetsDefinition, Any] = defaultdict(
+        lambda: defaultdict(set)
+    )
     for name, color in colors.items():
         asset_key = AssetKey.from_user_string(name)
         # ignore source assets

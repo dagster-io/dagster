@@ -807,7 +807,7 @@ def test_cycle_resolution_impossible():
 
     @asset
     def a(s, c):
-        return c + x
+        return s + c
 
     @asset
     def b(a):

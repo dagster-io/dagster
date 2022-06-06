@@ -75,8 +75,8 @@ class AssetSelectionData(
 
 
 def generate_asset_dep_graph(assets_defs: Sequence["AssetsDefinition"]) -> Dict[str, Any]:
-    upstream: Dict[str, AbstractSet[str]] = {}
-    downstream: Dict[str, AbstractSet[str]] = {}
+    upstream: Dict[str, Set[str]] = {}
+    downstream: Dict[str, Set[str]] = {}
 
     for assets_def in assets_defs:
         for asset_key in assets_def.asset_keys:
