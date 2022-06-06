@@ -12,32 +12,33 @@ import * as React from 'react';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Loading} from '../ui/Loading';
 
-import {BACKFILL_TABLE_FRAGMENT, BackfillTable as BackfillTableNew} from './BackfillTable';
+import {BACKFILL_TABLE_FRAGMENT, BackfillTable} from './BackfillTable';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {InstanceTabs} from './InstanceTabs';
 import {
-  InstanceBackfillsQueryNew,
-  InstanceBackfillsQueryNewVariables,
-} from './types/InstanceBackfillsQueryNew';
+  InstanceBackfillsQuery,
+  InstanceBackfillsQueryVariables,
+} from './types/InstanceBackfillsQuery';
 import {InstanceHealthForBackfillsQuery} from './types/InstanceHealthForBackfillsQuery';
 
-const PAGE_SIZE_NEW = 25;
+const PAGE_SIZE = 25;
 
 export const InstanceBackfills = () => {
   const queryData = useQuery<InstanceHealthForBackfillsQuery>(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
-    InstanceBackfillsQueryNew,
-    InstanceBackfillsQueryNewVariables
+    InstanceBackfillsQuery,
+    InstanceBackfillsQueryVariables
   >({
-    query: BACKFILLS_QUERY_NEW,
+    query: BACKFILLS_QUERY,
     variables: {},
-    pageSize: PAGE_SIZE_NEW,
+    pageSize: PAGE_SIZE,
     nextCursorForResult: (result) =>
       result.partitionBackfillsOrError.__typename === 'PartitionBackfills'
-        ? result.partitionBackfillsOrError.results[PAGE_SIZE_NEW - 1]?.backfillId
+        ? result.partitionBackfillsOrError.results[PAGE_SIZE - 1]?.backfillId
         : undefined,
     getResultArray: (result) =>
       result?.partitionBackfillsOrError.__typename === 'PartitionBackfills'
@@ -100,8 +101,8 @@ export const InstanceBackfills = () => {
                   />
                 </Box>
               )}
-              <BackfillTableNew
-                backfills={partitionBackfillsOrError.results.slice(0, PAGE_SIZE_NEW)}
+              <BackfillTable
+                backfills={partitionBackfillsOrError.results.slice(0, PAGE_SIZE)}
                 refetch={queryResult.refetch}
               />
               {partitionBackfillsOrError.results.length > 0 ? (
@@ -127,8 +128,8 @@ const INSTANCE_HEALTH_FOR_BACKFILLS_QUERY = gql`
   ${INSTANCE_HEALTH_FRAGMENT}
 `;
 
-const BACKFILLS_QUERY_NEW = gql`
-  query InstanceBackfillsQueryNew($cursor: String, $limit: Int) {
+const BACKFILLS_QUERY = gql`
+  query InstanceBackfillsQuery($cursor: String, $limit: Int) {
     partitionBackfillsOrError(cursor: $cursor, limit: $limit) {
       ... on PartitionBackfills {
         results {

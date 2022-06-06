@@ -11,7 +11,7 @@ import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {PartitionViewNew} from './PartitionViewNew';
+import {PartitionView} from './PartitionView';
 import {
   PipelinePartitionsRootQuery,
   PipelinePartitionsRootQueryVariables,
@@ -78,10 +78,7 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
         }
 
         return (
-          <PartitionViewNew
-            partitionSet={partitionSetsOrError.results[0]}
-            repoAddress={repoAddress}
-          />
+          <PartitionView partitionSet={partitionSetsOrError.results[0]} repoAddress={repoAddress} />
         );
       }}
     </Loading>
