@@ -61,7 +61,7 @@ from dagster import multi_asset, Out, Output, AssetKey
         "d": {AssetKey("b")},
     },
 )
-def my_assets(a, b):
+def my_complex_assets(a, b):
     # c only depends on a
     yield Output(value=a + 1, output_name="c")
     # d only depends on b

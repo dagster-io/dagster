@@ -15,11 +15,13 @@ A multi-asset represents a set of assets that are all updated by the same operat
 
 ## Overview
 
-When working with software-defined assets, it's sometimes inconvenient or impossible to map each persisted asset to a unique operation. A multi-asset is a way to define a single operation that will produce the contents of multiple data assets at once. Multi-assets may be useful in the following scenarios:
+When working with [software-defined assets](/concepts/assets/software-defined-assets), it's sometimes inconvenient or impossible to map each persisted asset to a unique operation. A multi-asset is a way to define a single operation that will produce the contents of multiple data assets at once.
+
+Multi-assets may be useful in the following scenarios:
 
 - A single call to an API results in multiple tables being updated (e.g. Airbyte, Fivetran, dbt)
-- A DataFrame is transformed into multiple different assets, and serializing it between separate ops would be prohibitively inefficient
-- The same in-memory object is used to compute multiple different assets
+- A DataFrame is transformed into multiple assets, and serializing it between separate ops would be prohibitively inefficient
+- The same in-memory object is used to compute multiple assets
 
 ## Defining multi-assets
 
@@ -27,7 +29,7 @@ The function responsible for computing the contents of any software-defined asse
 
 ### A basic multi-asset
 
-The easiest way to create a multi-asset is with the <PyObject object="multi_asset" decorator /> decorator. This decorator functions similarly to the <PyObject object="asset" decorator /> decorator, but requires an `outs` parameter specifying each output asset of this function.
+The easiest way to create a multi-asset is with the <PyObject object="multi_asset" decorator /> decorator. This decorator functions similarly to the <PyObject object="asset" decorator /> decorator, but requires an `outs` parameter specifying each output asset of the function.
 
 ```python file=/concepts/assets/multi_assets.py startafter=start_basic_multi_asset endbefore=end_basic_multi_asset
 from dagster import multi_asset, Out
@@ -43,11 +45,11 @@ def my_function():
     return "abc", 123
 ```
 
-By default, the names of the outputs will be used to form the asset keys of this multi-asset. The decorated function will be used to create the op for these assets, and must emit an output for each of them. In this case, we can emit multiple outputs by returning a tuple of values, one for each asset.
+By default, the names of the outputs will be used to form the asset keys of the multi-asset. The decorated function will be used to create the op for these assets and must emit an output for each of them. In this case, we can emit multiple outputs by returning a tuple of values, one for each asset.
 
 ### Customizing how assets are materialized with IO managers
 
-As with regular assets, you can customize how each asset is materialized with [IO managers](/concepts/io-management/io-managers). You may specify an `io_manager_key` on each output of the multi-asset.
+As with regular assets, you can customize how each asset is materialized with [IO managers](/concepts/io-management/io-managers). To do this, specify an `io_manager_key` on each output of the multi-asset.
 
 ```python file=/concepts/assets/multi_assets.py startafter=start_io_manager_multi_asset endbefore=end_io_manager_multi_asset
 from dagster import multi_asset, Out
@@ -65,9 +67,9 @@ def my_assets():
 
 ### Subsetting multi-assets
 
-By default, it is assumed that the computation inside of a multi-asset will always produce the contents all of the associated assets. This means that attempting to execute a set of assets that produces some, but not all of the assets defined by a given multi-asset will result in an error.
+By default, it is assumed that the computation inside of a multi-asset will always produce the contents all of the associated assets. This means that attempting to execute a set of assets that produces some, but not all, of the assets defined by a given multi-asset will result in an error.
 
-Sometimes, the underlying computation is sufficiently flexible to allow for computing an arbitrary subset of the assets that it is associate with. For these cases, you may set the `is_required` attribute of the outputs to `False`, and set the `can_subset` parameter of the decorator to `True`.
+Sometimes, the underlying computation is sufficiently flexible to allow for computing an arbitrary subset of the assets associated with it. In these cases, set the `is_required` attribute of the outputs to `False`, and set the `can_subset` parameter of the decorator to `True`.
 
 Inside the body of the function, we can use `context.selected_output_names` or `context.selected_asset_keys` to find out which computations should be run.
 
@@ -93,7 +95,9 @@ Because our outputs are now optional, we can no longer rely on returning a tuple
 
 ### Dependencies inside multi-assets
 
-When a multi-asset is created, it is assumed that each output asset depends on all of the input assets. However, this may not always be the case. In these situations, you may optionally provide a mapping from each output asset to the set of <PyObject object="AssetKey" />s that it depends on. This information will be used when displaying lineage information in Dagit and when parsing selections over your asset graph.
+When a multi-asset is created, it is assumed that each output asset depends on all of the input assets. This may not always be the case, however.
+
+In these situations, you may optionally provide a mapping from each output asset to the set of <PyObject object="AssetKey" />s that it depends on. This information is used to display lineage information in Dagit and for parsing selections over your asset graph.
 
 ```python file=/concepts/assets/multi_assets.py startafter=start_asset_deps_multi_asset endbefore=end_asset_deps_multi_asset
 from dagster import multi_asset, Out, Output, AssetKey
@@ -106,7 +110,7 @@ from dagster import multi_asset, Out, Output, AssetKey
         "d": {AssetKey("b")},
     },
 )
-def my_assets(a, b):
+def my_complex_assets(a, b):
     # c only depends on a
     yield Output(value=a + 1, output_name="c")
     # d only depends on b
