@@ -83,7 +83,9 @@ def docker_service_up(docker_compose_file, build_args=None):
 
             # collect logs from the containers and upload to buildkite
             containers = ["dagit", "docker_daemon", "dagster_grpc_server", "docker_postgresql"]
-            logs_dir = ".docker_logs"
+
+            current_test = os.environ.get('PYTEST_CURRENT_TEST').split(':')[-1].split(' ')[0]
+            logs_dir = f".docker_logs/{current_test}"
 
             p = subprocess.Popen(["rm", "-rf", "{dir}".format(dir=logs_dir)])
             p.communicate()
@@ -104,6 +106,9 @@ def docker_service_up(docker_compose_file, build_args=None):
                     )
                     p.communicate()
                     print(f"container({c}) logs dumped")
+                    if p.returncode != 0:
+                        print(f"container {c} log dump failed. logs:")
+                        print(log.read())
                     assert p.returncode == 0
 
             p = subprocess.Popen(
