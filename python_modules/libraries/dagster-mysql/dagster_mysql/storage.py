@@ -1,6 +1,6 @@
 from typing import Optional
 
-from dagster import check
+from dagster import _check as check
 from dagster.core.storage.base_storage import DagsterStorage
 from dagster.core.storage.config import mysql_config
 from dagster.core.storage.event_log import EventLogStorage

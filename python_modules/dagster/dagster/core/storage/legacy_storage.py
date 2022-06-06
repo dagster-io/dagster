@@ -357,7 +357,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def wipe(self):
         return self._storage.event_storage.wipe()
 
-    def watch(self, run_id: str, start_cursor: int, callback: Callable):
+    def watch(self, run_id: str, cursor: str, callback: Callable):
         return self._storage.event_storage.watch(run_id, start_cursor, callback)
 
     def end_watch(self, run_id: str, handler: Callable):
