@@ -479,11 +479,11 @@ def test_static_select_invalid_selection(select, error_match):
 
 def test_python_interleaving(
     conn_string, dbt_python_sources, test_python_project_dir, dbt_python_config_dir
-):
+):  # pylint: disable=unused-argument
     dbt_assets = load_assets_from_dbt_project(test_python_project_dir, dbt_python_config_dir)
 
     @io_manager
-    def test_io_manager(context):
+    def test_io_manager(_context):
         class TestIOManager(IOManager):
             def handle_output(self, context, obj):
                 # handling dbt output
@@ -500,7 +500,6 @@ def test_python_interleaving(
                     conn.commit()
                     cur.close()
                 except (Exception, psycopg2.DatabaseError) as error:
-                    print(error)
                     raise (error)
                 finally:
                     if conn is not None:
@@ -516,7 +515,6 @@ def test_python_interleaving(
                     cur.execute(f'SELECT * FROM "{schema}"."{table}"')
                     result = cur.fetchall()
                 except (Exception, psycopg2.DatabaseError) as error:
-                    print(error)
                     raise error
                 finally:
                     if conn is not None:
