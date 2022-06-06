@@ -80,6 +80,7 @@ def docker_service_up(docker_compose_file, build_args=None):
         try:
             yield  # buildkite pipeline handles the service
         finally:
+            print(f"ENVIRON: {os.getenv('BUILDKITE_JOB_ID')}")
             # collect logs from the containers and upload to buildkite
             containers = ["dagit", "docker_daemon", "dagster_grpc_server", "docker_postgresql"]
             logs_dir = ".docker_logs"
