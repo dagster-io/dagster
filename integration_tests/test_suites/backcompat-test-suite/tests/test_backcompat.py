@@ -84,7 +84,7 @@ def docker_service_up(docker_compose_file, build_args=None):
             containers = ["dagit", "docker_daemon", "dagster_grpc_server", "docker_postgresql"]
             logs_dir = ".docker_logs"
 
-            p = subprocess.Popen([f"rm -rf {logs_dir}"])
+            p = subprocess.Popen([f"rm -rf {logs_dir} || true"])
             assert p.returncode == 0
 
             Path(logs_dir).mkdir(parents=True, exist_ok=True)
