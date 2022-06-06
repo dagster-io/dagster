@@ -392,8 +392,6 @@ def _attempt_resolve_cycles(
 
     # get validate that there are no cycles
     toposorted = toposort(asset_deps["upstream"])
-    print(asset_deps)
-    print(toposorted)
 
     # dfs for each root node
     for root_name in toposorted[0]:
@@ -416,6 +414,5 @@ def _attempt_resolve_cycles(
         else:
             for asset_keys in color_mapping.values():
                 ret.append(assets_def.subset_for(asset_keys))
-    for assets_def in ret:
-        print(assets_def.asset_keys)
+
     return ret
