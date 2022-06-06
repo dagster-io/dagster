@@ -182,7 +182,6 @@ const AssetEntryRow: React.FC<{
     };
 
     const liveData = asset && liveDataByNode[toGraphId(asset.key)];
-    const stepKey = asset && asset.definition?.opNames[0];
     const repoAddress = asset?.definition
       ? buildRepoAddress(
           asset.definition.repository.name,
@@ -228,12 +227,15 @@ const AssetEntryRow: React.FC<{
           )}
         </td>
         <td>
-          {liveData && stepKey ? (
+          {liveData ? (
             liveData.lastMaterialization ? (
               <Mono>
                 <AssetRunLink
                   runId={liveData.lastMaterialization.runId}
-                  event={{stepKey, timestamp: liveData.lastMaterialization.timestamp}}
+                  event={{
+                    stepKey: liveData.stepKey,
+                    timestamp: liveData.lastMaterialization.timestamp,
+                  }}
                 >
                   <TimestampDisplay
                     timestamp={Number(liveData.lastMaterialization.timestamp) / 1000}
@@ -247,9 +249,9 @@ const AssetEntryRow: React.FC<{
           ) : undefined}
         </td>
         <td>
-          {liveData && stepKey && (
+          {liveData && (
             <Mono>
-              <AssetLatestRunWithNotices stepKey={stepKey} liveData={liveData} />
+              <AssetLatestRunWithNotices liveData={liveData} />
             </Mono>
           )}
         </td>
