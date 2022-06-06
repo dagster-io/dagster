@@ -114,6 +114,7 @@ def docker_service_up(docker_compose_file, build_args=None):
                 ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                env=os.environ.copy(),
             )
             stdout, stderr = p.communicate()
             print("Buildkite artifact added with stdout: ", stdout)
