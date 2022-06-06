@@ -1,5 +1,6 @@
 from .asset_group import AssetGroup
 from .asset_in import AssetIn
+from .asset_selection import AssetSelection
 from .assets import AssetsDefinition
 from .assets_from_modules import (
     assets_from_current_module,

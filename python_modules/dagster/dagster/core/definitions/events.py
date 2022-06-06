@@ -117,7 +117,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
         """
         E.g. "first_component>second_component"
         """
-        return ">".join(self.path)
+        return "/".join(self.path)
 
     @staticmethod
     def from_user_string(asset_key_string: str) -> "AssetKey":
