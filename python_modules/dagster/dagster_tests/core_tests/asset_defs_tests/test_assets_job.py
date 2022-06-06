@@ -1455,15 +1455,18 @@ def test_source_asset_requires_resource_defs():
         def load_input(self, context):
             return 5
 
+    @resource(required_resource_keys={"bar"})
+    def foo_resource(context):
+        assert context.resources.bar == "blah"
+
     @io_manager(required_resource_keys={"foo"})
     def the_manager(context):
-        context.resources.foo == "blah"
         return MyIOManager()
 
     my_source_asset = SourceAsset(
         key=AssetKey("my_source_asset"),
         io_manager_def=the_manager,
-        resource_defs={"foo": ResourceDefinition.hardcoded_resource("blah")},
+        resource_defs={"foo": foo_resource, "bar": ResourceDefinition.hardcoded_resource("blah")},
     )
 
     @asset
