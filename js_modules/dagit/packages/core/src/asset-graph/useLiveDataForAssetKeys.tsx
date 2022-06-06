@@ -1,6 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import React from 'react';
 
+import {useDidLaunchEvent} from '../runs/RunUtils';
 import {AssetKeyInput} from '../types/globalTypes';
 
 import {ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
@@ -26,6 +27,8 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
   const liveDataByNode = React.useMemo(() => {
     return liveResult.data ? buildLiveData(liveResult.data) : {};
   }, [liveResult.data]);
+
+  useDidLaunchEvent(liveResult.refetch);
 
   return {
     liveResult,

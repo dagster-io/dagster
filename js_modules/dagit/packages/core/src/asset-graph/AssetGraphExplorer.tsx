@@ -1,8 +1,6 @@
 import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
-import flatMap from 'lodash/flatMap';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
-import uniqBy from 'lodash/uniqBy';
 import without from 'lodash/without';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
@@ -36,7 +34,6 @@ import {
 } from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../pipelines/SidebarPipelineOrJobOverview';
-import {useDidLaunchEvent} from '../runs/RunUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
@@ -87,7 +84,6 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const liveDataRefreshState = useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS);
 
   useDocumentTitle('Assets');
-  useDidLaunchEvent(liveResult.refetch);
 
   return (
     <Loading allowStaleData queryResult={fetchResult}>
@@ -406,18 +402,9 @@ export const AssetGraphExplorerWithData: React.FC<
               />
 
               <LaunchAssetExecutionButton
-                title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
-                preferredJobName={explorerPath.pipelineName}
                 assets={launchGraphNodes.map((n) => n.definition)}
-                upstreamAssetKeys={uniqBy(
-                  flatMap(launchGraphNodes.map((n) => n.definition.dependencyKeys)),
-                  (key) => JSON.stringify(key),
-                ).filter(
-                  (key) =>
-                    !launchGraphNodes.some(
-                      (n) => JSON.stringify(n.assetKey) === JSON.stringify(key),
-                    ),
-                )}
+                liveDataByNode={liveDataByNode}
+                preferredJobName={explorerPath.pipelineName}
               />
             </Box>
           </Box>
@@ -516,15 +503,4 @@ const opsInRange = (
     }
   }
   return uniq(ledToTarget);
-};
-
-const titleForLaunch = (nodes: GraphNode[], liveDataByNode: LiveData) => {
-  const isRematerializeForAll = (nodes.length
-    ? nodes.map((n) => liveDataByNode[n.id])
-    : Object.values(liveDataByNode)
-  ).every((e) => !!e?.lastMaterialization);
-
-  return `${isRematerializeForAll ? 'Rematerialize' : 'Materialize'} ${
-    nodes.length === 0 ? `All` : nodes.length === 1 ? `Selected` : `Selected (${nodes.length})`
-  }`;
 };

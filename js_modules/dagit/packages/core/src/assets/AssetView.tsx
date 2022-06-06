@@ -36,7 +36,10 @@ import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDe
 import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetLineageScope, AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
-import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+import {
+  LaunchAssetExecutionButton,
+  LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT,
+} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
 import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
 
@@ -153,12 +156,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               <QueryRefreshCountdown refreshState={refreshState} />
             </Box>
             {definition && definition.jobNames.length > 0 && repoAddress && upstream && (
-              <LaunchAssetExecutionButton
-                assets={[definition]}
-                upstreamAssetKeys={upstream.map((u) => u.assetKey)}
-                preferredJobName={definition.jobNames[0]}
-                title={lastMaterializedAt ? 'Rematerialize' : 'Materialize'}
-              />
+              <LaunchAssetExecutionButton assets={[definition]} liveDataByNode={liveDataByNode} />
             )}
           </Box>
         }
@@ -312,12 +310,14 @@ const ASSET_QUERY = gql`
             }
           }
 
+          ...LaunchAssetExecutionAssetNodeFragment
           ...AssetNodeInstigatorsFragment
           ...AssetNodeDefinitionFragment
         }
       }
     }
   }
+  ${LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT}
   ${ASSET_NODE_INSTIGATORS_FRAGMENT}
   ${ASSET_NODE_DEFINITION_FRAGMENT}
 `;

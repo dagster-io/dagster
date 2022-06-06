@@ -1,36 +1,75 @@
-import {Button, Icon, Tooltip} from '@dagster-io/ui';
+import {gql, useQuery} from '@apollo/client';
+import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui';
+import uniq from 'lodash/uniq';
 import React from 'react';
 
-import {isSourceAsset} from '../asset-graph/Utils';
+import {isSourceAsset, LiveData} from '../asset-graph/Utils';
 import {LaunchRootExecutionButton} from '../launchpad/LaunchRootExecutionButton';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {DagsterTag} from '../runs/RunTag';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {configSchemaForAssetNode} from './AssetConfig';
+import {ASSET_NODE_CONFIG_FRAGMENT, configSchemaForAssetNode} from './AssetConfig';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {AssetKey} from './types';
+import {LaunchAssetExecutionAssetNodeFragment} from './types/LaunchAssetExecutionAssetNodeFragment';
+import {
+  LaunchAssetLoaderQuery,
+  LaunchAssetLoaderQueryVariables,
+} from './types/LaunchAssetLoaderQuery';
 
-type AssetMinimal = {
-  assetKey: {path: string[]};
-  configField: any;
-  opNames: string[];
-  jobNames: string[];
-  partitionDefinition: string | null;
-  repository: {name: string; location: {name: string}};
+export const LazyLaunchAssetExecutionButton: React.FC<{
+  assetKeys: AssetKey[];
+  liveDataByNode: LiveData;
+}> = ({assetKeys, liveDataByNode}) => {
+  const queryResult = useQuery<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>(
+    LAUNCH_ASSET_LOADER_QUERY,
+    {
+      skip: assetKeys.length === 0,
+      variables: {assetKeys: assetKeys.map(({path}) => ({path}))},
+    },
+  );
+
+  if (!assetKeys.length) {
+    return (
+      <Button intent="primary" icon={<Icon name="materialization" />} disabled>
+        Materialize
+      </Button>
+    );
+  }
+  if (!queryResult.data || queryResult.loading) {
+    return (
+      <Button intent="primary" icon={<Spinner purpose="body-text" />}>
+        Materialize
+      </Button>
+    );
+  }
+
+  return (
+    <LaunchAssetExecutionButton
+      assets={queryResult.data.assetNodes}
+      liveDataByNode={liveDataByNode}
+    />
+  );
 };
 
 export const LaunchAssetExecutionButton: React.FC<{
+  assets: LaunchAssetExecutionAssetNodeFragment[];
+  liveDataByNode: LiveData;
   preferredJobName?: string;
-  assets: AssetMinimal[];
-  upstreamAssetKeys: AssetKey[];
-  title?: string;
-}> = ({assets, preferredJobName, upstreamAssetKeys, title}) => {
+}> = ({assets, preferredJobName, liveDataByNode}) => {
   const [showingDialog, setShowingDialog] = React.useState(false);
   const repoAddress = buildRepoAddress(
     assets[0]?.repository.name || '',
     assets[0]?.repository.location.name || '',
   );
+
+  const upstreamAssetKeys = React.useMemo(() => {
+    const assetKeySet = new Set(assets.map((a) => JSON.stringify({path: a.assetKey})));
+    return uniq(assets.flatMap((a) => a.dependencyKeys.map(({path}) => JSON.stringify({path}))))
+      .filter((key) => !assetKeySet.has(key))
+      .map((key) => JSON.parse(key));
+  }, [assets]);
 
   let disabledReason = '';
   if (assets.some(isSourceAsset)) {
@@ -68,9 +107,9 @@ export const LaunchAssetExecutionButton: React.FC<{
       disabledReason || 'Cannot materialize assets using both asset config and partitions.';
   }
 
-  title = title || 'Refresh';
-
   let tooltipChildren: React.ReactNode;
+  let title = titleForLaunch(assets, liveDataByNode);
+
   if (anyAssetsHaveConfig) {
     const assetOpNames = assets.flatMap((a) => a.opNames || []);
     const sessionPresets = {
@@ -160,3 +199,56 @@ export const LaunchAssetExecutionButton: React.FC<{
   }
   return <Tooltip content={disabledReason}>{tooltipChildren}</Tooltip>;
 };
+
+const titleForLaunch = (
+  nodes: LaunchAssetExecutionAssetNodeFragment[],
+  liveDataByNode: LiveData,
+) => {
+  const isRematerializeForAll = (nodes.length
+    ? nodes.map((n) => liveDataByNode[n.id])
+    : Object.values(liveDataByNode)
+  ).every((e) => !!e?.lastMaterialization);
+
+  const count = nodes.length !== 1 ? ` (${nodes.length})` : '';
+
+  return `${isRematerializeForAll ? 'Rematerialize' : 'Materialize'} ${
+    nodes.length === 0 || nodes.length === Object.keys(liveDataByNode).length
+      ? `All${count}`
+      : `Selected${count}`
+  }`;
+};
+
+export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
+  fragment LaunchAssetExecutionAssetNodeFragment on AssetNode {
+    id
+    opNames
+    jobNames
+    partitionDefinition
+    assetKey {
+      path
+    }
+    dependencyKeys {
+      path
+    }
+    repository {
+      id
+      name
+      location {
+        id
+        name
+      }
+    }
+    ...AssetNodeConfigFragment
+  }
+  ${ASSET_NODE_CONFIG_FRAGMENT}
+`;
+
+const LAUNCH_ASSET_LOADER_QUERY = gql`
+  query LaunchAssetLoaderQuery($assetKeys: [AssetKeyInput!]!) {
+    assetNodes(assetKeys: $assetKeys) {
+      id
+      ...LaunchAssetExecutionAssetNodeFragment
+    }
+  }
+  ${LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT}
+`;

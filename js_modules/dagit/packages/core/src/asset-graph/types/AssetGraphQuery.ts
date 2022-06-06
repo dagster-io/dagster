@@ -19,6 +19,24 @@ export interface AssetGraphQuery_assetNodes_dependedByKeys {
   path: string[];
 }
 
+export interface AssetGraphQuery_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetGraphQuery_assetNodes_repository_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
+export interface AssetGraphQuery_assetNodes_repository {
+  __typename: "Repository";
+  id: string;
+  name: string;
+  location: AssetGraphQuery_assetNodes_repository_location;
+}
+
 export interface AssetGraphQuery_assetNodes_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
@@ -486,38 +504,20 @@ export interface AssetGraphQuery_assetNodes_configField {
   configType: AssetGraphQuery_assetNodes_configField_configType;
 }
 
-export interface AssetGraphQuery_assetNodes_assetKey {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface AssetGraphQuery_assetNodes_repository_location {
-  __typename: "RepositoryLocation";
-  id: string;
-  name: string;
-}
-
-export interface AssetGraphQuery_assetNodes_repository {
-  __typename: "Repository";
-  id: string;
-  name: string;
-  location: AssetGraphQuery_assetNodes_repository_location;
-}
-
 export interface AssetGraphQuery_assetNodes {
   __typename: "AssetNode";
   id: string;
   dependencyKeys: AssetGraphQuery_assetNodes_dependencyKeys[];
   dependedByKeys: AssetGraphQuery_assetNodes_dependedByKeys[];
-  configField: AssetGraphQuery_assetNodes_configField | null;
   graphName: string | null;
-  jobNames: string[];
   opNames: string[];
   description: string | null;
-  partitionDefinition: string | null;
   computeKind: string | null;
   assetKey: AssetGraphQuery_assetNodes_assetKey;
+  jobNames: string[];
+  partitionDefinition: string | null;
   repository: AssetGraphQuery_assetNodes_repository;
+  configField: AssetGraphQuery_assetNodes_configField | null;
 }
 
 export interface AssetGraphQuery {

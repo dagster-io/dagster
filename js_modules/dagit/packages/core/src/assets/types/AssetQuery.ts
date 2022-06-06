@@ -36,42 +36,14 @@ export interface AssetQuery_assetOrError_Asset_definition_repository {
   location: AssetQuery_assetOrError_Asset_definition_repository_location;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_jobs_schedules_scheduleState {
-  __typename: "InstigationState";
-  id: string;
-  selectorId: string;
-  status: InstigationStatus;
+export interface AssetQuery_assetOrError_Asset_definition_assetKey {
+  __typename: "AssetKey";
+  path: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_jobs_schedules {
-  __typename: "Schedule";
-  id: string;
-  name: string;
-  cronSchedule: string;
-  scheduleState: AssetQuery_assetOrError_Asset_definition_jobs_schedules_scheduleState;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_jobs_sensors_sensorState {
-  __typename: "InstigationState";
-  id: string;
-  selectorId: string;
-  status: InstigationStatus;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_jobs_sensors {
-  __typename: "Sensor";
-  id: string;
-  jobOriginId: string;
-  name: string;
-  sensorState: AssetQuery_assetOrError_Asset_definition_jobs_sensors_sensorState;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_jobs {
-  __typename: "Pipeline";
-  id: string;
-  name: string;
-  schedules: AssetQuery_assetOrError_Asset_definition_jobs_schedules[];
-  sensors: AssetQuery_assetOrError_Asset_definition_jobs_sensors[];
+export interface AssetQuery_assetOrError_Asset_definition_dependencyKeys {
+  __typename: "AssetKey";
+  path: string[];
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -541,9 +513,42 @@ export interface AssetQuery_assetOrError_Asset_definition_configField {
   configType: AssetQuery_assetOrError_Asset_definition_configField_configType;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetKey {
-  __typename: "AssetKey";
-  path: string[];
+export interface AssetQuery_assetOrError_Asset_definition_jobs_schedules_scheduleState {
+  __typename: "InstigationState";
+  id: string;
+  selectorId: string;
+  status: InstigationStatus;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_jobs_schedules {
+  __typename: "Schedule";
+  id: string;
+  name: string;
+  cronSchedule: string;
+  scheduleState: AssetQuery_assetOrError_Asset_definition_jobs_schedules_scheduleState;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_jobs_sensors_sensorState {
+  __typename: "InstigationState";
+  id: string;
+  selectorId: string;
+  status: InstigationStatus;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_jobs_sensors {
+  __typename: "Sensor";
+  id: string;
+  jobOriginId: string;
+  name: string;
+  sensorState: AssetQuery_assetOrError_Asset_definition_jobs_sensors_sensorState;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_jobs {
+  __typename: "Pipeline";
+  id: string;
+  name: string;
+  schedules: AssetQuery_assetOrError_Asset_definition_jobs_schedules[];
+  sensors: AssetQuery_assetOrError_Asset_definition_jobs_sensors[];
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_metadataEntries_PathMetadataEntry {
@@ -2911,14 +2916,14 @@ export interface AssetQuery_assetOrError_Asset_definition {
   groupName: string | null;
   partitionDefinition: string | null;
   repository: AssetQuery_assetOrError_Asset_definition_repository;
-  jobs: AssetQuery_assetOrError_Asset_definition_jobs[];
-  configField: AssetQuery_assetOrError_Asset_definition_configField | null;
-  description: string | null;
-  graphName: string | null;
   opNames: string[];
   jobNames: string[];
-  computeKind: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_assetKey;
+  dependencyKeys: AssetQuery_assetOrError_Asset_definition_dependencyKeys[];
+  configField: AssetQuery_assetOrError_Asset_definition_configField | null;
+  jobs: AssetQuery_assetOrError_Asset_definition_jobs[];
+  description: string | null;
+  graphName: string | null;
   metadataEntries: AssetQuery_assetOrError_Asset_definition_metadataEntries[];
   op: AssetQuery_assetOrError_Asset_definition_op | null;
 }

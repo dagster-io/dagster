@@ -7,471 +7,9 @@
 // GraphQL fragment: AssetNodeDefinitionFragment
 // ====================================================
 
-export interface AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
-  __typename: "EnumConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
-  __typename: "RegularConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isRequired: boolean;
-  configTypeKey: string;
-  defaultValueAsJson: string | null;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
-  __typename: "ScalarUnionConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  scalarTypeKey: string;
-  nonScalarTypeKey: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_MapConfigType {
-  __typename: "MapConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  keyLabelName: string | null;
-}
-
-export type AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
-
-export interface AssetNodeDefinitionFragment_configField_configType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  recursiveConfigTypes: AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
-  __typename: "EnumConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
-  __typename: "RegularConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isRequired: boolean;
-  configTypeKey: string;
-  defaultValueAsJson: string | null;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
-  __typename: "ScalarUnionConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  scalarTypeKey: string;
-  nonScalarTypeKey: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_MapConfigType {
-  __typename: "MapConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  keyLabelName: string | null;
-}
-
-export type AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_MapConfigType;
-
-export interface AssetNodeDefinitionFragment_configField_configType_EnumConfigType {
-  __typename: "EnumConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-  recursiveConfigTypes: AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
-  __typename: "EnumConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
-  __typename: "RegularConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isRequired: boolean;
-  configTypeKey: string;
-  defaultValueAsJson: string | null;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
-  __typename: "ScalarUnionConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  scalarTypeKey: string;
-  nonScalarTypeKey: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_MapConfigType {
-  __typename: "MapConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  keyLabelName: string | null;
-}
-
-export type AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_MapConfigType;
-
-export interface AssetNodeDefinitionFragment_configField_configType_RegularConfigType {
-  __typename: "RegularConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-  recursiveConfigTypes: AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isRequired: boolean;
-  configTypeKey: string;
-  defaultValueAsJson: string | null;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
-  __typename: "EnumConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
-  __typename: "RegularConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isRequired: boolean;
-  configTypeKey: string;
-  defaultValueAsJson: string | null;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
-  __typename: "ScalarUnionConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  scalarTypeKey: string;
-  nonScalarTypeKey: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_MapConfigType {
-  __typename: "MapConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  keyLabelName: string | null;
-}
-
-export type AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
-
-export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_fields[];
-  recursiveConfigTypes: AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
-  __typename: "EnumConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
-  __typename: "RegularConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isRequired: boolean;
-  configTypeKey: string;
-  defaultValueAsJson: string | null;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
-  __typename: "ScalarUnionConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  scalarTypeKey: string;
-  nonScalarTypeKey: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType {
-  __typename: "MapConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  keyLabelName: string | null;
-}
-
-export type AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
-
-export interface AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType {
-  __typename: "ScalarUnionConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  scalarTypeKey: string;
-  nonScalarTypeKey: string;
-  recursiveConfigTypes: AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType {
-  __typename: "EnumConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType {
-  __typename: "RegularConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isRequired: boolean;
-  configTypeKey: string;
-  defaultValueAsJson: string | null;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType {
-  __typename: "ScalarUnionConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  scalarTypeKey: string;
-  nonScalarTypeKey: string;
-}
-
-export interface AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_MapConfigType {
-  __typename: "MapConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  keyLabelName: string | null;
-}
-
-export type AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_MapConfigType;
-
-export interface AssetNodeDefinitionFragment_configField_configType_MapConfigType {
-  __typename: "MapConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  keyLabelName: string | null;
-  recursiveConfigTypes: AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes[];
-}
-
-export type AssetNodeDefinitionFragment_configField_configType = AssetNodeDefinitionFragment_configField_configType_ArrayConfigType | AssetNodeDefinitionFragment_configField_configType_EnumConfigType | AssetNodeDefinitionFragment_configField_configType_RegularConfigType | AssetNodeDefinitionFragment_configField_configType_CompositeConfigType | AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType | AssetNodeDefinitionFragment_configField_configType_MapConfigType;
-
-export interface AssetNodeDefinitionFragment_configField {
-  __typename: "ConfigTypeField";
-  name: string;
-  configType: AssetNodeDefinitionFragment_configField_configType;
+export interface AssetNodeDefinitionFragment_assetKey {
+  __typename: "AssetKey";
+  path: string[];
 }
 
 export interface AssetNodeDefinitionFragment_repository_location {
@@ -485,11 +23,6 @@ export interface AssetNodeDefinitionFragment_repository {
   id: string;
   name: string;
   location: AssetNodeDefinitionFragment_repository_location;
-}
-
-export interface AssetNodeDefinitionFragment_assetKey {
-  __typename: "AssetKey";
-  path: string[];
 }
 
 export interface AssetNodeDefinitionFragment_metadataEntries_PathMetadataEntry {
@@ -2851,18 +2384,484 @@ export interface AssetNodeDefinitionFragment_op {
   outputDefinitions: AssetNodeDefinitionFragment_op_outputDefinitions[];
 }
 
+export interface AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetNodeDefinitionFragment_configField_configType_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_configField_configType_ArrayConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetNodeDefinitionFragment_configField_configType_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: AssetNodeDefinitionFragment_configField_configType_EnumConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetNodeDefinitionFragment_configField_configType_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: AssetNodeDefinitionFragment_configField_configType_RegularConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetNodeDefinitionFragment_configField_configType_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_fields[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_configField_configType_CompositeConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+  recursiveConfigTypes: AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetNodeDefinitionFragment_configField_configType_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+  recursiveConfigTypes: AssetNodeDefinitionFragment_configField_configType_MapConfigType_recursiveConfigTypes[];
+}
+
+export type AssetNodeDefinitionFragment_configField_configType = AssetNodeDefinitionFragment_configField_configType_ArrayConfigType | AssetNodeDefinitionFragment_configField_configType_EnumConfigType | AssetNodeDefinitionFragment_configField_configType_RegularConfigType | AssetNodeDefinitionFragment_configField_configType_CompositeConfigType | AssetNodeDefinitionFragment_configField_configType_ScalarUnionConfigType | AssetNodeDefinitionFragment_configField_configType_MapConfigType;
+
+export interface AssetNodeDefinitionFragment_configField {
+  __typename: "ConfigTypeField";
+  name: string;
+  configType: AssetNodeDefinitionFragment_configField_configType;
+}
+
 export interface AssetNodeDefinitionFragment {
   __typename: "AssetNode";
   id: string;
-  configField: AssetNodeDefinitionFragment_configField | null;
+  assetKey: AssetNodeDefinitionFragment_assetKey;
   description: string | null;
+  partitionDefinition: string | null;
   graphName: string | null;
   opNames: string[];
   jobNames: string[];
   repository: AssetNodeDefinitionFragment_repository;
-  partitionDefinition: string | null;
-  computeKind: string | null;
-  assetKey: AssetNodeDefinitionFragment_assetKey;
   metadataEntries: AssetNodeDefinitionFragment_metadataEntries[];
   op: AssetNodeDefinitionFragment_op | null;
+  configField: AssetNodeDefinitionFragment_configField | null;
 }

@@ -6,7 +6,6 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
-import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {NodeHighlightColors} from '../graph/OpNode';
 import {OpTags} from '../graph/OpTags';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
@@ -183,26 +182,14 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
 export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeFragment on AssetNode {
     id
-    ...AssetNodeConfigFragment
     graphName
-    jobNames
     opNames
     description
-    partitionDefinition
     computeKind
     assetKey {
       path
     }
-    repository {
-      id
-      name
-      location {
-        id
-        name
-      }
-    }
   }
-  ${ASSET_NODE_CONFIG_FRAGMENT}
 `;
 
 const BoxColors = {

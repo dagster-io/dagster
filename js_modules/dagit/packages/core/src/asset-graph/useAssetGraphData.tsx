@@ -2,6 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import React from 'react';
 
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
+import {LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT} from '../assets/LaunchAssetExecutionButton';
 import {AssetGroupSelector, PipelineSelector} from '../types/globalTypes';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
@@ -141,7 +142,9 @@ const ASSET_GRAPH_QUERY = gql`
         path
       }
       ...AssetNodeFragment
+      ...LaunchAssetExecutionAssetNodeFragment
     }
   }
   ${ASSET_NODE_FRAGMENT}
+  ${LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT}
 `;

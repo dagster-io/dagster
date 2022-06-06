@@ -1,16 +1,6 @@
 import {gql, QueryResult, useQuery} from '@apollo/client';
-import {
-  Box,
-  CursorPaginationControls,
-  CursorPaginationProps,
-  TextInput,
-  Suggest,
-  MenuItem,
-  Icon,
-  Colors,
-} from '@dagster-io/ui';
+import {Box, CursorPaginationControls, CursorPaginationProps, TextInput} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
-import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -28,8 +18,8 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {AssetGroupSelector} from '../types/globalTypes';
 import {LoadingSpinner} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
-import {buildRepoPath} from '../workspace/buildRepoAddress';
 
+import {AssetGroupSuggest, buildAssetGroupSelector} from './AssetGroupSuggest';
 import {AssetTable, ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTable';
 import {AssetViewModeSwitch} from './AssetViewModeSwitch';
 import {AssetsEmptyState} from './AssetsEmptyState';
@@ -213,68 +203,6 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
   );
 };
 
-const AssetGroupSuggest: React.FC<{
-  assets: Asset[];
-  value: AssetGroupSelector | null;
-  onChange: (g: AssetGroupSelector | null) => void;
-}> = ({assets, value, onChange}) => {
-  const assetGroups = React.useMemo(
-    () =>
-      uniqBy(
-        (assets || []).map(buildAssetGroupSelector).filter((a) => !!a) as AssetGroupSelector[],
-        (a) => JSON.stringify(a),
-      ).sort((a, b) => a.groupName.localeCompare(b.groupName)),
-    [assets],
-  );
-
-  const repoContextNeeded = React.useMemo(() => {
-    const result: {[groupName: string]: boolean} = {};
-    assetGroups.forEach(
-      (group) => (result[group.groupName] = group.groupName in result ? true : false),
-    );
-    return result;
-  }, [assetGroups]);
-
-  return (
-    <Suggest<AssetGroupSelector>
-      selectedItem={value}
-      items={assetGroups}
-      inputProps={{
-        style: {width: 220},
-        placeholder: 'Filter asset groups…',
-        rightElement: value ? (
-          <div style={{marginTop: 6.5, marginRight: 6}} onClick={() => onChange(null)}>
-            <Icon name="cancel" color={Colors.Gray400} />
-          </div>
-        ) : undefined,
-      }}
-      inputValueRenderer={(partition) => partition.groupName}
-      itemPredicate={(query, partition) =>
-        query.length === 0 || partition.groupName.includes(query)
-      }
-      itemsEqual={isEqual}
-      itemRenderer={(assetGroup, props) => (
-        <MenuItem
-          active={props.modifiers.active}
-          onClick={props.handleClick}
-          key={JSON.stringify(assetGroup)}
-          text={
-            <>
-              {assetGroup.groupName}
-              {repoContextNeeded[assetGroup.groupName] ? (
-                <span style={{opacity: 0.5, paddingLeft: 4}}>
-                  {buildRepoPath(assetGroup.repositoryName, assetGroup.repositoryLocationName)}
-                </span>
-              ) : undefined}
-            </>
-          }
-        />
-      )}
-      noResults={<MenuItem disabled={true} text="No asset groups." />}
-      onItemSelect={onChange}
-    />
-  );
-};
 const Wrapper = styled.div`
   flex: 1 1;
   display: flex;
@@ -315,16 +243,6 @@ const ASSET_CATALOG_GROUP_TABLE_QUERY = gql`
   }
   ${ASSET_TABLE_DEFINITION_FRAGMENT}
 `;
-
-function buildAssetGroupSelector(a: Asset) {
-  return a.definition && a.definition.groupName
-    ? {
-        groupName: a.definition.groupName,
-        repositoryName: a.definition?.repository.name,
-        repositoryLocationName: a.definition?.repository.location.name,
-      }
-    : false;
-}
 
 function buildFlatProps(assets: Asset[], prefixPath: string[], cursor: string | undefined) {
   const cursorValue = (asset: Asset) => JSON.stringify([...prefixPath, ...asset.key.path]);

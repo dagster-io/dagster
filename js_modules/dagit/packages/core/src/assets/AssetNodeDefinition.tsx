@@ -3,7 +3,6 @@ import {Box, Colors, Icon, Caption, Subheading, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {
   displayNameForAssetKey,
   isSourceAsset,
@@ -248,8 +247,11 @@ const OpNamesDisplay = (props: {
 export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
-    ...AssetNodeConfigFragment
+    assetKey {
+      path
+    }
     description
+    partitionDefinition
     graphName
     opNames
     jobNames
@@ -261,10 +263,9 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
         name
       }
     }
-    ...AssetNodeFragment
     ...AssetNodeOpMetadataFragment
+    ...AssetNodeConfigFragment
   }
   ${ASSET_NODE_CONFIG_FRAGMENT}
-  ${ASSET_NODE_FRAGMENT}
   ${ASSET_NODE_OP_METADATA_FRAGMENT}
 `;
