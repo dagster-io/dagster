@@ -5,7 +5,7 @@ import dagster._check as check
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
-from .unresolved_job_definition import UnresolvedJobDefinition
+from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 
 class RepoRelativeTarget(NamedTuple):
@@ -21,7 +21,7 @@ class RepoRelativeTarget(NamedTuple):
 class DirectTarget(
     NamedTuple(
         "_DirectTarget",
-        [("target", Union[GraphDefinition, PipelineDefinition, UnresolvedJobDefinition])],
+        [("target", Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition])],
     )
 ):
     """
@@ -29,9 +29,11 @@ class DirectTarget(
     in to any repository the container is included in.
     """
 
-    def __new__(cls, target: Union[GraphDefinition, PipelineDefinition, UnresolvedJobDefinition]):
+    def __new__(
+        cls, target: Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]
+    ):
         check.inst_param(
-            target, "target", (GraphDefinition, PipelineDefinition, UnresolvedJobDefinition)
+            target, "target", (GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition)
         )
 
         if isinstance(target, PipelineDefinition) and not len(target.mode_definitions) == 1:
@@ -64,5 +66,5 @@ class DirectTarget(
         # open question on how to direct target subset pipeline
         return None
 
-    def load(self) -> Union[PipelineDefinition, GraphDefinition, UnresolvedJobDefinition]:
+    def load(self) -> Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
         return self.target

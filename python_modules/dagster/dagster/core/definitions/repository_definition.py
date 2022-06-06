@@ -30,7 +30,7 @@ from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
-from .unresolved_job_definition import UnresolvedJobDefinition
+from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
@@ -607,7 +607,7 @@ class CachingRepositoryData(RepositoryData):
 
             if isinstance(job, GraphDefinition):
                 repository_definitions["jobs"][key] = job.coerce_to_job()
-            elif isinstance(job, UnresolvedJobDefinition):
+            elif isinstance(job, UnresolvedAssetJobDefinition):
                 repository_definitions["jobs"][key] = job.resolve(
                     # TODO: once AssetDefs are on the repository, do this
                     assets=[],
@@ -631,7 +631,7 @@ class CachingRepositoryData(RepositoryData):
                 SensorDefinition,
                 "AssetGroup",
                 GraphDefinition,
-                UnresolvedJobDefinition,
+                UnresolvedAssetJobDefinition,
             ]
         ],
     ) -> "CachingRepositoryData":
@@ -646,8 +646,7 @@ class CachingRepositoryData(RepositoryData):
 
         pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
         coerced_graphs: Dict[str, JobDefinition] = {}
-        unresolved_jobs: Dict[str, UnresolvedJobDefinition] = {}
-        resolved_jobs: Dict[str, JobDefinition] = {}
+        unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition] = {}
         partition_sets: Dict[str, PartitionSetDefinition] = {}
         schedules: Dict[str, ScheduleDefinition] = {}
         sensors: Dict[str, SensorDefinition] = {}
@@ -711,6 +710,15 @@ class CachingRepositoryData(RepositoryData):
                     )
                 pipelines_or_jobs[coerced.name] = coerced
                 coerced_graphs[coerced.name] = coerced
+            elif isinstance(definition, UnresolvedAssetJobDefinition):
+                if definition.name in pipelines_or_jobs or definition.name in unresolved_jobs:
+                    raise DagsterInvalidDefinitionError(
+                        "Duplicate definition found for unresolved job '{name}'".format(
+                            name=definition.name
+                        )
+                    )
+                # we can only resolve these once we have all assets
+                unresolved_jobs[definition.name] = definition
             elif isinstance(definition, AssetGroup):
                 if combined_asset_group:
                     combined_asset_group += definition
@@ -742,38 +750,25 @@ class CachingRepositoryData(RepositoryData):
         else:
             source_assets_by_key = {}
 
-        # resolve all the UnresolvedJobDefinitions using the full set of assets
-        for name, unresolved_job_def in unresolved_jobs.items():
-            resolved_job = unresolved_job_def.resolve(assets, list(source_assets.values()))
-            resolved_jobs[name] = resolved_job
-            pipelines_or_jobs[name] = resolved_job
-
         for name, sensor_def in sensors.items():
             if sensor_def.has_loadable_targets():
                 targets = sensor_def.load_targets()
                 for target in targets:
                     _process_and_validate_target(
-                        sensor_def,
-                        coerced_graphs,
-                        resolved_jobs,
-                        pipelines_or_jobs,
-                        target,
-                        assets,
-                        list(source_assets.values()),
+                        sensor_def, coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
                     )
 
         for name, schedule_def in schedules.items():
             if schedule_def.has_loadable_target():
                 target = schedule_def.load_target()
                 _process_and_validate_target(
-                    schedule_def,
-                    coerced_graphs,
-                    resolved_jobs,
-                    pipelines_or_jobs,
-                    target,
-                    assets,
-                    list(source_assets.values()),
+                    schedule_def, coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
                 )
+
+        # resolve all the UnresolvedAssetJobDefinitions using the full set of assets
+        for name, unresolved_job_def in unresolved_jobs.items():
+            resolved_job = unresolved_job_def.resolve(assets, list(source_assets.values()))
+            pipelines_or_jobs[name] = resolved_job
 
         pipelines: Dict[str, PipelineDefinition] = {}
         jobs: Dict[str, JobDefinition] = {}
@@ -1235,13 +1230,11 @@ class RepositoryDefinition:
 def _process_and_validate_target(
     schedule_or_sensor_def: Union[SensorDefinition, ScheduleDefinition],
     coerced_graphs: Dict[str, JobDefinition],
-    resolved_jobs: Dict[str, JobDefinition],
+    unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition],
     pipelines_or_jobs: Dict[str, PipelineDefinition],
-    target: Union[GraphDefinition, PipelineDefinition, UnresolvedJobDefinition],
-    assets: Sequence["AssetsDefinition"],
-    source_assets: Sequence["SourceAsset"],
+    target: Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition],
 ):
-    # This function modifies the state of coerced_graphs and resolved_jobs
+    # This function modifies the state of coerced_graphs and unresolved_jobs
     targeter = (
         f"schedule '{schedule_or_sensor_def.name}'"
         if isinstance(schedule_or_sensor_def, ScheduleDefinition)
@@ -1265,28 +1258,31 @@ def _process_and_validate_target(
         coerced_job = target.coerce_to_job()
         coerced_graphs[target.name] = coerced_job
         pipelines_or_jobs[target.name] = coerced_job
-    elif isinstance(target, UnresolvedJobDefinition):
-        if target.name not in resolved_jobs:
+    elif isinstance(target, UnresolvedAssetJobDefinition):
+        if target.name not in unresolved_jobs:
             # Since this is am unresolved job we have to resolve, it is not possible to
             # be the same definition by reference equality
             if target.name in pipelines_or_jobs:
                 dupe_target_type = pipelines_or_jobs[target.name].target_type
                 warnings.warn(
                     _get_error_msg_for_target_conflict(
-                        targeter, "unresolved job", target.name, dupe_target_type
+                        targeter, "unresolved asset job", target.name, dupe_target_type
                     )
                 )
-        # TODO: error if target selection is not the same as the selection for the resolved job
-        resolved_job = target.resolve(assets, source_assets)
-        resolved_jobs[target.name] = resolved_job
-        pipelines_or_jobs[target.name] = resolved_job
+        elif unresolved_jobs[target.name].selection != target.selection:
+            warnings.warn(
+                _get_error_msg_for_target_conflict(
+                    targeter, "unresolved asset job", target.name, "unresolved asset job"
+                )
+            )
+        unresolved_jobs[target.name] = target
     else:
         if target.name in pipelines_or_jobs and pipelines_or_jobs[target.name] != target:
             dupe_target_type = (
                 "graph"
                 if target.name in coerced_graphs
-                else "unresolved job"
-                if target.name in resolved_jobs
+                else "unresolved asset job"
+                if target.name in unresolved_jobs
                 else pipelines_or_jobs[target.name].target_type
             )
             warnings.warn(

@@ -34,7 +34,7 @@ from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
 from .run_request import PipelineRunReaction, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
-from .unresolved_job_definition import UnresolvedJobDefinition
+from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
@@ -195,9 +195,9 @@ class SensorDefinition:
         mode: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
-        job: Optional[Union[GraphDefinition, JobDefinition, UnresolvedJobDefinition]] = None,
+        job: Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]] = None,
         jobs: Optional[
-            Sequence[Union[GraphDefinition, JobDefinition, UnresolvedJobDefinition]]
+            Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]
         ] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
@@ -322,7 +322,7 @@ class SensorDefinition:
         return self._targets
 
     @property
-    def job(self) -> Union[PipelineDefinition, GraphDefinition, UnresolvedJobDefinition]:
+    def job(self) -> Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
         if self._targets:
             if len(self._targets) == 1 and isinstance(self._targets[0], DirectTarget):
                 return self._targets[0].target
@@ -407,7 +407,7 @@ class SensorDefinition:
 
     def load_targets(
         self,
-    ) -> List[Union[PipelineDefinition, GraphDefinition, UnresolvedJobDefinition]]:
+    ) -> List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):
@@ -613,9 +613,9 @@ class AssetSensorDefinition(SensorDefinition):
         mode: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
-        job: Optional[Union[GraphDefinition, JobDefinition, UnresolvedJobDefinition]] = None,
+        job: Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]] = None,
         jobs: Optional[
-            Sequence[Union[GraphDefinition, JobDefinition, UnresolvedJobDefinition]]
+            Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]
         ] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
