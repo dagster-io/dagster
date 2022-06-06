@@ -92,9 +92,4 @@ CLI_COMMON_OPTIONS_CONFIG_SCHEMA = {
             "your dbt project configuration file."
         ),
     ),
-    "docs_url": Field(
-        config=StringSource,
-        is_required=False,
-        description="The url for where dbt docs are being served for this project.",
-    ),
 }

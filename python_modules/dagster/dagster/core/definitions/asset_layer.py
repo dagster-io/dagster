@@ -633,7 +633,7 @@ def build_asset_selection_job(
         warnings.simplefilter("ignore", category=ExperimentalWarning)
         asset_job = build_assets_job(
             name=name,
-            assets=included_assets,
+            assets=_resolve_cycles(included_assets),
             source_assets=excluded_assets,
             resource_defs=resource_defs,
             executor_def=executor_def,
@@ -688,3 +688,360 @@ def _subset_assets_defs(
     ]
 
     return list(included_assets), all_excluded_assets
+
+
+def _resolve_cycles(assets_defs: Sequence["AssetsDefinition"]) -> Sequence["AssetsDefinition"]:
+    """
+    DFS starting at root nodes to color the asset dependency graph. Each time you leave your
+    current AssetsDefinition, the color increments.
+
+    At the end of this process, we'll have a coloring for the asset graph such that any asset which
+    is downstream of another asset via a different AssetsDefinition will be guaranteed to have
+    a different (greater) color.
+
+    Once we have our coloring, if any AssetsDefinition contains assets with different colors,
+    we split that AssetsDefinition into a subset for each individual color.
+
+    This ensures that no asset that shares a node with another asset will be downstream of
+    that asset via a different node (i.e. there will be no cycles).
+    """
+    from dagster.core.selector.subset_selector import generate_asset_dep_graph
+
+    # get asset dependencies
+    asset_deps = generate_asset_dep_graph(assets_defs)
+    print(asset_deps)
+
+    # index AssetsDefinitions by their asset names
+    assets_defs_by_asset_name = {}
+    for assets_def in assets_defs:
+        for asset_key in assets_def.asset_keys:
+            assets_defs_by_asset_name[asset_key.to_user_string()] = assets_def
+
+    # color for each asset
+    colors = {}
+
+    # recursively color an asset and all of its downstream assets
+    def _dfs(name, cur_color):
+        colors[name] = cur_color
+        cur_node_asset_keys = assets_defs_by_asset_name[name].asset_keys
+        for downstream_name in asset_deps["downstream"].get(name):
+            # if the downstream asset is in the current node, keep the same color
+            if AssetKey.from_user_string(downstream_name) in cur_node_asset_keys:
+                new_color = cur_color
+            else:
+                new_color = cur_color + 1
+
+            # if current color of the downstream asset is less than the new color, re-do dfs
+            if colors.get(downstream_name, -1) < new_color:
+                _dfs(downstream_name, new_color)
+
+    # dfs for each root node
+    for name, upstream_names in asset_deps["upstream"].items():
+        if not upstream_names or all(
+            upstream_name not in asset_deps["upstream"] for upstream_name in upstream_names
+        ):
+            _dfs(name, 0)
+    print("---------------")
+    print(colors)
+
+    color_mapping_by_assets_defs = defaultdict(lambda: defaultdict(set))
+    for name, color in colors.items():
+        color_mapping_by_assets_defs[assets_defs_by_asset_name[name]][color].add(
+            AssetKey.from_user_string(name)
+        )
+
+    print(color_mapping_by_assets_defs)
+    ret = []
+    for assets_def, color_mapping in color_mapping_by_assets_defs.items():
+        if len(color_mapping) == 1:
+            ret.append(assets_def)
+        else:
+            for asset_keys in color_mapping.values():
+                ret.append(assets_def.subset_for(asset_keys))
+    for assets_def in ret:
+        print(assets_def.asset_keys)
+    return ret
+
+
+def _resolve_cycles(assets_defs: Sequence["AssetsDefinition"]) -> Sequence["AssetsDefinition"]:
+    """
+    DFS starting at root nodes to color the asset dependency graph. Each time you leave your
+    current AssetsDefinition, the color increments.
+
+    At the end of this process, we'll have a coloring for the asset graph such that any asset which
+    is downstream of another asset via a different AssetsDefinition will be guaranteed to have
+    a different (greater) color.
+
+    Once we have our coloring, if any AssetsDefinition contains assets with different colors,
+    we split that AssetsDefinition into a subset for each individual color.
+
+    This ensures that no asset that shares a node with another asset will be downstream of
+    that asset via a different node (i.e. there will be no cycles).
+    """
+    from dagster.core.selector.subset_selector import generate_asset_dep_graph
+
+    # get asset dependencies
+    asset_deps = generate_asset_dep_graph(assets_defs)
+    print(asset_deps)
+
+    # index AssetsDefinitions by their asset names
+    assets_defs_by_asset_name = {}
+    for assets_def in assets_defs:
+        for asset_key in assets_def.asset_keys:
+            assets_defs_by_asset_name[asset_key.to_user_string()] = assets_def
+
+    # color for each asset
+    colors = {}
+
+    # recursively color an asset and all of its downstream assets
+    def _dfs(name, cur_color):
+        colors[name] = cur_color
+        cur_node_asset_keys = assets_defs_by_asset_name[name].asset_keys
+        for downstream_name in asset_deps["downstream"][name]:
+            # if the downstream asset is in the current node, keep the same color
+            if AssetKey.from_user_string(downstream_name) in cur_node_asset_keys:
+                new_color = cur_color
+            else:
+                new_color = cur_color + 1
+
+            # if current color of the downstream asset is less than the new color, re-do dfs
+            if colors.get(downstream_name, -1) < new_color:
+                _dfs(downstream_name, new_color)
+
+    # dfs for each root node
+    for name, upstream_names in asset_deps["upstream"].items():
+        if not upstream_names or all(
+            upstream_name not in asset_deps["upstream"] for upstream_name in upstream_names
+        ):
+            _dfs(name, 0)
+
+    color_mapping_by_assets_defs = defaultdict(lambda: defaultdict(set))
+    for name, color in colors.items():
+        color_mapping_by_assets_defs[assets_defs_by_asset_name[name]][color].add(
+            AssetKey.from_user_string(name)
+        )
+
+    print(color_mapping_by_assets_defs)
+    ret = []
+    for assets_def, color_mapping in color_mapping_by_assets_defs.items():
+        if len(color_mapping) == 1:
+            ret.append(assets_def)
+        else:
+            for asset_keys in color_mapping.values():
+                ret.append(assets_def.subset_for(asset_keys))
+    for assets_def in ret:
+        print(assets_def.asset_keys)
+    return ret
+
+
+def _resolve_cycles(assets_defs: Sequence["AssetsDefinition"]) -> Sequence["AssetsDefinition"]:
+    """
+    DFS starting at root nodes to color the asset dependency graph. Each time you leave your
+    current AssetsDefinition, the color increments.
+
+    At the end of this process, we'll have a coloring for the asset graph such that any asset which
+    is downstream of another asset via a different AssetsDefinition will be guaranteed to have
+    a different (greater) color.
+
+    Once we have our coloring, if any AssetsDefinition contains assets with different colors,
+    we split that AssetsDefinition into a subset for each individual color.
+
+    This ensures that no asset that shares a node with another asset will be downstream of
+    that asset via a different node (i.e. there will be no cycles).
+    """
+    from dagster.core.selector.subset_selector import generate_asset_dep_graph
+
+    # get asset dependencies
+    asset_deps = generate_asset_dep_graph(assets_defs)
+    print(asset_deps)
+
+    # index AssetsDefinitions by their asset names
+    assets_defs_by_asset_name = {}
+    for assets_def in assets_defs:
+        for asset_key in assets_def.asset_keys:
+            assets_defs_by_asset_name[asset_key.to_user_string()] = assets_def
+
+    # color for each asset
+    colors = {}
+
+    # recursively color an asset and all of its downstream assets
+    def _dfs(name, cur_color):
+        colors[name] = cur_color
+        cur_node_asset_keys = assets_defs_by_asset_name[name].asset_keys
+        for downstream_name in asset_deps["downstream"][name]:
+            # if the downstream asset is in the current node, keep the same color
+            if AssetKey.from_user_string(downstream_name) in cur_node_asset_keys:
+                new_color = cur_color
+            else:
+                new_color = cur_color + 1
+
+            # if current color of the downstream asset is less than the new color, re-do dfs
+            if colors.get(downstream_name, -1) < new_color:
+                _dfs(downstream_name, new_color)
+
+    # dfs for each root node
+    for name, upstream_names in asset_deps["upstream"].items():
+        if not upstream_names or all(
+            upstream_name not in asset_deps["upstream"] for upstream_name in upstream_names
+        ):
+            _dfs(name, 0)
+
+    color_mapping_by_assets_defs = defaultdict(lambda: defaultdict(set))
+    for name, color in colors.items():
+        color_mapping_by_assets_defs[assets_defs_by_asset_name[name]][color].add(
+            AssetKey.from_user_string(name)
+        )
+
+    print(color_mapping_by_assets_defs)
+    ret = []
+    for assets_def, color_mapping in color_mapping_by_assets_defs.items():
+        if len(color_mapping) == 1:
+            ret.append(assets_def)
+        else:
+            for asset_keys in color_mapping.values():
+                ret.append(assets_def.subset_for(asset_keys))
+    for assets_def in ret:
+        print(assets_def.asset_keys)
+    return ret
+
+
+def _resolve_cycles(assets_defs: Sequence["AssetsDefinition"]) -> Sequence["AssetsDefinition"]:
+    """
+    DFS starting at root nodes to color the asset dependency graph. Each time you leave your
+    current AssetsDefinition, the color increments.
+
+    At the end of this process, we'll have a coloring for the asset graph such that any asset which
+    is downstream of another asset via a different AssetsDefinition will be guaranteed to have
+    a different (greater) color.
+
+    Once we have our coloring, if any AssetsDefinition contains assets with different colors,
+    we split that AssetsDefinition into a subset for each individual color.
+
+    This ensures that no asset that shares a node with another asset will be downstream of
+    that asset via a different node (i.e. there will be no cycles).
+    """
+    from dagster.core.selector.subset_selector import generate_asset_dep_graph
+
+    # get asset dependencies
+    asset_deps = generate_asset_dep_graph(assets_defs)
+    print(asset_deps)
+
+    # index AssetsDefinitions by their asset names
+    assets_defs_by_asset_name = {}
+    for assets_def in assets_defs:
+        for asset_key in assets_def.asset_keys:
+            assets_defs_by_asset_name[asset_key.to_user_string()] = assets_def
+
+    # color for each asset
+    colors = {}
+
+    # recursively color an asset and all of its downstream assets
+    def _dfs(name, cur_color):
+        colors[name] = cur_color
+        cur_node_asset_keys = assets_defs_by_asset_name[name].asset_keys
+        for downstream_name in asset_deps["downstream"][name]:
+            # if the downstream asset is in the current node, keep the same color
+            if AssetKey.from_user_string(downstream_name) in cur_node_asset_keys:
+                new_color = cur_color
+            else:
+                new_color = cur_color + 1
+
+            # if current color of the downstream asset is less than the new color, re-do dfs
+            if colors.get(downstream_name, -1) < new_color:
+                _dfs(downstream_name, new_color)
+
+    # dfs for each root node
+    for name, upstream_names in asset_deps["upstream"].items():
+        if not upstream_names or all(
+            upstream_name not in asset_deps["upstream"] for upstream_name in upstream_names
+        ):
+            _dfs(name, 0)
+
+    color_mapping_by_assets_defs = defaultdict(lambda: defaultdict(set))
+    for name, color in colors.items():
+        color_mapping_by_assets_defs[assets_defs_by_asset_name[name]][color].add(
+            AssetKey.from_user_string(name)
+        )
+
+    print(color_mapping_by_assets_defs)
+    ret = []
+    for assets_def, color_mapping in color_mapping_by_assets_defs.items():
+        if len(color_mapping) == 1:
+            ret.append(assets_def)
+        else:
+            for asset_keys in color_mapping.values():
+                ret.append(assets_def.subset_for(asset_keys))
+    for assets_def in ret:
+        print(assets_def.asset_keys)
+    return ret
+
+
+def _resolve_cycles(assets_defs: Sequence["AssetsDefinition"]) -> Sequence["AssetsDefinition"]:
+    """
+    DFS starting at root nodes to color the asset dependency graph. Each time you leave your
+    current AssetsDefinition, the color increments.
+
+    At the end of this process, we'll have a coloring for the asset graph such that any asset which
+    is downstream of another asset via a different AssetsDefinition will be guaranteed to have
+    a different (greater) color.
+
+    Once we have our coloring, if any AssetsDefinition contains assets with different colors,
+    we split that AssetsDefinition into a subset for each individual color.
+
+    This ensures that no asset that shares a node with another asset will be downstream of
+    that asset via a different node (i.e. there will be no cycles).
+    """
+    from dagster.core.selector.subset_selector import generate_asset_dep_graph
+
+    # get asset dependencies
+    asset_deps = generate_asset_dep_graph(assets_defs)
+    print(asset_deps)
+
+    # index AssetsDefinitions by their asset names
+    assets_defs_by_asset_name = {}
+    for assets_def in assets_defs:
+        for asset_key in assets_def.asset_keys:
+            assets_defs_by_asset_name[asset_key.to_user_string()] = assets_def
+
+    # color for each asset
+    colors = {}
+
+    # recursively color an asset and all of its downstream assets
+    def _dfs(name, cur_color):
+        colors[name] = cur_color
+        cur_node_asset_keys = assets_defs_by_asset_name[name].asset_keys
+        for downstream_name in asset_deps["downstream"][name]:
+            # if the downstream asset is in the current node, keep the same color
+            if AssetKey.from_user_string(downstream_name) in cur_node_asset_keys:
+                new_color = cur_color
+            else:
+                new_color = cur_color + 1
+
+            # if current color of the downstream asset is less than the new color, re-do dfs
+            if colors.get(downstream_name, -1) < new_color:
+                _dfs(downstream_name, new_color)
+
+    # dfs for each root node
+    for name, upstream_names in asset_deps["upstream"].items():
+        if not upstream_names or all(
+            upstream_name not in asset_deps["upstream"] for upstream_name in upstream_names
+        ):
+            _dfs(name, 0)
+
+    color_mapping_by_assets_defs = defaultdict(lambda: defaultdict(set))
+    for name, color in colors.items():
+        color_mapping_by_assets_defs[assets_defs_by_asset_name[name]][color].add(
+            AssetKey.from_user_string(name)
+        )
+
+    print(color_mapping_by_assets_defs)
+    ret = []
+    for assets_def, color_mapping in color_mapping_by_assets_defs.items():
+        if len(color_mapping) == 1:
+            ret.append(assets_def)
+        else:
+            for asset_keys in color_mapping.values():
+                ret.append(assets_def.subset_for(asset_keys))
+    for assets_def in ret:
+        print(assets_def.asset_keys)
+    return ret

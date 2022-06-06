@@ -2,12 +2,22 @@ import json
 from unittest.mock import MagicMock
 
 import pytest
+import psycopg2
 from dagster_dbt import dbt_cli_resource
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError
 from dagster_dbt.types import DbtOutput
 
-from dagster import AssetGroup, AssetKey, MetadataEntry, ResourceDefinition, asset, repository
+from dagster import (
+    AssetGroup,
+    AssetKey,
+    MetadataEntry,
+    ResourceDefinition,
+    asset,
+    repository,
+    io_manager,
+    IOManager,
+)
 from dagster.core.asset_defs import build_assets_job
 from dagster.utils import file_relative_path
 
@@ -369,99 +379,83 @@ def test_subsetting(
     assert all_keys == expected_keys
 
 
-@pytest.mark.parametrize("load_from_manifest", [True, False])
-@pytest.mark.parametrize(
-    "select,expected_asset_names",
-    [
-        (
-            "*",
-            {
-                "sort_by_calories",
-                "sort_cold_cereals_by_calories",
-                "least_caloric",
-                "sort_hot_cereals_by_calories",
-            },
-        ),
-        (
-            "+least_caloric",
-            {"sort_by_calories", "least_caloric"},
-        ),
-        (
-            "sort_by_calories least_caloric",
-            {"sort_by_calories", "least_caloric"},
-        ),
-        (
-            "tag:bar+",
-            {
-                "sort_by_calories",
-                "sort_cold_cereals_by_calories",
-                "least_caloric",
-                "sort_hot_cereals_by_calories",
-            },
-        ),
-        (
-            "tag:foo",
-            {"sort_by_calories", "sort_cold_cereals_by_calories"},
-        ),
-        (
-            "tag:foo,tag:bar",
-            {"sort_by_calories"},
-        ),
-    ],
-)
-def test_dbt_selects(
-    dbt_build,
-    conn_string,
-    test_project_dir,
-    dbt_config_dir,
-    load_from_manifest,
-    select,
-    expected_asset_names,
-):  # pylint: disable=unused-argument
-    if load_from_manifest:
-        manifest_path = file_relative_path(__file__, "sample_manifest.json")
-        with open(manifest_path, "r", encoding="utf8") as f:
-            manifest_json = json.load(f)
+def test_python_interleaving(
+    conn_string, dbt_python_sources, test_python_project_dir, dbt_python_config_dir
+):
+    dbt_assets = load_assets_from_dbt_project(test_python_project_dir, dbt_python_config_dir)
 
-        dbt_assets = load_assets_from_dbt_manifest(manifest_json, select=select)
-    else:
-        dbt_assets = load_assets_from_dbt_project(
-            project_dir=test_project_dir, profiles_dir=dbt_config_dir, select=select
-        )
+    @io_manager
+    def test_io_manager(context):
+        class TestIOManager(IOManager):
+            def handle_output(self, context, obj):
+                # handling dbt output
+                if obj is None:
+                    return
+                schema, table = context.asset_key.path
+                try:
+                    conn = psycopg2.connect(conn_string)
+                    cur = conn.cursor()
+                    cur.execute(
+                        f'CREATE TABLE IF NOT EXISTS "{schema}"."{table}" (user_id integer, is_bot bool)'
+                    )
+                    cur.executemany(f'INSERT INTO "{schema}"."{table}"' + " VALUES(%s,%s)", obj)
+                    conn.commit()
+                    cur.close()
+                except (Exception, psycopg2.DatabaseError) as error:
+                    print(error)
+                    raise (error)
+                finally:
+                    if conn is not None:
+                        conn.close()
 
-    expected_asset_keys = {AssetKey(["test-schema", key]) for key in expected_asset_names}
-    assert dbt_assets[0].asset_keys == expected_asset_keys
+            def load_input(self, context):
+                schema, table = context.asset_key.path
+                result = None
+                conn = None
+                try:
+                    conn = psycopg2.connect(conn_string)
+                    cur = conn.cursor()
+                    cur.execute(f'SELECT * FROM "{schema}"."{table}"')
+                    result = cur.fetchall()
+                except (Exception, psycopg2.DatabaseError) as error:
+                    print(error)
+                    raise error
+                finally:
+                    if conn is not None:
+                        conn.close()
+                return result
 
-    result = (
-        AssetGroup(
-            dbt_assets,
-            resource_defs={
-                "dbt": dbt_cli_resource.configured(
-                    {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
-                )
-            },
-        )
-        .build_job(name="dbt_job")
-        .execute_in_process()
-    )
+        return TestIOManager()
 
+    @asset(namespace="test-python-schema")
+    def bot_labeled_users(cleaned_users):
+        # super advanced bot labeling algorithm
+        return [(uid, uid % 5 == 0) for _, uid in cleaned_users]
+
+    job = AssetGroup(
+        [*dbt_assets, bot_labeled_users],
+        resource_defs={
+            "io_manager": test_io_manager,
+            "dbt": dbt_cli_resource.configured(
+                {"project_dir": test_python_project_dir, "profiles_dir": dbt_python_config_dir}
+            ),
+        },
+    ).build_job("interleave_job")
+
+    result = job.execute_in_process()
     assert result.success
     all_keys = {
         event.event_specific_data.materialization.asset_key
         for event in result.all_events
         if event.event_type_value == "ASSET_MATERIALIZATION"
     }
-    assert all_keys == expected_asset_keys
-
-
-@pytest.mark.parametrize(
-    "select,error_match",
-    [("tag:nonexist", "No dbt models match"), ("asjdlhalskujh:z", "not a valid method name")],
-)
-def test_static_select_invalid_selection(select, error_match):
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
-
-    with pytest.raises(Exception, match=error_match):
-        load_assets_from_dbt_manifest(manifest_json, select=select)
+    expected_asset_names = [
+        "cleaned_events",
+        "cleaned_users",
+        "daily_aggregated_events",
+        "daily_aggregated_users",
+        "bot_labeled_users",
+        "bot_labeled_events",
+    ]
+    expected_keys = {AssetKey(["test-python-schema", name]) for name in expected_asset_names}
+    assert all_keys == expected_keys

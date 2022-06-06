@@ -576,7 +576,7 @@ def dbt_rpc_resource(context) -> DbtRpcResource:
     """This resource defines a dbt RPC client.
 
     To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
+    <https://docs.dagster.io/overview/configuration#configured>`_ method.
 
     Examples:
 
@@ -613,7 +613,7 @@ def dbt_rpc_sync_resource(
     and waits for the request to complete before returning.
 
     To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
+    <https://docs.dagster.io/overview/configuration#configured>`_ method.
 
     Examples:
 

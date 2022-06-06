@@ -29,14 +29,12 @@ class DbtCliResource(DbtResource):
         ignore_handled_error: bool,
         target_path: str,
         logger: Optional[Any] = None,
-        docs_url: Optional[str] = None,
     ):
         self._default_flags = default_flags
         self._executable = executable
         self._warn_error = warn_error
         self._ignore_handled_error = ignore_handled_error
         self._target_path = target_path
-        self._docs_url = docs_url
         super().__init__(logger)
 
     @property
@@ -89,7 +87,6 @@ class DbtCliResource(DbtResource):
             warn_error=self._warn_error,
             ignore_handled_error=self._ignore_handled_error,
             target_path=self._target_path,
-            docs_url=self._docs_url,
         )
 
     def compile(
@@ -307,7 +304,7 @@ def dbt_cli_resource(context) -> DbtCliResource:
     """This resource defines a dbt CLI interface.
 
     To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
+    <https://docs.dagster.io/overview/configuration#configured>`_ method.
 
     Examples:
 
@@ -355,5 +352,4 @@ def dbt_cli_resource(context) -> DbtCliResource:
         ignore_handled_error=context.resource_config["ignore_handled_error"],
         target_path=context.resource_config["target_path"],
         logger=context.log,
-        docs_url=context.resource_config.get("docs_url"),
     )

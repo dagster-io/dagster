@@ -1,7 +1,7 @@
 import json
 import os
 import subprocess
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import dagster._check as check
 from dagster.core.utils import coerce_valid_log_level
@@ -23,7 +23,6 @@ def execute_cli(
     warn_error: bool,
     ignore_handled_error: bool,
     target_path: str,
-    docs_url: Optional[str] = None,
 ) -> DbtCliOutput:
     """Executes a command on the dbt CLI in a subprocess."""
     check.str_param(executable, "executable")
@@ -112,7 +111,6 @@ def execute_cli(
         raw_output=raw_output,
         logs=logs,
         result=run_results,
-        docs_url=docs_url,
     )
 
 
