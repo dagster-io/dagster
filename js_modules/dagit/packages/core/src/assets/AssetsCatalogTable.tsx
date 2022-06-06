@@ -22,7 +22,7 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
-import {toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {AssetGroupSelector} from '../types/globalTypes';
@@ -137,20 +137,7 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
     () => displayed.map<AssetKey>((a) => ({path: a.key.path})),
     [displayed],
   );
-  const displayedDefinitionMap = React.useMemo(
-    () =>
-      Object.fromEntries(
-        displayed
-          .filter((n) => n.definition)
-          .map((n) => [toGraphId(n.key), {definition: n.definition!}]),
-      ),
-    [displayed],
-  );
-
-  const {liveDataByNode, liveResult} = useLiveDataForAssetKeys(
-    displayedDefinitionMap,
-    displayedKeys,
-  );
+  const {liveDataByNode, liveResult} = useLiveDataForAssetKeys(displayedKeys);
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(query, FIFTEEN_SECONDS),
