@@ -383,7 +383,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         ),
     ],
 )
-def test_asset_group_build_subset_joob_errors(job_selection, use_multi, expected_error):
+def test_asset_group_build_subset_job_errors(job_selection, use_multi, expected_error):
     group = AssetGroup(_get_assets_defs(use_multi=use_multi))
 
     if expected_error:
