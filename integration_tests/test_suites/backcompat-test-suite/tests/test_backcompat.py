@@ -20,10 +20,6 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 EARLIEST_TESTED_RELEASE = os.getenv("EARLIEST_TESTED_RELEASE")
 MOST_RECENT_RELEASE_PLACEHOLDER = "most_recent"
 
-print(f"ENVIRON: job id {os.getenv('BUILDKITE_JOB_ID')} is buildkite {os.getenv('BUILDKITE')}")
-
-JOB_ID = os.getenv('BUILDKITE_JOB_ID')
-
 pytest_plugins = ["dagster_test.fixtures"]
 
 
@@ -115,12 +111,10 @@ def docker_service_up(docker_compose_file, build_args=None):
                     "buildkite-agent",
                     "artifact",
                     "upload",
-                    "--job {job}".format(job=JOB_ID),
                     "{dir}/**/*".format(dir=logs_dir),
                 ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                env=os.environ.copy(),
             )
             stdout, stderr = p.communicate()
             print("Buildkite artifact added with stdout: ", stdout)
