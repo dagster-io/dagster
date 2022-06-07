@@ -85,7 +85,6 @@ export const Default = () => {
       )}
       noResults={<MenuItem disabled={true} text="No presets." />}
       onItemSelect={(item) => setSelectedItem(item)}
-      popoverProps={{modifiers: {offset: {enabled: true, offset: '-2px 8px'}}}}
       selectedItem={selectedItem}
     />
   );

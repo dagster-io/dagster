@@ -1,5 +1,6 @@
 load_from:
-  - python_package: hacker_news
-    # Scopes down the repository to use in this Dagster deployment - this can be varied in
-    # different environments to allow the same code to be used in different environments
-    attribute: hacker_news_prod
+  - python_package:
+      package_name: hacker_news
+      # Scopes down the repository to use in this Dagster deployment - this can be varied in
+      # different environments to allow the same code to be used in different environments
+      attribute: hacker_news_prod

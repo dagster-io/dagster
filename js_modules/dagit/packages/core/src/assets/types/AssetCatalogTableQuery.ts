@@ -30,6 +30,7 @@ export interface AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes_defi
   id: string;
   opNames: string[];
   jobNames: string[];
+  groupName: string | null;
   partitionDefinition: string | null;
   description: string | null;
   repository: AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes_definition_repository;
