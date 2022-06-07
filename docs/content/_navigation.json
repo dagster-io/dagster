@@ -35,16 +35,12 @@
             "path": "/tutorial/intro-tutorial/setup"
           },
           {
-            "title": "Defining An Asset",
-            "path": "/tutorial/intro-tutorial/assets/defining-an-asset"
+            "title": "Assets",
+            "path": "/tutorial/intro-tutorial/defining-an-asset"
           },
           {
-            "title": "Building Graphs of Assets",
-            "path": "/tutorial/intro-tutorial/assets/asset-graph"
-          },
-          {
-            "title": "Testing Assets",
-            "path": "/tutorial/intro-tutorial/assets/testing-assets"
+            "title": "Ops and Jobs",
+            "path": "/tutorial/intro-tutorial/ops-jobs/single-op-job"
           }
         ]
       },
