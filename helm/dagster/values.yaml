@@ -692,7 +692,7 @@ postgresql:
   # When set, overrides the default `postgresql` scheme for the connection string.
   # (e.g., set to `postgresql+pg8000` to use the `pg8000` library).
   # See: https://docs.sqlalchemy.org/en/13/dialects/postgresql.html#dialect-postgresql
-  postgresqlScheme: "postgresql"
+  postgresqlScheme: ""
 
   service:
     port: 5432

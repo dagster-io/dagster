@@ -7,5 +7,7 @@ postgres_db:
   db_name: {{ .Values.postgresql.postgresqlDatabase	}}
   port: {{ .Values.postgresql.service.port }}
   params: {{- .Values.postgresql.postgresqlParams | toYaml | nindent 4 }}
+  {{- if .Values.postgresql.postgresqlScheme }}
   scheme: {{ .Values.postgresql.postgresqlScheme }}
+  {{- end }}
 {{- end }}
