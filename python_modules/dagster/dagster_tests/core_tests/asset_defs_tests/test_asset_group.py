@@ -759,10 +759,10 @@ def test_job_with_reserved_name():
     def the_graph():
         pass
 
-    the_job = the_graph.to_job(name="__ASSET_GROUP")
+    the_job = the_graph.to_job(name="__ASSET_JOB")
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Attempted to provide job called __ASSET_GROUP to repository, which is a reserved name.",
+        match="Attempted to provide job called __ASSET_JOB to repository, which is a reserved name.",
     ):
 
         @repository
@@ -871,9 +871,9 @@ def test_multiple_partitions_defs():
     jobs = group.get_base_jobs()
     assert len(jobs) == 3
     assert {job_def.name for job_def in jobs} == {
-        "__ASSET_GROUP_0",
-        "__ASSET_GROUP_1",
-        "__ASSET_GROUP_2",
+        "__ASSET_JOB_0",
+        "__ASSET_JOB_1",
+        "__ASSET_JOB_2",
     }
     assert {
         frozenset([node_def.name for node_def in job_def.all_node_defs]) for job_def in jobs

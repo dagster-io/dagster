@@ -40,7 +40,8 @@ from .assets import AssetsDefinition
 from .assets_job import build_assets_job
 from .source_asset import SourceAsset
 
-ASSET_GROUP_BASE_JOB_PREFIX = "__ASSET_GROUP"
+# Prefix for auto created jobs that are used to materialize assets
+ASSET_BASE_JOB_PREFIX = "__ASSET_JOB"
 
 
 class AssetGroup:
@@ -147,7 +148,7 @@ class AssetGroup:
 
     @staticmethod
     def is_base_job_name(name) -> bool:
-        return name.startswith(ASSET_GROUP_BASE_JOB_PREFIX)
+        return name.startswith(ASSET_BASE_JOB_PREFIX)
 
     def build_job(
         self,
@@ -434,7 +435,7 @@ class AssetGroup:
             if len(assets_by_partitions_def.keys()) == 0 or assets_by_partitions_def.keys() == {
                 None
             }:
-                return [self.build_job(ASSET_GROUP_BASE_JOB_PREFIX)]
+                return [self.build_job(ASSET_BASE_JOB_PREFIX)]
             else:
                 unpartitioned_assets = assets_by_partitions_def.get(None, [])
                 jobs = []
@@ -446,7 +447,7 @@ class AssetGroup:
                     if partitions_def is not None:
                         jobs.append(
                             build_assets_job(
-                                f"{ASSET_GROUP_BASE_JOB_PREFIX}_{i}",
+                                f"{ASSET_BASE_JOB_PREFIX}_{i}",
                                 assets=assets_with_partitions + unpartitioned_assets,
                                 source_assets=[*self.source_assets, *self.assets],
                                 resource_defs=self.resource_defs,
