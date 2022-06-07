@@ -57,6 +57,7 @@ type DagitQuery {
   assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
   assetNodes(
+    group: AssetGroupSelector
     pipeline: PipelineSelector
     assetKeys: [AssetKeyInput!]
     loadMaterializations: Boolean = false
@@ -69,7 +70,8 @@ type DagitQuery {
     limit: Int
   ): PartitionBackfillsOrError!
   permissions: [GraphenePermission!]!
-  assetsLatestInfo(assetKeys: [AssetKeyInput!]): [AssetLatestInfo!]!
+  assetsLatestInfo(assetKeys: [AssetKeyInput!]!): [AssetLatestInfo!]!
+  logsForRun(runId: ID!, afterCursor: String, limit: Int): EventConnectionOrError!
 }
 
 union RepositoriesOrError = RepositoryConnection | PythonError
@@ -395,7 +397,7 @@ type Run implements PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  eventConnection(afterCursor: String): GrapheneEventConnection!
+  eventConnection(afterCursor: String): EventConnection!
   assetSelection: [AssetKey!]
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
@@ -431,7 +433,7 @@ interface PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  eventConnection(afterCursor: String): GrapheneEventConnection!
+  eventConnection(afterCursor: String): EventConnection!
 }
 
 type RepositoryOrigin {
@@ -658,7 +660,7 @@ type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
   partition: String
 }
 
-type GrapheneEventConnection {
+type EventConnection {
   events: [DagsterRunEvent!]!
   cursor: String!
   hasMore: Boolean!
@@ -1945,6 +1947,16 @@ input AssetKeyInput {
   path: [String!]!
 }
 
+"""
+This type represents the fields necessary to identify
+        an asset group.
+"""
+input AssetGroupSelector {
+  groupName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
 union AssetNodeOrError = AssetNode | AssetNotFoundError
 
 union PartitionBackfillOrError = PartitionBackfill | PythonError
@@ -1967,6 +1979,8 @@ type AssetLatestInfo {
   inProgressRunIds: [String!]!
   latestRun: Run
 }
+
+union EventConnectionOrError = EventConnection | RunNotFoundError | PythonError
 
 """
 Mutations to programatically interact with your Dagster instance.

@@ -4,12 +4,20 @@ import os
 import subprocess
 import tempfile
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 
 from dagster import AssetKey, AssetObservation, Output, job, op
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.utils import file_relative_path
+
+
+def get_columns(instance, table_name: str):
+    return set(c["name"] for c in inspect(instance.run_storage._engine).get_columns(table_name))
+
+
+def get_indexes(instance, table_name: str):
+    return set(c["name"] for c in inspect(instance.run_storage._engine).get_indexes(table_name))
 
 
 def _reconstruct_from_file(hostname, conn_string, path, _username="root", _password="test"):
@@ -171,3 +179,32 @@ def test_jobs_selector_id_migration(hostname, conn_string):
                 .where(JobTickTable.c.selector_id.isnot(None))
             )[0][0]
             assert migrated_tick_count == legacy_tick_count
+
+
+def test_add_bulk_actions_columns(hostname, conn_string):
+    new_columns = {"selector_id", "action_type"}
+    new_indexes = {"idx_bulk_actions_action_type", "idx_bulk_actions_selector_id"}
+
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        # use an old snapshot, it has the bulk actions table but not the new columns
+        file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration.sql"),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+
+            assert get_columns(instance, "bulk_actions") & new_columns == set()
+            assert get_indexes(instance, "bulk_actions") & new_indexes == set()
+
+            instance.upgrade()
+            assert new_columns <= get_columns(instance, "bulk_actions")
+            assert new_indexes <= get_indexes(instance, "bulk_actions")

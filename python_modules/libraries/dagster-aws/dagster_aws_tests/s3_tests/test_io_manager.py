@@ -1,7 +1,9 @@
-from dagster_aws.s3.io_manager import s3_pickle_asset_io_manager, s3_pickle_io_manager
+from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_aws.s3.utils import construct_s3_client
 
 from dagster import (
+    GraphIn,
+    GraphOut,
     In,
     Int,
     Out,
@@ -10,10 +12,12 @@ from dagster import (
     VersionStrategy,
     asset,
     build_assets_job,
+    graph,
     job,
     op,
     resource,
 )
+from dagster.core.asset_defs.assets import AssetsDefinition
 from dagster.core.test_utils import instance_for_test
 
 
@@ -121,13 +125,28 @@ def test_memoization_s3_io_manager(mock_s3_bucket):
 
 
 def define_assets_job(bucket):
+    @op
+    def first_op(first_input):
+        assert first_input == 2
+        return first_input * 2
+
+    @op
+    def second_op(second_input):
+        assert second_input == 4
+        return second_input + 3
+
     @asset
     def asset1():
         return 1
 
     @asset
     def asset2(asset1):
+        assert asset1 == 1
         return asset1 + 1
+
+    @graph(ins={"asset2": GraphIn()}, out={"asset3": GraphOut()})
+    def graph_asset(asset2):
+        return second_op(first_op(asset2))
 
     @asset(partitions_def=StaticPartitionsDefinition(["apple", "orange"]))
     def partitioned():
@@ -135,15 +154,15 @@ def define_assets_job(bucket):
 
     return build_assets_job(
         name="assets",
-        assets=[asset1, asset2, partitioned],
+        assets=[asset1, asset2, AssetsDefinition.from_graph(graph_asset), partitioned],
         resource_defs={
-            "io_manager": s3_pickle_asset_io_manager.configured({"s3_bucket": bucket}),
+            "io_manager": s3_pickle_io_manager.configured({"s3_bucket": bucket}),
             "s3": s3_test_resource,
         },
     )
 
 
-def test_s3_pickle_asset_io_manager_execution(mock_s3_bucket):
+def test_s3_pickle_io_manager_asset_execution(mock_s3_bucket):
     assert not len(list(mock_s3_bucket.objects.all()))
     inty_job = define_assets_job(mock_s3_bucket.name)
 
@@ -151,11 +170,18 @@ def test_s3_pickle_asset_io_manager_execution(mock_s3_bucket):
 
     assert result.output_for_node("asset1") == 1
     assert result.output_for_node("asset2") == 2
+    assert result.output_for_node("graph_asset.first_op") == 4
+    assert result.output_for_node("graph_asset.second_op") == 7
 
     objects = list(mock_s3_bucket.objects.all())
-    assert len(objects) == 3
+    assert len(objects) == 5
     assert {(o.bucket_name, o.key) for o in objects} == {
         ("test-bucket", "dagster/asset1"),
         ("test-bucket", "dagster/asset2"),
+        ("test-bucket", "dagster/asset3"),
         ("test-bucket", "dagster/partitioned/apple"),
+        (
+            "test-bucket",
+            "/".join(["dagster", "storage", result.run_id, "graph_asset.first_op", "result"]),
+        ),
     }

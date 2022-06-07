@@ -2908,6 +2908,7 @@ export interface AssetQuery_assetOrError_Asset_definition_op {
 export interface AssetQuery_assetOrError_Asset_definition {
   __typename: "AssetNode";
   id: string;
+  groupName: string | null;
   partitionDefinition: string | null;
   repository: AssetQuery_assetOrError_Asset_definition_repository;
   jobs: AssetQuery_assetOrError_Asset_definition_jobs[];

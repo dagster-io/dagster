@@ -57,6 +57,34 @@ def test_filesystem_persist_one_run(tmpdir):
         do_test_single_write_read(instance)
 
 
+def test_partial_storage(tmpdir):
+    with instance_for_test(
+        overrides={
+            "run_storage": {
+                "module": "dagster.core.storage.runs",
+                "class": "SqliteRunStorage",
+                "config": {
+                    "base_dir": str(tmpdir),
+                },
+            }
+        }
+    ) as _instance:
+        pass
+
+
+def test_unified_storage(tmpdir):
+    with instance_for_test(
+        overrides={
+            "storage": {
+                "sqlite": {
+                    "base_dir": str(tmpdir),
+                }
+            }
+        }
+    ) as _instance:
+        pass
+
+
 def test_in_memory_persist_one_run():
     with DagsterInstance.ephemeral() as instance:
         do_test_single_write_read(instance)

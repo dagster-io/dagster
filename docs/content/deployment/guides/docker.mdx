@@ -42,40 +42,8 @@ load_from:
 as well as a `dagster.yaml` file to configure your [Dagster instance](/deployment/dagster-instance):
 
 ```yaml file=/deploying/docker/dagster.yaml
-run_storage:
-  module: dagster_postgres.run_storage
-  class: PostgresRunStorage
-  config:
-    postgres_db:
-      username:
-        env: DAGSTER_PG_USERNAME
-      password:
-        env: DAGSTER_PG_PASSWORD
-      hostname:
-        env: DAGSTER_PG_HOST
-      db_name:
-        env: DAGSTER_PG_DB
-      port: 5432
-
-event_log_storage:
-  module: dagster_postgres.event_log
-  class: PostgresEventLogStorage
-  config:
-    postgres_db:
-      username:
-        env: DAGSTER_PG_USERNAME
-      password:
-        env: DAGSTER_PG_PASSWORD
-      hostname:
-        env: DAGSTER_PG_HOST
-      db_name:
-        env: DAGSTER_PG_DB
-      port: 5432
-
-schedule_storage:
-  module: dagster_postgres.schedule_storage
-  class: PostgresScheduleStorage
-  config:
+storage:
+  postgres:
     postgres_db:
       username:
         env: DAGSTER_PG_USERNAME
