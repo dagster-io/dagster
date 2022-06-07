@@ -167,8 +167,8 @@ class PipelineDefinition:
         version_strategy: Optional[VersionStrategy] = None,
         asset_layer: Optional[AssetLayer] = None,
     ):
-        # If a graph is specificed directly use it
-        if check.opt_inst_param(graph_def, "graph_def", GraphDefinition):
+        # If a graph is specified directly use it
+        if isinstance(graph_def, GraphDefinition):
             self._graph_def = graph_def
             self._name = name or graph_def.name
 
