@@ -39,7 +39,7 @@ const CodeMirrorShimStyle = createGlobalStyle`
   }
 `;
 
-export const YAMLEditorDialog: React.FC<Props> = ({
+export const ConfigEditorDialog: React.FC<Props> = ({
   config,
   configSchema,
   isLoading,
