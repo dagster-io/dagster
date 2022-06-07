@@ -135,6 +135,7 @@ def docker_service_up(docker_compose_file, build_args=None):
             print("Buildkite artifact added with stdout: ", stdout)
             print("Buildkite artifact added with stderr: ", stderr)
             assert p.returncode == 0
+        return
 
     try:
         subprocess.check_output(["docker-compose", "-f", docker_compose_file, "stop"])
