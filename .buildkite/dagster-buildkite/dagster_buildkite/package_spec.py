@@ -57,7 +57,6 @@ class PackageSpec(
             ("package_type", str),
             ("unsupported_python_versions", List[AvailablePythonVersion]),
             ("pytest_extra_cmds", Optional[Union[List[str], PytestExtraCommandsFunction]]),
-            ("pytest_post_cmds", Optional[Union[List[str], PytestExtraCommandsFunction]]),
             ("pytest_step_dependencies", Optional[Union[List[str], PytestDependenciesFunction]]),
             ("pytest_tox_factors", Optional[List[str]]),
             ("env_vars", List[str]),
@@ -91,11 +90,6 @@ class PackageSpec(
             commands or a function. Function form takes two arguments, the python version being
             tested and the tox factor (if any), and returns a list of shell commands to execute.
             Defaults to None (no additional commands).
-        pytest_post_cmds (Union[List[str], Callable[str, List[str]]], optional): Optional
-            specification  of commands to run after the main pytest invocation through tox. Can be
-            either a list of commands or a function. Function form take two arguments, the python
-            version being tested and the tox factor (if any), and returns a list of shell commands
-            execute. Defaults to None (no additional commands).
         pytest_step_dependencies (Callable[str, List[str]], optional): Optional specification of
             Buildkite dependencies (e.g. on test image build step) for pytest steps. Can be either a
             list of commands or a function. Function form takes two arguments, the python version
@@ -130,7 +124,6 @@ class PackageSpec(
         package_type: Optional[str] = None,
         unsupported_python_versions: Optional[List[AvailablePythonVersion]] = None,
         pytest_extra_cmds: Optional[Union[List[str], PytestExtraCommandsFunction]] = None,
-        pytest_post_cmds: Optional[Union[List[str], PytestExtraCommandsFunction]] = None,
         pytest_step_dependencies: Optional[Union[List[str], PytestDependenciesFunction]] = None,
         pytest_tox_factors: Optional[List[str]] = None,
         env_vars: Optional[List[str]] = None,
@@ -151,7 +144,6 @@ class PackageSpec(
             package_type,
             unsupported_python_versions or [],
             pytest_extra_cmds,
-            pytest_post_cmds,
             pytest_step_dependencies,
             pytest_tox_factors,
             env_vars or [],
@@ -214,12 +206,6 @@ class PackageSpec(
                         ]
                     else:
                         extra_commands_post = []
-
-                    if self.pytest_post_cmds:
-                        if isinstance(self.pytest_post_cmds, list):
-                            extra_commands_post += self.pytest_post_cmds
-                        elif callable(self.pytest_post_cmds):
-                            extra_commands_post += self.pytest_post_cmds(py_version, other_factor)
 
                     if isinstance(self.pytest_step_dependencies, list):
                         dependencies = self.pytest_step_dependencies
