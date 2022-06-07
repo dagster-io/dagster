@@ -25,6 +25,7 @@ import {AssetKey} from './types';
 import {
   AssetCatalogGroupTableQuery,
   AssetCatalogGroupTableQueryVariables,
+  AssetCatalogGroupTableQuery_assetNodes,
 } from './types/AssetCatalogGroupTableQuery';
 import {
   AssetCatalogTableQuery,
@@ -59,15 +60,11 @@ function useAllAssets(
 
   return React.useMemo(() => {
     if (groupSelector) {
+      const assetNodes = groupQuery.data?.assetNodes;
       return {
         query: groupQuery,
         error: undefined,
-        assets: groupQuery.data?.assetNodes.map<AssetTableFragment>((definition) => ({
-          __typename: 'Asset',
-          id: definition.id,
-          key: definition.assetKey,
-          definition,
-        })),
+        assets: assetNodes?.map(definitionToAssetTableFragment),
       };
     } else {
       const assetsOrError = assetsQuery.data?.assetsOrError;
@@ -243,6 +240,16 @@ const ASSET_CATALOG_GROUP_TABLE_QUERY = gql`
   }
   ${ASSET_TABLE_DEFINITION_FRAGMENT}
 `;
+
+// When we load the AssetCatalogTable for a particular asset group, we retrieve `assetNodes`,
+// not `assets`. To narrow the scope of this difference we coerce the nodes to look like
+// AssetCatalogTableQuery results.
+//
+function definitionToAssetTableFragment(
+  definition: AssetCatalogGroupTableQuery_assetNodes,
+): AssetTableFragment {
+  return {__typename: 'Asset', id: definition.id, key: definition.assetKey, definition};
+}
 
 function buildFlatProps(assets: Asset[], prefixPath: string[], cursor: string | undefined) {
   const cursorValue = (asset: Asset) => JSON.stringify([...prefixPath, ...asset.key.path]);

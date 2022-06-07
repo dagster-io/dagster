@@ -1,11 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
-import {Page} from '@dagster-io/ui';
+import {Box, Page, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {Loading} from '../ui/Loading';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
 import {AssetPageHeader} from './AssetPageHeader';
@@ -40,7 +39,9 @@ export const AssetsCatalogRoot = () => {
   return queryResult.loading ? (
     <Page>
       <AssetPageHeader assetKey={{path: currentPath}} />
-      <Loading queryResult={queryResult}>{() => null}</Loading>
+      <Box padding={64}>
+        <Spinner purpose="page" />
+      </Box>
     </Page>
   ) : currentPath.length === 0 ||
     queryResult.data?.assetOrError.__typename === 'AssetNotFoundError' ? (
