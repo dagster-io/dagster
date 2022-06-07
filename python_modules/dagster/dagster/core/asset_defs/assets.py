@@ -376,14 +376,7 @@ class AssetsDefinition(ResourceAddable):
 
         # Ensure top-level resource requirements are met - except for
         # io_manager, since that is a default it can be resolved later.
-        ensure_requirements_satisfied(
-            merged_resource_defs,
-            [
-                requirement
-                for requirement in self.get_resource_requirements()
-                if requirement.key != "io_manager"
-            ],
-        )
+        ensure_requirements_satisfied(merged_resource_defs, list(self.get_resource_requirements()))
 
         # Get all transitive resource dependencies from other resources.
         relevant_keys = get_transitive_required_resource_keys(
@@ -404,7 +397,7 @@ class AssetsDefinition(ResourceAddable):
             asset_deps=self._asset_deps,
             selected_asset_keys=self._selected_asset_keys,
             can_subset=self._can_subset,
-            resource_defs=merged_resource_defs,
+            resource_defs=relevant_resource_defs,
         )
 
 

@@ -90,7 +90,6 @@ def build_assets_job(
     Returns:
         JobDefinition: A job that materializes the given assets.
     """
-    from ..execution.resources_init import get_transitive_required_resource_keys
 
     check.str_param(name, "name")
     check.iterable_param(assets, "assets", of_type=AssetsDefinition)
@@ -136,18 +135,7 @@ def build_assets_job(
         graph, assets_defs_by_node_handle, resolved_source_assets
     )
 
-    all_resource_defs = {}
-    for asset in assets + source_assets:
-        for resource_key, resource_def in asset.resource_defs.items():
-            if resource_key not in all_resource_defs:
-                all_resource_defs[resource_key] = resource_def
-            if all_resource_defs[resource_key] != resource_def:
-                raise DagsterInvalidDefinitionError(
-                    f"Conflicting versions of resource with key '{resource_key}' "
-                    "were provided to different assets. When constructing a "
-                    "job, all resource definitions provided to assets must "
-                    "match by reference equality for a given key."
-                )
+    all_resource_defs = get_all_resource_defs(assets, resolved_source_assets)
 
     return graph.to_job(
         resource_defs=all_resource_defs,
@@ -423,3 +411,22 @@ def _attempt_resolve_cycles(
                 ret.append(assets_def.subset_for(asset_keys))
 
     return ret
+
+
+def get_all_resource_defs(
+    assets: Sequence[AssetsDefinition], source_assets: Sequence[SourceAsset]
+) -> Dict[str, ResourceDefinition]:
+    all_resource_defs = {}
+    all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]
+    for asset in all_assets:
+        for resource_key, resource_def in asset.resource_defs.items():
+            if resource_key not in all_resource_defs:
+                all_resource_defs[resource_key] = resource_def
+            if all_resource_defs[resource_key] != resource_def:
+                raise DagsterInvalidDefinitionError(
+                    f"Conflicting versions of resource with key '{resource_key}' "
+                    "were provided to different assets. When constructing a "
+                    "job, all resource definitions provided to assets must "
+                    "match by reference equality for a given key."
+                )
+    return all_resource_defs

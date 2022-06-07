@@ -147,7 +147,7 @@ def test_asset_group_missing_resources():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"AssetGroup is missing required resource keys for asset 'asset_foo'. Missing resource keys: \['foo'\]",
+        match="resource with key 'foo' required by op 'asset_foo' was not provided.",
     ):
         AssetGroup([asset_foo])
 
@@ -155,7 +155,7 @@ def test_asset_group_missing_resources():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"SourceAsset with key AssetKey\(\['foo'\]\) requires io manager with key 'foo', which was not provided on AssetGroup. Provided keys: \['io_manager'\]",
+        match="SourceAsset with asset key AssetKey\(\['foo'\]\) requires IO manager with key 'foo', but none was provided.",
     ):
         AssetGroup([], source_assets=[source_asset_io_req])
 
@@ -183,9 +183,7 @@ def test_asset_group_requires_root_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"Output 'result' with AssetKey 'AssetKey\(\['asset_foo'\]\)' "
-        r"requires io manager 'blah' but was not provided on asset group. "
-        r"Provided resources: \['io_manager'\]",
+        match="io manager with key 'blah' required by output 'result' of op 'asset_foo'' was not provided.",
     ):
         AssetGroup([asset_foo])
 
@@ -195,9 +193,13 @@ def test_resource_override():
     def the_resource():
         pass
 
+    @asset
+    def single_asset():
+        pass
+
     @repository
     def the_repo():
-        return [AssetGroup([], resource_defs={"io_manager": mem_io_manager})]
+        return [AssetGroup([single_asset], resource_defs={"io_manager": mem_io_manager})]
 
     asset_group_underlying_job = the_repo.get_all_jobs()[0]
     assert (  # pylint: disable=comparison-with-callable
@@ -980,18 +982,6 @@ def test_asset_group_from_current_module():
     assert len(group.source_assets) == 1
 
 
-def test_default_io_manager():
-    @asset
-    def asset_foo():
-        return "foo"
-
-    group = AssetGroup(assets=[asset_foo])
-    assert (
-        group.resource_defs["io_manager"]  # pylint: disable=comparison-with-callable
-        == fs_io_manager
-    )
-
-
 def test_job_with_reserved_name():
     @graph
     def the_graph():
@@ -1210,9 +1200,17 @@ def test_add_asset_groups():
     group1 = AssetGroup(assets=[asset1], source_assets=[source1])
     group2 = AssetGroup(assets=[asset2], source_assets=[source2])
 
-    assert (group1 + group2) == AssetGroup(
-        assets=[asset1, asset2], source_assets=[source1, source2]
-    )
+    added_group = group1 + group2
+    assert len(added_group.assets) == 2
+    assert sorted([asset.asset_key.to_string() for asset in added_group.assets]) == [
+        AssetKey(["asset1"]).to_string(),
+        AssetKey(["asset2"]).to_string(),
+    ]
+
+    assert sorted([asset.key.to_string() for asset in added_group.source_assets]) == [
+        AssetKey(["source1"]).to_string(),
+        AssetKey(["source2"]).to_string(),
+    ]
 
 
 def test_add_asset_groups_different_resources():
@@ -1280,9 +1278,21 @@ def test_to_source_assets():
         yield Output(2, "my_other_out_name")
 
     assert AssetGroup([my_asset, my_multi_asset]).to_source_assets() == [
-        SourceAsset(AssetKey(["my_asset"]), io_manager_key="io_manager"),
-        SourceAsset(AssetKey(["my_asset_name"]), io_manager_key="io_manager"),
-        SourceAsset(AssetKey(["my_other_asset"]), io_manager_key="io_manager"),
+        SourceAsset(
+            AssetKey(["my_asset"]),
+            io_manager_key="io_manager",
+            resource_defs={"io_manager": fs_io_manager},
+        ),
+        SourceAsset(
+            AssetKey(["my_asset_name"]),
+            io_manager_key="io_manager",
+            resource_defs={"io_manager": fs_io_manager},
+        ),
+        SourceAsset(
+            AssetKey(["my_other_asset"]),
+            io_manager_key="io_manager",
+            resource_defs={"io_manager": fs_io_manager},
+        ),
     ]
 
 
@@ -1316,7 +1326,14 @@ def test_build_job_diff_resource_defs():
 
     group = AssetGroup([the_asset, other_asset])
 
-    assert group.build_job("some_name", selection="the_asset").execute_in_process().success
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Conflicting versions of resource with key 'foo' were provided to "
+        "different assets. When constructing a job, all resource definitions "
+        "provided to assets must match by reference equality for a given key.",
+    ):
+
+        group.build_job("some_name", selection="the_asset")
 
 
 def test_repo_asset_group_diff_resource_defs():
@@ -1337,7 +1354,9 @@ def test_repo_asset_group_diff_resource_defs():
     # same key fails
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="had a conflicting version of the same resource key foo. Please resolve this conflict by giving different keys to each resource definition.",
+        match="Conflicting versions of resource with key 'foo' were provided to "
+        "different assets. When constructing a job, all resource definitions "
+        "provided to assets must match by reference equality for a given key.",
     ):
 
         @repository
@@ -1376,6 +1395,6 @@ def test_graph_backed_asset_resources():
     asset_group = AssetGroup([the_asset, other_asset])
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="had a conflicting version of the same resource key foo.",
+        match="Conflicting versions of resource with key 'foo' were provided to different assets. When constructing a job, all resource definitions provided to assets must match by reference equality for a given key.",
     ):
         asset_group.materialize()

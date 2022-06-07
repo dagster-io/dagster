@@ -1,4 +1,4 @@
-from typing import Dict, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import Dict, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey, CoerceableToAssetKey
@@ -63,7 +63,6 @@ class SourceAsset(
         key = AssetKey.from_coerceable(key)
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         metadata_entries = _metadata_entries or normalize_metadata(metadata, [], allow_invalid=True)
-        metadata_entries = normalize_metadata(metadata, [], allow_invalid=True)
         resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         io_manager_def = check.opt_inst_param(io_manager_def, "io_manager_def", IOManagerDefinition)
         if io_manager_def:
@@ -102,7 +101,10 @@ class SourceAsset(
     @property
     def io_manager_def(self) -> Optional[IOManagerDefinition]:
         io_manager_key = self.get_io_manager_key()
-        return self.resource_defs.get(io_manager_key) if io_manager_key else None
+        return cast(
+            Optional[IOManagerDefinition],
+            self.resource_defs.get(io_manager_key) if io_manager_key else None,
+        )
 
     def with_resources(self, resource_defs) -> "SourceAsset":
         from dagster.core.execution.resources_init import get_transitive_required_resource_keys
@@ -125,7 +127,7 @@ class SourceAsset(
         }
 
         io_manager_key = (
-            self.get_io_manager_key() if self.get_io_manager_key != "io_manager" else None
+            self.get_io_manager_key() if self.get_io_manager_key() != "io_manager" else None
         )
         return SourceAsset(
             key=self.key,
