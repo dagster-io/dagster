@@ -601,11 +601,20 @@ class AssetLayer:
         )
 
     def group_names_by_assets(self) -> Mapping[AssetKey, str]:
-        return {
+        group_names: Dict[AssetKey, str] = {
             key: assets_def.group_names[key]
             for key, assets_def in self._assets_defs_by_key.items()
             if key in assets_def.group_names
         }
+
+        group_names.update(
+            {
+                key: source_asset_def.group_name
+                for key, source_asset_def in self._source_assets_by_key.items()
+            }
+        )
+
+        return group_names
 
 
 def build_asset_selection_job(

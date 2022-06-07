@@ -1652,10 +1652,15 @@ def grouped_asset_4():
     return 1
 
 
+@asset
+def ungrouped_asset_5():
+    return 1
+
+
 # For now the only way to add assets to repositories is via AssetGroup
 # When AssetGroup is removed, these assets should be added directly to repository_with_named_groups
 named_groups_job = AssetGroup(
-    [grouped_asset_1, grouped_asset_2, ungrouped_asset_3, grouped_asset_4]
+    [grouped_asset_1, grouped_asset_2, ungrouped_asset_3, grouped_asset_4, ungrouped_asset_5]
 ).build_job("named_groups_job")
 
 

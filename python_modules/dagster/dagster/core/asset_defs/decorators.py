@@ -25,7 +25,7 @@ from dagster.core.definitions.input import In
 from dagster.core.definitions.output import Out
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
-from dagster.core.definitions.utils import NoValueSentinel, check_valid_name
+from dagster.core.definitions.utils import NoValueSentinel
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import IOManagerDefinition
 from dagster.core.types.dagster_type import DagsterType
@@ -133,7 +133,8 @@ def asset(
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
-        group_name (Optional[str]): A string name used to organize multiple assets into groups.
+        group_name (Optional[str]): A string name used to organize multiple assets into groups. If not provided,
+            the name "default" is used.
 
     Examples:
 
@@ -215,7 +216,7 @@ class _Asset:
         self.partition_mappings = partition_mappings
         self.op_tags = op_tags
         self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
-        self.group_name = check_valid_name(group_name) if group_name else None
+        self.group_name = group_name
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
