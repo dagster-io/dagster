@@ -13,7 +13,7 @@ def foo_pipline():
 def test_step_handler_context():
     recon_pipeline = reconstructable(foo_pipline)
     with instance_for_test() as instance:
-        run = create_run_for_test(instance)
+        run = create_run_for_test(instance, pipeline_code_origin=recon_pipeline.get_python_origin())
 
         args = ExecuteStepArgs(
             pipeline_origin=recon_pipeline.get_python_origin(),

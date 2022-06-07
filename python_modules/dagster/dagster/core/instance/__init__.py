@@ -1163,6 +1163,7 @@ class DagsterInstance:
         execution_plan_snapshot,
         parent_pipeline_snapshot,
         solid_selection=None,
+        pipeline_code_origin=None,
     ):
         # The usage of this method is limited to dagster-airflow, specifically in Dagster
         # Operators that are executed in Airflow. Because a common workflow in Airflow is to
@@ -1190,6 +1191,7 @@ class DagsterInstance:
             pipeline_snapshot=pipeline_snapshot,
             execution_plan_snapshot=execution_plan_snapshot,
             parent_pipeline_snapshot=parent_pipeline_snapshot,
+            pipeline_code_origin=pipeline_code_origin,
         )
 
         def get_run():
