@@ -1042,9 +1042,9 @@ def test_to_source_assets():
         yield Output(2, "my_other_out_name")
 
     assert AssetGroup([my_asset, my_multi_asset]).to_source_assets() == [
-        SourceAsset(AssetKey(["my_asset"])),
-        SourceAsset(AssetKey(["my_asset_name"])),
-        SourceAsset(AssetKey(["my_other_asset"])),
+        SourceAsset(AssetKey(["my_asset"]), io_manager_key="io_manager"),
+        SourceAsset(AssetKey(["my_asset_name"]), io_manager_key="io_manager"),
+        SourceAsset(AssetKey(["my_other_asset"]), io_manager_key="io_manager"),
     ]
 
 

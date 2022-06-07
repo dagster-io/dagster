@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, Tooltip} from '@dagster-io/ui';
+import {Box, Colors, Icon, IconName, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -27,9 +27,10 @@ interface Props {
   repoPath?: string;
 }
 
-export type JobItemType = {
+export type LeftNavItemType = {
   name: string;
   isJob: boolean;
+  leftIcon: IconName;
   label: React.ReactNode;
   path: string;
   repoAddress: RepoAddress;
@@ -48,7 +49,7 @@ export const FlatContentList: React.FC<Props> = (props) => {
   }, [repos]);
 
   const jobs = React.useMemo(() => {
-    const items: JobItemType[] = [];
+    const items: LeftNavItemType[] = [];
 
     for (const option of repos) {
       const {repository, repositoryLocation} = option;
@@ -76,21 +77,51 @@ export const FlatContentList: React.FC<Props> = (props) => {
         <span style={{fontSize: '16px', fontWeight: 600}}>{title}</span>
       </Box>
       <Items style={{height: 'calc(100% - 226px)'}}>
-        {jobs.map((job) => (
-          <JobItem
-            key={`${job.name}-${repoAddressAsString(job.repoAddress)}`}
-            job={job}
-            repoPath={repoPath}
-            selector={selector}
-          />
-        ))}
+        {jobs.map((job) => {
+          const repoString = repoAddressAsString(job.repoAddress);
+          return (
+            <LeftNavItem
+              key={`${job.name}-${repoString}`}
+              item={job}
+              active={!!(repoPath && repoString === repoPath && selector === job.name)}
+            />
+          );
+        })}
       </Items>
     </>
   );
 };
 
+export const getAssetGroupItemsForOption = (option: DagsterRepoOption) => {
+  const items: LeftNavItemType[] = [];
+
+  const {repository, repositoryLocation} = option;
+  const address = buildRepoAddress(repository.name, repositoryLocation.name);
+
+  for (const {groupName} of repository.assetGroups) {
+    items.push({
+      name: groupName || '',
+      leftIcon: 'asset_group',
+      isJob: false,
+      schedules: [],
+      sensors: [],
+      repoAddress: address,
+      path: workspacePathFromAddress(address, `/asset-groups/${groupName}`),
+      label: (
+        <Label $hasIcon={false}>
+          <TruncatingName data-tooltip={groupName} data-tooltip-style={LabelTooltipStyles}>
+            {groupName}
+          </TruncatingName>
+        </Label>
+      ),
+    });
+  }
+
+  return items.sort((a, b) => a.name.localeCompare(b.name));
+};
+
 export const getJobItemsForOption = (option: DagsterRepoOption) => {
-  const items: JobItemType[] = [];
+  const items: LeftNavItemType[] = [];
 
   const {repository, repositoryLocation} = option;
   const address = buildRepoAddress(repository.name, repositoryLocation.name);
@@ -109,6 +140,7 @@ export const getJobItemsForOption = (option: DagsterRepoOption) => {
     items.push({
       name,
       isJob,
+      leftIcon: 'job',
       label: (
         <Label $hasIcon={!!(schedules.length || sensors.length) || !isJob}>
           <TruncatingName data-tooltip={name} data-tooltip-style={LabelTooltipStyles}>
@@ -125,119 +157,116 @@ export const getJobItemsForOption = (option: DagsterRepoOption) => {
     });
   }
 
-  return items;
+  return items.sort((a, b) => a.name.localeCompare(b.name));
 };
 
-interface JobItemProps {
-  job: JobItemType;
-  repoPath?: string;
-  selector?: string;
+interface LeftNavItemProps {
+  active: boolean;
+  item: LeftNavItemType;
 }
 
-export const JobItem: React.FC<JobItemProps> = (props) => {
-  const {job: jobItem, repoPath, selector} = props;
-  const {name, label, path, repoAddress, schedules, sensors} = jobItem;
+export const LeftNavItem = React.forwardRef(
+  (props: LeftNavItemProps, ref: React.ForwardedRef<HTMLDivElement>) => {
+    const {active, item} = props;
+    const {label, leftIcon, path, repoAddress, schedules, sensors} = item;
 
-  const [showDialog, setShowDialog] = React.useState(false);
+    const [showDialog, setShowDialog] = React.useState(false);
 
-  const jobRepoPath = repoAddressAsString(repoAddress);
+    const rightIcon = () => {
+      const scheduleCount = schedules.length;
+      const sensorCount = sensors.length;
 
-  const icon = () => {
-    const scheduleCount = schedules.length;
-    const sensorCount = sensors.length;
-
-    if (!scheduleCount && !sensorCount) {
-      return null;
-    }
-
-    const whichIcon = scheduleCount ? 'schedule' : 'sensors';
-    const needsDialog = scheduleCount > 1 || sensorCount > 1 || (scheduleCount && sensorCount);
-
-    const status = () => {
-      return schedules.some(
-        (schedule) => schedule.scheduleState.status === InstigationStatus.RUNNING,
-      ) || sensors.some((sensor) => sensor.sensorState.status === InstigationStatus.RUNNING)
-        ? InstigationStatus.RUNNING
-        : InstigationStatus.STOPPED;
-    };
-
-    const tooltipContent = () => {
-      if (scheduleCount && sensorCount) {
-        const scheduleString = scheduleCount > 1 ? `${scheduleCount} schedules` : '1 schedule';
-        const sensorString = sensorCount > 1 ? `${sensorCount} sensors` : '1 sensor';
-        return `${scheduleString}, ${sensorString}`;
+      if (!scheduleCount && !sensorCount) {
+        return null;
       }
 
-      if (scheduleCount) {
-        return scheduleCount === 1 ? (
+      const whichIcon = scheduleCount ? 'schedule' : 'sensors';
+      const needsDialog = scheduleCount > 1 || sensorCount > 1 || (scheduleCount && sensorCount);
+
+      const status = () => {
+        return schedules.some(
+          (schedule) => schedule.scheduleState.status === InstigationStatus.RUNNING,
+        ) || sensors.some((sensor) => sensor.sensorState.status === InstigationStatus.RUNNING)
+          ? InstigationStatus.RUNNING
+          : InstigationStatus.STOPPED;
+      };
+
+      const tooltipContent = () => {
+        if (scheduleCount && sensorCount) {
+          const scheduleString = scheduleCount > 1 ? `${scheduleCount} schedules` : '1 schedule';
+          const sensorString = sensorCount > 1 ? `${sensorCount} sensors` : '1 sensor';
+          return `${scheduleString}, ${sensorString}`;
+        }
+
+        if (scheduleCount) {
+          return scheduleCount === 1 ? (
+            <div>
+              Schedule: <strong>{humanCronString(schedules[0].cronSchedule)}</strong>
+            </div>
+          ) : (
+            `${scheduleCount} schedules`
+          );
+        }
+
+        return sensorCount === 1 ? (
           <div>
-            Schedule: <strong>{humanCronString(schedules[0].cronSchedule)}</strong>
+            Sensor: <strong>{sensors[0].name}</strong>
           </div>
         ) : (
-          `${scheduleCount} schedules`
+          `${sensorCount} sensors`
         );
-      }
+      };
 
-      return sensorCount === 1 ? (
-        <div>
-          Sensor: <strong>{sensors[0].name}</strong>
-        </div>
-      ) : (
-        `${sensorCount} sensors`
-      );
-    };
-
-    const link = () => {
-      const icon = (
-        <Icon
-          name={whichIcon}
-          color={status() === InstigationStatus.RUNNING ? Colors.Green500 : Colors.Gray600}
-        />
-      );
-
-      if (needsDialog) {
-        return (
-          <SensorScheduleDialogButton onClick={() => setShowDialog(true)}>
-            {icon}
-          </SensorScheduleDialogButton>
+      const link = () => {
+        const icon = (
+          <Icon
+            name={whichIcon}
+            color={status() === InstigationStatus.RUNNING ? Colors.Green500 : Colors.Gray600}
+          />
         );
-      }
 
-      const path = scheduleCount
-        ? `/schedules/${schedules[0].name}`
-        : `/sensors/${sensors[0].name}`;
-      return <Link to={workspacePathFromAddress(repoAddress, path)}>{icon}</Link>;
+        if (needsDialog) {
+          return (
+            <SensorScheduleDialogButton onClick={() => setShowDialog(true)}>
+              {icon}
+            </SensorScheduleDialogButton>
+          );
+        }
+
+        const path = scheduleCount
+          ? `/schedules/${schedules[0].name}`
+          : `/sensors/${sensors[0].name}`;
+        return <Link to={workspacePathFromAddress(repoAddress, path)}>{icon}</Link>;
+      };
+
+      return (
+        <>
+          <IconWithTooltip content={tooltipContent()}>{link()}</IconWithTooltip>
+          {needsDialog ? (
+            <ScheduleAndSensorDialog
+              isOpen={showDialog}
+              onClose={() => setShowDialog(false)}
+              repoAddress={repoAddress}
+              schedules={schedules}
+              sensors={sensors}
+              showSwitch
+            />
+          ) : null}
+        </>
+      );
     };
 
     return (
-      <>
-        <IconWithTooltip content={tooltipContent()}>{link()}</IconWithTooltip>
-        {needsDialog ? (
-          <ScheduleAndSensorDialog
-            isOpen={showDialog}
-            onClose={() => setShowDialog(false)}
-            repoAddress={repoAddress}
-            schedules={schedules}
-            sensors={sensors}
-            showSwitch
-          />
-        ) : null}
-      </>
+      <ItemContainer ref={ref}>
+        <Item $active={active} to={path}>
+          <Icon name={leftIcon} color={active ? Colors.Blue700 : Colors.Dark} />
+          <div>{label}</div>
+        </Item>
+        {rightIcon()}
+      </ItemContainer>
     );
-  };
-
-  return (
-    <ItemContainer>
-      <Item
-        className={`${name === selector && repoPath === jobRepoPath ? 'selected' : ''}`}
-        to={path}
-      >
-        <div>{label}</div>
-      </Item>
-      {icon()}
-    </ItemContainer>
-  );
-};
+  },
+);
 
 const Label = styled.div<{$hasIcon: boolean}>`
   display: flex;

@@ -2,6 +2,7 @@ import {Box, MainContent, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {Route, Switch, useParams} from 'react-router-dom';
 
+import {AssetGroupRoot} from '../assets/AssetGroupRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
@@ -90,6 +91,9 @@ const RepoRouteContainer = () => {
       </Route>
       <Route path="/workspace/:repoPath/sensors/:sensorName">
         <SensorRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/workspace/:repoPath/asset-groups/(/?.*)">
+        <AssetGroupRoot repoAddress={addressForPath} />
       </Route>
       <Route path="/workspace/:repoPath/:tab?">
         <WorkspaceRepoRoot repoAddress={addressForPath} />

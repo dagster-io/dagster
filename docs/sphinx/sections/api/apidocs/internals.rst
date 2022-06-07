@@ -71,6 +71,15 @@ Instance
 
 ----
 
+Storage
+-------
+
+.. currentmodule:: dagster.core.storage.base_storage
+
+.. autoclass:: DagsterStorage
+
+----
+
 Run storage
 -----------
 

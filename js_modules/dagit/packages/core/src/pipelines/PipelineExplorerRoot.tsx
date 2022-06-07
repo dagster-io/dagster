@@ -83,13 +83,12 @@ export const PipelineExplorerContainer: React.FC<{
         const assetNodesPresent = result.solidHandles.some(
           (h) => h.solid.definition.assetNodes.length > 0,
         );
-
         if (options.preferAssetRendering && assetNodesPresent) {
           return (
             <AssetGraphExplorer
               options={options}
               setOptions={setOptions}
-              pipelineSelector={pipelineSelector}
+              fetchOptions={{pipelineSelector}}
               explorerPath={explorerPath}
               onChangeExplorerPath={onChangeExplorerPath}
             />
