@@ -6,12 +6,9 @@ import styled from 'styled-components/macro';
 import {AppContext} from '../app/AppContext';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {
-  LeftNavItem,
-  getJobItemsForOption,
-  LeftNavItemType,
-  getAssetGroupItemsForOption,
-} from '../nav/FlatContentList';
+import {LeftNavItem} from '../nav/LeftNavItem';
+import {LeftNavItemType} from '../nav/LeftNavItemType';
+import {getAssetGroupItemsForOption, getJobItemsForOption} from '../nav/getLeftNavItemsForOption';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -92,7 +89,7 @@ export const SectionedLeftNav = () => {
         padding={{horizontal: 24, bottom: 12}}
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
       >
-        <span style={{fontSize: '16px'}}>Workspace</span>
+        <span style={{fontSize: '16px', fontWeight: 500}}>Workspace</span>
       </Box>
       <Container>
         {sortedRepos.map((repo) => {
