@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 from dagster import IOManager
 from dagster import _check as check
@@ -34,3 +35,15 @@ class PandasIOManager(IOManager):
 @io_manager(config_schema={"con_string": str})
 def pandas_io_manager(context):
     return PandasIOManager(context.resource_config["con_string"])
+
+
+class NumpyIOManager(PandasIOManager):
+    def load_input(self, context) -> np.ndarray:
+        model_name = context.upstream_output.asset_key.path[-1]
+        pd_df = pd.read_sql(f"SELECT * FROM {model_name}", con=self._con)
+        return pd_df.to_numpy()
+
+
+@io_manager(config_schema={"con_string": str})
+def numpy_io_manager(context):
+    return NumpyIOManager(context.resource_config["con_string"])
