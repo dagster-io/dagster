@@ -67,6 +67,14 @@ class ResourceRequirement(ABC):
         return self.key in resource_defs
 
 
+class ResourceAddable(ABC):
+    @abstractmethod
+    def with_resources(
+        self, resource_defs: Mapping[str, "ResourceDefinition"]
+    ) -> "ResourceAddable":
+        raise NotImplementedError()
+
+
 class SolidDefinitionResourceRequirement(
     NamedTuple("_SolidDefinitionResourceRequirement", [("key", str), ("node_description", str)]),
     ResourceRequirement,

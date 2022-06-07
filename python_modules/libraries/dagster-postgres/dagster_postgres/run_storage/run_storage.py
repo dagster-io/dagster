@@ -1,6 +1,7 @@
 import sqlalchemy as db
 
 import dagster._check as check
+from dagster.core.storage.config import pg_config
 from dagster.core.storage.runs import (
     DaemonHeartbeatsTable,
     InstanceInfo,
@@ -19,7 +20,6 @@ from dagster.utils import utc_datetime_from_timestamp
 from ..utils import (
     create_pg_connection,
     pg_alembic_config,
-    pg_config,
     pg_statement_timeout,
     pg_url_from_config,
     retry_pg_connection_fn,
@@ -37,7 +37,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     To use Postgres for run storage, you can add a block such as the following to your
     ``dagster.yaml``:
 
-    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg.yaml
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg-legacy.yaml
        :caption: dagster.yaml
        :lines: 1-10
        :language: YAML

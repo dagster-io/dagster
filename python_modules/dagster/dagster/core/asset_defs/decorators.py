@@ -25,7 +25,7 @@ from dagster.core.definitions.input import In
 from dagster.core.definitions.output import Out
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
-from dagster.core.definitions.utils import NoValueSentinel
+from dagster.core.definitions.utils import NoValueSentinel, check_valid_name
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import IOManagerDefinition
 from dagster.core.types.dagster_type import DagsterType
@@ -215,7 +215,7 @@ class _Asset:
         self.partition_mappings = partition_mappings
         self.op_tags = op_tags
         self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
-        self.group_name = group_name
+        self.group_name = check_valid_name(group_name) if group_name else None
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__

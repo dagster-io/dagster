@@ -11,7 +11,9 @@
   "stop_urls": [
     "https://docs.dagster.io/_modules/",
     "https://docs.dagster.io/master/",
-    "https://docs.dagster.io/\\d+\\.\\d+.\\d+/"
+    "https://docs.dagster.io/\\d+\\.\\d+.\\d+/",
+    "https://docs.dagster.io/changelog",
+    "https://docs.dagster.io/migration"
   ],
   "strip_chars": " .,;:#¶",
   "selectors": {
@@ -41,12 +43,12 @@
         "selector": "",
         "default_value": "API"
       },
-      "lvl1": ".section h1",
-      "lvl2": ".section h2",
-      "lvl3": ".section h3",
-      "lvl4": ".section h4",
-      "lvl5": ".section h5, .section .rubric, .section dt",
-      "text": ".section p, .section li"
+      "lvl1": "section h1",
+      "lvl2": "section h2",
+      "lvl3": "section h3",
+      "lvl4": "section h4",
+      "lvl5": "section h5, section .rubric, section dt",
+      "text": "section p, section li"
     }
   },
   "nb_hits": 9458
