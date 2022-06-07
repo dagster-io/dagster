@@ -10,6 +10,7 @@ import {
   Popover,
   Table,
   Mono,
+  Tooltip,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -21,6 +22,7 @@ import {LiveData, toGraphId} from '../asset-graph/Utils';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {AnchorButton} from '../ui/AnchorButton';
 import {MenuLink} from '../ui/MenuLink';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -28,10 +30,7 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';
-<<<<<<< HEAD
-=======
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
->>>>>>> 3321992479 (Defer fetching data required to launch assets until you click the button!)
 import {AssetTableFragment as Asset} from './types/AssetTableFragment';
 import {AssetViewType} from './useAssetView';
 
@@ -83,20 +82,9 @@ export const AssetTable = ({
 
   return (
     <Box flex={{direction: 'column'}}>
-      <Box flex={{alignItems: 'center', gap: 12}} padding={{vertical: 8, left: 24, right: 12}}>
+      <Box flex={{alignItems: 'center', gap: 8}} padding={{vertical: 8, left: 24, right: 12}}>
         {actionBarComponents}
         <div style={{flex: 1}} />
-<<<<<<< HEAD
-        <AssetBulkActions
-          selected={Array.from(checkedAssets)}
-          clearSelection={() => onToggleAll(false)}
-        />
-=======
-        {checkedAssets.length > 0 && (
-          <div
-            style={{color: Colors.Gray500, paddingRight: 4}}
-          >{`${checkedAssets.length.toLocaleString()} assets selected`}</div>
-        )}
         {checkedAssets.some((c) => !c.definition) ? (
           <Tooltip content="One or more selected assets are not software-defined and cannot be launched directly.">
             <Button intent="primary" icon={<Icon name="materialization" />} disabled>
@@ -110,7 +98,6 @@ export const AssetTable = ({
           />
         )}
         <MoreActionsDropdown selected={checkedAssets} clearSelection={() => onToggleAll(false)} />
->>>>>>> 3321992479 (Defer fetching data required to launch assets until you click the button!)
       </Box>
       <Table>
         <thead>
@@ -283,19 +270,12 @@ const AssetEntryRow: React.FC<{
         <td>
           {asset ? (
             <Box flex={{gap: 8, alignItems: 'center'}}>
-              <Link to={`/instance/assets/${path.join('/')}`}>
-                <Button>View Details</Button>
-              </Link>
+              <AnchorButton to={`/instance/assets/${path.join('/')}`}>View Details</AnchorButton>
               <Popover
                 position="bottom-right"
                 content={
                   <Menu>
                     <MenuLink
-<<<<<<< HEAD
-                      text="View details…"
-                      to={`/instance/assets/${path.join('/')}`}
-                      icon="view_list"
-=======
                       text="Show in group"
                       to={
                         repoAddress && asset.definition?.groupName
@@ -325,10 +305,9 @@ const AssetEntryRow: React.FC<{
                       to={`/instance/assets/${path.join('/')}?view=lineage&lineageScope=downstream`}
                       disabled={!asset?.definition}
                       icon="graph_downstream"
->>>>>>> 3321992479 (Defer fetching data required to launch assets until you click the button!)
                     />
                     <MenuItem
-                      text="Wipe Asset…"
+                      text="Wipe materializations"
                       icon="delete"
                       disabled={!canWipe}
                       intent="danger"
@@ -349,7 +328,7 @@ const AssetEntryRow: React.FC<{
   },
 );
 
-const AssetBulkActions: React.FC<{
+const MoreActionsDropdown: React.FC<{
   selected: Asset[];
   clearSelection: () => void;
   requery?: RefetchQueriesFunction;
@@ -362,24 +341,25 @@ const AssetBulkActions: React.FC<{
   }
 
   const disabled = selected.length === 0;
-  const label =
-    selected.length > 1
-      ? `Wipe materializations for ${selected.length} assets`
-      : selected.length === 1
-      ? `Wipe materializations for 1 asset`
-      : `Wipe materializations`;
 
   return (
     <>
-      <Button
-        disabled={disabled}
-        icon={<Icon name="delete" />}
-        intent={disabled ? 'none' : 'danger'}
-        outlined={!disabled}
-        onClick={() => setShowBulkWipeDialog(true)}
+      <Popover
+        position="bottom-right"
+        content={
+          <Menu>
+            <MenuItem
+              text="Wipe materializations"
+              onClick={() => setShowBulkWipeDialog(true)}
+              icon={<Icon name="delete" color={disabled ? Colors.Gray600 : Colors.Red500} />}
+              disabled={disabled}
+              intent="danger"
+            />
+          </Menu>
+        }
       >
-        {label}
-      </Button>
+        <Button icon={<Icon name="expand_more" />} />
+      </Popover>
       <AssetWipeDialog
         assetKeys={selected.map((asset) => asset.key)}
         isOpen={showBulkWipeDialog}
