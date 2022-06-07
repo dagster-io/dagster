@@ -4,43 +4,43 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: LaunchpadSessionContainerPipelineFragment
+// GraphQL fragment: LaunchpadSessionPipelineFragment
 // ====================================================
 
-export interface LaunchpadSessionContainerPipelineFragment_presets_tags {
+export interface LaunchpadSessionPipelineFragment_presets_tags {
   __typename: "PipelineTag";
   key: string;
   value: string;
 }
 
-export interface LaunchpadSessionContainerPipelineFragment_presets {
+export interface LaunchpadSessionPipelineFragment_presets {
   __typename: "PipelinePreset";
   name: string;
   mode: string;
   solidSelection: string[] | null;
   runConfigYaml: string;
-  tags: LaunchpadSessionContainerPipelineFragment_presets_tags[];
+  tags: LaunchpadSessionPipelineFragment_presets_tags[];
 }
 
-export interface LaunchpadSessionContainerPipelineFragment_tags {
+export interface LaunchpadSessionPipelineFragment_tags {
   __typename: "PipelineTag";
   key: string;
   value: string;
 }
 
-export interface LaunchpadSessionContainerPipelineFragment_modes {
+export interface LaunchpadSessionPipelineFragment_modes {
   __typename: "Mode";
   id: string;
   name: string;
   description: string | null;
 }
 
-export interface LaunchpadSessionContainerPipelineFragment {
+export interface LaunchpadSessionPipelineFragment {
   __typename: "Pipeline";
   id: string;
   isJob: boolean;
   name: string;
-  presets: LaunchpadSessionContainerPipelineFragment_presets[];
-  tags: LaunchpadSessionContainerPipelineFragment_tags[];
-  modes: LaunchpadSessionContainerPipelineFragment_modes[];
+  presets: LaunchpadSessionPipelineFragment_presets[];
+  tags: LaunchpadSessionPipelineFragment_tags[];
+  modes: LaunchpadSessionPipelineFragment_modes[];
 }

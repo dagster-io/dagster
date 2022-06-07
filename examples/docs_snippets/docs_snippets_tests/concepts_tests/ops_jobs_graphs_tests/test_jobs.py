@@ -6,6 +6,7 @@ from docs_snippets.concepts.ops_jobs_graphs.dynamic import (
     multiple,
     naive,
     other_arg,
+    return_dynamic,
 )
 from docs_snippets.concepts.ops_jobs_graphs.fan_in_job import fan_in
 from docs_snippets.concepts.ops_jobs_graphs.jobs import (
@@ -74,6 +75,7 @@ def test_dynamic_examples():
     assert chained.execute_in_process().success
     assert other_arg.execute_in_process().success
     assert multiple.execute_in_process().success
+    assert return_dynamic()
 
 
 def test_retry_examples():

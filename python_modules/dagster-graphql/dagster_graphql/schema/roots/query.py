@@ -30,6 +30,7 @@ from ...implementation.fetch_pipelines import (
 )
 from ...implementation.fetch_runs import (
     get_execution_plan,
+    get_logs_for_run,
     get_run_by_id,
     get_run_group,
     get_run_groups,
@@ -77,7 +78,7 @@ from ..instigation import (
 from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
 from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
-from ..pipelines.pipeline import GrapheneRunOrError
+from ..pipelines.pipeline import GrapheneEventConnectionOrError, GrapheneRunOrError
 from ..pipelines.snapshot import GraphenePipelineSnapshotOrError
 from ..run_config import GrapheneRunConfigSchemaOrError
 from ..runs import (
@@ -273,7 +274,14 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     assetsLatestInfo = graphene.Field(
         non_null_list(GrapheneAssetLatestInfo),
-        assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
+        assetKeys=graphene.Argument(non_null_list(GrapheneAssetKeyInput)),
+    )
+
+    logsForRun = graphene.Field(
+        graphene.NonNull(GrapheneEventConnectionOrError),
+        runId=graphene.NonNull(graphene.ID),
+        afterCursor=graphene.String(),
+        limit=graphene.Int(),
     )
 
     def resolve_repositoriesOrError(self, graphene_info, **kwargs):
@@ -525,7 +533,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_assetsLatestInfo(self, graphene_info, **kwargs):
         asset_keys = set(
-            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
+            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys")
         )
 
         results = get_asset_nodes(graphene_info)
@@ -535,7 +543,10 @@ class GrapheneDagitQuery(graphene.ObjectType):
         step_keys_by_asset: Dict[AssetKey, List[str]] = {
             node.external_asset_node.asset_key: node.external_asset_node.op_names
             for node in results
-            if not asset_keys or node.assetKey in asset_keys
+            if node.assetKey in asset_keys
         }
 
         return get_assets_live_info(graphene_info, step_keys_by_asset)
+
+    def resolve_logsForRun(self, graphene_info, runId, afterCursor=None, limit=None):
+        return get_logs_for_run(graphene_info, runId, afterCursor, limit)

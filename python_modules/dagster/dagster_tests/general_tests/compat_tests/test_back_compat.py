@@ -902,3 +902,44 @@ def test_repo_label_tag_migration():
 
             count = instance.get_runs_count(job_repo_filter)
             assert count == 2
+
+
+def test_add_bulk_actions_columns():
+    src_dir = file_relative_path(__file__, "snapshot_0_14_16_bulk_actions_columns/sqlite")
+
+    with copy_directory(src_dir) as test_dir:
+
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        assert {"id", "key", "status", "timestamp", "body"} == set(
+            get_sqlite3_columns(db_path, "bulk_actions")
+        )
+        assert "idx_bulk_actions_action_type" not in get_sqlite3_indexes(db_path, "bulk_actions")
+        assert "idx_bulk_actions_selector_id" not in get_sqlite3_indexes(db_path, "bulk_actions")
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
+
+            assert {
+                "id",
+                "key",
+                "status",
+                "timestamp",
+                "body",
+                "action_type",
+                "selector_id",
+            } == set(get_sqlite3_columns(db_path, "bulk_actions"))
+            assert "idx_bulk_actions_action_type" in get_sqlite3_indexes(db_path, "bulk_actions")
+            assert "idx_bulk_actions_selector_id" in get_sqlite3_indexes(db_path, "bulk_actions")
+
+            instance._run_storage._alembic_downgrade(rev="721d858e1dda")
+
+            assert get_current_alembic_version(db_path) == "721d858e1dda"
+            assert {"id", "key", "status", "timestamp", "body"} == set(
+                get_sqlite3_columns(db_path, "bulk_actions")
+            )
+            assert "idx_bulk_actions_action_type" not in get_sqlite3_indexes(
+                db_path, "bulk_actions"
+            )
+            assert "idx_bulk_actions_selector_id" not in get_sqlite3_indexes(
+                db_path, "bulk_actions"
+            )

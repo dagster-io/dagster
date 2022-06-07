@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 
 export const AssetLink: React.FC<{
   path: string[];
-  icon?: 'asset' | 'folder' | 'materialization';
+  icon?: 'asset' | 'asset_non_sda' | 'folder';
   url?: string;
   isGroup?: boolean;
 }> = ({path, icon, url, isGroup}) => {

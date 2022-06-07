@@ -1,14 +1,17 @@
 import {BaseTag, Box, Colors, Icon, IconWrapper, StyledTag} from '@dagster-io/ui';
 import * as React from 'react';
+import {useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {getJobItemsForOption, JobItem} from '../nav/FlatContentList';
+import {getLeftNavItemsForOption, LeftNavItem} from '../nav/FlatContentList';
+import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
 
 const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parsed : []);
@@ -17,6 +20,8 @@ const EXPANDED_REPO_KEYS = 'dagit.expanded-repo-keys';
 export const SectionedLeftNav = () => {
   const {loading, visibleRepos} = React.useContext(WorkspaceContext);
   const {basePath} = React.useContext(AppContext);
+
+  const jobMatch = usePathMatch();
 
   const [expandedKeys, setExpandedKeys] = useStateWithStorage<string[]>(
     basePath + ':' + EXPANDED_REPO_KEYS,
@@ -90,13 +95,16 @@ export const SectionedLeftNav = () => {
           const repoName = repo.repository.name;
           const repoAddress = buildRepoAddress(repoName, repo.repositoryLocation.name);
           const addressAsString = repoAddressAsString(repoAddress);
+          const pathMatch = jobMatch?.repoAddress === repoAddress ? jobMatch.jobName : null;
           return (
             <Section
               key={addressAsString}
               onToggle={onToggle}
               option={repo}
+              repoAddress={repoAddress}
               expanded={expandedKeys.includes(addressAsString)}
               showRepoLocation={duplicateRepoNames.has(repoName)}
+              pathJobMatch={pathMatch}
             />
           );
         })}
@@ -112,15 +120,61 @@ interface SectionProps {
   expanded: boolean;
   onToggle: (repoAddress: RepoAddress) => void;
   option: DagsterRepoOption;
+  pathJobMatch: string | null;
+  repoAddress: RepoAddress;
   showRepoLocation: boolean;
 }
 
 export const Section: React.FC<SectionProps> = (props) => {
-  const {expanded, onToggle, option, showRepoLocation} = props;
-  const repoAddress = buildRepoAddress(option.repository.name, option.repositoryLocation.name);
-  const jobItems = React.useMemo(() => getJobItemsForOption(option), [option]);
+  const {expanded, onToggle, option, pathJobMatch, repoAddress, showRepoLocation} = props;
+  const jobItems = React.useMemo(() => getLeftNavItemsForOption(option), [option]);
+
   const anyJobs = jobItems.length > 0;
   const showJobs = expanded && anyJobs;
+  const match = pathJobMatch && jobItems.find((job) => job.name === pathJobMatch);
+  const matchRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (match && matchRef.current) {
+      matchRef.current.scrollIntoView({block: 'nearest'});
+    }
+  }, [match]);
+
+  const visibleJobs = () => {
+    if (showJobs) {
+      return (
+        <Box
+          padding={{vertical: 8, horizontal: 12}}
+          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        >
+          {jobItems.map((jobItem) => {
+            const active = pathJobMatch === jobItem.name;
+            return (
+              <LeftNavItem
+                job={jobItem}
+                key={jobItem.path}
+                ref={active ? matchRef : undefined}
+                active={active}
+              />
+            );
+          })}
+        </Box>
+      );
+    }
+
+    if (match) {
+      return (
+        <Box
+          padding={{vertical: 8, horizontal: 12}}
+          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        >
+          <LeftNavItem job={match} active ref={matchRef} />
+        </Box>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <Box background={Colors.Gray100}>
@@ -162,18 +216,37 @@ export const Section: React.FC<SectionProps> = (props) => {
           </Box>
         </Box>
       </SectionHeader>
-      {showJobs ? (
-        <Box
-          padding={{vertical: 8, horizontal: 12}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        >
-          {jobItems.map((jobItem) => (
-            <JobItem job={jobItem} key={jobItem.path} />
-          ))}
-        </Box>
-      ) : null}
+      {visibleJobs()}
     </Box>
   );
+};
+
+type PathMatch = {
+  repoPath: string;
+  pipelinePath: string;
+};
+
+const usePathMatch = () => {
+  const jobMatch = useRouteMatch<PathMatch>('/workspace/:repoPath/jobs/:pipelinePath');
+  const pipelineMatch = useRouteMatch<PathMatch>('/workspace/:repoPath/pipelines/:pipelinePath');
+
+  const jobMatchParams = jobMatch?.params;
+  const pipelineMatchParams = pipelineMatch?.params;
+
+  const match = jobMatchParams || pipelineMatchParams;
+  const repoPath = match?.repoPath;
+  const jobPath = match?.pipelinePath;
+
+  if (repoPath && jobPath) {
+    const repoAddress = repoAddressFromPath(repoPath);
+    const explorerPath = explorerPathFromString(jobPath);
+    const jobName = explorerPath.pipelineName;
+    if (repoAddress && jobName) {
+      return {repoAddress, jobName};
+    }
+  }
+
+  return null;
 };
 
 const Container = styled.div`

@@ -452,7 +452,7 @@ class AssetLayer:
         asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
         asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         io_manager_by_asset: Dict[AssetKey, str] = {
-            source_asset.key: source_asset.io_manager_key for source_asset in source_assets
+            source_asset.key: source_asset.get_io_manager_key() for source_asset in source_assets
         }
         for node_handle, assets_def in assets_defs_by_node_handle.items():
             asset_deps.update(assets_def.asset_deps)

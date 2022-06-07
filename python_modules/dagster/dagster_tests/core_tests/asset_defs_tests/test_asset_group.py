@@ -781,6 +781,17 @@ def test_materialize():
     assert result.success
 
 
+def test_materialize_with_config():
+    @asset(config_schema={"foo": str})
+    def asset_foo(context):
+        return context.op_config["foo"]
+
+    group = AssetGroup(assets=[asset_foo])
+
+    result = group.materialize(run_config={"ops": {"asset_foo": {"config": {"foo": "bar"}}}})
+    assert result.success
+
+
 def test_materialize_with_out_of_process_executor():
     @asset
     def asset_foo():
@@ -1031,9 +1042,9 @@ def test_to_source_assets():
         yield Output(2, "my_other_out_name")
 
     assert AssetGroup([my_asset, my_multi_asset]).to_source_assets() == [
-        SourceAsset(AssetKey(["my_asset"])),
-        SourceAsset(AssetKey(["my_asset_name"])),
-        SourceAsset(AssetKey(["my_other_asset"])),
+        SourceAsset(AssetKey(["my_asset"]), io_manager_key="io_manager"),
+        SourceAsset(AssetKey(["my_asset_name"]), io_manager_key="io_manager"),
+        SourceAsset(AssetKey(["my_other_asset"]), io_manager_key="io_manager"),
     ]
 
 

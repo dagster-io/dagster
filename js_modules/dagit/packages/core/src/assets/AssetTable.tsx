@@ -193,7 +193,7 @@ const AssetEntryRow: React.FC<{
             path={path}
             url={linkUrl}
             isGroup={isGroup}
-            icon={isGroup ? 'folder' : asset?.definition ? 'asset' : 'materialization'}
+            icon={isGroup ? 'folder' : asset?.definition ? 'asset' : 'asset_non_sda'}
           />
           <Description>
             {asset?.definition &&
