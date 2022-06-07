@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
-
 snapshots = Snapshot()
 
 snapshots['TestSensors.test_get_sensor[non_launchable_in_memory_instance_lazy_repository] 1'] = {
