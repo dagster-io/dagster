@@ -7,7 +7,6 @@ from urllib.parse import urlparse
 import mysql.connector as mysql
 import sqlalchemy as db
 
-from dagster import Field, IntSource, Selector, StringSource
 from dagster import _check as check
 from dagster.core.storage.sql import get_alembic_config
 
@@ -30,21 +29,6 @@ def get_conn(conn_string):
     )
     # https://github.com/dagster-io/dagster/issues/3735
     return conn
-
-
-def mysql_config():
-    return Selector(
-        {
-            "mysql_url": StringSource,
-            "mysql_db": {
-                "username": StringSource,
-                "password": StringSource,
-                "hostname": StringSource,
-                "db_name": StringSource,
-                "port": Field(IntSource, is_required=False, default_value=3306),
-            },
-        }
-    )
 
 
 def mysql_url_from_config(config_value):
