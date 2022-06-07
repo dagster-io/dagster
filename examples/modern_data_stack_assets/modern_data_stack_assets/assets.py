@@ -26,7 +26,6 @@ dbt_assets = load_assets_from_dbt_project(
     compute_kind="python",
     namespace="public",
     ins={"daily_order_summary": AssetIn(namespace="public", input_manager_key="numpy_io_manager")},
-    required_resource_keys={"numpy_io_manager"},
 )
 def order_forecast_model(daily_order_summary: np.ndarray) -> Any:
     """Model parameters that best fit the observed data"""
