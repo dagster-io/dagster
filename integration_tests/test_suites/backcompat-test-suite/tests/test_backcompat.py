@@ -119,7 +119,6 @@ def docker_service_up(docker_compose_file, build_args=None):
                         stdout, stderr = q.communicate()
                         print(f"{c.name} container log dump failed with stdout: ", stdout)
                         print(f"{c.name} container logs dump failed with stderr: ", stderr)
-                    assert p.returncode == 0
 
             p = subprocess.Popen(
                 [
@@ -134,7 +133,6 @@ def docker_service_up(docker_compose_file, build_args=None):
             stdout, stderr = p.communicate()
             print("Buildkite artifact added with stdout: ", stdout)
             print("Buildkite artifact added with stderr: ", stderr)
-            assert p.returncode == 0
         return
 
     try:
