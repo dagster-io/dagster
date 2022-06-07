@@ -58,7 +58,7 @@ This isn't the case with software-defined assets:
 
 ---
 
-## When is it appropriate to use software-defined assets?
+## When should I use software-defined assets?
 
 You should use software-defined assets when:
 
@@ -80,57 +80,7 @@ Still not sure? Check out these examples to see what's a good fit and what isn't
 
 ---
 
-## How do software-defined assets work with other Dagster concepts?
-
-Not sure how software-defined assets fit into your current Dagster usage? In this section, we'll touch on how software-defined assets work with some of Dagster's core concepts:
-
-- [Ops and graphs](#ops-and-graphs)
-- [Jobs](#jobs)
-- [Dagster types](#dagster-types)
-- [Repositories](#repositories)
-- [IO managers](#io-managers)
-
-### Ops and graphs
-
-| Without software-defined assets                                           | With software-defined assets                                                                   |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| An [op]() is the basic unit of computation                                | Every software-defined asset includes a graph or an op                                         |
-| A [graph]() is a composite unit of computation that connects multiple ops | Every software-defined asset includes a graph or an op                                         |
-| Ops can have multiple outputs                                             | Multiple assets can be produced by a single op when defined using the `@multi_asset` decorator |
-| Ops can use [config](/concepts/ops-jobs-graphs/ops#op-configuration)      | Assets can use [config]()                                                                      |
-| Ops can be tested by directly invoking them                               | Assets can be tested by directly invoking them                                                 |
-| Ops can require resources                                                 | Software-defined assets can require resources                                                  |
-
-### Jobs
-
-| Without software-defined assets         | With software-defined assets                                |
-| --------------------------------------- | ----------------------------------------------------------- |
-| A job targets a graph of ops            | An asset job targets a selection of software-defined assets |
-| Jobs can be partitioned                 | Assets can be partitioned                                   |
-| Jobs can be put on schedules or sensors | Asset jobs can be put on schedules or sensors               |
-
-### Dagster types
-
-| Without software-defined assets                                                                                                           | With software-defined assets                                                                                                                                                 |
-| ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Op outputs and inputs can have Dagster types                                                                                              | Software-defined assets can have Dagster types                                                                                                                               |
-| The `Nothing` Dagster type enables declaring that Dagster doesn't need to store or load the object corresponding to an op output or input | The `non_argument_deps` argument when defining an asset enables specifying dependencies without relying on Dagster to store or load objects corresponding to that dependency |
-
-### Repositories
-
-| Without software-defined assets                       | With software-defined assets    |
-| ----------------------------------------------------- | ------------------------------- |
-| Repositories can contain jobs, schedules, and sensors | Repositories can contain assets |
-
-### IO managers
-
-| Without software-defined assets                                         | With software-defined assets                             |
-| ----------------------------------------------------------------------- | -------------------------------------------------------- |
-| IO managers can control how op inputs and outputs are loaded and stored | IO managers can control how assets are loaded and stored |
-
----
-
-## Upgrading jobs to use software-defined assets
+## How do I upgrade jobs to use software-defined assets?
 
 Let's say you've written jobs that you want to enrich using software-defined assets. Assuming assets are known and being updated, what would upgrading look like?
 
@@ -405,3 +355,53 @@ two_tables = AssetsDefinition.from_graph(ingest_graph)
 def repo():
     return [two_tables, AssetSelection.all().to_job("products_and_categories")]
 ```
+
+---
+
+## How do software-defined assets work with other Dagster concepts?
+
+Still not sure how software-defined assets fit into your current Dagster usage? In this section, we'll touch on how software-defined assets work with some of Dagster's core concepts:
+
+- [Ops and graphs](#ops-and-graphs)
+- [Jobs](#jobs)
+- [Dagster types](#dagster-types)
+- [Repositories](#repositories)
+- [IO managers](#io-managers)
+
+### Ops and graphs
+
+| Without software-defined assets                                           | With software-defined assets                                                                   |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| An [op]() is the basic unit of computation                                | Every software-defined asset includes a graph or an op                                         |
+| A [graph]() is a composite unit of computation that connects multiple ops | Every software-defined asset includes a graph or an op                                         |
+| Ops can have multiple outputs                                             | Multiple assets can be produced by a single op when defined using the `@multi_asset` decorator |
+| Ops can use [config](/concepts/ops-jobs-graphs/ops#op-configuration)      | Assets can use [config]()                                                                      |
+| Ops can be tested by directly invoking them                               | Assets can be tested by directly invoking them                                                 |
+| Ops can require resources                                                 | Software-defined assets can require resources                                                  |
+
+### Jobs
+
+| Without software-defined assets         | With software-defined assets                                |
+| --------------------------------------- | ----------------------------------------------------------- |
+| A job targets a graph of ops            | An asset job targets a selection of software-defined assets |
+| Jobs can be partitioned                 | Assets can be partitioned                                   |
+| Jobs can be put on schedules or sensors | Asset jobs can be put on schedules or sensors               |
+
+### Dagster types
+
+| Without software-defined assets                                                                                                           | With software-defined assets                                                                                                                                                 |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Op outputs and inputs can have Dagster types                                                                                              | Software-defined assets can have Dagster types                                                                                                                               |
+| The `Nothing` Dagster type enables declaring that Dagster doesn't need to store or load the object corresponding to an op output or input | The `non_argument_deps` argument when defining an asset enables specifying dependencies without relying on Dagster to store or load objects corresponding to that dependency |
+
+### Repositories
+
+| Without software-defined assets                       | With software-defined assets    |
+| ----------------------------------------------------- | ------------------------------- |
+| Repositories can contain jobs, schedules, and sensors | Repositories can contain assets |
+
+### IO managers
+
+| Without software-defined assets                                         | With software-defined assets                             |
+| ----------------------------------------------------------------------- | -------------------------------------------------------- |
+| IO managers can control how op inputs and outputs are loaded and stored | IO managers can control how assets are loaded and stored |
