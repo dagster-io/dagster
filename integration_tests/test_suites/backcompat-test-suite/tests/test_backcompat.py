@@ -107,8 +107,11 @@ def docker_service_up(docker_compose_file, build_args=None):
                     p.communicate()
                     print(f"container({c}) logs dumped")
                     if p.returncode != 0:
-                        print(f"container {c} log dump failed. logs:")
-                        print(log.read())
+                        p = subprocess.Popen(
+                        ["docker", "logs", c],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                    )
                     assert p.returncode == 0
 
             p = subprocess.Popen(
