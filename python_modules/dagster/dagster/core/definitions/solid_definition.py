@@ -316,12 +316,10 @@ class SolidDefinition(NodeDefinition):
                     input_name=input_def.name,
                 )
             elif input_def.input_manager_key:
-                # TODO change to a class that makes sense. leaving as OutputManagerRequirement
-                # for now because the expected type is correct. Will need to make a new class
-                yield OutputManagerRequirement(
+                yield InputManagerRequirement(
                     key=input_def.input_manager_key,
                     node_description=node_description,
-                    output_name=input_def.name,
+                    input_name=input_def.name,
                 )
             elif asset_layer and handle:
                 input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)

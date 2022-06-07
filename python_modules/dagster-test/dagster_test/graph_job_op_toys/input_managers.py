@@ -92,7 +92,10 @@ def median_floats(context, df):
     # return med
 
 
-@op(ins={"df": In(input_manager_key="numpy_csv_mgr")}, required_resource_keys={"numpy_csv_mgr"})
+@op(
+    ins={"df": In(input_manager_key="numpy_csv_mgr")},
+    # required_resource_keys={"numpy_csv_mgr"}
+)
 def count_rows(context, df: np.ndarray):
     num_rows = df.shape[0]
     context.log.info(f"Dataframe with type {type(df)} has {num_rows} rows")
