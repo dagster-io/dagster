@@ -28,6 +28,10 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';
+<<<<<<< HEAD
+=======
+import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+>>>>>>> 3321992479 (Defer fetching data required to launch assets until you click the button!)
 import {AssetTableFragment as Asset} from './types/AssetTableFragment';
 import {AssetViewType} from './useAssetView';
 
@@ -82,10 +86,31 @@ export const AssetTable = ({
       <Box flex={{alignItems: 'center', gap: 12}} padding={{vertical: 8, left: 24, right: 12}}>
         {actionBarComponents}
         <div style={{flex: 1}} />
+<<<<<<< HEAD
         <AssetBulkActions
           selected={Array.from(checkedAssets)}
           clearSelection={() => onToggleAll(false)}
         />
+=======
+        {checkedAssets.length > 0 && (
+          <div
+            style={{color: Colors.Gray500, paddingRight: 4}}
+          >{`${checkedAssets.length.toLocaleString()} assets selected`}</div>
+        )}
+        {checkedAssets.some((c) => !c.definition) ? (
+          <Tooltip content="One or more selected assets are not software-defined and cannot be launched directly.">
+            <Button intent="primary" icon={<Icon name="materialization" />} disabled>
+              Materialize
+            </Button>
+          </Tooltip>
+        ) : (
+          <LaunchAssetExecutionButton
+            assetKeys={checkedAssets.map((c) => c.key)}
+            liveDataByNode={liveDataByNode}
+          />
+        )}
+        <MoreActionsDropdown selected={checkedAssets} clearSelection={() => onToggleAll(false)} />
+>>>>>>> 3321992479 (Defer fetching data required to launch assets until you click the button!)
       </Box>
       <Table>
         <thead>
@@ -266,9 +291,41 @@ const AssetEntryRow: React.FC<{
                 content={
                   <Menu>
                     <MenuLink
+<<<<<<< HEAD
                       text="View details…"
                       to={`/instance/assets/${path.join('/')}`}
                       icon="view_list"
+=======
+                      text="Show in group"
+                      to={
+                        repoAddress && asset.definition?.groupName
+                          ? workspacePathFromAddress(
+                              repoAddress,
+                              `/asset_groups/${asset.definition.groupName}`,
+                            )
+                          : ''
+                      }
+                      disabled={!asset?.definition}
+                      icon="asset_group"
+                    />
+                    <MenuLink
+                      text="View neighbors"
+                      to={`/instance/assets/${path.join('/')}?view=lineage&lineageScope=neighbors`}
+                      disabled={!asset?.definition}
+                      icon="graph_neighbors"
+                    />
+                    <MenuLink
+                      text="View upstream assets"
+                      to={`/instance/assets/${path.join('/')}?view=lineage&lineageScope=upstream`}
+                      disabled={!asset?.definition}
+                      icon="graph_upstream"
+                    />
+                    <MenuLink
+                      text="View downstream assets"
+                      to={`/instance/assets/${path.join('/')}?view=lineage&lineageScope=downstream`}
+                      disabled={!asset?.definition}
+                      icon="graph_downstream"
+>>>>>>> 3321992479 (Defer fetching data required to launch assets until you click the button!)
                     />
                     <MenuItem
                       text="Wipe Asset…"

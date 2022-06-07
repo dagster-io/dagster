@@ -406,18 +406,9 @@ export const AssetGraphExplorerWithData: React.FC<
               />
 
               <LaunchAssetExecutionButton
-                title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
+                assetKeys={launchGraphNodes.map((n) => n.assetKey)}
+                liveDataByNode={liveDataByNode}
                 preferredJobName={explorerPath.pipelineName}
-                assets={launchGraphNodes.map((n) => n.definition)}
-                upstreamAssetKeys={uniqBy(
-                  flatMap(launchGraphNodes.map((n) => n.definition.dependencyKeys)),
-                  (key) => JSON.stringify(key),
-                ).filter(
-                  (key) =>
-                    !launchGraphNodes.some(
-                      (n) => JSON.stringify(n.assetKey) === JSON.stringify(key),
-                    ),
-                )}
               />
             </Box>
           </Box>

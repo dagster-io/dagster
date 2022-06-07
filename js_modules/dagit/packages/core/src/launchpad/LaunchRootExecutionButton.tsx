@@ -5,7 +5,11 @@ import {useHistory} from 'react-router';
 import {IconName} from '../../../ui/src';
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {TelemetryAction, useTelemetryAction} from '../app/Telemetry';
-import {LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult} from '../runs/RunUtils';
+import {
+  LAUNCH_PIPELINE_EXECUTION_MUTATION,
+  handleLaunchResult,
+  LaunchBehavior,
+} from '../runs/RunUtils';
 import {
   LaunchPipelineExecution,
   LaunchPipelineExecutionVariables,
@@ -17,13 +21,13 @@ import {showLaunchError} from './showLaunchError';
 interface LaunchRootExecutionButtonProps {
   disabled: boolean;
   getVariables: () => undefined | LaunchPipelineExecutionVariables;
-  behavior: 'open' | 'open-in-new-tab' | 'toast';
+  behavior: LaunchBehavior;
   pipelineName: string;
   title?: string;
   icon?: IconName;
 }
 
-export const LaunchRootExecutionButton: React.FC<LaunchRootExecutionButtonProps> = (props) => {
+export function useLaunchWithTelemetry() {
   const {canLaunchPipelineExecution} = usePermissions();
   const [launchPipelineExecution] = useMutation<
     LaunchPipelineExecution,
@@ -32,27 +36,42 @@ export const LaunchRootExecutionButton: React.FC<LaunchRootExecutionButtonProps>
   const logTelemetry = useTelemetryAction();
   const history = useHistory();
 
+  return React.useCallback(
+    async (variables: LaunchPipelineExecutionVariables, behavior: LaunchBehavior) => {
+      const jobName =
+        variables.executionParams.selector.jobName ||
+        variables.executionParams.selector.pipelineName;
+
+      if (!canLaunchPipelineExecution || !jobName) {
+        return;
+      }
+      const metadata: {[key: string]: string | null | undefined} = {
+        jobName,
+        opSelection: variables.executionParams.selector.solidSelection ? 'provided' : undefined,
+      };
+
+      const result = await launchPipelineExecution({variables});
+      logTelemetry(TelemetryAction.LAUNCH_RUN, metadata);
+      try {
+        handleLaunchResult(jobName, result, history, {behavior});
+      } catch (error) {
+        showLaunchError(error as Error);
+      }
+    },
+    [canLaunchPipelineExecution, history, launchPipelineExecution, logTelemetry],
+  );
+}
+
+export const LaunchRootExecutionButton: React.FC<LaunchRootExecutionButtonProps> = (props) => {
+  const launchWithTelemetry = useLaunchWithTelemetry();
+  const {canLaunchPipelineExecution} = usePermissions();
+
   const onLaunch = async () => {
     const variables = props.getVariables();
     if (variables == null) {
       return;
     }
-
-    const metadata: {[key: string]: string | null | undefined} = {};
-
-    if (variables.executionParams.selector.solidSelection) {
-      metadata['opSelection'] = 'provided';
-    }
-    metadata['jobName'] =
-      variables.executionParams.selector.jobName || variables.executionParams.selector.pipelineName;
-
-    try {
-      const result = await launchPipelineExecution({variables});
-      logTelemetry(TelemetryAction.LAUNCH_RUN, metadata);
-      handleLaunchResult(props.pipelineName, result, history, {behavior: props.behavior});
-    } catch (error) {
-      showLaunchError(error as Error);
-    }
+    await launchWithTelemetry(variables, props.behavior);
   };
 
   return (
