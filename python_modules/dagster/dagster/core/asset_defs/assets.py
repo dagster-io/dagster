@@ -185,10 +185,6 @@ class AssetsDefinition(ResourceAddable):
         return self._resource_defs
 
     @property
-    def group_names(self) -> Mapping[AssetKey, str]:
-        return self._group_names
-
-    @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
         return self._selected_asset_keys
 

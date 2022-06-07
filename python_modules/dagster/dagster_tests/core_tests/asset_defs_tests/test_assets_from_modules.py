@@ -116,6 +116,9 @@ def test_assets_from_modules_with_group_name():
 
 
 def test_respect_existing_groups():
+    assets = assets_from_current_module()
+    assert assets[0].group_names.get(AssetKey("asset_in_current_module")) == "my_group"
+
     with pytest.raises(DagsterInvalidDefinitionError):
         assets_from_current_module(group_name="yay")
 
