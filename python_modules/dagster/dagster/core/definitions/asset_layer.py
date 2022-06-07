@@ -101,11 +101,11 @@ def _resolve_input_to_destinations(
     return all_destinations
 
 
-def _resolve_output_to_destinations(output_name, asset_key, node_def, handle):
-    node_input_handle_to_upstream_output_asset_key = {}
+def _resolve_output_to_destinations(output_name, node_def, handle) -> Sequence[NodeInputHandle]:
+    node_input_handles: List[NodeInputHandle] = []
     if not isinstance(node_def, GraphDefinition):
         # must be in the op definition
-        return node_input_handle_to_upstream_output_asset_key
+        return node_input_handles
 
     for mapping in node_def.output_mappings:
         if mapping.definition.name != output_name:
@@ -113,10 +113,9 @@ def _resolve_output_to_destinations(output_name, asset_key, node_def, handle):
         output_pointer = mapping.maps_from
         output_node = node_def.solid_named(output_pointer.solid_name)
 
-        node_input_handle_to_upstream_output_asset_key.update(
+        node_input_handles.extend(
             _resolve_output_to_destinations(
                 output_pointer.output_name,
-                asset_key,
                 output_node.definition,
                 NodeHandle(output_pointer.solid_name, parent=handle),
             )
@@ -129,13 +128,13 @@ def _resolve_output_to_destinations(output_name, asset_key, node_def, handle):
             ).get(SolidOutputHandle(output_node, output_def), [])
         )
         for input_handle in downstream_input_handles:
-            node_input_handle_to_upstream_output_asset_key[
+            node_input_handles.append(
                 NodeInputHandle(
                     NodeHandle(input_handle.solid_name, parent=handle), input_handle.input_name
                 )
-            ] = asset_key
+            )
 
-    return node_input_handle_to_upstream_output_asset_key
+    return node_input_handles
 
 
 def _build_graph_dependencies(
@@ -517,10 +516,14 @@ class AssetLayer:
                     is_required=asset_key in assets_def.asset_keys,
                 )
                 io_manager_by_asset[asset_key] = inner_output_def.io_manager_key
+
                 asset_key_by_input.update(
-                    _resolve_output_to_destinations(
-                        output_name, asset_key, assets_def.node_def, node_handle
-                    )
+                    {
+                        input_handle: asset_key
+                        for input_handle in _resolve_output_to_destinations(
+                            output_name, assets_def.node_def, node_handle
+                        )
+                    }
                 )
         return AssetLayer(
             asset_keys_by_node_input_handle=asset_key_by_input,
