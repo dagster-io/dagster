@@ -12,10 +12,10 @@ import {
 type AssetNode = AssetGraphQuery_assetNodes;
 type AssetKey = AssetGraphQuery_assetNodes_assetKey;
 
-export const __ASSET_GROUP_PREFIX = '__ASSET_GROUP';
+export const __ASSET_JOB_PREFIX = '__ASSET_JOB';
 
 export function isHiddenAssetGroupJob(jobName: string) {
-  return jobName.startsWith(__ASSET_GROUP_PREFIX);
+  return jobName.startsWith(__ASSET_JOB_PREFIX);
 }
 
 // IMPORTANT: We use this, rather than AssetNode.id throughout this file because

@@ -9,7 +9,7 @@ import {
   isSourceAsset,
   LiveData,
   isHiddenAssetGroupJob,
-  __ASSET_GROUP_PREFIX,
+  __ASSET_JOB_PREFIX,
 } from '../asset-graph/Utils';
 import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
@@ -232,7 +232,7 @@ const OpNamesDisplay = (props: {
 
   const graphPath = workspacePathFromAddress(
     repoAddress,
-    `/graphs/${__ASSET_GROUP_PREFIX}/${graphName}/`,
+    `/graphs/${__ASSET_JOB_PREFIX}/${graphName}/`,
   );
 
   return (
