@@ -66,7 +66,9 @@ const MenuItem = React.forwardRef<
         )}
         <span
           className={cx({
+            // Map content hierarchy to levels for docs search
             "DocSearch-lvl0": lvl === 0 && match,
+            "DocSearch-lvl1": lvl === 1 && match,
             "DocSearch-lvl2": lvl === 2 && match,
           })}
         >
@@ -161,11 +163,11 @@ const SecondaryNavigation = () => {
                 href={itemWithPath.path}
                 item={sectionOrItem}
                 match={match}
-                lvl={2}
+                lvl={1}
               />
             ) : (
               <Link href={itemWithPath.path} passHref>
-                <MenuItem item={sectionOrItem} match={match} lvl={2} />
+                <MenuItem item={sectionOrItem} match={match} lvl={1} />
               </Link>
             )}
             {match && sectionOrItem.children && (
