@@ -215,7 +215,7 @@
   },
   {
     "source": "/guides/dagster/asset-tutorial",
-    "destination": "/tutorial/intro-tutorial/assets",
+    "destination": "/tutorial/intro-tutorial/assets/defining-an-asset",
     "permanent": true
   },
   {
