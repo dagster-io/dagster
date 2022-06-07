@@ -6,11 +6,11 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 
+import docker
 import packaging
 import pytest
 import requests
 from dagster_graphql import DagsterGraphQLClient
-import docker
 
 from dagster import file_relative_path
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -87,7 +87,7 @@ def docker_service_up(docker_compose_file, build_args=None):
             client = docker.client.from_env()
             containers = client.containers.list()
 
-            current_test = os.environ.get('PYTEST_CURRENT_TEST').split(':')[-1].split(' ')[0]
+            current_test = os.environ.get("PYTEST_CURRENT_TEST").split(":")[-1].split(" ")[0]
             logs_dir = f".docker_logs/{current_test}"
 
             # delete any existing logs
@@ -99,26 +99,26 @@ def docker_service_up(docker_compose_file, build_args=None):
 
             for c in containers:
                 with open(
-                    "{dir}/{container}-logs.txt".format(dir=logs_dir, container=c),
+                    "{dir}/{container}-logs.txt".format(dir=logs_dir, container=c.name),
                     "w",
                     encoding="utf8",
                 ) as log:
                     p = subprocess.Popen(
-                        ["docker", "logs", c],
+                        ["docker", "logs", c.name],
                         stdout=log,
                         stderr=log,
                     )
                     p.communicate()
-                    print(f"container({c}) logs dumped")
+                    print(f"container({c.name}) logs dumped")
                     if p.returncode != 0:
                         q = subprocess.Popen(
-                            ["docker", "logs", c],
+                            ["docker", "logs", c.name],
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                         )
                         stdout, stderr = q.communicate()
-                        print(f"{c} container log dump failed with stdout: ", stdout)
-                        print(f"{c} container logs dump failed with stderr: ", stderr)
+                        print(f"{c.name} container log dump failed with stdout: ", stdout)
+                        print(f"{c.name} container logs dump failed with stderr: ", stderr)
                     assert p.returncode == 0
 
             p = subprocess.Popen(
