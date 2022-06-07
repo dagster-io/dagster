@@ -1,7 +1,18 @@
 import re
 import sys
 from collections import defaultdict, deque
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, List, NamedTuple, Sequence, Set
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    FrozenSet,
+    Iterable,
+    List,
+    NamedTuple,
+    Sequence,
+    Set,
+)
 
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.events import AssetKey
@@ -74,7 +85,7 @@ class AssetSelectionData(
         )
 
 
-def generate_asset_dep_graph(assets_defs: Sequence["AssetsDefinition"]) -> Dict[str, Any]:
+def generate_asset_dep_graph(assets_defs: Iterable["AssetsDefinition"]) -> Dict[str, Any]:
     upstream: Dict[str, Set[str]] = {}
     downstream: Dict[str, Set[str]] = {}
 

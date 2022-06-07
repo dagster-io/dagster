@@ -1,4 +1,5 @@
 import itertools
+from collections import defaultdict
 from typing import (
     AbstractSet,
     Any,
@@ -8,10 +9,13 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Union,
     cast,
 )
+
+from toposort import CircularDependencyError, toposort
 
 import dagster._check as check
 from dagster.config import Shape
@@ -99,19 +103,11 @@ def build_assets_job(
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
 
     deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
-
-    try:
-        node_deps = {}
-        for upstream_node, downstream_deps in deps.items():
-            node_deps[upstream_node] = {
-                dep if isinstance(dep, str) else dep.node for dep in downstream_deps.values()
-            }
-        # make sure that there is a valid topological sorting of these node dependencies
-        list(toposort(node_deps))
-    # only try to resolve cycles if we have a cycle
-    except CircularDependencyError:
+    # attempt to resolve cycles using multi-asset subsetting
+    if _has_cycles(deps):
         assets = _attempt_resolve_cycles(assets)
         deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
+
     graph = GraphDefinition(
         name=name,
         node_defs=[asset.node_def for asset in assets],
@@ -335,8 +331,27 @@ def build_deps(
     return deps, assets_defs_by_node_handle
 
 
+def _has_cycles(deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]) -> bool:
+    """Detect if there are cycles in a dependency dictionary."""
+    try:
+        node_deps: Dict[Union[str, NodeInvocation], Set[str]] = {}
+        for upstream_node, downstream_deps in deps.items():
+            node_deps[upstream_node] = set()
+            for dep in downstream_deps.values():
+                if isinstance(dep, DependencyDefinition):
+                    node_deps[upstream_node].add(dep.node)
+                else:
+                    check.failed(f"Unexpected dependency type {type(dep)}.")
+        # make sure that there is a valid topological sorting of these node dependencies
+        list(toposort(node_deps))
+        return False
+    # only try to resolve cycles if we have a cycle
+    except CircularDependencyError:
+        return True
+
+
 def _attempt_resolve_cycles(
-    assets_defs: Sequence["AssetsDefinition"],
+    assets_defs: Iterable["AssetsDefinition"],
 ) -> Sequence["AssetsDefinition"]:
     """
     DFS starting at root nodes to color the asset dependency graph. Each time you leave your
@@ -353,7 +368,6 @@ def _attempt_resolve_cycles(
     that asset via a different node (i.e. there will be no cycles).
     """
     from dagster.core.selector.subset_selector import generate_asset_dep_graph
-    from dagster.core.utils import toposort
 
     # get asset dependencies
     asset_deps = generate_asset_dep_graph(assets_defs)
@@ -387,8 +401,8 @@ def _attempt_resolve_cycles(
             if colors.get(downstream_name, -1) < new_color:
                 _dfs(downstream_name, new_color)
 
-    # get validate that there are no cycles
-    toposorted = toposort(asset_deps["upstream"])
+    # validate that there are no cycles in the overall asset graph
+    toposorted = list(toposort(asset_deps["upstream"]))
 
     # dfs for each root node
     for root_name in toposorted[0]:
