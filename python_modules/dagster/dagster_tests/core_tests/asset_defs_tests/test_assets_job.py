@@ -256,6 +256,8 @@ def test_source_asset():
             assert context.resources.subresource == 9
             assert context.upstream_output.resources.subresource == 9
             assert context.upstream_output.asset_key == AssetKey("source1")
+            assert context.upstream_output.metadata == {"a": "b"}
+            assert context.upstream_output.resource_config["a"] == 7
             assert context.asset_key == AssetKey("source1")
             return 5
 
@@ -266,7 +268,11 @@ def test_source_asset():
     job = build_assets_job(
         "a",
         [asset1],
-        source_assets=[SourceAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
+        source_assets=[
+            SourceAsset(
+                AssetKey("source1"), io_manager_key="special_io_manager", metadata={"a": "b"}
+            )
+        ],
         resource_defs={
             "special_io_manager": my_io_manager.configured({"a": 7}),
             "subresource": ResourceDefinition.hardcoded_resource(9),

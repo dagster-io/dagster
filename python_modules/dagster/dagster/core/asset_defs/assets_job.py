@@ -1,5 +1,17 @@
 import itertools
-from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster.config import Shape
@@ -32,7 +44,7 @@ from .source_asset import SourceAsset
 @experimental
 def build_assets_job(
     name: str,
-    assets: Sequence[AssetsDefinition],
+    assets: Iterable[AssetsDefinition],
     source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
@@ -76,7 +88,7 @@ def build_assets_job(
     """
 
     check.str_param(name, "name")
-    check.sequence_param(assets, "assets", of_type=AssetsDefinition)
+    check.iterable_param(assets, "assets", of_type=AssetsDefinition)
     check.opt_sequence_param(
         source_assets, "source_assets", of_type=(SourceAsset, AssetsDefinition)
     )
@@ -131,7 +143,7 @@ def build_assets_job(
 
 
 def build_job_partitions_from_assets(
-    assets: Sequence[AssetsDefinition],
+    assets: Iterable[AssetsDefinition],
     source_assets: Sequence[Union[SourceAsset, AssetsDefinition]],
 ) -> Optional[PartitionedConfig]:
     assets_with_partitions_defs = [assets_def for assets_def in assets if assets_def.partitions_def]
@@ -236,7 +248,7 @@ def build_source_assets_by_key(
 
 
 def build_deps(
-    assets_defs: Sequence[AssetsDefinition], source_paths: AbstractSet[AssetKey]
+    assets_defs: Iterable[AssetsDefinition], source_paths: AbstractSet[AssetKey]
 ) -> Tuple[
     Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]],
     Mapping[NodeHandle, AssetsDefinition],

@@ -71,6 +71,11 @@ class AssetsDefinition:
             self._selected_asset_keys = all_asset_keys
         self._can_subset = can_subset
 
+        self._metadata_by_asset_key = {
+            asset_key: node_def.resolve_output_to_origin(output_name, None)[0].metadata
+            for output_name, asset_key in asset_keys_by_output_name.items()
+        }
+
     def __call__(self, *args, **kwargs):
         return self._node_def(*args, **kwargs)
 
@@ -219,6 +224,10 @@ class AssetsDefinition:
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         return self._partitions_def
+
+    @property
+    def metadata_by_asset_key(self):
+        return self._metadata_by_asset_key
 
     def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
         if self._partitions_def is None:
