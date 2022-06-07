@@ -36,15 +36,15 @@
           },
           {
             "title": "Defining An Asset",
-            "path": "/guides/dagster/asset-tutorial/defining-an-asset"
+            "path": "/tutorial/intro-tutorial/assets/defining-an-asset"
           },
           {
             "title": "Building Graphs of Assets",
-            "path": "/guides/dagster/asset-tutorial/asset-graph"
+            "path": "/tutorial/intro-tutorial/assets/asset-graph"
           },
           {
             "title": "Testing Assets",
-            "path": "/guides/dagster/asset-tutorial/testing-assets"
+            "path": "/tutorial/intro-tutorial/assets/testing-assets"
           }
         ]
       },
