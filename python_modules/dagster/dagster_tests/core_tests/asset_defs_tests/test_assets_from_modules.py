@@ -95,3 +95,15 @@ def test_asset_group_from_current_module():
     assets = [get_unique_asset_identifier(asset) for asset in assets]
     assert assets == ["asset_in_current_module", AssetKey("source_asset_in_current_module")]
     assert len(assets) == 2
+
+
+def test_assets_from_modules_with_group_name():
+    from . import asset_package
+    from .asset_package import module_with_assets
+
+    assets = assets_from_modules([asset_package, module_with_assets], group_name="my_cool_group")
+    for asset in assets:
+        if isinstance(asset, AssetsDefinition):
+            asset_keys = asset.asset_keys
+            for asset_key in asset_keys:
+                assert asset.group_names.get(asset_key) == "my_cool_group"

@@ -71,7 +71,9 @@ def assets_and_source_assets_from_modules(
 
 
 def assets_from_modules(
-    modules: Iterable[ModuleType], extra_source_assets: Optional[Sequence[SourceAsset]] = None
+    modules: Iterable[ModuleType],
+    group_name: Optional[str] = None,
+    extra_source_assets: Optional[Sequence[SourceAsset]] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
     Constructs a list of assets and source assets from the given modules.
@@ -85,13 +87,22 @@ def assets_from_modules(
         List[Union[AssetsDefinition, SourceAsset]]: A list containing assets and source assets
             defined in the given modules.
     """
+    group_name = check.opt_str_param(group_name, "group_name")
     assets, source_assets = assets_and_source_assets_from_modules(
         modules, extra_source_assets=extra_source_assets
     )
+
+    if group_name:
+        assets = [
+            asset.with_group_names({asset_key: group_name for asset_key in asset.asset_keys})
+            for asset in assets
+        ]
+
     return [*assets, *source_assets]
 
 
 def assets_from_current_module(
+    group_name: Optional[str] = None,
     extra_source_assets: Optional[Sequence[SourceAsset]] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
@@ -110,7 +121,9 @@ def assets_from_current_module(
     if module is None:
         check.failed("Could not find a module for the caller")
 
-    return assets_from_modules([module], extra_source_assets=extra_source_assets)
+    return assets_from_modules(
+        [module], group_name=group_name, extra_source_assets=extra_source_assets
+    )
 
 
 def assets_and_source_assets_from_package_module(
@@ -136,6 +149,7 @@ def assets_and_source_assets_from_package_module(
 
 def assets_from_package_module(
     package_module: ModuleType,
+    group_name: Optional[str] = None,
     extra_source_assets: Optional[Sequence[SourceAsset]] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
@@ -153,14 +167,22 @@ def assets_from_package_module(
         List[Union[AssetsDefinition, SourceAsset]]: A list containing assets and source assets
             defined in the module.
     """
+    group_name = check.opt_str_param(group_name, "group_name")
     assets, source_assets = assets_and_source_assets_from_package_module(
         package_module, extra_source_assets
     )
+    if group_name:
+        assets = [
+            asset.with_group_names({asset_key: group_name for asset_key in asset.asset_keys})
+            for asset in assets
+        ]
     return [*assets, *source_assets]
 
 
 def assets_from_package_name(
-    package_name: str, extra_source_assets: Optional[Sequence[SourceAsset]] = None
+    package_name: str,
+    group_name: Optional[str] = None,
+    extra_source_assets: Optional[Sequence[SourceAsset]] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
     Constructs a list of assets and source assets that include all asset
@@ -176,7 +198,9 @@ def assets_from_package_name(
             defined in the module.
     """
     package_module = import_module(package_name)
-    return assets_from_package_module(package_module, extra_source_assets=extra_source_assets)
+    return assets_from_package_module(
+        package_module, group_name=group_name, extra_source_assets=extra_source_assets
+    )
 
 
 def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:

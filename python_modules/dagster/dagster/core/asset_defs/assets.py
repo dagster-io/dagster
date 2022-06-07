@@ -179,6 +179,10 @@ class AssetsDefinition:
         return self._resource_defs
 
     @property
+    def group_names(self) -> Mapping[AssetKey, str]:
+        return self._group_names
+
+    @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
         return self._selected_asset_keys
 
@@ -266,6 +270,33 @@ class AssetsDefinition:
                 },
                 resource_defs=self.resource_defs,
             )
+
+    def with_group_names(
+        self,
+        group_names: Mapping[AssetKey, str],
+    ) -> "AssetsDefinition":
+        from dagster import DagsterInvalidDefinitionError
+
+        defined_group_names = [
+            asset_key for asset_key in group_names if asset_key in self.group_names
+        ]
+        if defined_group_names:
+            raise DagsterInvalidDefinitionError(
+                f"Group name already exists on asset f{','.join(defined_group_names)}"
+            )
+
+        return self.__class__(
+            asset_keys_by_input_name=self._asset_keys_by_input_name,
+            asset_keys_by_output_name=self._asset_keys_by_output_name,
+            node_def=self.node_def,
+            partitions_def=self.partitions_def,
+            partition_mappings=self._partition_mappings,
+            asset_deps=self._asset_deps,
+            can_subset=self.can_subset,
+            selected_asset_keys=self._selected_asset_keys,
+            resource_defs=self.resource_defs,
+            group_names=group_names,
+        )
 
     def subset_for(self, selected_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
         """
