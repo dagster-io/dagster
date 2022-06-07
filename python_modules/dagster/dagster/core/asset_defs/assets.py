@@ -12,6 +12,7 @@ from dagster.core.definitions import (
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.utils import merge_dicts
+from dagster.core.definitions.utils import validate_group_name
 from dagster.utils.backcompat import ExperimentalWarning, experimental
 
 from ..definitions.resource_requirement import (
@@ -21,8 +22,6 @@ from ..definitions.resource_requirement import (
 )
 from .partition_mapping import PartitionMapping
 from .source_asset import SourceAsset
-
-DEFAULT_GROUP_NAME = "default"
 
 
 class AssetsDefinition(ResourceAddable):
@@ -77,7 +76,7 @@ class AssetsDefinition(ResourceAddable):
         # assets that don't have a group name get a DEFAULT_GROUP_NAME
         for key in all_asset_keys:
             group_name = group_names.get(key)
-            self._group_names[key] = group_name if group_name else DEFAULT_GROUP_NAME
+            self._group_names[key] = validate_group_name(group_name)
 
         if selected_asset_keys is not None:
             self._selected_asset_keys = selected_asset_keys

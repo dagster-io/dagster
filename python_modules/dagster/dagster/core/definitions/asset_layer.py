@@ -532,9 +532,28 @@ class AssetLayer:
         )
 
     def group_names_by_assets(self) -> Mapping[AssetKey, str]:
+        from dagster.core.asset_defs import AssetsDefinition
+
         group_names: Dict[AssetKey, str] = {}
-        for assets_def in self._assets_defs:
+
+        # find all AssetsDefinition and SourceAsset instances
+        assets_defs = self._assets_defs.copy() if self._assets_defs else []
+        source_asset_defs = []
+        if self._source_asset_defs:
+            for source_asset in self._source_asset_defs:
+                if isinstance(source_asset, AssetsDefinition):
+                    assets_defs.append(source_asset)
+                else:
+                    source_asset_defs.append(source_asset)
+
+        # extract group_names from AssetDefinition
+        for assets_def in assets_defs:
             group_names.update(assets_def.group_names)
+
+        # extract group_name from all SourceAsset
+        for source_asset_def in source_asset_defs:
+            group_names[source_asset_def.key] = source_asset_def.group_name
+
         return group_names
 
 

@@ -2,7 +2,7 @@ import pytest
 
 from dagster import AssetKey, AssetsDefinition, GraphOut, In, Out, graph, job, op
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
-from dagster.core.asset_defs.assets import DEFAULT_GROUP_NAME
+from dagster.core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.host_representation.external_data import (
     ExternalAssetDependedBy,
@@ -134,7 +134,7 @@ def test_input_name_matches_output_name():
             dependencies=[],
             depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey("something"))],
             job_names=[],
-            group_name=None,
+            group_name=DEFAULT_GROUP_NAME,
         ),
         ExternalAssetNode(
             asset_key=AssetKey("something"),
@@ -523,7 +523,7 @@ def test_source_asset_with_op():
             dependencies=[],
             depended_by=[ExternalAssetDependedBy(AssetKey("bar"))],
             job_names=[],
-            group_name=None,
+            group_name=DEFAULT_GROUP_NAME,
         ),
         ExternalAssetNode(
             asset_key=AssetKey("bar"),
@@ -554,7 +554,7 @@ def test_unused_source_asset():
             dependencies=[],
             depended_by=[],
             job_names=[],
-            group_name=None,
+            group_name=DEFAULT_GROUP_NAME,
         ),
         ExternalAssetNode(
             asset_key=AssetKey("bar"),
@@ -562,7 +562,7 @@ def test_unused_source_asset():
             dependencies=[],
             depended_by=[],
             job_names=[],
-            group_name=None,
+            group_name=DEFAULT_GROUP_NAME,
         ),
     ]
 
@@ -586,7 +586,7 @@ def test_used_source_asset():
             dependencies=[],
             depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey(["foo"]))],
             job_names=[],
-            group_name=None,
+            group_name=DEFAULT_GROUP_NAME,
         ),
         ExternalAssetNode(
             asset_key=AssetKey("foo"),
