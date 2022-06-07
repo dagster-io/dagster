@@ -36,7 +36,7 @@ class AssetsDefinition(ResourceAddable):
         can_subset: bool = False,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         group_names: Optional[Mapping[AssetKey, str]] = None,
-        # if adding new fields, make sure to handle them in the with_replaced_asset_keys method
+        # if adding new fields, make sure to handle them in the with_prefix_or_group method
     ):
         self._node_def = node_def
         self._asset_keys_by_input_name = check.dict_param(
@@ -239,11 +239,38 @@ class AssetsDefinition(ResourceAddable):
             self._partitions_def.get_default_partition_mapping(),
         )
 
-    def with_replaced_asset_keys(
+    def with_prefix_or_group(
         self,
-        output_asset_key_replacements: Mapping[AssetKey, AssetKey],
-        input_asset_key_replacements: Mapping[AssetKey, AssetKey],
+        output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
+        input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
+        group_names: Optional[Mapping[AssetKey, str]] = None,
     ) -> "AssetsDefinition":
+        from dagster import DagsterInvalidDefinitionError
+
+        output_asset_key_replacements = check.opt_dict_param(
+            output_asset_key_replacements,
+            "output_asset_key_replacements",
+            key_type=AssetKey,
+            value_type=AssetKey,
+        )
+        input_asset_key_replacements = check.opt_dict_param(
+            input_asset_key_replacements,
+            "input_asset_key_replacements",
+            key_type=AssetKey,
+            value_type=AssetKey,
+        )
+        group_names = check.opt_dict_param(
+            group_names, "group_names", key_type=AssetKey, value_type=str
+        )
+
+        defined_group_names = [
+            asset_key.to_user_string() for asset_key in group_names if asset_key in self.group_names
+        ]
+        if defined_group_names:
+            raise DagsterInvalidDefinitionError(
+                f"Group name already exists on assets {', '.join(defined_group_names)}"
+            )
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
@@ -275,34 +302,8 @@ class AssetsDefinition(ResourceAddable):
                     output_asset_key_replacements.get(key, key) for key in self._selected_asset_keys
                 },
                 resource_defs=self.resource_defs,
+                group_names={**self.group_names, **group_names},
             )
-
-    def with_group_names(
-        self,
-        group_names: Mapping[AssetKey, str],
-    ) -> "AssetsDefinition":
-        from dagster import DagsterInvalidDefinitionError
-
-        defined_group_names = [
-            asset_key for asset_key in group_names if asset_key in self.group_names
-        ]
-        if defined_group_names:
-            raise DagsterInvalidDefinitionError(
-                f"Group name already exists on asset f{','.join(defined_group_names)}"
-            )
-
-        return self.__class__(
-            asset_keys_by_input_name=self._asset_keys_by_input_name,
-            asset_keys_by_output_name=self._asset_keys_by_output_name,
-            node_def=self.node_def,
-            partitions_def=self.partitions_def,
-            partition_mappings=self._partition_mappings,
-            asset_deps=self._asset_deps,
-            can_subset=self.can_subset,
-            selected_asset_keys=self._selected_asset_keys,
-            resource_defs=self.resource_defs,
-            group_names=group_names,
-        )
 
     def subset_for(self, selected_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
         """

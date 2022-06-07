@@ -73,6 +73,7 @@ def assets_and_source_assets_from_modules(
 def assets_from_modules(
     modules: Iterable[ModuleType],
     group_name: Optional[str] = None,
+    asset_key_prefix: Optional[str] = None,
     extra_source_assets: Optional[Sequence[SourceAsset]] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
@@ -88,13 +89,18 @@ def assets_from_modules(
             A list containing assets and source assets defined in the given modules.
     """
     group_name = check.opt_str_param(group_name, "group_name")
+    asset_key_prefix = check.opt_str_param(asset_key_prefix, "asset_key_prefix")
+
     assets, source_assets = assets_and_source_assets_from_modules(
         modules, extra_source_assets=extra_source_assets
     )
-
+    if asset_key_prefix:
+        assets = prefix_assets(assets, asset_key_prefix)
     if group_name:
         assets = [
-            asset.with_group_names({asset_key: group_name for asset_key in asset.asset_keys})
+            asset.with_prefix_or_group(
+                group_names={asset_key: group_name for asset_key in asset.asset_keys}
+            )
             for asset in assets
         ]
 
@@ -103,6 +109,7 @@ def assets_from_modules(
 
 def assets_from_current_module(
     group_name: Optional[str] = None,
+    asset_key_prefix: Optional[str] = None,
     extra_source_assets: Optional[Sequence[SourceAsset]] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
@@ -122,7 +129,10 @@ def assets_from_current_module(
         check.failed("Could not find a module for the caller")
 
     return assets_from_modules(
-        [module], group_name=group_name, extra_source_assets=extra_source_assets
+        [module],
+        group_name=group_name,
+        asset_key_prefix=asset_key_prefix,
+        extra_source_assets=extra_source_assets,
     )
 
 
@@ -150,6 +160,7 @@ def assets_and_source_assets_from_package_module(
 def assets_from_package_module(
     package_module: ModuleType,
     group_name: Optional[str] = None,
+    asset_key_prefix: Optional[str] = None,
     extra_source_assets: Optional[Sequence[SourceAsset]] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
@@ -168,12 +179,18 @@ def assets_from_package_module(
             A list containing assets and source assets defined in the module.
     """
     group_name = check.opt_str_param(group_name, "group_name")
+    asset_key_prefix = check.opt_str_param(asset_key_prefix, "asset_key_prefix")
+
     assets, source_assets = assets_and_source_assets_from_package_module(
         package_module, extra_source_assets
     )
+    if asset_key_prefix:
+        assets = prefix_assets(assets, asset_key_prefix)
     if group_name:
         assets = [
-            asset.with_group_names({asset_key: group_name for asset_key in asset.asset_keys})
+            asset.with_prefix_or_group(
+                group_names={asset_key: group_name for asset_key in asset.asset_keys}
+            )
             for asset in assets
         ]
     return [*assets, *source_assets]
@@ -182,6 +199,7 @@ def assets_from_package_module(
 def assets_from_package_name(
     package_name: str,
     group_name: Optional[str] = None,
+    asset_key_prefix: Optional[str] = None,
     extra_source_assets: Optional[Sequence[SourceAsset]] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
@@ -199,7 +217,10 @@ def assets_from_package_name(
     """
     package_module = import_module(package_name)
     return assets_from_package_module(
-        package_module, group_name=group_name, extra_source_assets=extra_source_assets
+        package_module,
+        group_name=group_name,
+        asset_key_prefix=asset_key_prefix,
+        extra_source_assets=extra_source_assets,
     )
 
 
@@ -217,3 +238,64 @@ def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]
         raise ValueError(
             f"Tried to find modules in package {package_module}, but its __file__ is None"
         )
+
+
+def prefix_assets(assets_defs: List[AssetsDefinition], key_prefix: str) -> List[AssetsDefinition]:
+    """
+    Given an list of assets, prefix the input and output asset keys with key_prefix.
+    The prefix is not added to source assets.
+
+    Input asset keys that reference other assets within assets_defs are "brought along" -
+    i.e. prefixed as well.
+
+    Example with a single asset:
+
+        .. code-block:: python
+
+            @asset
+            def asset1():
+                ...
+
+            result = prefixed_asset_key_replacements([asset_1], "my_prefix")
+            assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset1"])
+
+    Example with dependencies within the list of assets:
+
+        .. code-block:: python
+
+            @asset
+            def asset1():
+                ...
+
+            @asset
+            def asset2(asset1):
+                ...
+
+            result = prefixed_asset_key_replacements([asset1, asset2], "my_prefix")
+            assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset1"])
+            assert result.assets[1].asset_key == AssetKey(["my_prefix", "asset2"])
+            assert result.assets[1].dependency_asset_keys == {AssetKey(["my_prefix", "asset1"])}
+
+    """
+    asset_keys = {asset_key for assets_def in assets_defs for asset_key in assets_def.asset_keys}
+
+    result_assets: List[AssetsDefinition] = []
+    for assets_def in assets_defs:
+        output_asset_key_replacements = {
+            asset_key: AssetKey([key_prefix] + asset_key.path)
+            for asset_key in assets_def.asset_keys
+        }
+        input_asset_key_replacements = {}
+        for dep_asset_key in assets_def.dependency_asset_keys:
+            if dep_asset_key in asset_keys:
+                input_asset_key_replacements[dep_asset_key] = AssetKey(
+                    (key_prefix, *dep_asset_key.path)
+                )
+
+        result_assets.append(
+            assets_def.with_prefix_or_group(
+                output_asset_key_replacements=output_asset_key_replacements,
+                input_asset_key_replacements=input_asset_key_replacements,
+            )
+        )
+    return result_assets
