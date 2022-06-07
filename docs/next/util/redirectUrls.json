@@ -443,13 +443,28 @@
     "permanent": true
   },
   {
+    "source": "/tutorial/intro-tutorial/single-op-job",
+    "destination": "/tutorial/intro-tutorial/ops-jobs/single-op-job",
+    "permanent": true
+  },
+  {
     "source": "/tutorial/intro-tutorial/single-solid-pipeline",
-    "destination": "/tutorial/intro-tutorial/single-op-job",
+    "destination": "/tutorial/intro-tutorial/ops-jobs/single-op-job",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/intro-tutorial/connecting-ops",
+    "destination": "/tutorial/intro-tutorial/ops-jobs/connecting-ops",
     "permanent": true
   },
   {
     "source": "/tutorial/intro-tutorial/connecting-solids",
-    "destination": "/tutorial/intro-tutorial/connecting-ops",
+    "destination": "/tutorial/intro-tutorial/ops-jobs/connecting-ops",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/intro-tutorial/testable",
+    "destination": "/tutorial/intro-tutorial/ops-jobs/testable",
     "permanent": true
   },
   {
