@@ -42,19 +42,18 @@ Drilling down to the [Asset Details page](/concepts/dagit/dagit#asset-details) f
 
 ### Improved code ergonomics
 
-Without software-defined assets, you're often forced to choose between:
+Software-defined assets provide sizeable improvements when it comes to code ergonomics:
 
-- **Easy dependency tracking** by containing everything in a single mega-job, which requires maintaining a huge, unwieldy object.
+- **You'll usually write less code**. Specifying the inputs to a software-defined asset defines the assets it depends on. This means you don't need to use `@graph` and `@job` to wire dependencies between ops.
 
-- **Manageable maintenance** by splitting up your pipeline into smaller jobs, which makes tracking cross-job dependencies difficult.
+  This approach improves scalability by reducing the number of times an asset's name appears in your codebase by half. Refer to the [IO manager-based example](#materialize-two-interdependent-tables-without-an-io-manager) below to see this in action.
 
-This isn't the case with software-defined assets:
+- **You no longer have to choose between easy dependency tracking and manageable organization.** Without software-defined assets, you're often forced to:
 
-- **Assets track their dependencies,** so you don't need to define mega-jobs just to keep track. This allows you to avoid interruptions in dependency graphs and eliminate the need for root input managers.
+    - Contain everything in a single mega-job, which allows for easy dependency tracking but creates maintenance difficulties, OR
+    - Split your pipeline into smaller jobs, which allows for easy maintenance but makes dependency tracking difficult
 
-- **Using software-defined assets usually means writing less code**. Specifying the inputs to a software-defined asset defines the assets it depends on. This means you don't need to use `@graph` and `@job` to wire dependencies between ops.
-
-  This approach reduces the number of times an asset's name appears in your codebase by half, improving your codebase's scalability. Refer to the [IO manager-based example](#materialize-two-interdependent-tables-without-an-io-manager) below to see this in action.
+   As assets track their dependencies, you can avoid interruptions in dependency graphs and eliminate the need for root input managers.
 
 ---
 
