@@ -41,8 +41,8 @@ def assets_and_source_assets_from_modules(
             group in addition to the source assets found in the modules.
 
     Returns:
-        Tuple[List[AssetsDefinition], List[SourceAsset]]: An tuple containing a list of assets
-            and a list of source assets defined in the given modules.
+        Tuple[List[AssetsDefinition], List[SourceAsset]]:
+            A tuple containing a list of assets and a list of source assets defined in the given modules.
     """
     asset_ids: Set[int] = set()
     asset_keys: Dict[AssetKey, ModuleType] = dict()
@@ -82,8 +82,8 @@ def assets_from_modules(
             group in addition to the source assets found in the modules.
 
     Returns:
-        List[Union[AssetsDefinition, SourceAsset]]: A list containing assets and source assets
-            defined in the given modules.
+        List[Union[AssetsDefinition, SourceAsset]]:
+            A list containing assets and source assets defined in the given modules.
     """
     assets, source_assets = assets_and_source_assets_from_modules(
         modules, extra_source_assets=extra_source_assets
@@ -102,8 +102,8 @@ def assets_from_current_module(
             group in addition to the source assets found in the modules.
 
     Returns:
-        List[Union[AssetsDefinition, SourceAsset]]: A list containing assets and source assets
-            defined in the module.
+        List[Union[AssetsDefinition, SourceAsset]]:
+            A list containing assets and source assets defined in the module.
     """
     caller = inspect.stack()[1]
     module = inspect.getmodule(caller[0])
@@ -126,8 +126,8 @@ def assets_and_source_assets_from_package_module(
             group in addition to the source assets found in the modules.
 
     Returns:
-        Tuple[List[AssetsDefinition], List[SourceAsset]]: An tuple containing a list of assets
-            and a list of source assets defined in the given modules.
+        Tuple[List[AssetsDefinition], List[SourceAsset]]:
+            A tuple containing a list of assets and a list of source assets defined in the given modules.
     """
     return assets_and_source_assets_from_modules(
         _find_modules_in_package(package_module), extra_source_assets=extra_source_assets
@@ -150,8 +150,8 @@ def assets_from_package_module(
             group in addition to the source assets found in the modules.
 
     Returns:
-        List[Union[AssetsDefinition, SourceAsset]]: A list containing assets and source assets
-            defined in the module.
+        List[Union[AssetsDefinition, SourceAsset]]:
+            A list containing assets and source assets defined in the module.
     """
     assets, source_assets = assets_and_source_assets_from_package_module(
         package_module, extra_source_assets
@@ -172,8 +172,8 @@ def assets_from_package_name(
             group in addition to the source assets found in the modules.
 
     Returns:
-        List[Union[AssetsDefinition, SourceAsset]]: A list containing assets and source assets
-            defined in the module.
+        List[Union[AssetsDefinition, SourceAsset]]:
+            A list containing assets and source assets defined in the module.
     """
     package_module = import_module(package_name)
     return assets_from_package_module(package_module, extra_source_assets=extra_source_assets)
