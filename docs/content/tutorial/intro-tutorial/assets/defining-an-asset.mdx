@@ -1,33 +1,21 @@
 ---
-title: "Software-Defined Assets Tutorial | Part One: Defining An Asset | Dagster"
+title: Software-Defined Assets Tutorial | Dagster
 description: A software-defined specifies an asset that you want to exist and how to compute its contents.
 ---
 
-# Defining An Asset
+# A First Asset
 
-This is part one of three in the Dagster assets intro tutorial:
+## The Cereal Dataset
 
-1. **Defining an asset**
-2. [Building graphs of assets](/tutorial/intro-tutorial/assets/asset-graph)
-3. [Testing assets](/tutorial/intro-tutorial/assets/testing-assets)
+Our assets will represent and transform a simple but scary CSV dataset, cereal.csv, which contains nutritional facts about 80 breakfast cereals.
 
-In this part, you'll create and materialize your first asset in Dagster using a CSV dataset. The dataset, `cereal.csv`, contains nutritional facts about 80 breakfast cereals.
-
----
-
-## Prerequisites
-
-Before proceeding, complete the [setup steps](/tutorial/intro-tutorial/setup).
-
----
-
-## Step 1: Creating the asset
+## Hello, Asset!
 
 Let's write our first Dagster asset and save it as `cereal.py`.
 
-A [software-defined asset](/concepts/assets/software-defined-assets) specifies an asset that you want to exist and how to compute its contents. Typically, you'll define assets by annotating ordinary Python functions with the <PyObject module="dagster" object="asset" decorator /> decorator.
+A software-defined asset specifies an asset that you want to exist and how to compute its contents. Typically, you'll define assets by annotating ordinary Python functions with the <PyObject module="dagster" object="asset" decorator /> decorator.
 
-Our first asset represents a dataset of cereal data, downloaded from the internet:
+Our first asset represents a dataset of cereal data, downloaded from the internet.
 
 ```python file=/guides/dagster/asset_tutorial/cereal.py startafter=start_asset_marker endbefore=end_asset_marker
 import csv
@@ -44,58 +32,47 @@ def cereals():
     return cereal_rows
 ```
 
-In this case, our asset doesn't depend on any other assets.
+In this simple case, our asset doesn't depend on any other assets.
 
----
+## Materializing our asset
 
-## Step 2: Materializing the asset
-
-"Materializing" an asset means computing its contents and writing them to persistent storage. By default, Dagster pickles the value returned by the function and stores it the local filesystem, using the name of the asset as the name of the file. Where and how the contents are stored is fully customizable - e.g. you might store them in a database or a cloud object store like S3. We'll look at how that works later.
+"Materializing" an asset means computing its contents and then writing them to persistent storage. By default, Dagster will pickle the value returned by the function and store them it the local filesystem, using the name of the asset as the name of the file. Where and how the contents are stored is fully customizable - e.g. you might store them in a database or a cloud object store like S3. We'll look at how that works later.
 
 Assuming you’ve saved this code as `cereal.py`, you can execute it via two different mechanisms:
 
-- [Dagit](#dagit), a web-based interface for interacting with Dagster objects
-- [Dagster's Python API](#python-api)
-
 ### Dagit
 
-To visualize your assets in Dagit, run the following command in the directory that contains the file:
+To visualize your assets in Dagit, just run the following. Make sure you're in the directory that contains the file with your code:
 
 ```bash
 dagit -f cereal.py
 ```
 
-When Dagit is up and running, you'll see something like this:
+You'll see output like
 
 ```bash
 Serving dagit on http://127.0.0.1:3000 in process 70635
 ```
 
-Navigate to <http://127.0.0.1:3000> in your web browser to view the asset:
+You should be able to navigate to <http://127.0.0.1:3000> in your web browser and view your asset.
 
 <img src="/images/dagster/guides/asset-tutorial/defining-an-asset/defining_an_asset.png" />
 
-To launch a run that materializes the asset, click **Materialize All**.
+Clicking on the "Materialize All" button will launch a run that will materialize the asset. After that run has completed, the shaded box underneath "cereals" holds information about that run. Clicking on the Run ID, which is the string of characters in the upper right of that box, will take you to a view that includes a structured stream of logs and events that occurred during its execution.
 
-After the run completes, the **Materialized** and **Last Run** attributes in the asset will be populated. To view a stream of logs and events that occurred during the asset's materialization, click the run ID. This is the string of characters next to **Last Run**:
+<img src="/images/dagster/guides/asset-tutorial/defining-an-asset/asset_run.png" />
 
-<img src="/images/tutorial/assets/link_to_run_logs.png" />
+In this view, you can filter and search through the logs corresponding to the run that's materializing your asset.
 
-In this view, you can filter and search through the logs for the run that materialized the asset:
+To see a history of all the materializations for your asset, you can navigate to the _Asset Details_ page for it. Click the "cereals" link in the upper left corner of this run page, next to "Success". Another way to get to the same page is to navigate back to the Asset Graph page by clicking "Assets" in the top navigation pane, clicking on your asset, and then clicking on "View in Asset Catalog" at the top of the pane that shows up on the right.
 
-<img src="/images/tutorial/assets/asset_run_logs.png" />
-
-To view detailed info about the asset, click the **cereals** link next to the **Success** indicator in the upper left corner of the page:
-
-<img src="/images/tutorial/assets/link_to_asset_details.png" />
-
-You can also access the **Asset Details** page by clicking **Assets** in the upper right corner of the page, then clicking the asset in the list that displays.
+<img src="/images/dagster/guides/asset-tutorial/defining-an-asset/asset_details.png" />
 
 Success!
 
 ### Python API
 
-If you'd rather materialize your asset without Dagit, add a few lines to `cereal.py`. This executes a run within the Python process:
+If you'd rather materialize your asset as a script, you can do that without spinning up Dagit. Just add a few lines to `cereal.py`. This executes a run within the Python process.
 
 ```python file=/guides/dagster/asset_tutorial/cereal.py startafter=start_materialize_marker endbefore=end_materialize_marker
 from dagster import AssetGroup
@@ -104,21 +81,8 @@ if __name__ == "__main__":
     AssetGroup([cereals]).materialize()
 ```
 
-And now you can run:
+Now you can just run:
 
 ```bash
 python cereal.py
 ```
-
-Success!
-
----
-
-## What's next?
-
-In this tutorial, you:
-
-- Defined your first asset
-- Materialized the asset using Dagit or Dagster's Python API
-
-In the second part of this tutorial, we'll build on what you learned by creating graphs of assets.
