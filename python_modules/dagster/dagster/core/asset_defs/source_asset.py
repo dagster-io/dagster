@@ -11,10 +11,9 @@ from dagster.core.definitions.metadata import (
 )
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.resource_requirement import ResourceAddable
-from dagster.core.definitions.utils import validate_group_name
+from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import IOManagerDefinition
-from dagster.core.definitions.utils import DEFAULT_GROUP_NAME
 
 
 class SourceAsset(
