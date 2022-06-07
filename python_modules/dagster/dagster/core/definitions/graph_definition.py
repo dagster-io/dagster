@@ -389,10 +389,10 @@ class GraphDefinition(NodeDefinition):
         check.failed(f"Could not find output mapping {output_name}")
 
     def resolve_output_to_origin(
-        self, output_name: str, handle: NodeHandle
+        self, output_name: str, handle: Optional[NodeHandle]
     ) -> Tuple[OutputDefinition, NodeHandle]:
         check.str_param(output_name, "output_name")
-        check.inst_param(handle, "handle", NodeHandle)
+        check.opt_inst_param(handle, "handle", NodeHandle)
 
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, "Can only resolve outputs for valid output names")
