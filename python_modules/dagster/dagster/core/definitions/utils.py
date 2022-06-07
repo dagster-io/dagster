@@ -15,6 +15,7 @@ from dagster.utils import frozentags
 from dagster.utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 DEFAULT_OUTPUT = "result"
+DEFAULT_GROUP_NAME = "default"  # asset group_name used when none is provided
 
 DISALLOWED_NAMES = set(
     [
@@ -113,6 +114,13 @@ def validate_tags(tags: Optional[Dict[str, Any]], allow_reserved_tags=True) -> D
         check_reserved_tags(valid_tags)
 
     return frozentags(valid_tags)
+
+
+def validate_group_name(group_name: Optional[str]) -> str:
+    """Ensures a string name is valid and returns a default if no name provided."""
+    if group_name:
+        return check_valid_name(group_name)
+    return DEFAULT_GROUP_NAME
 
 
 def config_from_files(config_files: List[str]) -> Dict[str, Any]:

@@ -14,7 +14,7 @@ def get_description() -> str:
         The data orchestration platform built for productivity.
         """.strip()
 
-    return readme_path.read_text()
+    return readme_path.read_text(encoding="utf-8")
 
 
 def get_version() -> str:

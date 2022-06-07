@@ -88,6 +88,17 @@ class GraphenePipelineSelector(graphene.InputObjectType):
         name = "PipelineSelector"
 
 
+class GrapheneAssetGroupSelector(graphene.InputObjectType):
+    groupName = graphene.NonNull(graphene.String)
+    repositoryName = graphene.NonNull(graphene.String)
+    repositoryLocationName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        description = """This type represents the fields necessary to identify
+        an asset group."""
+        name = "AssetGroupSelector"
+
+
 class GrapheneGraphSelector(graphene.InputObjectType):
     graphName = graphene.NonNull(graphene.String)
     repositoryName = graphene.NonNull(graphene.String)

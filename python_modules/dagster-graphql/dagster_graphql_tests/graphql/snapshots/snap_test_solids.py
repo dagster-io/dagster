@@ -1836,6 +1836,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'ungrouped_asset_5'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'named_groups_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'ungrouped_asset_5'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'upstream_static_partitioned_asset'
                 },
                 'invocations': [

@@ -2,7 +2,6 @@ import {gql} from '@apollo/client';
 import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
 import React from 'react';
 
-import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {GanttChartLayout} from '../gantt/Constants';
 import {GanttChartMode} from '../gantt/GanttChart';
@@ -103,52 +102,19 @@ function buildMatrixData(
         return blankState;
       }
 
-      if (featureEnabled(FeatureFlag.flagNewPartitionsView)) {
-        const lastRun = partition.runs[partition.runs.length - 1];
-        const lastRunStepStatus = lastRun.stepStats.find((stats) =>
-          isStepKeyForNode(node.name, stats.stepKey),
-        )?.status;
+      const lastRun = partition.runs[partition.runs.length - 1];
+      const lastRunStepStatus = lastRun.stepStats.find((stats) =>
+        isStepKeyForNode(node.name, stats.stepKey),
+      )?.status;
 
-        if (!lastRunStepStatus || lastRunStepStatus === StepEventStatus.IN_PROGRESS) {
-          return blankState;
-        }
-
-        return {
-          name: node.name,
-          unix: getStartTime(lastRun),
-          color: lastRunStepStatus,
-        };
-      }
-
-      const datapoints = partition.runs
-        .map((r, idx) => ({
-          runIdx: idx,
-          status: r.stepStats.find((stats) => isStepKeyForNode(node.name, stats.stepKey))?.status,
-        }))
-        .filter(
-          (s): s is {runIdx: number; status: StepEventStatus} =>
-            !!s.status && s.status !== StepEventStatus.IN_PROGRESS,
-        )
-        .reverse();
-
-      if (datapoints.length === 0) {
+      if (!lastRunStepStatus || lastRunStepStatus === StepEventStatus.IN_PROGRESS) {
         return blankState;
       }
 
-      // Calculate the box color for this step. CSS classes are in the "previous-final" format, and we'll
-      // strip the "previous" half later if the user has that display option disabled.
-      //
-      // Rules:
-      // - The `final` status is the status of the step the last time it was run
-      // - The `previous` status is the status of the step before that run, if it was different.
-      const prev = datapoints.slice(1).find((dp) => dp.status !== datapoints[0].status);
-      const color = prev
-        ? (`${prev.status}-${datapoints[0].status}` as StatusSquareColor)
-        : datapoints[0].status;
       return {
         name: node.name,
-        unix: getStartTime(partition.runs[datapoints[0].runIdx]),
-        color,
+        unix: getStartTime(lastRun),
+        color: lastRunStepStatus,
       };
     });
     return {

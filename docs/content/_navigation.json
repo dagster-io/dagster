@@ -256,6 +256,10 @@
           {
             "title": "Asset Observations",
             "path": "/concepts/assets/asset-observations"
+          },
+          {
+            "title": "Multi-Assets",
+            "path": "/concepts/assets/multi-assets"
           }
         ]
       }

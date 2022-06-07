@@ -13,6 +13,7 @@ import {
   Tag,
 } from '@dagster-io/ui';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 
 import {
   FIFTEEN_SECONDS,
@@ -21,14 +22,14 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
-import {displayNameForAssetKey, GraphData, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
+import {GraphData, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetEvents} from './AssetEvents';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
@@ -53,8 +54,6 @@ export interface AssetViewParams {
 }
 
 export const AssetView: React.FC<Props> = ({assetKey}) => {
-  useDocumentTitle(`Asset: ${displayNameForAssetKey(assetKey)}`);
-
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
 
   const queryResult = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
@@ -83,11 +82,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   );
 
   const {upstream, downstream} = useNeighborsFromGraph(assetGraphData, assetKey);
-
-  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(
-    assetGraphData?.nodes,
-    graphAssetKeys,
-  );
+  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(graphAssetKeys);
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS),
@@ -116,6 +111,18 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             )}
             {definition && repoAddress && (
               <AssetNodeInstigatorTag assetNode={definition} repoAddress={repoAddress} />
+            )}
+            {definition && repoAddress && definition.groupName && (
+              <Tag icon="asset_group">
+                <Link
+                  to={workspacePathFromAddress(
+                    repoAddress,
+                    `/asset-groups/${definition.groupName}`,
+                  )}
+                >
+                  {definition.groupName}
+                </Link>
+              </Tag>
             )}
           </>
         }
@@ -294,6 +301,7 @@ const ASSET_QUERY = gql`
 
         definition {
           id
+          groupName
           partitionDefinition
           repository {
             id

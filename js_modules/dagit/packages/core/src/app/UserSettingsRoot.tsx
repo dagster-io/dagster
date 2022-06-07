@@ -114,26 +114,6 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
                 />
               ),
             },
-            {
-              key: 'New partitions view (experimental)',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(FeatureFlag.flagNewPartitionsView)}
-                  onChange={() => toggleFlag(FeatureFlag.flagNewPartitionsView)}
-                />
-              ),
-            },
-            {
-              key: 'Sectioned left nav (opt-out)',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={!flags.includes(FeatureFlag.flagFlatLeftNav)}
-                  onChange={() => toggleFlag(FeatureFlag.flagFlatLeftNav)}
-                />
-              ),
-            },
           ]}
         />
       </Box>
