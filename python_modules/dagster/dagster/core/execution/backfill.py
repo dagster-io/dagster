@@ -31,11 +31,6 @@ from dagster.utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes
-class BulkActionType(Enum):
-    BACKFILL = "BACKFILL"
-
-
-@whitelist_for_serdes
 class BulkActionStatus(Enum):
     REQUESTED = "REQUESTED"
     COMPLETED = "COMPLETED"

@@ -6,7 +6,8 @@ from tqdm import tqdm
 import dagster._check as check
 from dagster.serdes import deserialize_as
 
-from ...execution.backfill import BulkActionType, PartitionBackfill
+from ...execution.backfill import PartitionBackfill
+from ...execution.bulk_actions import BulkActionType
 from ..pipeline_run import PipelineRun, PipelineRunStatus
 from ..runs.base import RunStorage
 from ..runs.schema import BulkActionsTable, RunTagsTable, RunsTable
@@ -246,7 +247,8 @@ def migrate_bulk_actions(run_storage: RunStorage, print_fn=None):
                 conn.execute(
                     BulkActionsTable.update()
                     .values(
-                        selector_id=backfill.selector_id, action_type=BulkActionType.BACKFILL.value
+                        selector_id=backfill.selector_id,
+                        action_type=BulkActionType.PARTITION_BACKFILL.value,
                     )
                     .where(BulkActionsTable.c.id == storage_id)
                 )
