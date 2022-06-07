@@ -87,15 +87,6 @@ class UpstreamAssetSelection(AssetSelection):
         self.children = (child,)
         self.depth = depth
 
-    def resolve(self, all_assets: AssetSet) -> AssetSet:
-        child = self.children[0].resolve(all_assets)
-        return reduce(
-            lambda acc, asset: acc
-            | _gather_upstream_assets(asset, all_assets, max_depth=self.depth),
-            child,
-            set(),
-        )
-
 
 # ########################
 # ##### RESOLUTION
