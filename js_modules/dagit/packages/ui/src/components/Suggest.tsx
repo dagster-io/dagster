@@ -55,7 +55,7 @@ export const Suggest = <T,>(props: React.PropsWithChildren<SuggestProps<T>>) => 
     ...props.popoverProps,
     minimal: true,
     modifiers: deepmerge(
-      {offset: {enabled: true, offset: '0, 8px'}},
+      {offset: {enabled: true, offset: '0 8px'}},
       props.popoverProps?.modifiers || {},
     ),
     popoverClassName: `dagit-popover ${props.popoverProps?.className || ''}`,

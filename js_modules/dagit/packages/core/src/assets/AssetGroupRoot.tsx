@@ -8,6 +8,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {explorerPathFromString, explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {TabLink} from '../ui/TabLink';
+import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -35,6 +36,7 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
       <PageHeader
         title={<Heading>{groupName}</Heading>}
+        right={<ReloadAllButton label="Reload definitions" />}
         tags={
           <Tag icon="asset_group">
             Asset Group in <RepositoryLink repoAddress={repoAddress} />
