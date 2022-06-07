@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import sys
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, cast
 
 import click
 
@@ -12,13 +12,16 @@ from dagster.cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
 )
-from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.errors import DagsterExecutionInterruptedError
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.run_cancellation_thread import start_run_cancellation_thread
 from dagster.core.instance import DagsterInstance
-from dagster.core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
+from dagster.core.origin import (
+    DEFAULT_DAGSTER_ENTRY_POINT,
+    PipelinePythonOrigin,
+    get_python_environment_entry_point,
+)
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.test_utils import mock_system_timezone
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -53,7 +56,6 @@ def api_cli():
 def execute_run_command(input_json):
     with capture_interrupts():
         args = deserialize_as(input_json, ExecuteRunArgs)
-        recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
 
         with (
             DagsterInstance.from_ref(args.instance_ref)
@@ -66,7 +68,6 @@ def execute_run_command(input_json):
                 buffer.append(serialize_dagster_namedtuple(event))
 
             return_code = _execute_run_command_body(
-                recon_pipeline,
                 args.pipeline_run_id,
                 instance,
                 send_to_buffer,
@@ -81,7 +82,6 @@ def execute_run_command(input_json):
 
 
 def _execute_run_command_body(
-    recon_pipeline: ReconstructablePipeline,
     pipeline_run_id: str,
     instance: DagsterInstance,
     write_stream_fn: Callable[[DagsterEvent], Any],
@@ -95,6 +95,16 @@ def _execute_run_command_body(
     pipeline_run: PipelineRun = check.not_none(
         instance.get_run_by_id(pipeline_run_id),
         "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
+    )
+
+    check.inst(
+        pipeline_run.pipeline_code_origin,
+        PipelinePythonOrigin,
+        "Pipeline run with id '{}' does not include an origin.".format(pipeline_run_id),
+    )
+
+    recon_pipeline = recon_pipeline_from_origin(
+        cast(PipelinePythonOrigin, pipeline_run.pipeline_code_origin)
     )
 
     pid = os.getpid()
@@ -148,7 +158,6 @@ def _execute_run_command_body(
 def resume_run_command(input_json):
     with capture_interrupts():
         args = deserialize_as(input_json, ResumeRunArgs)
-        recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
 
         with (
             DagsterInstance.from_ref(args.instance_ref)
@@ -161,7 +170,6 @@ def resume_run_command(input_json):
                 buffer.append(serialize_dagster_namedtuple(event))
 
             return_code = _resume_run_command_body(
-                recon_pipeline,
                 args.pipeline_run_id,
                 instance,
                 send_to_buffer,
@@ -176,7 +184,6 @@ def resume_run_command(input_json):
 
 
 def _resume_run_command_body(
-    recon_pipeline: ReconstructablePipeline,
     pipeline_run_id: Optional[str],
     instance: DagsterInstance,
     write_stream_fn: Callable[[DagsterEvent], Any],
@@ -191,6 +198,15 @@ def _resume_run_command_body(
         pipeline_run,
         PipelineRun,
         "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
+    )
+    check.inst(
+        pipeline_run.pipeline_code_origin,
+        PipelinePythonOrigin,
+        "Pipeline run with id '{}' does not include an origin.".format(pipeline_run_id),
+    )
+
+    recon_pipeline = recon_pipeline_from_origin(
+        cast(PipelinePythonOrigin, pipeline_run.pipeline_code_origin)
     )
 
     pid = os.getpid()
@@ -339,6 +355,11 @@ def _execute_step_command_body(
             PipelineRun,
             "Pipeline run with id '{}' not found for step execution".format(args.pipeline_run_id),
         )
+        check.inst(
+            pipeline_run.pipeline_code_origin,
+            PipelinePythonOrigin,
+            "Pipeline run with id '{}' does not include an origin.".format(args.pipeline_run_id),
+        )
 
         if args.should_verify_step:
             success = verify_step(
@@ -351,7 +372,7 @@ def _execute_step_command_body(
                 return
 
         recon_pipeline = recon_pipeline_from_origin(
-            args.pipeline_origin
+            cast(PipelinePythonOrigin, pipeline_run.pipeline_code_origin)
         ).subset_for_execution_from_existing_pipeline(
             pipeline_run.solids_to_execute, pipeline_run.asset_selection
         )

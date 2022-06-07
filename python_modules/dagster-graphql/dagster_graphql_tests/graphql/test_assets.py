@@ -958,15 +958,24 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         asset_groups_list = result.data["repositoryOrError"]["assetGroups"]
         # normalize for easy comparison
-        asset_groups = sorted(
-            (group["groupName"], sorted(key["path"] for key in group["assetKeys"]))
+        asset_groups_dict = {
+            group["groupName"]: sorted(".".join(key["path"]) for key in group["assetKeys"])
             for group in asset_groups_list
-        )
+        }
+        # The default group accumulates a lot of asset keys from other test data so we
+        # compare it separately
+        default_group_members = set(asset_groups_dict.pop("default"))
+
         expected_asset_groups = [
-            ("group_1", [["grouped_asset_1"], ["grouped_asset_2"]]),
-            ("group_2", [["grouped_asset_4"]]),
+            ("group_1", ["grouped_asset_1", "grouped_asset_2"]),
+            ("group_2", ["grouped_asset_4"]),
         ]
-        assert asset_groups == expected_asset_groups
+        assert sorted(asset_groups_dict.items()) == expected_asset_groups
+
+        expected_default_group_members = {"ungrouped_asset_3", "ungrouped_asset_5"}
+        assert (
+            expected_default_group_members & default_group_members
+        ) == expected_default_group_members
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):

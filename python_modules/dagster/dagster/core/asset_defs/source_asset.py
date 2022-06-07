@@ -11,6 +11,7 @@ from dagster.core.definitions.metadata import (
 )
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.resource_requirement import ResourceAddable
+from dagster.core.definitions.utils import validate_group_name
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import IOManagerDefinition
 
@@ -25,6 +26,7 @@ class SourceAsset(
             ("io_manager_def", Optional[IOManagerDefinition]),
             ("description", Optional[str]),
             ("partitions_def", Optional[PartitionsDefinition]),
+            ("group_name", str),
         ],
     ),
     ResourceAddable,
@@ -52,6 +54,7 @@ class SourceAsset(
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        group_name: Optional[str] = None,
     ):
 
         key = AssetKey.from_coerceable(key)
@@ -69,6 +72,7 @@ class SourceAsset(
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
+            group_name=validate_group_name(group_name),
         )
 
     @property

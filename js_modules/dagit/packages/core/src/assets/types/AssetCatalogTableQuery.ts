@@ -28,8 +28,6 @@ export interface AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes_defi
 export interface AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes_definition {
   __typename: "AssetNode";
   id: string;
-  opNames: string[];
-  jobNames: string[];
   groupName: string | null;
   partitionDefinition: string | null;
   description: string | null;
