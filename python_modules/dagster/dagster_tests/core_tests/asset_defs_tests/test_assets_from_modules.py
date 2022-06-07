@@ -107,6 +107,8 @@ def test_assets_from_modules_with_group_name():
                 asset_keys = asset.asset_keys
                 for asset_key in asset_keys:
                     assert asset.group_names.get(asset_key) == "my_cool_group"
+            elif isinstance(asset, SourceAsset):
+                assert asset.group_name == "my_cool_group"
 
     assets = assets_from_modules([asset_package, module_with_assets], group_name="my_cool_group")
     check_asset_group(assets)
@@ -134,10 +136,8 @@ def test_prefix():
                 for asset_key in asset_keys:
                     assert asset_key.path[0] == "my_cool_prefix"
 
-    assets = assets_from_modules(
-        [asset_package, module_with_assets], asset_key_prefix="my_cool_prefix"
-    )
+    assets = assets_from_modules([asset_package, module_with_assets], key_prefix="my_cool_prefix")
     check_asset_prefix(assets)
 
-    assets = assets_from_package_module(asset_package, asset_key_prefix="my_cool_prefix")
+    assets = assets_from_package_module(asset_package, key_prefix="my_cool_prefix")
     check_asset_prefix(assets)

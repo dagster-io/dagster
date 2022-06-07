@@ -11,7 +11,7 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
-from dagster.core.definitions.utils import validate_group_name
+from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning, experimental
 
@@ -276,7 +276,9 @@ class AssetsDefinition(ResourceAddable):
         )
 
         defined_group_names = [
-            asset_key.to_user_string() for asset_key in group_names if asset_key in self.group_names
+            asset_key.to_user_string()
+            for asset_key in group_names
+            if asset_key in self.group_names and self.group_names[asset_key] != DEFAULT_GROUP_NAME
         ]
         if defined_group_names:
             raise DagsterInvalidDefinitionError(

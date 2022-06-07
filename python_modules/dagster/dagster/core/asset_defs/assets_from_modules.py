@@ -73,29 +73,26 @@ def assets_and_source_assets_from_modules(
 def assets_from_modules(
     modules: Iterable[ModuleType],
     group_name: Optional[str] = None,
-    asset_key_prefix: Optional[str] = None,
-    extra_source_assets: Optional[Sequence[SourceAsset]] = None,
+    key_prefix: Optional[str] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
     Constructs a list of assets and source assets from the given modules.
 
     Args:
         modules (Iterable[ModuleType]): The Python modules to look for assets inside.
-        extra_source_assets (Optional[Sequence[SourceAsset]]): Source assets to include in the
-            group in addition to the source assets found in the modules.
+        group_name (Optional[str]): The group name for assets within the modules.
+        key_prefix (Optional[str]): Asset key prefix for assets within the modules.
 
     Returns:
         List[Union[AssetsDefinition, SourceAsset]]:
             A list containing assets and source assets defined in the given modules.
     """
     group_name = check.opt_str_param(group_name, "group_name")
-    asset_key_prefix = check.opt_str_param(asset_key_prefix, "asset_key_prefix")
+    key_prefix = check.opt_str_param(key_prefix, "key_prefix")
 
-    assets, source_assets = assets_and_source_assets_from_modules(
-        modules, extra_source_assets=extra_source_assets
-    )
-    if asset_key_prefix:
-        assets = prefix_assets(assets, asset_key_prefix)
+    assets, source_assets = assets_and_source_assets_from_modules(modules)
+    if key_prefix:
+        assets = prefix_assets(assets, key_prefix)
     if group_name:
         assets = [
             asset.with_prefix_or_group(
@@ -103,21 +100,21 @@ def assets_from_modules(
             )
             for asset in assets
         ]
+        source_assets = [source_asset.with_group(group_name) for source_asset in source_assets]
 
     return [*assets, *source_assets]
 
 
 def assets_from_current_module(
     group_name: Optional[str] = None,
-    asset_key_prefix: Optional[str] = None,
-    extra_source_assets: Optional[Sequence[SourceAsset]] = None,
+    key_prefix: Optional[str] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
     Constructs a list of assets and source assets from the module where this function is called.
 
     Args:
-        extra_source_assets (Optional[Sequence[SourceAsset]]): Source assets to include in the
-            group in addition to the source assets found in the modules.
+        group_name (Optional[str]): The group name for assets within the module.
+        key_prefix (Optional[str]): Asset key prefix for assets within the module.
 
     Returns:
         List[Union[AssetsDefinition, SourceAsset]]:
@@ -131,8 +128,7 @@ def assets_from_current_module(
     return assets_from_modules(
         [module],
         group_name=group_name,
-        asset_key_prefix=asset_key_prefix,
-        extra_source_assets=extra_source_assets,
+        key_prefix=key_prefix,
     )
 
 
@@ -160,8 +156,7 @@ def assets_and_source_assets_from_package_module(
 def assets_from_package_module(
     package_module: ModuleType,
     group_name: Optional[str] = None,
-    asset_key_prefix: Optional[str] = None,
-    extra_source_assets: Optional[Sequence[SourceAsset]] = None,
+    key_prefix: Optional[str] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
     Constructs a list of assets and source assets that includes all asset
@@ -171,21 +166,19 @@ def assets_from_package_module(
 
     Args:
         package_module (ModuleType): The package module to looks for assets inside.
-        extra_source_assets (Optional[Sequence[SourceAsset]]): Source assets to include in the
-            group in addition to the source assets found in the modules.
+        group_name (Optional[str]): The group name for assets within the modules.
+        key_prefix (Optional[str]): Asset key prefix for assets within the modules.
 
     Returns:
         List[Union[AssetsDefinition, SourceAsset]]:
             A list containing assets and source assets defined in the module.
     """
     group_name = check.opt_str_param(group_name, "group_name")
-    asset_key_prefix = check.opt_str_param(asset_key_prefix, "asset_key_prefix")
+    key_prefix = check.opt_str_param(key_prefix, "key_prefix")
 
-    assets, source_assets = assets_and_source_assets_from_package_module(
-        package_module, extra_source_assets
-    )
-    if asset_key_prefix:
-        assets = prefix_assets(assets, asset_key_prefix)
+    assets, source_assets = assets_and_source_assets_from_package_module(package_module)
+    if key_prefix:
+        assets = prefix_assets(assets, key_prefix)
     if group_name:
         assets = [
             asset.with_prefix_or_group(
@@ -193,14 +186,15 @@ def assets_from_package_module(
             )
             for asset in assets
         ]
+        source_assets = [asset.with_group(group_name) for asset in source_assets]
+
     return [*assets, *source_assets]
 
 
 def assets_from_package_name(
     package_name: str,
     group_name: Optional[str] = None,
-    asset_key_prefix: Optional[str] = None,
-    extra_source_assets: Optional[Sequence[SourceAsset]] = None,
+    key_prefix: Optional[str] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
     Constructs a list of assets and source assets that include all asset
@@ -208,8 +202,8 @@ def assets_from_package_name(
 
     Args:
         package_name (str): The name of a Python package to look for assets inside.
-        extra_source_assets (Optional[Sequence[SourceAsset]]): Source assets to include in the
-            group in addition to the source assets found in the modules.
+        group_name (Optional[str]): The group name for assets within the modules.
+        key_prefix (Optional[str]): Asset key prefix for assets within the modules.
 
     Returns:
         List[Union[AssetsDefinition, SourceAsset]]:
@@ -219,8 +213,7 @@ def assets_from_package_name(
     return assets_from_package_module(
         package_module,
         group_name=group_name,
-        asset_key_prefix=asset_key_prefix,
-        extra_source_assets=extra_source_assets,
+        key_prefix=key_prefix,
     )
 
 
