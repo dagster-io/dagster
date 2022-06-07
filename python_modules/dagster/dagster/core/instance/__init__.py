@@ -225,10 +225,10 @@ class DagsterInstance:
     transient in-memory components.
 
     Configuration of this class should be done by setting values in ``$DAGSTER_HOME/dagster.yaml``.
-    For example, to use Postgres for run and event log storage, you can write a ``dagster.yaml``
-    such as the following:
+    For example, to use Postgres for dagster storage, you can write a ``dagster.yaml`` such as the
+    following:
 
-    .. literalinclude:: ../../../../../examples/docs_snippets/docs_snippets/deploying/postgres_dagster.yaml
+    .. literalinclude:: ../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg.yaml
        :caption: dagster.yaml
        :language: YAML
 
@@ -433,13 +433,22 @@ class DagsterInstance:
         klass = instance_ref.custom_instance_class or DagsterInstance
         kwargs = instance_ref.custom_instance_class_config
 
+        unified_storage = instance_ref.storage
+        run_storage = unified_storage.run_storage if unified_storage else instance_ref.run_storage
+        event_storage = (
+            unified_storage.event_log_storage if unified_storage else instance_ref.event_storage
+        )
+        schedule_storage = (
+            unified_storage.schedule_storage if unified_storage else instance_ref.schedule_storage
+        )
+
         return klass(  # type: ignore
             instance_type=InstanceType.PERSISTENT,
             local_artifact_storage=instance_ref.local_artifact_storage,
-            run_storage=instance_ref.run_storage,
-            event_storage=instance_ref.event_storage,
+            run_storage=run_storage,
+            event_storage=event_storage,
+            schedule_storage=schedule_storage,
             compute_log_manager=instance_ref.compute_log_manager,
-            schedule_storage=instance_ref.schedule_storage,
             scheduler=instance_ref.scheduler,
             run_coordinator=instance_ref.run_coordinator,
             run_launcher=instance_ref.run_launcher,
