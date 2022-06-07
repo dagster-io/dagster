@@ -35,5 +35,5 @@ class AssetIn(
             asset_key=AssetKey.from_coerceable(asset_key) if asset_key is not None else None,
             metadata=check.opt_inst_param(metadata, "metadata", Mapping),
             namespace=check.opt_list_param(namespace, "namespace", str),
-            input_manager_key=check.opt_str_param(input_manager_key, "input_manager_key")
+            input_manager_key=check.opt_str_param(input_manager_key, "input_manager_key"),
         )
