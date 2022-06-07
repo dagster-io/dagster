@@ -6,6 +6,7 @@ import dagster._check as check
 from dagster.config.validate import process_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.utils import parse_env_var
 from dagster.utils import make_readonly_value, merge_dicts
 
 if TYPE_CHECKING:
@@ -99,6 +100,10 @@ class K8sContainerContext(
             namespace=other.namespace if other.namespace else self.namespace,
             resources=other.resources if other.resources else self.resources,
         )
+
+    def get_environment_dict(self) -> Dict[str, str]:
+        parsed_env_var_tuples = [parse_env_var(env_var) for env_var in self.env_vars]
+        return {env_var_tuple[0]: env_var_tuple[1] for env_var_tuple in parsed_env_var_tuples}
 
     @staticmethod
     def create_for_run(
