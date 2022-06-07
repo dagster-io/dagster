@@ -226,13 +226,13 @@ def test_asset_io_manager(storage_account, file_system, credential):
         assert op_1 == 5
         return op_1 + 1
 
-    @graph(name=f"graph_asset_{_id}", out={"asset3": GraphOut()})
+    @graph(name=f"graph_asset_{_id}", out={f"asset3_{_id}": GraphOut()})
     def graph_asset():
         return second_op(first_op())
 
     @asset(
         name=f"upstream_{_id}",
-        ins={"asset3": AssetIn(asset_key=AssetKey(["asset3"]))},
+        ins={"asset3": AssetIn(asset_key=AssetKey([f"asset3_{_id}"]))},
     )
     def upstream(asset3):
         return asset3 + 1
