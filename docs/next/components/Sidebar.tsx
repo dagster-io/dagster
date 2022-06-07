@@ -202,13 +202,7 @@ const ThirdLevelNavigation = ({ section }) => {
           }
         )}
       >
-        <span
-          className={cx({
-            "DocSearch-lvl2": section.path === asPathWithoutAnchor,
-          })}
-        >
-          {section.title}
-        </span>
+        <span>{section.title}</span>
       </a>
     </Link>
   );
