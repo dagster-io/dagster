@@ -10,7 +10,7 @@ If you want to understand when, why, and how to use software-defined assets in D
 Before we jump in, here's a quick refresher:
 
 - An **asset** is a persistent object in storage, such as a table, machine learning (ML) model, or file.
-- An [**op**](/concepts/ops-jobs-graphs/ops) is the core unit of computation in Dagster. For example, an op might accept tabular data as input and produce transformed tabular data as output.
+- An [**op**](/concepts/ops-jobs-graphs/ops) is the core unit of computation in Dagster. For example, an op might accept tabular data as its input and produce transformed tabular data as its output.
 - A [**graph**](/concepts/ops-jobs-graphs/jobs-graphs) is a directed acyclic graph of ops or other graphs, which execute in order and pass data to each other.
 - A [**software-defined asset**](/concepts/assets/software-defined-assets) is a declaration of an asset that should exist and a description of how to compute it: the op or graph that needs to run and the upstream assets that it should run on.
 
