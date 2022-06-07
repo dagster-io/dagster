@@ -213,7 +213,26 @@
     "destination": "/deployment/run-coordinator",
     "permanent": true
   },
-
+  {
+    "source": "/guides/dagster/asset-tutorial",
+    "destination": "/tutorial/intro-tutorial/assets",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/asset-tutorial/asset-graph",
+    "destination": "/tutorial/intro-tutorial/assets/asset-graph",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/asset-tutorial/defining-an-asset",
+    "destination": "/tutorial/intro-tutorial/assets/defining-an-asset",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/asset-tutorial/testing-assets",
+    "destination": "/tutorial/intro-tutorial/assets/testing-assets",
+    "permanent": true
+  },
   {
     "source": "/overview/dagit",
     "destination": "/concepts/dagit/dagit",
