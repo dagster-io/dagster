@@ -98,30 +98,29 @@ def build_assets_job(
     partitioned_config = build_job_partitions_from_assets(assets, source_assets or [])
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
 
+    deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
+
     try:
-        deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
-        graph = GraphDefinition(
-            name=name,
-            node_defs=[asset.node_def for asset in assets],
-            dependencies=deps,
-            description=description,
-            input_mappings=None,
-            output_mappings=None,
-            config=None,
-        )
-    # only try to resolve cycles if we encounter an error
-    except DagsterInvalidDefinitionError:
+        node_deps = {}
+        for upstream_node, downstream_deps in deps.items():
+            node_deps[upstream_node] = {
+                dep if isinstance(dep, str) else dep.node for dep in downstream_deps.values()
+            }
+        # make sure that there is a valid topological sorting of these node dependencies
+        list(toposort(node_deps))
+    # only try to resolve cycles if we have a cycle
+    except CircularDependencyError:
         assets = _attempt_resolve_cycles(assets)
         deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
-        graph = GraphDefinition(
-            name=name,
-            node_defs=[asset.node_def for asset in assets],
-            dependencies=deps,
-            description=description,
-            input_mappings=None,
-            output_mappings=None,
-            config=None,
-        )
+    graph = GraphDefinition(
+        name=name,
+        node_defs=[asset.node_def for asset in assets],
+        dependencies=deps,
+        description=description,
+        input_mappings=None,
+        output_mappings=None,
+        config=None,
+    )
 
     # turn any AssetsDefinitions into SourceAssets
     resolved_source_assets: List[SourceAsset] = []
