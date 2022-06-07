@@ -53,6 +53,11 @@ def all_assets():
     ]
 
 
+def test_asset_selection_all(all_assets):
+    sel = AssetSelection.all()
+    assert sel.resolve(all_assets) == all_assets
+
+
 def test_asset_selection_and(all_assets):
     sel = AssetSelection.keys("alice", "bob") & AssetSelection.keys("bob", "candace")
     assert sel.resolve(all_assets) == {bob}
