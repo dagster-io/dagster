@@ -38,9 +38,9 @@ const MenuItem = React.forwardRef<
         {
           "hover:bg-lavender hover:bg-opacity-50 text-blurple": match,
           "hover:text-gray-900 hover:bg-lavender hover:bg-opacity-50": !match,
-          "py-2": lvl <= 2,
           "px-2": lvl === 0,
-          "pl-3 pr-2": lvl === 2,
+          "pl-3 pr-2": lvl <= 1,
+          "py-2": lvl <= 2,
         }
       )}
       href={href}
