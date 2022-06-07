@@ -6,10 +6,10 @@ from dagster_airbyte import airbyte_resource, build_airbyte_assets
 from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
 from scipy import optimize
 
-from dagster import AssetGroup, asset, AssetIn
+from dagster import AssetGroup, AssetIn, asset
 
 from .constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
-from .pandas_io_manager import pandas_io_manager, numpy_io_manager
+from .pandas_io_manager import numpy_io_manager, pandas_io_manager
 
 airbyte_assets = build_airbyte_assets(
     connection_id=AIRBYTE_CONNECTION_ID,
@@ -30,7 +30,7 @@ dbt_assets = load_assets_from_dbt_project(
 )
 def order_forecast_model(daily_order_summary: np.ndarray) -> Any:
     """Model parameters that best fit the observed data"""
-    df = pd.DataFrame(daily_order_summary)
+    df = pd.DataFrame(daily_order_summary, columns=["order_date", "total_value", "num_orders"])
     return tuple(
         optimize.curve_fit(
             f=model_func, xdata=df.order_date.astype(np.int64), ydata=df.num_orders, p0=[10, 100]
@@ -56,6 +56,6 @@ analytics_assets = AssetGroup(
         "airbyte": airbyte_resource.configured(AIRBYTE_CONFIG),
         "dbt": dbt_cli_resource.configured(DBT_CONFIG),
         "pandas_io_manager": pandas_io_manager.configured(PANDAS_IO_CONFIG),
-        "numpy_io_manager": numpy_io_manager.configured(PANDAS_IO_CONFIG)
+        "numpy_io_manager": numpy_io_manager.configured(PANDAS_IO_CONFIG),
     },
 ).build_job("Assets")
