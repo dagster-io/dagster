@@ -17,6 +17,8 @@ import SidebarNavigation from "components/mdx/SidebarNavigation";
 import hydrate from "next-mdx-remote/hydrate";
 import { useRouter } from "next/router";
 import GitHubButton from "react-github-btn";
+import cx from "classnames";
+
 const components: MdxRemote.Components = MDXComponents;
 
 export type MDXData = {
@@ -126,7 +128,15 @@ const BreadcrumbNav = () => {
                   )}
                   <a
                     href={item.path}
-                    className="ml-1 lg:ml-2 text-xs lg:text-sm lg:font-medium text-gray-700 hover:text-gray-900 truncate"
+                    className={cx(
+                      "ml-1 lg:ml-2 text-xs lg:text-sm lg:font-medium text-gray-700 hover:text-gray-900 truncate",
+                      {
+                        // Map nav hierarchy to levels for docs search
+                        "DocSearch-lvl0": index === 0,
+                        "DocSearch-lvl1": index === 1,
+                        "DocSearch-lvl2": index === 2,
+                      }
+                    )}
                   >
                     {item.title}
                   </a>

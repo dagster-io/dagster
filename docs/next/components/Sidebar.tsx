@@ -64,16 +64,7 @@ const MenuItem = React.forwardRef<
             {Icons[item.icon]}
           </svg>
         )}
-        <span
-          className={cx({
-            // Map content hierarchy to levels for docs search
-            "DocSearch-lvl0": lvl === 0 && match,
-            "DocSearch-lvl1": lvl === 1 && match,
-            "DocSearch-lvl2": lvl === 2 && match,
-          })}
-        >
-          {item.title}
-        </span>
+        <span>{item.title}</span>
       </div>
 
       {rightIcon && (
