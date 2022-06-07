@@ -81,6 +81,27 @@
     "path": "/concepts",
     "children": [
       {
+        "title": "Assets",
+        "children": [
+          {
+            "title": "Software-Defined Assets",
+            "path": "/concepts/assets/software-defined-assets"
+          },
+          {
+            "title": "Asset Materializations",
+            "path": "/concepts/assets/asset-materializations"
+          },
+          {
+            "title": "Asset Observations",
+            "path": "/concepts/assets/asset-observations"
+          },
+          {
+            "title": "Multi-Assets",
+            "path": "/concepts/assets/multi-assets"
+          }
+        ]
+      },
+      {
         "title": "Ops, Jobs, and Graphs",
         "children": [
           {
@@ -235,27 +256,6 @@
           {
             "title": "Backfills",
             "path": "/concepts/partitions-schedules-sensors/backfills"
-          }
-        ]
-      },
-      {
-        "title": "Assets",
-        "children": [
-          {
-            "title": "Software-Defined Assets",
-            "path": "/concepts/assets/software-defined-assets"
-          },
-          {
-            "title": "Asset Materializations",
-            "path": "/concepts/assets/asset-materializations"
-          },
-          {
-            "title": "Asset Observations",
-            "path": "/concepts/assets/asset-observations"
-          },
-          {
-            "title": "Multi-Assets",
-            "path": "/concepts/assets/multi-assets"
           }
         ]
       }
