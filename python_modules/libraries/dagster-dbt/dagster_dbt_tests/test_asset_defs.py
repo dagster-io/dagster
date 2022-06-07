@@ -10,6 +10,7 @@ from dagster_dbt.types import DbtOutput
 
 from dagster import (
     AssetGroup,
+    AssetIn,
     AssetKey,
     IOManager,
     io_manager,
@@ -17,7 +18,7 @@ from dagster import (
     MetadataEntry,
     ResourceDefinition,
     asset,
-    AssetIn,
+    repository,
 )
 from dagster.core.asset_defs import build_assets_job
 from dagster.utils import file_relative_path

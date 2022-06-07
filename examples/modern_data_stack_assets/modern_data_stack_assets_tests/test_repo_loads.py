@@ -1,3 +1,3 @@
 def test_repo_loads():
-    # placeholder for future testing
-    assert True
+    # placeholder for future tests
+    import modern_data_stack_assets
