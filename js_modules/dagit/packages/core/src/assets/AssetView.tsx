@@ -82,11 +82,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   );
 
   const {upstream, downstream} = useNeighborsFromGraph(assetGraphData, assetKey);
-
-  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(
-    assetGraphData?.nodes,
-    graphAssetKeys,
-  );
+  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(graphAssetKeys);
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS),
