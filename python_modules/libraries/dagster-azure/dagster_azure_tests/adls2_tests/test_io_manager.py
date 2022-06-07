@@ -215,6 +215,10 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
 
 def test_asset_io_manager(storage_account, file_system, credential):
+    # if you add new assets to this test, make sure that the output names include _id so that we don't
+    # run into issues with the azure leasing system in CI
+    # when this test is run for multiple python versions in parallel the azure leasing system will
+    # cause failures if two tests try to access the same asset at the same time
     _id = f"{uuid4()}".replace("-", "")
 
     @op
