@@ -354,20 +354,31 @@ class AssetsDefinition(ResourceAddable):
                     metadata=output_def.metadata,
                     io_manager_key=output_def.io_manager_key,
                     description=output_def.description,
+                    resource_defs=self.resource_defs,
                 )
             )
 
         return result
 
-<<<<<<< HEAD
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
         yield from self.node_def.get_resource_requirements()  # type: ignore[attr-defined]
         for source_key, resource_def in self.resource_defs.items():
             yield from resource_def.get_resource_requirements(outer_context=source_key)
 
-    def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
+    @property
+    def required_resource_keys(self) -> Set[str]:
+        return {requirement.key for requirement in self.get_resource_requirements()}
 
-        merged_resource_defs = merge_dicts(resource_defs, self.resource_defs)
+    def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
+        from dagster.core.definitions.graph_definition import default_job_io_manager
+        from dagster.core.execution.resources_init import get_transitive_required_resource_keys
+
+        merged_resource_defs = merge_dicts(
+            {"io_manager": default_job_io_manager}, resource_defs, self.resource_defs
+        )
+
+        # Ensure top-level resource requirements are met - except for
+        # io_manager, since that is a default it can be resolved later.
         ensure_requirements_satisfied(
             merged_resource_defs,
             [
@@ -376,6 +387,16 @@ class AssetsDefinition(ResourceAddable):
                 if requirement.key != "io_manager"
             ],
         )
+
+        # Get all transitive resource dependencies from other resources.
+        relevant_keys = get_transitive_required_resource_keys(
+            self.required_resource_keys, merged_resource_defs
+        )
+        relevant_resource_defs = {
+            key: resource_def
+            for key, resource_def in merged_resource_defs.items()
+            if key in relevant_keys
+        }
 
         return AssetsDefinition(
             asset_keys_by_input_name=self._asset_keys_by_input_name,
@@ -388,16 +409,6 @@ class AssetsDefinition(ResourceAddable):
             can_subset=self._can_subset,
             resource_defs=merged_resource_defs,
         )
-=======
-    @property
-    def required_resource_keys(self) -> Set[str]:
-        if isinstance(self.node_def, GraphDefinition):
-            graph_def = self.node_def.ensure_graph_def()
-            return {requirement.key for requirement in graph_def.get_resource_requirements()}
-        else:
-            solid_def = self.node_def.ensure_solid_def()
-            return solid_def.required_resource_keys
->>>>>>> Add resource defs to source asset, handle transitive dependencies
 
 
 def _infer_asset_keys_by_input_names(

@@ -42,10 +42,7 @@ from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue, n
 from .mode import ModeDefinition
 from .node_definition import NodeDefinition
 from .preset import PresetDefinition
-from .resource_requirement import (
-    ensure_requirements_satisfied,
-    get_and_validate_transitive_resource_dependencies,
-)
+from .resource_requirement import ensure_requirements_satisfied
 from .utils import validate_tags
 from .version_strategy import VersionStrategy
 
@@ -276,7 +273,7 @@ class PipelineDefinition:
         self._graph_def.get_inputs_must_be_resolved_top_level(self._asset_layer)
 
     def _get_resource_requirements_for_mode(self, mode_def: ModeDefinition) -> Set[str]:
-        from ..execution.resources_init import get_dependencies, resolve_resource_dependencies
+        from ..execution.resources_init import get_transitive_required_resource_keys
 
         requirements = list(self._graph_def.get_resource_requirements(self.asset_layer))
         for hook_def in self._hook_defs:
@@ -288,11 +285,7 @@ class PipelineDefinition:
         ensure_requirements_satisfied(mode_def.resource_defs, requirements, mode_def.name)
         required_keys = {requirement.key for requirement in requirements}
         return required_keys.union(
-            get_and_validate_transitive_resource_dependencies(
-                mode_def.resource_defs,
-                required_resource_keys=required_keys,
-                mode_name=mode_def.name,
-            )
+            get_transitive_required_resource_keys(required_keys, mode_def.resource_defs)
         )
 
     @property
