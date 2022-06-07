@@ -143,7 +143,8 @@ def build_assets_job(
                 all_resource_defs[resource_key] = resource_def
             if all_resource_defs[resource_key] != resource_def:
                 raise DagsterInvalidDefinitionError(
-                    f"Conflicting versions of resource with key '{resource_key}' were provided to different assets. When constructing a "
+                    f"Conflicting versions of resource with key '{resource_key}' "
+                    "were provided to different assets. When constructing a "
                     "job, all resource definitions provided to assets must "
                     "match by reference equality for a given key."
                 )

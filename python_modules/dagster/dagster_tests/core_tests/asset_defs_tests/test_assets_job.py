@@ -292,7 +292,7 @@ def test_missing_io_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Error when attempting to build job 'a': IO Manager required for key 'special_io_manager', but none was provided.",
+        match="SourceAsset with asset key AssetKey\(\['source1'\]\) requires IO manager with key 'special_io_manager', but none was provided.",
     ):
         build_assets_job(
             "a",
@@ -1379,10 +1379,9 @@ def test_source_asset_io_manager_def():
     def my_derived_asset(my_source_asset):
         return my_source_asset + 4
 
-    source_asset_job = AssetGroup(
-        assets=[my_derived_asset],
-        source_assets=[my_source_asset],
-    ).build_job("source_asset_job")
+    source_asset_job = build_assets_job(
+        name="test", assets=[my_derived_asset], source_assets=[my_source_asset]
+    )
 
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
     assert result.success
@@ -1407,11 +1406,12 @@ def test_source_asset_io_manager_not_provided():
     def my_derived_asset(my_source_asset):
         return my_source_asset + 4
 
-    source_asset_job = AssetGroup(
+    source_asset_job = build_assets_job(
+        "the_job",
         assets=[my_derived_asset],
         source_assets=[my_source_asset],
         resource_defs={"io_manager": the_manager},
-    ).build_job("source_asset_job")
+    )
 
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
     assert result.success
@@ -1436,11 +1436,12 @@ def test_source_asset_io_manager_key_provided():
     def my_derived_asset(my_source_asset):
         return my_source_asset + 4
 
-    source_asset_job = AssetGroup(
+    source_asset_job = build_assets_job(
+        "the_job",
         assets=[my_derived_asset],
         source_assets=[my_source_asset],
         resource_defs={"some_key": the_manager},
-    ).build_job("source_asset_job")
+    )
 
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
     assert result.success
@@ -1473,10 +1474,11 @@ def test_source_asset_requires_resource_defs():
     def my_derived_asset(my_source_asset):
         return my_source_asset + 4
 
-    source_asset_job = AssetGroup(
+    source_asset_job = build_assets_job(
+        "the_job",
         assets=[my_derived_asset],
         source_assets=[my_source_asset],
-    ).build_job("source_asset_job")
+    )
 
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
     assert result.success
@@ -1484,6 +1486,8 @@ def test_source_asset_requires_resource_defs():
 
 
 def test_other_asset_provides_req():
+    # Demonstrate that assets cannot resolve each other's dependencies with
+    # resources on each definition.
     @asset(required_resource_keys={"foo"})
     def asset_reqs_foo():
         pass
@@ -1492,8 +1496,11 @@ def test_other_asset_provides_req():
     def asset_provides_foo():
         pass
 
-    the_job = build_assets_job(name="test", assets=[asset_reqs_foo, asset_provides_foo])
-    assert the_job.execute_in_process().success
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'foo' required by op 'asset_reqs_foo' was not provided.",
+    ):
+        build_assets_job(name="test", assets=[asset_reqs_foo, asset_provides_foo])
 
 
 def test_transitive_deps_not_provided():
@@ -1542,7 +1549,7 @@ def test_transitive_io_manager_dep_not_provided():
         pass
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="IO manager for source asset with key AssetKey\(\['my_source_asset'\]\) requires resource with key foo, but none provided.",
+        DagsterInvariantViolationError,
+        match="Resource with key 'foo' required by resource with key 'my_source_asset__io_manager', but not provided.",
     ):
         build_assets_job(name="test", assets=[my_derived_asset], source_assets=[my_source_asset])

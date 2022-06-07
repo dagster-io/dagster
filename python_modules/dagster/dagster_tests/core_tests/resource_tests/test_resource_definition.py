@@ -1145,8 +1145,8 @@ def test_resource_needs_resource():
         pass
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="resource with key 'bar_resource' required by resource with key 'foo_resource' was not provided",
+        DagsterInvariantViolationError,
+        match="Resource with key 'bar_resource' required by resource with key 'foo_resource', but not provided.",
     ):
 
         @pipeline(
