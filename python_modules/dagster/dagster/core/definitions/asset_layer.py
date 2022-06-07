@@ -607,10 +607,12 @@ class AssetLayer:
             if key in assets_def.group_names
         }
 
-        group_names.update({
-            key: source_asset_def.group_name 
-            for key, source_asset_def in self._source_assets_by_key.items()
-        })
+        group_names.update(
+            {
+                key: source_asset_def.group_name
+                for key, source_asset_def in self._source_assets_by_key.items()
+            }
+        )
 
         return group_names
 
