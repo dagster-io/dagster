@@ -1,21 +1,7 @@
-import {
-  Box,
-  Button,
-  DialogFooter,
-  Dialog,
-  SplitPanelContainer,
-  Spinner,
-  Tooltip,
-  Icon,
-} from '@dagster-io/ui';
+import {Button, DialogFooter, Dialog, Tooltip, Icon} from '@dagster-io/ui';
 import * as React from 'react';
-import {createGlobalStyle} from 'styled-components/macro';
 
-import {ConfigEditorHelp} from '../launchpad/ConfigEditorHelp';
-
-import {ConfigEditor} from './ConfigEditor';
-import {ConfigEditorHelpContext} from './ConfigEditorHelpContext';
-import {isHelpContextEqual} from './isHelpContextEqual';
+import {ConfigEditorWithSchema} from './ConfigEditorWithSchema';
 
 interface Props {
   onConfigChange: (config: string) => void;
@@ -32,13 +18,6 @@ interface Props {
   isOpen: boolean;
 }
 
-// Force code editor hints to appear above the dialog modal
-const CodeMirrorShimStyle = createGlobalStyle`
-  .CodeMirror-hints {
-    z-index: 100;
-  }
-`;
-
 export const ConfigEditorDialog: React.FC<Props> = ({
   config,
   configSchema,
@@ -53,12 +32,6 @@ export const ConfigEditorDialog: React.FC<Props> = ({
   saveText,
   isOpen,
 }) => {
-  const editorSplitPanelContainer = React.useRef<SplitPanelContainer | null>(null);
-  const [editorHelpContext, setEditorHelpContext] = React.useState<ConfigEditorHelpContext | null>(
-    null,
-  );
-  const editor = React.useRef<ConfigEditor | null>(null);
-
   return (
     <Dialog
       isOpen={isOpen}
@@ -66,44 +39,12 @@ export const ConfigEditorDialog: React.FC<Props> = ({
       onClose={onClose}
       style={{maxWidth: '90%', minWidth: '70%', width: 1000}}
     >
-      <CodeMirrorShimStyle />
-      <SplitPanelContainer
-        ref={editorSplitPanelContainer}
-        axis="horizontal"
+      <ConfigEditorWithSchema
+        onConfigChange={onConfigChange}
+        config={config}
+        configSchema={configSchema}
+        isLoading={isLoading}
         identifier={identifier}
-        firstMinSize={100}
-        firstInitialPercent={70}
-        first={
-          !isLoading ? (
-            <ConfigEditor
-              ref={editor}
-              configCode={config!}
-              onConfigChange={onConfigChange}
-              onHelpContextChange={(next) => {
-                if (next && !isHelpContextEqual(editorHelpContext, next)) {
-                  setEditorHelpContext(next);
-                }
-              }}
-              readOnly={false}
-              checkConfig={async (_j) => {
-                return {isValid: true};
-              }}
-              runConfigSchema={configSchema}
-            />
-          ) : (
-            <Box style={{height: '100%'}} flex={{alignItems: 'center', justifyContent: 'center'}}>
-              <Spinner purpose="section" />
-            </Box>
-          )
-        }
-        second={
-          <Box style={{height: 500}}>
-            <ConfigEditorHelp
-              context={editorHelpContext}
-              allInnerTypes={configSchema?.allConfigTypes || []}
-            />
-          </Box>
-        }
       />
       <DialogFooter topBorder>
         {error ? (
