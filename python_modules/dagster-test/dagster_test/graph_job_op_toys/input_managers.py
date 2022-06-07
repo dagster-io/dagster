@@ -10,6 +10,7 @@ from dagster import (
     In,
     InputContext,
     Noneable,
+    Out,
     OutputContext,
     graph,
     io_manager,
@@ -66,7 +67,7 @@ def numpy_input_manager(init_context):
     return NumpyCsvInputManager(base_dir=init_context.resource_config["base_dir"])
 
 
-@op
+@op(out=Out(io_manager_key="pandas_io_mgr"))
 def make_a_df():
     df = pd.DataFrame(
         {
@@ -115,6 +116,7 @@ df_stats_job = df_stats.to_job(
     name="df_stats_job",
     resource_defs={
         "io_manager": pandas_io_manager,
+        "pandas_io_mgr": pandas_io_manager,
         "pyspark_csv_mgr": pyspark_input_manager,
         "numpy_csv_mgr": numpy_input_manager,
     },
