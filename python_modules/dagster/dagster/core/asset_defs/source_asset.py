@@ -105,12 +105,9 @@ class SourceAsset(
         return self.resource_defs.get(io_manager_key) if io_manager_key else None
 
     def with_resources(self, resource_defs) -> "SourceAsset":
-        from dagster.core.definitions.graph_definition import default_job_io_manager
         from dagster.core.execution.resources_init import get_transitive_required_resource_keys
 
-        merged_resource_defs = merge_dicts(
-            {"io_manager": default_job_io_manager}, resource_defs, self.resource_defs
-        )
+        merged_resource_defs = merge_dicts(resource_defs, self.resource_defs)
 
         io_manager_def = merged_resource_defs.get(self.get_io_manager_key())
         if not io_manager_def and self.get_io_manager_key() != "io_manager":

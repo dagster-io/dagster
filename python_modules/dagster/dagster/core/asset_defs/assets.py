@@ -370,12 +370,9 @@ class AssetsDefinition(ResourceAddable):
         return {requirement.key for requirement in self.get_resource_requirements()}
 
     def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
-        from dagster.core.definitions.graph_definition import default_job_io_manager
         from dagster.core.execution.resources_init import get_transitive_required_resource_keys
 
-        merged_resource_defs = merge_dicts(
-            {"io_manager": default_job_io_manager}, resource_defs, self.resource_defs
-        )
+        merged_resource_defs = merge_dicts(resource_defs, self.resource_defs)
 
         # Ensure top-level resource requirements are met - except for
         # io_manager, since that is a default it can be resolved later.
