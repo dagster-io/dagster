@@ -1,7 +1,7 @@
 import operator
 from abc import ABC
 from functools import reduce
-from typing import AbstractSet, FrozenSet, Optional, TypeVar
+from typing import AbstractSet, FrozenSet, Optional
 
 from typing_extensions import TypeAlias
 
@@ -14,7 +14,6 @@ from dagster.core.selector.subset_selector import (
     generate_asset_name_to_definition_map,
 )
 
-T = TypeVar("T")
 AssetSet: TypeAlias = AbstractSet[AssetsDefinition]  # makes sigs more readable
 
 
@@ -42,10 +41,6 @@ class AssetSelection(ABC):
 
     def __and__(self, other: "AssetSelection") -> "AndAssetSelection":
         return AndAssetSelection(self, other)
-
-    # def to_job(self, assets: AssetSet, *args):
-    #     selected_assets = self.resolve(assets)
-    #     return OwensFrankenJob(selected_assets, *args)
 
     def resolve(self, all_assets: AssetSet) -> AssetSet:
         return Resolver(all_assets).resolve(self)
@@ -108,7 +103,7 @@ class Resolver:
             child = self.resolve(node.children[0])
             return reduce(
                 operator.or_,
-                [self.gather_connected_assets(asset, "downstream", node.depth) for asset in child],
+                [self._gather_connected_assets(asset, "downstream", node.depth) for asset in child],
             )
         elif isinstance(node, GroupsAssetSelection):
             return {
@@ -125,12 +120,12 @@ class Resolver:
             child = self.resolve(node.children[0])
             return reduce(
                 operator.or_,
-                [self.gather_connected_assets(asset, "upstream", node.depth) for asset in child],
+                [self._gather_connected_assets(asset, "upstream", node.depth) for asset in child],
             )
         else:
             check.failed(f"Unknown node type: {type(node)}")
 
-    def gather_connected_assets(
+    def _gather_connected_assets(
         self, asset: AssetsDefinition, direction: Direction, depth: Optional[int]
     ) -> FrozenSet[AssetsDefinition]:
         connected = fetch_connected_assets_definitions(

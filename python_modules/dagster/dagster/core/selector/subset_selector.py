@@ -263,7 +263,7 @@ def parse_clause(clause: str) -> Optional[Tuple[int, str, int]]:
         else:
             check.failed(f"Invalid clause part: {part}")
 
-    token_matching = re.compile(r"^(\*?\+*)?([.>\w\d\[\]?_-]+)(\+*\*?)?$").search(clause.strip())
+    token_matching = re.compile(r"^(\*?\+*)?([./\w\d\[\]?_-]+)(\+*\*?)?$").search(clause.strip())
     # return None if query is invalid
     parts = token_matching.groups() if token_matching is not None else []
     if len(parts) != 3:
