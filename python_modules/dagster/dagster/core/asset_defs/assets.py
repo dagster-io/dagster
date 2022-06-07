@@ -11,8 +11,8 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
-from dagster.utils import merge_dicts
 from dagster.core.definitions.utils import validate_group_name
+from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning, experimental
 
 from ..definitions.resource_requirement import (
