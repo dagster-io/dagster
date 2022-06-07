@@ -10,6 +10,7 @@ import packaging
 import pytest
 import requests
 from dagster_graphql import DagsterGraphQLClient
+import docker
 
 from dagster import file_relative_path
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -82,11 +83,14 @@ def docker_service_up(docker_compose_file, build_args=None):
         finally:
 
             # collect logs from the containers and upload to buildkite
-            containers = ["dagit", "docker_daemon", "dagster_grpc_server", "docker_postgresql"]
+            # containers = ["dagit", "docker_daemon", "dagster_grpc_server", "docker_postgresql"]
+            client = docker.client.from_env()
+            containers = client.containers.list()
 
             current_test = os.environ.get('PYTEST_CURRENT_TEST').split(':')[-1].split(' ')[0]
             logs_dir = f".docker_logs/{current_test}"
 
+            # delete any existing logs
             p = subprocess.Popen(["rm", "-rf", "{dir}".format(dir=logs_dir)])
             p.communicate()
             assert p.returncode == 0
