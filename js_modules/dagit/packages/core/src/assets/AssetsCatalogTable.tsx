@@ -7,6 +7,7 @@ import {
   Suggest,
   MenuItem,
   Icon,
+  ButtonGroup,
 } from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import uniqBy from 'lodash/uniqBy';
@@ -31,7 +32,6 @@ import {StickyTableContainer} from '../ui/StickyTableContainer';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 
 import {AssetTable, ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTable';
-import {AssetViewModeSwitch} from './AssetViewModeSwitch';
 import {AssetsEmptyState} from './AssetsEmptyState';
 import {AssetKey} from './types';
 import {
@@ -44,7 +44,7 @@ import {
   AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes,
 } from './types/AssetCatalogTableQuery';
 import {AssetTableFragment} from './types/AssetTableFragment';
-import {useAssetView} from './useAssetView';
+import {AssetViewType, useAssetView} from './useAssetView';
 
 const PAGE_SIZE = 50;
 
@@ -90,12 +90,14 @@ function useAllAssets(
 }
 
 interface AssetCatalogTableProps {
+  prefixPath: string[];
+  setPrefixPath: (prefixPath: string[]) => void;
   groupSelector?: AssetGroupSelector;
-  prefixPath?: string[];
 }
 
 export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
-  prefixPath = [],
+  prefixPath,
+  setPrefixPath,
   groupSelector,
 }) => {
   const [view, setView] = useAssetView();
@@ -178,7 +180,19 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
           liveDataByNode={liveDataByNode}
           actionBarComponents={
             <>
-              <AssetViewModeSwitch />
+              <ButtonGroup<AssetViewType>
+                activeItems={new Set([view])}
+                buttons={[
+                  {id: 'flat', icon: 'view_list', tooltip: 'List view'},
+                  {id: 'directory', icon: 'folder', tooltip: 'Folder view'},
+                ]}
+                onClick={(view) => {
+                  setView(view);
+                  if (view === 'flat' && prefixPath.length) {
+                    setPrefixPath([]);
+                  }
+                }}
+              />
               <TextInput
                 value={search || ''}
                 style={{width: '30vw', minWidth: 150, maxWidth: 400}}
