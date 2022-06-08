@@ -24,7 +24,6 @@ A software-defined asset includes three main components:
 - An <PyObject object="AssetKey" />, which is a handle for referring to the asset.
 - A set of upstream asset keys, which refer to assets that the contents of the software-defined asset are derived from.
 - An [op](/concepts/ops-jobs-graphs/ops), which is a function responsible for computing the contents of the asset from its upstream dependencies.
-
 A crucial distinction between software-defined assets and [ops](/concepts/ops-jobs-graphs/ops) is that software-defined assets know about their dependencies, while ops do not. Ops aren't hooked up to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/jobs-graphs).
 
 "Materializing" an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [Dagit](/concepts/dagit/dagit), Dagster's web UI, or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is [fully customizable](#customizing-how-assets-are-materialized-with-io-managers).
@@ -506,16 +505,6 @@ def upstream_asset():
 def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 ```
-
-### Explicit dependencies
-
-If defining dependencies by matching argument names to upstream asset names feels too magical for your tastes, you can also define dependencies in a more explicit way:
-
-```python file=/concepts/assets/explicit_asset_dependency.py
-ENOENT: no such file or directory, open '/Users/erincochran/Desktop/dagster-repo/examples/docs_snippets/docs_snippets/concepts/assets/explicit_asset_dependency.py'
-```
-
-In this case, `ins={"upstream": AssetIn("upstream_asset")}` declares that the contents of the asset with the key `upstream_asset` will be provided to the function argument named `upstream`.
 
 ### Attaching metadata
 
