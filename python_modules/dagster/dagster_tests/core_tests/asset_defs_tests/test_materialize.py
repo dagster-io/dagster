@@ -35,6 +35,7 @@ def test_basic_materialize():
     with TemporaryDirectory() as temp_dir:
         with instance_for_test(temp_dir=temp_dir) as instance:
             result = materialize([the_asset], instance=instance)
+            assert result.success
             assert result.asset_materializations_for_node("the_asset")[0].metadata_entries[
                 0
             ].value == MetadataValue.path(os.path.join(temp_dir, "storage", "the_asset"))
@@ -121,7 +122,7 @@ def test_materialize_source_assets():
     def the_asset(the_source):
         return the_source + 1
 
-    result = materialize([the_asset], source_assets=[the_source])
+    result = materialize([the_asset, the_source])
     assert result.success
     assert result.output_for_node("the_asset") == 6
 
@@ -145,7 +146,7 @@ def test_materialize_source_asset_conflicts():
         DagsterInvalidDefinitionError,
         match="Conflicting versions of resource with key 'foo' were provided to different assets.",
     ):
-        materialize([the_asset], source_assets=[the_source])
+        materialize([the_asset, the_source])
 
 
 def test_materialize_no_assets():
