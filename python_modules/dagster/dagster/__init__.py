@@ -168,6 +168,7 @@ from dagster.core.definitions.run_status_sensor_definition import build_run_stat
 from dagster.core.definitions.schedule_definition import build_schedule_context
 from dagster.core.definitions.sensor_definition import build_sensor_context
 from dagster.core.definitions.step_launcher import StepLauncher
+from dagster.core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster.core.definitions.utils import (
     config_from_files,
     config_from_pkg_resources,

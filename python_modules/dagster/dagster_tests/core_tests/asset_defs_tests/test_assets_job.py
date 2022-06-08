@@ -1242,7 +1242,7 @@ def test_raise_error_on_incomplete_graph_asset_subset():
     ).build_job("job")
 
     with instance_for_test() as instance:
-        with pytest.raises(DagsterInvalidDefinitionError, match="complicated_graph"):
+        with pytest.raises(DagsterInvalidSubsetError, match="complicated_graph"):
             job.execute_in_process(instance=instance, asset_selection=[AssetKey("comments_table")])
 
 
