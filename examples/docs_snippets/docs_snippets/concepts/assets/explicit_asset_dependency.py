@@ -1,4 +1,4 @@
-from dagster import AssetIn, asset
+from dagster import AssetIn, AssetKey, asset
 
 
 # start_string_example

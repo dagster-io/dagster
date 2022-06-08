@@ -153,7 +153,7 @@ repository_a_source_asset = SourceAsset(key=AssetKey("repository_a_asset"))
 
 @asset
 def repository_b_asset(repository_a_asset):
-    return 6
+    return repository_a_asset + 6
 
 
 repository_b_asset_group = AssetGroup(
