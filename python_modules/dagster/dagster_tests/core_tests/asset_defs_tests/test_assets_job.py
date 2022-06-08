@@ -292,7 +292,7 @@ def test_missing_io_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="SourceAsset with asset key AssetKey\(\['source1'\]\) requires IO manager with key 'special_io_manager', but none was provided.",
+        match=r"SourceAsset with asset key AssetKey\(\['source1'\]\) requires IO manager with key 'special_io_manager', but none was provided.",
     ):
         build_assets_job(
             "a",
@@ -1461,7 +1461,7 @@ def test_source_asset_requires_resource_defs():
         assert context.resources.bar == "blah"
 
     @io_manager(required_resource_keys={"foo"})
-    def the_manager(context):
+    def the_manager():
         return MyIOManager()
 
     my_source_asset = SourceAsset(
@@ -1527,7 +1527,7 @@ def test_transitive_resource_deps_provided():
     @asset(
         resource_defs={"used": used_resource, "foo": ResourceDefinition.hardcoded_resource("blah")}
     )
-    def the_asset(context):
+    def the_asset():
         pass
 
     the_job = build_assets_job(name="test", assets=[the_asset])
@@ -1536,7 +1536,7 @@ def test_transitive_resource_deps_provided():
 
 def test_transitive_io_manager_dep_not_provided():
     @io_manager(required_resource_keys={"foo"})
-    def the_manager(context):
+    def the_manager():
         pass
 
     my_source_asset = SourceAsset(
@@ -1545,7 +1545,7 @@ def test_transitive_io_manager_dep_not_provided():
     )
 
     @asset
-    def my_derived_asset(my_source_asset):
+    def my_derived_asset(my_source_asset):  # pylint: disable=unused-argument
         pass
 
     with pytest.raises(

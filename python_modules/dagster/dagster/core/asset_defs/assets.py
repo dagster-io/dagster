@@ -339,6 +339,7 @@ class AssetsDefinition(ResourceAddable):
             asset_deps=self._asset_deps,
             can_subset=self.can_subset,
             selected_asset_keys=selected_asset_keys & self.asset_keys,
+            resource_defs=self.resource_defs,
         )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
