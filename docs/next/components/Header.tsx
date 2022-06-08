@@ -1,6 +1,5 @@
 import * as React from "react";
 import { useState } from "react";
-import { JoinSlackButton } from "./JoinSlackButton";
 
 const COLLAPSING_PX = -16;
 
@@ -108,9 +107,7 @@ const Header = ({ openMobileDocsMenu }) => {
             {" "}
             Sign in
           </a>
-          <div className="self-center hidden xl:block">
-            <JoinSlackButton header />
-          </div>
+          <div className="self-center hidden xl:block"></div>
         </div>
 
         <div className="flex items-center md:hidden z-50">
@@ -206,7 +203,6 @@ const Header = ({ openMobileDocsMenu }) => {
             >
               Github
             </a>
-            <JoinSlackButton />
           </div>
         </div>
       </nav>

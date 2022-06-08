@@ -215,7 +215,9 @@ const SidebarContents = () => {
       {/* Search Bar*/}
       <div className="h-0 flex-1 flex flex-col overflow-y-auto ">
         <div className="px-3 mt-5">
-          <div className="block w-full pl-4 border-gray-300 rounded-full border bg-white"></div>
+          <div className="block w-full pl-4 border-gray-300 rounded-full border bg-white">
+            <Search />
+          </div>
         </div>
         {/* End Search Bar */}
 
