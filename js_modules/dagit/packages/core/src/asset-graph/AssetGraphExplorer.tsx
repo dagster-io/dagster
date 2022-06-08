@@ -69,7 +69,7 @@ interface Props {
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
 }
 
-const EXPERIMENTAL_MINI_SCALE = 0.5;
+export const EXPERIMENTAL_MINI_SCALE = 0.5;
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {
