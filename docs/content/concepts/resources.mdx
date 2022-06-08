@@ -5,25 +5,15 @@ description: Resources enable you to separate graph logic from environment, and 
 
 # Resources
 
-Resources provide a way to manage dependencies to external components and share implementations across multiple [ops](/concepts/ops-jobs-graphs/ops) or [assets](/concepts/assets/software-defined-assets) in a [job](/concepts/ops-jobs-graphs/jobs-graphs).
+Resources are objects that are shared across the implementations of multiple [assets](/concepts/assets/software-defined-assets) and [ops](/concepts/ops-jobs-graphs/ops) and that can be plugged in after defining those ops and assets.
 
-Using resources, you could:
+Resources typically model external components that assets and ops interact with. For example, a resource might be a connection to a data warehouse like Snowflake or a service like Slack.
 
-- Provide access to features of the execution environment to ops
-- Bind a set of resources and other environment information to a job so that those resources can be available to the ops within that job
-- Construct different jobs for the same graph, each with different resources, to represent the execution environments that the graph will be run in
+So, why use resources?
 
-So, **why use resources**? Using resources has a variety of benefits, as they are:
-
-- **Pluggable**: Map a resource to a key in one job and then map a different resource to that same key in a different job. This is useful if there is a heavy external dependency that you want to use in production, but avoid using in testing.
-
-  You can simply provide different resource sets for each execution case: one for production with the heavy dependency (e.g., AWS) as a resource, and one for testing with something lighter (i.e., in-memory store) mapped to the same key. For more information about this capability, check out [Separating Business Logic from Environments](/concepts/testing#separating-business-logic-from-environments).
-
-- **Job scoped**: Since resources are job scoped, if you provide a resource to a job, then it becomes available for use with every op in that job.
-
-- **Configurable**: Resources can be configured using a strongly typed [configuration system](/concepts/configuration/config-schema).
-
-- **Dependencies**: Resources can depend on other resources. This makes it possible to cleanly represent external environment objects that rely on other external environment information for initialization.
+- **Plug in different implementations in different environments** - If you have a heavy external dependency that you want to use in production, but avoid using in testing, you can accomplish this by providing different resources in each environment. Check out [Separating Business Logic from Environments](/concepts/testing#separating-business-logic-from-environments) for more info about this capability.
+- **Share configuration across multiple ops or assets** - Resources are configurable and shared, so you can supply configuration in one place instead of configuring the ops and assets individually.
+- **Share implementations across multiple ops or assets** - When multiple ops access the same external services, resources provide a standard way to structure your code to share the implementations.
 
 ---
 
