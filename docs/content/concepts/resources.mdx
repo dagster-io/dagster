@@ -19,9 +19,12 @@ External dependencies as resources are:
 
 - **Pluggable**: Map a resource to a key in one job and then map a different resource to that same key in a different job. This is useful if there is a heavy external dependency that you want to use in production, but avoid using in testing.
 
-   You can simply provide different resource sets for each execution case: one for production with the heavy dependency (e.g., AWS) as a resource, and one for testing with something lighter (i.e., in-memory store) mapped to the same key. For more information about this capability, check out [Separating Business Logic from Environments](/concepts/testing#separating-business-logic-from-environments).
+  You can simply provide different resource sets for each execution case: one for production with the heavy dependency (e.g., AWS) as a resource, and one for testing with something lighter (i.e., in-memory store) mapped to the same key. For more information about this capability, check out [Separating Business Logic from Environments](/concepts/testing#separating-business-logic-from-environments).
+
 - **Job Scoped**: Since resources are job scoped, if you provide a resource to a job, then it becomes available for use with every op in that job.
+
 - **Configurable**: Resources can be configured using a strongly typed [configuration system](/concepts/configuration/config-schema).
+
 - **Dependencies**: Resources can depend on other resources. This makes it possible to cleanly represent external environment objects that rely on other external environment information for initialization.
 
 ---
