@@ -16,6 +16,7 @@ from dagster import (
     build_schedule_from_partitioned_job,
     daily_partitioned_config,
     daily_schedule,
+    fs_io_manager,
     graph,
     job,
     lambda_solid,
@@ -619,7 +620,14 @@ def test_source_assets():
     def my_repo():
         return [AssetGroup(assets=[], source_assets=[foo, bar])]
 
-    assert my_repo.source_assets_by_key == {AssetKey("foo"): foo, AssetKey("bar"): bar}
+    assert my_repo.source_assets_by_key == {
+        AssetKey("foo"): SourceAsset(
+            key=AssetKey("foo"), resource_defs={"io_manager": fs_io_manager}
+        ),
+        AssetKey("bar"): SourceAsset(
+            key=AssetKey("bar"), resource_defs={"io_manager": fs_io_manager}
+        ),
+    }
 
 
 def test_multiple_asset_groups_one_repo():
