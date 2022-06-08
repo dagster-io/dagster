@@ -137,7 +137,7 @@ asset_group = AssetGroup(assets=[my_derived_asset], source_assets=[my_source_ass
 You can also re-use assets across repositories by including them as source assets:
 
 ```python file=/concepts/assets/cross_repository_asset.py
-from dagster import AssetGroup, AssetKey, Output, SourceAsset, asset, repository
+from dagster import AssetGroup, SourceAsset, asset, repository
 
 
 @asset

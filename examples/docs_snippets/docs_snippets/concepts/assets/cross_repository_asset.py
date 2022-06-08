@@ -1,4 +1,4 @@
-from dagster import AssetGroup, AssetKey, Output, SourceAsset, asset, repository
+from dagster import AssetGroup, SourceAsset, asset, repository
 
 
 @asset
