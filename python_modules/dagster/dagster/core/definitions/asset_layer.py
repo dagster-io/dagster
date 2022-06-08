@@ -24,7 +24,7 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils.backcompat import ExperimentalWarning
 
-from ..errors import DagsterInvalidDefinitionError
+from ..errors import DagsterInvalidSubsetError
 from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle, SolidOutputHandle
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
@@ -619,13 +619,13 @@ class AssetLayer:
 
 def build_asset_selection_job(
     name: str,
-    assets: Iterable["AssetsDefinition"],
-    source_assets: Iterable["SourceAsset"],
-    executor_def: ExecutorDefinition,
-    resource_defs: Mapping[str, ResourceDefinition],
-    description: str,
-    tags: Dict[str, Any],
-    asset_selection: Optional[FrozenSet[AssetKey]],
+    assets: Sequence["AssetsDefinition"],
+    source_assets: Sequence["SourceAsset"],
+    executor_def: Optional[ExecutorDefinition] = None,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    description: Optional[str] = None,
+    tags: Optional[Dict[str, Any]] = None,
+    asset_selection: Optional[FrozenSet[AssetKey]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
 ):
     from dagster.core.asset_defs import build_assets_job
@@ -667,9 +667,12 @@ def _subset_assets_defs(
     included_assets: Set[AssetsDefinition] = set()
     excluded_assets: Set[AssetsDefinition] = set()
 
+    included_keys: Set[AssetKey] = set()
+
     for asset in assets:
         # intersection
         selected_subset = selected_asset_keys & asset.asset_keys
+        included_keys.update(selected_subset)
         # all assets in this def are selected
         if selected_subset == asset.asset_keys:
             included_assets.add(asset)
@@ -683,7 +686,7 @@ def _subset_assets_defs(
             # subset of the asset that we don't want
             excluded_assets.add(asset.subset_for(asset.asset_keys - subset_asset.asset_keys))
         else:
-            raise DagsterInvalidDefinitionError(
+            raise DagsterInvalidSubsetError(
                 f"When building job, the AssetsDefinition '{asset.node_def.name}' "
                 f"contains asset keys {sorted(list(asset.asset_keys))}, but "
                 f"attempted to select only {sorted(list(selected_subset))}. "
@@ -691,6 +694,14 @@ def _subset_assets_defs(
                 "asset keys produced by this asset."
             )
 
+    missed_keys = selected_asset_keys - included_keys
+    if missed_keys:
+        raise DagsterInvalidSubsetError(
+            f"When building job, the AssetKey(s) {[key.to_user_string() for key in missed_keys]} "
+            "were selected, but are not produced by any of the provided AssetsDefinitions. Make "
+            "sure that keys are spelled correctly and that all of the expected definitions are "
+            "provided."
+        )
     all_excluded_assets: Sequence[Union["AssetsDefinition", "SourceAsset"]] = [
         *excluded_assets,
         *source_assets,

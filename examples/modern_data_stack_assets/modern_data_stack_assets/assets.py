@@ -22,7 +22,7 @@ dbt_assets = load_assets_from_dbt_project(
 )
 
 
-@asset(compute_kind="python", namespace="public")
+@asset(compute_kind="python")
 def order_forecast_model(daily_order_summary: pd.DataFrame) -> Any:
     """Model parameters that best fit the observed data"""
     df = daily_order_summary
@@ -33,7 +33,7 @@ def order_forecast_model(daily_order_summary: pd.DataFrame) -> Any:
     )
 
 
-@asset(compute_kind="python", io_manager_key="pandas_io_manager", namespace="public")
+@asset(compute_kind="python", io_manager_key="pandas_io_manager")
 def predicted_orders(
     daily_order_summary: pd.DataFrame, order_forecast_model: Tuple[float, float]
 ) -> pd.DataFrame:

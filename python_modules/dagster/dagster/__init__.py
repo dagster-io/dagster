@@ -14,7 +14,6 @@ sys.meta_path.insert(
         }
     ),
 )
-
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
 from dagster.config.config_schema import ConfigSchema
@@ -26,11 +25,11 @@ from dagster.core.asset_defs import (
     AssetsDefinition,
     SourceAsset,
     asset,
-    assets_from_current_module,
-    assets_from_modules,
-    assets_from_package_module,
-    assets_from_package_name,
     build_assets_job,
+    load_assets_from_current_module,
+    load_assets_from_modules,
+    load_assets_from_package_module,
+    load_assets_from_package_name,
     multi_asset,
 )
 from dagster.core.definitions import (
@@ -168,6 +167,7 @@ from dagster.core.definitions.run_status_sensor_definition import build_run_stat
 from dagster.core.definitions.schedule_definition import build_schedule_context
 from dagster.core.definitions.sensor_definition import build_sensor_context
 from dagster.core.definitions.step_launcher import StepLauncher
+from dagster.core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster.core.definitions.utils import (
     config_from_files,
     config_from_pkg_resources,
@@ -226,6 +226,7 @@ from dagster.core.execution.results import (
     SolidExecutionResult,
 )
 from dagster.core.execution.validate_run_config import validate_run_config
+from dagster.core.execution.with_resources import with_resources
 from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
@@ -488,6 +489,7 @@ __all__ = [
     "OpExecutionContext",
     "PipelineExecutionResult",
     "RetryRequested",
+    "with_resources",
     "build_resources",
     "SolidExecutionResult",
     "SolidExecutionContext",
@@ -551,10 +553,10 @@ __all__ = [
     "config_from_yaml_strings",
     "configured",
     "build_assets_job",
-    "assets_from_modules",
-    "assets_from_current_module",
-    "assets_from_package_module",
-    "assets_from_package_name",
+    "load_assets_from_modules",
+    "load_assets_from_current_module",
+    "load_assets_from_package_module",
+    "load_assets_from_package_name",
     # types
     "Any",
     "Bool",
