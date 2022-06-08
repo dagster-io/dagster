@@ -17,8 +17,8 @@ from dagster import (
     io_manager,
     op,
 )
-from dagster.core.asset_defs.load_assets_from_modules import prefix_assets
 from dagster.core.asset_defs import asset, multi_asset
+from dagster.core.asset_defs.load_assets_from_modules import prefix_assets
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.execution.with_resources import with_resources
 from dagster.core.test_utils import instance_for_test
