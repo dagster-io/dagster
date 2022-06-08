@@ -1,6 +1,5 @@
 import tempfile
 
-import pytest
 from dagster_pyspark import pyspark_resource
 from hacker_news_assets.core import assets
 from hacker_news_assets.resources.hn_resource import hn_snapshot_client
@@ -15,7 +14,6 @@ from dagster import (
 )
 
 
-@pytest.mark.skip()
 def test_download():
     with tempfile.TemporaryDirectory() as temp_dir:
         test_job = AssetGroup(
