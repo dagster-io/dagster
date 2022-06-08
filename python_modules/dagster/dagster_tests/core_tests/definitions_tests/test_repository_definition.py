@@ -654,6 +654,28 @@ def test_multiple_asset_groups_one_repo():
     }
 
 
+def test_direct_assets():
+    foo = SourceAsset("foo")
+
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    @repository
+    def my_repo():
+        return [foo, asset1, asset2]
+
+    assert len(my_repo.get_all_jobs()) == 1
+    assert set(my_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
+        AssetKey(["asset1"]),
+        AssetKey(["asset2"]),
+    }
+
+
 def _create_graph_with_name(name):
     @graph(name=name)
     def _the_graph():
