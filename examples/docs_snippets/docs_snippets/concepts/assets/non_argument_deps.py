@@ -1,4 +1,4 @@
-def execute_query(query):
+def execute_query():
     pass
 
 
