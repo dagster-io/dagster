@@ -34,6 +34,7 @@ from dagster.core.definitions.sensor_definition import (
     SensorDefinition,
 )
 from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster.core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
@@ -914,7 +915,10 @@ def external_asset_graph_from_defs(
                 output_name=output_def.name,
                 output_description=output_def.description,
                 metadata_entries=output_def.metadata_entries,
-                group_name=group_names.get(asset_key),
+                # assets defined by Out(asset_key="k") do not have any group
+                # name specified we default to DEFAULT_GROUP_NAME here to ensure
+                # such assets are part of the default group
+                group_name=group_names.get(asset_key, DEFAULT_GROUP_NAME),
             )
         )
 
