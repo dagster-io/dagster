@@ -109,8 +109,8 @@ class AssetGroup:
         assets = with_resources(assets, resource_defs)
         source_assets = with_resources(source_assets, resource_defs)
 
-        self._assets = assets
-        self._source_assets = source_assets
+        self._assets = set(assets)
+        self._source_assets = set(source_assets)
         self._resource_defs = resource_defs
         self._executor_def = executor_def
 

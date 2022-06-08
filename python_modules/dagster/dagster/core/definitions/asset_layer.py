@@ -619,8 +619,8 @@ class AssetLayer:
 
 def build_asset_selection_job(
     name: str,
-    assets: Sequence["AssetsDefinition"],
-    source_assets: Sequence["SourceAsset"],
+    assets: AbstractSet["AssetsDefinition"],
+    source_assets: AbstractSet["SourceAsset"],
     executor_def: Optional[ExecutorDefinition] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,

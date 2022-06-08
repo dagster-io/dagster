@@ -336,8 +336,8 @@ class JobDefinition(PipelineDefinition):
 
         new_job = build_asset_selection_job(
             name=self.name,
-            assets=list(self.asset_layer.assets_defs_by_key.values()),
-            source_assets=list(self.asset_layer.source_assets_by_key.values()),
+            assets=set(self.asset_layer.assets_defs_by_key.values()),
+            source_assets=set(self.asset_layer.source_assets_by_key.values()),
             executor_def=self.executor_def,
             resource_defs=self.resource_defs,
             description=self.description,
