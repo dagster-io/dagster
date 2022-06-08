@@ -48,8 +48,8 @@ class UnresolvedAssetJobDefinition(
         """
         return build_asset_selection_job(
             name=self.name,
-            assets=assets,
-            source_assets=source_assets,
+            assets=set(assets),
+            source_assets=set(source_assets),
             description=self.description,
             tags=self.tags,
             asset_selection=self.selection.resolve(assets),
