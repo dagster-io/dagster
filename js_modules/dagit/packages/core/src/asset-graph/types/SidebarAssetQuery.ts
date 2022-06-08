@@ -13,6 +13,473 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNotFoundError {
   __typename: "AssetNotFoundError";
 }
 
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType_recursiveConfigTypes = SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  recursiveConfigTypes: SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType_recursiveConfigTypes[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType_recursiveConfigTypes = SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType_recursiveConfigTypes[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType_recursiveConfigTypes = SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType_recursiveConfigTypes[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_recursiveConfigTypes = SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_fields[];
+  recursiveConfigTypes: SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType_recursiveConfigTypes[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType_recursiveConfigTypes = SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+  recursiveConfigTypes: SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType_recursiveConfigTypes[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType_recursiveConfigTypes = SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType_recursiveConfigTypes_ArrayConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+  recursiveConfigTypes: SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType_recursiveConfigTypes[];
+}
+
+export type SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType = SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ArrayConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_EnumConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_RegularConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_ScalarUnionConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_MapConfigType;
+
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField {
+  __typename: "ConfigTypeField";
+  name: string;
+  configType: SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType;
+}
+
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_PathMetadataEntry {
   __typename: "PathMetadataEntry";
   label: string;
@@ -2403,6 +2870,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode {
   __typename: "AssetNode";
   id: string;
   description: string | null;
+  configField: SidebarAssetQuery_assetNodeOrError_AssetNode_configField | null;
   metadataEntries: SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries[];
   partitionDefinition: string | null;
   assetKey: SidebarAssetQuery_assetNodeOrError_AssetNode_assetKey;

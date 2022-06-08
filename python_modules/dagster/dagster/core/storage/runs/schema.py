@@ -86,6 +86,8 @@ BulkActionsTable = db.Table(
     db.Column("status", db.String(255), nullable=False),
     db.Column("timestamp", db.types.TIMESTAMP, nullable=False),
     db.Column("body", db.Text),
+    db.Column("action_type", db.String(32)),
+    db.Column("selector_id", db.Text),
 )
 
 InstanceInfo = db.Table(
@@ -98,6 +100,8 @@ db.Index("idx_run_tags", RunTagsTable.c.key, RunTagsTable.c.value, mysql_length=
 db.Index("idx_run_partitions", RunsTable.c.partition_set, RunsTable.c.partition, mysql_length=64)
 db.Index("idx_bulk_actions", BulkActionsTable.c.key, mysql_length=32)
 db.Index("idx_bulk_actions_status", BulkActionsTable.c.status, mysql_length=32)
+db.Index("idx_bulk_actions_action_type", BulkActionsTable.c.action_type, mysql_length=32)
+db.Index("idx_bulk_actions_selector_id", BulkActionsTable.c.selector_id, mysql_length=64)
 db.Index("idx_run_status", RunsTable.c.status, mysql_length=32)
 db.Index(
     "idx_run_range",

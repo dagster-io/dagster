@@ -251,7 +251,7 @@ const RunWithData: React.FC<RunWithDataProps> = ({
     }
 
     if (run.status === 'QUEUED') {
-      return <QueuedState runId={runId} />;
+      return <QueuedState run={run} />;
     }
 
     if (run.executionPlan && runtimeGraph) {
@@ -307,6 +307,7 @@ const RunWithData: React.FC<RunWithDataProps> = ({
               computeLogKey={computeLogKey}
               onSetComputeLogKey={onSetComputeLogKey}
               computeLogUrl={computeLogUrl}
+              counts={logs.counts}
             />
             {logType !== LogType.structured ? (
               <ComputeLogPanel

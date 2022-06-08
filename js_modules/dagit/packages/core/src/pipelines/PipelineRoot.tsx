@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
-import {LaunchpadRoot} from '../launchpad/LaunchpadRoot';
+import {JobLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchpadSetupFromRunRoot} from '../launchpad/LaunchpadSetupFromRunRoot';
 import {LaunchpadSetupRoot} from '../launchpad/LaunchpadSetupRoot';
 import {PipelineNav} from '../nav/PipelineNav';
@@ -56,7 +56,7 @@ export const PipelineRoot: React.FC<Props> = (props) => {
             '/workspace/:repoPath/jobs/:pipelinePath/playground',
           ]}
         >
-          <LaunchpadRoot repoAddress={repoAddress} />
+          <JobLaunchpad repoAddress={repoAddress} />
         </Route>
         <Route
           path={[

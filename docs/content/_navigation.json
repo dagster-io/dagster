@@ -118,6 +118,10 @@
           {
             "title": "Op Retries",
             "path": "/concepts/ops-jobs-graphs/op-retries"
+          },
+          {
+            "title": "Metadata & Tags",
+            "path": "/concepts/ops-jobs-graphs/metadata-tags"
           }
         ]
       },
@@ -252,6 +256,10 @@
           {
             "title": "Asset Observations",
             "path": "/concepts/assets/asset-observations"
+          },
+          {
+            "title": "Multi-Assets",
+            "path": "/concepts/assets/multi-assets"
           }
         ]
       }

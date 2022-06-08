@@ -13,6 +13,7 @@ from dagster.core.host_representation import PipelineSelector
 from dagster.core.storage.pipeline_run import RunRecord, RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 
+from .events import from_event_record
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import UserFacingGraphQLError, capture_error
 
@@ -314,3 +315,23 @@ def get_step_stats(graphene_info, run_id, step_keys=None):
 
     step_stats = graphene_info.context.instance.get_run_step_stats(run_id, step_keys)
     return [GrapheneRunStepStats(stats) for stats in step_stats]
+
+
+@capture_error
+def get_logs_for_run(graphene_info, run_id, cursor=None, limit=None):
+    from ..schema.errors import GrapheneRunNotFoundError
+    from ..schema.pipelines.pipeline import GrapheneEventConnection
+
+    instance = graphene_info.context.instance
+    run = instance.get_run_by_id(run_id)
+    if not run:
+        return GrapheneRunNotFoundError(run_id)
+
+    conn = instance.get_records_for_run(run_id, cursor=cursor, limit=limit)
+    return GrapheneEventConnection(
+        events=[
+            from_event_record(record.event_log_entry, run.pipeline_name) for record in conn.records
+        ],
+        cursor=conn.cursor,
+        hasMore=conn.has_more,
+    )

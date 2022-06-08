@@ -225,10 +225,10 @@ class DagsterInstance:
     transient in-memory components.
 
     Configuration of this class should be done by setting values in ``$DAGSTER_HOME/dagster.yaml``.
-    For example, to use Postgres for run and event log storage, you can write a ``dagster.yaml``
-    such as the following:
+    For example, to use Postgres for dagster storage, you can write a ``dagster.yaml`` such as the
+    following:
 
-    .. literalinclude:: ../../../../../examples/docs_snippets/docs_snippets/deploying/postgres_dagster.yaml
+    .. literalinclude:: ../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg.yaml
        :caption: dagster.yaml
        :language: YAML
 
@@ -433,13 +433,22 @@ class DagsterInstance:
         klass = instance_ref.custom_instance_class or DagsterInstance
         kwargs = instance_ref.custom_instance_class_config
 
+        unified_storage = instance_ref.storage
+        run_storage = unified_storage.run_storage if unified_storage else instance_ref.run_storage
+        event_storage = (
+            unified_storage.event_log_storage if unified_storage else instance_ref.event_storage
+        )
+        schedule_storage = (
+            unified_storage.schedule_storage if unified_storage else instance_ref.schedule_storage
+        )
+
         return klass(  # type: ignore
             instance_type=InstanceType.PERSISTENT,
             local_artifact_storage=instance_ref.local_artifact_storage,
-            run_storage=instance_ref.run_storage,
-            event_storage=instance_ref.event_storage,
+            run_storage=run_storage,
+            event_storage=event_storage,
+            schedule_storage=schedule_storage,
             compute_log_manager=instance_ref.compute_log_manager,
-            schedule_storage=instance_ref.schedule_storage,
             scheduler=instance_ref.scheduler,
             run_coordinator=instance_ref.run_coordinator,
             run_launcher=instance_ref.run_launcher,
@@ -1154,6 +1163,7 @@ class DagsterInstance:
         execution_plan_snapshot,
         parent_pipeline_snapshot,
         solid_selection=None,
+        pipeline_code_origin=None,
     ):
         # The usage of this method is limited to dagster-airflow, specifically in Dagster
         # Operators that are executed in Airflow. Because a common workflow in Airflow is to
@@ -1181,6 +1191,7 @@ class DagsterInstance:
             pipeline_snapshot=pipeline_snapshot,
             execution_plan_snapshot=execution_plan_snapshot,
             parent_pipeline_snapshot=parent_pipeline_snapshot,
+            pipeline_code_origin=pipeline_code_origin,
         )
 
         def get_run():
@@ -1381,50 +1392,6 @@ class DagsterInstance:
         self, asset_keys: Optional[Sequence[AssetKey]] = None
     ) -> Iterable["AssetRecord"]:
         return self._event_storage.get_asset_records(asset_keys)
-
-    @traced
-    def events_for_asset_key(
-        self,
-        asset_key,
-        partitions=None,
-        before_cursor=None,
-        after_cursor=None,
-        cursor=None,
-        before_timestamp=None,
-        limit=None,
-        ascending=False,
-    ):
-        check.inst_param(asset_key, "asset_key", AssetKey)
-
-        warnings.warn(
-            """
-The method `events_for_asset_key` on DagsterInstance has been deprecated as of `0.12.0` in favor of
-the method `get_event_records`. The method `get_event_records` takes in an `EventRecordsFilter`
-argument that allows for filtering by asset key and asset key partitions. The return value is a
-list of `EventLogRecord` objects, each of which contains a storage_id and an event log entry.
-
-Example:
-records = instance.get_event_records(
-    EventRecordsFilter(
-        asset_key=asset_key,
-        asset_partitions=partitions,
-        after_cursor=after_cursor,
-    ),
-)
-"""
-        )
-
-        return self._event_storage.get_asset_events(
-            asset_key,
-            partitions,
-            before_cursor,
-            after_cursor,
-            limit,
-            before_timestamp=before_timestamp,
-            ascending=ascending,
-            include_cursor=True,
-            cursor=cursor,
-        )
 
     @traced
     def run_ids_for_asset_key(self, asset_key):

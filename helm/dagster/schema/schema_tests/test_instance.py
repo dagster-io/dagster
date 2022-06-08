@@ -58,8 +58,9 @@ def helm_template() -> HelmTemplate:
     )
 
 
+@pytest.mark.parametrize("postgresql_scheme", ["", "postgresql", "postgresql+psycopg2"])
 @pytest.mark.parametrize("storage", ["schedule_storage", "run_storage", "event_log_storage"])
-def test_storage_postgres_db_config(template: HelmTemplate, storage: str):
+def test_storage_postgres_db_config(template: HelmTemplate, postgresql_scheme: str, storage: str):
     postgresql_username = "username"
     postgresql_host = "1.1.1.1"
     postgresql_database = "database"
@@ -75,6 +76,7 @@ def test_storage_postgres_db_config(template: HelmTemplate, storage: str):
             postgresqlHost=postgresql_host,
             postgresqlDatabase=postgresql_database,
             postgresqlParams=postgresql_params,
+            postgresqlScheme=postgresql_scheme,
             service=Service(port=postgresql_port),
         )
     )
@@ -95,6 +97,10 @@ def test_storage_postgres_db_config(template: HelmTemplate, storage: str):
     assert postgres_db["db_name"] == postgresql_database
     assert postgres_db["port"] == postgresql_port
     assert postgres_db["params"] == postgresql_params
+    if not postgresql_scheme:
+        assert "scheme" not in postgres_db
+    else:
+        assert postgres_db["scheme"] == postgresql_scheme
 
 
 def test_k8s_run_launcher_config(template: HelmTemplate):

@@ -22,14 +22,7 @@ data:
       module: dagster_postgres.schedule_storage
       class: PostgresScheduleStorage
       config:
-        postgres_db:
-          username: {{ .Values.postgresql.postgresqlUsername }}
-          password:
-            env: DAGSTER_PG_PASSWORD
-          hostname: {{ include "dagster.postgresql.host" . }}
-          db_name:  {{ .Values.postgresql.postgresqlDatabase	}}
-          port: {{ .Values.postgresql.service.port }}
-          params: {{ .Values.postgresql.postgresqlParams | toYaml | nindent 12 }}
+        {{- include "dagsterYaml.postgresql.config" . | indent 8 }}
 
     run_launcher:
       {{- $runLauncherType := .Values.runLauncher.type }}
@@ -46,27 +39,13 @@ data:
       module: dagster_postgres.run_storage
       class: PostgresRunStorage
       config:
-        postgres_db:
-          username: {{ .Values.postgresql.postgresqlUsername }}
-          password:
-            env: DAGSTER_PG_PASSWORD
-          hostname: {{ include "dagster.postgresql.host" . }}
-          db_name:  {{ .Values.postgresql.postgresqlDatabase	}}
-          port: {{ .Values.postgresql.service.port }}
-          params: {{ .Values.postgresql.postgresqlParams | toYaml | nindent 12 }}
+        {{- include "dagsterYaml.postgresql.config" . | indent 8 }}
 
     event_log_storage:
       module: dagster_postgres.event_log
       class: PostgresEventLogStorage
       config:
-        postgres_db:
-          username: {{ .Values.postgresql.postgresqlUsername }}
-          password:
-            env: DAGSTER_PG_PASSWORD
-          hostname: {{ include "dagster.postgresql.host" . }}
-          db_name:  {{ .Values.postgresql.postgresqlDatabase	}}
-          port: {{ .Values.postgresql.service.port }}
-          params: {{ .Values.postgresql.postgresqlParams | toYaml | nindent 12 }}
+        {{- include "dagsterYaml.postgresql.config" . | indent 8 }}
 
     {{- if and (.Values.dagsterDaemon.enabled) (.Values.dagsterDaemon.runCoordinator.enabled) }}
     {{- $runCoordinatorType := .Values.dagsterDaemon.runCoordinator.type }}

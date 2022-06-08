@@ -12,7 +12,7 @@ from dagster_test.graph_job_op_toys.asset_lineage import (
 )
 from dagster_test.graph_job_op_toys.big_honkin_asset_graph import big_honkin_asset_group
 from dagster_test.graph_job_op_toys.branches import branch_failed_job, branch_job
-from dagster_test.graph_job_op_toys.composition import composition
+from dagster_test.graph_job_op_toys.composition import composition_job
 from dagster_test.graph_job_op_toys.cross_repo_assets import (
     downstream_asset_group1,
     downstream_asset_group2,
@@ -31,6 +31,7 @@ from dagster_test.graph_job_op_toys.log_spew import log_spew
 from dagster_test.graph_job_op_toys.long_asset_keys import long_asset_keys_group
 from dagster_test.graph_job_op_toys.longitudinal import longitudinal_job
 from dagster_test.graph_job_op_toys.many_events import many_events, many_events_subset_job
+from dagster_test.graph_job_op_toys.metadata import with_metadata
 from dagster_test.graph_job_op_toys.notebooks import hello_world_notebook_pipeline
 from dagster_test.graph_job_op_toys.partitioned_assets import partitioned_asset_group
 from dagster_test.graph_job_op_toys.retries import retry_job
@@ -63,7 +64,7 @@ model_job = model.to_job()
 def toys_repository():
     return (
         [
-            composition,
+            composition_job,
             error_monster_failing_job,
             error_monster_passing_job,
             hammer_default_executor_job,
@@ -85,6 +86,7 @@ def toys_repository():
             model_job,
             hello_world_notebook_pipeline,
             software_defined_assets,
+            with_metadata,
         ]
         + get_toys_schedules()
         + get_toys_sensors()
