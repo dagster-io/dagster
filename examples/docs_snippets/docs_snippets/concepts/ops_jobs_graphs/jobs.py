@@ -1,4 +1,6 @@
-# pylint: disable=unused-argument
+# isort: skip_file
+
+# pylint: disable=unused-argument,reimported
 
 from dagster import DependencyDefinition, GraphDefinition, job, op
 
@@ -97,7 +99,5 @@ the_job = wires_input.to_job(input_values={"x": 5})
 # start_execute_in_process_input
 graph_result = wires_input.execute_in_process(input_values={"x": 5})
 
-job_result = the_job.execute_in_process(
-    input_values={"x": 6}
-)  # Overrides existing input value
+job_result = the_job.execute_in_process(input_values={"x": 6})  # Overrides existing input value
 # end_execute_in_process_input

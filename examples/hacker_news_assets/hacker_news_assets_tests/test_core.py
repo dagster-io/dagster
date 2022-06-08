@@ -8,8 +8,8 @@ from hacker_news_assets.resources.parquet_io_manager import local_partitioned_pa
 from dagster import (
     AssetGroup,
     ResourceDefinition,
-    load_assets_from_package_module,
     fs_io_manager,
+    load_assets_from_package_module,
     mem_io_manager,
 )
 
