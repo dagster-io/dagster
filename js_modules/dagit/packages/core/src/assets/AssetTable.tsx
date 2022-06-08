@@ -17,6 +17,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
+import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {AssetLatestRunWithNotices, AssetRunLink} from '../asset-graph/AssetNode';
 import {LiveData, toGraphId} from '../asset-graph/Utils';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
@@ -40,6 +41,7 @@ export const AssetTable = ({
   view,
   assets,
   actionBarComponents,
+  refreshState,
   liveDataByNode,
   prefixPath,
   displayPathForAsset,
@@ -48,6 +50,7 @@ export const AssetTable = ({
 }: {
   view: AssetViewType;
   assets: Asset[];
+  refreshState: QueryRefreshState;
   actionBarComponents: React.ReactNode;
   liveDataByNode: LiveData;
   prefixPath: string[];
@@ -82,22 +85,26 @@ export const AssetTable = ({
 
   return (
     <Box flex={{direction: 'column'}}>
-      <Box flex={{alignItems: 'center', gap: 8}} padding={{vertical: 8, left: 24, right: 12}}>
+      <Box flex={{alignItems: 'center', gap: 12}} padding={{vertical: 8, left: 24, right: 12}}>
         {actionBarComponents}
         <div style={{flex: 1}} />
-        {checkedAssets.some((c) => !c.definition) ? (
-          <Tooltip content="One or more selected assets are not software-defined and cannot be launched directly.">
-            <Button intent="primary" icon={<Icon name="materialization" />} disabled>
-              Materialize
-            </Button>
-          </Tooltip>
-        ) : (
-          <LaunchAssetExecutionButton
-            assetKeys={checkedAssets.map((c) => c.key)}
-            liveDataByNode={liveDataByNode}
-          />
-        )}
-        <MoreActionsDropdown selected={checkedAssets} clearSelection={() => onToggleAll(false)} />
+        <QueryRefreshCountdown refreshState={refreshState} />
+
+        <Box flex={{alignItems: 'center', gap: 8}}>
+          {checkedAssets.some((c) => !c.definition) ? (
+            <Tooltip content="One or more selected assets are not software-defined and cannot be launched directly.">
+              <Button intent="primary" icon={<Icon name="materialization" />} disabled>
+                Materialize
+              </Button>
+            </Tooltip>
+          ) : (
+            <LaunchAssetExecutionButton
+              assetKeys={checkedAssets.map((c) => c.key)}
+              liveDataByNode={liveDataByNode}
+            />
+          )}
+          <MoreActionsDropdown selected={checkedAssets} clearSelection={() => onToggleAll(false)} />
+        </Box>
       </Box>
       <Table>
         <thead>
@@ -118,7 +125,7 @@ export const AssetTable = ({
             <th>{view === 'directory' ? 'Asset Key Prefix' : 'Asset Key'}</th>
             <th style={{width: 340}}>Defined In</th>
             <th style={{width: 200}}>Materialized</th>
-            <th style={{width: 100}}>Latest Run</th>
+            <th style={{width: 115}}>Latest Run</th>
             <th style={{width: 80}}>Actions</th>
           </tr>
         </thead>
@@ -158,7 +165,7 @@ export const AssetTable = ({
 const AssetEmptyRow = () => {
   return (
     <tr>
-      <td colSpan={4}>
+      <td colSpan={6}>
         <Box flex={{justifyContent: 'center', alignItems: 'center'}}>
           <Box margin={{left: 8}}>No assets to display</Box>
         </Box>

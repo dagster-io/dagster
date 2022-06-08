@@ -177,7 +177,7 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
               spellCheck={false}
               onChange={onChange}
               onKeyDown={onKeyDown}
-              placeholder="Search jobs, schedules, sensors…"
+              placeholder="Search assets, jobs, schedules, sensors…"
               type="text"
               value={queryString}
             />

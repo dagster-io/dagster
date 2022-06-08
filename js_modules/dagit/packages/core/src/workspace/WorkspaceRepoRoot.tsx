@@ -33,6 +33,10 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
 
   const tabs = React.useMemo(() => {
     const tabList = [
+      {
+        text: 'Assets',
+        href: workspacePathFromAddress(repoAddress, '/assets'),
+      },
       {text: 'Jobs', href: workspacePathFromAddress(repoAddress, '/jobs')},
       anyPipelines
         ? {text: 'Pipelines', href: workspacePathFromAddress(repoAddress, '/pipelines')}
@@ -44,10 +48,6 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
       },
       {text: 'Schedules', href: workspacePathFromAddress(repoAddress, '/schedules')},
       {text: 'Sensors', href: workspacePathFromAddress(repoAddress, '/sensors')},
-      {
-        text: 'Assets',
-        href: workspacePathFromAddress(repoAddress, '/assets'),
-      },
     ];
 
     return tabList.filter(Boolean) as {text: string; href: string}[];
