@@ -7,15 +7,11 @@ description: Getting familiar with Dagster's feature set and tooling through han
 
 Get up to speed by working through these tutorials, which use small examples illustrative of real data problems.
 
----
-
-## Intro tutorials
-
-Master the basics of Dagster with these tutorials.
-
 **Before you get started, make sure you [install Dagster](/tutorial/intro-tutorial/setup)!**
 
-### Assets
+---
+
+## Assets
 
 <Note>
 	<strong>New to Dagster?</strong> Start here!
@@ -27,23 +23,12 @@ Dagster is used to build and maintain data assets. In this tutorial, we'll walk 
 - [**Build graphs of assets**](/tutorial/intro-tutorial/assets/asset-graph) using multiple assets
 - [**Test assets**](/tutorial/intro-tutorial/assets/testing-assets), whether a single asset or multiple
 
-### Ops and jobs
+---
+
+## Ops and jobs
 
 Dagster's asset functionality sits on top of a general orchestration engine that can be used for tasks other than creating and maintaining assets. Check out this op-focused tutorial to learn more:
 
 - [**Write and execute an op job**](/tutorial/intro-tutorial/ops-jobs/single-op-job) using a sample CSV dataset
 - [**Connect ops in jobs**](/tutorial/intro-tutorial/ops-jobs/connecting-ops) to create complex, multi-op jobs using a sample CSV dataset
 - [**Test ops and jobs**](/tutorial/intro-tutorial/ops-jobs/testable) with unit tests
-
----
-
-## Advanced tutorials
-
-**Ready for more?** Get familiar with some of Dagster's more advanced features:
-
-- [**Configure ops**](/tutorial/advanced-tutorial/configuring-ops) to parameterize pipelines with configuration
-- [**Define op inputs and outputs**](/tutorial/advanced-tutorial/types) using Dagster's type system
-- [**Utilize resources and built-in config**](/tutorial/advanced-tutorial/resources) to hold your business logic constant while interacting with external services in different environments
-- [**Use materializations**](/tutorial/advanced-tutorial/materializations) to make Dagster aware of your persistent artifacts outside the system
-- [**Organize jobs in repositories and workspaces**](/tutorial/advanced-tutorial/repositories) to keep jobs tidy and findable
-- [**Schedule job runs**](/tutorial/advanced-tutorial/scheduling) to run jobs at regular intervals
