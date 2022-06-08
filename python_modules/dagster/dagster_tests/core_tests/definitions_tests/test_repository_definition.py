@@ -753,7 +753,7 @@ def test_bad_coerce():
 
 def test_bad_resolve():
 
-    with pytest.raises(DagsterInvalidSubsetError, match="No qualified assets to execute"):
+    with pytest.raises(DagsterInvalidSubsetError, match="When building job"):
 
         @repository
         def _fails():
@@ -901,12 +901,17 @@ def test_duplicate_graph_target_invalid():
 def test_duplicate_unresolved_job_valid():
     the_job = define_asset_job(name="foo")
 
+    @asset
+    def foo_asset():
+        return 1
+
     # Providing the same graph to the repo and multiple schedules / sensors is valid
     @repository
     def the_repo_dupe_unresolved_job_valid():
-        return [the_job, _create_sensor_from_target(the_job)]
+        return [the_job, _create_sensor_from_target(the_job), foo_asset]
 
-    assert len(the_repo_dupe_unresolved_job_valid.get_all_jobs()) == 1
+    # one job for the mega job
+    assert len(the_repo_dupe_unresolved_job_valid.get_all_jobs()) == 2
 
 
 def test_duplicate_unresolved_job_target_invalid():

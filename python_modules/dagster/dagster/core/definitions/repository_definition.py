@@ -740,7 +740,6 @@ class CachingRepositoryData(RepositoryData):
             for job_def in combined_asset_group.get_base_jobs():
                 pipelines_or_jobs[job_def.name] = job_def
 
-            assets = combined_asset_group.assets
             source_assets_by_key = {
                 source_asset.key: source_asset
                 for source_asset in combined_asset_group.source_assets
@@ -765,7 +764,15 @@ class CachingRepositoryData(RepositoryData):
 
         # resolve all the UnresolvedAssetJobDefinitions using the full set of assets
         for name, unresolved_job_def in unresolved_jobs.items():
-            resolved_job = unresolved_job_def.resolve(assets, list(source_assets.values()))
+            if not combined_asset_group:
+                raise DagsterInvalidDefinitionError(
+                    f"UnresolvedAssetJobDefinition {name} specified, but no AssetDefinitions exist "
+                    "on the repository."
+                )
+            resolved_job = unresolved_job_def.resolve(
+                assets=combined_asset_group.assets,
+                source_assets=combined_asset_group.source_assets,
+            )
             pipelines_or_jobs[name] = resolved_job
 
         pipelines: Dict[str, PipelineDefinition] = {}
