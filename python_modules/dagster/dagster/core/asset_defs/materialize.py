@@ -1,8 +1,7 @@
-from typing import Any, List, Mapping, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 import dagster._check as check
 
-from ..definitions import ResourceDefinition
 from ..execution.execute_in_process_result import ExecuteInProcessResult
 from ..execution.with_resources import with_resources
 from ..instance import DagsterInstance

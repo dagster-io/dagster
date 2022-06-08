@@ -225,5 +225,6 @@ def test_materialize_multi_asset():
         yield Output(2, "my_other_out_name")
 
     result = materialize([thing_asset, multi_asset_with_internal_deps])
-    result.output_for_node("multi_asset_with_internal_deps", "my_out_name") == 1
-    result.output_for_node("multi_asset_with_internal_deps", "my_other_out_name") == 2
+    assert result.success
+    assert result.output_for_node("multi_asset_with_internal_deps", "my_out_name") == 1
+    assert result.output_for_node("multi_asset_with_internal_deps", "my_other_out_name") == 2
