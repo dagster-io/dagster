@@ -17,7 +17,9 @@ def materialize(
     instance: Optional[DagsterInstance] = None,
 ) -> ExecuteInProcessResult:
     """
-    Executes an in-process run which materializes assets that fulfill selection.
+    Executes a single-threaded, in-process run which materializes provided assets.
+
+    By default, will materialize assets to the local filesystem.
 
     Args:
         assets (Sequence[Union[AssetsDefinition, SourceAsset]]): The assets to materialize. Can also provide ``SourceAsset``s to fill dependencies for asset defs.
