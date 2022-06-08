@@ -13,5 +13,9 @@ def create_db_conn_string(base_dir, db_name):
     return "sqlite:///{}".format("/".join(path_components + [db_file]))
 
 
+def create_in_memory_conn_string(db_name):
+    return f"sqlite:///file:{db_name}?mode=memory&uri=true"
+
+
 def get_sqlite_version():
     return str(sqlite3.sqlite_version)
