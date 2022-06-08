@@ -136,4 +136,5 @@ class SourceAsset(
             partitions_def=self.partitions_def,
             _metadata_entries=self.metadata_entries,
             resource_defs=relevant_resource_defs,
+            group_name=self.group_name,
         )

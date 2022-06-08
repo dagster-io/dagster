@@ -398,6 +398,7 @@ class AssetsDefinition(ResourceAddable):
             selected_asset_keys=self._selected_asset_keys,
             can_subset=self._can_subset,
             resource_defs=relevant_resource_defs,
+            group_names=self._group_names,
         )
 
 
