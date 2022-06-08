@@ -120,6 +120,7 @@ If you want Dagit to contain both an asset group and a set of [jobs](/concepts/o
 - [Upstream changes](#upstream-changed-indicator)
 
 #### All assets
+
 To view a list of all your assets, click **Assets** in the top-right corner of the page. This opens the Asset Catalog:
 
 <img
@@ -169,11 +170,12 @@ In this case, the contents of `comment_stories` may be outdated, as the most rec
 You can resolve this issue by re-materializing the downstream asset. This will re-compute the contents with the most recent data/changes to its upstream dependency.
 
 <Note>
-    Currently, the <strong>upstream changed</strong> indicator won't display in the following scenarios:
-    <ul>
+  Currently, the <strong>upstream changed</strong> indicator won't display in
+  the following scenarios:
+  <ul>
     <li>The upstream asset is in another asset group or job</li>
     <li>The assets are partitioned</li>
-    </ul>
+  </ul>
 </Note>
 
 ### Materializing assets in Dagit
