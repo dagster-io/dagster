@@ -50,14 +50,14 @@ export function Search() {
   });
 
   useEffect(() => {
-    // if (typeof navigator !== "undefined") {
-    //   if (/(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
-    //     setActionKey(ACTION_KEY_APPLE);
-    //   } else {
-    //     setActionKey(ACTION_KEY_DEFAULT);
-    //   }
-    //   setBrowserDetected(true);
-    // }
+    if (typeof navigator !== "undefined") {
+      if (/(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+        setActionKey(ACTION_KEY_APPLE);
+      } else {
+        setActionKey(ACTION_KEY_DEFAULT);
+      }
+      setBrowserDetected(true);
+    }
   }, []);
 
   return (
