@@ -95,13 +95,10 @@ def build_assets_job(
     )
     check.opt_str_param(description, "description")
     check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
-<<<<<<< HEAD
-=======
     source_assets_by_key = build_source_assets_by_key(source_assets)
 
     partitions_def = build_job_partitions_from_assets(assets, source_assets or [])
     deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
->>>>>>> 7daa3bf
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
     resource_defs = merge_dicts({"io_manager": default_job_io_manager}, resource_defs)
 
@@ -143,10 +140,6 @@ def build_assets_job(
     return graph.to_job(
         resource_defs=all_resource_defs,
         config=config,
-<<<<<<< HEAD
-=======
-        partitions_def=partitions_def,
->>>>>>> 7daa3bf
         tags=tags,
         executor_def=executor_def,
         partitions_def=partitions_def,
