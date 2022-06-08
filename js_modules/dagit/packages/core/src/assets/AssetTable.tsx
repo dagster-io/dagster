@@ -125,7 +125,7 @@ export const AssetTable = ({
             <th>{view === 'directory' ? 'Asset Key Prefix' : 'Asset Key'}</th>
             <th style={{width: 340}}>Defined In</th>
             <th style={{width: 200}}>Materialized</th>
-            <th style={{width: 100}}>Latest Run</th>
+            <th style={{width: 115}}>Latest Run</th>
             <th style={{width: 80}}>Actions</th>
           </tr>
         </thead>
