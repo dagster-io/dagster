@@ -73,17 +73,12 @@ def op_requires_resources(context):
 
 As assets are functionally similar to ops, assets also use resource keys to access resources:
 
-<!-- This hard-coded example is temporary. -->
-
-```python
-from dagster import asset
-
-CREATE_TABLE_1_QUERY = "create table_1 as select * from table_0"
-
-
-@asset(required_resource_keys={"database"})
-def asset_requires_resources(context):
-    context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
+```python file=/concepts/assets/asset_config.py startafter=start_example endbefore=end_example
+@asset(config_schema={"api_endpoint": str})
+def my_configurable_asset(context):
+    api_endpoint = context.op_config["api_endpoint"]
+    data = requests.get(f"{api_endpoint}/data").json()
+    return data
 ```
 
 ---
