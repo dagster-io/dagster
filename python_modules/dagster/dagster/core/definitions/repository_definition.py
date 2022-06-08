@@ -746,19 +746,6 @@ class CachingRepositoryData(RepositoryData):
         else:
             source_assets_by_key = {}
 
-        # resolve all the UnresolvedAssetJobDefinitions using the full set of assets
-        for name, unresolved_job_def in unresolved_jobs.items():
-            if not combined_asset_group:
-                raise DagsterInvalidDefinitionError(
-                    f"UnresolvedAssetJobDefinition {name} specified, but no AssetDefinitions exist "
-                    "on the repository."
-                )
-            resolved_job = unresolved_job_def.resolve(
-                assets=combined_asset_group.assets,
-                source_assets=combined_asset_group.source_assets,
-            )
-            pipelines_or_jobs[name] = resolved_job
-
         for name, sensor_def in sensors.items():
             if sensor_def.has_loadable_targets():
                 targets = sensor_def.load_targets()
@@ -773,6 +760,19 @@ class CachingRepositoryData(RepositoryData):
                 _process_and_validate_target(
                     schedule_def, coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
                 )
+
+        # resolve all the UnresolvedAssetJobDefinitions using the full set of assets
+        for name, unresolved_job_def in unresolved_jobs.items():
+            if not combined_asset_group:
+                raise DagsterInvalidDefinitionError(
+                    f"UnresolvedAssetJobDefinition {name} specified, but no AssetDefinitions exist "
+                    "on the repository."
+                )
+            resolved_job = unresolved_job_def.resolve(
+                assets=combined_asset_group.assets,
+                source_assets=combined_asset_group.source_assets,
+            )
+            pipelines_or_jobs[name] = resolved_job
 
         pipelines: Dict[str, PipelineDefinition] = {}
         jobs: Dict[str, JobDefinition] = {}
@@ -1268,13 +1268,13 @@ def _process_and_validate_target(
             # be the same definition by reference equality
             if target.name in pipelines_or_jobs:
                 dupe_target_type = pipelines_or_jobs[target.name].target_type
-                warnings.warn(
+                raise DagsterInvalidDefinitionError(
                     _get_error_msg_for_target_conflict(
                         targeter, "unresolved asset job", target.name, dupe_target_type
                     )
                 )
         elif unresolved_jobs[target.name].selection != target.selection:
-            warnings.warn(
+            raise DagsterInvalidDefinitionError(
                 _get_error_msg_for_target_conflict(
                     targeter, "unresolved asset job", target.name, "unresolved asset job"
                 )
