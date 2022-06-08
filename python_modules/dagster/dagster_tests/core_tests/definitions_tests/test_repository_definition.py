@@ -16,6 +16,7 @@ from dagster import (
     build_schedule_from_partitioned_job,
     daily_partitioned_config,
     daily_schedule,
+    fs_io_manager,
     graph,
     job,
     lambda_solid,
@@ -619,7 +620,14 @@ def test_source_assets():
     def my_repo():
         return [AssetGroup(assets=[], source_assets=[foo, bar])]
 
-    assert my_repo.source_assets_by_key == {AssetKey("foo"): foo, AssetKey("bar"): bar}
+    assert my_repo.source_assets_by_key == {
+        AssetKey("foo"): SourceAsset(
+            key=AssetKey("foo"), resource_defs={"io_manager": fs_io_manager}
+        ),
+        AssetKey("bar"): SourceAsset(
+            key=AssetKey("bar"), resource_defs={"io_manager": fs_io_manager}
+        ),
+    }
 
 
 def test_multiple_asset_groups_one_repo():
@@ -639,6 +647,28 @@ def test_multiple_asset_groups_one_repo():
         return [group1, group2]
 
     assert my_repo.source_assets_by_key.keys() == {AssetKey("foo"), AssetKey("bar")}
+    assert len(my_repo.get_all_jobs()) == 1
+    assert set(my_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
+        AssetKey(["asset1"]),
+        AssetKey(["asset2"]),
+    }
+
+
+def test_direct_assets():
+    foo = SourceAsset("foo")
+
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    @repository
+    def my_repo():
+        return [foo, asset1, asset2]
+
     assert len(my_repo.get_all_jobs()) == 1
     assert set(my_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
         AssetKey(["asset1"]),
