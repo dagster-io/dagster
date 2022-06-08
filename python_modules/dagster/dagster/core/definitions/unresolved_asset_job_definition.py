@@ -9,7 +9,7 @@ from dagster.core.selector.subset_selector import parse_clause
 if TYPE_CHECKING:
     from dagster.core.asset_defs import AssetsDefinition, SourceAsset
     from dagster.core.asset_defs.asset_selection import AssetSelection
-    from dagster.core.definitions import ExecutorDefinition, JobDefinition
+    from dagster.core.definitions import JobDefinition
 
 
 class UnresolvedAssetJobDefinition(
@@ -18,7 +18,6 @@ class UnresolvedAssetJobDefinition(
         [
             ("name", str),
             ("selection", "AssetSelection"),
-            ("executor_def", Optional["ExecutorDefinition"]),
             ("description", Optional[str]),
             ("tags", Optional[Dict[str, Any]]),
         ],
@@ -28,18 +27,15 @@ class UnresolvedAssetJobDefinition(
         cls,
         name: str,
         selection: "AssetSelection",
-        executor_def: Optional["ExecutorDefinition"] = None,
         description: Optional[str] = None,
         tags: Optional[Dict[str, Any]] = None,
     ):
         from dagster.core.asset_defs.asset_selection import AssetSelection
-        from dagster.core.definitions.executor_definition import ExecutorDefinition
 
         return super(UnresolvedAssetJobDefinition, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             selection=check.inst_param(selection, "selection", AssetSelection),
-            executor_def=check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition),
             description=check.opt_str_param(description, "description"),
             tags=check.opt_dict_param(tags, "tags"),
         )
@@ -54,7 +50,6 @@ class UnresolvedAssetJobDefinition(
             name=self.name,
             assets=assets,
             source_assets=source_assets,
-            executor_def=self.executor_def,
             description=self.description,
             tags=self.tags,
             asset_selection=self.selection.resolve(assets),
@@ -82,13 +77,30 @@ def _selection_from_string(string: str) -> "AssetSelection":
 
 def define_asset_job(
     name: str,
-    selection: Union[str, Sequence[str], "AssetSelection"] = None,
-    executor_def: "ExecutorDefinition" = None,
-    description: str = None,
-    tags: Dict[str, Any] = None,
+    selection: Optional[Union[str, Sequence[str], "AssetSelection"]] = None,
+    description: Optional[str] = None,
+    tags: Optional[Dict[str, Any]] = None,
 ) -> UnresolvedAssetJobDefinition:
-    """Creates a definition of a job which will update a selection of assets. This will only be
+    """Creates a definition of a job which will materialize a selection of assets. This will only be
     resolved to a JobDefinition once placed in a repository.
+
+    Args:
+        name (str):
+            The name for the JobDefintion.
+        selection (Union[str, Sequence[str], AssetSelection]):
+            A selection over the set of Assets available on your repository. This can be a string
+            such as "my_asset*", a list of such strings (representing a union of these selections),
+            or an AssetSelection object.
+
+            This selection will be resolved to a set of Assets once the repository is loaded with a
+            set of AssetsDefinitions.
+        tags (Optional[Mapping[str, Any]]):
+            Arbitrary information that will be attached to the execution of the Job.
+            Values that are not strings will be json encoded and must meet the criteria that
+            `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
+            values provided at invocation time.
+        description (Optional[str]):
+            A description for the Job.
     """
     from dagster.core.asset_defs.asset_selection import AssetSelection
 
@@ -105,7 +117,6 @@ def define_asset_job(
     return UnresolvedAssetJobDefinition(
         name=name,
         selection=cast(AssetSelection, selection),
-        executor_def=executor_def,
         description=description,
         tags=tags,
     )

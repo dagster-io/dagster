@@ -607,7 +607,7 @@ class CachingRepositoryData(RepositoryData):
                 repository_definitions["jobs"][key] = job.coerce_to_job()
             elif isinstance(job, UnresolvedAssetJobDefinition):
                 repository_definitions["jobs"][key] = job.resolve(
-                    # TODO: once AssetDefs are on the repository, do this
+                    # TODO: https://github.com/dagster-io/dagster/issues/8263
                     assets=[],
                     source_assets=[],
                 )
