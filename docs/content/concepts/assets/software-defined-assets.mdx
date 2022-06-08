@@ -398,6 +398,18 @@ def downstream_asset(upstream):
 
 In this case, `ins={"upstream": AssetIn("upstream_asset")}` declares that the contents of the asset with the key `upstream_asset` will be provided to the function argument named `upstream`.
 
+### Attaching metadata
+
+Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataEntry) to assets. To attach metadata, supply a `metadata` dictionary to the asset:
+
+```python file=/concepts/assets/asset_metadata.py startafter=start_example endbefore=end_example
+@asset(metadata={"cereal_name": "Sugar Sprinkles"})
+def cereal_asset():
+    return 5
+```
+
+Asset metadata can be viewed in Dagit on the [Asset Detail page](/concepts/dagit/dagit#asset-details).
+
 ### Using context in assets
 
 Since a software-defined asset contains an op, all of the typical functionality of an op (like the use of resources) is available to an asset.
