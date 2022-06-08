@@ -4,17 +4,17 @@ import {Link} from 'react-router-dom';
 
 export const AssetLink: React.FC<{
   path: string[];
-  displayIcon?: boolean;
+  icon?: 'asset' | 'asset_non_sda' | 'folder';
   url?: string;
-  trailingSlash?: boolean;
-}> = ({path, displayIcon, url, trailingSlash}) => {
+  isGroup?: boolean;
+}> = ({path, icon, url, isGroup}) => {
   const linkUrl = url ? url : `/instance/assets/${path.map(encodeURIComponent).join('/')}`;
 
   return (
     <Box flex={{direction: 'row', alignItems: 'center', display: 'inline-flex'}}>
-      {displayIcon ? (
+      {icon ? (
         <Box margin={{right: 8}}>
-          <Icon name="asset" color={Colors.Gray400} />
+          <Icon name={icon} color={Colors.Gray400} />
         </Box>
       ) : null}
       <Link to={linkUrl}>
@@ -29,7 +29,7 @@ export const AssetLink: React.FC<{
               ],
               [] as React.ReactNode[],
             )}
-          {trailingSlash ? '/' : null}
+          {isGroup ? '/' : null}
         </span>
       </Link>
     </Box>

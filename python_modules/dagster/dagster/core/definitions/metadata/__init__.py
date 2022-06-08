@@ -1,6 +1,7 @@
 import functools
 import os
 import re
+from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -152,7 +153,7 @@ def package_metadata_value(label: str, raw_value: RawMetadataValue) -> "Metadata
 # ########################
 
 
-class MetadataValue:
+class MetadataValue(ABC):
     """Utility class to wrap metadata values passed into Dagster events so that they can be
     displayed in Dagit and other tooling.
 
@@ -169,6 +170,11 @@ class MetadataValue:
                 },
             )
     """
+
+    @property
+    @abstractmethod
+    def value(self) -> object:
+        raise NotImplementedError()
 
     @staticmethod
     def text(text: str) -> "TextMetadataValue":
@@ -517,6 +523,10 @@ class TextMetadataValue(  # type: ignore
             cls, check.opt_str_param(text, "text", default="")
         )
 
+    @property
+    def value(self) -> Optional[str]:
+        return self.text
+
 
 @whitelist_for_serdes(storage_name="UrlMetadataEntryData")
 class UrlMetadataValue(  # type: ignore
@@ -539,6 +549,10 @@ class UrlMetadataValue(  # type: ignore
             cls, check.opt_str_param(url, "url", default="")
         )
 
+    @property
+    def value(self) -> Optional[str]:
+        return self.url
+
 
 @whitelist_for_serdes(storage_name="PathMetadataEntryData")
 class PathMetadataValue(  # type: ignore
@@ -554,6 +568,10 @@ class PathMetadataValue(  # type: ignore
         return super(PathMetadataValue, cls).__new__(
             cls, check.opt_path_param(path, "path", default="")
         )
+
+    @property
+    def value(self) -> Optional[str]:
+        return self.path
 
 
 @whitelist_for_serdes(storage_name="JsonMetadataEntryData")
@@ -581,6 +599,10 @@ class JsonMetadataValue(
             raise DagsterInvalidMetadata("Value is a dictionary but is not JSON serializable.")
         return super(JsonMetadataValue, cls).__new__(cls, data)
 
+    @property
+    def value(self) -> Dict[str, Any]:
+        return self.data
+
 
 @whitelist_for_serdes(storage_name="MarkdownMetadataEntryData")
 class MarkdownMetadataValue(
@@ -602,6 +624,10 @@ class MarkdownMetadataValue(
         return super(MarkdownMetadataValue, cls).__new__(
             cls, check.opt_str_param(md_str, "md_str", default="")
         )
+
+    @property
+    def value(self) -> Optional[str]:
+        return self.md_str
 
 
 @whitelist_for_serdes(storage_name="PythonArtifactMetadataEntryData")
@@ -626,6 +652,10 @@ class PythonArtifactMetadataValue(
         return super(PythonArtifactMetadataValue, cls).__new__(
             cls, check.str_param(module, "module"), check.str_param(name, "name")
         )
+
+    @property
+    def value(self) -> object:
+        return self
 
 
 @whitelist_for_serdes(storage_name="FloatMetadataEntryData")
@@ -704,6 +734,10 @@ class DagsterPipelineRunMetadataValue(
             cls, check.str_param(run_id, "run_id")
         )
 
+    @property
+    def value(self) -> str:
+        return self.run_id
+
 
 @whitelist_for_serdes(storage_name="DagsterAssetMetadataEntryData")
 class DagsterAssetMetadataValue(
@@ -721,6 +755,10 @@ class DagsterAssetMetadataValue(
         return super(DagsterAssetMetadataValue, cls).__new__(
             cls, check.inst_param(asset_key, "asset_key", AssetKey)
         )
+
+    @property
+    def value(self) -> "AssetKey":
+        return self.value
 
 
 @experimental
@@ -779,6 +817,10 @@ class TableMetadataValue(
             schema,
         )
 
+    @property
+    def value(self):
+        return self
+
 
 @whitelist_for_serdes(storage_name="TableSchemaMetadataEntryData")
 class TableSchemaMetadataValue(
@@ -794,6 +836,10 @@ class TableSchemaMetadataValue(
         return super(TableSchemaMetadataValue, cls).__new__(
             cls, check.inst_param(schema, "schema", TableSchema)
         )
+
+    @property
+    def value(self) -> TableSchema:
+        return self.schema
 
 
 # ########################

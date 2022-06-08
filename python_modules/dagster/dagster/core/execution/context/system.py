@@ -644,28 +644,19 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return metadata
 
     def _get_source_run_id_from_logs(self, step_output_handle: StepOutputHandle) -> Optional[str]:
-        from dagster.core.events import DagsterEventType
 
         # walk through event logs to find the right run_id based on the run lineage
-        run_group = self.instance.get_run_group(self.run_id)
-        if run_group is None:
-            check.failed(f"Failed to load run group {self.run_id}")
 
-        _, runs = run_group
-        run_id_to_parent_run_id = {run.run_id: run.parent_run_id for run in runs}
-        source_run_id = self.pipeline_run.parent_run_id
-        while source_run_id:
-            # note: this would cost N db calls where N = number of parent runs
-            step_output_record = self.instance.all_logs(
-                source_run_id, of_type=DagsterEventType.STEP_OUTPUT
-            )
+        parent_state = self.get_known_state().parent_state
+        while parent_state:
+
             # if the parent run has yielded an StepOutput event for the given step output,
             # we find the source run id
-            for r in step_output_record:
-                if r.dagster_event.step_output_data.step_output_handle == step_output_handle:
-                    return source_run_id
+            if step_output_handle in parent_state.produced_outputs:
+                return parent_state.run_id
+
             # else, keep looking backwards
-            source_run_id = run_id_to_parent_run_id.get(source_run_id)
+            parent_state = parent_state.get_parent_state()
 
         # When a fixed path is provided via io manager, it's able to run step subset using an execution
         # plan when the ascendant outputs were not previously created by dagster-controlled

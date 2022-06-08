@@ -296,14 +296,10 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         assert result_one.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
-        instance = graphql_context.instance
-
-        assert os.path.exists(
-            os.path.join(instance.storage_directory(), run_id, "sum_solid", "result")
-        )
-        assert os.path.exists(
-            os.path.join(instance.storage_directory(), run_id, "sum_sq_solid", "result")
-        )
+        result = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)
+        logs = result["pipelineRunLogs"]["messages"]
+        assert get_step_output_event(logs, "sum_solid")
+        assert get_step_output_event(logs, "sum_sq_solid")
 
         # retry
         new_run_id = make_new_run_id()
@@ -340,21 +336,6 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         assert not get_step_output_event(logs, "sum_solid")
         assert get_step_output_event(logs, "sum_sq_solid")
-
-        assert not os.path.exists(
-            os.path.join(
-                instance.storage_directory(),
-                new_run_id,
-                "sum_solid.inputs.num.read",
-                "input_thunk_output",
-            )
-        )
-        assert not os.path.exists(
-            os.path.join(instance.storage_directory(), new_run_id, "sum_solid", "result")
-        )
-        assert os.path.exists(
-            os.path.join(instance.storage_directory(), new_run_id, "sum_sq_solid", "result")
-        )
 
     def test_pipeline_reexecution_info_query(self, graphql_context, snapshot):
         context = graphql_context
@@ -414,9 +395,9 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
     def test_pipeline_reexecution_invalid_step_in_subset(self, graphql_context):
         run_id = make_new_run_id()
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
-        execute_dagster_graphql_and_finish_runs(
+        result_one = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 "executionParams": {
                     "selector": selector,
@@ -426,6 +407,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
+        assert result_one.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         # retry
         new_run_id = make_new_run_id()

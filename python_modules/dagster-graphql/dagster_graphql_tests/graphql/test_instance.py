@@ -24,4 +24,9 @@ BaseTestSuite: Any = make_graphql_context_test_suite(
 class TestInstanceSettings(BaseTestSuite):
     def test_instance_settings(self, graphql_context):
         results = execute_dagster_graphql(graphql_context, INSTANCE_QUERY)
-        assert results.data == {"instance": {"runQueuingSupported": True, "hasInfo": True}}
+        assert results.data == {
+            "instance": {
+                "runQueuingSupported": True,
+                "hasInfo": graphql_context.show_instance_config,
+            }
+        }

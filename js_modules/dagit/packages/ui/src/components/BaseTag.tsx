@@ -65,7 +65,7 @@ export const StyledTag = styled.div<StyledTagProps>`
   background-color: ${({$fillColor}) => $fillColor};
   border-radius: 8px;
   color: ${({$textColor}) => $textColor};
-  cursor: ${({$interactive}) => ($interactive ? 'pointer' : 'default')};
+  cursor: ${({$interactive}) => ($interactive ? 'pointer' : 'inherit')};
   display: inline-flex;
   flex-direction: row;
   font-size: 12px;

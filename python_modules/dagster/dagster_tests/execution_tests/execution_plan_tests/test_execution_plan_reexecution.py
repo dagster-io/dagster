@@ -14,14 +14,11 @@ from dagster import (
     reexecute_pipeline,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.errors import (
-    DagsterExecutionStepNotFoundError,
-    DagsterInvariantViolationError,
-    DagsterRunNotFoundError,
-)
+from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster.core.events import get_step_output_event
-from dagster.core.execution.api import create_execution_plan, execute_plan
+from dagster.core.execution.api import execute_plan
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.instance import DagsterInstance
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.test_utils import default_mode_def_for_test
@@ -85,6 +82,10 @@ def test_execution_plan_reexecution():
     execution_plan = ExecutionPlan.build(
         InMemoryPipeline(pipeline_def),
         resolved_run_config,
+        known_state=KnownExecutionState.build_for_reexecution(
+            instance,
+            instance.get_run_by_id(result.run_id),
+        ),
     )
 
     subset_plan = execution_plan.build_subset_plan(["add_two"], pipeline_def, resolved_run_config)
@@ -116,40 +117,6 @@ def test_execution_plan_reexecution():
     assert get_step_output_event(step_events, "add_two")
 
 
-def test_execution_plan_wrong_run_id():
-    pipeline_def = define_addy_pipeline(using_file_system=True)
-
-    unrun_id = "not_a_run"
-    run_config = {"solids": {"add_one": {"inputs": {"num": {"value": 3}}}}}
-
-    instance = DagsterInstance.ephemeral()
-
-    execution_plan = create_execution_plan(pipeline_def, run_config=run_config)
-
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline_def,
-        execution_plan=execution_plan,
-        run_config=run_config,
-        parent_run_id=unrun_id,
-        root_run_id=unrun_id,
-    )
-
-    with pytest.raises(DagsterRunNotFoundError) as exc_info:
-        execute_plan(
-            execution_plan,
-            InMemoryPipeline(pipeline_def),
-            run_config=run_config,
-            pipeline_run=pipeline_run,
-            instance=instance,
-        )
-
-    assert str(exc_info.value) == "Run id {} set as parent run id was not found in instance".format(
-        unrun_id
-    )
-
-    assert exc_info.value.invalid_run_id == unrun_id
-
-
 def test_execution_plan_reexecution_with_in_memory():
     pipeline_def = define_addy_pipeline()
     instance = DagsterInstance.ephemeral()
@@ -161,7 +128,14 @@ def test_execution_plan_reexecution_with_in_memory():
     ## re-execute add_two
 
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), resolved_run_config)
+    execution_plan = ExecutionPlan.build(
+        InMemoryPipeline(pipeline_def),
+        resolved_run_config,
+        known_state=KnownExecutionState.build_for_reexecution(
+            instance,
+            instance.get_run_by_id(result.run_id),
+        ),
+    )
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,

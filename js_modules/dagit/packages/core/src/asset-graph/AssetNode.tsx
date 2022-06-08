@@ -1,23 +1,20 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, Spinner, Tooltip, FontFamily, Box, CaptionMono} from '@dagster-io/ui';
+import {Colors, Icon, Tooltip, FontFamily, Box, CaptionMono, Spinner} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
-import React, {CSSProperties} from 'react';
+import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
+import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {NodeHighlightColors} from '../graph/OpNode';
 import {OpTags} from '../graph/OpTags';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
-import {displayNameForAssetKey, LiveDataForNode} from './Utils';
-import {
-  assetNameMaxlengthForWidth,
-  ASSET_NODE_ANNOTATIONS_MAX_WIDTH,
-  ASSET_NODE_NAME_MAX_LENGTH,
-} from './layout';
+import {ComputeStatus, displayNameForAssetKey, LiveDataForNode} from './Utils';
+import {ASSET_NODE_ANNOTATIONS_MAX_WIDTH, ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 
 const MISSING_LIVE_DATA = {
@@ -25,29 +22,31 @@ const MISSING_LIVE_DATA = {
   inProgressRunIds: [],
   runWhichFailedToMaterialize: null,
   lastMaterialization: null,
+  stepKey: '',
 };
 
 export const AssetNode: React.FC<{
   definition: AssetNodeFragment;
   liveData?: LiveDataForNode;
+  computeStatus?: ComputeStatus;
   selected: boolean;
-  width?: number;
-  padded?: boolean;
   inAssetCatalog?: boolean;
-}> = React.memo(({definition, selected, liveData, inAssetCatalog, width, padded = true}) => {
-  const stepKey = definition.opNames[0] || '';
+}> = React.memo(({definition, selected, liveData, inAssetCatalog, computeStatus}) => {
+  const firstOp = definition.opNames.length ? definition.opNames[0] : null;
+  const computeName = definition.graphName || definition.opNames[0] || null;
 
   // Used for linking to the run with this step highlighted. We only support highlighting
   // a single step, so just use the first one.
-  const computeName = definition.graphName || definition.opNames[0] || null;
+  const stepKey = firstOp || '';
+
   const displayName = withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {
-    maxLength: width ? assetNameMaxlengthForWidth(width) : ASSET_NODE_NAME_MAX_LENGTH,
+    maxLength: ASSET_NODE_NAME_MAX_LENGTH,
   });
 
   const {lastMaterialization} = liveData || MISSING_LIVE_DATA;
 
   return (
-    <AssetNodeContainer $selected={selected} $padded={padded}>
+    <AssetNodeContainer $selected={selected}>
       <AssetNodeBox $selected={selected}>
         <Name>
           <span style={{marginTop: 1}}>
@@ -58,7 +57,7 @@ export const AssetNode: React.FC<{
           </div>
           <div style={{flex: 1}} />
           <div style={{maxWidth: ASSET_NODE_ANNOTATIONS_MAX_WIDTH}}>
-            {liveData?.computeStatus === 'old' && (
+            {computeStatus === 'old' && (
               <UpstreamNotice>
                 upstream
                 <br />
@@ -88,15 +87,17 @@ export const AssetNode: React.FC<{
           {lastMaterialization ? (
             <StatsRow>
               <span>Materialized</span>
-              <AssetRunLink
-                runId={lastMaterialization.runId}
-                event={{stepKey, timestamp: lastMaterialization.timestamp}}
-              >
-                <TimestampDisplay
-                  timestamp={Number(lastMaterialization.timestamp) / 1000}
-                  timeFormat={{showSeconds: false, showTimezone: false}}
-                />
-              </AssetRunLink>
+              <CaptionMono>
+                <AssetRunLink
+                  runId={lastMaterialization.runId}
+                  event={{stepKey, timestamp: lastMaterialization.timestamp}}
+                >
+                  <TimestampDisplay
+                    timestamp={Number(lastMaterialization.timestamp) / 1000}
+                    timeFormat={{showSeconds: false, showTimezone: false}}
+                  />
+                </AssetRunLink>
+              </CaptionMono>
             </StatsRow>
           ) : (
             <>
@@ -108,7 +109,9 @@ export const AssetNode: React.FC<{
           )}
           <StatsRow>
             <span>Latest Run</span>
-            <AssetLatestRunWithNotices liveData={liveData} stepKey={stepKey} />
+            <CaptionMono>
+              <AssetLatestRunWithNotices liveData={liveData} />
+            </CaptionMono>
           </StatsRow>
         </Stats>
         {definition.computeKind && (
@@ -132,70 +135,18 @@ export const AssetNode: React.FC<{
   );
 }, isEqual);
 
-export const AssetLatestRunWithNotices: React.FC<{
-  liveData: LiveDataForNode | undefined;
-  stepKey: string | null;
-}> = ({liveData, stepKey}) => {
-  const {lastMaterialization, unstartedRunIds, inProgressRunIds, runWhichFailedToMaterialize} =
-    liveData || MISSING_LIVE_DATA;
-
-  return inProgressRunIds?.length > 0 ? (
-    <Box flex={{gap: 4, alignItems: 'center'}}>
-      <Tooltip content="A run is currently rematerializing this asset.">
-        <Spinner purpose="body-text" />
-      </Tooltip>
-      <AssetRunLink runId={inProgressRunIds[0]} />
-    </Box>
-  ) : unstartedRunIds?.length > 0 ? (
-    <Box flex={{gap: 4, alignItems: 'center'}}>
-      <Tooltip content="A run has started that will rematerialize this asset soon.">
-        <Spinner purpose="body-text" stopped />
-      </Tooltip>
-      <AssetRunLink runId={unstartedRunIds[0]} />
-    </Box>
-  ) : runWhichFailedToMaterialize?.__typename === 'Run' ? (
-    <Box flex={{gap: 4, alignItems: 'center'}}>
-      <Tooltip
-        content={`Run ${titleForRun({
-          runId: runWhichFailedToMaterialize.id,
-        })} failed to materialize this asset`}
-      >
-        <Icon name="warning" color={Colors.Red500} />
-      </Tooltip>
-      <AssetRunLink runId={runWhichFailedToMaterialize.id} />
-    </Box>
-  ) : lastMaterialization ? (
-    <AssetRunLink
-      runId={lastMaterialization.runId}
-      event={{stepKey, timestamp: lastMaterialization.timestamp}}
-    />
-  ) : (
-    <span>–</span>
-  );
-};
 export const AssetNodeMinimal: React.FC<{
   selected: boolean;
-  style?: CSSProperties;
-}> = ({selected, style, children}) => {
+  definition: AssetNodeFragment;
+}> = ({selected, definition}) => {
   return (
-    <AssetNodeContainer
-      $padded={true}
-      $selected={selected}
-      style={{position: 'absolute', borderRadius: 12}}
-    >
-      <AssetNodeBox
-        $selected={selected}
-        style={{
-          border: `4px solid ${Colors.Blue200}`,
-          borderRadius: 10,
-          position: 'absolute',
-          inset: 4,
-          ...style,
-        }}
-      >
-        {children}
-      </AssetNodeBox>
-    </AssetNodeContainer>
+    <MinimalAssetNodeContainer $selected={selected}>
+      <MinimalAssetNodeBox $selected={selected}>
+        <MinimalName style={{fontSize: 28}}>
+          {withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {maxLength: 17})}
+        </MinimalName>
+      </MinimalAssetNodeBox>
+    </MinimalAssetNodeContainer>
   );
 };
 
@@ -208,7 +159,7 @@ export const AssetRunLink: React.FC<{
     target="_blank"
     rel="noreferrer"
   >
-    {children || <CaptionMono>{titleForRun({runId})}</CaptionMono>}
+    {children || titleForRun({runId})}
   </Link>
 );
 
@@ -232,7 +183,9 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
 export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeFragment on AssetNode {
     id
+    ...AssetNodeConfigFragment
     graphName
+    jobNames
     opNames
     description
     partitionDefinition
@@ -249,6 +202,7 @@ export const ASSET_NODE_FRAGMENT = gql`
       }
     }
   }
+  ${ASSET_NODE_CONFIG_FRAGMENT}
 `;
 
 const BoxColors = {
@@ -257,23 +211,20 @@ const BoxColors = {
   Stats: 'rgba(236, 236, 248, 1)',
 };
 
-export const AssetNodeContainer = styled.div<{$selected: boolean; $padded: boolean}>`
+const AssetNodeContainer = styled.div<{$selected: boolean}>`
+  outline: ${(p) => (p.$selected ? `2px dashed ${NodeHighlightColors.Border}` : 'none')};
   border-radius: 6px;
   outline-offset: -1px;
   background: ${(p) => (p.$selected ? NodeHighlightColors.Background : 'white')};
   inset: 0;
-
-  ${(p) =>
-    p.$padded &&
-    `
   padding: 4px;
   margin-top: 10px;
   margin-right: 4px;
   margin-left: 4px;
-  margin-bottom: 2px;`}
+  margin-bottom: 2px;
 `;
 
-export const AssetNodeBox = styled.div<{$selected: boolean}>`
+const AssetNodeBox = styled.div<{$selected: boolean}>`
   border: 2px solid ${(p) => (p.$selected ? Colors.Blue500 : Colors.Blue200)};
   background: ${BoxColors.Stats};
   border-radius: 5px;
@@ -293,6 +244,31 @@ const Name = styled.div`
   border-top-right-radius: 5px;
   font-weight: 600;
   gap: 4px;
+`;
+
+const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
+  position: absolute;
+  border-radius: 12px;
+  outline-offset: 2px;
+  outline-width: 4px;
+`;
+
+const MinimalAssetNodeBox = styled(AssetNodeBox)`
+  background: ${Colors.White};
+  border: 4px solid ${Colors.Blue200};
+  border-radius: 10px;
+  position: absolute;
+  inset: 4px;
+`;
+
+const MinimalName = styled(Name)`
+  font-weight: 600;
+  white-space: nowrap;
+  position: absolute;
+  background: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 `;
 
 const Description = styled.div`
@@ -335,12 +311,48 @@ const UpstreamNotice = styled.div`
   border-top-right-radius: 3px;
 `;
 
-export const NameMinimal = styled(Name)`
-  font-weight: 600;
-  white-space: nowrap;
-  position: absolute;
-  background: none;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-`;
+export const AssetLatestRunWithNotices: React.FC<{
+  liveData?: LiveDataForNode;
+}> = ({liveData}) => {
+  const {
+    lastMaterialization,
+    unstartedRunIds,
+    inProgressRunIds,
+    runWhichFailedToMaterialize,
+    stepKey,
+  } = liveData || MISSING_LIVE_DATA;
+
+  return inProgressRunIds?.length > 0 ? (
+    <Box flex={{gap: 4, alignItems: 'center'}}>
+      <Tooltip content="A run is currently rematerializing this asset.">
+        <Spinner purpose="body-text" />
+      </Tooltip>
+      <AssetRunLink runId={inProgressRunIds[0]} />
+    </Box>
+  ) : unstartedRunIds?.length > 0 ? (
+    <Box flex={{gap: 4, alignItems: 'center'}}>
+      <Tooltip content="A run has started that will rematerialize this asset soon.">
+        <Spinner purpose="body-text" stopped />
+      </Tooltip>
+      <AssetRunLink runId={unstartedRunIds[0]} />
+    </Box>
+  ) : runWhichFailedToMaterialize?.__typename === 'Run' ? (
+    <Box flex={{gap: 4, alignItems: 'center'}}>
+      <Tooltip
+        content={`Run ${titleForRun({
+          runId: runWhichFailedToMaterialize.id,
+        })} failed to materialize this asset`}
+      >
+        <Icon name="warning" color={Colors.Red500} />
+      </Tooltip>
+      <AssetRunLink runId={runWhichFailedToMaterialize.id} />
+    </Box>
+  ) : lastMaterialization ? (
+    <AssetRunLink
+      runId={lastMaterialization.runId}
+      event={{stepKey, timestamp: lastMaterialization.timestamp}}
+    />
+  ) : (
+    <span>–</span>
+  );
+};

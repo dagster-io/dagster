@@ -171,10 +171,13 @@ def dynamic_with_optional_output_job():
     def dynamic_optional_output_op(context):
         for i in range(10):
             if (
+                # re-execution run skipped odd numbers
                 context.pipeline_run.parent_run_id
-                and i % 2 == 0  # re-execution run skipped odd numbers
-                or not context.pipeline_run.parent_run_id
-                and i % 2 == 1  # root run skipped even numbers
+                and i % 2 == 0
+            ) or (
+                # root run skipped even numbers
+                not context.pipeline_run.parent_run_id
+                and i % 2 == 1
             ):
                 yield DynamicOutput(value=i, mapping_key=str(i))
 

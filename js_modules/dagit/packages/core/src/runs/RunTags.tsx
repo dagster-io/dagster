@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
-import {__ASSET_GROUP_PREFIX} from '../asset-graph/Utils';
+import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 
 import {DagsterTag, RunTag, TagType} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
@@ -50,7 +50,7 @@ export const RunTags: React.FC<{
     const others = [];
     for (const tag of tags) {
       if (
-        tag.value.startsWith(__ASSET_GROUP_PREFIX) &&
+        tag.value.startsWith(__ASSET_JOB_PREFIX) &&
         (tag.key === DagsterTag.PartitionSet || tag.key === DagsterTag.StepSelection)
       ) {
         continue;

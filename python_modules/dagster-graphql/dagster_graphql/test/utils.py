@@ -5,6 +5,7 @@ from graphql import graphql
 
 import dagster._check as check
 from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import wait_for_runs_to_finish
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import PythonFileTarget
 
@@ -40,7 +41,7 @@ def execute_dagster_graphql(context, query, variables=None):
 
 def execute_dagster_graphql_and_finish_runs(context, query, variables=None):
     result = execute_dagster_graphql(context, query, variables)
-    context.instance.run_launcher.join()
+    wait_for_runs_to_finish(context.instance, timeout=30)
     return result
 
 

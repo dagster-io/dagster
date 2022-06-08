@@ -22,9 +22,14 @@ from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.asset_defs import (
     AssetGroup,
     AssetIn,
+    AssetSelection,
     AssetsDefinition,
     SourceAsset,
     asset,
+    assets_from_current_module,
+    assets_from_modules,
+    assets_from_package_module,
+    assets_from_package_name,
     build_assets_job,
     multi_asset,
 )
@@ -233,7 +238,6 @@ from dagster.core.storage.event_log import (
     RunShardedEventsCursor,
 )
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
-from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster.core.storage.mem_io_manager import mem_io_manager
@@ -374,6 +378,7 @@ __all__ = [
     "AssetIn",
     "AssetMaterialization",
     "AssetObservation",
+    "AssetSelection",
     "AssetSensorDefinition",
     "AssetsDefinition",
     "DagsterAssetMetadataValue",
@@ -546,6 +551,10 @@ __all__ = [
     "config_from_yaml_strings",
     "configured",
     "build_assets_job",
+    "assets_from_modules",
+    "assets_from_current_module",
+    "assets_from_package_module",
+    "assets_from_package_name",
     # types
     "Any",
     "Bool",
@@ -645,7 +654,6 @@ __all__ = [
     "RootInputManager",
     "RootInputManagerDefinition",
     "root_input_manager",
-    "fs_asset_io_manager",
     "fs_io_manager",
     "mem_io_manager",
     "custom_path_fs_io_manager",

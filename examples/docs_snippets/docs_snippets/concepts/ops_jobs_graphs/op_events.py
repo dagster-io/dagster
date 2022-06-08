@@ -40,47 +40,14 @@ def flaky_operation():
     return 0
 
 
-# start_op_output_0
-from dagster import Output, op
-
-
-@op
-def my_simple_yield_op(context):
-    yield Output(1)
-
-
-# end_op_output_0
-
-# start_op_output_1
-from dagster import op
-
-
-@op
-def my_simple_return_op(context):
-    return 1
-
-
-# end_op_output_1
-
-# start_op_output_2
-from dagster import Output, op
-
-
-@op(out={"my_output": Out(int)})
-def my_named_yield_op(context):
-    yield Output(1, output_name="my_output")
-
-
-# end_op_output_2
-
 # start_op_output_3
 from dagster import MetadataValue, Output, op
 
 
 @op
-def my_metadata_output(context):
+def my_metadata_output(context) -> Output:
     df = get_some_data()
-    yield Output(
+    return Output(
         df,
         metadata={
             "text_metadata": "Text-based metadata for this event",
@@ -92,6 +59,30 @@ def my_metadata_output(context):
 
 
 # end_op_output_3
+
+# start_op_output_4
+from dagster import Output, op
+from typing import Tuple
+
+# Using Output as type annotation without inner type
+@op
+def my_output_op() -> Output:
+    return Output("some_value")
+
+
+# A single output with a parameterized type annotation
+@op
+def my_output_generic_op() -> Output[int]:
+    return Output(5)
+
+
+# Multiple outputs using parameterized type annotation
+@op(out={"int_out": Out(), "str_out": Out()})
+def my_multiple_generic_output_op() -> Tuple[Output[int], Output[str]]:
+    return (Output(5), Output("foo"))
+
+
+# end_op_output_4
 
 # start_metadata_expectation_op
 from dagster import ExpectationResult, MetadataValue, op
@@ -230,3 +221,15 @@ def my_expectation_op(context, df):
 
 
 # end_expectation_op
+
+# start_yield_outputs
+from dagster import Output, op
+
+
+@op(out={"out1": Out(str), "out2": Out(int)})
+def my_op_yields():
+    yield Output(5, output_name="out2")
+    yield Output("foo", output_name="out1")
+
+
+# end_yield_outputs

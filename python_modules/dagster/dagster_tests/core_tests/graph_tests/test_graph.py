@@ -1159,7 +1159,7 @@ def test_input_values_override_default():
     assert result.output_value() == 6
 
 
-def test_ounsatisfied_input_nested():
+def test_unsatisfied_input_nested():
     @op
     def ingest(x: datetime) -> str:
         return str(x)
@@ -1174,6 +1174,6 @@ def test_ounsatisfied_input_nested():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Input 'x' of op 'ingest' has no upstream output, no default value, and no dagster type loader.",
+        match="Input 'x' of graph 'the_graph' has no way of being resolved.",
     ):
         the_top_level_graph.to_job()
