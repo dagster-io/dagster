@@ -4,17 +4,17 @@ from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional, Sequence, Uni
 
 import dagster._check as check
 from dagster.core.definitions.asset_layer import build_asset_selection_job
-from dagster.core.selector.subset_selector import parse_clause
 from dagster.core.definitions.config import ConfigMapping
+from dagster.core.selector.subset_selector import parse_clause
 
 if TYPE_CHECKING:
     from dagster.core.asset_defs import AssetsDefinition, SourceAsset
     from dagster.core.asset_defs.asset_selection import AssetSelection
     from dagster.core.definitions import (
         JobDefinition,
-        PartitionsDefinition,
         PartitionSetDefinition,
         PartitionedConfig,
+        PartitionsDefinition,
     )
 
 
@@ -110,7 +110,7 @@ def define_asset_job(
     config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
     description: Optional[str] = None,
     tags: Optional[Dict[str, Any]] = None,
-    partitions_def: Optional["ParitionsDefinition"] = None,
+    partitions_def: Optional["PartitionsDefinition"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will materialize a selection of assets. This will only be
     resolved to a JobDefinition once placed in a repository.

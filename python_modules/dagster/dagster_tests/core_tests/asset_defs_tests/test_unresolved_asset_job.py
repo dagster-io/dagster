@@ -5,7 +5,9 @@ from dagster import (
     AssetSelection,
     AssetsDefinition,
     DagsterEventType,
+    DailyPartitionsDefinition,
     EventRecordsFilter,
+    HourlyPartitionsDefinition,
     IOManager,
     Out,
     Output,
@@ -14,10 +16,8 @@ from dagster import (
     in_process_executor,
     io_manager,
     op,
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
-    schedule_from_partitions,
     repository,
+    schedule_from_partitions,
 )
 from dagster._check import CheckError
 from dagster.core.asset_defs import asset, multi_asset
@@ -470,9 +470,8 @@ def test_partitioned_schedule():
 
     schedule = schedule_from_partitions(job)
 
-    assert (
-        schedule.get_partition_set()._partitions_def == partitions_def
-    )  # pylint: disable=protected-access
+    spd = schedule.get_partition_set()._partitions_def  # pylint: disable=protected-access
+    assert spd == partitions_def
 
 
 def test_partitioned_schedule_on_repo():
@@ -500,7 +499,7 @@ def test_intersecting_partitions_on_repo_invalid():
 
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
     def d(c):
-        return
+        return c
 
     with pytest.raises(CheckError, match="partitions_def of Daily"):
 
@@ -525,7 +524,7 @@ def test_intersecting_partitions_on_repo_valid():
 
     @asset(partitions_def=partitions_def2)
     def d(c):
-        return
+        return c
 
     @repository
     def my_repo():

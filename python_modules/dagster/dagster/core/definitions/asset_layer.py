@@ -25,12 +25,12 @@ from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils.backcompat import ExperimentalWarning
 
 from ..errors import DagsterInvalidSubsetError
+from .config import ConfigMapping
 from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle, SolidOutputHandle
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition
 from .resource_definition import ResourceDefinition
-from .config import ConfigMapping
 
 if TYPE_CHECKING:
     from dagster.core.asset_defs import AssetGroup, AssetsDefinition, SourceAsset
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from dagster.core.execution.context.output import OutputContext
 
     from .job_definition import JobDefinition
-    from .partition import PartitionsDefinition
+    from .partition import PartitionsDefinition, PartitionedConfig
 
 
 class AssetOutputInfo(

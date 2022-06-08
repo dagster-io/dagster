@@ -4,7 +4,6 @@ from typing import Optional, Union, cast
 import dagster._check as check
 
 from .job_definition import JobDefinition
-from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .partition import (
     Partition,
     PartitionSetDefinition,
@@ -19,6 +18,7 @@ from .schedule_definition import (
     ScheduleEvaluationContext,
 )
 from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
+from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 
 def build_schedule_from_partitioned_job(
@@ -50,8 +50,9 @@ def build_schedule_from_partitioned_job(
         partition_set = cast(PartitionSetDefinition, job.get_partition_set_def())
         partitions_def = cast(TimeWindowPartitionsDefinition, partitioned_config.partitions_def)
     else:
-        partition_set = job.get_partition_set_def()
-        partitions_def = job.partitions_def
+        partition_set = cast(PartitionSetDefinition, job.get_partition_set_def())
+        partitions_def = cast(TimeWindowPartitionsDefinition, job.partitions_def)
+
     check.inst(partitions_def, TimeWindowPartitionsDefinition)
 
     minute_of_hour = cast(

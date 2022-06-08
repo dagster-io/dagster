@@ -108,8 +108,6 @@ def build_assets_job(
 
     source_assets_by_key = build_source_assets_by_key(source_assets)
 
-    partitioned_config = build_job_partitions_from_assets(assets, source_assets or [])
-
     deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
     # attempt to resolve cycles using multi-asset subsetting
     if _has_cycles(deps):
