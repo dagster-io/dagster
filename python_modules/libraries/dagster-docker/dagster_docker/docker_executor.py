@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, cast
 
 import docker
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
@@ -13,12 +13,13 @@ from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.executor.step_delegating import StepDelegatingExecutor
 from dagster.core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
+from dagster.core.origin import PipelinePythonOrigin
+from dagster.core.utils import parse_env_var
 from dagster.serdes.utils import hash_str
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import experimental
 
 from .container_context import DockerContainerContext
-from .utils import parse_env_var
 
 
 @executor(
@@ -101,9 +102,9 @@ class DockerStepHandler(StepHandler):
     def _get_image(self, step_handler_context: StepHandlerContext):
         from . import DockerRunLauncher
 
-        image = (
-            step_handler_context.execute_step_args.pipeline_origin.repository_origin.container_image
-        )
+        image = cast(
+            PipelinePythonOrigin, step_handler_context.pipeline_run.pipeline_code_origin
+        ).repository_origin.container_image
         if not image:
             image = self._image
 
@@ -201,7 +202,7 @@ class DockerStepHandler(StepHandler):
         events = [
             DagsterEvent(
                 event_type_value=DagsterEventType.ENGINE_EVENT.value,
-                pipeline_name=step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
+                pipeline_name=step_handler_context.pipeline_run.pipeline_name,
                 step_key=step_key,
                 message="Launching step in Docker container",
                 event_specific_data=EngineEventData(
@@ -238,7 +239,7 @@ class DockerStepHandler(StepHandler):
             return [
                 DagsterEvent(
                     event_type_value=DagsterEventType.STEP_FAILURE.value,
-                    pipeline_name=step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
+                    pipeline_name=step_handler_context.pipeline_run.pipeline_name,
                     step_key=step_key,
                     message=f"Error when checking on step container health: {e}",
                     event_specific_data=StepFailureData(
@@ -257,7 +258,7 @@ class DockerStepHandler(StepHandler):
             return [
                 DagsterEvent(
                     event_type_value=DagsterEventType.STEP_FAILURE.value,
-                    pipeline_name=step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
+                    pipeline_name=step_handler_context.pipeline_run.pipeline_name,
                     step_key=step_key,
                     message=f"Container status is {container.status}. Hit exception attempting to get its return code: {e}",
                     event_specific_data=StepFailureData(
@@ -274,7 +275,7 @@ class DockerStepHandler(StepHandler):
         return [
             DagsterEvent(
                 event_type_value=DagsterEventType.STEP_FAILURE.value,
-                pipeline_name=step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
+                pipeline_name=step_handler_context.pipeline_run.pipeline_name,
                 step_key=step_key,
                 message=f"Container status is {container.status}. Return code is {str(ret_code)}.",
                 event_specific_data=StepFailureData(
@@ -296,7 +297,7 @@ class DockerStepHandler(StepHandler):
         events = [
             DagsterEvent(
                 event_type_value=DagsterEventType.ENGINE_EVENT.value,
-                pipeline_name=step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
+                pipeline_name=step_handler_context.pipeline_run.pipeline_name,
                 step_key=step_key,
                 message="Stopping Docker container for step",
                 event_specific_data=EngineEventData(),
@@ -317,7 +318,7 @@ class DockerStepHandler(StepHandler):
             events.append(
                 DagsterEvent(
                     event_type_value=DagsterEventType.ENGINE_EVENT.value,
-                    pipeline_name=step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
+                    pipeline_name=step_handler_context.pipeline_run.pipeline_name,
                     step_key=step_key,
                     message=f"Hit error while terminating Docker container:\n{e}",
                     event_specific_data=EngineEventData(),

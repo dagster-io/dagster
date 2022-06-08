@@ -653,12 +653,14 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
         try:
-            execute_run_args = check.inst(
+            execute_external_pipeline_args = check.inst(
                 deserialize_json_to_dagster_namedtuple(request.serialized_execute_run_args),
                 ExecuteExternalPipelineArgs,
             )
-            run_id = execute_run_args.pipeline_run_id
-            recon_pipeline = self._recon_pipeline_from_origin(execute_run_args.pipeline_origin)
+            run_id = execute_external_pipeline_args.pipeline_run_id
+            recon_pipeline = self._recon_pipeline_from_origin(
+                execute_external_pipeline_args.pipeline_origin
+            )
 
         except:
             return api_pb2.StartRunReply(
@@ -689,7 +691,7 @@ class DagsterApiServer(DagsterApiServicer):
             execution_process.start()
             self._executions[run_id] = (
                 execution_process,
-                execute_run_args.instance_ref,
+                execute_external_pipeline_args.instance_ref,
             )
             self._termination_events[run_id] = termination_event
 

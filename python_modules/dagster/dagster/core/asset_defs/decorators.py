@@ -133,7 +133,8 @@ def asset(
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
-        group_name (Optional[str]): A string name used to organize multiple assets into groups.
+        group_name (Optional[str]): A string name used to organize multiple assets into groups. If not provided,
+            the name "default" is used.
 
     Examples:
 

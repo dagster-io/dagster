@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {ASSET_NODE_CONFIG_FRAGMENT, configSchemaForAssetNode} from '../assets/AssetConfig';
 import {AssetEvents} from '../assets/AssetEvents';
 import {
   AssetMetadataTable,
@@ -18,6 +19,7 @@ import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {pluginForMetadata} from '../plugins';
+import {ConfigTypeSchema} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {LiveDataForNode, displayNameForAssetKey} from './Utils';
@@ -49,6 +51,7 @@ export const SidebarAssetInfo: React.FC<{
   const repoAddress = buildRepoAddress(asset.repository.name, asset.repository.location.name);
   const {assetMetadata, assetType} = metadataForAssetNode(asset);
   const hasAssetMetadata = assetType || assetMetadata.length > 0;
+  const assetConfigSchema = configSchemaForAssetNode(asset);
 
   const OpMetadataPlugin = asset.op?.metadata && pluginForMetadata(asset.op.metadata);
 
@@ -77,6 +80,17 @@ export const SidebarAssetInfo: React.FC<{
           {asset.op && OpMetadataPlugin?.SidebarComponent && (
             <OpMetadataPlugin.SidebarComponent definition={asset.op} repoAddress={repoAddress} />
           )}
+        </SidebarSection>
+      )}
+
+      {assetConfigSchema && (
+        <SidebarSection title="Config">
+          <Box padding={{vertical: 16, horizontal: 24}}>
+            <ConfigTypeSchema
+              type={assetConfigSchema}
+              typesInScope={assetConfigSchema.recursiveConfigTypes}
+            />
+          </Box>
         </SidebarSection>
       )}
 
@@ -151,6 +165,7 @@ export const SIDEBAR_ASSET_FRAGMENT = gql`
   fragment SidebarAssetFragment on AssetNode {
     id
     description
+    ...AssetNodeConfigFragment
     metadataEntries {
       ...MetadataEntryFragment
     }
@@ -177,6 +192,7 @@ export const SIDEBAR_ASSET_FRAGMENT = gql`
 
     ...AssetNodeOpMetadataFragment
   }
+  ${ASSET_NODE_CONFIG_FRAGMENT}
   ${ASSET_NODE_OP_METADATA_FRAGMENT}
   ${METADATA_ENTRY_FRAGMENT}
 `;

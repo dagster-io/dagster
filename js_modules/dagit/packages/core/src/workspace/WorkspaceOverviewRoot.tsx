@@ -61,11 +61,11 @@ export const WorkspaceOverviewRoot = () => {
         <thead>
           <tr>
             <th>Repository</th>
+            <th>Assets</th>
             <th>Jobs</th>
             {anyPipelinesInWorkspace ? <th>Pipelines</th> : null}
             <th>Graphs</th>
             <th>Ops</th>
-            <th>Assets</th>
             <th>Schedules</th>
             <th>Sensors</th>
           </tr>
@@ -81,6 +81,9 @@ export const WorkspaceOverviewRoot = () => {
             return (
               <tr key={repoString}>
                 <td style={{width: '40%'}}>{repoString}</td>
+                <td>
+                  <Link to={workspacePath(name, location, '/assets')}>Assets</Link>
+                </td>
                 <td>
                   <Link to={workspacePath(name, location, '/jobs')}>Jobs</Link>
                 </td>
@@ -98,9 +101,6 @@ export const WorkspaceOverviewRoot = () => {
                 </td>
                 <td>
                   <Link to={workspacePath(name, location, '/ops')}>Ops</Link>
-                </td>
-                <td>
-                  <Link to={workspacePath(name, location, '/assets')}>Assets</Link>
                 </td>
                 <td>
                   <Link to={workspacePath(name, location, '/schedules')}>Schedules</Link>

@@ -19,6 +19,7 @@ import {AppContext} from '../app/AppContext';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {withMiddleTruncation} from '../app/Util';
 import {WebSocketContext} from '../app/WebSocketProvider';
+import {CancelRunButton} from '../runs/RunActionButtons';
 import {
   EMPTY_RUN_METADATA,
   IRunMetadataDict,
@@ -27,6 +28,7 @@ import {
 } from '../runs/RunMetadataProvider';
 import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {StepSelection} from '../runs/StepSelection';
+import {RunFragment} from '../runs/types/RunFragment';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 
 import {
@@ -820,16 +822,18 @@ export const GanttChartLoadingState = ({runId}: {runId: string}) => (
   </GanttChartContainer>
 );
 
-export const QueuedState = ({runId}: {runId: string}) => (
+export const QueuedState = ({run}: {run: RunFragment}) => (
   <GanttChartContainer>
-    <OptionsContainer />
+    <OptionsContainer style={{justifyContent: 'flex-end'}}>
+      <CancelRunButton run={run} />
+    </OptionsContainer>
     <SplitPanelContainer
       identifier="gantt-split"
       axis="horizontal"
       first={
         <NonIdealState
           icon="arrow_forward"
-          title="Run Queued"
+          title="Run queued"
           description="This run is queued for execution and will start soon."
           action={
             <Link to={runsPathWithFilters([{token: 'status', value: 'QUEUED'}])}>
@@ -843,7 +847,7 @@ export const QueuedState = ({runId}: {runId: string}) => (
         <GanttStatusPanel
           metadata={EMPTY_RUN_METADATA}
           selection={{keys: [], query: '*'}}
-          runId={runId}
+          runId={run.id}
           nowMs={0}
         />
       }

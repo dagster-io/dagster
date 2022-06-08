@@ -48,9 +48,6 @@ GCS
 .. autoconfigurable:: dagster_gcp.gcs.gcs_pickle_io_manager
   :annotation: IOManagerDefinition
 
-.. autoconfigurable:: dagster_gcp.gcs.gcs_pickle_asset_io_manager
-  :annotation: IOManagerDefinition
-
 Legacy APIs
 -----------
 

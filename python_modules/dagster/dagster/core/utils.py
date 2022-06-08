@@ -1,9 +1,10 @@
+import os
 import random
 import string
 import uuid
 import warnings
 from collections import OrderedDict
-from typing import Union
+from typing import Tuple, Union, cast
 
 import toposort as toposort_
 
@@ -80,3 +81,14 @@ def check_dagster_package_version(library_name, library_version):
             __version__, library_name, library_version
         )
         warnings.warn(message)
+
+
+def parse_env_var(env_var_str: str) -> Tuple[str, str]:
+    if "=" in env_var_str:
+        split = env_var_str.split("=", maxsplit=1)
+        return (split[0], split[1])
+    else:
+        env_var_value = os.getenv(env_var_str)
+        if env_var_value == None:
+            raise Exception(f"Tried to load environment variable {env_var_str}, but it was not set")
+        return (env_var_str, cast(str, env_var_value))

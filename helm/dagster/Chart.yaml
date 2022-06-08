@@ -19,15 +19,15 @@ dependencies:
     condition: dagster-user-deployments.enableSubchart
   - name: postgresql
     version: 8.1.0
-    repository: https://charts.bitnami.com/bitnami
+    repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
     condition: postgresql.enabled
   - name: rabbitmq
     version: 6.16.3
-    repository: https://charts.bitnami.com/bitnami
+    repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
     condition: rabbitmq.enabled
   - name: redis
     version: 12.7.4
-    repository: https://charts.bitnami.com/bitnami
+    repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
     condition: redis.internal
 maintainers:
   - name: Elementl

@@ -1,5 +1,5 @@
-import {LaunchpadSessionContainerRunConfigSchemaFragment_ModeNotFoundError} from './types/LaunchpadSessionContainerRunConfigSchemaFragment';
+import {LaunchpadSessionRunConfigSchemaFragment_ModeNotFoundError} from './types/LaunchpadSessionRunConfigSchemaFragment';
 
 export type ModeNotFoundError =
-  | LaunchpadSessionContainerRunConfigSchemaFragment_ModeNotFoundError
+  | LaunchpadSessionRunConfigSchemaFragment_ModeNotFoundError
   | undefined;

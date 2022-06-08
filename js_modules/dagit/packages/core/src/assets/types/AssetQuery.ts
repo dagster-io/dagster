@@ -74,15 +74,476 @@ export interface AssetQuery_assetOrError_Asset_definition_jobs {
   sensors: AssetQuery_assetOrError_Asset_definition_jobs_sensors[];
 }
 
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_fields[];
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType_recursiveConfigTypes[];
+}
+
+export type AssetQuery_assetOrError_Asset_definition_configField_configType = AssetQuery_assetOrError_Asset_definition_configField_configType_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_EnumConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_RegularConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_configField_configType_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_configField {
+  __typename: "ConfigTypeField";
+  name: string;
+  configType: AssetQuery_assetOrError_Asset_definition_configField_configType;
+}
+
 export interface AssetQuery_assetOrError_Asset_definition_assetKey {
   __typename: "AssetKey";
   path: string[];
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations {
-  __typename: "MaterializationEvent";
-  timestamp: string;
-  runId: string;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_metadataEntries_PathMetadataEntry {
@@ -2444,109 +2905,22 @@ export interface AssetQuery_assetOrError_Asset_definition_op {
   outputDefinitions: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetKey {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository_location {
-  __typename: "RepositoryLocation";
-  id: string;
-  name: string;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository {
-  __typename: "Repository";
-  id: string;
-  name: string;
-  location: AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository_location;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations {
-  __typename: "MaterializationEvent";
-  timestamp: string;
-  runId: string;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset {
-  __typename: "AssetNode";
-  id: string;
-  opNames: string[];
-  jobNames: string[];
-  graphName: string | null;
-  description: string | null;
-  partitionDefinition: string | null;
-  computeKind: string | null;
-  assetKey: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetKey;
-  repository: AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository;
-  assetMaterializations: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations[];
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependencies {
-  __typename: "AssetDependency";
-  asset: AssetQuery_assetOrError_Asset_definition_dependencies_asset;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetKey {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository_location {
-  __typename: "RepositoryLocation";
-  id: string;
-  name: string;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository {
-  __typename: "Repository";
-  id: string;
-  name: string;
-  location: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository_location;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations {
-  __typename: "MaterializationEvent";
-  timestamp: string;
-  runId: string;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset {
-  __typename: "AssetNode";
-  id: string;
-  opNames: string[];
-  jobNames: string[];
-  graphName: string | null;
-  description: string | null;
-  partitionDefinition: string | null;
-  computeKind: string | null;
-  assetKey: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetKey;
-  repository: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository;
-  assetMaterializations: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations[];
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy {
-  __typename: "AssetDependency";
-  asset: AssetQuery_assetOrError_Asset_definition_dependedBy_asset;
-}
-
 export interface AssetQuery_assetOrError_Asset_definition {
   __typename: "AssetNode";
   id: string;
+  groupName: string | null;
   partitionDefinition: string | null;
   repository: AssetQuery_assetOrError_Asset_definition_repository;
   jobs: AssetQuery_assetOrError_Asset_definition_jobs[];
+  configField: AssetQuery_assetOrError_Asset_definition_configField | null;
   description: string | null;
   graphName: string | null;
   opNames: string[];
   jobNames: string[];
   computeKind: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_assetKey;
-  assetMaterializations: AssetQuery_assetOrError_Asset_definition_assetMaterializations[];
   metadataEntries: AssetQuery_assetOrError_Asset_definition_metadataEntries[];
   op: AssetQuery_assetOrError_Asset_definition_op | null;
-  dependencies: AssetQuery_assetOrError_Asset_definition_dependencies[];
-  dependedBy: AssetQuery_assetOrError_Asset_definition_dependedBy[];
 }
 
 export interface AssetQuery_assetOrError_Asset {

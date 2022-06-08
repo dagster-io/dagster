@@ -1,8 +1,8 @@
 import * as React from 'react';
 
 import {getJSONForKey, useStateWithStorage} from '../hooks/useStateWithStorage';
-import {LaunchpadSessionContainerPartitionSetsFragment} from '../launchpad/types/LaunchpadSessionContainerPartitionSetsFragment';
-import {LaunchpadSessionContainerPipelineFragment} from '../launchpad/types/LaunchpadSessionContainerPipelineFragment';
+import {LaunchpadSessionPartitionSetsFragment} from '../launchpad/types/LaunchpadSessionPartitionSetsFragment';
+import {LaunchpadSessionPipelineFragment} from '../launchpad/types/LaunchpadSessionPipelineFragment';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
@@ -223,8 +223,8 @@ export const useInvalidateConfigsForRepo = () => {
 };
 
 export const useInitialDataForMode = (
-  pipeline: LaunchpadSessionContainerPipelineFragment,
-  partitionSets: LaunchpadSessionContainerPartitionSetsFragment,
+  pipeline: LaunchpadSessionPipelineFragment,
+  partitionSets: LaunchpadSessionPartitionSetsFragment,
 ) => {
   const {isJob, presets} = pipeline;
   const partitionSetsForMode = partitionSets.results;

@@ -13,7 +13,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 
-from .asset_graph import GrapheneAssetNode
+from .asset_graph import GrapheneAssetGroup, GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
 from .partition_sets import GraphenePartitionSet
 from .pipelines.pipeline import GrapheneJob, GraphenePipeline
@@ -161,6 +161,7 @@ class GrapheneRepository(graphene.ObjectType):
     sensors = non_null_list(GrapheneSensor)
     assetNodes = non_null_list(GrapheneAssetNode)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
+    assetGroups = non_null_list(GrapheneAssetGroup)
 
     class Meta:
         name = "Repository"
@@ -251,6 +252,21 @@ class GrapheneRepository(graphene.ObjectType):
         return [
             GrapheneAssetNode(self._repository_location, self._repository, external_asset_node)
             for external_asset_node in self._repository.get_external_asset_nodes()
+        ]
+
+    def resolve_assetGroups(self, _graphene_info):
+        groups = {}
+        for external_asset_node in self._repository.get_external_asset_nodes():
+            if not external_asset_node.group_name:
+                continue
+            external_assets = groups.setdefault(external_asset_node.group_name, [])
+            external_assets.append(external_asset_node)
+
+        return [
+            GrapheneAssetGroup(
+                group_name, [external_node.asset_key for external_node in external_nodes]
+            )
+            for group_name, external_nodes in groups.items()
         ]
 
 

@@ -2,7 +2,6 @@ import {MainContent} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 
-import {AssetEntryRoot} from '../assets/AssetEntryRoot';
 import {AssetsCatalogRoot} from '../assets/AssetsCatalogRoot';
 import {RunRoot} from '../runs/RunRoot';
 import {RunsRoot} from '../runs/RunsRoot';
@@ -21,11 +20,8 @@ export const InstanceRoot = () => {
   return (
     <MainContent ref={main}>
       <Switch>
-        <Route path="/instance/assets" exact>
+        <Route path="/instance/assets(/?.*)">
           <AssetsCatalogRoot />
-        </Route>
-        <Route path="/instance/assets/(/?.*)">
-          <AssetEntryRoot />
         </Route>
         <Route path="/instance/runs" exact>
           <RunsRoot />

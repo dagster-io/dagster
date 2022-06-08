@@ -99,6 +99,9 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
   {{- with index . 1 }}
   k8s:
     image_pull_policy: {{ .image.pullPolicy }}
+    {{- if $.Values.imagePullSecrets }}
+    image_pull_secrets: {{- $.Values.imagePullSecrets | toYaml | nindent 6 }}
+    {{- end }}
     env_config_maps:
     - {{ include "dagster.fullname" $ }}-{{ .name }}-user-env
     {{- range $envConfigMap := .envConfigMaps }}

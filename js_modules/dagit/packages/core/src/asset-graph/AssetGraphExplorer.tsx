@@ -1,8 +1,6 @@
-import {Box, Checkbox, Colors, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
-import flatMap from 'lodash/flatMap';
+import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
-import uniqBy from 'lodash/uniqBy';
 import without from 'lodash/without';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
@@ -15,12 +13,11 @@ import {
   QueryRefreshState,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
-import {withMiddleTruncation} from '../app/Util';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
-import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
+import {closestNodeInDirection} from '../graph/common';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {
   GraphExplorerOptions,
@@ -38,14 +35,12 @@ import {
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../pipelines/SidebarPipelineOrJobOverview';
 import {useDidLaunchEvent} from '../runs/RunUtils';
-import {PipelineSelector} from '../types/globalTypes';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
 import {AssetConnectedEdges} from './AssetEdges';
-import {AssetNode, AssetNodeMinimal, NameMinimal} from './AssetNode';
+import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
-import {OmittedAssetsNotice} from './OmittedAssetsNotice';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {
   GraphData,
@@ -54,12 +49,11 @@ import {
   GraphNode,
   isSourceAsset,
   tokenForAssetKey,
-  displayNameForAssetKey,
   buildComputeStatusData,
 } from './Utils';
 import {AssetGraphLayout} from './layout';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
-import {useAssetGraphData} from './useAssetGraphData';
+import {AssetGraphFetchScope, useAssetGraphData} from './useAssetGraphData';
 import {useFindJobForAsset} from './useFindJobForAsset';
 import {useLiveDataForAssetKeys} from './useLiveDataForAssetKeys';
 
@@ -69,8 +63,7 @@ interface Props {
   options: GraphExplorerOptions;
   setOptions?: (options: GraphExplorerOptions) => void;
 
-  pipelineSelector?: PipelineSelector;
-  filterNodes?: (assetNode: AssetGraphQuery_assetNodes) => boolean;
+  fetchOptions: AssetGraphFetchScope;
 
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
@@ -86,12 +79,9 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     graphAssetKeys,
     allAssetKeys,
     applyingEmptyDefault,
-  } = useAssetGraphData(props.pipelineSelector, props.explorerPath.opsQuery);
+  } = useAssetGraphData(props.explorerPath.opsQuery, props.fetchOptions);
 
-  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(
-    assetGraphData?.nodes,
-    graphAssetKeys,
-  );
+  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(graphAssetKeys);
   const liveDataRefreshState = useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS);
 
   useDocumentTitle('Assets');
@@ -132,7 +122,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   );
 };
 
-const AssetGraphExplorerWithData: React.FC<
+export const AssetGraphExplorerWithData: React.FC<
   {
     allAssetKeys: AssetKey[];
     assetGraphData: GraphData;
@@ -152,7 +142,7 @@ const AssetGraphExplorerWithData: React.FC<
     assetGraphData,
     graphQueryItems,
     applyingEmptyDefault,
-    pipelineSelector,
+    fetchOptions,
   } = props;
 
   const history = useHistory();
@@ -165,9 +155,10 @@ const AssetGraphExplorerWithData: React.FC<
     selectedAssetValues.includes(tokenForAssetKey(node.definition.assetKey)),
   );
   const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1];
-  const launchGraphNodes = selectedGraphNodes.length
-    ? selectedGraphNodes
-    : Object.values(assetGraphData.nodes).filter((a) => !isSourceAsset(a.definition));
+
+  const {layout, loading, async} = useAssetLayout(assetGraphData);
+
+  const viewportEl = React.useRef<SVGViewport>();
 
   const onSelectNode = React.useCallback(
     async (
@@ -226,6 +217,11 @@ const AssetGraphExplorerWithData: React.FC<
         ).join(',');
       }
 
+      const nextCenter = layout?.nodes[nextOpsNameSelection[nextOpsNameSelection.length - 1]];
+      if (nextCenter) {
+        viewportEl.current?.zoomToSVGCoords(nextCenter.bounds.x, nextCenter.bounds.y, true);
+      }
+
       onChangeExplorerPath(
         {
           ...explorerPath,
@@ -245,12 +241,9 @@ const AssetGraphExplorerWithData: React.FC<
       history,
       lastSelectedNode,
       assetGraphData,
+      layout,
     ],
   );
-
-  const {layout, loading, async} = useAssetLayout(assetGraphData);
-
-  const viewportEl = React.useRef<SVGViewport>();
 
   const [lastRenderedLayout, setLastRenderedLayout] = React.useState<AssetGraphLayout | null>(null);
   const renderingNewLayout = lastRenderedLayout !== layout;
@@ -328,23 +321,13 @@ const AssetGraphExplorerWithData: React.FC<
               maxZoom={1.2}
               maxAutocenterZoom={1.0}
             >
-              {({scale: _scale}, viewportRect) => (
+              {({scale: _scale}) => (
                 <SVGContainer width={layout.width} height={layout.height}>
                   <AssetConnectedEdges highlighted={highlighted} edges={layout.edges} />
 
-                  {Object.values(layout.nodes).map(({id, bounds}, index) => {
+                  {Object.values(layout.nodes).map(({id, bounds}) => {
                     const graphNode = assetGraphData.nodes[id];
                     const path = JSON.parse(id);
-                    if (!renderingNewLayout && isNodeOffscreen(bounds, viewportRect)) {
-                      return id === lastSelectedNode?.id ? (
-                        <RecenterGraph
-                          key={index}
-                          viewportRef={viewportEl}
-                          x={bounds.x + bounds.width / 2}
-                          y={bounds.y + bounds.height / 2}
-                        />
-                      ) : null;
-                    }
 
                     return (
                       <foreignObject
@@ -363,16 +346,9 @@ const AssetGraphExplorerWithData: React.FC<
                           <ForeignNode assetKey={{path}} />
                         ) : _scale < EXPERIMENTAL_MINI_SCALE ? (
                           <AssetNodeMinimal
-                            style={{background: Colors.White}}
+                            definition={graphNode.definition}
                             selected={selectedGraphNodes.includes(graphNode)}
-                          >
-                            <NameMinimal style={{fontSize: 28}}>
-                              {withMiddleTruncation(
-                                displayNameForAssetKey(graphNode.definition.assetKey),
-                                {maxLength: 17},
-                              )}
-                            </NameMinimal>
-                          </AssetNodeMinimal>
+                          />
                         ) : (
                           <AssetNode
                             definition={graphNode.definition}
@@ -416,7 +392,7 @@ const AssetGraphExplorerWithData: React.FC<
 
           <Box
             flex={{direction: 'column', alignItems: 'flex-end', gap: 8}}
-            style={{position: 'absolute', right: 12, top: 12}}
+            style={{position: 'absolute', right: 12, top: 8}}
           >
             <Box flex={{alignItems: 'center', gap: 12}}>
               <QueryRefreshCountdown
@@ -425,21 +401,15 @@ const AssetGraphExplorerWithData: React.FC<
               />
 
               <LaunchAssetExecutionButton
-                title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
+                context={selectedGraphNodes.length ? 'selected' : 'all'}
+                assetKeys={(selectedGraphNodes.length
+                  ? selectedGraphNodes
+                  : Object.values(assetGraphData.nodes).filter((a) => !isSourceAsset(a.definition))
+                ).map((n) => n.assetKey)}
+                liveDataByNode={liveDataByNode}
                 preferredJobName={explorerPath.pipelineName}
-                assets={launchGraphNodes.map((n) => n.definition)}
-                upstreamAssetKeys={uniqBy(
-                  flatMap(launchGraphNodes.map((n) => n.definition.dependencyKeys)),
-                  (key) => JSON.stringify(key),
-                ).filter(
-                  (key) =>
-                    !launchGraphNodes.some(
-                      (n) => JSON.stringify(n.assetKey) === JSON.stringify(key),
-                    ),
-                )}
               />
             </Box>
-            {!props.pipelineSelector && <OmittedAssetsNotice assetKeys={props.allAssetKeys} />}
           </Box>
           <QueryOverlay>
             <GraphQueryInput
@@ -462,10 +432,10 @@ const AssetGraphExplorerWithData: React.FC<
               />
             </RightInfoPanelContent>
           </RightInfoPanel>
-        ) : pipelineSelector ? (
+        ) : fetchOptions.pipelineSelector ? (
           <RightInfoPanel>
             <RightInfoPanelContent>
-              <SidebarPipelineOrJobOverview pipelineSelector={pipelineSelector} />
+              <SidebarPipelineOrJobOverview pipelineSelector={fetchOptions.pipelineSelector} />
             </RightInfoPanelContent>
           </RightInfoPanel>
         ) : null
@@ -536,30 +506,4 @@ const opsInRange = (
     }
   }
   return uniq(ledToTarget);
-};
-
-const titleForLaunch = (nodes: GraphNode[], liveDataByNode: LiveData) => {
-  const isRematerializeForAll = (nodes.length
-    ? nodes.map((n) => liveDataByNode[n.id])
-    : Object.values(liveDataByNode)
-  ).every((e) => !!e?.lastMaterialization);
-
-  return `${isRematerializeForAll ? 'Rematerialize' : 'Materialize'} ${
-    nodes.length === 0 ? `All` : nodes.length === 1 ? `Selected` : `Selected (${nodes.length})`
-  }`;
-};
-
-// This is similar to react-router's "<Redirect />" in that it immediately performs
-// the action you rendered.
-//
-const RecenterGraph: React.FC<{
-  viewportRef: React.MutableRefObject<SVGViewport | undefined>;
-  x: number;
-  y: number;
-}> = ({viewportRef, x, y}) => {
-  React.useEffect(() => {
-    viewportRef.current?.zoomToSVGCoords(x, y, true);
-  }, [viewportRef, x, y]);
-
-  return <span />;
 };

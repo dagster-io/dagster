@@ -426,10 +426,10 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
         interfaces = (GrapheneISolidDefinition,)
         name = "SolidDefinition"
 
-    def __init__(self, represented_pipeline, solid_def_name):
+    def __init__(self, represented_pipeline: RepresentedPipeline, solid_def_name: str):
         check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
         self._solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
-        super().__init__(name=solid_def_name, description=self._solid_def_snap.description)
+        super().__init__(name=solid_def_name, description=self._solid_def_snap.description)  # type: ignore
         ISolidDefinitionMixin.__init__(self, represented_pipeline, solid_def_name)
 
     def resolve_config_field(self, _graphene_info):

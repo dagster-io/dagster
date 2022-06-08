@@ -6,6 +6,9 @@ import {TestProvider} from '../testing/TestProvider';
 
 import {AssetView} from './AssetView';
 
+// This file must be mocked because Jest can't handle `import.meta.url`.
+jest.mock('../graph/asyncGraphLayout', () => ({}));
+
 describe('AssetView', () => {
   const defaultMocks = {
     MaterializationEvent: () => ({

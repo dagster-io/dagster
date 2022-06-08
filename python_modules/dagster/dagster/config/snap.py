@@ -215,7 +215,7 @@ class ConfigFieldSnap(
             ("type_key", str),
             ("is_required", bool),
             ("default_provided", bool),
-            ("default_value_as_json_str", Optional[object]),
+            ("default_value_as_json_str", Optional[str]),
             ("description", Optional[str]),
         ],
     )

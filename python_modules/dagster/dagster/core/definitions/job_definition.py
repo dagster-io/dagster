@@ -330,14 +330,14 @@ class JobDefinition(PipelineDefinition):
         )
 
         check.invariant(
-            self.asset_layer._assets_defs != None,  # pylint:disable=protected-access
+            self.asset_layer.assets_defs_by_key is not None,
             "Asset layer must have _asset_defs argument defined",
         )
 
         new_job = build_asset_selection_job(
             name=self.name,
-            assets=self.asset_layer._assets_defs,  # pylint:disable=protected-access
-            source_assets=self.asset_layer._source_asset_defs,  # pylint:disable=protected-access
+            assets=set(self.asset_layer.assets_defs_by_key.values()),
+            source_assets=self.asset_layer.source_assets_by_key.values(),
             executor_def=self.executor_def,
             resource_defs=self.resource_defs,
             description=self.description,

@@ -671,6 +671,10 @@
                     "title": "Postgresqlparams",
                     "type": "object"
                 },
+                "postgresqlScheme": {
+                    "title": "Postgresqlscheme",
+                    "type": "string"
+                },
                 "service": {
                     "$ref": "#/definitions/schema__charts__dagster__subschema__postgresql__Service"
                 }

@@ -163,9 +163,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             max_wait_time_sec=max_completion_wait_time_seconds,
         )
 
-    def launch_step(self, step_context, prior_attempts_count):
+    def launch_step(self, step_context):
         step_run_ref = step_context_to_step_run_ref(
-            step_context, prior_attempts_count, self.local_dagster_job_package_path
+            step_context, self.local_dagster_job_package_path
         )
         run_id = step_context.pipeline_run.run_id
         log = step_context.log

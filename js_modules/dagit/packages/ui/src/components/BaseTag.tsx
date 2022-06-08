@@ -19,7 +19,7 @@ const BaseTagTooltipStyle: React.CSSProperties = {
   alignItems: 'center',
   padding: '4px 8px',
   userSelect: 'text',
-  pointerEvents: 'all',
+  pointerEvents: 'none',
   borderRadius: 8,
   border: 'none',
   top: -10,
@@ -65,7 +65,7 @@ export const StyledTag = styled.div<StyledTagProps>`
   background-color: ${({$fillColor}) => $fillColor};
   border-radius: 8px;
   color: ${({$textColor}) => $textColor};
-  cursor: ${({$interactive}) => ($interactive ? 'pointer' : 'default')};
+  cursor: ${({$interactive}) => ($interactive ? 'pointer' : 'inherit')};
   display: inline-flex;
   flex-direction: row;
   font-size: 12px;
