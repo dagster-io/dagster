@@ -21,7 +21,7 @@ def my_op():
     return 5
 
 
-@op(doesnt_exit="foo")
+@op
 def ingest(x):
     return x + 5
 
