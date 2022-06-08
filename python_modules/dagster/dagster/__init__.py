@@ -30,6 +30,7 @@ from dagster.core.asset_defs import (
     load_assets_from_modules,
     load_assets_from_package_module,
     load_assets_from_package_name,
+    materialize,
     multi_asset,
 )
 from dagster.core.definitions import (
@@ -557,6 +558,7 @@ __all__ = [
     "load_assets_from_current_module",
     "load_assets_from_package_module",
     "load_assets_from_package_name",
+    "materialize",
     # types
     "Any",
     "Bool",
