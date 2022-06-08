@@ -12,7 +12,7 @@ from dagster.core.definitions.metadata import (
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.resource_requirement import ResourceAddable
-from dagster.core.definitions.utils import validate_group_name
+from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import IOManagerDefinition
 from dagster.utils import merge_dicts
@@ -58,6 +58,7 @@ class SourceAsset(
         _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        # Add additional fields to with_resources and with_group below
     ):
 
         key = AssetKey.from_coerceable(key)
@@ -137,4 +138,21 @@ class SourceAsset(
             _metadata_entries=self.metadata_entries,
             resource_defs=relevant_resource_defs,
             group_name=self.group_name,
+        )
+
+    def with_group_name(self, group_name: str) -> "SourceAsset":
+        if self.group_name != DEFAULT_GROUP_NAME:
+            raise DagsterInvalidDefinitionError(
+                f"A group name has already been provided to source asset {self.key.to_user_string()}"
+            )
+
+        return SourceAsset(
+            key=self.key,
+            _metadata_entries=self.metadata_entries,
+            io_manager_key=self.io_manager_key,
+            io_manager_def=self.io_manager_def,
+            description=self.description,
+            partitions_def=self.partitions_def,
+            group_name=group_name,
+            resource_defs=self.resource_defs,
         )
