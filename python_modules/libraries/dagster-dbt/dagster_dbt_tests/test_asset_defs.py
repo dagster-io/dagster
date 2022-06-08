@@ -13,11 +13,10 @@ from dagster import (
     AssetIn,
     AssetKey,
     IOManager,
-    io_manager,
-    repository,
     MetadataEntry,
     ResourceDefinition,
     asset,
+    io_manager,
     repository,
 )
 from dagster.core.asset_defs import build_assets_job
