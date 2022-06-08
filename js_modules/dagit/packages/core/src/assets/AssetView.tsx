@@ -154,10 +154,8 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             </Box>
             {definition && definition.jobNames.length > 0 && repoAddress && upstream && (
               <LaunchAssetExecutionButton
-                assets={[definition]}
-                upstreamAssetKeys={upstream.map((u) => u.assetKey)}
-                preferredJobName={definition.jobNames[0]}
-                title={lastMaterializedAt ? 'Rematerialize' : 'Materialize'}
+                assetKeys={[definition.assetKey]}
+                liveDataByNode={liveDataByNode}
               />
             )}
           </Box>

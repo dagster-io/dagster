@@ -509,12 +509,12 @@ export interface AssetGraphQuery_assetNodes {
   id: string;
   dependencyKeys: AssetGraphQuery_assetNodes_dependencyKeys[];
   dependedByKeys: AssetGraphQuery_assetNodes_dependedByKeys[];
+  partitionDefinition: string | null;
   configField: AssetGraphQuery_assetNodes_configField | null;
   graphName: string | null;
   jobNames: string[];
   opNames: string[];
   description: string | null;
-  partitionDefinition: string | null;
   computeKind: string | null;
   assetKey: AssetGraphQuery_assetNodes_assetKey;
   repository: AssetGraphQuery_assetNodes_repository;
