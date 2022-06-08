@@ -50,10 +50,10 @@ Software-defined assets provide sizeable improvements when it comes to code ergo
 
 - **You no longer have to choose between easy dependency tracking and manageable organization.** Without software-defined assets, you're often forced to:
 
-    - Contain everything in a single mega-job, which allows for easy dependency tracking but creates maintenance difficulties, OR
-    - Split your pipeline into smaller jobs, which allows for easy maintenance but makes dependency tracking difficult
+  - Contain everything in a single mega-job, which allows for easy dependency tracking but creates maintenance difficulties, OR
+  - Split your pipeline into smaller jobs, which allows for easy maintenance but makes dependency tracking difficult
 
-   As assets track their dependencies, you can avoid interruptions in dependency graphs and eliminate the need for root input managers.
+  As assets track their dependencies, you can avoid interruptions in dependency graphs and eliminate the need for root input managers.
 
 ---
 
@@ -62,7 +62,7 @@ Software-defined assets provide sizeable improvements when it comes to code ergo
 You should use software-defined assets when:
 
 - You’re using Dagster to produce or maintain assets, AND
-- You know what those assets will be before you launch any runs. 
+- You know what those assets will be before you launch any runs.
 
 Note that using software-defined assets in one job doesn’t mean need to be used in all your jobs. If your use case doesn't meet these criteria, you can still use graphs and ops.
 
@@ -369,14 +369,15 @@ Still not sure how software-defined assets fit into your current Dagster usage? 
 
 ### Ops and graphs
 
-| Without software-defined assets                                           | With software-defined assets                                                                   |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| An [op]() is the basic unit of computation                                | Every software-defined asset includes a graph or an op                                         |
-| A [graph]() is a composite unit of computation that connects multiple ops | Every software-defined asset includes a graph or an op                                         |
-| Ops can have multiple outputs                                             | Multiple assets can be produced by a single op when defined using the `@multi_asset` decorator |
-| Ops can use [config](/concepts/ops-jobs-graphs/ops#op-configuration)      | Assets can use [config]()                                                                      |
-| Ops can be tested by directly invoking them                               | Assets can be tested by directly invoking them                                                 |
-| Ops can require resources                                                 | Software-defined assets can require resources                                                  |
+| Without software-defined assets                                                                                | With software-defined assets                                                                   |
+| -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| An [op](/concepts/ops-jobs-graphs/ops) is the basic unit of computation                                        | Every software-defined asset includes a graph or an op                                         |
+| A [graph](/concepts/ops-jobs-graphs/jobs-graphs) is a composite unit of computation that connects multiple ops | Every software-defined asset includes a graph or an op                                         |
+| Ops can have multiple outputs                                                                                  | Multiple assets can be produced by a single op when defined using the `@multi_asset` decorator |
+| Ops can use [config](/concepts/ops-jobs-graphs/ops#op-configuration)                                           | Assets can use [config](/concepts/assets/software-defined-assets)                              |
+| Ops can access <PyObject object="OpExecutionContext" />                                                        | Assets can access <PyObject object="OpExecutionContext" />                                     |
+| Ops can require resources                                                                                      | Software-defined assets can require resources                                                  |
+| Ops can be tested by directly invoking them                                                                    | Assets can be tested by directly invoking them                                                 |
 
 ### Jobs
 
