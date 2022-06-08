@@ -6,6 +6,7 @@ import pytest
 from dagster import (
     AssetGroup,
     AssetKey,
+    AssetSelection,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     JobDefinition,
@@ -27,10 +28,10 @@ from dagster import (
     schedule,
     sensor,
     solid,
+    define_asset_job,
 )
 from dagster._check import CheckError
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
-from dagster.core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster.core.errors import DagsterInvalidSubsetError
 
 
@@ -237,7 +238,7 @@ def test_direct_schedule_target():
 
 def test_direct_schedule_unresolved_target():
 
-    unresolved_job = UnresolvedAssetJobDefinition(name="unresolved_job", selection="foo")
+    unresolved_job = define_asset_job("unresolved_job", selection="foo")
 
     @asset
     def foo():
@@ -278,7 +279,7 @@ def test_direct_sensor_target():
 
 def test_direct_sensor_unresolved_target():
 
-    unresolved_job = UnresolvedAssetJobDefinition(name="unresolved_job", selection="foo")
+    unresolved_job = define_asset_job("unresolved_job", selection="foo")
 
     @asset
     def foo():
@@ -320,7 +321,7 @@ def test_target_dupe_job():
 
 
 def test_target_dupe_unresolved():
-    unresolved_job = UnresolvedAssetJobDefinition(name="unresolved_job", selection="foo")
+    unresolved_job = define_asset_job("unresolved_job", selection="foo")
 
     @asset
     def foo():
@@ -358,7 +359,7 @@ def test_bare_graph():
 
 
 def test_unresolved_job():
-    unresolved_job = UnresolvedAssetJobDefinition(name="unresolved_job", selection="foo")
+    unresolved_job = define_asset_job("unresolved_job", selection="foo")
 
     @asset
     def foo():
@@ -479,7 +480,7 @@ def test_dupe_graph_defs():
 
 
 def test_dupe_unresolved_job_defs():
-    unresolved_job = UnresolvedAssetJobDefinition(name="bar", selection="foo")
+    unresolved_job = define_asset_job("bar", selection="foo")
 
     @asset
     def foo():
@@ -594,7 +595,7 @@ def test_dict_jobs():
             "jobs": {
                 "my_graph": my_graph,
                 "other_graph": my_graph.to_job(name="other_graph"),
-                "tbd": UnresolvedAssetJobDefinition("tbd", selection="*"),
+                "tbd": define_asset_job("tbd", selection="*"),
             }
         }
 
@@ -757,7 +758,7 @@ def test_bad_resolve():
 
         @repository
         def _fails():
-            return {"jobs": {"tbd": UnresolvedAssetJobDefinition(name="tbd", selection="foo")}}
+            return {"jobs": {"tbd": define_asset_job(name="tbd", selection="foo")}}
 
 
 def test_source_assets():
@@ -899,7 +900,7 @@ def test_duplicate_graph_target_invalid():
 
 
 def test_duplicate_unresolved_job_valid():
-    the_job = UnresolvedAssetJobDefinition(name="foo", selection="*")
+    the_job = define_asset_job(name="foo")
 
     # Providing the same graph to the repo and multiple schedules / sensors is valid
     @repository
@@ -910,8 +911,8 @@ def test_duplicate_unresolved_job_valid():
 
 
 def test_duplicate_unresolved_job_target_invalid():
-    the_job = UnresolvedAssetJobDefinition(name="foo", selection="*")
-    other_job = UnresolvedAssetJobDefinition(name="foo", selection="foo")
+    the_job = define_asset_job(name="foo")
+    other_job = define_asset_job(name="foo", selection="foo")
 
     @asset
     def foo():
@@ -919,7 +920,7 @@ def test_duplicate_unresolved_job_target_invalid():
 
     foo_group = AssetGroup([foo])
 
-    # Different reference-equal graph provided to repo with same name, ensure error is thrown.
+    # Different reference-equal jobs provided to repo with same name, ensure error is thrown.
     with pytest.warns(
         UserWarning,
         match="sensor '_the_sensor' targets unresolved asset job 'foo', but a different unresolved asset job with the same name was provided.",

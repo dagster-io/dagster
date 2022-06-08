@@ -12,6 +12,7 @@ from dagster.core.selector.subset_selector import (
     fetch_connected_assets_definitions,
     generate_asset_dep_graph,
     generate_asset_name_to_definition_map,
+    parse_clause,
 )
 
 AssetSet: TypeAlias = AbstractSet[AssetsDefinition]  # makes sigs more readable
@@ -99,9 +100,9 @@ class Resolver:
         self.asset_dep_graph = generate_asset_dep_graph(list(all_assets))
         self.all_assets_by_name = generate_asset_name_to_definition_map(all_assets)
 
-    def resolve(self, node: AssetSelection) -> AssetSet:
+    def resolve(self, node: AssetSelection) -> Set[str]:
         if isinstance(node, AllAssetSelection):
-            return self.all_assets
+            return self.all_assets_by_name.keys()
         elif isinstance(node, AndAssetSelection):
             child_1, child_2 = [self.resolve(child) for child in node.children]
             return child_1 & child_2
@@ -113,12 +114,22 @@ class Resolver:
             )
         elif isinstance(node, GroupsAssetSelection):
             return {
+                key for key in
+            }
+            return reduce(
+                operator.or_,
+                [
+
+                ]
+            )
+
+            return {
                 a
                 for a in self.all_assets
                 if any(_match_group(a, pattern) for pattern in node.children)
             }
         elif isinstance(node, KeysAssetSelection):
-            return {a for a in self.all_assets if any(_match_key(a, key) for key in node.children)}
+            return node.children
         elif isinstance(node, OrAssetSelection):
             child_1, child_2 = [self.resolve(child) for child in node.children]
             return child_1 | child_2

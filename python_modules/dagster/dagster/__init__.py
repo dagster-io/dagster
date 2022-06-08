@@ -162,6 +162,7 @@ from dagster.core.definitions import (
     weekly_partitioned_config,
     weekly_schedule,
 )
+from dagster.core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster.core.definitions.configurable import configured
 from dagster.core.definitions.policy import Backoff, Jitter, RetryPolicy
 from dagster.core.definitions.run_status_sensor_definition import build_run_status_sensor_context
