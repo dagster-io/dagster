@@ -1,17 +1,16 @@
 from dagster_gcp.gcs import FakeGCSClient
-from dagster_gcp.gcs.io_manager import (
-    PickledObjectGCSIOManager,
-    gcs_pickle_asset_io_manager,
-    gcs_pickle_io_manager,
-)
+from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager, gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
 from google.cloud import storage  # type: ignore
 
 from dagster import (
     AssetGroup,
+    AssetsDefinition,
     DagsterInstance,
     DynamicOut,
     DynamicOutput,
+    GraphIn,
+    GraphOut,
     In,
     Int,
     Out,
@@ -21,6 +20,7 @@ from dagster import (
     asset,
     build_input_context,
     build_output_context,
+    graph,
     job,
     op,
     resource,
@@ -160,6 +160,16 @@ def test_dynamic(gcs_bucket):
 
 
 def test_asset_io_manager(gcs_bucket):
+    @op
+    def first_op(first_input):
+        assert first_input == 3
+        return first_input * 2
+
+    @op
+    def second_op(second_input):
+        assert second_input == 6
+        return second_input + 3
+
     @asset
     def upstream():
         return 2
@@ -168,15 +178,19 @@ def test_asset_io_manager(gcs_bucket):
     def downstream(upstream):
         return 1 + upstream
 
+    @graph(ins={"downstream": GraphIn()}, out={"asset3": GraphOut()})
+    def graph_asset(downstream):
+        return second_op(first_op(downstream))
+
     @asset(partitions_def=StaticPartitionsDefinition(["apple", "orange"]))
     def partitioned():
         return 8
 
     fake_gcs_client = FakeGCSClient()
     asset_group = AssetGroup(
-        [upstream, downstream, partitioned],
+        [upstream, downstream, AssetsDefinition.from_graph(graph_asset), partitioned],
         resource_defs={
-            "io_manager": gcs_pickle_asset_io_manager.configured(
+            "io_manager": gcs_pickle_io_manager.configured(
                 {"gcs_bucket": gcs_bucket, "gcs_prefix": "assets"}
             ),
             "gcs": ResourceDefinition.hardcoded_resource(fake_gcs_client),
@@ -190,4 +204,6 @@ def test_asset_io_manager(gcs_bucket):
         f"{gcs_bucket}/assets/upstream",
         f"{gcs_bucket}/assets/downstream",
         f"{gcs_bucket}/assets/partitioned/apple",
+        f"{gcs_bucket}/assets/asset3",
+        f"{gcs_bucket}/assets/storage/{result.run_id}/files/graph_asset.first_op/result",
     }

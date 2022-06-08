@@ -8,7 +8,7 @@ from schema.charts.utils import kubernetes
 
 
 def create_simple_user_deployment(
-    name: str, include_config_in_launched_runs: Optional[bool] = False
+    name: str, include_config_in_launched_runs: Optional[bool] = None
 ) -> UserDeployment:
     return UserDeployment(
         name=name,

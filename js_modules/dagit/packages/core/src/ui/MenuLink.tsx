@@ -1,6 +1,12 @@
 // eslint-disable-next-line no-restricted-imports
-import {MenuItem} from '@blueprintjs/core';
-import {Box, Colors, CommonMenuItemProps, IconWrapper, iconWithColor} from '@dagster-io/ui';
+import {
+  Box,
+  Colors,
+  CommonMenuItemProps,
+  IconWrapper,
+  iconWithColor,
+  MenuItem,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link, LinkProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -14,8 +20,11 @@ interface MenuLinkProps
  * If you want to use a menu item as a link, use `MenuLink` and provide a `to` prop.
  */
 export const MenuLink: React.FC<MenuLinkProps> = (props) => {
-  const {icon, intent, text, ...rest} = props;
+  const {icon, intent, text, disabled, ...rest} = props;
 
+  if (disabled) {
+    return <MenuItem disabled icon={icon} intent={intent} text={text} />;
+  }
   return (
     <StyledMenuLink {...rest}>
       <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>

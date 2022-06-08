@@ -47,6 +47,19 @@ def full_pg_config(hostname):
     )
 
 
+def unified_pg_config(hostname):
+    return f"""
+      storage:
+        postgres:
+          postgres_db:
+            username: test
+            password: test
+            hostname: {hostname}
+            db_name: test
+
+    """
+
+
 def skip_autocreate_pg_config(hostname):
     return """
       run_storage:
@@ -135,6 +148,14 @@ def params_specified_pg_config(hostname):
     """.format(
         hostname=hostname
     )
+
+
+def test_load_instance(hostname):
+    with instance_for_test(overrides=yaml.safe_load(full_pg_config(hostname))):
+        pass
+
+    with instance_for_test(overrides=yaml.safe_load(unified_pg_config(hostname))):
+        pass
 
 
 def test_connection_leak(hostname, conn_string):
@@ -231,17 +252,33 @@ def test_conn_str():
     db_name = "dagster"
     hostname = "database-city.com"
 
+    url_wo_scheme = r"has%40init:%3Afull%3A%20of%20junk%21%40%3F@database-city.com:5432/dagster"
+
     conn_str = get_conn_string(
         username=username,
         password=password,
         db_name=db_name,
         hostname=hostname,
     )
-    assert (
-        conn_str
-        == r"postgresql://has%40init:%3Afull%3A%20of%20junk%21%40%3F@database-city.com:5432/dagster"
-    )
+    assert conn_str == f"postgresql://{url_wo_scheme}"
     parsed = urlparse(conn_str)
     assert unquote(parsed.username) == username
     assert unquote(parsed.password) == password
     assert parsed.hostname == hostname
+    assert parsed.scheme == "postgresql"
+
+    custom_scheme = "postgresql+dialect"
+    conn_str = get_conn_string(
+        username=username,
+        password=password,
+        db_name=db_name,
+        hostname=hostname,
+        scheme=custom_scheme,
+    )
+
+    assert conn_str == f"postgresql+dialect://{url_wo_scheme}"
+    parsed = urlparse(conn_str)
+    assert unquote(parsed.username) == username
+    assert unquote(parsed.password) == password
+    assert parsed.hostname == hostname
+    assert parsed.scheme == custom_scheme

@@ -47,7 +47,12 @@ def test_execute_run():
             runner = CliRunner()
 
             instance = DagsterInstance.get()
-            run = create_run_for_test(instance, pipeline_name="foo", run_id="new_run")
+            run = create_run_for_test(
+                instance,
+                pipeline_name="foo",
+                run_id="new_run",
+                pipeline_code_origin=pipeline_handle.get_python_origin(),
+            )
 
             input_json = serialize_dagster_namedtuple(
                 ExecuteRunArgs(
@@ -83,7 +88,12 @@ def test_execute_run_fail_pipeline():
             runner = CliRunner()
 
             instance = DagsterInstance.get()
-            run = create_run_for_test(instance, pipeline_name="foo", run_id="new_run")
+            run = create_run_for_test(
+                instance,
+                pipeline_name="foo",
+                run_id="new_run",
+                pipeline_code_origin=pipeline_handle.get_python_origin(),
+            )
 
             input_json = serialize_dagster_namedtuple(
                 ExecuteRunArgs(
@@ -102,7 +112,10 @@ def test_execute_run_fail_pipeline():
             assert "RUN_FAILURE" in result.stdout, "no match, result: {}".format(result)
 
             run = create_run_for_test(
-                instance, pipeline_name="foo", run_id="new_run_raise_on_error"
+                instance,
+                pipeline_name="foo",
+                run_id="new_run_raise_on_error",
+                pipeline_code_origin=pipeline_handle.get_python_origin(),
             )
 
             input_json_raise_on_failure = serialize_dagster_namedtuple(
@@ -208,7 +221,12 @@ def test_execute_step():
         with get_foo_pipeline_handle(instance) as pipeline_handle:
             runner = CliRunner()
 
-            run = create_run_for_test(instance, pipeline_name="foo", run_id="new_run")
+            run = create_run_for_test(
+                instance,
+                pipeline_name="foo",
+                run_id="new_run",
+                pipeline_code_origin=pipeline_handle.get_python_origin(),
+            )
 
             input_json = serialize_dagster_namedtuple(
                 ExecuteStepArgs(
@@ -240,7 +258,12 @@ def test_execute_step_1():
         with get_foo_pipeline_handle(instance) as pipeline_handle:
             runner = CliRunner()
 
-            run = create_run_for_test(instance, pipeline_name="foo", run_id="new_run")
+            run = create_run_for_test(
+                instance,
+                pipeline_name="foo",
+                run_id="new_run",
+                pipeline_code_origin=pipeline_handle.get_python_origin(),
+            )
 
             input_json = serialize_dagster_namedtuple(
                 ExecuteStepArgs(
@@ -275,6 +298,7 @@ def test_execute_step_verify_step():
                 instance,
                 pipeline_name="foo",
                 run_id="new_run",
+                pipeline_code_origin=pipeline_handle.get_python_origin(),
             )
 
             input_json = serialize_dagster_namedtuple(
@@ -338,6 +362,7 @@ def test_execute_step_verify_step_framework_error(mock_verify_step):
                 instance,
                 pipeline_name="foo",
                 run_id="new_run",
+                pipeline_code_origin=pipeline_handle.get_python_origin(),
             )
 
             input_json = serialize_dagster_namedtuple(

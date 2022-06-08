@@ -58,8 +58,9 @@ def _build_lint_steps() -> List[CommandStep]:
         .with_retry(2)
         .build(),
         CommandStepBuilder("dagster dependency build")
+        # https://github.com/dagster-io/dagster/issues/8167
         .run(
-            "helm repo add bitnami https://charts.bitnami.com/bitnami",
+            "helm repo add bitnami-pre-2022 https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami",
             "helm dependency build helm/dagster",
         )
         .on_integration_image(AvailablePythonVersion.get_default())

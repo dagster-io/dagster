@@ -2,7 +2,7 @@ import {Mono} from '@dagster-io/ui';
 import React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 
-import {__ASSET_GROUP_PREFIX} from '../asset-graph/Utils';
+import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 
 export interface ExplorerPath {
   pipelineName: string;

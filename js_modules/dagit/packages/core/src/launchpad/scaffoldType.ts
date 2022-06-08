@@ -49,6 +49,7 @@ export const scaffoldType = (
       return {
         String: '',
         Int: 0,
+        Float: 0.0,
         Bool: true,
         Any: 'AnyType',
       }[type.key];

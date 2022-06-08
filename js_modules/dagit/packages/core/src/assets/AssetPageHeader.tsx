@@ -9,11 +9,8 @@ type Props = {assetKey: {path: string[]}} & Partial<React.ComponentProps<typeof 
 
 export const AssetPageHeader: React.FC<Props> = ({assetKey, ...extra}) => {
   const breadcrumbs = React.useMemo(() => {
-    if (assetKey.path.length === 1) {
-      return [{text: assetKey.path[0], href: '/instance/assets'}];
-    }
+    const list: BreadcrumbProps[] = [{text: 'Assets', href: '/instance/assets'}];
 
-    const list: BreadcrumbProps[] = [];
     assetKey.path.reduce((accum: string, elem: string) => {
       const href = `${accum}/${encodeURIComponent(elem)}`;
       list.push({text: elem, href});
@@ -26,15 +23,18 @@ export const AssetPageHeader: React.FC<Props> = ({assetKey, ...extra}) => {
   return (
     <PageHeader
       title={
-        <Box flex={{alignItems: 'center', gap: 4}} style={{maxWidth: '600px', overflow: 'hidden'}}>
-          <Breadcrumbs
+        <Box
+          flex={{alignItems: 'center', gap: 4}}
+          style={{maxWidth: '600px', overflow: 'hidden', marginBottom: 4}}
+        >
+          <BreadcrumbsWithSlashes
             items={breadcrumbs}
+            currentBreadcrumbRenderer={({text}) => <Heading>{text}</Heading>}
             breadcrumbRenderer={({text, href}) => (
               <Heading>
                 <BreadcrumbLink to={href || '#'}>{text}</BreadcrumbLink>
               </Heading>
             )}
-            currentBreadcrumbRenderer={({text}) => <Heading>{text}</Heading>}
           />
         </Box>
       }
@@ -43,6 +43,17 @@ export const AssetPageHeader: React.FC<Props> = ({assetKey, ...extra}) => {
   );
 };
 
+const BreadcrumbsWithSlashes = styled(Breadcrumbs)`
+  & li:not(:first-child)::after {
+    background: none;
+    font-size: 20px;
+    font-weight: bold;
+    color: #5c7080;
+    content: '/';
+    width: 8px;
+    line-height: 16px;
+  }
+`;
 const BreadcrumbLink = styled(Link)`
   color: ${Colors.Gray800};
 

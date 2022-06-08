@@ -3,6 +3,8 @@ from typing import Any
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
+from dagster.core.test_utils import wait_for_runs_to_finish
+
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
 RUN_QUERY = """
@@ -41,7 +43,7 @@ class TestBasicLaunch(BaseTestSuite):
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
-        graphql_context.instance.run_launcher.join()
+        wait_for_runs_to_finish(graphql_context.instance)
 
         result = execute_dagster_graphql(
             context=graphql_context, query=RUN_QUERY, variables={"runId": run_id}
@@ -69,7 +71,7 @@ class TestBasicLaunch(BaseTestSuite):
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
-        graphql_context.instance.run_launcher.join()
+        wait_for_runs_to_finish(graphql_context.instance)
 
         result = execute_dagster_graphql(
             context=graphql_context, query=RUN_QUERY, variables={"runId": run_id}
