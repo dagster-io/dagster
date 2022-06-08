@@ -15,12 +15,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {
-  FIFTEEN_SECONDS,
-  QueryRefreshCountdown,
-  useMergedRefresh,
-  useQueryRefreshAtInterval,
-} from '../app/QueryRefresh';
+import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
@@ -206,9 +201,9 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
               {!groupSelector ? (
                 <AssetGroupSuggest assets={assets} value={searchGroup} onChange={setSearchGroup} />
               ) : undefined}
-              <QueryRefreshCountdown refreshState={refreshState} />
             </>
           }
+          refreshState={refreshState}
           prefixPath={prefixPath || []}
           displayPathForAsset={displayPathForAsset}
           maxDisplayCount={PAGE_SIZE}
