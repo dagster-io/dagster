@@ -44,9 +44,6 @@ def predicted_orders(
     return pd.DataFrame({"order_date": future_dates, "num_orders": predicted_data})
 
 
-# this job will update every asset in our repository
-update_everything_job = define_asset_job("update_everything", selection="*")
-
 # all of the resources needed for interacting with our tools
 resource_defs = {
     "airbyte": airbyte_resource.configured(AIRBYTE_CONFIG),
