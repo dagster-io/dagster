@@ -4,7 +4,6 @@ import {useHistory, useParams} from 'react-router-dom';
 
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {explorerPathFromString, explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {TabLink} from '../ui/TabLink';
@@ -14,15 +13,22 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 
-export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
-  const params = useParams();
+interface AssetGroupRootParams {
+  groupName: string;
+  prefixPath: string;
+  0: string;
+}
+
+export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress; tab: 'lineage' | 'list'}> = ({
+  repoAddress,
+  tab,
+}) => {
+  const {groupName, 0: path} = useParams<AssetGroupRootParams>();
   const history = useHistory();
-  const explorerPath = explorerPathFromString(params[0]);
-  const {pipelineName: groupName, opNames: prefixPath} = explorerPath;
 
   useDocumentTitle(`Asset Group: ${groupName}`);
 
-  const [tab = 'lineage'] = useQueryPersistedState<'lineage' | 'list'>({queryKey: 'tab'});
+  const groupPath = workspacePathFromAddress(repoAddress, `/asset-groups/${groupName}`);
   const groupSelector = React.useMemo(
     () => ({
       groupName,
@@ -45,16 +51,8 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
         tabs={
           <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
             <Tabs selectedTabId={tab}>
-              <TabLink
-                id="lineage"
-                title="Lineage"
-                to={workspacePathFromAddress(repoAddress, `/asset-groups/${groupName}?tab=lineage`)}
-              />
-              <TabLink
-                id="list"
-                title="List"
-                to={workspacePathFromAddress(repoAddress, `/asset-groups/${groupName}?tab=list`)}
-              />
+              <TabLink id="lineage" title="Lineage" to={`${groupPath}/lineage`} />
+              <TabLink id="list" title="List" to={`${groupPath}/list`} />
             </Tabs>
           </Box>
         }
@@ -63,15 +61,19 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
         <AssetGraphExplorer
           fetchOptions={{groupSelector}}
           options={{preferAssetRendering: true, explodeComposites: true}}
-          explorerPath={explorerPath}
+          explorerPath={explorerPathFromString(path || 'lineage/')}
           onChangeExplorerPath={(path, mode) => {
-            history[mode](
-              workspacePathFromAddress(repoAddress, `/asset-groups/${explorerPathToString(path)}`),
-            );
+            history[mode](`${groupPath}/${explorerPathToString(path)}`);
           }}
         />
       ) : (
-        <AssetsCatalogTable prefixPath={prefixPath.filter(Boolean)} groupSelector={groupSelector} />
+        <AssetsCatalogTable
+          groupSelector={groupSelector}
+          prefixPath={path.split('/').map(decodeURIComponent).filter(Boolean)}
+          setPrefixPath={(prefixPath) =>
+            history.push(`${groupPath}/list/${prefixPath.map(encodeURIComponent).join('/')}`)
+          }
+        />
       )}
     </Page>
   );

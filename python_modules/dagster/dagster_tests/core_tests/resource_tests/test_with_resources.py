@@ -3,10 +3,12 @@ import pytest
 from dagster import (
     AssetKey,
     DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
     IOManager,
     ResourceDefinition,
     io_manager,
     mem_io_manager,
+    resource,
 )
 from dagster.core.asset_defs import AssetsDefinition, SourceAsset, asset, build_assets_job
 from dagster.core.execution.with_resources import with_resources
@@ -83,9 +85,7 @@ def test_assets_direct_resource_conflicts():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="had a conflicting version of the same resource key foo. Please "
-        "resolve this conflict by giving different keys to each resource "
-        "definition.",
+        match="Conflicting versions of resource with key 'foo' were provided to different assets. When constructing a job, all resource definitions provided to assets must match by reference equality for a given key.",
     ):
         build_assets_job("the_job", [transformed_asset, other_transformed_asset])
 
@@ -214,3 +214,133 @@ def test_source_asset_no_manager_def():
         match="requires IO manager with key 'foo', but none was provided.",
     ):
         with_resources([the_source_asset], {})
+
+
+def test_asset_transitive_resource_deps():
+    @resource(required_resource_keys={"foo"})
+    def the_resource(context):
+        assert context.resources.foo == "bar"
+
+    @asset(resource_defs={"the_resource": the_resource})
+    def the_asset():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'foo' required by resource with key 'the_resource' was not provided",
+    ):
+        with_resources([the_asset], {})
+
+    transformed_asset = with_resources(
+        [the_asset], {"foo": ResourceDefinition.hardcoded_resource("bar")}
+    )[0]
+
+    assert build_assets_job("blah", [transformed_asset]).execute_in_process().success
+
+
+def test_asset_io_manager_transitive_dependencies():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return 5
+
+    @io_manager(required_resource_keys={"the_resource"})
+    def the_manager():
+        return MyIOManager()
+
+    @asset(io_manager_def=the_manager)
+    def the_asset():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'the_resource' required by resource with key 'the_asset__io_manager' was not provided.",
+    ):
+        with_resources([the_asset], resource_defs={})
+
+    @resource(required_resource_keys={"foo"})
+    def the_resource(context):
+        assert context.resources.foo == "bar"
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Resource with key 'foo' required by resource with key 'the_resource', but not provided.",
+    ):
+        with_resources([the_asset], resource_defs={"the_resource": the_resource})
+
+    transformed_assets = with_resources(
+        [the_asset],
+        resource_defs={
+            "the_resource": the_resource,
+            "foo": ResourceDefinition.hardcoded_resource("bar"),
+        },
+    )
+    assert build_assets_job("blah", transformed_assets).execute_in_process().success
+
+
+def test_source_asset_partial_resources():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return 5
+
+    @io_manager(required_resource_keys={"foo"})
+    def the_manager(context):
+        assert context.resources.foo == "blah"
+        return MyIOManager()
+
+    my_source_asset = SourceAsset(key=AssetKey("my_source_asset"), io_manager_def=the_manager)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Resource with key 'foo' required by resource with key 'my_source_asset__io_manager', but not provided.",
+    ):
+        with_resources([my_source_asset], resource_defs={})
+
+    @resource(required_resource_keys={"bar"})
+    def foo_resource(context):
+        return context.resources.bar
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Resource with key 'bar' required by resource with key 'foo', but not provided.",
+    ):
+        with_resources([my_source_asset], resource_defs={"foo": foo_resource})
+
+    transformed_source = with_resources(
+        [my_source_asset],
+        resource_defs={"foo": foo_resource, "bar": ResourceDefinition.hardcoded_resource("blah")},
+    )[0]
+
+    @asset
+    def my_derived_asset(my_source_asset):
+        return my_source_asset + 4
+
+    the_job = build_assets_job("the_job", [my_derived_asset], source_assets=[transformed_source])
+
+    result = the_job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("my_derived_asset") == 9
+
+
+def test_asset_circular_resource_dependency():
+    @asset(required_resource_keys={"foo"})
+    def the_asset():
+        pass
+
+    @resource(required_resource_keys={"bar"})
+    def foo():
+        pass
+
+    @resource(required_resource_keys={"foo"})
+    def bar():
+        pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError, match='Resource key "bar" transitively depends on itself.'
+    ):
+        with_resources([the_asset], resource_defs={"foo": foo, "bar": bar})

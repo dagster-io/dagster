@@ -327,12 +327,12 @@ def test_node_info_to_asset_key(
             "sort_by_calories,sort_cold_cereals_by_calories,sort_hot_cereals_by_calories,least_caloric,hanger1,hanger2",
         ),
         (
-            "test-schema>sort_by_calories+",
+            "test-schema/sort_by_calories+",
             "sort_by_calories,least_caloric,sort_cold_cereals_by_calories,sort_hot_cereals_by_calories,hanger1",
         ),
-        ("*test-schema>hanger2", "hanger2,least_caloric,sort_by_calories"),
+        ("*test-schema/hanger2", "hanger2,least_caloric,sort_by_calories"),
         (
-            ["test-schema>sort_cold_cereals_by_calories", "test-schema>least_caloric"],
+            ["test-schema/sort_cold_cereals_by_calories", "test-schema/least_caloric"],
             "sort_cold_cereals_by_calories,least_caloric",
         ),
     ],
