@@ -33,7 +33,6 @@ from dagster.seven import funcsigs
 from dagster.utils.backcompat import (
     ExperimentalWarning,
     canonicalize_backcompat_args,
-    deprecation_warning,
     experimental_decorator,
 )
 
