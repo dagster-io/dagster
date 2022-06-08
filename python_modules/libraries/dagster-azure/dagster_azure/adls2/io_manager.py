@@ -122,7 +122,7 @@ def adls2_pickle_io_manager(init_context):
     components as parent directories under the base_dir.
 
     Subsequent materializations of an asset will overwrite previous materializations of that asset.
-    So, with a base directory of "/my/base/path", an asset with key
+    With a base directory of "/my/base/path", an asset with key
     `AssetKey(["one", "two", "three"])` would be stored in a file called "three" in a directory
     with path "/my/base/path/one/two/".
 
