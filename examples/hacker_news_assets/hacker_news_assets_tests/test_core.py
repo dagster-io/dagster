@@ -9,7 +9,7 @@ from hacker_news_assets.resources.parquet_io_manager import local_partitioned_pa
 from dagster import (
     AssetGroup,
     ResourceDefinition,
-    assets_from_package_module,
+    load_assets_from_package_module,
     fs_io_manager,
     mem_io_manager,
 )
@@ -19,7 +19,7 @@ from dagster import (
 def test_download():
     with tempfile.TemporaryDirectory() as temp_dir:
         test_job = AssetGroup(
-            assets_from_package_module(assets),
+            load_assets_from_package_module(assets),
             resource_defs={
                 "io_manager": fs_io_manager,
                 "partition_start": ResourceDefinition.string_resource(),
