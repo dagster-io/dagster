@@ -1,4 +1,3 @@
-import warnings
 from typing import AbstractSet, Dict, Iterable, Iterator, Mapping, Optional, Sequence, Set, cast
 
 import dagster._check as check
@@ -15,7 +14,6 @@ from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster.core.execution.context.compute import OpExecutionContext
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import ExperimentalWarning, experimental
 
 from ..definitions.resource_requirement import (
     ResourceAddable,
@@ -120,7 +118,6 @@ class AssetsDefinition(ResourceAddable):
         return solid_def(*args, **kwargs)
 
     @staticmethod
-    @experimental
     def from_graph(
         graph_def: GraphDefinition,
         asset_keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
@@ -312,39 +309,36 @@ class AssetsDefinition(ResourceAddable):
                 f"Group name already exists on assets {', '.join(defined_group_names)}"
             )
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
-            return self.__class__(
-                asset_keys_by_input_name={
-                    input_name: input_asset_key_replacements.get(key, key)
-                    for input_name, key in self._asset_keys_by_input_name.items()
-                },
-                asset_keys_by_output_name={
-                    output_name: output_asset_key_replacements.get(key, key)
-                    for output_name, key in self._asset_keys_by_output_name.items()
-                },
-                node_def=self.node_def,
-                partitions_def=self.partitions_def,
-                partition_mappings=self._partition_mappings,
-                asset_deps={
-                    # replace both the keys and the values in this mapping
-                    output_asset_key_replacements.get(key, key): {
-                        input_asset_key_replacements.get(
-                            upstream_key,
-                            output_asset_key_replacements.get(upstream_key, upstream_key),
-                        )
-                        for upstream_key in value
-                    }
-                    for key, value in self.asset_deps.items()
-                },
-                can_subset=self.can_subset,
-                selected_asset_keys={
-                    output_asset_key_replacements.get(key, key) for key in self._selected_asset_keys
-                },
-                resource_defs=self.resource_defs,
-                group_names={**self.group_names, **group_names},
-            )
+        return self.__class__(
+            asset_keys_by_input_name={
+                input_name: input_asset_key_replacements.get(key, key)
+                for input_name, key in self._asset_keys_by_input_name.items()
+            },
+            asset_keys_by_output_name={
+                output_name: output_asset_key_replacements.get(key, key)
+                for output_name, key in self._asset_keys_by_output_name.items()
+            },
+            node_def=self.node_def,
+            partitions_def=self.partitions_def,
+            partition_mappings=self._partition_mappings,
+            asset_deps={
+                # replace both the keys and the values in this mapping
+                output_asset_key_replacements.get(key, key): {
+                    input_asset_key_replacements.get(
+                        upstream_key,
+                        output_asset_key_replacements.get(upstream_key, upstream_key),
+                    )
+                    for upstream_key in value
+                }
+                for key, value in self.asset_deps.items()
+            },
+            can_subset=self.can_subset,
+            selected_asset_keys={
+                output_asset_key_replacements.get(key, key) for key in self._selected_asset_keys
+            },
+            resource_defs=self.resource_defs,
+            group_names={**self.group_names, **group_names},
+        )
 
     def subset_for(self, selected_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
         """
