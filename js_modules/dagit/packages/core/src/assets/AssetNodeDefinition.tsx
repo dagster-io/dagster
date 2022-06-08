@@ -214,6 +214,7 @@ const OpNamesDisplay = (props: {
     return null;
   }
 
+  console.log(graphName, opNames);
   if (!graphName) {
     const firstOp = opNames[0];
     if (displayNameForAssetKey(assetKey) === firstOp) {
@@ -237,7 +238,7 @@ const OpNamesDisplay = (props: {
 
   return (
     <Box flex={{gap: 4, alignItems: 'center'}}>
-      <Icon name="job" size={16} />
+      <Icon name="schema" size={16} />
       <Mono>
         <Link to={graphPath}>{graphName}</Link> ({opCount === 1 ? '1 op' : `${opCount} ops`})
       </Mono>

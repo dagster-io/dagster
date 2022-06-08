@@ -395,7 +395,7 @@ export const AssetGraphExplorerWithData: React.FC<
 
           <Box
             flex={{direction: 'column', alignItems: 'flex-end', gap: 8}}
-            style={{position: 'absolute', right: 12, top: 12}}
+            style={{position: 'absolute', right: 12, top: 8}}
           >
             <Box flex={{alignItems: 'center', gap: 12}}>
               <QueryRefreshCountdown
