@@ -1112,9 +1112,9 @@ def test_internal_asset_deps_assets():
 @multi_asset(outs={"a": Out(is_required=False), "b": Out(is_required=False)}, can_subset=True)
 def ab(context, foo):
     if "a" in context.selected_output_names:
-        yield Output(foo+1, "a")
+        yield Output(foo + 1, "a")
     if "b" in context.selected_output_names:
-        yield Output(foo+2, "b")
+        yield Output(foo + 2, "b")
 
 
 @asset

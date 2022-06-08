@@ -3,19 +3,7 @@ import warnings
 from collections import defaultdict
 from importlib import import_module
 from types import ModuleType
-from typing import (
-    AbstractSet,
-    Any,
-    Dict,
-    FrozenSet,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-)
+from typing import Any, Dict, FrozenSet, Iterable, List, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
 from dagster.core.definitions.dependency import NodeHandle
@@ -131,7 +119,7 @@ class AssetGroup:
         return self._assets
 
     @property
-    def source_assets(self) -> Sequence[AssetsDefinition]:
+    def source_assets(self):
         return self._source_assets
 
     @property
