@@ -154,7 +154,7 @@ Here's what an equivalent job looks like using software-defined assets:
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_io_manager.py
 from pandas import DataFrame
 
-from dagster import AssetSelection, SourceAsset, asset, repository, with_resources
+from dagster import SourceAsset, asset, define_asset_job, repository, with_resources
 
 from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
 
@@ -176,14 +176,14 @@ def user_recommender_model(users: DataFrame):
 @repository
 def repo():
     return [
-        with_resources(
-            [users, user_recommender_model],
+        *with_resources(
+            [raw_users, users, user_recommender_model],
             resource_defs={
                 "warehouse": snowflake_io_manager,
                 "object_store": s3_io_manager,
             },
         ),
-        AssetSelection.all().to_job("users_recommender_job"),
+        define_asset_job("users_recommender_job"),
     ]
 ```
 
@@ -233,10 +233,11 @@ def repo():
 Here's an example of an equivalent job that uses software-defined assets:
 
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_nothing.py
-from mylib import create_db_connection, pickle_to_s3, train_recommender_model
 from pandas import read_sql
 
-from dagster import AssetSelection, asset, assets_from_current_module, repository
+from dagster import asset, define_asset_job, repository
+
+from .mylib import create_db_connection, pickle_to_s3, train_recommender_model
 
 
 @asset(non_argument_deps={"raw_users"})
@@ -255,8 +256,7 @@ def user_recommender_model():
 
 @repository
 def repo():
-    assets = assets_from_current_module()
-    return [assets, AssetSelection.all().to_job("users_recommender_job")]
+    return [users, user_recommender_model, define_asset_job("users_recommender_job")]
 ```
 
 ### Not all ops produce assets
@@ -315,7 +315,7 @@ Here's an equivalent job using software-defined assets. Note: Because some ops d
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_graph.py
 from pandas import DataFrame
 
-from dagster import AssetSelection, AssetsDefinition, GraphOut, graph, op, repository
+from dagster import AssetsDefinition, GraphOut, define_asset_job, graph, op, repository
 
 from .mylib import create_db_connection, fetch_products
 
@@ -352,7 +352,7 @@ two_tables = AssetsDefinition.from_graph(ingest_graph)
 
 @repository
 def repo():
-    return [two_tables, AssetSelection.all().to_job("products_and_categories")]
+    return [two_tables, define_asset_job("products_and_categories_job")]
 ```
 
 ---

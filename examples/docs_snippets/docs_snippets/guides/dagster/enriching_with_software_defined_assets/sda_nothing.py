@@ -1,7 +1,8 @@
-from mylib import create_db_connection, pickle_to_s3, train_recommender_model
 from pandas import read_sql
 
-from dagster import AssetSelection, asset, assets_from_current_module, repository
+from dagster import asset, define_asset_job, repository
+
+from .mylib import create_db_connection, pickle_to_s3, train_recommender_model
 
 
 @asset(non_argument_deps={"raw_users"})
@@ -20,5 +21,4 @@ def user_recommender_model():
 
 @repository
 def repo():
-    assets = assets_from_current_module()
-    return [assets, AssetSelection.all().to_job("users_recommender_job")]
+    return [users, user_recommender_model, define_asset_job("users_recommender_job")]

@@ -1,6 +1,6 @@
 from pandas import DataFrame
 
-from dagster import AssetSelection, SourceAsset, asset, repository, with_resources
+from dagster import SourceAsset, asset, define_asset_job, repository, with_resources
 
 from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
 
@@ -22,12 +22,12 @@ def user_recommender_model(users: DataFrame):
 @repository
 def repo():
     return [
-        with_resources(
-            [users, user_recommender_model],
+        *with_resources(
+            [raw_users, users, user_recommender_model],
             resource_defs={
                 "warehouse": snowflake_io_manager,
                 "object_store": s3_io_manager,
             },
         ),
-        AssetSelection.all().to_job("users_recommender_job"),
+        define_asset_job("users_recommender_job"),
     ]

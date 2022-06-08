@@ -1,6 +1,6 @@
 from pandas import DataFrame
 
-from dagster import AssetSelection, AssetsDefinition, GraphOut, graph, op, repository
+from dagster import AssetsDefinition, GraphOut, define_asset_job, graph, op, repository
 
 from .mylib import create_db_connection, fetch_products
 
@@ -37,4 +37,4 @@ two_tables = AssetsDefinition.from_graph(ingest_graph)
 
 @repository
 def repo():
-    return [two_tables, AssetSelection.all().to_job("products_and_categories")]
+    return [two_tables, define_asset_job("products_and_categories_job")]
