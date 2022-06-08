@@ -357,7 +357,7 @@ export const RightInfoPanelContent = styled.div`
 export const OptionsOverlay = styled.div`
   background-color: ${Color(Colors.White).fade(0.6).toString()};
   z-index: 2;
-  padding: 15px 15px;
+  padding: 15px 20px;
   display: inline-flex;
   align-items: stretch;
   white-space: nowrap;
@@ -370,7 +370,7 @@ export const OptionsOverlay = styled.div`
 export const HighlightOverlay = styled.div`
   background-color: ${Color(Colors.White).fade(0.6).toString()};
   z-index: 2;
-  padding: 12px 12px 0 0;
+  padding: 8px 12px 0 0;
   display: inline-flex;
   align-items: stretch;
   position: absolute;
@@ -381,8 +381,8 @@ export const HighlightOverlay = styled.div`
 export const QueryOverlay = styled.div`
   z-index: 2;
   position: absolute;
-  top: 10px;
-  left: 20px;
+  top: 8px;
+  left: 24px;
   white-space: nowrap;
   display: flex;
   gap: 10px;

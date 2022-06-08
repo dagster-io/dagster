@@ -39,8 +39,8 @@ export interface GraphData {
   downstream: {[assetId: GraphId]: {[childAssetId: GraphId]: boolean}};
   upstream: {[assetId: GraphId]: {[parentAssetId: GraphId]: boolean}};
 }
-export const isSourceAsset = (node: {jobNames: string[]; opNames: string[]}) => {
-  return node.jobNames.length === 0 && !node.opNames.length;
+export const isSourceAsset = (node: {graphName: string | null; opNames: string[]}) => {
+  return !node.graphName && !node.opNames.length;
 };
 
 export const buildGraphData = (assetNodes: AssetNode[]) => {

@@ -39,6 +39,7 @@ def default_ecs_task_definition(
     metadata,
     image,
     container_name,
+    environment,
     command=None,
     secrets=None,
     include_sidecars=False,
@@ -71,6 +72,7 @@ def default_ecs_task_definition(
             "entryPoint": [],
             "command": command if command else [],
         },
+        ({"environment": environment} if environment else {}),
         secrets or {},
         {} if include_sidecars else {"dependsOn": []},
     )

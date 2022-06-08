@@ -116,6 +116,16 @@ def adls2_pickle_io_manager(init_context):
     as each execution node has network connectivity and credentials for ADLS and the backing
     container.
 
+    Assigns each op output to a unique filepath containing run ID, step key, and output name.
+    Assigns each asset to a single filesystem path, at "<base_dir>/<asset_key>". If the asset key
+    has multiple components, the final component is used as the name of the file, and the preceding
+    components as parent directories under the base_dir.
+
+    Subsequent materializations of an asset will overwrite previous materializations of that asset.
+    With a base directory of "/my/base/path", an asset with key
+    `AssetKey(["one", "two", "three"])` would be stored in a file called "three" in a directory
+    with path "/my/base/path/one/two/".
+
     Attach this resource definition to your job in order to make it available all your ops:
 
     .. code-block:: python

@@ -274,6 +274,7 @@ def container_context_config(configured_secret):
                 }
             ],
             "secrets_tags": ["dagster"],
+            "env_vars": ["FOO_ENV_VAR=BAR_VALUE"],
         }
     }
 
@@ -289,6 +290,7 @@ def other_container_context_config(other_configured_secret):
                 }
             ],
             "secrets_tags": ["other_secret_tag"],
+            "env_vars": ["OTHER_FOO_ENV_VAR"],
         }
     }
 

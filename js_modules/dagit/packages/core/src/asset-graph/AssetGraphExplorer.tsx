@@ -1,8 +1,6 @@
 import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
-import flatMap from 'lodash/flatMap';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
-import uniqBy from 'lodash/uniqBy';
 import without from 'lodash/without';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
@@ -157,9 +155,6 @@ export const AssetGraphExplorerWithData: React.FC<
     selectedAssetValues.includes(tokenForAssetKey(node.definition.assetKey)),
   );
   const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1];
-  const launchGraphNodes = selectedGraphNodes.length
-    ? selectedGraphNodes
-    : Object.values(assetGraphData.nodes).filter((a) => !isSourceAsset(a.definition));
 
   const {layout, loading, async} = useAssetLayout(assetGraphData);
 
@@ -397,7 +392,7 @@ export const AssetGraphExplorerWithData: React.FC<
 
           <Box
             flex={{direction: 'column', alignItems: 'flex-end', gap: 8}}
-            style={{position: 'absolute', right: 12, top: 12}}
+            style={{position: 'absolute', right: 12, top: 8}}
           >
             <Box flex={{alignItems: 'center', gap: 12}}>
               <QueryRefreshCountdown
@@ -406,18 +401,13 @@ export const AssetGraphExplorerWithData: React.FC<
               />
 
               <LaunchAssetExecutionButton
-                title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
+                context={selectedGraphNodes.length ? 'selected' : 'all'}
+                assetKeys={(selectedGraphNodes.length
+                  ? selectedGraphNodes
+                  : Object.values(assetGraphData.nodes).filter((a) => !isSourceAsset(a.definition))
+                ).map((n) => n.assetKey)}
+                liveDataByNode={liveDataByNode}
                 preferredJobName={explorerPath.pipelineName}
-                assets={launchGraphNodes.map((n) => n.definition)}
-                upstreamAssetKeys={uniqBy(
-                  flatMap(launchGraphNodes.map((n) => n.definition.dependencyKeys)),
-                  (key) => JSON.stringify(key),
-                ).filter(
-                  (key) =>
-                    !launchGraphNodes.some(
-                      (n) => JSON.stringify(n.assetKey) === JSON.stringify(key),
-                    ),
-                )}
               />
             </Box>
           </Box>
@@ -516,15 +506,4 @@ const opsInRange = (
     }
   }
   return uniq(ledToTarget);
-};
-
-const titleForLaunch = (nodes: GraphNode[], liveDataByNode: LiveData) => {
-  const isRematerializeForAll = (nodes.length
-    ? nodes.map((n) => liveDataByNode[n.id])
-    : Object.values(liveDataByNode)
-  ).every((e) => !!e?.lastMaterialization);
-
-  return `${isRematerializeForAll ? 'Rematerialize' : 'Materialize'} ${
-    nodes.length === 0 ? `All` : nodes.length === 1 ? `Selected` : `Selected (${nodes.length})`
-  }`;
 };

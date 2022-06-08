@@ -14,12 +14,12 @@ from dagster.core.executor.init import InitExecutorContext
 from dagster.core.executor.step_delegating import StepDelegatingExecutor
 from dagster.core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
 from dagster.core.origin import PipelinePythonOrigin
+from dagster.core.utils import parse_env_var
 from dagster.serdes.utils import hash_str
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import experimental
 
 from .container_context import DockerContainerContext
-from .utils import parse_env_var
 
 
 @executor(
