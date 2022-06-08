@@ -30,6 +30,7 @@ from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition
 from .resource_definition import ResourceDefinition
+from .config import ConfigMapping
 
 if TYPE_CHECKING:
     from dagster.core.asset_defs import AssetGroup, AssetsDefinition, SourceAsset
@@ -622,6 +623,8 @@ def build_asset_selection_job(
     assets: Iterable["AssetsDefinition"],
     source_assets: Iterable["SourceAsset"],
     executor_def: Optional[ExecutorDefinition] = None,
+    config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
+    partitions_def: Optional["PartitionsDefinition"] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
     tags: Optional[Dict[str, Any]] = None,
@@ -638,14 +641,25 @@ def build_asset_selection_job(
         included_assets = cast(Iterable["AssetsDefinition"], assets)
         excluded_assets = list(source_assets)
 
+    if partitions_def:
+        for asset in included_assets:
+            check.invariant(
+                asset.partitions_def == partitions_def,
+                f"Assets defined for node '{asset.node_def.name}' have a partitions_def of "
+                f"{asset.partitions_def}, but job '{name}' has non-matching partitions_def of "
+                f"{partitions_def}.",
+            )
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=ExperimentalWarning)
         asset_job = build_assets_job(
             name=name,
             assets=included_assets,
+            config=config,
             source_assets=excluded_assets,
             resource_defs=resource_defs,
             executor_def=executor_def,
+            partitions_def=partitions_def,
             description=description,
             tags=tags,
             _asset_selection_data=asset_selection_data,
