@@ -21,7 +21,7 @@ def test_with_replaced_asset_keys():
         assert input1
         assert input2
 
-    replaced = asset1.with_replaced_asset_keys(
+    replaced = asset1.with_prefix_or_group(
         output_asset_key_replacements={
             AssetKey(["asset1"]): AssetKey(["prefix1", "asset1_changed"])
         },
@@ -94,7 +94,7 @@ def test_chain_replace_and_subset_for():
     def abc_(context, in1, in2, in3):  # pylint: disable=unused-argument
         pass
 
-    replaced_1 = abc_.with_replaced_asset_keys(
+    replaced_1 = abc_.with_prefix_or_group(
         output_asset_key_replacements={AssetKey(["a"]): AssetKey(["foo", "foo_a"])},
         input_asset_key_replacements={AssetKey(["in1"]): AssetKey(["foo", "bar_in1"])},
     )
@@ -116,7 +116,7 @@ def test_chain_replace_and_subset_for():
     )
     assert subbed_1.asset_keys == {AssetKey(["foo", "foo_a"]), AssetKey("b")}
 
-    replaced_2 = subbed_1.with_replaced_asset_keys(
+    replaced_2 = subbed_1.with_prefix_or_group(
         output_asset_key_replacements={
             AssetKey(["foo", "foo_a"]): AssetKey(["again", "foo", "foo_a"]),
             AssetKey(["b"]): AssetKey(["something", "bar_b"]),
