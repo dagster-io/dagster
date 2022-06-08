@@ -245,7 +245,7 @@ def prefix_assets(
     assets_defs: Sequence[AssetsDefinition], key_prefix: str
 ) -> List[AssetsDefinition]:
     """
-    Given an list of assets, prefix the input and output asset keys with key_prefix.
+    Given a list of assets, prefix the input and output asset keys with key_prefix.
     The prefix is not added to source assets.
 
     Input asset keys that reference other assets within assets_defs are "brought along" -
