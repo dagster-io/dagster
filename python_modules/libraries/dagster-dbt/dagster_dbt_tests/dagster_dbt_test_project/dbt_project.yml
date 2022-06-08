@@ -31,6 +31,8 @@ clean-targets: # directories to be removed by `dbt clean`
 # using the `{{ config(...) }}` macro.
 models:
   dagster_dbt_test_project:
+    subdir:
+      +schema: "subdir_schema"
     materialized: view
 
 seeds:

@@ -102,8 +102,12 @@ def _get_node_name(node_info: Mapping[str, Any]):
 
 
 def _get_node_asset_key(node_info):
-    if node_info.get("schema") is not None:
-        components = [node_info["schema"], node_info["name"]]
+    """By default, a dbt node's key is the union of its model name and any schema configured on
+    the model itself.
+    """
+    configured_schema = node_info["config"].get("schema")
+    if configured_schema is not None:
+        components = [configured_schema, node_info["name"]]
     else:
         components = [node_info["name"]]
 

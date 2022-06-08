@@ -147,7 +147,7 @@ def test_asset_group_missing_resources():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"AssetGroup is missing required resource keys for asset 'asset_foo'. Missing resource keys: \['foo'\]",
+        match="resource with key 'foo' required by op 'asset_foo' was not provided.",
     ):
         AssetGroup([asset_foo])
 
@@ -155,7 +155,7 @@ def test_asset_group_missing_resources():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"SourceAsset with key AssetKey\(\['foo'\]\) requires io manager with key 'foo', which was not provided on AssetGroup. Provided keys: \['io_manager'\]",
+        match=r"SourceAsset with asset key AssetKey\(\['foo'\]\) requires IO manager with key 'foo', but none was provided.",
     ):
         AssetGroup([], source_assets=[source_asset_io_req])
 
@@ -183,9 +183,7 @@ def test_asset_group_requires_root_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"Output 'result' with AssetKey 'AssetKey\(\['asset_foo'\]\)' "
-        r"requires io manager 'blah' but was not provided on asset group. "
-        r"Provided resources: \['io_manager'\]",
+        match="io manager with key 'blah' required by output 'result' of op 'asset_foo'' was not provided.",
     ):
         AssetGroup([asset_foo])
 
@@ -195,9 +193,13 @@ def test_resource_override():
     def the_resource():
         pass
 
+    @asset
+    def single_asset():
+        pass
+
     @repository
     def the_repo():
-        return [AssetGroup([], resource_defs={"io_manager": mem_io_manager})]
+        return [AssetGroup([single_asset], resource_defs={"io_manager": mem_io_manager})]
 
     asset_group_underlying_job = the_repo.get_all_jobs()[0]
     assert (  # pylint: disable=comparison-with-callable
@@ -335,7 +337,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         ("*", False, None),
         ("*", True, None),
         ("e", False, None),
-        ("e", True, (DagsterInvalidDefinitionError, "")),
+        ("e", True, (DagsterInvalidSubsetError, "")),
         (
             "x",
             False,
@@ -375,7 +377,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
             ["*final"],
             True,
             (
-                DagsterInvalidDefinitionError,
+                DagsterInvalidSubsetError,
                 r"When building job, the AssetsDefinition 'abc_' contains asset keys "
                 r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\], but attempted to "
                 r"select only \[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\)\]",
@@ -475,13 +477,13 @@ def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
         (["+a", "b+"], "start,a,b,c,d", None),
         (["*c", "final"], "b,c,final", None),
         ("*", "start,a,b,c,d,e,f,final", ["core", "models"]),
-        ("core>models>a", "a", ["core", "models"]),
-        ("core>models>b+", "b,c,d", ["core", "models"]),
-        ("+core>models>f", "f,d,e", ["core", "models"]),
-        ("++core>models>f", "f,d,e,c,a,b", ["core", "models"]),
-        ("core>models>start*", "start,a,d,f,final", ["core", "models"]),
-        (["+core>models>a", "core>models>b+"], "start,a,b,c,d", ["core", "models"]),
-        (["*core>models>c", "core>models>final"], "b,c,final", ["core", "models"]),
+        ("core/models/a", "a", ["core", "models"]),
+        ("core/models/b+", "b,c,d", ["core", "models"]),
+        ("+core/models/f", "f,d,e", ["core", "models"]),
+        ("++core/models/f", "f,d,e,c,a,b", ["core", "models"]),
+        ("core/models/start*", "start,a,d,f,final", ["core", "models"]),
+        (["+core/models/a", "core/models/b+"], "start,a,b,c,d", ["core", "models"]),
+        (["*core/models/c", "core/models/final"], "b,c,final", ["core", "models"]),
     ],
 )
 def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi, prefixes):
@@ -830,12 +832,12 @@ def test_asset_group_build_job_selection_multi_component():
         ...
 
     group = AssetGroup([asset1], source_assets=[source_asset])
-    assert group.build_job(name="something", selection="abc>asset1").asset_layer.asset_keys == {
+    assert group.build_job(name="something", selection="abc/asset1").asset_layer.asset_keys == {
         AssetKey(["abc", "asset1"])
     }
 
     with pytest.raises(DagsterInvalidSubsetError, match="No qualified"):
-        group.build_job(name="something", selection="apple>banana")
+        group.build_job(name="something", selection="apple/banana")
 
 
 @pytest.mark.parametrize(
@@ -980,27 +982,15 @@ def test_asset_group_from_current_module():
     assert len(group.source_assets) == 1
 
 
-def test_default_io_manager():
-    @asset
-    def asset_foo():
-        return "foo"
-
-    group = AssetGroup(assets=[asset_foo])
-    assert (
-        group.resource_defs["io_manager"]  # pylint: disable=comparison-with-callable
-        == fs_io_manager
-    )
-
-
 def test_job_with_reserved_name():
     @graph
     def the_graph():
         pass
 
-    the_job = the_graph.to_job(name="__ASSET_GROUP")
+    the_job = the_graph.to_job(name="__ASSET_JOB")
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Attempted to provide job called __ASSET_GROUP to repository, which is a reserved name.",
+        match="Attempted to provide job called __ASSET_JOB to repository, which is a reserved name.",
     ):
 
         @repository
@@ -1109,9 +1099,9 @@ def test_multiple_partitions_defs():
     jobs = group.get_base_jobs()
     assert len(jobs) == 3
     assert {job_def.name for job_def in jobs} == {
-        "__ASSET_GROUP_0",
-        "__ASSET_GROUP_1",
-        "__ASSET_GROUP_2",
+        "__ASSET_JOB_0",
+        "__ASSET_JOB_1",
+        "__ASSET_JOB_2",
     }
     assert {
         frozenset([node_def.name for node_def in job_def.all_node_defs]) for job_def in jobs
@@ -1210,9 +1200,17 @@ def test_add_asset_groups():
     group1 = AssetGroup(assets=[asset1], source_assets=[source1])
     group2 = AssetGroup(assets=[asset2], source_assets=[source2])
 
-    assert (group1 + group2) == AssetGroup(
-        assets=[asset1, asset2], source_assets=[source1, source2]
-    )
+    added_group = group1 + group2
+    assert len(added_group.assets) == 2
+    assert sorted([asset.asset_key.to_string() for asset in added_group.assets]) == [
+        AssetKey(["asset1"]).to_string(),
+        AssetKey(["asset2"]).to_string(),
+    ]
+
+    assert sorted([asset.key.to_string() for asset in added_group.source_assets]) == [
+        AssetKey(["source1"]).to_string(),
+        AssetKey(["source2"]).to_string(),
+    ]
 
 
 def test_add_asset_groups_different_resources():
@@ -1280,9 +1278,21 @@ def test_to_source_assets():
         yield Output(2, "my_other_out_name")
 
     assert AssetGroup([my_asset, my_multi_asset]).to_source_assets() == [
-        SourceAsset(AssetKey(["my_asset"]), io_manager_key="io_manager"),
-        SourceAsset(AssetKey(["my_asset_name"]), io_manager_key="io_manager"),
-        SourceAsset(AssetKey(["my_other_asset"]), io_manager_key="io_manager"),
+        SourceAsset(
+            AssetKey(["my_asset"]),
+            io_manager_key="io_manager",
+            resource_defs={"io_manager": fs_io_manager},
+        ),
+        SourceAsset(
+            AssetKey(["my_asset_name"]),
+            io_manager_key="io_manager",
+            resource_defs={"io_manager": fs_io_manager},
+        ),
+        SourceAsset(
+            AssetKey(["my_other_asset"]),
+            io_manager_key="io_manager",
+            resource_defs={"io_manager": fs_io_manager},
+        ),
     ]
 
 
@@ -1316,7 +1326,14 @@ def test_build_job_diff_resource_defs():
 
     group = AssetGroup([the_asset, other_asset])
 
-    assert group.build_job("some_name", selection="the_asset").execute_in_process().success
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Conflicting versions of resource with key 'foo' were provided to "
+        "different assets. When constructing a job, all resource definitions "
+        "provided to assets must match by reference equality for a given key.",
+    ):
+
+        group.build_job("some_name", selection="the_asset")
 
 
 def test_repo_asset_group_diff_resource_defs():
@@ -1337,7 +1354,9 @@ def test_repo_asset_group_diff_resource_defs():
     # same key fails
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="had a conflicting version of the same resource key foo. Please resolve this conflict by giving different keys to each resource definition.",
+        match="Conflicting versions of resource with key 'foo' were provided to "
+        "different assets. When constructing a job, all resource definitions "
+        "provided to assets must match by reference equality for a given key.",
     ):
 
         @repository
@@ -1376,6 +1395,6 @@ def test_graph_backed_asset_resources():
     asset_group = AssetGroup([the_asset, other_asset])
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="had a conflicting version of the same resource key foo.",
+        match="Conflicting versions of resource with key 'foo' were provided to different assets. When constructing a job, all resource definitions provided to assets must match by reference equality for a given key.",
     ):
         asset_group.materialize()
