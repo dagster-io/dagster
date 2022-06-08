@@ -475,13 +475,13 @@ def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
         (["+a", "b+"], "start,a,b,c,d", None),
         (["*c", "final"], "b,c,final", None),
         ("*", "start,a,b,c,d,e,f,final", ["core", "models"]),
-        ("core>models>a", "a", ["core", "models"]),
-        ("core>models>b+", "b,c,d", ["core", "models"]),
-        ("+core>models>f", "f,d,e", ["core", "models"]),
-        ("++core>models>f", "f,d,e,c,a,b", ["core", "models"]),
-        ("core>models>start*", "start,a,d,f,final", ["core", "models"]),
-        (["+core>models>a", "core>models>b+"], "start,a,b,c,d", ["core", "models"]),
-        (["*core>models>c", "core>models>final"], "b,c,final", ["core", "models"]),
+        ("core/models/a", "a", ["core", "models"]),
+        ("core/models/b+", "b,c,d", ["core", "models"]),
+        ("+core/models/f", "f,d,e", ["core", "models"]),
+        ("++core/models/f", "f,d,e,c,a,b", ["core", "models"]),
+        ("core/models/start*", "start,a,d,f,final", ["core", "models"]),
+        (["+core/models/a", "core/models/b+"], "start,a,b,c,d", ["core", "models"]),
+        (["*core/models/c", "core/models/final"], "b,c,final", ["core", "models"]),
     ],
 )
 def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi, prefixes):
@@ -830,12 +830,12 @@ def test_asset_group_build_job_selection_multi_component():
         ...
 
     group = AssetGroup([asset1], source_assets=[source_asset])
-    assert group.build_job(name="something", selection="abc>asset1").asset_layer.asset_keys == {
+    assert group.build_job(name="something", selection="abc/asset1").asset_layer.asset_keys == {
         AssetKey(["abc", "asset1"])
     }
 
     with pytest.raises(DagsterInvalidSubsetError, match="No qualified"):
-        group.build_job(name="something", selection="apple>banana")
+        group.build_job(name="something", selection="apple/banana")
 
 
 @pytest.mark.parametrize(
