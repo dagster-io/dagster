@@ -10,6 +10,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
@@ -18,6 +19,7 @@ from typing import (
 
 import dagster._check as check
 from dagster.core.asset_defs.source_asset import SourceAsset
+from dagster.core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.utils import merge_dicts
 
