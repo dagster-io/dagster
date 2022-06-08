@@ -1,7 +1,7 @@
 # isort: skip_file
 # pylint: disable=unnecessary-ellipsis
 
-from dagster import repository, DefaultSensorStatus, SkipReason
+from dagster import repository, DefaultSensorStatus, SkipReason, AssetGroup, asset
 
 
 # start_sensor_job_marker
@@ -43,8 +43,25 @@ def my_directory_sensor():
 
 # end_directory_sensor_marker
 
+
+@asset
+def my_asset():
+    return 1
+
+
+# start_asset_job_sensor_marker
+asset_job = AssetGroup([my_asset]).build_job("asset_job")
+
+
+@sensor(job=asset_job)
+def materializes_asset_sensor():
+    yield RunRequest(...)
+
+
+# end_asset_job_sensor_marker
+
 # start_running_in_code
-@sensor(job=log_file_job, default_status=DefaultSensorStatus.RUNNING)
+@sensor(job=asset_job, default_status=DefaultSensorStatus.RUNNING)
 def my_running_sensor():
     ...
 

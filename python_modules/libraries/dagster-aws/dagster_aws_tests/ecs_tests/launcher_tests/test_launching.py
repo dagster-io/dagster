@@ -10,8 +10,10 @@ from dagster_aws.ecs.launcher import RUNNING_STATUSES, STOPPED_STATUSES
 from dagster_aws.ecs.tasks import TaskMetadata
 
 from dagster._check import CheckError
+from dagster.core.code_pointer import FileCodePointer
 from dagster.core.events import MetadataEntry
 from dagster.core.launcher.base import WorkerStatus
+from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 
 
 @pytest.mark.parametrize("task_long_arn_format", ["enabled", "disabled"])
@@ -415,3 +417,34 @@ def test_status(ecs, instance, workspace, run):
 
     task["lastStatus"] = "foo"
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.UNKNOWN
+
+
+def test_overrides_too_long(
+    instance,
+    workspace,
+    pipeline,
+    external_pipeline,
+):
+
+    large_container_context = {i: "boom" for i in range(10000)}
+
+    mock_pipeline_code_origin = PipelinePythonOrigin(
+        pipeline_name="test",
+        repository_origin=RepositoryPythonOrigin(
+            executable_path="/",
+            code_pointer=FileCodePointer(
+                python_file="foo.py",
+                fn_name="foo",
+            ),
+            container_image="test:latest",
+            container_context=large_container_context,
+        ),
+    )
+
+    run = instance.create_run_for_pipeline(
+        pipeline,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=mock_pipeline_code_origin,
+    )
+
+    instance.launch_run(run.run_id, workspace)

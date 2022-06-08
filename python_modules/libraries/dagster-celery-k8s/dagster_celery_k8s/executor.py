@@ -369,7 +369,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             pod_name,
             component="step_worker",
             labels={
-                "dagster/job": execute_step_args.pipeline_origin.pipeline_name,
+                "dagster/job": pipeline_run.pipeline_name,
                 "dagster/op": step_key,
                 "dagster/run-id": execute_step_args.pipeline_run_id,
             },

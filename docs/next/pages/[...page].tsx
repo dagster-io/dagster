@@ -237,6 +237,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           searchIndex: searchIndex,
           tableOfContents,
           githubLink,
+          asPath,
         },
       },
       revalidate: 600, // In seconds; This enables Incremental Static Regeneration

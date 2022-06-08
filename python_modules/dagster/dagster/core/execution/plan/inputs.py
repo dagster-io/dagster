@@ -162,20 +162,21 @@ class FromSourceAsset(
         from dagster.core.events import DagsterEvent
         from dagster.core.execution.context.output import OutputContext
 
-        input_asset_key = step_context.pipeline_def.asset_layer.asset_key_for_input(
+        asset_layer = step_context.pipeline_def.asset_layer
+
+        input_asset_key = asset_layer.asset_key_for_input(
             self.solid_handle, input_name=self.input_name
         )
         assert input_asset_key is not None
 
-        input_manager_key = step_context.pipeline_def.asset_layer.io_manager_key_for_asset(
-            input_asset_key
-        )
+        input_manager_key = asset_layer.io_manager_key_for_asset(input_asset_key)
 
         op_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
         config_data = op_config.inputs.get(self.input_name) if op_config else None
 
         loader = getattr(step_context.resources, input_manager_key)
         resources = build_resources_for_manager(input_manager_key, step_context)
+        resource_config = step_context.resolved_run_config.resources[input_manager_key].config
         load_input_context = step_context.for_input_manager(
             input_def.name,
             config_data,
@@ -184,7 +185,12 @@ class FromSourceAsset(
             resource_config=step_context.resolved_run_config.resources[input_manager_key].config,
             resources=resources,
             artificial_output_context=OutputContext(
-                resources=resources, asset_info=AssetOutputInfo(key=input_asset_key)
+                resources=resources,
+                asset_info=AssetOutputInfo(key=input_asset_key),
+                name=input_asset_key.path[-1],
+                step_key="none",
+                metadata=asset_layer.metadata_for_asset(input_asset_key),
+                resource_config=resource_config,
             ),
         )
 

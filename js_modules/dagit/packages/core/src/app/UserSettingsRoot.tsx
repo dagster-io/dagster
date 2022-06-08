@@ -105,42 +105,12 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
               ),
             },
             {
-              key: 'Always collapse left navigation',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(FeatureFlag.flagAlwaysCollapseNavigation)}
-                  onChange={() => toggleFlag(FeatureFlag.flagAlwaysCollapseNavigation)}
-                />
-              ),
-            },
-            {
               key: 'Disable WebSockets',
               value: (
                 <Checkbox
                   format="switch"
                   checked={flags.includes(FeatureFlag.flagDisableWebsockets)}
                   onChange={() => toggleFlag(FeatureFlag.flagDisableWebsockets)}
-                />
-              ),
-            },
-            {
-              key: 'New partitions view (experimental)',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(FeatureFlag.flagNewPartitionsView)}
-                  onChange={() => toggleFlag(FeatureFlag.flagNewPartitionsView)}
-                />
-              ),
-            },
-            {
-              key: 'Sectioned left nav (opt-out)',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={!flags.includes(FeatureFlag.flagFlatLeftNav)}
-                  onChange={() => toggleFlag(FeatureFlag.flagFlatLeftNav)}
                 />
               ),
             },

@@ -1,22 +1,29 @@
-import {Box} from '@dagster-io/ui';
+import {Box, Spinner} from '@dagster-io/ui';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {AssetNode} from '../asset-graph/AssetNode';
 import {LiveData, toGraphId} from '../asset-graph/Utils';
-
-import {AssetNodeDefinitionFragment_dependencies} from './types/AssetNodeDefinitionFragment';
+import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 
 export const AssetNodeList: React.FC<{
-  items: AssetNodeDefinitionFragment_dependencies[];
+  items: AssetGraphQuery_assetNodes[] | null;
   liveDataByNode: LiveData;
 }> = ({items, liveDataByNode}) => {
   const history = useHistory();
 
+  if (items === null) {
+    return (
+      <Container flex={{alignItems: 'center', justifyContent: 'center'}}>
+        <Spinner purpose="section" />
+      </Container>
+    );
+  }
+
   return (
     <Container flex={{gap: 4}} padding={{horizontal: 12}}>
-      {items.map(({asset}) => (
+      {items.map((asset) => (
         <AssetNodeWrapper
           key={asset.id}
           onClick={(e) => {
@@ -37,7 +44,7 @@ export const AssetNodeList: React.FC<{
 };
 
 const Container = styled(Box)`
-  height: 124px;
+  height: 144px;
   overflow-x: auto;
   width: 100%;
   white-space: nowrap;
@@ -46,4 +53,5 @@ const Container = styled(Box)`
 const AssetNodeWrapper = styled.div`
   cursor: pointer;
   width: 240px;
+  flex-shrink: 0;
 `;

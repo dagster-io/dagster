@@ -7,10 +7,7 @@ export const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
 
 export enum FeatureFlag {
   flagDebugConsoleLogging = 'flagDebugConsoleLogging',
-  flagAlwaysCollapseNavigation = 'flagAlwaysCollapseNavigation',
   flagDisableWebsockets = 'flagDisableWebsockets',
-  flagNewPartitionsView = 'flagNewPartitionsView',
-  flagFlatLeftNav = 'flagFlatLeftNav',
 }
 
 export const getFeatureFlags: () => FeatureFlag[] = memoize(

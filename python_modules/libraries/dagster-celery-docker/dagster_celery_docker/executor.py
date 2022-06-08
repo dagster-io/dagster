@@ -237,7 +237,7 @@ def create_docker_task(celery_app, **task_kwargs):
         docker_image = (
             docker_config["image"]
             if docker_config.get("image")
-            else execute_step_args.pipeline_origin.repository_origin.container_image
+            else pipeline_run.pipeline_code_origin.repository_origin.container_image
         )
 
         if not docker_image:

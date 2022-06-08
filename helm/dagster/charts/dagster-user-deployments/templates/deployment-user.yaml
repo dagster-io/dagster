@@ -51,13 +51,12 @@ spec:
                 secretKeyRef:
                   name: {{ include "dagsterUserDeployments.postgresql.secretName" $ }}
                   key: postgresql-password
-            {{- if $deployment.includeConfigInLaunchedRuns }}
-            {{- if $deployment.includeConfigInLaunchedRuns.enabled }}
+            {{- $includeConfigInLaunchedRuns := $deployment.includeConfigInLaunchedRuns | default (dict "enabled" true) }}
+            {{- if $includeConfigInLaunchedRuns.enabled }}
             # uses the auto_envvar_prefix of the dagster cli to set the --container-context arg
             # on 'dagster api grpc'
             - name: DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT
               value: {{ include "dagsterUserDeployments.k8sContainerContext" (list $ $deployment) | fromYaml | toJson | quote }}
-            {{- end }}
             {{- end }}
           envFrom:
             - configMapRef:

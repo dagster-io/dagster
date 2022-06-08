@@ -38,9 +38,9 @@ const MenuItem = React.forwardRef<
         {
           "hover:bg-lavender hover:bg-opacity-50 text-blurple": match,
           "hover:text-gray-900 hover:bg-lavender hover:bg-opacity-50": !match,
-          "py-2": lvl <= 2,
           "px-2": lvl === 0,
-          "pl-3 pr-2": lvl === 2,
+          "pl-3 pr-2": lvl <= 1,
+          "py-2": lvl <= 2,
         }
       )}
       href={href}
@@ -64,14 +64,7 @@ const MenuItem = React.forwardRef<
             {Icons[item.icon]}
           </svg>
         )}
-        <span
-          className={cx({
-            "DocSearch-lvl0": lvl === 0 && match,
-            "DocSearch-lvl2": lvl === 2 && match,
-          })}
-        >
-          {item.title}
-        </span>
+        <span>{item.title}</span>
       </div>
 
       {rightIcon && (
@@ -161,11 +154,11 @@ const SecondaryNavigation = () => {
                 href={itemWithPath.path}
                 item={sectionOrItem}
                 match={match}
-                lvl={2}
+                lvl={1}
               />
             ) : (
               <Link href={itemWithPath.path} passHref>
-                <MenuItem item={sectionOrItem} match={match} lvl={2} />
+                <MenuItem item={sectionOrItem} match={match} lvl={1} />
               </Link>
             )}
             {match && sectionOrItem.children && (
@@ -209,13 +202,7 @@ const ThirdLevelNavigation = ({ section }) => {
           }
         )}
       >
-        <span
-          className={cx({
-            "DocSearch-lvl2": section.path === asPathWithoutAnchor,
-          })}
-        >
-          {section.title}
-        </span>
+        <span>{section.title}</span>
       </a>
     </Link>
   );

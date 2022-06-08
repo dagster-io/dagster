@@ -9,7 +9,6 @@ from typing import (
     List,
     Optional,
     Set,
-    Tuple,
     Union,
 )
 
@@ -39,6 +38,7 @@ from .dependency import (
 )
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
+from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue, normalize_metadata
 from .mode import ModeDefinition
 from .node_definition import NodeDefinition
 from .preset import PresetDefinition
@@ -159,6 +159,7 @@ class PipelineDefinition:
         mode_defs: Optional[List[ModeDefinition]] = None,
         preset_defs: Optional[List[PresetDefinition]] = None,
         tags: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         solid_retry_policy: Optional[RetryPolicy] = None,
         graph_def=None,
@@ -166,8 +167,8 @@ class PipelineDefinition:
         version_strategy: Optional[VersionStrategy] = None,
         asset_layer: Optional[AssetLayer] = None,
     ):
-        # If a graph is specificed directly use it
-        if check.opt_inst_param(graph_def, "graph_def", GraphDefinition):
+        # If a graph is specified directly use it
+        if isinstance(graph_def, GraphDefinition):
             self._graph_def = graph_def
             self._name = name or graph_def.name
 
@@ -194,6 +195,10 @@ class PipelineDefinition:
         # same graph may be in multiple pipelines/jobs, keep separate layer
         self._description = check.opt_str_param(description, "description")
         self._tags = validate_tags(tags)
+
+        self._metadata = []
+        if metadata is not None:
+            self._metadata = normalize_metadata(metadata, [])
 
         self._current_level_node_defs = self._graph_def.node_defs
 
@@ -314,6 +319,10 @@ class PipelineDefinition:
     @property
     def tags(self):
         return frozentags(**merge_dicts(self._graph_def.tags, self._tags))
+
+    @property
+    def metadata(self) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
+        return self._metadata
 
     @property
     def description(self):
@@ -826,14 +835,3 @@ def _create_run_config_schema(
         config_type_dict_by_key=config_type_dict_by_key,
         config_mapping=mode_definition.config_mapping,
     )
-
-
-def _add_resource_req(
-    resource_reqs: Dict[str, Tuple[str, Set[str]]],
-    resource_key: str,
-    resource_type: str,
-    requiree_descriptor: str,
-) -> None:
-    if resource_key not in resource_reqs:
-        resource_reqs[resource_key] = (resource_type, set())
-    resource_reqs[resource_key][1].add(requiree_descriptor)

@@ -219,6 +219,25 @@ def register_managed_run_for_test(
     )
 
 
+def wait_for_runs_to_finish(instance, timeout=20, run_tags=None):
+    total_time = 0
+    interval = 0.1
+
+    filters = RunsFilter(tags=run_tags) if run_tags else None
+
+    while True:
+        runs = instance.get_runs(filters)
+        if all([run.is_finished for run in runs]):
+            return
+
+        if total_time > timeout:
+            raise Exception("Timed out")
+
+        time.sleep(interval)
+        total_time += interval
+        interval = interval * 2
+
+
 def poll_for_finished_run(instance, run_id=None, timeout=20, run_tags=None):
     total_time = 0
     interval = 0.01
