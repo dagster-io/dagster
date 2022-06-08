@@ -7,7 +7,7 @@
 Get started with Dagster in just three quick steps:
 
 1. [Install Dagster](#step-1-install-dagster)
-2. [Define an asset](#step-2-define-an-asset)
+2. [Define assets](#step-2-define-assets)
 3. [Materialize the asset](#step-3-materialize-the-asset)
 
 ---
@@ -30,15 +30,20 @@ This installs the latest stable version of the core Dagster packages in your cur
 
 ---
 
-## Step 2: Define an asset
+## Step 2: Define assets
 
-To get started, we'll define a simple data [asset](/concepts/assets/software-defined-assets) that represents a CSV dataset about breakfast cereals.
+To get started, we'll define two simple data [assets](/concepts/assets/software-defined-assets):
+
+- A `cereals` asset that represents a CSV dataset about breakfast cereals, and
+- A `nabisco_cereals` asset, which is [a downstream dependency](/concepts/assets/software-defined-assets#assets-with-dependencies) of `cereals` and only contains cereals manufactured by Nabisco
 
 Copy the following code. In the directory where Dagster is installed, save this into a file named `cereal.py`:
 
-```python file=/guides/dagster/asset_tutorial/cereal.py startafter=start_asset_marker endbefore=end_asset_marker
+```python file=/guides/dagster/asset_tutorial/serial_asset_graph.py
 import csv
+
 import requests
+
 from dagster import asset
 
 
@@ -46,16 +51,20 @@ from dagster import asset
 def cereals():
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
-    cereal_rows = [row for row in csv.DictReader(lines)]
+    return [row for row in csv.DictReader(lines)]
 
-    return cereal_rows
+
+@asset
+def nabisco_cereals(cereals):
+    """Cereals manufactured by Nabisco"""
+    return [row for row in cereals if row["mfr"] == "N"]
 ```
 
 ---
 
-## Step 3: Materialize the asset
+## Step 3: Materialize the assets
 
-Next, you'll materialize the asset. Materialization computes an asset's contents and writes them to persistent storage.
+Next, you'll materialize the assets. Materialization computes an asset's contents and writes them to persistent storage. By default, this is a pickle file on the local system.
 
 There are a few ways to materialize an asset:
 
@@ -84,15 +93,15 @@ There are a few ways to materialize an asset:
    Serving dagit on http://127.0.0.1:3000 in process 70635
    ```
 
-3. Navigate to <http://localhost:3000> in your web browser to view your asset.
+3. Navigate to <http://localhost:3000> in your web browser to view your assets.
 
-4. Click the **Materialize All** button to launch a run that materializes the asset:
+4. Click the **Materialize All** button to launch a run that materializes the assets:
 
    <img src="/images/getting-started/materialize-asset-in-dagit.gif" />
 
 ### Using the Dagster Python API
 
-You can also use the [Dagster Python API](/concepts/ops-jobs-graphs/job-execution#python-apis) materialize the asset as a script.
+You can also use the [Dagster Python API](/concepts/ops-jobs-graphs/job-execution#python-apis) materialize the assets as a script.
 
 Just add a few lines to `cereal.py`, which will executes a run within the Python process:
 
@@ -113,7 +122,7 @@ python cereal.py
 
 ## What's next?
 
-Congrats - you just created and materialized your first Dagster asset! Now that you've done that, what's next?
+Congrats - you just created and materialized your first Dagster assets! Now that you've done that, what's next?
 
 - **Learn about Dagster** with hands-on examples using our [tutorials](/tutorial)
 - **Get the most out of Dagster** by familiarizing yourself with its core [concepts](/concepts)
