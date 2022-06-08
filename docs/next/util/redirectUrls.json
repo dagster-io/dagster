@@ -5,8 +5,8 @@
     "permanent": true
   },
   {
-    "source": "/tutorial/setup",
-    "destination": "/tutorial/intro-tutorial/setup",
+    "source": "/tutorial/intro-tutorial/setup",
+    "destination": "/tutorial/setup",
     "permanent": true
   },
   {
@@ -54,13 +54,11 @@
     "destination": "/tutorial/advanced-tutorial/materializations",
     "permanent": true
   },
-
   {
     "source": "/tutorial/advanced_repositories",
     "destination": "/tutorial/advanced-tutorial/repositories",
     "permanent": true
   },
-
   {
     "source": "/tutorial/advanced_scheduling",
     "destination": "/tutorial/advanced-tutorial/scheduling",
@@ -215,22 +213,22 @@
   },
   {
     "source": "/guides/dagster/asset-tutorial",
-    "destination": "/tutorial/intro-tutorial/assets/defining-an-asset",
+    "destination": "/tutorial/assets/defining-an-asset",
     "permanent": true
   },
   {
     "source": "/guides/dagster/asset-tutorial/asset-graph",
-    "destination": "/tutorial/intro-tutorial/assets/asset-graph",
+    "destination": "/tutorial/assets/asset-graph",
     "permanent": true
   },
   {
     "source": "/guides/dagster/asset-tutorial/defining-an-asset",
-    "destination": "/tutorial/intro-tutorial/assets/defining-an-asset",
+    "destination": "/tutorial/assets/defining-an-asset",
     "permanent": true
   },
   {
     "source": "/guides/dagster/asset-tutorial/testing-assets",
-    "destination": "/tutorial/intro-tutorial/assets/testing-assets",
+    "destination": "/tutorial/assets/testing-assets",
     "permanent": true
   },
   {
@@ -463,27 +461,27 @@
   },
   {
     "source": "/tutorial/intro-tutorial/single-op-job",
-    "destination": "/tutorial/intro-tutorial/ops-jobs/single-op-job",
+    "destination": "/tutorial/ops-jobs/single-op-job",
     "permanent": true
   },
   {
     "source": "/tutorial/intro-tutorial/single-solid-pipeline",
-    "destination": "/tutorial/intro-tutorial/ops-jobs/single-op-job",
+    "destination": "/tutorial/ops-jobs/single-op-job",
     "permanent": true
   },
   {
     "source": "/tutorial/intro-tutorial/connecting-ops",
-    "destination": "/tutorial/intro-tutorial/ops-jobs/connecting-ops",
+    "destination": "/tutorial/ops-jobs/connecting-ops",
     "permanent": true
   },
   {
     "source": "/tutorial/intro-tutorial/connecting-solids",
-    "destination": "/tutorial/intro-tutorial/ops-jobs/connecting-ops",
+    "destination": "/tutorial/ops-jobs/connecting-ops",
     "permanent": true
   },
   {
     "source": "/tutorial/intro-tutorial/testable",
-    "destination": "/tutorial/intro-tutorial/ops-jobs/testable",
+    "destination": "/tutorial/ops-jobs/testable",
     "permanent": true
   },
   {
