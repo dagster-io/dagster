@@ -1109,6 +1109,14 @@ def test_internal_asset_deps_assets():
     }
 
 
+@multi_asset(outs={"a": Out(is_required=False), "b": Out(is_required=False)}, can_subset=True)
+def ab(context, foo):
+    if "a" in context.selected_output_names:
+        yield Output("a", "a")
+    if "b" in context.selected_output_names:
+        yield Output("b", "b")
+
+
 @asset
 def foo():
     return 5
@@ -1134,7 +1142,7 @@ def unconnected():
     pass
 
 
-asset_group = AssetGroup([foo, bar, foo_bar, baz, unconnected])
+asset_group = AssetGroup([foo, ab, bar, foo_bar, baz, unconnected])
 
 
 def test_disconnected_subset():
@@ -1244,6 +1252,41 @@ def test_raise_error_on_incomplete_graph_asset_subset():
     with instance_for_test() as instance:
         with pytest.raises(DagsterInvalidSubsetError, match="complicated_graph"):
             job.execute_in_process(instance=instance, asset_selection=[AssetKey("comments_table")])
+
+
+def test_multi_subset():
+    with instance_for_test() as instance:
+        job = asset_group.build_job("foo")
+        result = job.execute_in_process(
+            instance=instance,
+            asset_selection=[AssetKey("foo"), AssetKey("a")],
+        )
+        materialization_events = sorted(
+            [event for event in result.all_events if event.is_step_materialization],
+            key=lambda event: event.asset_key,
+        )
+
+        assert len(materialization_events) == 2
+        assert materialization_events[0].asset_key == AssetKey("a")
+        assert materialization_events[1].asset_key == AssetKey("foo")
+
+
+def test_multi_all():
+    with instance_for_test() as instance:
+        job = asset_group.build_job("foo")
+        result = job.execute_in_process(
+            instance=instance,
+            asset_selection=[AssetKey("foo"), AssetKey("a"), AssetKey("b")],
+        )
+        materialization_events = sorted(
+            [event for event in result.all_events if event.is_step_materialization],
+            key=lambda event: event.asset_key,
+        )
+
+        assert len(materialization_events) == 3
+        assert materialization_events[0].asset_key == AssetKey("a")
+        assert materialization_events[1].asset_key == AssetKey("b")
+        assert materialization_events[2].asset_key == AssetKey("foo")
 
 
 def test_subset_with_source_asset():
