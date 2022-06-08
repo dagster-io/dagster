@@ -14,7 +14,7 @@ Before we jump in, here's a quick refresher:
 - A [**graph**](/concepts/ops-jobs-graphs/jobs-graphs) is a directed acyclic graph of ops or other graphs, which execute in order and pass data to each other.
 - A [**software-defined asset**](/concepts/assets/software-defined-assets) is a declaration of an asset that should exist and a description of how to compute it: the op or graph that needs to run and the upstream assets that it should run on.
 
-**Software-defined assets aren't a replacement for Dagster's core computational concepts**. Think of them as a top layer that links ops, graphs, and jobs to the long-lived objects they interact with.
+**Software-defined assets aren't a replacement for Dagster's core computational concepts** - ops are, in fact, the core unit of computation that occurs **within an asset**. Think of them as a top layer that links ops, graphs, and jobs to the long-lived objects they interact with.
 
 ---
 
