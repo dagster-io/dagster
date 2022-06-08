@@ -165,7 +165,7 @@ export const AssetTable = ({
 const AssetEmptyRow = () => {
   return (
     <tr>
-      <td colSpan={4}>
+      <td colSpan={6}>
         <Box flex={{justifyContent: 'center', alignItems: 'center'}}>
           <Box margin={{left: 8}}>No assets to display</Box>
         </Box>
