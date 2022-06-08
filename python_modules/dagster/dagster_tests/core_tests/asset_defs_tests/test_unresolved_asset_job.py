@@ -1,5 +1,6 @@
-import pytest
 from typing import List
+
+import pytest
 
 from dagster import (
     AssetKey,
@@ -10,15 +11,15 @@ from dagster import (
     IOManager,
     Out,
     Output,
+    define_asset_job,
     graph,
     in_process_executor,
     io_manager,
     op,
-    define_asset_job,
 )
-from dagster.core.execution.with_resources import with_resources
 from dagster.core.asset_defs import asset, multi_asset
 from dagster.core.errors import DagsterInvalidSubsetError
+from dagster.core.execution.with_resources import with_resources
 from dagster.core.test_utils import instance_for_test
 
 

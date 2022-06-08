@@ -78,12 +78,6 @@ class UpstreamAssetSelection(AssetSelection):
         self.depth = depth
 
 
-class UpstreamAssetSelection(AssetSelection):
-    def __init__(self, child: AssetSelection, *, depth: Optional[int] = None):
-        self.children = (child,)
-        self.depth = depth
-
-
 # ########################
 # ##### RESOLUTION
 # ########################
