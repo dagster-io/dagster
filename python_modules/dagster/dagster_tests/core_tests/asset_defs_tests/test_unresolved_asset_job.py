@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 
 from dagster import (
@@ -18,6 +16,7 @@ from dagster import (
     op,
 )
 from dagster.core.asset_defs import asset, multi_asset
+from dagster.core.asset_defs.load_assets_from_modules import prefix_assets
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.execution.with_resources import with_resources
 from dagster.core.test_utils import instance_for_test
@@ -32,31 +31,6 @@ def _all_asset_keys(result):
     ret = {mat.asset_key for mat in mats}
     assert len(mats) == len(ret)
     return ret
-
-
-def _apply_prefix(assets_defs, key_prefix):
-    asset_keys = {asset_key for assets_def in assets_defs for asset_key in assets_def.asset_keys}
-
-    result_assets: List[AssetsDefinition] = []
-    for assets_def in assets_defs:
-        output_asset_key_replacements = {
-            asset_key: AssetKey([key_prefix] + asset_key.path)
-            for asset_key in assets_def.asset_keys
-        }
-        input_asset_key_replacements = {}
-        for dep_asset_key in assets_def.dependency_asset_keys:
-            if dep_asset_key in asset_keys:
-                input_asset_key_replacements[dep_asset_key] = AssetKey(
-                    (key_prefix, *dep_asset_key.path)
-                )
-
-        result_assets.append(
-            assets_def.with_replaced_asset_keys(
-                output_asset_key_replacements=output_asset_key_replacements,
-                input_asset_key_replacements=input_asset_key_replacements,
-            )
-        )
-    return result_assets
 
 
 def asset_aware_io_manager():
@@ -351,7 +325,7 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
     prefixed_assets = _get_assets_defs(use_multi=use_multi, allow_subset=use_multi)
     # apply prefixes
     for prefix in reversed(prefixes or []):
-        prefixed_assets = _apply_prefix(prefixed_assets, prefix)
+        prefixed_assets = prefix_assets(prefixed_assets, prefix)
 
     final_assets = with_resources(
         prefixed_assets,
