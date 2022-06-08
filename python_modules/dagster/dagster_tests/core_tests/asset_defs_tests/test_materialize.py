@@ -5,15 +5,22 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetsDefinition,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
+    GraphOut,
     IOManager,
     MetadataValue,
+    Out,
+    Output,
     ResourceDefinition,
     SourceAsset,
     asset,
+    graph,
     io_manager,
     materialize,
+    multi_asset,
+    op,
     with_resources,
 )
 from dagster.core.test_utils import instance_for_test
@@ -143,3 +150,79 @@ def test_materialize_source_asset_conflicts():
 
 def test_materialize_no_assets():
     assert materialize([]).success
+
+
+def test_materialize_graph_backed_asset():
+    @asset
+    def a():
+        return "a"
+
+    @asset
+    def b():
+        return "b"
+
+    @op
+    def double_string(s):
+        return s * 2
+
+    @op
+    def combine_strings(s1, s2):
+        return s1 + s2
+
+    @graph
+    def create_cool_thing(a, b):
+        da = double_string(double_string(a))
+        db = double_string(b)
+        return combine_strings(da, db)
+
+    cool_thing_asset = AssetsDefinition(
+        asset_keys_by_input_name={"a": AssetKey("a"), "b": AssetKey("b")},
+        asset_keys_by_output_name={"result": AssetKey("cool_thing")},
+        node_def=create_cool_thing,
+    )
+
+    result = materialize([cool_thing_asset, a, b])
+    assert result.success
+    assert result.output_for_node("create_cool_thing.combine_strings") == "aaaabb"
+
+
+def test_materialize_multi_asset():
+    @op
+    def upstream_op():
+        return "foo"
+
+    @op(out={"o1": Out(), "o2": Out()})
+    def two_outputs(upstream_op):
+        o1 = upstream_op
+        o2 = o1 + "bar"
+        return o1, o2
+
+    @graph(out={"o1": GraphOut(), "o2": GraphOut()})
+    def thing():
+        o1, o2 = two_outputs(upstream_op())
+        return (o1, o2)
+
+    thing_asset = AssetsDefinition(
+        asset_keys_by_input_name={},
+        asset_keys_by_output_name={"o1": AssetKey("thing"), "o2": AssetKey("thing_2")},
+        node_def=thing,
+        asset_deps={AssetKey("thing"): set(), AssetKey("thing_2"): {AssetKey("thing")}},
+    )
+
+    @multi_asset(
+        outs={
+            "my_out_name": Out(metadata={"foo": "bar"}),
+            "my_other_out_name": Out(metadata={"bar": "foo"}),
+        },
+        internal_asset_deps={
+            "my_out_name": {AssetKey("my_other_out_name")},
+            "my_other_out_name": {AssetKey("thing")},
+        },
+    )
+    def multi_asset_with_internal_deps(thing):  # pylint: disable=unused-argument
+        yield Output(1, "my_out_name")
+        yield Output(2, "my_other_out_name")
+
+    result = materialize([thing_asset, multi_asset_with_internal_deps])
+    result.output_for_node("multi_asset_with_internal_deps", "my_out_name") == 1
+    result.output_for_node("multi_asset_with_internal_deps", "my_other_out_name") == 2
