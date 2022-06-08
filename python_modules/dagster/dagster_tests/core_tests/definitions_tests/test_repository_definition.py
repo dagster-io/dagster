@@ -959,7 +959,7 @@ def test_source_asset_resource_conflicts():
     ):
 
         @repository
-        def the_repo():
+        def other_repo():
             return [other_source, the_source]
 
 
