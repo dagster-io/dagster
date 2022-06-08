@@ -1,11 +1,12 @@
 import {gql} from '@apollo/client';
 import {Colors, Icon, Tooltip, FontFamily, Box, CaptionMono, Spinner} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
-import React, {CSSProperties} from 'react';
+import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
+import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {NodeHighlightColors} from '../graph/OpNode';
 import {OpTags} from '../graph/OpTags';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
@@ -21,6 +22,7 @@ const MISSING_LIVE_DATA = {
   inProgressRunIds: [],
   runWhichFailedToMaterialize: null,
   lastMaterialization: null,
+  stepKey: '',
 };
 
 export const AssetNode: React.FC<{
@@ -108,7 +110,7 @@ export const AssetNode: React.FC<{
           <StatsRow>
             <span>Latest Run</span>
             <CaptionMono>
-              <AssetLatestRunWithNotices liveData={liveData} stepKey={stepKey} />
+              <AssetLatestRunWithNotices liveData={liveData} />
             </CaptionMono>
           </StatsRow>
         </Stats>
@@ -135,23 +137,16 @@ export const AssetNode: React.FC<{
 
 export const AssetNodeMinimal: React.FC<{
   selected: boolean;
-  style?: CSSProperties;
-}> = ({selected, style, children}) => {
+  definition: AssetNodeFragment;
+}> = ({selected, definition}) => {
   return (
-    <AssetNodeContainer $selected={selected} style={{position: 'absolute', borderRadius: 12}}>
-      <AssetNodeBox
-        $selected={selected}
-        style={{
-          border: `4px solid ${Colors.Blue200}`,
-          borderRadius: 10,
-          position: 'absolute',
-          inset: 4,
-          ...style,
-        }}
-      >
-        {children}
-      </AssetNodeBox>
-    </AssetNodeContainer>
+    <MinimalAssetNodeContainer $selected={selected}>
+      <MinimalAssetNodeBox $selected={selected}>
+        <MinimalName style={{fontSize: 28}}>
+          {withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {maxLength: 17})}
+        </MinimalName>
+      </MinimalAssetNodeBox>
+    </MinimalAssetNodeContainer>
   );
 };
 
@@ -188,7 +183,9 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
 export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeFragment on AssetNode {
     id
+    ...AssetNodeConfigFragment
     graphName
+    jobNames
     opNames
     description
     partitionDefinition
@@ -205,6 +202,7 @@ export const ASSET_NODE_FRAGMENT = gql`
       }
     }
   }
+  ${ASSET_NODE_CONFIG_FRAGMENT}
 `;
 
 const BoxColors = {
@@ -226,7 +224,7 @@ const AssetNodeContainer = styled.div<{$selected: boolean}>`
   margin-bottom: 2px;
 `;
 
-export const AssetNodeBox = styled.div<{$selected: boolean}>`
+const AssetNodeBox = styled.div<{$selected: boolean}>`
   border: 2px solid ${(p) => (p.$selected ? Colors.Blue500 : Colors.Blue200)};
   background: ${BoxColors.Stats};
   border-radius: 5px;
@@ -248,7 +246,22 @@ const Name = styled.div`
   gap: 4px;
 `;
 
-export const NameMinimal = styled(Name)`
+const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
+  position: absolute;
+  border-radius: 12px;
+  outline-offset: 2px;
+  outline-width: 4px;
+`;
+
+const MinimalAssetNodeBox = styled(AssetNodeBox)`
+  background: ${Colors.White};
+  border: 4px solid ${Colors.Blue200};
+  border-radius: 10px;
+  position: absolute;
+  inset: 4px;
+`;
+
+const MinimalName = styled(Name)`
   font-weight: 600;
   white-space: nowrap;
   position: absolute;
@@ -300,10 +313,14 @@ const UpstreamNotice = styled.div`
 
 export const AssetLatestRunWithNotices: React.FC<{
   liveData?: LiveDataForNode;
-  stepKey: string;
-}> = ({liveData, stepKey}) => {
-  const {lastMaterialization, unstartedRunIds, inProgressRunIds, runWhichFailedToMaterialize} =
-    liveData || MISSING_LIVE_DATA;
+}> = ({liveData}) => {
+  const {
+    lastMaterialization,
+    unstartedRunIds,
+    inProgressRunIds,
+    runWhichFailedToMaterialize,
+    stepKey,
+  } = liveData || MISSING_LIVE_DATA;
 
   return inProgressRunIds?.length > 0 ? (
     <Box flex={{gap: 4, alignItems: 'center'}}>

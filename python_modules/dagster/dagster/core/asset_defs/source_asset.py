@@ -10,6 +10,9 @@ from dagster.core.definitions.metadata import (
     normalize_metadata,
 )
 from dagster.core.definitions.partition import PartitionsDefinition
+from dagster.core.definitions.resource_requirement import ResourceAddable
+from dagster.core.definitions.utils import validate_group_name
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import IOManagerDefinition
 
 
@@ -23,8 +26,10 @@ class SourceAsset(
             ("io_manager_def", Optional[IOManagerDefinition]),
             ("description", Optional[str]),
             ("partitions_def", Optional[PartitionsDefinition]),
+            ("group_name", str),
         ],
-    )
+    ),
+    ResourceAddable,
 ):
     """A SourceAsset represents an asset that will be loaded by (but not updated by) Dagster.
 
@@ -48,11 +53,13 @@ class SourceAsset(
         io_manager_def: Optional[IOManagerDefinition] = None,
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+        _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        group_name: Optional[str] = None,
     ):
 
         key = AssetKey.from_coerceable(key)
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        metadata_entries = normalize_metadata(metadata, [], allow_invalid=True)
+        metadata_entries = _metadata_entries or normalize_metadata(metadata, [], allow_invalid=True)
         return super().__new__(
             cls,
             key=key,
@@ -65,6 +72,7 @@ class SourceAsset(
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
+            group_name=validate_group_name(group_name),
         )
 
     @property
@@ -77,3 +85,22 @@ class SourceAsset(
             return "io_manager"
         source_asset_path = "__".join(self.key.path)
         return self.io_manager_key or f"{source_asset_path}__io_manager"
+
+    def with_resources(self, resource_defs) -> "SourceAsset":
+        if self.io_manager_def:
+            return self
+
+        io_manager_def = resource_defs.get(self.get_io_manager_key())
+        if not io_manager_def and self.get_io_manager_key() != "io_manager":
+            raise DagsterInvalidDefinitionError(
+                f"SourceAsset with asset key {self.key} requires IO manager with key '{self.get_io_manager_key()}', but none was provided."
+            )
+
+        return SourceAsset(
+            key=self.key,
+            io_manager_def=io_manager_def,
+            io_manager_key=self.get_io_manager_key(),
+            description=self.description,
+            partitions_def=self.partitions_def,
+            _metadata_entries=self.metadata_entries,
+        )

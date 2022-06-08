@@ -1159,7 +1159,7 @@ def test_input_values_override_default():
     assert result.output_value() == 6
 
 
-def test_ounsatisfied_input_nested():
+def test_unsatisfied_input_nested():
     @op
     def ingest(x: datetime) -> str:
         return str(x)

@@ -1,5 +1,5 @@
 import warnings
-from typing import AbstractSet, Dict, Iterable, Mapping, Optional, Sequence, Set, cast
+from typing import AbstractSet, Dict, Iterable, Iterator, Mapping, Optional, Sequence, Set, cast
 
 import dagster._check as check
 from dagster.core.definitions import (
@@ -11,13 +11,20 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
+from dagster.core.definitions.utils import validate_group_name
+from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning, experimental
 
+from ..definitions.resource_requirement import (
+    ResourceAddable,
+    ResourceRequirement,
+    ensure_requirements_satisfied,
+)
 from .partition_mapping import PartitionMapping
 from .source_asset import SourceAsset
 
 
-class AssetsDefinition:
+class AssetsDefinition(ResourceAddable):
     def __init__(
         self,
         asset_keys_by_input_name: Mapping[str, AssetKey],
@@ -63,13 +70,24 @@ class AssetsDefinition:
             f"expected keys: {all_asset_keys}",
         )
         self._resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
-        self._group_names = check.opt_mapping_param(group_names, "group_names")
+
+        group_names = check.mapping_param(group_names, "group_names") if group_names else {}
+        self._group_names = {}
+        # assets that don't have a group name get a DEFAULT_GROUP_NAME
+        for key in all_asset_keys:
+            group_name = group_names.get(key)
+            self._group_names[key] = validate_group_name(group_name)
 
         if selected_asset_keys is not None:
             self._selected_asset_keys = selected_asset_keys
         else:
             self._selected_asset_keys = all_asset_keys
         self._can_subset = can_subset
+
+        self._metadata_by_asset_key = {
+            asset_key: node_def.resolve_output_to_origin(output_name, None)[0].metadata
+            for output_name, asset_key in asset_keys_by_output_name.items()
+        }
 
     def __call__(self, *args, **kwargs):
         return self._node_def(*args, **kwargs)
@@ -220,6 +238,10 @@ class AssetsDefinition:
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         return self._partitions_def
 
+    @property
+    def metadata_by_asset_key(self):
+        return self._metadata_by_asset_key
+
     def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
         if self._partitions_def is None:
             check.failed("Asset is not partitioned")
@@ -309,6 +331,35 @@ class AssetsDefinition:
             )
 
         return result
+
+    def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
+        yield from self.node_def.get_resource_requirements()  # type: ignore[attr-defined]
+        for source_key, resource_def in self.resource_defs.items():
+            yield from resource_def.get_resource_requirements(outer_context=source_key)
+
+    def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
+
+        merged_resource_defs = merge_dicts(resource_defs, self.resource_defs)
+        ensure_requirements_satisfied(
+            merged_resource_defs,
+            [
+                requirement
+                for requirement in self.get_resource_requirements()
+                if requirement.key != "io_manager"
+            ],
+        )
+
+        return AssetsDefinition(
+            asset_keys_by_input_name=self._asset_keys_by_input_name,
+            asset_keys_by_output_name=self._asset_keys_by_output_name,
+            node_def=self.node_def,
+            partitions_def=self._partitions_def,
+            partition_mappings=self._partition_mappings,
+            asset_deps=self._asset_deps,
+            selected_asset_keys=self._selected_asset_keys,
+            can_subset=self._can_subset,
+            resource_defs=merged_resource_defs,
+        )
 
 
 def _infer_asset_keys_by_input_names(

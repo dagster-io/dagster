@@ -219,9 +219,7 @@ def dagster_event_sequence_for_step(
     try:
         if step_context.step_launcher and not force_local_execution:
             # info all on step_context - should deprecate second arg
-            step_events = step_context.step_launcher.launch_step(
-                step_context, step_context.previous_attempt_count
-            )
+            step_events = step_context.step_launcher.launch_step(step_context)
         else:
             step_events = core_dagster_event_sequence_for_step(step_context)
 

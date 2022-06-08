@@ -25,7 +25,7 @@ from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils.backcompat import ExperimentalWarning
 
 from ..errors import DagsterInvalidDefinitionError
-from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
+from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle, SolidOutputHandle
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition
@@ -99,6 +99,42 @@ def _resolve_input_to_destinations(
             handle=NodeHandle(mapping.maps_to.solid_name, parent=handle),
         )
     return all_destinations
+
+
+def _resolve_output_to_destinations(output_name, node_def, handle) -> Sequence[NodeInputHandle]:
+    node_input_handles: List[NodeInputHandle] = []
+    if not isinstance(node_def, GraphDefinition):
+        # must be in the op definition
+        return node_input_handles
+
+    for mapping in node_def.output_mappings:
+        if mapping.definition.name != output_name:
+            continue
+        output_pointer = mapping.maps_from
+        output_node = node_def.solid_named(output_pointer.solid_name)
+
+        node_input_handles.extend(
+            _resolve_output_to_destinations(
+                output_pointer.output_name,
+                output_node.definition,
+                NodeHandle(output_pointer.solid_name, parent=handle),
+            )
+        )
+
+        output_def = output_node.definition.output_def_named(output_pointer.output_name)
+        downstream_input_handles = (
+            node_def.dependency_structure.output_to_downstream_inputs_for_solid(
+                output_pointer.solid_name
+            ).get(SolidOutputHandle(output_node, output_def), [])
+        )
+        for input_handle in downstream_input_handles:
+            node_input_handles.append(
+                NodeInputHandle(
+                    NodeHandle(input_handle.solid_name, parent=handle), input_handle.input_name
+                )
+            )
+
+    return node_input_handles
 
 
 def _build_graph_dependencies(
@@ -369,10 +405,10 @@ class AssetLayer:
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
         dependency_node_handles_by_asset_key: Optional[Mapping[AssetKey, Set[NodeHandle]]] = None,
         assets_defs: Optional[List["AssetsDefinition"]] = None,
-        source_asset_defs: Optional[Sequence[Union["SourceAsset", "AssetsDefinition"]]] = None,
+        source_asset_defs: Optional[Sequence["SourceAsset"]] = None,
         io_manager_keys_by_asset_key: Optional[Mapping[AssetKey, str]] = None,
     ):
-        from dagster.core.asset_defs import AssetsDefinition, SourceAsset
+        from dagster.core.asset_defs import SourceAsset
 
         self._asset_keys_by_node_input_handle = check.opt_dict_param(
             asset_keys_by_node_input_handle,
@@ -395,10 +431,17 @@ class AssetLayer:
             key_type=AssetKey,
             value_type=Set,
         )
-        self._assets_defs = check.opt_list_param(assets_defs, "assets_defs")
-        self._source_asset_defs = check.opt_list_param(
-            source_asset_defs, "source_assets", of_type=(SourceAsset, AssetsDefinition)
-        )
+        self._source_assets_by_key = {
+            source_asset.key: source_asset
+            for source_asset in check.opt_list_param(
+                source_asset_defs, "source_assets_defs", of_type=SourceAsset
+            )
+        }
+        self._assets_defs_by_key = {
+            key: assets_def
+            for assets_def in check.opt_list_param(assets_defs, "assets_defs")
+            for key in assets_def.asset_keys
+        }
 
         # keep an index from node handle to all keys expected to be generated in that node
         self._asset_keys_by_node_handle: Dict[NodeHandle, Set[AssetKey]] = defaultdict(set)
@@ -480,6 +523,15 @@ class AssetLayer:
                     is_required=asset_key in assets_def.asset_keys,
                 )
                 io_manager_by_asset[asset_key] = inner_output_def.io_manager_key
+
+                asset_key_by_input.update(
+                    {
+                        input_handle: asset_key
+                        for input_handle in _resolve_output_to_destinations(
+                            output_name, assets_def.node_def, node_handle
+                        )
+                    }
+                )
         return AssetLayer(
             asset_keys_by_node_input_handle=asset_key_by_input,
             asset_info_by_node_output_handle=asset_info_by_output,
@@ -515,6 +567,14 @@ class AssetLayer:
     def asset_keys(self) -> Iterable[AssetKey]:
         return self._dependency_node_handles_by_asset_key.keys()
 
+    @property
+    def source_assets_by_key(self) -> Mapping[AssetKey, "SourceAsset"]:
+        return self._source_assets_by_key
+
+    @property
+    def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+        return self._assets_defs_by_key
+
     def asset_keys_for_node(self, node_handle: NodeHandle) -> AbstractSet[AssetKey]:
         return self._asset_keys_by_node_handle[node_handle]
 
@@ -524,6 +584,15 @@ class AssetLayer:
     def io_manager_key_for_asset(self, asset_key: AssetKey) -> str:
         return self._io_manager_keys_by_asset_key.get(asset_key, "io_manager")
 
+    def metadata_for_asset(self, asset_key: AssetKey) -> Optional[Dict[str, object]]:
+        if asset_key in self._source_assets_by_key:
+            metadata = self._source_assets_by_key[asset_key].metadata
+            return {key: value.value for key, value in metadata.items()} if metadata else None
+        elif asset_key in self._assets_defs_by_key:
+            return self._assets_defs_by_key[asset_key].metadata_by_asset_key[asset_key]
+        else:
+            check.failed(f"Couldn't find key {asset_key}")
+
     def asset_info_for_output(
         self, node_handle: NodeHandle, output_name: str
     ) -> Optional[AssetOutputInfo]:
@@ -532,16 +601,26 @@ class AssetLayer:
         )
 
     def group_names_by_assets(self) -> Mapping[AssetKey, str]:
-        group_names: Dict[AssetKey, str] = {}
-        for assets_def in self._assets_defs:
-            group_names.update(assets_def.group_names)
+        group_names: Dict[AssetKey, str] = {
+            key: assets_def.group_names[key]
+            for key, assets_def in self._assets_defs_by_key.items()
+            if key in assets_def.group_names
+        }
+
+        group_names.update(
+            {
+                key: source_asset_def.group_name
+                for key, source_asset_def in self._source_assets_by_key.items()
+            }
+        )
+
         return group_names
 
 
 def build_asset_selection_job(
     name: str,
-    assets: Sequence["AssetsDefinition"],
-    source_assets: Sequence[Union["AssetsDefinition", "SourceAsset"]],
+    assets: Iterable["AssetsDefinition"],
+    source_assets: Iterable["SourceAsset"],
     executor_def: ExecutorDefinition,
     resource_defs: Mapping[str, ResourceDefinition],
     description: str,
@@ -556,10 +635,8 @@ def build_asset_selection_job(
             assets, source_assets, asset_selection
         )
     else:
-        included_assets = cast(List["AssetsDefinition"], assets)
-        # Slice [:] serves as a copy constructor, so that we don't
-        # accidentally add to the original list
-        excluded_assets = source_assets[:]
+        included_assets = cast(Iterable["AssetsDefinition"], assets)
+        excluded_assets = list(source_assets)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=ExperimentalWarning)
@@ -578,10 +655,10 @@ def build_asset_selection_job(
 
 
 def _subset_assets_defs(
-    assets: Sequence["AssetsDefinition"],
-    source_assets: Sequence[Union["AssetsDefinition", "SourceAsset"]],
+    assets: Iterable["AssetsDefinition"],
+    source_assets: Iterable["SourceAsset"],
     selected_asset_keys: AbstractSet[AssetKey],
-) -> Tuple[Sequence["AssetsDefinition"], Sequence[Union["AssetsDefinition", "SourceAsset"]]]:
+) -> Tuple[Iterable["AssetsDefinition"], Sequence[Union["AssetsDefinition", "SourceAsset"]]]:
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
     """
@@ -614,6 +691,9 @@ def _subset_assets_defs(
                 "asset keys produced by this asset."
             )
 
-    all_excluded_assets = [*excluded_assets, *source_assets]
+    all_excluded_assets: Sequence[Union["AssetsDefinition", "SourceAsset"]] = [
+        *excluded_assets,
+        *source_assets,
+    ]
 
     return list(included_assets), all_excluded_assets

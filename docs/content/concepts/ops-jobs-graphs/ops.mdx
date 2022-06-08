@@ -104,15 +104,52 @@ def my_output_op():
 
 To define multiple outputs, or to use a different output name than "result", you can provide a dictionary of <PyObject object="Out" pluralize /> to the <PyObject object="op" decorator /> decorator.
 
-When you have more than one output, you can return a tuple of values, one for each output.
-
 ```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_multi_output_op_marker endbefore=end_multi_output_op_marker
 @op(out={"first_output": Out(), "second_output": Out()})
 def my_multi_output_op():
     return 5, 6
 ```
 
+Return type annotations can be used directly on ops. For a single output, the return annotation will be used directly for type checking.
+
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_return_annotation endbefore=end_return_annotation
+from dagster import op
+
+
+@op
+def return_annotation_op() -> int:
+    return 5
+```
+
+If there are multiple outputs, a tuple annotation can be specified. Each inner type of the tuple annotation should correspond to an output in the op.
+
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_tuple_return endbefore=end_tuple_return
+from dagster import op
+from typing import Tuple
+
+
+@op(out={"int_output": Out(), "str_output": Out()})
+def my_multiple_output_annotation_op() -> Tuple[int, str]:
+    return (5, "foo")
+```
+
+Outputs are expected to follow the order they are specified in the op's `out` dictionary. In the above example, the `int` output corresponds to `int_output`, and the `str` output corresponds to `str_output`.
+
+Note that if you would like to specify a single tuple output and still utilize type annotations, this can be done by providing either a single <PyObject object="Out" /> to the op, or none.
+
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_single_output_tuple endbefore=end_single_output_tuple
+from dagster import op
+from typing import Tuple
+
+
+@op
+def my_single_tuple_output_op() -> Tuple[int, str]:
+    return (5, "foo")  # Will be viewed as one output
+```
+
 Like inputs, outputs can also have [Dagster Types](/concepts/types).
+
+While many use cases can be served using built-in python annotations, <PyObject object="Output"/> and <PyObject object="DynamicOutput"/> objects unlock additional functionality. Check out the docs on [Op Outputs](/concepts/ops-jobs-graphs/op-events#output-objects) to learn more.
 
 ### Op Context
 

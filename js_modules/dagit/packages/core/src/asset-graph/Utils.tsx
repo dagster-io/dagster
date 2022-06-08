@@ -1,24 +1,21 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 
-import {AssetNodeDefinitionFragment} from '../assets/types/AssetNodeDefinitionFragment';
-
 import {
-  AssetGraphLiveQuery_assetsLatestInfo,
   AssetGraphLiveQuery_assetsLatestInfo_latestRun,
   AssetGraphLiveQuery_assetNodes_assetMaterializations,
+  AssetGraphLiveQuery,
 } from './types/AssetGraphLiveQuery';
 import {
   AssetGraphQuery_assetNodes,
   AssetGraphQuery_assetNodes_assetKey,
 } from './types/AssetGraphQuery';
-import {AssetNodeLiveFragment} from './types/AssetNodeLiveFragment';
 type AssetNode = AssetGraphQuery_assetNodes;
 type AssetKey = AssetGraphQuery_assetNodes_assetKey;
 
-export const __ASSET_GROUP_PREFIX = '__ASSET_GROUP';
+export const __ASSET_JOB_PREFIX = '__ASSET_JOB';
 
 export function isHiddenAssetGroupJob(jobName: string) {
-  return jobName.startsWith(__ASSET_GROUP_PREFIX);
+  return jobName.startsWith(__ASSET_JOB_PREFIX);
 }
 
 // IMPORTANT: We use this, rather than AssetNode.id throughout this file because
@@ -29,7 +26,7 @@ export function isHiddenAssetGroupJob(jobName: string) {
 // because JSON.stringify's whitespace behavior is different than Python's.
 //
 export type GraphId = string;
-export const toGraphId = (key: AssetKey): GraphId => JSON.stringify(key.path);
+export const toGraphId = (key: {path: string[]}): GraphId => JSON.stringify(key.path);
 
 export interface GraphNode {
   id: GraphId;
@@ -83,47 +80,6 @@ export const buildGraphData = (assetNodes: AssetNode[]) => {
   return data;
 };
 
-export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragment) => {
-  const id = toGraphId(assetNode.assetKey);
-  const graphData: GraphData = {
-    downstream: {
-      [id]: {},
-    },
-    nodes: {
-      [id]: {
-        id,
-        assetKey: assetNode.assetKey,
-        definition: {...assetNode, dependencyKeys: [], dependedByKeys: []},
-      },
-    },
-    upstream: {
-      [id]: {},
-    },
-  };
-
-  for (const {asset} of assetNode.dependencies) {
-    const depId = toGraphId(asset.assetKey);
-    graphData.upstream[id][depId] = true;
-    graphData.downstream[depId] = {...graphData.downstream[depId], [id]: true};
-    graphData.nodes[depId] = {
-      id: depId,
-      assetKey: asset.assetKey,
-      definition: {...asset, dependencyKeys: [], dependedByKeys: []},
-    };
-  }
-  for (const {asset} of assetNode.dependedBy) {
-    const depId = toGraphId(asset.assetKey);
-    graphData.upstream[depId] = {...graphData.upstream[depId], [id]: true};
-    graphData.downstream[id][depId] = true;
-    graphData.nodes[depId] = {
-      id: depId,
-      assetKey: asset.assetKey,
-      definition: {...asset, dependencyKeys: [], dependedByKeys: []},
-    };
-  }
-  return graphData;
-};
-
 export const graphHasCycles = (graphData: GraphData) => {
   const nodes = new Set(Object.keys(graphData.nodes));
   const search = (stack: string[], node: string): boolean => {
@@ -155,6 +111,7 @@ export const buildSVGPath = pathVerticalDiagonal({
 export type ComputeStatus = 'good' | 'old' | 'none' | 'unknown';
 
 export interface LiveDataForNode {
+  stepKey: string;
   unstartedRunIds: string[]; // run in progress and step not started
   inProgressRunIds: string[]; // run in progress and step in progress
   runWhichFailedToMaterialize: AssetGraphLiveQuery_assetsLatestInfo_latestRun | null;
@@ -223,20 +180,11 @@ export const buildComputeStatusData = (graph: GraphData, liveData: LiveData) => 
   return statuses;
 };
 
-export const buildLiveData = (
-  assets: AssetDefinitionsForLiveData,
-  nodes: AssetNodeLiveFragment[],
-  assetsLatestInfo: AssetGraphLiveQuery_assetsLatestInfo[],
-) => {
+export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQuery) => {
   const data: LiveData = {};
 
-  for (const liveNode of nodes) {
+  for (const liveNode of assetNodes) {
     const graphId = toGraphId(liveNode.assetKey);
-    const definition = assets[graphId]?.definition;
-    if (!definition) {
-      console.warn(`buildLiveData could not find the definition matching ${graphId}`);
-      continue;
-    }
     const lastMaterialization = liveNode.assetMaterializations[0] || null;
 
     const assetLiveRuns = assetsLatestInfo.find(
@@ -253,6 +201,7 @@ export const buildLiveData = (
 
     data[graphId] = {
       lastMaterialization,
+      stepKey: liveNode.opNames[0],
       inProgressRunIds: assetLiveRuns?.inProgressRunIds || [],
       unstartedRunIds: assetLiveRuns?.unstartedRunIds || [],
       runWhichFailedToMaterialize,

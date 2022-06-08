@@ -31,6 +31,3 @@ dependency on an old version, via ``snowflake-connector-python``.
 
 .. autoconfigurable:: dagster_azure.adls2.adls2_pickle_io_manager
   :annotation: IOManagerDefinition
-
-.. autoconfigurable:: dagster_azure.adls2.adls2_pickle_asset_io_manager
-  :annotation: IOManagerDefinition

@@ -166,6 +166,12 @@ export enum TerminateRunPolicy {
   SAFE_TERMINATE = "SAFE_TERMINATE",
 }
 
+export interface AssetGroupSelector {
+  groupName: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 export interface AssetKeyInput {
   path: string[];
 }

@@ -117,6 +117,9 @@ const ROOT_WORKSPACE_QUERY = gql`
                   mode
                   pipelineName
                 }
+                assetGroups {
+                  groupName
+                }
                 ...RepositoryInfoFragment
               }
             }

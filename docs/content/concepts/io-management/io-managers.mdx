@@ -139,13 +139,36 @@ The <PyObject module="dagster" object="io_manager" /> decorator behaves nearly i
 
 The provided `context` argument for `handle_output` is an <PyObject module="dagster" object="OutputContext" />. The provided `context` argument for `load_input` is an <PyObject module="dagster" object="InputContext" />. The linked API documentation lists all the fields that are available on these objects.
 
+### Accessing the partition key
+
+IO managers interoperate smoothly with [partitions](/concepts/partitions-schedules-sensors/partitions). You can access the partition key for the current run using the `context` for both `load_input` and `handle_output`. If working with [assets](/concepts/assets/software-defined-assets), you can also access the asset-specific partition key or partition key range, though most of the time the run partition key will be equal to the asset partition key.
+
+```python literalinclude file=/concepts/io_management/custom_io_manager.py startafter=start_partitioned_marker endbefore=end_partitioned_marker
+from dagster import IOManager
+
+
+class MyPartitionedIOManager(IOManager):
+    def path_for_partition(self, partition_key):
+        return f"some/path/{partition_key}.csv"
+
+    # `context.partition_key` is the run-scoped partition key
+    def handle_output(self, context, obj):
+        write_csv(self.path_for_partition(context.partition_key), obj)
+
+    # `context.asset_partition_key` is set to the partition key for an asset
+    # (if the `IOManager` is handling an asset). This is usually equal to the
+    # run `partition_key`.
+    def load_input(self, context):
+        return read_csv(self.path_for_partition(context.asset_partition_key))
+```
+
 ## Examples
 
 ### A custom IO manager that stores Pandas DataFrames in tables
 
 If your ops produce Pandas DataFrames that populate tables in a data warehouse, you might write something like the following. This IO manager uses the name assigned to the output as the name of the table to write the output to.
 
-```python literalinclude file=/concepts/io_management/custom_io_manager.py startafter=start_marker endbefore=end_marker
+```python literalinclude file=/concepts/io_management/custom_io_manager.py startafter=start_df_marker endbefore=end_df_marker
 from dagster import IOManager, io_manager
 
 

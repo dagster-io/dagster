@@ -37,7 +37,9 @@ export const asyncGetFullOpLayout = asyncMemoize(
 // Asset Graph
 
 const _assetLayoutCacheKey = (graphData: GraphData) => {
-  return Object.keys(graphData.nodes).sort().join('|');
+  // Note: The "show secondary edges" toggle means that we need a cache key that incorporates
+  // both the displayed nodes and the displayed edges.
+  return JSON.stringify(graphData);
 };
 
 export const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);

@@ -6,7 +6,9 @@ import styled from 'styled-components/macro';
 import {AppContext} from '../app/AppContext';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {getLeftNavItemsForOption, LeftNavItem} from '../nav/FlatContentList';
+import {LeftNavItem} from '../nav/LeftNavItem';
+import {LeftNavItemType} from '../nav/LeftNavItemType';
+import {getAssetGroupItemsForOption, getJobItemsForOption} from '../nav/getLeftNavItemsForOption';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -21,7 +23,7 @@ export const SectionedLeftNav = () => {
   const {loading, visibleRepos} = React.useContext(WorkspaceContext);
   const {basePath} = React.useContext(AppContext);
 
-  const jobMatch = usePathMatch();
+  const match = usePathMatch();
 
   const [expandedKeys, setExpandedKeys] = useStateWithStorage<string[]>(
     basePath + ':' + EXPANDED_REPO_KEYS,
@@ -87,15 +89,13 @@ export const SectionedLeftNav = () => {
         padding={{horizontal: 24, bottom: 12}}
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
       >
-        <Icon name="job" />
-        <span style={{fontSize: '16px', fontWeight: 600}}>Jobs</span>
+        <span style={{fontSize: '16px', fontWeight: 500}}>Workspace</span>
       </Box>
       <Container>
         {sortedRepos.map((repo) => {
           const repoName = repo.repository.name;
           const repoAddress = buildRepoAddress(repoName, repo.repositoryLocation.name);
           const addressAsString = repoAddressAsString(repoAddress);
-          const pathMatch = jobMatch?.repoAddress === repoAddress ? jobMatch.jobName : null;
           return (
             <Section
               key={addressAsString}
@@ -104,7 +104,7 @@ export const SectionedLeftNav = () => {
               repoAddress={repoAddress}
               expanded={expandedKeys.includes(addressAsString)}
               showRepoLocation={duplicateRepoNames.has(repoName)}
-              pathJobMatch={pathMatch}
+              match={match?.repoAddress === repoAddress ? match : null}
             />
           );
         })}
@@ -120,19 +120,18 @@ interface SectionProps {
   expanded: boolean;
   onToggle: (repoAddress: RepoAddress) => void;
   option: DagsterRepoOption;
-  pathJobMatch: string | null;
+  match: {itemName: string; itemType: 'asset-group' | 'job'} | null;
   repoAddress: RepoAddress;
   showRepoLocation: boolean;
 }
 
 export const Section: React.FC<SectionProps> = (props) => {
-  const {expanded, onToggle, option, pathJobMatch, repoAddress, showRepoLocation} = props;
-  const jobItems = React.useMemo(() => getLeftNavItemsForOption(option), [option]);
-
-  const anyJobs = jobItems.length > 0;
-  const showJobs = expanded && anyJobs;
-  const match = pathJobMatch && jobItems.find((job) => job.name === pathJobMatch);
+  const {expanded, onToggle, option, match, repoAddress, showRepoLocation} = props;
   const matchRef = React.useRef<HTMLDivElement>(null);
+
+  const jobItems = React.useMemo(() => getJobItemsForOption(option), [option]);
+  const assetGroupItems = React.useMemo(() => getAssetGroupItemsForOption(option), [option]);
+  const empty = jobItems.length === 0 && assetGroupItems.length === 0;
 
   React.useEffect(() => {
     if (match && matchRef.current) {
@@ -140,48 +139,40 @@ export const Section: React.FC<SectionProps> = (props) => {
     }
   }, [match]);
 
-  const visibleJobs = () => {
-    if (showJobs) {
-      return (
-        <Box
-          padding={{vertical: 8, horizontal: 12}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        >
-          {jobItems.map((jobItem) => {
-            const active = pathJobMatch === jobItem.name;
-            return (
-              <LeftNavItem
-                job={jobItem}
-                key={jobItem.path}
-                ref={active ? matchRef : undefined}
-                active={active}
-              />
-            );
-          })}
-        </Box>
-      );
-    }
+  const visibleItems = ({items, type}: {items: LeftNavItemType[]; type: 'job' | 'asset-group'}) => {
+    const matchItem =
+      match?.itemType === type ? items.find((i) => i.name === match.itemName) : null;
 
-    if (match) {
-      return (
-        <Box
-          padding={{vertical: 8, horizontal: 12}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        >
-          <LeftNavItem job={match} active ref={matchRef} />
-        </Box>
-      );
+    const shownItems = expanded ? items : matchItem ? [matchItem] : [];
+    if (!shownItems.length) {
+      return null;
     }
-
-    return null;
+    return (
+      <Box
+        padding={{vertical: 8, horizontal: 12}}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      >
+        {expanded && (
+          <ItemTypeLabel>{type === 'asset-group' ? 'Asset Groups' : 'Jobs'}</ItemTypeLabel>
+        )}
+        {shownItems.map((item) => (
+          <LeftNavItem
+            item={item}
+            key={item.path}
+            ref={item === matchItem ? matchRef : undefined}
+            active={item === matchItem}
+          />
+        ))}
+      </Box>
+    );
   };
 
   return (
     <Box background={Colors.Gray100}>
       <SectionHeader
-        $open={showJobs}
+        $open={expanded && !empty}
         $showRepoLocation={showRepoLocation}
-        disabled={!anyJobs}
+        disabled={empty}
         onClick={() => onToggle(repoAddress)}
       >
         <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 8}}>
@@ -194,10 +185,7 @@ export const Section: React.FC<SectionProps> = (props) => {
                 {option.repository.name}
               </RepoName>
               {showRepoLocation ? (
-                <RepoLocation
-                  data-tooltip={`@${option.repositoryLocation.name}`}
-                  $disabled={!anyJobs}
-                >
+                <RepoLocation data-tooltip={`@${option.repositoryLocation.name}`} $disabled={empty}>
                   @{option.repositoryLocation.name}
                 </RepoLocation>
               ) : null}
@@ -207,7 +195,7 @@ export const Section: React.FC<SectionProps> = (props) => {
               <BaseTag
                 fillColor={Colors.Gray10}
                 textColor={Colors.Dark}
-                label={jobItems.length.toLocaleString()}
+                label={(jobItems.length + assetGroupItems.length).toLocaleString()}
               />
             </div>
           </RepoNameContainer>
@@ -216,38 +204,53 @@ export const Section: React.FC<SectionProps> = (props) => {
           </Box>
         </Box>
       </SectionHeader>
-      {visibleJobs()}
+      {visibleItems({type: 'job', items: jobItems})}
+      {visibleItems({type: 'asset-group', items: assetGroupItems})}
     </Box>
   );
 };
 
-type PathMatch = {
-  repoPath: string;
-  pipelinePath: string;
-};
+type PathMatch =
+  | {
+      repoPath: string;
+      pipelinePath: string;
+    }
+  | {
+      repoPath: string;
+      groupName: string;
+    };
 
 const usePathMatch = () => {
-  const jobMatch = useRouteMatch<PathMatch>('/workspace/:repoPath/jobs/:pipelinePath');
-  const pipelineMatch = useRouteMatch<PathMatch>('/workspace/:repoPath/pipelines/:pipelinePath');
-
-  const jobMatchParams = jobMatch?.params;
-  const pipelineMatchParams = pipelineMatch?.params;
-
-  const match = jobMatchParams || pipelineMatchParams;
-  const repoPath = match?.repoPath;
-  const jobPath = match?.pipelinePath;
-
-  if (repoPath && jobPath) {
-    const repoAddress = repoAddressFromPath(repoPath);
-    const explorerPath = explorerPathFromString(jobPath);
-    const jobName = explorerPath.pipelineName;
-    if (repoAddress && jobName) {
-      return {repoAddress, jobName};
-    }
+  const match = useRouteMatch<PathMatch>([
+    '/workspace/:repoPath/(jobs|pipelines)/:pipelinePath',
+    '/workspace/:repoPath/asset-groups/:groupName',
+  ]);
+  if (!match) {
+    return null;
+  }
+  const repoAddress = repoAddressFromPath(match.params.repoPath);
+  if (!repoAddress) {
+    return null;
   }
 
-  return null;
+  return 'pipelinePath' in match.params
+    ? {
+        repoAddress,
+        itemName: explorerPathFromString(match.params.pipelinePath).pipelineName,
+        itemType: 'job' as const,
+      }
+    : {
+        repoAddress,
+        itemName: match.params.groupName,
+        itemType: 'asset-group' as const,
+      };
 };
+
+const ItemTypeLabel = styled.div`
+  color: ${Colors.Gray600};
+  padding: 8px 12px 4px;
+  font-size: 12px;
+`;
 
 const Container = styled.div`
   background-color: ${Colors.Gray100};

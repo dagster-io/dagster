@@ -1,15 +1,11 @@
 import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
-import {useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
-import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {SectionedLeftNav} from '../ui/SectionedLeftNav';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
-import {FlatContentList} from './FlatContentList';
 import {RepoNavItem} from './RepoNavItem';
 import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 
@@ -18,30 +14,8 @@ const LoadedRepositorySection: React.FC<{
   visibleRepos: DagsterRepoOption[];
   toggleVisible: (repoAddresses: RepoAddress[]) => void;
 }> = ({allRepos, visibleRepos, toggleVisible}) => {
-  const location = useLocation();
-  const {flagFlatLeftNav} = useFeatureFlags();
-
-  const workspacePath = location.pathname.split('/workspace/').pop();
-  const [, repoPath, type, item, tab] =
-    workspacePath?.match(
-      /([^\/]+)\/(pipelines|jobs|solids|ops|sensors|schedules)\/([^\/]+)\/?([^\/]+)?/,
-    ) || [];
-
-  // Covert the "jobname~*opquery*" path component to "jobname"
-  // so we know to select it in the sidebar
-  const selector =
-    item && (type === 'pipelines' || type === 'jobs')
-      ? explorerPathFromString(item).pipelineName
-      : item;
-
   const listContent = () => {
     if (visibleRepos.length) {
-      if (flagFlatLeftNav) {
-        return (
-          <FlatContentList repoPath={repoPath} selector={selector} repos={visibleRepos} tab={tab} />
-        );
-      }
-
       return <SectionedLeftNav />;
     }
 

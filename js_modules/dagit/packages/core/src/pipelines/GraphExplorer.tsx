@@ -152,7 +152,8 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
 
   const solids = React.useMemo(() => handles.map((h) => h.solid), [handles]);
   const solidsQueryEnabled = !parentHandle && !explorerPath.snapshotId;
-  const showAssetRenderingOption = solids.some((s) => s.definition.assetNodes.length > 0);
+  const showAssetRenderingOption =
+    !isGraph && solids.some((s) => s.definition.assetNodes.length > 0);
   const explodeCompositesEnabled =
     !parentHandle &&
     (options.explodeComposites ||

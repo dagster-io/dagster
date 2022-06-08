@@ -854,7 +854,7 @@ def external_asset_graph_from_defs(
                     job_names=[],
                     op_description=source_asset.description,
                     metadata_entries=metadata_entries,
-                    group_name=group_names.get(source_asset.key),
+                    group_name=source_asset.group_name,
                 )
             )
 

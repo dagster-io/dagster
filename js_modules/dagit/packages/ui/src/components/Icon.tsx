@@ -10,6 +10,9 @@ import arrow_downward from '../icon-svgs/arrow_downward.svg';
 import arrow_drop_down from '../icon-svgs/arrow_drop_down.svg';
 import arrow_forward from '../icon-svgs/arrow_forward.svg';
 import arrow_upward from '../icon-svgs/arrow_upward.svg';
+import asset from '../icon-svgs/asset.svg';
+import asset_group from '../icon-svgs/asset_group.svg';
+import asset_non_sda from '../icon-svgs/asset_non_sda.svg';
 import assignment from '../icon-svgs/assignment.svg';
 import assignment_turned_in from '../icon-svgs/assignment_turned_in.svg';
 import attach_file from '../icon-svgs/attach_file.svg';
@@ -41,6 +44,9 @@ import folder from '../icon-svgs/folder.svg';
 import folder_open from '../icon-svgs/folder_open.svg';
 import gantt_flat from '../icon-svgs/gantt_flat.svg';
 import gantt_waterfall from '../icon-svgs/gantt_waterfall.svg';
+import graph_downstream from '../icon-svgs/graph_downstream.svg';
+import graph_neighbors from '../icon-svgs/graph_neighbors.svg';
+import graph_upstream from '../icon-svgs/graph_upstream.svg';
 import history from '../icon-svgs/history.svg';
 import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
 import hourglass_bottom from '../icon-svgs/hourglass_bottom.svg';
@@ -112,7 +118,9 @@ import {Colors} from './Colors';
 
 export const Icons = {
   // Core icons
-  asset: table_view,
+  asset,
+  asset_non_sda,
+  asset_group,
   expectation,
   materialization,
   observation,
@@ -144,6 +152,10 @@ export const Icons = {
   folder,
   tag,
   slack,
+
+  graph_downstream,
+  graph_upstream,
+  graph_neighbors,
 
   // Material icons
   add_circle,
