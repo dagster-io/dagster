@@ -456,7 +456,8 @@ runLauncher:
       # Example:
       #
       # envVars:
-      #   - "ENV_VAR"
+      #   - "FOO_ENV_VAR" (Will pull the value of FOO_ENV_VAR from the calling process)
+      #   - "BAR_ENV_VAR=baz_value" (Will set the value of BAR_ENV_VAR to baz_value)
       envVars: []
 
       # Additional volumes that should be included in the Job's Pod. See:

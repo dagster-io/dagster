@@ -619,8 +619,8 @@ class AssetLayer:
 
 def build_asset_selection_job(
     name: str,
-    assets: Sequence["AssetsDefinition"],
-    source_assets: Sequence["SourceAsset"],
+    assets: Iterable["AssetsDefinition"],
+    source_assets: Iterable["SourceAsset"],
     executor_def: Optional[ExecutorDefinition] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
@@ -669,7 +669,7 @@ def _subset_assets_defs(
 
     included_keys: Set[AssetKey] = set()
 
-    for asset in assets:
+    for asset in set(assets):
         # intersection
         selected_subset = selected_asset_keys & asset.asset_keys
         included_keys.update(selected_subset)

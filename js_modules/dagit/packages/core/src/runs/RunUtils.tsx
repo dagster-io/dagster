@@ -61,11 +61,13 @@ export function useDidLaunchEvent(cb: () => void, delay = 1500) {
   }, [cb, delay]);
 }
 
+export type LaunchBehavior = 'open' | 'open-in-new-tab' | 'toast';
+
 export function handleLaunchResult(
   pipelineName: string,
   result: void | {data?: LaunchPipelineExecution | LaunchPipelineReexecution | null},
   history: History<unknown>,
-  options: {behavior: 'toast' | 'open' | 'open-in-new-tab'; preserveQuerystring?: boolean},
+  options: {behavior: LaunchBehavior; preserveQuerystring?: boolean},
 ) {
   const obj =
     result && result.data && 'launchPipelineExecution' in result.data
