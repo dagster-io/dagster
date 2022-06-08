@@ -1055,38 +1055,6 @@ def test_dupe_jobs_pipelines_invalid():
             return [the_graph, the_schedule]
 
 
-def test_duplicate_job_repo():
-    @graph
-    def the_graph():
-        pass
-
-    return _the_job
-
-
-def _create_pipeline_with_name(name):
-    @pipeline(name=name)
-    def _the_pipeline():
-        pass
-
-    return _the_pipeline
-
-
-def _create_schedule_from_target(target):
-    @schedule(job=target, cron_schedule="* * * * *")
-    def _the_schedule():
-        pass
-
-    return _the_schedule
-
-
-def _create_sensor_from_target(target):
-    @sensor(job=target)
-    def _the_sensor():
-        pass
-
-    return _the_sensor
-
-
 def test_duplicate_graph_valid():
     the_graph = _create_graph_with_name("foo")
 

@@ -746,21 +746,6 @@ class CachingRepositoryData(RepositoryData):
         else:
             source_assets_by_key = {}
 
-        for name, sensor_def in sensors.items():
-            if sensor_def.has_loadable_targets():
-                targets = sensor_def.load_targets()
-                for target in targets:
-                    _process_and_validate_target(
-                        sensor_def, coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
-                    )
-
-        for name, schedule_def in schedules.items():
-            if schedule_def.has_loadable_target():
-                target = schedule_def.load_target()
-                _process_and_validate_target(
-                    schedule_def, coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
-                )
-
         # resolve all the UnresolvedAssetJobDefinitions using the full set of assets
         for name, unresolved_job_def in unresolved_jobs.items():
             if not combined_asset_group:
@@ -779,14 +764,14 @@ class CachingRepositoryData(RepositoryData):
                 targets = sensor_def.load_targets()
                 for target in targets:
                     _process_and_validate_target(
-                        sensor_def, coerced_graphs, pipelines_or_jobs, target
+                        sensor_def, coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
                     )
 
         for name, schedule_def in schedules.items():
             if schedule_def.has_loadable_target():
                 target = schedule_def.load_target()
                 _process_and_validate_target(
-                    schedule_def, coerced_graphs, pipelines_or_jobs, target
+                    schedule_def, coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
                 )
 
         pipelines: Dict[str, PipelineDefinition] = {}
