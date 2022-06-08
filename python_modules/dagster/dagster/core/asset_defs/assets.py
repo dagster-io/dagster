@@ -362,8 +362,6 @@ class AssetsDefinition(ResourceAddable):
         return result
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
-        if isinstance(self.node_def, GraphDefinition):
-            return
         yield from self.node_def.get_resource_requirements()  # type: ignore[attr-defined]
         for source_key, resource_def in self.resource_defs.items():
             yield from resource_def.get_resource_requirements(outer_context=source_key)
