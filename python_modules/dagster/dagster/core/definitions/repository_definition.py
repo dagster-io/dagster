@@ -24,6 +24,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from dagster.utils import merge_dicts
 
 from .events import AssetKey
+from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .job_definition import JobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
@@ -633,6 +634,7 @@ class CachingRepositoryData(RepositoryData):
                 UnresolvedAssetJobDefinition,
             ]
         ],
+        default_executor_def: Optional[ExecutorDefinition] = None,
     ) -> "CachingRepositoryData":
         """Static constructor.
 
@@ -735,7 +737,11 @@ class CachingRepositoryData(RepositoryData):
                 raise DagsterInvalidDefinitionError(
                     "A repository can't have both an AssetGroup and direct asset defs"
                 )
-            combined_asset_group = AssetGroup(assets=assets_defs, source_assets=source_assets)
+            combined_asset_group = AssetGroup(
+                assets=assets_defs,
+                source_assets=source_assets,
+                executor_def=default_executor_def,
+            )
 
         if combined_asset_group:
             for job_def in combined_asset_group.get_base_jobs():
