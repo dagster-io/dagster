@@ -576,6 +576,9 @@ class AssetLayer:
     def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._assets_defs_by_key
 
+    def assets_def_for_asset(self, asset_key: AssetKey) -> "AssetsDefinition":
+        return self._assets_defs_by_key[asset_key]
+
     def asset_keys_for_node(self, node_handle: NodeHandle) -> AbstractSet[AssetKey]:
         return self._asset_keys_by_node_handle[node_handle]
 
@@ -616,6 +619,18 @@ class AssetLayer:
         )
 
         return group_names
+
+    def partitions_def_for_asset(self, asset_key: AssetKey) -> Optional["PartitionsDefinition"]:
+        assets_def = self._assets_defs_by_key.get(asset_key)
+
+        if assets_def is not None:
+            return assets_def.partitions_def
+        else:
+            source_asset = self._source_assets_by_key.get(asset_key)
+            if source_asset is not None:
+                return source_asset.partitions_def
+
+        return None
 
 
 def build_asset_selection_job(

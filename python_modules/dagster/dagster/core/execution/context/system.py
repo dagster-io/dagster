@@ -26,6 +26,7 @@ from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
@@ -720,27 +721,39 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return solid_config.config if solid_config else None
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
-        op_config = self.op_config
+        asset_layer = self.pipeline_def.asset_layer
+        assets_def = asset_layer.assets_def_for_asset(
+            next(iter(asset_layer.asset_keys_for_node(self.solid_handle)))
+        )
+        upstream_asset_key = asset_layer.asset_key_for_input(self.solid_handle, input_name)
 
-        if is_iterable(op_config) and "assets" in op_config:
-            all_input_asset_partitions = op_config["assets"].get("input_partitions")
-            if all_input_asset_partitions is not None:
-                this_input_asset_partitions = all_input_asset_partitions.get(input_name)
-                if this_input_asset_partitions is not None:
-                    return True
-
-        return False
+        return (
+            upstream_asset_key is not None
+            and assets_def.partitions_def is not None
+            and asset_layer.partitions_def_for_asset(upstream_asset_key) is not None
+        )
 
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        op_config = self.op_config
-        if is_iterable(op_config) and "assets" in op_config:
-            all_input_asset_partitions = op_config["assets"].get("input_partitions")
-            if all_input_asset_partitions is not None:
-                this_input_asset_partitions = all_input_asset_partitions.get(input_name)
-                if this_input_asset_partitions is not None:
-                    return PartitionKeyRange(
-                        this_input_asset_partitions["start"], this_input_asset_partitions["end"]
-                    )
+        from dagster.core.asset_defs.asset_partitions import (
+            get_upstream_partitions_for_partition_range,
+        )
+
+        asset_layer = self.pipeline_def.asset_layer
+        assets_def = asset_layer.assets_def_for_asset(
+            next(iter(asset_layer.asset_keys_for_node(self.solid_handle)))
+        )
+        upstream_asset_key = asset_layer.asset_key_for_input(self.solid_handle, input_name)
+
+        if upstream_asset_key is not None:
+            upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
+
+            if assets_def.partitions_def is not None and upstream_asset_partitions_def is not None:
+                return get_upstream_partitions_for_partition_range(
+                    assets_def,
+                    upstream_asset_partitions_def,
+                    upstream_asset_key,
+                    PartitionKeyRange(self.partition_key, self.partition_key),
+                )
 
         check.failed("The input has no asset partitions")
 
@@ -754,27 +767,21 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 f"but the step input has a partition range: '{start}' to '{end}'."
             )
 
-    def has_asset_partitions_for_output(self, output_name: str) -> bool:
-        op_config = self.op_config
-        if is_iterable(op_config) and "assets" in op_config:
-            all_output_asset_partitions = op_config["assets"].get("output_partitions")
-            if all_output_asset_partitions is not None:
-                this_output_asset_partitions = all_output_asset_partitions.get(output_name)
-                if this_output_asset_partitions is not None:
-                    return True
+    def _partitions_def_for_output(self, output_name: str) -> Optional[PartitionsDefinition]:
+        asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
+            node_handle=self.solid_handle, output_name=output_name
+        )
+        if asset_info:
+            return asset_info.partitions_def
+        else:
+            return asset_info
 
-        return False
+    def has_asset_partitions_for_output(self, output_name: str) -> bool:
+        return self._partitions_def_for_output(output_name) is not None
 
     def asset_partition_key_range_for_output(self, output_name: str) -> PartitionKeyRange:
-        op_config = self.op_config
-        if is_iterable(op_config) and "assets" in op_config:
-            all_output_asset_partitions = op_config["assets"].get("output_partitions")
-            if all_output_asset_partitions is not None:
-                this_output_asset_partitions = all_output_asset_partitions.get(output_name)
-                if this_output_asset_partitions is not None:
-                    return PartitionKeyRange(
-                        this_output_asset_partitions["start"], this_output_asset_partitions["end"]
-                    )
+        if self._partitions_def_for_output(output_name) is not None:
+            return PartitionKeyRange(self.partition_key, self.partition_key)
 
         check.failed("The output has no asset partitions")
 
@@ -795,10 +802,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         - The output asset has no partitioning.
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
         """
-        asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
-            self.solid_handle, output_name
-        )
-        partitions_def = asset_info.partitions_def if asset_info else None
+        partitions_def = self._partitions_def_for_output(output_name)
 
         if not partitions_def:
             raise ValueError(
