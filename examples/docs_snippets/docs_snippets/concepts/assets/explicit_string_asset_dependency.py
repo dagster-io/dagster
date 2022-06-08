@@ -1,4 +1,4 @@
-from dagster import AssetIn, AssetKey, asset
+from dagster import AssetIn, asset
 
 
 @asset

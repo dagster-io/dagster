@@ -76,7 +76,7 @@ def downstream_asset(upstream_asset):
 If defining dependencies by matching argument names to upstream asset names feels too magical for your tastes, you can also define dependencies in a more explicit way:
 
 ```python file=/concepts/assets/explicit_string_asset_dependency.py
-from dagster import AssetIn, AssetKey, asset
+from dagster import AssetIn, asset
 
 
 @asset
@@ -137,7 +137,7 @@ asset_group = AssetGroup(assets=[my_derived_asset], source_assets=[my_source_ass
 You can also re-use assets across repositories by including them as source assets:
 
 ```python file=/concepts/assets/cross_repository_asset.py
-from dagster import AssetGroup, SourceAsset, asset, repository
+from dagster import AssetGroup, AssetKey, SourceAsset, asset, repository
 
 
 @asset
@@ -512,17 +512,7 @@ def downstream_asset(upstream_asset):
 If defining dependencies by matching argument names to upstream asset names feels too magical for your tastes, you can also define dependencies in a more explicit way:
 
 ```python file=/concepts/assets/explicit_asset_dependency.py
-from dagster import AssetIn, asset
-
-
-@asset
-def upstream_asset():
-    return [1, 2, 3]
-
-
-@asset(ins={"upstream": AssetIn("upstream_asset")})
-def downstream_asset(upstream):
-    return upstream + [4]
+ENOENT: no such file or directory, open '/Users/erincochran/Desktop/dagster-repo/examples/docs_snippets/docs_snippets/concepts/assets/explicit_asset_dependency.py'
 ```
 
 In this case, `ins={"upstream": AssetIn("upstream_asset")}` declares that the contents of the asset with the key `upstream_asset` will be provided to the function argument named `upstream`.
