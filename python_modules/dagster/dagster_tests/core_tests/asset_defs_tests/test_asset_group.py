@@ -341,22 +341,34 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         (
             "x",
             False,
-            (DagsterInvalidSubsetError, r"When building job, the AssetKey\(s\) \['x'\]"),
+            (
+                DagsterInvalidSubsetError,
+                r"No qualified assets to execute found for clause='x'",
+            ),
         ),
         (
             "x",
             True,
-            (DagsterInvalidSubsetError, r"When building job, the AssetKey\(s\) \['x'\]"),
+            (
+                DagsterInvalidSubsetError,
+                r"No qualified assets to execute found for clause='x'",
+            ),
         ),
         (
             ["start", "x"],
             False,
-            (DagsterInvalidSubsetError, r"When building job, the AssetKey\(s\) \['x'\]"),
+            (
+                DagsterInvalidSubsetError,
+                r"No qualified assets to execute found for clause='x'",
+            ),
         ),
         (
             ["start", "x"],
             True,
-            (DagsterInvalidSubsetError, r"When building job, the AssetKey\(s\) \['x'\]"),
+            (
+                DagsterInvalidSubsetError,
+                r"No qualified assets to execute found for clause='x'",
+            ),
         ),
         (["d", "e", "f"], False, None),
         (["d", "e", "f"], True, None),
