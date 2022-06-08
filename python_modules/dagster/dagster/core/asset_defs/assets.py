@@ -2,6 +2,7 @@ import warnings
 from typing import AbstractSet, Dict, Iterable, Iterator, Mapping, Optional, Sequence, Set, cast
 
 import dagster._check as check
+from dagster.core.decorator_utils import get_function_params
 from dagster.core.definitions import (
     GraphDefinition,
     NodeDefinition,
@@ -12,6 +13,7 @@ from dagster.core.definitions import (
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.utils import validate_group_name
+from dagster.core.execution.context.compute import OpExecutionContext
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning, experimental
 
@@ -90,7 +92,32 @@ class AssetsDefinition(ResourceAddable):
         }
 
     def __call__(self, *args, **kwargs):
-        return self._node_def(*args, **kwargs)
+        from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+
+        if isinstance(self.node_def, GraphDefinition):
+            return self._node_def(*args, **kwargs)
+        solid_def = self.op
+        provided_context: Optional[OpExecutionContext] = None
+        if len(args) > 0 and isinstance(args[0], OpExecutionContext):
+            provided_context = _build_invocation_context_with_included_resources(
+                self.resource_defs, args[0]
+            )
+            new_args = [provided_context, *args[1:]]
+            return solid_def(*new_args, **kwargs)
+        elif (
+            isinstance(solid_def.compute_fn.decorated_fn, DecoratedSolidFunction)
+            and solid_def.compute_fn.has_context_arg()
+        ):
+            context_param_name = get_function_params(solid_def.compute_fn.decorated_fn)[0].name
+            if context_param_name in kwargs:
+                provided_context = _build_invocation_context_with_included_resources(
+                    self.resource_defs, kwargs[context_param_name]
+                )
+                new_kwargs = dict(kwargs)
+                new_kwargs[context_param_name] = provided_context
+                return solid_def(*args, **new_kwargs)
+
+        return solid_def(*args, **kwargs)
 
     @staticmethod
     @experimental
@@ -193,8 +220,8 @@ class AssetsDefinition(ResourceAddable):
         return next(iter(self.asset_keys))
 
     @property
-    def resource_defs(self) -> Mapping[str, ResourceDefinition]:
-        return self._resource_defs
+    def resource_defs(self) -> Dict[str, ResourceDefinition]:
+        return dict(self._resource_defs)
 
     @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
@@ -416,3 +443,31 @@ def _infer_asset_keys_by_output_names(
         if output_name not in inferred_asset_keys_by_output_names:
             inferred_asset_keys_by_output_names[output_name] = AssetKey([output_name])
     return inferred_asset_keys_by_output_names
+
+
+def _build_invocation_context_with_included_resources(
+    resource_defs: Dict[str, ResourceDefinition], context: OpExecutionContext
+) -> OpExecutionContext:
+    from dagster.core.execution.context.invocation import (
+        UnboundSolidExecutionContext,
+        build_op_context,
+    )
+
+    override_resources = context.resources._asdict()
+    all_resources = merge_dicts(resource_defs, override_resources)
+
+    if isinstance(context, UnboundSolidExecutionContext):
+        context = cast(UnboundSolidExecutionContext, context)
+        # pylint: disable=protected-access
+        return build_op_context(
+            resources=all_resources,
+            config=context.solid_config,
+            resources_config=context._resources_config,
+            instance=context._instance,
+            partition_key=context._partition_key,
+            mapping_key=context._mapping_key,
+        )
+    else:
+        # If user is mocking OpExecutionContext, send it through (we don't know
+        # what modifications they might be making, and we don't want to override)
+        return context
