@@ -8,7 +8,7 @@ Get started with Dagster in just three quick steps:
 
 1. [Install Dagster](#step-1-install-dagster)
 2. [Define assets](#step-2-define-assets)
-3. [Materialize the asset](#step-3-materialize-the-asset)
+3. [Materialize the assets](#step-3-materialize-the-assets)
 
 ---
 
@@ -37,7 +37,7 @@ To get started, we'll define two simple data [assets](/concepts/assets/software-
 - A `cereals` asset that represents a CSV dataset about breakfast cereals, and
 - A `nabisco_cereals` asset, which is [a downstream dependency](/concepts/assets/software-defined-assets#assets-with-dependencies) of `cereals` and only contains cereals manufactured by Nabisco
 
-Copy the following code. In the directory where Dagster is installed, save this into a file named `cereal.py`:
+In the directory where you installed Dagster, copy this code and save it in a file named `cereal.py`:
 
 ```python file=/guides/dagster/asset_tutorial/serial_asset_graph.py
 import csv
@@ -101,9 +101,9 @@ There are a few ways to materialize an asset:
 
 ### Using the Dagster Python API
 
-You can also use the [Dagster Python API](/concepts/ops-jobs-graphs/job-execution#python-apis) materialize the assets as a script.
+You can also use the [Dagster Python API](/concepts/ops-jobs-graphs/job-execution#python-apis) to materialize the assets as a script.
 
-Just add a few lines to `cereal.py`, which will executes a run within the Python process:
+Add a few lines to `cereal.py`, which executes a run within the Python process:
 
 ```python file=/guides/dagster/asset_tutorial/cereal.py startafter=start_materialize_marker endbefore=end_materialize_marker
 from dagster import materialize
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     materialize([cereals, nabisco_cereals])
 ```
 
-Now you can just run:
+Now you can run:
 
 ```bash
 python cereal.py
