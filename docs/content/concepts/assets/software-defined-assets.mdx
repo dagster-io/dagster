@@ -65,6 +65,33 @@ def downstream_asset(upstream_asset):
 
 The [explicit dependencies](#explicit-dependencies) example covers an alternative way to specify asset dependencies without needing to match argument names to upstream asset names.
 
+### Asset context
+
+Since a software-defined asset contains an op, all the typical functionality of an op - like the use of [resources](/concepts/resources) and [configuration](#asset-configuration) - is available to an asset. Supplying the `context` parameter provides access to system information for the op, for example:
+
+```python file=/concepts/assets/asset_w_context.py startafter=start_w_context endbefore=end_w_context
+@asset(required_resource_keys={"api"})
+def my_asset(context):
+    # fetches contents of an asset
+    return context.resources.api.fetch_table("my_asset")
+```
+
+### Asset configuration
+
+Like ops, configuration is also supported for assets. Configuration is accessible through the asset context at runtime and can be used to specify behavior. Note that asset configuration behaves the same as configuration for ops.
+
+For example, the following asset queries an API endpoint defined through configuration:
+
+```python file=/concepts/assets/asset_config.py startafter=start_example endbefore=end_example
+@asset(config_schema={"api_endpoint": str})
+def my_configurable_asset(context):
+    api_endpoint = context.op_config["api_endpoint"]
+    data = requests.get(f"{api_endpoint}/data").json()
+    return data
+```
+
+Refer to the [Config schema documentation](/concepts/configuration/config-schema) for more configuration info and examples.
+
 ## Combining assets in groups
 
 To materialize assets or load them in Dagit, you first need to combine them into an <PyObject object="AssetGroup" />, which is a set of assets with no unsatisfied dependencies. For example:
@@ -452,17 +479,6 @@ def cereal_asset():
 ```
 
 Asset metadata can be viewed in Dagit on the [Asset Detail page](/concepts/dagit/dagit#asset-details).
-
-### Using context in assets
-
-Since a software-defined asset contains an op, all of the typical functionality of an op (like the use of resources) is available to an asset.
-
-```python file=/concepts/assets/asset_w_context.py startafter=start_w_context endbefore=end_w_context
-@asset(required_resource_keys={"api"})
-def my_asset(context):
-    # fetches contents of an asset
-    return context.resources.api.fetch_table("my_asset")
-```
 
 ## Further Reading
 
