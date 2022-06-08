@@ -155,5 +155,4 @@ class SourceAsset(
             partitions_def=self.partitions_def,
             group_name=group_name,
             resource_defs=self.resource_defs,
-            group_name=self.group_name,
         )
