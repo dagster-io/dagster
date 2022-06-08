@@ -475,13 +475,13 @@ def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
         (["+a", "b+"], "start,a,b,c,d", None),
         (["*c", "final"], "b,c,final", None),
         ("*", "start,a,b,c,d,e,f,final", ["core", "models"]),
-        ("core>models>a", "a", ["core", "models"]),
-        ("core>models>b+", "b,c,d", ["core", "models"]),
-        ("+core>models>f", "f,d,e", ["core", "models"]),
-        ("++core>models>f", "f,d,e,c,a,b", ["core", "models"]),
-        ("core>models>start*", "start,a,d,f,final", ["core", "models"]),
-        (["+core>models>a", "core>models>b+"], "start,a,b,c,d", ["core", "models"]),
-        (["*core>models>c", "core>models>final"], "b,c,final", ["core", "models"]),
+        ("core/models/a", "a", ["core", "models"]),
+        ("core/models/b+", "b,c,d", ["core", "models"]),
+        ("+core/models/f", "f,d,e", ["core", "models"]),
+        ("++core/models/f", "f,d,e,c,a,b", ["core", "models"]),
+        ("core/models/start*", "start,a,d,f,final", ["core", "models"]),
+        (["+core/models/a", "core/models/b+"], "start,a,b,c,d", ["core", "models"]),
+        (["*core/models/c", "core/models/final"], "b,c,final", ["core", "models"]),
     ],
 )
 def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi, prefixes):
@@ -584,6 +584,244 @@ def test_subset_does_not_respect_context():
     assert _all_asset_keys(result) == specified_keys | {AssetKey("a"), AssetKey("b")}
 
 
+def test_subset_cycle_resolution_embed_assets_in_complex_graph():
+    """
+    This represents a single large multi-asset with two assets embedded inside of it.
+    Ops:
+        foo produces: a, b, c, d, e, f, g, h
+        x produces: x
+        y produces: y
+    Upstream Assets:
+        a: []
+        b: []
+        c: [b]
+        d: [b]
+        e: [x, c]
+        f: [d]
+        g: [e]
+        h: [g, y]
+        x: [a]
+        y: [e, f]
+    """
+    io_manager_obj, io_manager_def = asset_aware_io_manager()
+    for item in "abcdefghxy":
+        io_manager_obj.db[AssetKey(item)] = None
+
+    @multi_asset(
+        outs={name: Out(is_required=False) for name in "a,b,c,d,e,f,g,h".split(",")},
+        internal_asset_deps={
+            "a": set(),
+            "b": set(),
+            "c": {AssetKey("b")},
+            "d": {AssetKey("b")},
+            "e": {AssetKey("c"), AssetKey("x")},
+            "f": {AssetKey("d")},
+            "g": {AssetKey("e")},
+            "h": {AssetKey("g"), AssetKey("y")},
+        },
+        can_subset=True,
+    )
+    def foo(context, x, y):
+        a = b = c = d = e = f = g = h = None
+        if "a" in context.selected_output_names:
+            a = 1
+            yield Output(a, "a")
+        if "b" in context.selected_output_names:
+            b = 1
+            yield Output(b, "b")
+        if "c" in context.selected_output_names:
+            c = (b or 1) + 1
+            yield Output(c, "c")
+        if "d" in context.selected_output_names:
+            d = (b or 1) + 1
+            yield Output(d, "d")
+        if "e" in context.selected_output_names:
+            e = x + (c or 2)
+            yield Output(e, "e")
+        if "f" in context.selected_output_names:
+            f = (d or 1) + 1
+            yield Output(f, "f")
+        if "g" in context.selected_output_names:
+            g = (e or 4) + 1
+            yield Output(g, "g")
+        if "h" in context.selected_output_names:
+            h = (g or 5) + y
+            yield Output(h, "h")
+
+    @asset
+    def x(a):
+        return a + 1
+
+    @asset
+    def y(e, f):
+        return e + f
+
+    job = AssetGroup([foo, x, y], resource_defs={"io_manager": io_manager_def}).build_job("job")
+
+    # should produce a job with foo(a,b,c,d,f) -> x -> foo(e,g) -> y -> foo(h)
+    assert len(list(job.graph.iterate_solid_defs())) == 5
+    result = job.execute_in_process()
+
+    assert _all_asset_keys(result) == {AssetKey(x) for x in "a,b,c,d,e,f,g,h,x,y".split(",")}
+    assert result.output_for_node("foo_3", "h") == 12
+
+
+def test_subset_cycle_resolution_complex():
+    """
+    Ops:
+        foo produces: a, b, c, d, e, f
+        x produces: x
+        y produces: y
+        z produces: z
+    Upstream Assets:
+        a: []
+        b: [x]
+        c: [x]
+        d: [y]
+        e: [c]
+        f: [d]
+        x: [a]
+        y: [b, c]
+    """
+    io_manager_obj, io_manager_def = asset_aware_io_manager()
+    for item in "abcdefxy":
+        io_manager_obj.db[AssetKey(item)] = None
+
+    @multi_asset(
+        outs={name: Out(is_required=False) for name in "a,b,c,d,e,f".split(",")},
+        internal_asset_deps={
+            "a": set(),
+            "b": {AssetKey("x")},
+            "c": {AssetKey("x")},
+            "d": {AssetKey("y")},
+            "e": {AssetKey("c")},
+            "f": {AssetKey("d")},
+        },
+        can_subset=True,
+    )
+    def foo(context, x, y):
+        if "a" in context.selected_output_names:
+            yield Output(1, "a")
+        if "b" in context.selected_output_names:
+            yield Output(x + 1, "b")
+        if "c" in context.selected_output_names:
+            c = x + 2
+            yield Output(c, "c")
+        if "d" in context.selected_output_names:
+            d = y + 1
+            yield Output(d, "d")
+        if "e" in context.selected_output_names:
+            yield Output(c + 1, "e")
+        if "f" in context.selected_output_names:
+            yield Output(d + 1, "f")
+
+    @asset
+    def x(a):
+        return a + 1
+
+    @asset
+    def y(b, c):
+        return b + c
+
+    job = AssetGroup([foo, x, y], resource_defs={"io_manager": io_manager_def}).build_job("job")
+
+    # should produce a job with foo -> x -> foo -> y -> foo
+    assert len(list(job.graph.iterate_solid_defs())) == 5
+    result = job.execute_in_process()
+
+    assert _all_asset_keys(result) == {AssetKey(x) for x in "a,b,c,d,e,f,x,y".split(",")}
+    assert result.output_for_node("x") == 2
+    assert result.output_for_node("y") == 7
+    assert result.output_for_node("foo_3", "f") == 9
+
+
+def test_subset_cycle_resolution_basic():
+    """
+    Ops:
+        foo produces: a, b
+        foo_prime produces: a', b'
+    Assets:
+        s -> a -> a' -> b -> b'
+    """
+    io_manager_obj, io_manager_def = asset_aware_io_manager()
+    for item in "a,b,a_prime,b_prime".split(","):
+        io_manager_obj.db[AssetKey(item)] = None
+    # some value for the source
+    io_manager_obj.db[AssetKey("s")] = 0
+
+    s = SourceAsset("s")
+
+    @multi_asset(
+        outs={"a": Out(is_required=False), "b": Out(is_required=False)},
+        internal_asset_deps={
+            "a": {AssetKey("s")},
+            "b": {AssetKey("a_prime")},
+        },
+        can_subset=True,
+    )
+    def foo(context, s, a_prime):
+        context.log.info(context.selected_asset_keys)
+        if AssetKey("a") in context.selected_asset_keys:
+            yield Output(s + 1, "a")
+        if AssetKey("b") in context.selected_asset_keys:
+            yield Output(a_prime + 1, "b")
+
+    @multi_asset(
+        outs={"a_prime": Out(is_required=False), "b_prime": Out(is_required=False)},
+        internal_asset_deps={
+            "a_prime": {AssetKey("a")},
+            "b_prime": {AssetKey("b")},
+        },
+        can_subset=True,
+    )
+    def foo_prime(context, a, b):
+        context.log.info(context.selected_asset_keys)
+        if AssetKey("a_prime") in context.selected_asset_keys:
+            yield Output(a + 1, "a_prime")
+        if AssetKey("b_prime") in context.selected_asset_keys:
+            yield Output(b + 1, "b_prime")
+
+    job = AssetGroup(
+        [foo, foo_prime], source_assets=[s], resource_defs={"io_manager": io_manager_def}
+    ).build_job("job")
+
+    # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
+    assert len(list(job.graph.iterate_solid_defs())) == 4
+
+    result = job.execute_in_process()
+    assert result.output_for_node("foo", "a") == 1
+    assert result.output_for_node("foo_prime", "a_prime") == 2
+    assert result.output_for_node("foo_2", "b") == 3
+    assert result.output_for_node("foo_prime_2", "b_prime") == 4
+
+    assert _all_asset_keys(result) == {
+        AssetKey("a"),
+        AssetKey("b"),
+        AssetKey("a_prime"),
+        AssetKey("b_prime"),
+    }
+
+
+def test_cycle_resolution_impossible():
+    from toposort import CircularDependencyError
+
+    @asset
+    def a(s, c):
+        return s + c
+
+    @asset
+    def b(a):
+        return a + 1
+
+    @asset
+    def c(b):
+        return b + 1
+
+    s = SourceAsset(key="s")
+    with pytest.raises(CircularDependencyError):
+        AssetGroup([a, b, c], source_assets=[s]).build_job("job")
+
+
 def test_asset_group_build_job_selection_multi_component():
     source_asset = SourceAsset(["apple", "banana"])
 
@@ -592,12 +830,12 @@ def test_asset_group_build_job_selection_multi_component():
         ...
 
     group = AssetGroup([asset1], source_assets=[source_asset])
-    assert group.build_job(name="something", selection="abc>asset1").asset_layer.asset_keys == {
+    assert group.build_job(name="something", selection="abc/asset1").asset_layer.asset_keys == {
         AssetKey(["abc", "asset1"])
     }
 
     with pytest.raises(DagsterInvalidSubsetError, match="No qualified"):
-        group.build_job(name="something", selection="apple>banana")
+        group.build_job(name="something", selection="apple/banana")
 
 
 @pytest.mark.parametrize(
@@ -759,10 +997,10 @@ def test_job_with_reserved_name():
     def the_graph():
         pass
 
-    the_job = the_graph.to_job(name="__ASSET_GROUP")
+    the_job = the_graph.to_job(name="__ASSET_JOB")
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Attempted to provide job called __ASSET_GROUP to repository, which is a reserved name.",
+        match="Attempted to provide job called __ASSET_JOB to repository, which is a reserved name.",
     ):
 
         @repository
@@ -871,9 +1109,9 @@ def test_multiple_partitions_defs():
     jobs = group.get_base_jobs()
     assert len(jobs) == 3
     assert {job_def.name for job_def in jobs} == {
-        "__ASSET_GROUP_0",
-        "__ASSET_GROUP_1",
-        "__ASSET_GROUP_2",
+        "__ASSET_JOB_0",
+        "__ASSET_JOB_1",
+        "__ASSET_JOB_2",
     }
     assert {
         frozenset([node_def.name for node_def in job_def.all_node_defs]) for job_def in jobs

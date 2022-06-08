@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import React from 'react';
 
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
-import {PipelineSelector} from '../types/globalTypes';
+import {AssetGroupSelector, PipelineSelector} from '../types/globalTypes';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
 import {buildGraphData, GraphData, tokenForAssetKey} from './Utils';
@@ -12,6 +12,11 @@ import {
   AssetGraphQuery_assetNodes,
 } from './types/AssetGraphQuery';
 
+export interface AssetGraphFetchScope {
+  hideEdgesToNodesOutsideQuery?: boolean;
+  pipelineSelector?: PipelineSelector;
+  groupSelector?: AssetGroupSelector;
+}
 /** Fetches data for rendering an asset graph:
  *
  * @param pipelineSelector: Optionally scope to an asset job, or pass null for the global graph
@@ -21,16 +26,13 @@ import {
  * @param filterNodes: filter the returned graph using the provided function. The global graph
  * uses this option to implement the "3 of 4 repositories" picker.
  */
-export function useAssetGraphData(
-  opsQuery: string,
-  options: {
-    hideEdgesToNodesOutsideQuery?: boolean;
-    pipelineSelector?: PipelineSelector;
-  },
-) {
+export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScope) {
   const fetchResult = useQuery<AssetGraphQuery, AssetGraphQueryVariables>(ASSET_GRAPH_QUERY, {
-    variables: {pipelineSelector: options.pipelineSelector},
     notifyOnNetworkStatusChange: true,
+    variables: {
+      pipelineSelector: options.pipelineSelector,
+      groupSelector: options.groupSelector,
+    },
   });
 
   const nodes = fetchResult.data?.assetNodes;
@@ -129,8 +131,8 @@ const removeEdgesToHiddenAssets = (graphData: GraphData) => {
 };
 
 const ASSET_GRAPH_QUERY = gql`
-  query AssetGraphQuery($pipelineSelector: PipelineSelector) {
-    assetNodes(pipeline: $pipelineSelector) {
+  query AssetGraphQuery($pipelineSelector: PipelineSelector, $groupSelector: AssetGroupSelector) {
+    assetNodes(pipeline: $pipelineSelector, group: $groupSelector) {
       id
       dependencyKeys {
         path

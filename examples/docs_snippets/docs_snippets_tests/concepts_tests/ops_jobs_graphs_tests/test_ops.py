@@ -4,10 +4,13 @@ from docs_snippets.concepts.ops_jobs_graphs.ops import (
     my_configurable_op,
     my_input_op,
     my_multi_output_op,
+    my_multiple_output_annotation_op,
     my_op,
     my_op_factory,
     my_output_op,
+    my_single_tuple_output_op,
     my_typed_input_op,
+    return_annotation_op,
 )
 
 
@@ -52,3 +55,15 @@ def test_my_configurable_op():
 def test_op_factory():
     factory_op = my_op_factory("test")
     assert isinstance(factory_op, OpDefinition)
+
+
+def test_return_annotation_op():
+    assert return_annotation_op() == 5
+
+
+def test_multiple_output_annotation_op():
+    assert my_multiple_output_annotation_op() == (5, "foo")
+
+
+def test_my_single_tuple_output_op():
+    assert my_single_tuple_output_op() == (5, "foo")

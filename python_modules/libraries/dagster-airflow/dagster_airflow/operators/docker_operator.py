@@ -229,6 +229,8 @@ class DagsterDockerOperator(DockerOperator):
         try:
             tags = {AIRFLOW_EXECUTION_DATE_STR: context.get("ts")} if "ts" in context else {}
 
+            recon_pipeline = self.recon_repo.get_reconstructable_pipeline(self.pipeline_name)
+
             pipeline_run = self.instance.register_managed_run(
                 pipeline_name=self.pipeline_name,
                 run_id=self.run_id,
@@ -242,6 +244,7 @@ class DagsterDockerOperator(DockerOperator):
                 pipeline_snapshot=self.pipeline_snapshot,
                 execution_plan_snapshot=self.execution_plan_snapshot,
                 parent_pipeline_snapshot=self.parent_pipeline_snapshot,
+                pipeline_code_origin=recon_pipeline.get_python_origin(),
             )
             if self._should_skip(pipeline_run):
                 raise AirflowSkipException(

@@ -32,7 +32,6 @@ import {GraphExplorerSolidHandleFragment} from './types/GraphExplorerSolidHandle
 export interface GraphExplorerOptions {
   explodeComposites: boolean;
   preferAssetRendering: boolean;
-  enableSidebar: boolean;
 }
 
 interface GraphExplorerProps {
@@ -281,27 +280,25 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
         </>
       }
       second={
-        options.enableSidebar ? (
-          <RightInfoPanel>
-            <Route
-              // eslint-disable-next-line react/no-children-prop
-              children={({location}: {location: any}) => (
-                <SidebarTabbedContainer
-                  pipeline={pipelineOrGraph}
-                  explorerPath={explorerPath}
-                  opHandleID={selectedHandle && selectedHandle.handleID}
-                  parentOpHandleID={parentHandle && parentHandle.handleID}
-                  getInvocations={getInvocations}
-                  onEnterSubgraph={handleEnterCompositeSolid}
-                  onClickOp={handleClickOp}
-                  repoAddress={repoAddress}
-                  isGraph={isGraph}
-                  {...qs.parse(location.search || '', {ignoreQueryPrefix: true})}
-                />
-              )}
-            />
-          </RightInfoPanel>
-        ) : undefined
+        <RightInfoPanel>
+          <Route
+            // eslint-disable-next-line react/no-children-prop
+            children={({location}: {location: any}) => (
+              <SidebarTabbedContainer
+                pipeline={pipelineOrGraph}
+                explorerPath={explorerPath}
+                opHandleID={selectedHandle && selectedHandle.handleID}
+                parentOpHandleID={parentHandle && parentHandle.handleID}
+                getInvocations={getInvocations}
+                onEnterSubgraph={handleEnterCompositeSolid}
+                onClickOp={handleClickOp}
+                repoAddress={repoAddress}
+                isGraph={isGraph}
+                {...qs.parse(location.search || '', {ignoreQueryPrefix: true})}
+              />
+            )}
+          />
+        </RightInfoPanel>
       }
     />
   );

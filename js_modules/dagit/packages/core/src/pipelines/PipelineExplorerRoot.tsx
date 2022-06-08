@@ -52,7 +52,6 @@ export const PipelineExplorerContainer: React.FC<{
   const [options, setOptions] = React.useState<GraphExplorerOptions>({
     explodeComposites: explorerPath.explodeComposites ?? false,
     preferAssetRendering: true,
-    enableSidebar: true,
   });
 
   const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
@@ -89,7 +88,7 @@ export const PipelineExplorerContainer: React.FC<{
             <AssetGraphExplorer
               options={options}
               setOptions={setOptions}
-              pipelineSelector={pipelineSelector}
+              fetchOptions={{pipelineSelector}}
               explorerPath={explorerPath}
               onChangeExplorerPath={onChangeExplorerPath}
             />

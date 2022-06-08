@@ -21,7 +21,6 @@ from .base import (
     EventLogStorage,
     EventRecordsFilter,
     RunShardedEventsCursor,
-    extract_asset_events_cursor,
 )
 
 
@@ -358,38 +357,6 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                 materializations_by_key[record.dagster_event.asset_key] = record
 
         return materializations_by_key
-
-    def get_asset_events(
-        self,
-        asset_key,
-        partitions=None,
-        before_cursor=None,
-        after_cursor=None,
-        limit=None,
-        ascending=False,
-        include_cursor=False,
-        before_timestamp=None,
-        cursor=None,
-    ):
-        before_cursor, after_cursor = extract_asset_events_cursor(
-            cursor, before_cursor, after_cursor, ascending
-        )
-        event_records = self.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=asset_key,
-                asset_partitions=partitions,
-                before_cursor=before_cursor,
-                after_cursor=after_cursor,
-                before_timestamp=before_timestamp,
-            ),
-            limit=limit,
-            ascending=ascending,
-        )
-        if include_cursor:
-            return [tuple([record.storage_id, record.event_log_entry]) for record in event_records]
-        else:
-            return [record.event_log_entry for record in event_records]
 
     def get_asset_run_ids(self, asset_key):
         asset_run_ids = set()

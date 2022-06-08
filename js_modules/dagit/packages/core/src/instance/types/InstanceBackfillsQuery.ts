@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { BulkActionStatus, BackfillStatus } from "./../../types/globalTypes";
+import { BulkActionStatus, BackfillStatus, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: InstanceBackfillsQuery
@@ -54,12 +54,27 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   cause: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error_cause | null;
 }
 
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs {
+  __typename: "Run";
+  id: string;
+  canTerminate: boolean;
+  status: RunStatus;
+  tags: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs_tags[];
+}
+
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results {
   __typename: "PartitionBackfill";
   backfillId: string;
   status: BulkActionStatus;
   backfillStatus: BackfillStatus;
   numRequested: number;
+  partitionNames: string[];
   numPartitions: number;
   partitionRunStats: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionRunStats;
   unfinishedRuns: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_unfinishedRuns[];
@@ -67,6 +82,7 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   partitionSetName: string;
   partitionSet: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet | null;
   error: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error | null;
+  runs: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs[];
 }
 
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills {

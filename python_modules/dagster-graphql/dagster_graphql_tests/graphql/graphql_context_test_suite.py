@@ -328,7 +328,7 @@ class InstanceManagers:
 
 class EnvironmentManagers:
     @staticmethod
-    def managed_grpc(target=None):
+    def managed_grpc(target=None, location_name="test"):
         @contextmanager
         def _mgr_fn(instance, read_only):
             """Goes out of process via grpc"""
@@ -340,14 +340,14 @@ class EnvironmentManagers:
                         python_file=loadable_target_origin.python_file,
                         attribute=loadable_target_origin.attribute,
                         working_directory=loadable_target_origin.working_directory,
-                        location_name="test",
+                        location_name=location_name,
                     )
                     if loadable_target_origin.python_file
                     else ModuleTarget(
                         module_name=loadable_target_origin.module_name,
                         attribute=loadable_target_origin.attribute,
                         working_directory=loadable_target_origin.working_directory,
-                        location_name="test",
+                        location_name=location_name,
                     )
                 ),
                 version="",
@@ -358,7 +358,7 @@ class EnvironmentManagers:
         return MarkedManager(_mgr_fn, [Marks.managed_grpc_env])
 
     @staticmethod
-    def deployed_grpc(target=None):
+    def deployed_grpc(target=None, location_name="test"):
         @contextmanager
         def _mgr_fn(instance, read_only):
             server_process = GrpcServerProcess(
@@ -374,7 +374,7 @@ class EnvironmentManagers:
                             port=api_client.port,
                             socket=api_client.socket,
                             host=api_client.host,
-                            location_name="test",
+                            location_name=location_name,
                         ),
                         version="",
                         read_only=read_only,
@@ -543,10 +543,10 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
-    def sqlite_with_default_run_launcher_managed_grpc_env(target=None):
+    def sqlite_with_default_run_launcher_managed_grpc_env(target=None, location_name="test"):
         return GraphQLContextVariant(
             InstanceManagers.sqlite_instance_with_default_run_launcher(),
-            EnvironmentManagers.managed_grpc(target),
+            EnvironmentManagers.managed_grpc(target, location_name),
             test_id="sqlite_with_default_run_launcher_managed_grpc_env",
         )
 
@@ -560,26 +560,26 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
-    def sqlite_with_default_run_launcher_deployed_grpc_env(target=None):
+    def sqlite_with_default_run_launcher_deployed_grpc_env(target=None, location_name="test"):
         return GraphQLContextVariant(
             InstanceManagers.sqlite_instance_with_default_run_launcher(),
-            EnvironmentManagers.deployed_grpc(target),
+            EnvironmentManagers.deployed_grpc(target, location_name),
             test_id="sqlite_with_default_run_launcher_deployed_grpc_env",
         )
 
     @staticmethod
-    def postgres_with_default_run_launcher_managed_grpc_env(target=None):
+    def postgres_with_default_run_launcher_managed_grpc_env(target=None, location_name="test"):
         return GraphQLContextVariant(
             InstanceManagers.postgres_instance_with_default_run_launcher(),
-            EnvironmentManagers.managed_grpc(target),
+            EnvironmentManagers.managed_grpc(target, location_name),
             test_id="postgres_with_default_run_launcher_managed_grpc_env",
         )
 
     @staticmethod
-    def postgres_with_default_run_launcher_deployed_grpc_env(target=None):
+    def postgres_with_default_run_launcher_deployed_grpc_env(target=None, location_name="test"):
         return GraphQLContextVariant(
             InstanceManagers.postgres_instance_with_default_run_launcher(),
-            EnvironmentManagers.deployed_grpc(target),
+            EnvironmentManagers.deployed_grpc(target, location_name),
             test_id="postgres_with_default_run_launcher_deployed_grpc_env",
         )
 
@@ -700,12 +700,20 @@ class GraphQLContextVariant:
         ]
 
     @staticmethod
-    def all_executing_variants(target=None):
+    def all_executing_variants(target=None, location_name="test"):
         return [
-            GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(target),
-            GraphQLContextVariant.sqlite_with_default_run_launcher_deployed_grpc_env(target),
-            GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(target),
-            GraphQLContextVariant.postgres_with_default_run_launcher_deployed_grpc_env(target),
+            GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(
+                target, location_name
+            ),
+            GraphQLContextVariant.sqlite_with_default_run_launcher_deployed_grpc_env(
+                target, location_name
+            ),
+            GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(
+                target, location_name
+            ),
+            GraphQLContextVariant.postgres_with_default_run_launcher_deployed_grpc_env(
+                target, location_name
+            ),
         ]
 
     @staticmethod
@@ -862,5 +870,7 @@ all_repos_loadable_target = LoadableTargetOrigin(
     python_file=file_relative_path(__file__, "cross_repo_asset_deps.py"),
 )
 AllRepositoryGraphQLContextTestMatrix = make_graphql_context_test_suite(
-    context_variants=GraphQLContextVariant.all_executing_variants(target=all_repos_loadable_target)
+    context_variants=GraphQLContextVariant.all_executing_variants(
+        target=all_repos_loadable_target, location_name="cross_asset_repos"
+    )
 )

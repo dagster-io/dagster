@@ -533,6 +533,11 @@ def _assert_no_container_context(user_deployment):
     assert "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT" not in env_names
 
 
+def _assert_has_container_context(user_deployment):
+    env_names = [env.name for env in user_deployment.spec.template.spec.containers[0].env]
+    assert "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT" in env_names
+
+
 def test_user_deployment_image(template: HelmTemplate):
     deployment = create_simple_user_deployment("foo")
     helm_values = DagsterHelmValues.construct(
@@ -553,23 +558,27 @@ def test_user_deployment_image(template: HelmTemplate):
     assert image_name == deployment.image.repository
     assert image_tag == deployment.image.tag
 
-    _assert_no_container_context(user_deployments[0])
+    _assert_has_container_context(user_deployments[0])
 
 
-def test_user_deployment_include_config(template: HelmTemplate):
-    deployment = create_simple_user_deployment("foo", include_config_in_launched_runs=True)
+def test_user_deployment_include_config_in_launched_runs(template: HelmTemplate):
+    deployments = [
+        create_simple_user_deployment("foo", include_config_in_launched_runs=True),
+        create_simple_user_deployment("bar", include_config_in_launched_runs=None),
+        create_simple_user_deployment("baz", include_config_in_launched_runs=False),
+    ]
+
     helm_values = DagsterHelmValues.construct(
         dagsterUserDeployments=UserDeployments.construct(
-            enabled=True,
-            enableSubchart=True,
-            deployments=[deployment],
+            enabled=True, enableSubchart=True, deployments=deployments
         )
     )
 
     user_deployments = template.render(helm_values)
 
-    assert len(user_deployments) == 1
+    assert len(user_deployments) == 3
 
+    # Setting to true results in container context being set
     container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
     assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
     assert json.loads(container_context.value) == {
@@ -580,6 +589,15 @@ def test_user_deployment_include_config(template: HelmTemplate):
             "service_account_name": "release-name-dagster-user-deployments-user-deployments",
         }
     }
+
+    # Setting to None also results in container context being set
+    assert (
+        user_deployments[1].spec.template.spec.containers[0].env[2].name
+        == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+    )
+
+    # setting to false means no container context
+    _assert_no_container_context(user_deployments[2])
 
 
 @pytest.mark.parametrize("include_config_in_launched_runs", [False, True])
@@ -818,10 +836,18 @@ def test_user_deployment_resources(template: HelmTemplate, include_config_in_lau
         _assert_no_container_context(user_deployments[0])
 
 
-def test_subchart_image_pull_secrets(subchart_template: HelmTemplate):
+@pytest.mark.parametrize("include_config_in_launched_runs", [False, True])
+def test_subchart_image_pull_secrets(
+    subchart_template: HelmTemplate, include_config_in_launched_runs: bool
+):
     image_pull_secrets = [{"name": "super-duper-secret"}]
     deployment_values = DagsterUserDeploymentsHelmValues.construct(
         imagePullSecrets=image_pull_secrets,
+        deployments=[
+            create_simple_user_deployment(
+                "foo", include_config_in_launched_runs=include_config_in_launched_runs
+            )
+        ],
     )
 
     deployment_templates = subchart_template.render(deployment_values)
@@ -832,6 +858,23 @@ def test_subchart_image_pull_secrets(subchart_template: HelmTemplate):
     pod_spec = deployment_template.spec.template.spec
 
     assert pod_spec.image_pull_secrets[0].name == image_pull_secrets[0]["name"]
+
+    if include_config_in_launched_runs:
+        container_context = deployment_template.spec.template.spec.containers[0].env[2]
+        assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        assert json.loads(container_context.value) == {
+            "k8s": {
+                "env_config_maps": [
+                    "release-name-dagster-user-deployments-foo-user-env",
+                ],
+                "image_pull_policy": "Always",
+                "image_pull_secrets": image_pull_secrets,
+                "namespace": "default",
+                "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+            }
+        }
+    else:
+        _assert_no_container_context(deployment_template)
 
 
 def test_subchart_postgres_password_global_override(subchart_template: HelmTemplate):

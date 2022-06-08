@@ -245,15 +245,13 @@ RUN_EVENTS_QUERY = (
     MESSAGE_EVENT_FRAGMENTS
     + """
 query pipelineRunEvents($runId: ID!, $cursor: String) {
-  pipelineRunOrError(runId: $runId) {
+  logsForRun(runId: $runId, afterCursor: $cursor) {
     __typename
-    ... on PipelineRun {
-      eventConnection(afterCursor: $cursor) {
-        events {
-          ...messageEventFragment
-        }
-        cursor
+    ... on EventConnection {
+      events {
+        ...messageEventFragment
       }
+      cursor
     }
   }
 }

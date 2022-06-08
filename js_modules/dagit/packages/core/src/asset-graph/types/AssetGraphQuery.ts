@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineSelector } from "./../../types/globalTypes";
+import { PipelineSelector, AssetGroupSelector } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: AssetGraphQuery
@@ -526,4 +526,5 @@ export interface AssetGraphQuery {
 
 export interface AssetGraphQueryVariables {
   pipelineSelector?: PipelineSelector | null;
+  groupSelector?: AssetGroupSelector | null;
 }
