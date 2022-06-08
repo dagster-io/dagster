@@ -19,7 +19,7 @@ const BaseTagTooltipStyle: React.CSSProperties = {
   alignItems: 'center',
   padding: '4px 8px',
   userSelect: 'text',
-  pointerEvents: 'all',
+  pointerEvents: 'none',
   borderRadius: 8,
   border: 'none',
   top: -10,
