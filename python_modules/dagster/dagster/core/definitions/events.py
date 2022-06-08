@@ -37,7 +37,8 @@ if TYPE_CHECKING:
     from dagster.core.execution.context.output import OutputContext
 
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
-ASSET_KEY_STRUCTURED_DELIMITER = "."
+ASSET_KEY_DELIMITER = "/"
+ASSET_KEY_LEGACY_DELIMITER = "."
 
 
 def parse_asset_key_string(s: str) -> List[str]:
@@ -110,18 +111,18 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
         if not self.path:
             return None
         if legacy:
-            return ASSET_KEY_STRUCTURED_DELIMITER.join(self.path)
+            return ASSET_KEY_LEGACY_DELIMITER.join(self.path)
         return seven.json.dumps(self.path)
 
     def to_user_string(self) -> str:
         """
         E.g. "first_component/second_component"
         """
-        return "/".join(self.path)
+        return ASSET_KEY_DELIMITER.join(self.path)
 
     @staticmethod
     def from_user_string(asset_key_string: str) -> "AssetKey":
-        return AssetKey(asset_key_string.split("/"))
+        return AssetKey(asset_key_string.split(ASSET_KEY_DELIMITER))
 
     @staticmethod
     def from_db_string(asset_key_string: Optional[str]) -> Optional["AssetKey"]:
@@ -141,7 +142,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
     def get_db_prefix(path: List[str], legacy: Optional[bool] = False):
         check.list_param(path, "path", of_type=str)
         if legacy:
-            return ASSET_KEY_STRUCTURED_DELIMITER.join(path)
+            return ASSET_KEY_LEGACY_DELIMITER.join(path)
         return seven.json.dumps(path)[:-2]  # strip trailing '"]' from json string
 
     @staticmethod

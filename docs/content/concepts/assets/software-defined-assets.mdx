@@ -474,18 +474,18 @@ def test_uses_context():
 
 ### Multi-component asset keys
 
-Assets are often objects in systems with hierarchical namespaces, like filesystems. Because of this, it often makes sense for an asset key to be a list of strings, instead of just a single string.
+Assets are often objects in systems with hierarchical namespaces, like filesystems. Because of this, it often makes sense for an asset key to be a list of strings, instead of just a single string. To define an asset with a multi-part asset key, use the `key_prefix` argument-- this can be either a list of strings or a single string with segments delimited by "/". The full asset key is formed by prepending the `key_prefix` to the asset name (which defaults to the name of the decorated function).
 
 ```python file=/concepts/assets/multi_component_asset_key.py startafter=start_marker endbefore=end_marker
 from dagster import AssetIn, asset
 
 
-@asset(namespace=["one", "two", "three"])
+@asset(key_prefix=["one", "two", "three"])
 def upstream_asset():
     return [1, 2, 3]
 
 
-@asset(ins={"upstream_asset": AssetIn(namespace=["one", "two", "three"])})
+@asset(ins={"upstream_asset": AssetIn(key_prefix="one/two/three")})
 def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 ```
