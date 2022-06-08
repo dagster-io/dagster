@@ -5,7 +5,21 @@ description: A software-defined asset is a description of how to compute the con
 
 # Software-Defined Assets
 
-A software-defined asset is a description of how to compute the contents of a particular data asset.
+An **asset** is an object in persistent storage, such as a table, file, or persisted machine learning model. A **software-defined asset** is a Dagster object that couples an asset to the function and upstream assets that are used to produce its contents.
+
+Software-defined assets enable a declarative approach to data management, in which code is the source of truth on what data assets should exist and how those assets are computed.
+
+A software-defined asset includes the following:
+
+- An <PyObject object="AssetKey" />, which is a handle for referring to the asset.
+- A set of upstream asset keys, which refer to assets that the contents of the software-defined asset are derived from.
+- An [op](/concepts/ops-jobs-graphs/ops), which is a function responsible for computing the contents of the asset from its upstream dependencies.
+
+  **Note**: A crucial distinction between software-defined assets and [ops](/concepts/ops-jobs-graphs/ops) is that software-defined assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/jobs-graphs).
+
+**Materializing** an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [Dagit](/concepts/dagit/dagit) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is [fully customizable](#customizing-how-assets-are-materialized-with-io-managers). It's possible to materialize an asset in multiple storage environments, such as production and staging.
+
+---
 
 ## Relevant APIs
 
@@ -15,21 +29,7 @@ A software-defined asset is a description of how to compute the contents of a pa
 | <PyObject object="AssetGroup" />      | A group of software-defined assets.                                                                                                                                                                                                                   |
 | <PyObject object="SourceAsset" />     | A class that describes an asset, but doesn't define how to compute it. Within an <PyObject object="AssetGroup" />, <PyObject object="SourceAsset" />s are used to represent assets that other assets depend on, but can't be materialized themselves. |
 
-## Overview
-
-An "asset" is an object in persistent storage, e.g. a table, a file, or a persisted machine learning model. A software-defined asset is a Dagster object that couples an asset to the function and upstream assets that are used to produce its contents. Software-defined assets enable a declarative approach to data management, in which your code is the source of truth on what data assets should exist and how those assets are computed.
-
-A software-defined asset includes three main components:
-
-- An <PyObject object="AssetKey" />, which is a handle for referring to the asset.
-- A set of upstream asset keys, which refer to assets that the contents of the software-defined asset are derived from.
-- An [op](/concepts/ops-jobs-graphs/ops), which is a function responsible for computing the contents of the asset from its upstream dependencies.
-
-A crucial distinction between software-defined assets and [ops](/concepts/ops-jobs-graphs/ops) is that software-defined assets know about their dependencies, while ops do not. Ops aren't hooked up to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/jobs-graphs).
-
-"Materializing" an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [Dagit](/concepts/dagit/dagit), Dagster's web UI, or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is [fully customizable](#customizing-how-assets-are-materialized-with-io-managers).
-
-A single software-defined asset might be represented in multiple storage environments - e.g. it might have a "production" version and a "staging" version.
+---
 
 ## Defining assets
 
