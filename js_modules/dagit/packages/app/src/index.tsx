@@ -24,7 +24,7 @@ const apolloLinks = [logLink, errorLink, timeStartLink];
 if (telemetryEnabled) {
   apolloLinks.unshift(telemetryLink(pathPrefix));
 }
-
+// test
 const config = {
   apolloLinks,
   basePath: pathPrefix,
