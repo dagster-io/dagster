@@ -13,30 +13,45 @@ from dagster_buildkite.utils import (
 )
 
 
-def build_packages_steps() -> List[BuildkiteStep]:
+def build_example_packages_steps() -> List[BuildkiteStep]:
+    custom_example_pkg_roots = [pkg.directory for pkg in EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG]
+    example_packages_with_standard_config = [
+        PackageSpec(
+            pkg,
+            upload_coverage=False,
+        )
+        for pkg in _get_uncustomized_pkg_roots("examples", custom_example_pkg_roots)
+    ]
 
-    custom_pkg_roots = [pkg.directory for pkg in PACKAGES_WITH_CUSTOM_CONFIG]
-    packages_with_standard_config = [
+    return _build_steps_from_package_specs(
+        EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config
+    )
+
+
+def build_library_packages_steps() -> List[BuildkiteStep]:
+    custom_library_pkg_roots = [pkg.directory for pkg in LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG]
+    library_packages_with_standard_config = [
         *[
             PackageSpec(pkg, upload_coverage=False)
-            for pkg in _get_uncustomized_pkg_roots("python_modules", custom_pkg_roots)
+            for pkg in _get_uncustomized_pkg_roots("python_modules", custom_library_pkg_roots)
         ],
         *[
             PackageSpec(pkg)
-            for pkg in _get_uncustomized_pkg_roots("python_modules/libraries", custom_pkg_roots)
-        ],
-        *[
-            PackageSpec(
-                pkg,
-                upload_coverage=False,
+            for pkg in _get_uncustomized_pkg_roots(
+                "python_modules/libraries", custom_library_pkg_roots
             )
-            for pkg in _get_uncustomized_pkg_roots("examples", custom_pkg_roots)
         ],
     ]
 
+    return _build_steps_from_package_specs(
+        LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG + library_packages_with_standard_config
+    )
+
+
+def _build_steps_from_package_specs(package_specs: List[PackageSpec]) -> List[BuildkiteStep]:
     steps: List[BuildkiteStep] = []
     all_packages = sorted(
-        PACKAGES_WITH_CUSTOM_CONFIG + packages_with_standard_config,
+        package_specs,
         key=lambda p: f"{_PACKAGE_TYPE_ORDER.index(p.package_type)} {p.name}",
     )
     for pkg in all_packages:
@@ -299,7 +314,7 @@ postgres_extra_cmds = [
 
 # Some Dagster packages have more involved test configs or support only certain Python version;
 # special-case those here
-PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
+EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/airflow_ingest",
         unsupported_python_versions=[AvailablePythonVersion.V3_9],
@@ -356,6 +371,9 @@ PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             AvailablePythonVersion.V3_6,
         ],
     ),
+]
+
+LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec("python_modules/automation"),
     PackageSpec("python_modules/dagit", pytest_extra_cmds=dagit_extra_cmds),
     PackageSpec(
