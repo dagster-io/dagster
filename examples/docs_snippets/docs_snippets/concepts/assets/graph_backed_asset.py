@@ -2,13 +2,7 @@ from unittest import mock
 
 from pandas import DataFrame
 
-from dagster import (
-    AssetGroup,
-    AssetsDefinition,
-    ResourceDefinition,
-    graph,
-    op,
-)
+from dagster import AssetGroup, AssetsDefinition, ResourceDefinition, graph, op
 
 
 def create_db_connection():
