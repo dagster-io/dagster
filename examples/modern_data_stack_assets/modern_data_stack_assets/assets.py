@@ -6,7 +6,7 @@ from dagster_airbyte import airbyte_resource, build_airbyte_assets
 from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
 from scipy import optimize
 
-from dagster import asset, define_asset_job, load_assets_from_current_module, repository
+from dagster import asset, load_assets_from_current_module, repository
 from dagster.core.execution.with_resources import with_resources
 
 from .constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
