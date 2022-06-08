@@ -17,6 +17,8 @@ import SidebarNavigation from "components/mdx/SidebarNavigation";
 import hydrate from "next-mdx-remote/hydrate";
 import { useRouter } from "next/router";
 import GitHubButton from "react-github-btn";
+import cx from "classnames";
+
 const components: MdxRemote.Components = MDXComponents;
 
 export type MDXData = {
@@ -28,6 +30,7 @@ export type MDXData = {
   searchIndex: any;
   tableOfContents: any;
   githubLink: string;
+  asPath: string;
 };
 
 export const VersionNotice = () => {
@@ -74,8 +77,9 @@ export const VersionNotice = () => {
   );
 };
 
-const BreadcrumbNav = () => {
+const BreadcrumbNav = ({ asPath }) => {
   const { asPathWithoutAnchor } = useVersion();
+  const pagePath = asPath ? asPath : asPathWithoutAnchor;
 
   let navigation = useNavigation();
 
@@ -99,7 +103,7 @@ const BreadcrumbNav = () => {
   let breadcrumbItems = [];
 
   for (let i = 0; i < navigation.length; i++) {
-    let matchedStack = traverse(navigation[i], asPathWithoutAnchor, []);
+    let matchedStack = traverse(navigation[i], pagePath, []);
     if (matchedStack) {
       breadcrumbItems = matchedStack;
       break;
@@ -126,7 +130,15 @@ const BreadcrumbNav = () => {
                   )}
                   <a
                     href={item.path}
-                    className="ml-1 lg:ml-2 text-xs lg:text-sm lg:font-medium text-gray-700 hover:text-gray-900 truncate"
+                    className={cx(
+                      "ml-1 lg:ml-2 text-xs lg:text-sm lg:font-medium text-gray-700 hover:text-gray-900 truncate",
+                      {
+                        // Map nav hierarchy to levels for docs search
+                        "DocSearch-lvl0": index === 0,
+                        "DocSearch-lvl1": index === 1,
+                        "DocSearch-lvl2": index === 2,
+                      }
+                    )}
                   >
                     {item.title}
                   </a>
@@ -140,7 +152,7 @@ const BreadcrumbNav = () => {
   );
 };
 
-export const VersionedContentLayout = ({ children }) => {
+export const VersionedContentLayout = ({ children, asPath = null }) => {
   return (
     <div
       className="flex-1 w-full min-w-0 relative z-0 focus:outline-none"
@@ -153,7 +165,7 @@ export const VersionedContentLayout = ({ children }) => {
               <VersionDropdown />
             </div>
             <div className="flex">
-              <BreadcrumbNav />
+              <BreadcrumbNav asPath={asPath} />
             </div>
           </div>
         </div>
@@ -304,8 +316,14 @@ function VersionedMDXRenderer({
   const { query } = useRouter();
   const { editMode } = query;
 
-  const { mdxSource, frontMatter, searchIndex, tableOfContents, githubLink } =
-    data;
+  const {
+    mdxSource,
+    frontMatter,
+    searchIndex,
+    tableOfContents,
+    githubLink,
+    asPath,
+  } = data;
 
   const content = hydrate(mdxSource, {
     components,
@@ -327,7 +345,7 @@ function VersionedMDXRenderer({
         }}
       />
 
-      <VersionedContentLayout>
+      <VersionedContentLayout asPath={asPath}>
         <div className="DocSearch-content prose dark:prose-dark max-w-none">
           {content}
         </div>
