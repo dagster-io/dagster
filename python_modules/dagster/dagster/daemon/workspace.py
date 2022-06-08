@@ -36,11 +36,14 @@ class BaseDaemonWorkspace(IWorkspace):
     def get_workspace_snapshot(self) -> Dict[str, WorkspaceLocationEntry]:
         if self._location_entries == None:
             self._location_entries = self._load_workspace()
-        return self._location_entries
+        return self._location_entries.copy()
 
     @abstractmethod
     def _load_workspace(self) -> Dict[str, WorkspaceLocationEntry]:
         pass
+
+    def get_workspace_copy_for_iteration(self):
+        return DaemonIterationWorkspace(self.get_workspace_snapshot())
 
     def get_repository_location(self, location_name: str) -> RepositoryLocation:
         if self._location_entries == None:
@@ -68,15 +71,33 @@ class BaseDaemonWorkspace(IWorkspace):
 
         return location_entry.repository_location
 
-    def cleanup(self) -> None:
+    # change this default param
+    def cleanup(self, cleanup_locations: bool = True) -> None:
         if self._location_entries != None:
-            for location_entry in self._location_entries.values():
-                if location_entry.repository_location:
-                    location_entry.repository_location.cleanup()
+            if cleanup_locations:
+                for location_entry in self._location_entries.values():
+                    if location_entry.repository_location:
+                        location_entry.repository_location.cleanup()
             self._location_entries = None
 
     def __exit__(self, exception_type, exception_value, traceback):
-        self.cleanup()
+        self.cleanup(cleanup_locations=True)
+
+
+# A copy of the main workspace's locations that can be called from a background thread
+# in a daemon without worrying that the main thread will clean up the locations underneath us.
+# Analagous to WorkspaceRequestContext in Dagit.
+#
+# Daemons that call this should be careful to set cleanup_locations=False when calling cleanup
+# on the parent workspace that get_workspace_copy_for_iteration() was called on to create
+# this workspace.
+class DaemonIterationWorkspace(BaseDaemonWorkspace):
+    def __init__(self, location_entries_copy):
+        self._location_entries_copy = location_entries_copy
+        super().__init__()
+
+    def _load_workspace(self) -> Dict[str, WorkspaceLocationEntry]:
+        return self._location_entries_copy
 
 
 class DaemonWorkspace(BaseDaemonWorkspace):

@@ -4,9 +4,9 @@ from dagster_graphql.test.utils import (
     infer_repository_selector,
 )
 
-from dagster.core.test_utils import create_test_daemon_workspace
+from dagster.core.test_utils import MockThreadPoolExecutor, create_test_daemon_workspace
 from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.sensor import execute_sensor_iteration
+from dagster.daemon.sensor import check_sensor_futures, execute_sensor_iteration
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 
@@ -34,11 +34,18 @@ def _create_sensor_tick(graphql_context):
         graphql_context.process_context.workspace_load_target,
         graphql_context.instance,
     ) as workspace:
+        logger = get_default_daemon_logger("SensorDaemon")
+        future_contexts = {}
         list(
             execute_sensor_iteration(
-                graphql_context.instance, get_default_daemon_logger("SensorDaemon"), workspace
+                graphql_context.instance,
+                logger,
+                workspace,
+                executor=MockThreadPoolExecutor(),
+                future_contexts=future_contexts,
             )
         )
+        list(check_sensor_futures(logger, future_contexts))
 
 
 class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):

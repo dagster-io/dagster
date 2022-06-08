@@ -6,6 +6,7 @@ import sys
 import tempfile
 import time
 from collections import defaultdict
+from concurrent.futures import Future
 from contextlib import ExitStack, contextmanager
 
 import pendulum
@@ -562,3 +563,30 @@ def test_counter():
     counts = counter.counts()
     assert counts["foo"] == 20
     assert counts["bar"] == 10
+
+
+class MockThreadPoolExecutor:
+    def __init__(self, **kwargs):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        pass
+
+    def submit(self, fn, *args, **kwargs):
+        # execute functions in series without creating threads
+        # for easier unit testing
+        future = Future()
+
+        try:
+            result = fn(*args, **kwargs)
+            future.set_result(result)
+        except Exception as e:
+            future.set_exception(e)
+
+        return future
+
+    def shutdown(self, wait=True):
+        pass

@@ -35,13 +35,18 @@ from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster.core.storage.event_log.base import EventRecordsFilter
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import (
+    MockThreadPoolExecutor,
     create_test_daemon_workspace,
     get_logger_output_from_capfd,
     instance_for_test,
 )
 from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
+from dagster.daemon.sensor import (
+    check_sensor_futures,
+    execute_sensor_iteration,
+    execute_sensor_iteration_loop,
+)
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 
@@ -377,13 +382,18 @@ def workspace_load_target(attribute="the_repo"):
 
 
 def evaluate_sensors(instance, workspace):
+    logger = get_default_daemon_logger("SensorDaemon")
+    future_contexts = {}
     list(
         execute_sensor_iteration(
             instance,
-            get_default_daemon_logger("SensorDaemon"),
+            logger,
             workspace,
+            executor=MockThreadPoolExecutor(),
+            future_contexts=future_contexts,
         )
     )
+    list(check_sensor_futures(logger, future_contexts))
 
 
 def validate_tick(
@@ -675,7 +685,7 @@ def test_bad_load_sensor(capfd):
             assert "Could not find sensor invalid_sensor in repository the_repo." in captured.out
 
 
-def test_error_sensor(capfd):
+def test_error_sensor(caplog):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
@@ -722,10 +732,9 @@ def test_error_sensor(capfd):
                 "Error occurred during the execution of evaluation_fn for sensor error_sensor",
             )
 
-            captured = capfd.readouterr()
             assert (
                 "Error occurred during the execution of evaluation_fn for sensor error_sensor"
-            ) in captured.out
+            ) in caplog.text
 
             # Tick updated the sensor's last tick time, but not its cursor (due to the failure)
             state = instance.get_instigator_state(

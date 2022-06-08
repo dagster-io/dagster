@@ -1,3 +1,4 @@
+import concurrent.futures
 import os
 import sys
 import time
@@ -26,7 +27,7 @@ from dagster.core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster.core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster.core.workspace import IWorkspace
 from dagster.utils import merge_dicts
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 MIN_INTERVAL_LOOP_TIME = 5
 
@@ -175,6 +176,56 @@ def _check_for_debug_crash(debug_crash_flags, key):
 RELOAD_WORKSPACE = 60
 
 
+class SensorFutureContext(
+    NamedTuple(
+        "_SensorFutureContext",
+        [
+            ("future", concurrent.futures.Future),
+            ("timeout", float),
+        ],
+    )
+):
+    DEFAULT_TIMEOUT_SECONDS = 75
+
+    def __new__(
+        cls,
+        future: concurrent.futures.Future,
+        timeout: Optional[float] = None,
+    ):
+        return super(cls, SensorFutureContext).__new__(
+            cls,
+            check.inst_param(future, "future", concurrent.futures.Future),
+            check.opt_float_param(
+                timeout,
+                "timeout",
+                default=pendulum.now("UTC").add(seconds=cls.DEFAULT_TIMEOUT_SECONDS).timestamp(),
+            ),
+        )
+
+    def timed_out(self):
+        return pendulum.now("UTC").timestamp() > self.timeout
+
+
+def check_sensor_futures(logger, future_contexts):
+    # Check if any futures have finished
+    for selector_id, future_context in future_contexts.copy().items():
+        if future_context.future.done() or future_context.timed_out():
+            response: Optional[SerializableErrorInfo] = None
+            try:
+                response = future_context.future.result(timeout=0)
+            except:
+                response = [serializable_error_info_from_exc_info(sys.exc_info())]
+
+            if response:
+                for error_info in response:
+                    logger.error("Error while running sensor tick: " + str(error_info))
+
+            del future_contexts[selector_id]
+
+            if response:
+                yield response
+
+
 def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
     """
     Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
@@ -184,37 +235,54 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
     """
     workspace_loaded_time = pendulum.now("UTC").timestamp()
 
-    workspace_iteration = 0
-    start_time = pendulum.now("UTC").timestamp()
-    while True:
+    max_workers = int(os.getenv("DAGSTER_SENSOR_DAEMON_THREADPOOL_WORKERS", "3"))
+
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=max_workers,
+        thread_name_prefix="sensor_daemon_worker",
+    ) as executor:
+
+        future_contexts = {}
+
+        workspace_iteration = 0
         start_time = pendulum.now("UTC").timestamp()
-        if until and start_time >= until:
-            # provide a way of organically ending the loop to support test environment
-            break
+        while True:
+            start_time = pendulum.now("UTC").timestamp()
+            if until and start_time >= until:
+                # provide a way of organically ending the loop to support test environment
+                break
 
-        if start_time - workspace_loaded_time > RELOAD_WORKSPACE:
-            workspace.cleanup()
-            workspace_loaded_time = pendulum.now("UTC").timestamp()
-            workspace_iteration = 0
+            yield from check_sensor_futures(logger, future_contexts)
 
-        yield from execute_sensor_iteration(
-            instance,
-            logger,
-            workspace,
-            log_verbose_checks=(workspace_iteration == 0),
-        )
+            if start_time - workspace_loaded_time > RELOAD_WORKSPACE:
+                workspace.cleanup(
+                    cleanup_locations=False
+                )  # rely on GC to clean locations once no thread is using them anymore
+                workspace_loaded_time = pendulum.now("UTC").timestamp()
+                workspace_iteration = 0
 
-        loop_duration = pendulum.now("UTC").timestamp() - start_time
-        sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
-        time.sleep(sleep_time)
-        yield
-        workspace_iteration += 1
+            yield from execute_sensor_iteration(
+                instance,
+                logger,
+                workspace.get_workspace_copy_for_iteration(),
+                executor,
+                future_contexts,
+                log_verbose_checks=(workspace_iteration == 0),
+            )
+
+            loop_duration = pendulum.now("UTC").timestamp() - start_time
+            sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
+            time.sleep(sleep_time)
+            yield
+            workspace_iteration += 1
 
 
 def execute_sensor_iteration(
     instance,
     logger,
     workspace,
+    executor,
+    future_contexts,
     log_verbose_checks=True,
     debug_crash_flags=None,
 ):
@@ -299,55 +367,66 @@ def execute_sensor_iteration(
     for external_sensor in sensors.values():
         sensor_name = external_sensor.name
         sensor_debug_crash_flags = debug_crash_flags.get(sensor_name) if debug_crash_flags else None
-        error_info = None
-        try:
-            sensor_state = all_sensor_states.get(external_sensor.selector_id)
-            if not sensor_state:
-                assert external_sensor.default_status == DefaultSensorStatus.RUNNING
-                sensor_state = InstigatorState(
-                    external_sensor.get_external_origin(),
-                    InstigatorType.SENSOR,
-                    InstigatorStatus.AUTOMATICALLY_RUNNING,
-                    SensorInstigatorData(min_interval=external_sensor.min_interval_seconds),
-                )
-                instance.add_instigator_state(sensor_state)
-            elif _is_under_min_interval(sensor_state, external_sensor, now):
-                continue
-
-            tick = instance.create_tick(
-                TickData(
-                    instigator_origin_id=sensor_state.instigator_origin_id,
-                    instigator_name=sensor_state.instigator_name,
-                    instigator_type=InstigatorType.SENSOR,
-                    status=TickStatus.STARTED,
-                    timestamp=now.timestamp(),
-                    selector_id=external_sensor.selector_id,
-                )
+        sensor_state = all_sensor_states.get(external_sensor.selector_id)
+        if not sensor_state:
+            assert external_sensor.default_status == DefaultSensorStatus.RUNNING
+            sensor_state = InstigatorState(
+                external_sensor.get_external_origin(),
+                InstigatorType.SENSOR,
+                InstigatorStatus.AUTOMATICALLY_RUNNING,
+                SensorInstigatorData(min_interval=external_sensor.min_interval_seconds),
             )
+            instance.add_instigator_state(sensor_state)
+        elif _is_under_min_interval(sensor_state, external_sensor, now):
+            continue
 
-            _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
+        if future_contexts.get(external_sensor.selector_id):
+            # Future for this sensor is already running
+            continue
 
-            with SensorLaunchContext(
-                external_sensor, tick, instance, logger, tick_retention_settings
-            ) as tick_context:
-                _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
-                yield from _evaluate_sensor(
-                    tick_context,
-                    instance,
-                    workspace,
-                    external_sensor,
-                    sensor_state,
-                    sensor_debug_crash_flags,
-                )
-        except Exception:
-            error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            logger.error(
-                "Sensor daemon caught an error for sensor {sensor_name} : {error_info}".format(
-                    sensor_name=external_sensor.name,
-                    error_info=error_info.to_string(),
-                )
+        future = executor.submit(
+            _process_tick,
+            logger,
+            instance,
+            workspace,
+            now,
+            external_sensor,
+            sensor_state,
+            sensor_debug_crash_flags,
+            tick_retention_settings,
+        )
+
+        future_contexts[external_sensor.selector_id] = SensorFutureContext(future)
+
+
+def _process_tick(
+    logger, instance, workspace, now, external_sensor, sensor_state, sensor_debug_crash_flags, tick_retention_settings
+):
+    tick = instance.create_tick(
+        TickData(
+            instigator_origin_id=sensor_state.instigator_origin_id,
+            instigator_name=sensor_state.instigator_name,
+            instigator_type=InstigatorType.SENSOR,
+            status=TickStatus.STARTED,
+            timestamp=now.timestamp(),
+            selector_id=external_sensor.selector_id,
+        )
+    )
+
+    _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
+
+    with SensorLaunchContext(external_sensor, tick, instance, logger, tick_retention_settings) as tick_context:
+        _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
+        return list(
+            _evaluate_sensor(
+                tick_context,
+                instance,
+                workspace,
+                external_sensor,
+                sensor_state,
+                sensor_debug_crash_flags,
             )
-        yield error_info
+        )
 
 
 def _evaluate_sensor(
@@ -374,8 +453,6 @@ def _evaluate_sensor(
         state.instigator_data.last_run_key if state.instigator_data else None,
         state.instigator_data.cursor if state.instigator_data else None,
     )
-
-    yield
 
     assert isinstance(sensor_runtime_data, SensorExecutionData)
     if not sensor_runtime_data.run_requests:
@@ -432,8 +509,7 @@ def _evaluate_sensor(
             context.logger.info(f"No run requests returned for {external_sensor.name}, skipping")
             context.update_state(TickStatus.SKIPPED, cursor=sensor_runtime_data.cursor)
 
-        yield
-        return
+        return  # Done with run status sensors
 
     skipped_runs = []
     existing_runs_by_key = _fetch_existing_runs(
@@ -464,7 +540,6 @@ def _evaluate_sensor(
         if isinstance(run, SkippedSensorRun):
             skipped_runs.append(run)
             context.add_run_info(run_id=None, run_key=run_request.run_key)
-            yield
             continue
 
         _check_for_debug_crash(sensor_debug_crash_flags, "RUN_CREATED")
@@ -486,8 +561,7 @@ def _evaluate_sensor(
             context.logger.error(
                 f"Run {run.run_id} created successfully but failed to launch: " f"{str(error_info)}"
             )
-
-        yield error_info
+            yield error_info
 
         _check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
 
@@ -505,8 +579,6 @@ def _evaluate_sensor(
         context.update_state(TickStatus.SUCCESS, cursor=sensor_runtime_data.cursor)
     else:
         context.update_state(TickStatus.SKIPPED, cursor=sensor_runtime_data.cursor)
-
-    yield
 
 
 def _is_under_min_interval(state, external_sensor, now):
