@@ -124,6 +124,18 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
     );
   }
 
+  if (!graphsForTable.length) {
+    return (
+      <Box padding={64}>
+        <NonIdealState
+          icon="schema"
+          title="No graphs found"
+          description={<div>This repository does not have any graphs defined.</div>}
+        />
+      </Box>
+    );
+  }
+
   return (
     <Table>
       <thead>

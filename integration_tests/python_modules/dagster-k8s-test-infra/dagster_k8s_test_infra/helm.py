@@ -726,7 +726,7 @@ def helm_chart_for_k8s_run_launcher(
                         "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}]
                         + ([{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []),
                         "envSecrets": [{"name": TEST_SECRET_NAME}],
-                        "envVars": ["BUILDKITE"],
+                        "envVars": (["BUILDKITE=1"] if os.getenv("BUILDKITE") else []),
                         "imagePullPolicy": image_pull_policy(),
                         "volumeMounts": [
                             {
