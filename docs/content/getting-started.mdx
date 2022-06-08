@@ -106,10 +106,10 @@ You can also use the [Dagster Python API](/concepts/ops-jobs-graphs/job-executio
 Add a few lines to `cereal.py`, which executes a run within the Python process:
 
 ```python file=/guides/dagster/asset_tutorial/cereal.py startafter=start_materialize_marker endbefore=end_materialize_marker
-from dagster import materialize
+from dagster import AssetGroup
 
 if __name__ == "__main__":
-    materialize([cereals, nabisco_cereals])
+    AssetGroup([cereals]).materialize()
 ```
 
 Now you can run:
