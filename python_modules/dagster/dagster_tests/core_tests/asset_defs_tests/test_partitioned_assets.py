@@ -666,6 +666,7 @@ def test_from_graph():
     @op
     def my_op2(context, upstream_asset):
         assert context.output_asset_partition_key() == "a"
+        return upstream_asset
 
     @graph
     def downstream_asset(upstream_asset):

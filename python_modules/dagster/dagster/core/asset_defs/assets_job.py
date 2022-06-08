@@ -97,7 +97,8 @@ def build_assets_job(
     check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
     source_assets_by_key = build_source_assets_by_key(source_assets)
 
-    partitions_def = build_job_partitions_from_assets(assets, source_assets or [])
+    partitions_def = partitions_def or build_job_partitions_from_assets(assets)
+
     deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
     resource_defs = merge_dicts({"io_manager": default_job_io_manager}, resource_defs)
@@ -150,7 +151,6 @@ def build_assets_job(
 
 def build_job_partitions_from_assets(
     assets: Iterable[AssetsDefinition],
-    source_assets: Sequence[Union[SourceAsset, AssetsDefinition]],
 ) -> Optional[PartitionsDefinition]:
     assets_with_partitions_defs = [assets_def for assets_def in assets if assets_def.partitions_def]
 
