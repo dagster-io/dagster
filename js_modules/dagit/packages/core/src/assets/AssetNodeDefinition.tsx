@@ -214,7 +214,6 @@ const OpNamesDisplay = (props: {
     return null;
   }
 
-  console.log(graphName, opNames);
   if (!graphName) {
     const firstOp = opNames[0];
     if (displayNameForAssetKey(assetKey) === firstOp) {
