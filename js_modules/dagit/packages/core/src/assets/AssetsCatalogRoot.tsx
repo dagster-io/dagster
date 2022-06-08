@@ -1,6 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Page, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
+import {useHistory} from 'react-router';
 import {useParams} from 'react-router-dom';
 
 import {displayNameForAssetKey} from '../asset-graph/Utils';
@@ -17,6 +18,7 @@ import {
 
 export const AssetsCatalogRoot = () => {
   const params = useParams();
+  const history = useHistory();
   const currentPath: string[] = (params['0'] || '')
     .split('/')
     .filter((x: string) => x)
@@ -50,7 +52,12 @@ export const AssetsCatalogRoot = () => {
         assetKey={{path: currentPath}}
         right={<ReloadAllButton label="Reload definitions" />}
       />
-      <AssetsCatalogTable prefixPath={currentPath} />
+      <AssetsCatalogTable
+        prefixPath={currentPath}
+        setPrefixPath={(prefixPath) =>
+          history.push(`/instance/assets/${prefixPath.map(encodeURIComponent).join('/')}`)
+        }
+      />
     </Page>
   ) : (
     <AssetView assetKey={{path: currentPath}} />

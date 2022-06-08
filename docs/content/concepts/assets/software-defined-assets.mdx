@@ -5,7 +5,21 @@ description: A software-defined asset is a description of how to compute the con
 
 # Software-Defined Assets
 
-A software-defined asset is a description of how to compute the contents of a particular data asset.
+An **asset** is an object in persistent storage, such as a table, file, or persisted machine learning model. A **software-defined asset** is a Dagster object that couples an asset to the function and upstream assets that are used to produce its contents.
+
+Software-defined assets enable a declarative approach to data management, in which code is the source of truth on what data assets should exist and how those assets are computed.
+
+A software-defined asset includes the following:
+
+- An <PyObject object="AssetKey" />, which is a handle for referring to the asset.
+- A set of upstream asset keys, which refer to assets that the contents of the software-defined asset are derived from.
+- An [op](/concepts/ops-jobs-graphs/ops), which is a function responsible for computing the contents of the asset from its upstream dependencies.
+
+  **Note**: A crucial distinction between software-defined assets and [ops](/concepts/ops-jobs-graphs/ops) is that software-defined assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/jobs-graphs).
+
+**Materializing** an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [Dagit](/concepts/dagit/dagit) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is [fully customizable](#customizing-how-assets-are-materialized-with-io-managers). It's possible to materialize an asset in multiple storage environments, such as production and staging.
+
+---
 
 ## Relevant APIs
 
@@ -15,21 +29,7 @@ A software-defined asset is a description of how to compute the contents of a pa
 | <PyObject object="AssetGroup" />      | A group of software-defined assets.                                                                                                                                                                                                                   |
 | <PyObject object="SourceAsset" />     | A class that describes an asset, but doesn't define how to compute it. Within an <PyObject object="AssetGroup" />, <PyObject object="SourceAsset" />s are used to represent assets that other assets depend on, but can't be materialized themselves. |
 
-## Overview
-
-An "asset" is an object in persistent storage, e.g. a table, a file, or a persisted machine learning model. A software-defined asset is a Dagster object that couples an asset to the function and upstream assets that are used to produce its contents. Software-defined assets enable a declarative approach to data management, in which your code is the source of truth on what data assets should exist and how those assets are computed.
-
-A software-defined asset includes three main components:
-
-- An <PyObject object="AssetKey" />, which is a handle for referring to the asset.
-- A set of upstream asset keys, which refer to assets that the contents of the software-defined asset are derived from.
-- An [op](/concepts/ops-jobs-graphs/ops), which is a function responsible for computing the contents of the asset from its upstream dependencies.
-
-A crucial distinction between software-defined assets and [ops](/concepts/ops-jobs-graphs/ops) is that software-defined assets know about their dependencies, while ops do not. Ops aren't hooked up to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/jobs-graphs).
-
-"Materializing" an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [Dagit](/concepts/dagit/dagit), Dagster's web UI, or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is [fully customizable](#customizing-how-assets-are-materialized-with-io-managers).
-
-A single software-defined asset might be represented in multiple storage environments - e.g. it might have a "production" version and a "staging" version.
+---
 
 ## Defining assets
 
@@ -64,6 +64,75 @@ def downstream_asset(upstream_asset):
 ```
 
 The [explicit dependencies](#explicit-dependencies) example covers an alternative way to specify asset dependencies without needing to match argument names to upstream asset names.
+
+### Graph-backed assets
+
+[Basic software-defined assets](#a-basic-software-defined-asset) can only produce one data artifact. If generating an asset involves multiple discrete computations, you can use graph-backed assets by separating each computation into an op and building a graph to combine your computations. This way, each discrete computation can be reused in other assets and jobs.
+
+This approach to asset creation allows you to define a graph of ops which can produce one or multiple assets. **Note**: To use graphs to create an asset, the graph **must return an output**.
+
+To define a graph-backed asset, use the `from_graph` attribute on the `AssetsDefinition` object:
+
+```python file=/concepts/assets/graph_backed_asset.py startafter=start example endbefore=end example
+@op(required_resource_keys={"slack"})
+def fetch_files_from_slack(context) -> DataFrame:
+    files = context.resources.slack.files_list(channel="#random")
+    return DataFrame(
+        [
+            {
+                "id": file.get("id"),
+                "created": file.get("created"),
+                "title": file.get("title"),
+                "permalink": file.get("permalink"),
+            }
+            for file in files
+        ]
+    )
+
+
+@op
+def store_files(files):
+    return files.to_sql(name="slack_files", con=create_db_connection())
+
+
+@graph
+def store_slack_files_in_sql():
+    store_files(fetch_files_from_slack())
+
+
+graph_asset = AssetsDefinition.from_graph(store_slack_files_in_sql)
+```
+
+**Note**: All output assets must be selected when using a graph-backed asset to create a job. Dagster will select all graph output automatically upon creating a job.
+
+### Asset context
+
+Since a software-defined asset contains an op, all the typical functionality of an op - like the use of [resources](/concepts/resources) and [configuration](#asset-configuration) - is available to an asset. Supplying the `context` parameter provides access to system information for the op, for example:
+
+```python file=/concepts/assets/asset_w_context.py startafter=start_w_context endbefore=end_w_context
+@asset(required_resource_keys={"api"})
+def my_asset(context):
+    # fetches contents of an asset
+    return context.resources.api.fetch_table("my_asset")
+```
+
+### Asset configuration
+
+Like ops, configuration is also supported for assets. Configuration is accessible through the asset context at runtime and can be used to specify behavior. Note that asset configuration behaves the same as configuration for ops.
+
+For example, the following asset queries an API endpoint defined through configuration:
+
+```python file=/concepts/assets/asset_config.py startafter=start_example endbefore=end_example
+@asset(config_schema={"api_endpoint": str})
+def my_configurable_asset(context):
+    api_endpoint = context.op_config["api_endpoint"]
+    data = requests.get(f"{api_endpoint}/data").json()
+    return data
+```
+
+Refer to the [Config schema documentation](/concepts/configuration/config-schema) for more configuration info and examples.
+
+---
 
 ## Combining assets in groups
 
@@ -114,26 +183,69 @@ If you want Dagit to contain both an asset group and a set of [jobs](/concepts/o
 
 ### Viewing assets in Dagit
 
-Clicking on "Assets", in the right section of Dagit's top navigation pane, takes you to the Asset Catalog, which shows a list of all your assets.
+- [All assets](#all-assets)
+- [Details for an asset](#asset-details)
+- [Dependency graph](#dependency-graph)
+- [Upstream changes](#upstream-changed-indicator)
+
+#### All assets
+
+To view a list of all your assets, click **Assets** in the top-right corner of the page. This opens the Asset Catalog:
 
 <img
 alt="Asset Catalog"
 src="/images/concepts/assets/software-defined-assets/catalog.png"
 />
 
-Clicking on the name of one of these assets will take you to the Asset Details Page for that asset.
+#### Asset details
+
+View the Asset Details page for an asset by clicking on its name:
 
 <img
 alt="Asset Details"
 src="/images/concepts/assets/software-defined-assets/details.png"
 />
 
-You can view a graph of all the assets with their dependencies by clicking the graph icon to the upper-left of the Asset Catalog, or by clicking "View in Graph" on any of the assets.
+#### Dependency graph
+
+To view a graph of all assets and their dependencies, you can:
+
+- Click the graph icon to the upper-left of the Asset Catalog
+- Click **View in Graph** on any asset
 
 <img
 alt="Asset Graph"
 src="/images/concepts/assets/software-defined-assets/graph.png"
 />
+
+#### Upstream changed indicator
+
+On occasion, you might see an **upstream changed** indicator on an asset in the dependency graph or on the Asset Details page:
+
+<img
+alt="Asset Graph with an upstream changed indicator"
+src="/images/concepts/assets/software-defined-assets/upstream-changed.png"
+/>
+
+This occurs when a downstream asset's last materialization took place **earlier than the asset it depends on.** Dagit displays this alert to notify you that the contents of an asset may be stale. For example:
+
+- `comments` is upstream of `comment_stories`
+- `comment_stories` depends on `comments`
+- `comment_stories` was last materialized on February 25 at **5:30PM**
+- `comments` was last materialized on February 25 at **7:05PM**
+
+In this case, the contents of `comment_stories` may be outdated, as the most recent data from `comments` wasn't used to compute them.
+
+You can resolve this issue by re-materializing the downstream asset. This will re-compute the contents with the most recent data/changes to its upstream dependency.
+
+<Note>
+  Currently, the <strong>upstream changed</strong> indicator won't display in
+  the following scenarios:
+  <ul>
+    <li>The upstream asset is in another asset group or job</li>
+    <li>The assets are partitioned</li>
+  </ul>
+</Note>
 
 ### Materializing assets in Dagit
 
@@ -398,16 +510,17 @@ def downstream_asset(upstream):
 
 In this case, `ins={"upstream": AssetIn("upstream_asset")}` declares that the contents of the asset with the key `upstream_asset` will be provided to the function argument named `upstream`.
 
-### Using context in assets
+### Attaching metadata
 
-Since a software-defined asset contains an op, all of the typical functionality of an op (like the use of resources) is available to an asset.
+Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataEntry) to assets. To attach metadata, supply a `metadata` dictionary to the asset:
 
-```python file=/concepts/assets/asset_w_context.py startafter=start_w_context endbefore=end_w_context
-@asset(required_resource_keys={"api"})
-def my_asset(context):
-    # fetches contents of an asset
-    return context.resources.api.fetch_table("my_asset")
+```python file=/concepts/assets/asset_metadata.py startafter=start_example endbefore=end_example
+@asset(metadata={"cereal_name": "Sugar Sprinkles"})
+def cereal_asset():
+    return 5
 ```
+
+Asset metadata can be viewed in Dagit on the [Asset Detail page](/concepts/dagit/dagit#asset-details).
 
 ## Further Reading
 

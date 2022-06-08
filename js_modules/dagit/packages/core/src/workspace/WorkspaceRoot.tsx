@@ -92,8 +92,16 @@ const RepoRouteContainer = () => {
       <Route path="/workspace/:repoPath/sensors/:sensorName">
         <SensorRoot repoAddress={addressForPath} />
       </Route>
-      <Route path="/workspace/:repoPath/asset-groups/(/?.*)">
-        <AssetGroupRoot repoAddress={addressForPath} />
+      <Route path={['/workspace/:repoPath/asset-groups/:groupName/list(/?.*)']}>
+        <AssetGroupRoot repoAddress={addressForPath} tab="list" />
+      </Route>
+      <Route
+        path={[
+          '/workspace/:repoPath/asset-groups/:groupName/(/?.*)',
+          '/workspace/:repoPath/asset-groups/:groupName',
+        ]}
+      >
+        <AssetGroupRoot repoAddress={addressForPath} tab="lineage" />
       </Route>
       <Route path="/workspace/:repoPath/:tab?">
         <WorkspaceRepoRoot repoAddress={addressForPath} />

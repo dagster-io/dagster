@@ -22,14 +22,15 @@ from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.asset_defs import (
     AssetGroup,
     AssetIn,
+    AssetSelection,
     AssetsDefinition,
     SourceAsset,
     asset,
+    build_assets_job,
     load_assets_from_current_module,
     load_assets_from_modules,
     load_assets_from_package_module,
     load_assets_from_package_name,
-    build_assets_job,
     multi_asset,
 )
 from dagster.core.definitions import (
@@ -377,6 +378,7 @@ __all__ = [
     "AssetIn",
     "AssetMaterialization",
     "AssetObservation",
+    "AssetSelection",
     "AssetSensorDefinition",
     "AssetsDefinition",
     "DagsterAssetMetadataValue",

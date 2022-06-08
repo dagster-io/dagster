@@ -5,9 +5,39 @@ description: Ops are the core unit of computation in Dagster and contain the log
 
 # Ops
 
-Ops are the core unit of computation in Dagster. Multiple ops can be connected to create a [Graph](/concepts/ops-jobs-graphs/jobs-graphs).
+Ops are one of two types of core units of computation in Dagster, with [assets](/concepts/assets/software-defined-assets) being the other type.
+
+An individual op should perform relatively simple tasks, such as:
+
+- Deriving a dataset from other datasets
+- Executing a database query
+- Initiating a Spark job in a remote cluster
+- Querying an API and storing the result in a data warehouse
+- Sending an email or Slack message
+
+Collections of ops can be assembled to create a [graph](/concepts/ops-jobs-graphs/jobs-graphs).
 
 <Image alt="ops" src="/images/ops.png" width={3200} height={1040} />
+
+Ops support a variety of useful features for data orchestration, such as:
+
+- **Flexible execution strategies**: Painlessly transition from development to production with ops, as they are sealed units of logic independent of execution strategy. Collections of ops - called [graphs](/concepts/ops-jobs-graphs/jobs-graphs) - can be bound via [jobs](/concepts/ops-jobs-graphs/jobs-graphs) to an appropriate [executor](/deployment/executors) for single-process execution or distribution across a cluster.
+
+- **Pluggable external systems**: If your data pipeline interfaces with external systems, you may want to use local substitutes during development over a cloud-based production system. Dagster provides [resources](/concepts/resources) as an abstraction layer for this purpose.
+
+  Ops can be written against abstract resources (e.g. `database`), with resource definitions later bound at the [job](/concepts/ops-jobs-graphs/jobs-graphs) level. Op logic can thus remain uncoupled to any particular implementation of an external system.
+
+- **Input and output management**: Ops have defined [inputs and outputs](#inputs-and-outputs), analogous to the arguments and return value(s) of a Python function. An input or output can be annotated with a [Dagster type](/concepts/types) for arbitrarily complex runtime validation. Outputs can additionally be tagged with an [IO Manager](/concepts/io-management/io-managers) to manage storage of the associated data in between ops. This enables easy swapping of I/O strategy depending on the execution environment, as well as efficient caching of data intermediates.
+
+- **Configuration**: Operations in a data pipeline are often parameterized by both upstream data (e.g. a stream of database records) and configuration parameters independent of upstream data (e.g. a "chunk size" of incoming records to operate on). Define configuration parameters by providing an associated [config schema](/concepts/configuration/config-schema) to the op.
+
+- **Event streams**: Ops emit a stream of [events](/concepts/ops-jobs-graphs/op-events) during execution. Certain events are emitted by default - such as indicating the start of an op's execution - but op authors are additionally given access to an event API.
+
+  This can be used to report data asset creation or modification (<PyObject object="AssetMaterialization"/>), the result of a data quality check (<PyObject object="ExpectationResult"/>), or other arbitrary information. Event streams can be visualized by Dagster's browser UI [Dagit](/concepts/dagit/dagit). This rich log of execution facilitates debugging, inspection, and real-time monitoring of running jobs.
+
+- **Testability**: The properties that enable flexible execution of ops also facilitate versatile testing. Ops can be [tested](/concepts/testing) in isolation or as part of a pipeline. Further, the [resource](/concepts/resources) API allows external systems (e.g. databases) to be stubbed or substituted as needed.
+
+---
 
 ## Relevant APIs
 
@@ -18,25 +48,6 @@ Ops are the core unit of computation in Dagster. Multiple ops can be connected t
 | <PyObject object="Out" />               | An output of an op. Defined on the `out` argument to the <PyObject object="op" displayText="op" decorator/> decorator.                                                           |
 | <PyObject object="OpExecutionContext"/> | An object exposing Dagster system APIs for resource access, logging, and more. Can be injected into an op by specifying `context` as the first argument of the compute function. |
 | <PyObject object="OpDefinition"  />     | Class for ops. You will rarely want to instantiate this class directly. Instead, you should use the <PyObject object="op" decorator />.                                          |
-
-## Overview
-
-Ops are Dagster's core unit of computation. Individual ops should perform relatively simple tasks. Collections of ops can then be assembled into [Graphs](/concepts/ops-jobs-graphs/jobs-graphs) to perform more complex tasks. Some examples of tasks appropriate for a single op:
-
-- Derive a dataset from other datasets.
-- Execute a database query.
-- Initiate a Spark job in a remote cluster.
-- Query an API and store the result in a data warehouse.
-- Send an email or Slack message.
-
-The op as computational unit enables many useful features for data orchestration:
-
-- **Flexible execution strategies**: Data pipelines are frequently developed locally and later deployed to production. Ops represent sealed units of logic independent of pipeline execution strategy, making the transition from development to production painless. Collections of ops (i.e. [Graphs](/concepts/ops-jobs-graphs/jobs-graphs)) can be bound via [Jobs](/concepts/ops-jobs-graphs/jobs-graphs) to an appropriate [Executor](/deployment/executors) for single-process execution or distribution across a cluster.
-- **Pluggable external systems**: Production data pipelines almost always interface with external systems. The availability of these systems varies across environments. During development, it may be desirable to use a local substitute (e.g. SQLite) in place of a production system (e.g. cloud-hosted Postgres). Dagster provides [Resources](/concepts/resources) as an abstraction layer for this purpose. Ops can be written against abstract resources (e.g. `database`), with resource definitions later bound at the [Job](/concepts/ops-jobs-graphs/jobs-graphs) level. Op logic can thus remain uncoupled to any particular implementation of an external system.
-- **Input and output management**: Ops have defined [inputs and outputs](#inputs-and-outputs), analogous to the arguments and return value(s) of a Python function. An input or output can be annotated with a [Dagster Type](/concepts/types) for arbitrarily complex runtime validation. Outputs can additionally be tagged with an [IO Manager](/concepts/io-management/io-managers) to manage storage of the associated data in between ops. This enables easy swapping of I/O strategy depending on the execution environment, as well as efficient caching of data intermediates.
-- **Configuration**: Operations in a data pipeline are often parameterized by both upstream data (e.g. a stream of database records) and "configuration" parameters independent of upstream data (e.g. a "chunk size" of incoming records to operate on). Ops can be given an associated [Config Schema](/concepts/configuration/config-schema) to define such configuration parameters.
-- **Event streams**: Ops emit a stream of [Events](/concepts/ops-jobs-graphs/op-events) during execution. Certain events are emitted by default (e.g. indicating the start of an op's execution), but op authors are additionally given access to an event API. This can be used to report data asset creation or modification (<PyObject object="AssetMaterialization"/>), the result of a data quality check (<PyObject object="ExpectationResult"/>), or other arbitrary information. Event streams can be visualized by Dagster's browser UI [Dagit](/concepts/dagit/dagit). This rich log of execution facilitates debugging, inspection, and real-time monitoring of running jobs.
-- **Testability**: The properties that enable flexible execution of ops also facilitate versatile testing. Ops can be [tested](/concepts/testing) in isolation or as part of a pipeline. Further, the [Resource](/concepts/resources) API allows external systems (e.g. databases) to be stubbed or substituted as needed.
 
 ---
 

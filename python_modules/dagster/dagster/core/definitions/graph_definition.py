@@ -747,7 +747,9 @@ class GraphDefinition(NodeDefinition):
     def is_subselected(self) -> bool:
         return False
 
-    def get_resource_requirements(self, asset_layer: "AssetLayer") -> Iterator[ResourceRequirement]:
+    def get_resource_requirements(
+        self, asset_layer: Optional["AssetLayer"] = None
+    ) -> Iterator[ResourceRequirement]:
         for node in self.node_dict.values():
             yield from node.get_resource_requirements(outer_container=self, asset_layer=asset_layer)
 
