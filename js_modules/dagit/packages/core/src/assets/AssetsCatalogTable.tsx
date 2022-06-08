@@ -210,7 +210,7 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
           requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY}]}
         />
       </StickyTableContainer>
-      <Box margin={{vertical: 20}}>
+      <Box padding={{bottom: 64}}>
         <CursorPaginationControls {...paginationProps} />
       </Box>
     </Wrapper>
