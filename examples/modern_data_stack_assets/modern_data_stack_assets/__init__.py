@@ -1,1 +1,1 @@
-from .assets import analytics_assets
+from .assets import mds_repo

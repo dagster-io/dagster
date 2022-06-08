@@ -11,9 +11,8 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster.core.execution.with_resources import with_resources
 from dagster.core.selector.subset_selector import AssetSelectionData
-from dagster.core.storage.fs_io_manager import fs_io_manager
-from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning
 
 from ..definitions.asset_layer import build_asset_selection_job
@@ -23,11 +22,12 @@ from ..definitions.partition import PartitionsDefinition
 from ..definitions.resource_definition import ResourceDefinition
 from ..errors import DagsterInvalidDefinitionError
 from .assets import AssetsDefinition
-from .assets_from_modules import (
+from .assets_job import build_assets_job
+from .load_assets_from_modules import (
     assets_and_source_assets_from_modules,
     assets_and_source_assets_from_package_module,
+    prefix_assets,
 )
-from .assets_job import build_assets_job
 from .source_asset import SourceAsset
 
 # Prefix for auto created jobs that are used to materialize assets
@@ -106,14 +106,8 @@ class AssetGroup:
         )
         executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
 
-        # In the case of collisions, merge_dicts takes values from the
-        # dictionary latest in the list, so we place the user provided resource
-        # defs after the defaults.
-        resource_defs = merge_dicts({"io_manager": fs_io_manager}, resource_defs)
-
-        _validate_resource_reqs_for_asset_group(
-            asset_list=assets, source_assets=source_assets, resource_defs=resource_defs
-        )
+        assets = with_resources(assets, resource_defs)
+        source_assets = with_resources(source_assets, resource_defs)
 
         self._assets = assets
         self._source_assets = source_assets
@@ -476,33 +470,10 @@ class AssetGroup:
                 assert result.assets[0].dependency_asset_keys == {AssetKey(["upstream_prefix", "asset1"])}
                 assert result.source_assets[0].key == AssetKey(["upstream_prefix", "asset1"])
         """
-
-        asset_keys = {
-            asset_key for assets_def in self.assets for asset_key in assets_def.asset_keys
-        }
-
-        result_assets: List[AssetsDefinition] = []
-        for assets_def in self.assets:
-            output_asset_key_replacements = {
-                asset_key: AssetKey([key_prefix] + asset_key.path)
-                for asset_key in assets_def.asset_keys
-            }
-            input_asset_key_replacements = {}
-            for dep_asset_key in assets_def.dependency_asset_keys:
-                if dep_asset_key in asset_keys:
-                    input_asset_key_replacements[dep_asset_key] = AssetKey(
-                        (key_prefix, *dep_asset_key.path)
-                    )
-
-            result_assets.append(
-                assets_def.with_replaced_asset_keys(
-                    output_asset_key_replacements=output_asset_key_replacements,
-                    input_asset_key_replacements=input_asset_key_replacements,
-                )
-            )
+        prefixed_assets = prefix_assets(self.assets, key_prefix)
 
         return AssetGroup(
-            assets=result_assets,
+            assets=prefixed_assets,
             source_assets=self.source_assets,
             resource_defs=self.resource_defs,
             executor_def=self.executor_def,

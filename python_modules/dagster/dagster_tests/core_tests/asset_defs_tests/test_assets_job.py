@@ -23,6 +23,7 @@ from dagster import (
     io_manager,
     multi_asset,
     op,
+    resource,
 )
 from dagster.config.source import StringSource
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
@@ -291,7 +292,7 @@ def test_missing_io_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Error when attempting to build job 'a': IO Manager required for key 'special_io_manager', but none was provided.",
+        match=r"SourceAsset with asset key AssetKey\(\['source1'\]\) requires IO manager with key 'special_io_manager', but none was provided.",
     ):
         build_assets_job(
             "a",
@@ -1108,6 +1109,14 @@ def test_internal_asset_deps_assets():
     }
 
 
+@multi_asset(outs={"a": Out(is_required=False), "b": Out(is_required=False)}, can_subset=True)
+def ab(context, foo):
+    if "a" in context.selected_output_names:
+        yield Output(foo + 1, "a")
+    if "b" in context.selected_output_names:
+        yield Output(foo + 2, "b")
+
+
 @asset
 def foo():
     return 5
@@ -1133,7 +1142,7 @@ def unconnected():
     pass
 
 
-asset_group = AssetGroup([foo, bar, foo_bar, baz, unconnected])
+asset_group = AssetGroup([foo, ab, bar, foo_bar, baz, unconnected])
 
 
 def test_disconnected_subset():
@@ -1241,8 +1250,43 @@ def test_raise_error_on_incomplete_graph_asset_subset():
     ).build_job("job")
 
     with instance_for_test() as instance:
-        with pytest.raises(DagsterInvalidDefinitionError, match="complicated_graph"):
+        with pytest.raises(DagsterInvalidSubsetError, match="complicated_graph"):
             job.execute_in_process(instance=instance, asset_selection=[AssetKey("comments_table")])
+
+
+def test_multi_subset():
+    with instance_for_test() as instance:
+        job = asset_group.build_job("foo")
+        result = job.execute_in_process(
+            instance=instance,
+            asset_selection=[AssetKey("foo"), AssetKey("a")],
+        )
+        materialization_events = sorted(
+            [event for event in result.all_events if event.is_step_materialization],
+            key=lambda event: event.asset_key,
+        )
+
+        assert len(materialization_events) == 2
+        assert materialization_events[0].asset_key == AssetKey("a")
+        assert materialization_events[1].asset_key == AssetKey("foo")
+
+
+def test_multi_all():
+    with instance_for_test() as instance:
+        job = asset_group.build_job("foo")
+        result = job.execute_in_process(
+            instance=instance,
+            asset_selection=[AssetKey("foo"), AssetKey("a"), AssetKey("b")],
+        )
+        materialization_events = sorted(
+            [event for event in result.all_events if event.is_step_materialization],
+            key=lambda event: event.asset_key,
+        )
+
+        assert len(materialization_events) == 3
+        assert materialization_events[0].asset_key == AssetKey("a")
+        assert materialization_events[1].asset_key == AssetKey("b")
+        assert materialization_events[2].asset_key == AssetKey("foo")
 
 
 def test_subset_with_source_asset():
@@ -1378,10 +1422,9 @@ def test_source_asset_io_manager_def():
     def my_derived_asset(my_source_asset):
         return my_source_asset + 4
 
-    source_asset_job = AssetGroup(
-        assets=[my_derived_asset],
-        source_assets=[my_source_asset],
-    ).build_job("source_asset_job")
+    source_asset_job = build_assets_job(
+        name="test", assets=[my_derived_asset], source_assets=[my_source_asset]
+    )
 
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
     assert result.success
@@ -1406,11 +1449,12 @@ def test_source_asset_io_manager_not_provided():
     def my_derived_asset(my_source_asset):
         return my_source_asset + 4
 
-    source_asset_job = AssetGroup(
+    source_asset_job = build_assets_job(
+        "the_job",
         assets=[my_derived_asset],
         source_assets=[my_source_asset],
         resource_defs={"io_manager": the_manager},
-    ).build_job("source_asset_job")
+    )
 
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
     assert result.success
@@ -1435,12 +1479,120 @@ def test_source_asset_io_manager_key_provided():
     def my_derived_asset(my_source_asset):
         return my_source_asset + 4
 
-    source_asset_job = AssetGroup(
+    source_asset_job = build_assets_job(
+        "the_job",
         assets=[my_derived_asset],
         source_assets=[my_source_asset],
         resource_defs={"some_key": the_manager},
-    ).build_job("source_asset_job")
+    )
 
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
     assert result.success
     assert result.output_for_node("my_derived_asset") == 9
+
+
+def test_source_asset_requires_resource_defs():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return 5
+
+    @resource(required_resource_keys={"bar"})
+    def foo_resource(context):
+        assert context.resources.bar == "blah"
+
+    @io_manager(required_resource_keys={"foo"})
+    def the_manager():
+        return MyIOManager()
+
+    my_source_asset = SourceAsset(
+        key=AssetKey("my_source_asset"),
+        io_manager_def=the_manager,
+        resource_defs={"foo": foo_resource, "bar": ResourceDefinition.hardcoded_resource("blah")},
+    )
+
+    @asset
+    def my_derived_asset(my_source_asset):
+        return my_source_asset + 4
+
+    source_asset_job = build_assets_job(
+        "the_job",
+        assets=[my_derived_asset],
+        source_assets=[my_source_asset],
+    )
+
+    result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
+    assert result.success
+    assert result.output_for_node("my_derived_asset") == 9
+
+
+def test_other_asset_provides_req():
+    # Demonstrate that assets cannot resolve each other's dependencies with
+    # resources on each definition.
+    @asset(required_resource_keys={"foo"})
+    def asset_reqs_foo():
+        pass
+
+    @asset(resource_defs={"foo": ResourceDefinition.hardcoded_resource("blah")})
+    def asset_provides_foo():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'foo' required by op 'asset_reqs_foo' was not provided.",
+    ):
+        build_assets_job(name="test", assets=[asset_reqs_foo, asset_provides_foo])
+
+
+def test_transitive_deps_not_provided():
+    @resource(required_resource_keys={"foo"})
+    def unused_resource():
+        pass
+
+    @asset(resource_defs={"unused": unused_resource})
+    def the_asset():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'foo' required by resource with key 'unused' was not provided.",
+    ):
+        build_assets_job(name="test", assets=[the_asset])
+
+
+def test_transitive_resource_deps_provided():
+    @resource(required_resource_keys={"foo"})
+    def used_resource(context):
+        assert context.resources.foo == "blah"
+
+    @asset(
+        resource_defs={"used": used_resource, "foo": ResourceDefinition.hardcoded_resource("blah")}
+    )
+    def the_asset():
+        pass
+
+    the_job = build_assets_job(name="test", assets=[the_asset])
+    assert the_job.execute_in_process().success
+
+
+def test_transitive_io_manager_dep_not_provided():
+    @io_manager(required_resource_keys={"foo"})
+    def the_manager():
+        pass
+
+    my_source_asset = SourceAsset(
+        key=AssetKey("my_source_asset"),
+        io_manager_def=the_manager,
+    )
+
+    @asset
+    def my_derived_asset(my_source_asset):  # pylint: disable=unused-argument
+        pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Resource with key 'foo' required by resource with key 'my_source_asset__io_manager', but not provided.",
+    ):
+        build_assets_job(name="test", assets=[my_derived_asset], source_assets=[my_source_asset])

@@ -488,7 +488,7 @@ def test_explicit_asset_keys():
             depended_by=[ExternalAssetDependedBy(AssetKey("b"))],
             job_names=["assets_job"],
             output_name="a",
-            group_name=None,
+            group_name=DEFAULT_GROUP_NAME,
         ),
         ExternalAssetNode(
             asset_key=AssetKey("b"),
@@ -500,7 +500,7 @@ def test_explicit_asset_keys():
             depended_by=[],
             job_names=["assets_job"],
             output_name="b",
-            group_name=None,
+            group_name=DEFAULT_GROUP_NAME,
         ),
     ]
 

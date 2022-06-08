@@ -8,6 +8,7 @@ from dagster import (
     AssetKey,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
+    JobDefinition,
     PipelineDefinition,
     SensorDefinition,
     SolidDefinition,
@@ -16,6 +17,8 @@ from dagster import (
     build_schedule_from_partitioned_job,
     daily_partitioned_config,
     daily_schedule,
+    define_asset_job,
+    fs_io_manager,
     graph,
     job,
     lambda_solid,
@@ -28,6 +31,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster.core.errors import DagsterInvalidSubsetError
 
 
 def create_single_node_pipeline(name, called):
@@ -231,6 +235,27 @@ def test_direct_schedule_target():
     assert test
 
 
+def test_direct_schedule_unresolved_target():
+
+    unresolved_job = define_asset_job("unresolved_job", selection="foo")
+
+    @asset
+    def foo():
+        return None
+
+    foo_group = AssetGroup([foo])
+
+    @schedule(cron_schedule="* * * * *", job=unresolved_job)
+    def direct_schedule():
+        return {}
+
+    @repository
+    def test():
+        return [direct_schedule, foo_group]
+
+    assert isinstance(test.get_job("unresolved_job"), JobDefinition)
+
+
 def test_direct_sensor_target():
     @solid
     def wow():
@@ -249,6 +274,27 @@ def test_direct_sensor_target():
         return [direct_sensor]
 
     assert test
+
+
+def test_direct_sensor_unresolved_target():
+
+    unresolved_job = define_asset_job("unresolved_job", selection="foo")
+
+    @asset
+    def foo():
+        return None
+
+    foo_group = AssetGroup([foo])
+
+    @sensor(job=unresolved_job)
+    def direct_sensor(_):
+        return {}
+
+    @repository
+    def test():
+        return [direct_sensor, foo_group]
+
+    assert isinstance(test.get_job("unresolved_job"), JobDefinition)
 
 
 def test_target_dupe_job():
@@ -273,6 +319,26 @@ def test_target_dupe_job():
     assert test
 
 
+def test_target_dupe_unresolved():
+    unresolved_job = define_asset_job("unresolved_job", selection="foo")
+
+    @asset
+    def foo():
+        return None
+
+    foo_group = AssetGroup([foo])
+
+    @sensor(job=unresolved_job)
+    def direct_sensor(_):
+        return {}
+
+    @repository
+    def test():
+        return [foo_group, direct_sensor, unresolved_job]
+
+    assert isinstance(test.get_job("unresolved_job"), JobDefinition)
+
+
 def test_bare_graph():
     @solid
     def ok():
@@ -289,6 +355,23 @@ def test_bare_graph():
     # should get updated once "executable" exists
     assert test.get_pipeline("bare")
     assert test.get_job("bare")
+
+
+def test_unresolved_job():
+    unresolved_job = define_asset_job("unresolved_job", selection="foo")
+
+    @asset
+    def foo():
+        return None
+
+    foo_group = AssetGroup([foo])
+
+    @repository
+    def test():
+        return [foo_group, unresolved_job]
+
+    assert isinstance(test.get_job("unresolved_job"), JobDefinition)
+    assert isinstance(test.get_pipeline("unresolved_job"), JobDefinition)
 
 
 def test_bare_graph_with_resources():
@@ -395,6 +478,60 @@ def test_dupe_graph_defs():
         get_collision_repo().get_all_jobs()
 
 
+def test_dupe_unresolved_job_defs():
+    unresolved_job = define_asset_job("bar", selection="foo")
+
+    @asset
+    def foo():
+        return None
+
+    foo_group = AssetGroup([foo])
+
+    @op
+    def the_op():
+        pass
+
+    @graph
+    def graph_bar():
+        the_op()
+
+    bar = graph_bar.to_job(name="bar")
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Duplicate job definition found for job 'bar'",
+    ):
+
+        @repository
+        def _pipe_collide():
+            return [foo_group, unresolved_job, bar]
+
+    def get_collision_repo():
+        @repository
+        def graph_collide():
+            return [
+                foo_group,
+                graph_bar.to_job(name="bar"),
+                unresolved_job,
+            ]
+
+        return graph_collide
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Duplicate definition found for unresolved job 'bar'",
+    ):
+
+        get_collision_repo().get_all_pipelines()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Duplicate definition found for unresolved job 'bar'",
+    ):
+
+        get_collision_repo().get_all_jobs()
+
+
 def test_job_pipeline_collision():
     @solid
     def noop():
@@ -457,6 +594,7 @@ def test_dict_jobs():
             "jobs": {
                 "my_graph": my_graph,
                 "other_graph": my_graph.to_job(name="other_graph"),
+                "tbd": define_asset_job("tbd", selection="*"),
             }
         }
 
@@ -465,6 +603,8 @@ def test_dict_jobs():
     assert jobs.has_job("my_graph")
     assert jobs.get_job("my_graph")
     assert jobs.get_job("other_graph")
+    assert jobs.has_job("tbd")
+    assert jobs.get_job("tbd")
 
 
 def test_lazy_jobs():
@@ -611,6 +751,15 @@ def test_bad_coerce():
             }
 
 
+def test_bad_resolve():
+
+    with pytest.raises(DagsterInvalidSubsetError, match="When building job"):
+
+        @repository
+        def _fails():
+            return {"jobs": {"tbd": define_asset_job(name="tbd", selection="foo")}}
+
+
 def test_source_assets():
     foo = SourceAsset(key=AssetKey("foo"))
     bar = SourceAsset(key=AssetKey("bar"))
@@ -619,7 +768,14 @@ def test_source_assets():
     def my_repo():
         return [AssetGroup(assets=[], source_assets=[foo, bar])]
 
-    assert my_repo.source_assets_by_key == {AssetKey("foo"): foo, AssetKey("bar"): bar}
+    assert my_repo.source_assets_by_key == {
+        AssetKey("foo"): SourceAsset(
+            key=AssetKey("foo"), resource_defs={"io_manager": fs_io_manager}
+        ),
+        AssetKey("bar"): SourceAsset(
+            key=AssetKey("bar"), resource_defs={"io_manager": fs_io_manager}
+        ),
+    }
 
 
 def test_multiple_asset_groups_one_repo():
@@ -639,6 +795,28 @@ def test_multiple_asset_groups_one_repo():
         return [group1, group2]
 
     assert my_repo.source_assets_by_key.keys() == {AssetKey("foo"), AssetKey("bar")}
+    assert len(my_repo.get_all_jobs()) == 1
+    assert set(my_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
+        AssetKey(["asset1"]),
+        AssetKey(["asset2"]),
+    }
+
+
+def test_direct_assets():
+    foo = SourceAsset("foo")
+
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    @repository
+    def my_repo():
+        return [foo, asset1, asset2]
+
     assert len(my_repo.get_all_jobs()) == 1
     assert set(my_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
         AssetKey(["asset1"]),
@@ -718,6 +896,52 @@ def test_duplicate_graph_target_invalid():
         @repository
         def the_repo_dupe_graph_invalid_schedule():
             return [the_graph, _create_schedule_from_target(other_graph)]
+
+
+def test_duplicate_unresolved_job_valid():
+    the_job = define_asset_job(name="foo")
+
+    @asset
+    def foo_asset():
+        return 1
+
+    # Providing the same graph to the repo and multiple schedules / sensors is valid
+    @repository
+    def the_repo_dupe_unresolved_job_valid():
+        return [the_job, _create_sensor_from_target(the_job), foo_asset]
+
+    # one job for the mega job
+    assert len(the_repo_dupe_unresolved_job_valid.get_all_jobs()) == 2
+
+
+def test_duplicate_unresolved_job_target_invalid():
+    the_job = define_asset_job(name="foo")
+    other_job = define_asset_job(name="foo", selection="foo")
+
+    @asset
+    def foo():
+        return None
+
+    foo_group = AssetGroup([foo])
+
+    # Different reference-equal jobs provided to repo with same name, ensure error is thrown.
+    with pytest.warns(
+        UserWarning,
+        match="sensor '_the_sensor' targets unresolved asset job 'foo', but a different unresolved asset job with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_graph_invalid_sensor():
+            return [foo_group, the_job, _create_sensor_from_target(other_job)]
+
+    with pytest.warns(
+        UserWarning,
+        match="schedule '_the_schedule' targets unresolved asset job 'foo', but a different unresolved asset job with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_graph_invalid_schedule():
+            return [foo_group, the_job, _create_schedule_from_target(other_job)]
 
 
 def test_duplicate_job_target_valid():

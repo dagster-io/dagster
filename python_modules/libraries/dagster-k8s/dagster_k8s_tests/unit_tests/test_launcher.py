@@ -80,7 +80,7 @@ def test_launcher_with_container_context(kubeconfig_file):
         load_incluster_config=False,
         kubeconfig_file=kubeconfig_file,
         k8s_client_batch_api=mock_k8s_client_batch_api,
-        env_vars=["FOO_TEST"],
+        env_vars=["FOO_TEST=foo"],
         resources={
             "requests": {"memory": "64Mi", "cpu": "250m"},
             "limits": {"memory": "128Mi", "cpu": "500m"},
@@ -89,7 +89,7 @@ def test_launcher_with_container_context(kubeconfig_file):
 
     container_context_config = {
         "k8s": {
-            "env_vars": ["BAR_TEST"],
+            "env_vars": ["BAR_TEST=bar"],
             "resources": {
                 "limits": {"memory": "64Mi", "cpu": "250m"},
                 "requests": {"memory": "32Mi", "cpu": "125m"},

@@ -1,15 +1,26 @@
+import logging
 import os
 import subprocess
-from typing import List
+from typing import List, Tuple
 
 from dagster_buildkite.defines import DO_COVERAGE
 from dagster_buildkite.steps.coverage import build_coverage_step
 from dagster_buildkite.steps.dagit_ui import build_dagit_ui_steps
 from dagster_buildkite.steps.dagster import build_dagster_steps
+from dagster_buildkite.steps.docs import build_docs_steps
 from dagster_buildkite.steps.integration import build_integration_steps
 from dagster_buildkite.steps.trigger import build_trigger_step
 from dagster_buildkite.steps.wait import build_wait_step
 from dagster_buildkite.utils import BuildkiteStep, is_feature_branch, safe_getenv
+
+_DAGIT_PATHES = ("js_modules/dagit",)
+_DOCS_PATHES = ("examples", "docs")
+
+logging.basicConfig(
+    format="%(asctime)s %(levelname)-8s %(message)s",
+    level=os.getenv("LOGLEVEL", "INFO"),
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 
 def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
@@ -19,7 +30,8 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
     build_creator_email = os.getenv("BUILDKITE_BUILD_CREATOR_EMAIL")
     oss_contribution = os.getenv("OSS_CONTRIBUTION")
     do_coverage = DO_COVERAGE
-    dagit_ui_only_diff = _is_dagit_ui_only_diff()
+    dagit_ui_only_diff = _is_path_only_diff(paths=_DAGIT_PATHES)
+    docs_only_diff = _is_path_only_diff(paths=_DOCS_PATHES)
 
     steps: List[BuildkiteStep] = []
 
@@ -56,11 +68,17 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
         )
 
     # Skip non-dagit-ui steps if we are on a feature branch with only dagit-ui (web app) changes.
+    logging.info(f"dagit_ui_only: {dagit_ui_only_diff}, docs_only: {docs_only_diff}")
     if is_feature_branch(branch_name) and dagit_ui_only_diff:
         steps += build_dagit_ui_steps()
 
+    # Skip non-docs steps if we are on a feature branch with only docs changes.
+    elif is_feature_branch(branch_name) and docs_only_diff:
+        steps += build_docs_steps()
+
     # Full pipeline.
     else:
+        steps += build_docs_steps()
         steps += build_dagit_ui_steps()
         steps += build_dagster_steps()
         steps += build_integration_steps()
@@ -72,10 +90,7 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
     return steps
 
 
-_DAGIT_PATH = "js_modules/dagit"
-
-
-def _is_dagit_ui_only_diff() -> bool:
+def _is_path_only_diff(paths: Tuple[str, ...]) -> bool:
     base_branch = safe_getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")
 
     try:
@@ -87,7 +102,7 @@ def _is_dagit_ui_only_diff() -> bool:
             .strip()
             .split("\n")
         )
-        return all(filepath.startswith(_DAGIT_PATH) for (filepath) in diff_files)
+        return all(filepath.startswith(paths) for (filepath) in diff_files)
 
     except subprocess.CalledProcessError:
         return False

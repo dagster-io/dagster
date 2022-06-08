@@ -237,7 +237,7 @@ const OpNamesDisplay = (props: {
 
   return (
     <Box flex={{gap: 4, alignItems: 'center'}}>
-      <Icon name="job" size={16} />
+      <Icon name="schema" size={16} />
       <Mono>
         <Link to={graphPath}>{graphName}</Link> ({opCount === 1 ? '1 op' : `${opCount} ops`})
       </Mono>

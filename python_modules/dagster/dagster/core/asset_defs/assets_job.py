@@ -29,14 +29,16 @@ from dagster.core.definitions.dependency import (
 )
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.executor_definition import ExecutorDefinition
-from dagster.core.definitions.graph_definition import GraphDefinition
+from dagster.core.definitions.graph_definition import GraphDefinition, default_job_io_manager
 from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.partition import PartitionedConfig, PartitionsDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.execution.with_resources import with_resources
 from dagster.core.selector.subset_selector import AssetSelectionData
+from dagster.utils import merge_dicts
 from dagster.utils.backcompat import experimental
 
 from .asset_partitions import get_upstream_partitions_for_partition_range
@@ -92,15 +94,20 @@ def build_assets_job(
 
     check.str_param(name, "name")
     check.iterable_param(assets, "assets", of_type=AssetsDefinition)
-    check.opt_sequence_param(
+    source_assets = check.opt_sequence_param(
         source_assets, "source_assets", of_type=(SourceAsset, AssetsDefinition)
     )
     check.opt_str_param(description, "description")
     check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
+    resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
+    resource_defs = merge_dicts({"io_manager": default_job_io_manager}, resource_defs)
+
+    assets = with_resources(assets, resource_defs)
+    source_assets = with_resources(source_assets, resource_defs)
+
     source_assets_by_key = build_source_assets_by_key(source_assets)
 
     partitioned_config = build_job_partitions_from_assets(assets, source_assets or [])
-    resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
 
     deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
     # attempt to resolve cycles using multi-asset subsetting
@@ -130,30 +137,7 @@ def build_assets_job(
         graph, assets_defs_by_node_handle, resolved_source_assets
     )
 
-    all_resource_defs = dict(resource_defs)
-    for asset_def in assets:
-        for resource_key, resource_def in asset_def.resource_defs.items():
-            if (
-                resource_key in all_resource_defs
-                and all_resource_defs[resource_key] != resource_def
-            ):
-                raise DagsterInvalidDefinitionError(
-                    f"When attempting to build job, asset {asset_def.asset_key} had a conflicting version of the same resource key {resource_key}. Please resolve this conflict by giving different keys to each resource definition."
-                )
-            all_resource_defs[resource_key] = resource_def
-
-    required_io_manager_keys = set()
-    for source_asset in resolved_source_assets:
-        if not source_asset.io_manager_def:
-            required_io_manager_keys.add(source_asset.get_io_manager_key())
-        else:
-            all_resource_defs[source_asset.get_io_manager_key()] = source_asset.io_manager_def
-
-    for required_key in sorted(list(required_io_manager_keys)):
-        if required_key not in all_resource_defs and required_key != "io_manager":
-            raise DagsterInvalidDefinitionError(
-                f"Error when attempting to build job '{name}': IO Manager required for key '{required_key}', but none was provided."
-            )
+    all_resource_defs = get_all_resource_defs(assets, resolved_source_assets)
 
     return graph.to_job(
         resource_defs=all_resource_defs,
@@ -429,3 +413,22 @@ def _attempt_resolve_cycles(
                 ret.append(assets_def.subset_for(asset_keys))
 
     return ret
+
+
+def get_all_resource_defs(
+    assets: Sequence[AssetsDefinition], source_assets: Sequence[SourceAsset]
+) -> Dict[str, ResourceDefinition]:
+    all_resource_defs = {}
+    all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]
+    for asset in all_assets:
+        for resource_key, resource_def in asset.resource_defs.items():
+            if resource_key not in all_resource_defs:
+                all_resource_defs[resource_key] = resource_def
+            if all_resource_defs[resource_key] != resource_def:
+                raise DagsterInvalidDefinitionError(
+                    f"Conflicting versions of resource with key '{resource_key}' "
+                    "were provided to different assets. When constructing a "
+                    "job, all resource definitions provided to assets must "
+                    "match by reference equality for a given key."
+                )
+    return all_resource_defs
