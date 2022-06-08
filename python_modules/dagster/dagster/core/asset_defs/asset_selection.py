@@ -1,21 +1,16 @@
 import operator
 from abc import ABC
 from functools import reduce
-from typing import AbstractSet, FrozenSet, Optional
-
-from typing_extensions import TypeAlias
+from typing import AbstractSet, FrozenSet, Optional, Sequence
 
 import dagster._check as check
 from dagster.core.asset_defs.assets import AssetsDefinition
+from dagster.core.definitions.events import AssetKey
 from dagster.core.selector.subset_selector import (
-    Direction,
-    fetch_connected_assets_definitions,
+    fetch_connected,
     generate_asset_dep_graph,
     generate_asset_name_to_definition_map,
-    parse_clause,
 )
-
-AssetSet: TypeAlias = AbstractSet[AssetsDefinition]  # makes sigs more readable
 
 
 class AssetSelection(ABC):
@@ -43,7 +38,7 @@ class AssetSelection(ABC):
     def __and__(self, other: "AssetSelection") -> "AndAssetSelection":
         return AndAssetSelection(self, other)
 
-    def resolve(self, all_assets: AssetSet) -> AssetSet:
+    def resolve(self, all_assets: Sequence[AssetsDefinition]) -> FrozenSet[AssetKey]:
         return Resolver(all_assets).resolve(self)
 
 
@@ -95,65 +90,69 @@ class UpstreamAssetSelection(AssetSelection):
 
 
 class Resolver:
-    def __init__(self, all_assets: AssetSet):
+    def __init__(self, all_assets: Sequence[AssetsDefinition]):
         self.all_assets = all_assets
         self.asset_dep_graph = generate_asset_dep_graph(list(all_assets))
         self.all_assets_by_name = generate_asset_name_to_definition_map(all_assets)
 
-    def resolve(self, node: AssetSelection) -> Set[str]:
+    def resolve(self, root_node: AssetSelection) -> FrozenSet[AssetKey]:
+        return frozenset(
+            {AssetKey.from_user_string(asset_name) for asset_name in self._resolve(root_node)}
+        )
+
+    def _resolve(self, node: AssetSelection) -> AbstractSet[str]:
         if isinstance(node, AllAssetSelection):
-            return self.all_assets_by_name.keys()
+            return set(self.all_assets_by_name.keys())
         elif isinstance(node, AndAssetSelection):
-            child_1, child_2 = [self.resolve(child) for child in node.children]
+            child_1, child_2 = [self._resolve(child) for child in node.children]
             return child_1 & child_2
         elif isinstance(node, DownstreamAssetSelection):
-            child = self.resolve(node.children[0])
-            return reduce(
-                operator.or_,
-                [self._gather_connected_assets(asset, "downstream", node.depth) for asset in child],
-            )
-        elif isinstance(node, GroupsAssetSelection):
-            return {
-                key for key in
-            }
+            child = self._resolve(node.children[0])
             return reduce(
                 operator.or_,
                 [
-
-                ]
+                    {asset_name}
+                    | fetch_connected(
+                        item=asset_name,
+                        graph=self.asset_dep_graph,
+                        direction="downstream",
+                        depth=node.depth,
+                    )
+                    for asset_name in child
+                ],
             )
-
-            return {
-                a
-                for a in self.all_assets
-                if any(_match_group(a, pattern) for pattern in node.children)
-            }
-        elif isinstance(node, KeysAssetSelection):
-            return node.children
-        elif isinstance(node, OrAssetSelection):
-            child_1, child_2 = [self.resolve(child) for child in node.children]
-            return child_1 | child_2
-        elif isinstance(node, UpstreamAssetSelection):
-            child = self.resolve(node.children[0])
+        elif isinstance(node, GroupsAssetSelection):
             return reduce(
                 operator.or_,
-                [self._gather_connected_assets(asset, "upstream", node.depth) for asset in child],
+                [_match_groups(assets_def, set(node.children)) for assets_def in self.all_assets],
+            )
+        elif isinstance(node, KeysAssetSelection):
+            return set(node.children)
+        elif isinstance(node, OrAssetSelection):
+            child_1, child_2 = [self._resolve(child) for child in node.children]
+            return child_1 | child_2
+        elif isinstance(node, UpstreamAssetSelection):
+            child = self._resolve(node.children[0])
+            return reduce(
+                operator.or_,
+                [
+                    {asset_name}
+                    | fetch_connected(
+                        item=asset_name,
+                        graph=self.asset_dep_graph,
+                        direction="upstream",
+                        depth=node.depth,
+                    )
+                    for asset_name in child
+                ],
             )
         else:
             check.failed(f"Unknown node type: {type(node)}")
 
-    def _gather_connected_assets(
-        self, asset: AssetsDefinition, direction: Direction, depth: Optional[int]
-    ) -> FrozenSet[AssetsDefinition]:
-        connected = fetch_connected_assets_definitions(
-            asset, self.asset_dep_graph, self.all_assets_by_name, direction=direction, depth=depth
-        )
-        return connected | {asset}
 
-
-def _match_key(asset: AssetsDefinition, key_str: str) -> bool:
-    return any(key_str == key.to_user_string() for key in asset.asset_keys)
-
-
-def _match_group(asset: AssetsDefinition, group_str: str) -> bool:
-    return any(group_str == group_name for group_name in asset.group_names.values())
+def _match_groups(assets_def: AssetsDefinition, groups: AbstractSet[str]) -> AbstractSet[str]:
+    return {
+        asset_key.to_user_string()
+        for asset_key, group in assets_def.group_names.items()
+        if group in groups
+    }

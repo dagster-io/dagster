@@ -1,13 +1,14 @@
 import operator
-from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional, Sequence, Union
+from functools import reduce
+from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster.core.definitions.asset_layer import build_asset_selection_job
 from dagster.core.selector.subset_selector import parse_clause
 
 if TYPE_CHECKING:
-    from dagster.core.asset_defs.asset_selection import AssetSelection
     from dagster.core.asset_defs import AssetsDefinition, SourceAsset
+    from dagster.core.asset_defs.asset_selection import AssetSelection
     from dagster.core.definitions import ExecutorDefinition, JobDefinition
 
 
@@ -31,8 +32,8 @@ class UnresolvedAssetJobDefinition(
         description: Optional[str] = None,
         tags: Optional[Dict[str, Any]] = None,
     ):
-        from dagster.core.definitions.executor_definition import ExecutorDefinition
         from dagster.core.asset_defs.asset_selection import AssetSelection
+        from dagster.core.definitions.executor_definition import ExecutorDefinition
 
         return super(UnresolvedAssetJobDefinition, cls).__new__(
             cls,
@@ -49,7 +50,6 @@ class UnresolvedAssetJobDefinition(
         """
         Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
         """
-
         return build_asset_selection_job(
             name=self.name,
             assets=assets,
@@ -67,14 +67,12 @@ def _selection_from_string(string: str) -> "AssetSelection":
     if string == "*":
         return AssetSelection.all()
 
-    print("STRING")
-    print(string)
     parts = parse_clause(string)
     if not parts:
-        raise check.failed(f"Invalid selection string: {string}")
+        check.failed(f"Invalid selection string: {string}")
     u, item, d = parts
 
-    selection = AssetSelection.keys(item)
+    selection: AssetSelection = AssetSelection.keys(item)
     if u:
         selection = selection.upstream(u)
     if d:
@@ -106,7 +104,7 @@ def define_asset_job(
 
     return UnresolvedAssetJobDefinition(
         name=name,
-        selection=selection,
+        selection=cast(AssetSelection, selection),
         executor_def=executor_def,
         description=description,
         tags=tags,

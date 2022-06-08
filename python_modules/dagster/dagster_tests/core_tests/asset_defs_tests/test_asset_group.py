@@ -337,38 +337,26 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         ("*", False, None),
         ("*", True, None),
         ("e", False, None),
-        ("e", True, (DagsterInvalidDefinitionError, "")),
+        ("e", True, (DagsterInvalidSubsetError, "")),
         (
             "x",
             False,
-            (
-                DagsterInvalidSubsetError,
-                r"No qualified assets to execute found for clause='x'",
-            ),
+            (DagsterInvalidSubsetError, r"When building job, the AssetKey\(s\) \['x'\]"),
         ),
         (
             "x",
             True,
-            (
-                DagsterInvalidSubsetError,
-                r"No qualified assets to execute found for clause='x'",
-            ),
+            (DagsterInvalidSubsetError, r"When building job, the AssetKey\(s\) \['x'\]"),
         ),
         (
             ["start", "x"],
             False,
-            (
-                DagsterInvalidSubsetError,
-                r"No qualified assets to execute found for clause='x'",
-            ),
+            (DagsterInvalidSubsetError, r"When building job, the AssetKey\(s\) \['x'\]"),
         ),
         (
             ["start", "x"],
             True,
-            (
-                DagsterInvalidSubsetError,
-                r"No qualified assets to execute found for clause='x'",
-            ),
+            (DagsterInvalidSubsetError, r"When building job, the AssetKey\(s\) \['x'\]"),
         ),
         (["d", "e", "f"], False, None),
         (["d", "e", "f"], True, None),
@@ -377,7 +365,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
             ["*final"],
             True,
             (
-                DagsterInvalidDefinitionError,
+                DagsterInvalidSubsetError,
                 r"When building job, the AssetsDefinition 'abc_' contains asset keys "
                 r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\], but attempted to "
                 r"select only \[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\)\]",

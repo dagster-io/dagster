@@ -6,7 +6,6 @@ import pytest
 from dagster import (
     AssetGroup,
     AssetKey,
-    AssetSelection,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     JobDefinition,
@@ -19,6 +18,7 @@ from dagster import (
     daily_partitioned_config,
     daily_schedule,
     fs_io_manager,
+    define_asset_job,
     graph,
     job,
     lambda_solid,
@@ -28,7 +28,6 @@ from dagster import (
     schedule,
     sensor,
     solid,
-    define_asset_job,
 )
 from dagster._check import CheckError
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
