@@ -23,7 +23,7 @@ class _Repository:
         self.description = check.opt_str_param(description, "description")
 
     def __call__(self, fn: Callable[[], Any]) -> RepositoryDefinition:
-        from dagster.core.asset_defs import AssetGroup
+        from dagster.core.asset_defs import AssetGroup, AssetsDefinition, SourceAsset
 
         check.callable_param(fn, "fn")
 
@@ -43,6 +43,8 @@ class _Repository:
                     or isinstance(definition, SensorDefinition)
                     or isinstance(definition, GraphDefinition)
                     or isinstance(definition, AssetGroup)
+                    or isinstance(definition, AssetsDefinition)
+                    or isinstance(definition, SourceAsset)
                 ):
                     bad_definitions.append((i, type(definition)))
             if bad_definitions:
@@ -55,7 +57,8 @@ class _Repository:
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: all elements of list "
                     "must be of type JobDefinition, GraphDefinition, PipelineDefinition, "
-                    "PartitionSetDefinition, ScheduleDefinition, or SensorDefinition. "
+                    "PartitionSetDefinition, ScheduleDefinition, SensorDefinition, "
+                    "AssetsDefinition, or SourceAsset."
                     f"Got {bad_definitions_str}."
                 )
             repository_data = CachingRepositoryData.from_list(repository_definitions)
