@@ -1,4 +1,6 @@
 # pylint: disable=missing-graphene-docstring
+from typing import List, Optional, Union
+
 import graphene
 
 import dagster._check as check
@@ -8,8 +10,20 @@ from dagster.core.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeS
 
 from .util import non_null_list
 
+GrapheneConfigTypeUnion = Union[
+    "GrapheneEnumConfigType",
+    "GrapheneCompositeConfigType",
+    "GrapheneArrayConfigType",
+    "GrapheneMapConfigType",
+    "GrapheneNullableConfigType",
+    "GrapheneRegularConfigType",
+    "GrapheneScalarUnionConfigType",
+]
 
-def to_config_type(config_schema_snapshot, config_type_key):
+
+def to_config_type(
+    config_schema_snapshot: ConfigSchemaSnapshot, config_type_key: str
+) -> GrapheneConfigTypeUnion:
     check.inst_param(config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot)
     check.str_param(config_type_key, "config_type_key")
 
@@ -81,7 +95,9 @@ navigating the full schema client-side and not innerTypes.
 
 
 class ConfigTypeMixin:
-    def __init__(self, config_schema_snapshot, config_type_snap):
+    def __init__(
+        self, config_schema_snapshot: ConfigSchemaSnapshot, config_type_snap: ConfigTypeSnap
+    ):
         self._config_type_snap = check.inst_param(
             config_type_snap, "config_type_snap", ConfigTypeSnap
         )
@@ -90,7 +106,7 @@ class ConfigTypeMixin:
         )
         super().__init__(**_ctor_kwargs_for_snap(config_type_snap))
 
-    def resolve_recursive_config_types(self, _graphene_info):
+    def resolve_recursive_config_types(self, _graphene_info) -> List[GrapheneConfigTypeUnion]:
         return list(
             map(
                 lambda key: to_config_type(self._config_schema_snapshot, key),
@@ -121,19 +137,19 @@ class GrapheneMapConfigType(ConfigTypeMixin, graphene.ObjectType):
         interfaces = (GrapheneConfigType,)
         name = "MapConfigType"
 
-    def resolve_key_type(self, _graphene_info):
+    def resolve_key_type(self, _graphene_info) -> GrapheneConfigTypeUnion:
         return to_config_type(
             self._config_schema_snapshot,
             self._config_type_snap.key_type_key,
         )
 
-    def resolve_value_type(self, _graphene_info):
+    def resolve_value_type(self, _graphene_info) -> GrapheneConfigTypeUnion:
         return to_config_type(
             self._config_schema_snapshot,
             self._config_type_snap.inner_type_key,
         )
 
-    def resolve_key_label_name(self, _graphene_info):
+    def resolve_key_label_name(self, _graphene_info) -> Optional[str]:
         return self._config_type_snap.given_name
 
 
@@ -149,7 +165,7 @@ class GrapheneArrayConfigType(ConfigTypeMixin, graphene.ObjectType):
         interfaces = (GrapheneConfigType, GrapheneWrappingConfigType)
         name = "ArrayConfigType"
 
-    def resolve_of_type(self, _graphene_info):
+    def resolve_of_type(self, _graphene_info) -> GrapheneConfigTypeUnion:
         return to_config_type(
             self._config_schema_snapshot,
             self._config_type_snap.inner_type_key,
@@ -166,22 +182,22 @@ class GrapheneScalarUnionConfigType(ConfigTypeMixin, graphene.ObjectType):
         interfaces = (GrapheneConfigType,)
         name = "ScalarUnionConfigType"
 
-    def get_scalar_type_key(self):
+    def get_scalar_type_key(self) -> str:
         return self._config_type_snap.scalar_type_key
 
-    def get_non_scalar_type_key(self):
+    def get_non_scalar_type_key(self) -> str:
         return self._config_type_snap.non_scalar_type_key
 
-    def resolve_scalar_type_key(self, _):
+    def resolve_scalar_type_key(self, _) -> str:
         return self.get_scalar_type_key()
 
-    def resolve_non_scalar_type_key(self, _):
+    def resolve_non_scalar_type_key(self, _) -> str:
         return self.get_non_scalar_type_key()
 
-    def resolve_scalar_type(self, _):
+    def resolve_scalar_type(self, _) -> GrapheneConfigTypeUnion:
         return to_config_type(self._config_schema_snapshot, self.get_scalar_type_key())
 
-    def resolve_non_scalar_type(self, _):
+    def resolve_non_scalar_type(self, _) -> GrapheneConfigTypeUnion:
         return to_config_type(self._config_schema_snapshot, self.get_non_scalar_type_key())
 
 
@@ -190,7 +206,7 @@ class GrapheneNullableConfigType(ConfigTypeMixin, graphene.ObjectType):
         interfaces = (GrapheneConfigType, GrapheneWrappingConfigType)
         name = "NullableConfigType"
 
-    def resolve_of_type(self, _graphene_info):
+    def resolve_of_type(self, _graphene_info) -> GrapheneConfigTypeUnion:
         return to_config_type(self._config_schema_snapshot, self._config_type_snap.inner_type_key)
 
 
@@ -210,10 +226,10 @@ class GrapheneEnumConfigType(ConfigTypeMixin, graphene.ObjectType):
     values = non_null_list(GrapheneEnumConfigValue)
     given_name = graphene.NonNull(graphene.String)
 
-    def resolve_values(self, _graphene_info):
+    def resolve_values(self, _graphene_info) -> List[GrapheneEnumConfigValue]:
         return [
             GrapheneEnumConfigValue(value=ev.value, description=ev.description)
-            for ev in self._config_type_snap.enum_values
+            for ev in check.not_none(self._config_type_snap.enum_values)
         ]
 
     def resolve_given_name(self, _):
@@ -231,24 +247,26 @@ class GrapheneConfigTypeField(graphene.ObjectType):
     class Meta:
         name = "ConfigTypeField"
 
-    def resolve_config_type_key(self, _):
+    def resolve_config_type_key(self, _) -> str:
         return self._field_snap.type_key
 
-    def __init__(self, config_schema_snapshot, field_snap):
+    def __init__(self, config_schema_snapshot: ConfigSchemaSnapshot, field_snap: ConfigFieldSnap):
         self._config_schema_snapshot = check.inst_param(
             config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
         )
-        self._field_snap = check.inst_param(field_snap, "field_snap", ConfigFieldSnap)
+        self._field_snap: ConfigFieldSnap = check.inst_param(
+            field_snap, "field_snap", ConfigFieldSnap
+        )
         super().__init__(
             name=field_snap.name,
             description=field_snap.description,
             is_required=field_snap.is_required,
         )
 
-    def resolve_config_type(self, _graphene_info):
+    def resolve_config_type(self, _graphene_info) -> GrapheneConfigTypeUnion:
         return to_config_type(self._config_schema_snapshot, self._field_snap.type_key)
 
-    def resolve_default_value_as_json(self, _graphene_info):
+    def resolve_default_value_as_json(self, _graphene_info) -> Optional[str]:
         return self._field_snap.default_value_as_json_str
 
 
@@ -259,14 +277,14 @@ class GrapheneCompositeConfigType(ConfigTypeMixin, graphene.ObjectType):
         interfaces = (GrapheneConfigType,)
         name = "CompositeConfigType"
 
-    def resolve_fields(self, _graphene_info):
+    def resolve_fields(self, _graphene_info) -> List[GrapheneConfigTypeField]:
         return sorted(
             [
                 GrapheneConfigTypeField(
                     config_schema_snapshot=self._config_schema_snapshot,
                     field_snap=field_snap,
                 )
-                for field_snap in self._config_type_snap.fields
+                for field_snap in (self._config_type_snap.fields or [])
             ],
             key=lambda field: field.name,
         )

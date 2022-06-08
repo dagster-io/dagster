@@ -251,7 +251,7 @@ const RunWithData: React.FC<RunWithDataProps> = ({
     }
 
     if (run.status === 'QUEUED') {
-      return <QueuedState runId={runId} />;
+      return <QueuedState run={run} />;
     }
 
     if (run.executionPlan && runtimeGraph) {

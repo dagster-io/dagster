@@ -107,10 +107,14 @@ def compute_bollinger_bands(
     return odf
 
 
-def compute_bollinger_bands_multi(df: pd.DataFrame, dropna: bool = True):
+def compute_bollinger_bands_multi(
+    df: pd.DataFrame, dropna: bool = True, rate: int = 30, sigma: float = 2.0
+):
     """Compute Bollinger bands for a set of stocks over time. The input dataframe can contain
     multiple timeseries grouped by the `name` column."""
-    odf = df.groupby("name").apply(lambda idf: compute_bollinger_bands(idf, dropna=False))
+    odf = df.groupby("name").apply(
+        lambda idf: compute_bollinger_bands(idf, dropna=False, rate=rate, sigma=sigma)
+    )
     return odf.dropna().reset_index() if dropna else odf
 
 

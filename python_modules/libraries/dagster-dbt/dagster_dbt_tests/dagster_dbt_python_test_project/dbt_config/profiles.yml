@@ -1,0 +1,13 @@
+dagster_dbt_python_test_project:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('POSTGRES_TEST_DB_DBT_HOST') }}"
+      user: test
+      pass: test
+      port: 5432
+      dbname: test
+      schema: test-python-schema
+      threads: 2
+      keepalives_idle: 0

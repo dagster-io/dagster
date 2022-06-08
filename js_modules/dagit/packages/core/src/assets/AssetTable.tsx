@@ -24,14 +24,17 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {MenuLink} from '../ui/MenuLink';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';
 import {AssetTableFragment as Asset} from './types/AssetTableFragment';
+import {AssetViewType} from './useAssetView';
 
 type AssetKey = {path: string[]};
 
 export const AssetTable = ({
+  view,
   assets,
   actionBarComponents,
   liveDataByNode,
@@ -40,6 +43,7 @@ export const AssetTable = ({
   maxDisplayCount,
   requery,
 }: {
+  view: AssetViewType;
   assets: Asset[];
   actionBarComponents: React.ReactNode;
   liveDataByNode: LiveData;
@@ -51,22 +55,25 @@ export const AssetTable = ({
   const [toWipe, setToWipe] = React.useState<AssetKey[] | undefined>();
   const {canWipeAssets} = usePermissions();
 
-  const assetGroups: {[key: string]: Asset[]} = {};
+  const groupedByFirstComponent: {[pathComponent: string]: Asset[]} = {};
   const checkedAssets: Asset[] = [];
 
   assets.forEach((asset) => {
     const displayPathKey = JSON.stringify(displayPathForAsset(asset));
-    assetGroups[displayPathKey] = [...(assetGroups[displayPathKey] || []), asset];
+    groupedByFirstComponent[displayPathKey] = [
+      ...(groupedByFirstComponent[displayPathKey] || []),
+      asset,
+    ];
   });
 
   const [{checkedIds: checkedPaths}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
-    Object.keys(assetGroups),
+    Object.keys(groupedByFirstComponent),
   );
 
-  const pageDisplayPathKeys = Object.keys(assetGroups).sort().slice(0, maxDisplayCount);
+  const pageDisplayPathKeys = Object.keys(groupedByFirstComponent).sort().slice(0, maxDisplayCount);
   pageDisplayPathKeys.forEach((pathKey) => {
     if (checkedPaths.has(pathKey)) {
-      checkedAssets.push(...(assetGroups[pathKey] || []));
+      checkedAssets.push(...(groupedByFirstComponent[pathKey] || []));
     }
   });
 
@@ -96,7 +103,7 @@ export const AssetTable = ({
                 }}
               />
             </th>
-            <th>Asset Key</th>
+            <th>{view === 'directory' ? 'Asset Key Prefix' : 'Asset Key'}</th>
             <th style={{width: 340}}>Defined In</th>
             <th style={{width: 200}}>Materialized</th>
             <th style={{width: 100}}>Latest Run</th>
@@ -111,7 +118,7 @@ export const AssetTable = ({
                   key={idx}
                   prefixPath={prefixPath}
                   path={JSON.parse(pathStr)}
-                  assets={assetGroups[pathStr] || []}
+                  assets={groupedByFirstComponent[pathStr] || []}
                   liveDataByNode={liveDataByNode}
                   isSelected={checkedPaths.has(pathStr)}
                   onToggleChecked={onToggleFactory(pathStr)}
@@ -175,7 +182,6 @@ const AssetEntryRow: React.FC<{
     };
 
     const liveData = asset && liveDataByNode[toGraphId(asset.key)];
-    const stepKey = asset && asset.definition?.opNames[0];
     const repoAddress = asset?.definition
       ? buildRepoAddress(
           asset.definition.repository.name,
@@ -185,7 +191,7 @@ const AssetEntryRow: React.FC<{
 
     return (
       <tr>
-        <td style={{paddingRight: '4px'}}>
+        <td style={{paddingRight: 8}}>
           <Checkbox checked={isSelected} onChange={onChange} />
         </td>
         <td>
@@ -193,7 +199,7 @@ const AssetEntryRow: React.FC<{
             path={path}
             url={linkUrl}
             isGroup={isGroup}
-            icon={isGroup ? 'folder' : asset?.definition ? 'asset' : 'materialization'}
+            icon={isGroup ? 'folder' : asset?.definition ? 'asset' : 'asset_non_sda'}
           />
           <Description>
             {asset?.definition &&
@@ -203,18 +209,33 @@ const AssetEntryRow: React.FC<{
         </td>
         <td>
           {repoAddress && (
-            <Box flex={{direction: 'column'}}>
+            <Box flex={{direction: 'column', gap: 4}}>
               <RepositoryLink showIcon showRefresh={false} repoAddress={repoAddress} />
+              {asset?.definition && asset?.definition.groupName ? (
+                <Link
+                  to={workspacePathFromAddress(
+                    repoAddress,
+                    `/asset-groups/${asset.definition.groupName}`,
+                  )}
+                >
+                  <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+                    <Icon color={Colors.Gray400} name="asset_group" /> {asset.definition.groupName}
+                  </Box>
+                </Link>
+              ) : undefined}
             </Box>
           )}
         </td>
         <td>
-          {liveData && stepKey ? (
+          {liveData ? (
             liveData.lastMaterialization ? (
               <Mono>
                 <AssetRunLink
                   runId={liveData.lastMaterialization.runId}
-                  event={{stepKey, timestamp: liveData.lastMaterialization.timestamp}}
+                  event={{
+                    stepKey: liveData.stepKey,
+                    timestamp: liveData.lastMaterialization.timestamp,
+                  }}
                 >
                   <TimestampDisplay
                     timestamp={Number(liveData.lastMaterialization.timestamp) / 1000}
@@ -228,9 +249,9 @@ const AssetEntryRow: React.FC<{
           ) : undefined}
         </td>
         <td>
-          {liveData && stepKey && (
+          {liveData && (
             <Mono>
-              <AssetLatestRunWithNotices stepKey={stepKey} liveData={liveData} />
+              <AssetLatestRunWithNotices liveData={liveData} />
             </Mono>
           )}
         </td>
@@ -316,6 +337,23 @@ const AssetBulkActions: React.FC<{
   );
 });
 
+export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
+  fragment AssetTableDefinitionFragment on AssetNode {
+    id
+    groupName
+    partitionDefinition
+    description
+    repository {
+      id
+      name
+      location {
+        id
+        name
+      }
+    }
+  }
+`;
+
 export const ASSET_TABLE_FRAGMENT = gql`
   fragment AssetTableFragment on Asset {
     __typename
@@ -325,20 +363,10 @@ export const ASSET_TABLE_FRAGMENT = gql`
     }
     definition {
       id
-      opNames
-      jobNames
-      partitionDefinition
-      description
-      repository {
-        id
-        name
-        location {
-          id
-          name
-        }
-      }
+      ...AssetTableDefinitionFragment
     }
   }
+  ${ASSET_TABLE_DEFINITION_FRAGMENT}
 `;
 
 const Description = styled.div`

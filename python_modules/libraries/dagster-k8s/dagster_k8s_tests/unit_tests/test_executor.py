@@ -87,6 +87,7 @@ def test_executor_init(k8s_run_launcher_instance):
     run = create_run_for_test(
         k8s_run_launcher_instance,
         pipeline_name="bar",
+        pipeline_code_origin=reconstructable(bar).get_python_origin(),
     )
 
     step_handler_context = StepHandlerContext(
@@ -193,6 +194,7 @@ def test_step_handler(kubeconfig_file, k8s_instance):
     run = create_run_for_test(
         k8s_instance,
         pipeline_name="bar",
+        pipeline_code_origin=reconstructable(bar).get_python_origin(),
     )
     handler.launch_step(
         StepHandlerContext(
@@ -243,6 +245,7 @@ def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):
         run = create_run_for_test(
             k8s_instance,
             pipeline_name="bar",
+            pipeline_code_origin=reconstructable(bar).get_python_origin(),
         )
         handler.launch_step(
             StepHandlerContext(
@@ -290,6 +293,7 @@ def test_step_handler_image_override(kubeconfig_file, k8s_instance):
     run = create_run_for_test(
         k8s_instance,
         pipeline_name="bar",
+        pipeline_code_origin=reconstructable(bar).get_python_origin(),
     )
     handler.launch_step(
         StepHandlerContext(

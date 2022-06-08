@@ -19,6 +19,9 @@ export const defaultMocks = {
     opName: hyphenatedName,
     metadataEntries: () => [],
   }),
+  AssetGroup: () => ({
+    groupName: hyphenatedName,
+  }),
   ISolidDefinition: () => ({
     __typename: 'SolidDefinition',
   }),

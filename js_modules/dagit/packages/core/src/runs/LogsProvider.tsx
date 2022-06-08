@@ -61,6 +61,7 @@ const pipelineStatusFromMessages = (messages: RunDagsterRunEventFragment[]) => {
 };
 
 const BATCH_INTERVAL = 100;
+const QUERY_LOG_LIMIT = 10000;
 
 type State = {
   nodes: LogNode[];
@@ -226,20 +227,23 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
     RUN_LOGS_QUERY,
     {
       notifyOnNetworkStatusChange: true,
-      variables: {runId, cursor},
+      variables: {runId, cursor, limit: QUERY_LOG_LIMIT},
       pollInterval: POLL_INTERVAL,
       onCompleted: (data: RunLogsQuery) => {
         // We have to stop polling in order to update the `after` value.
         stopPolling();
 
-        if (data?.pipelineRunOrError.__typename !== 'Run') {
+        if (
+          data?.pipelineRunOrError.__typename !== 'Run' ||
+          data?.logsForRun.__typename !== 'EventConnection'
+        ) {
           return;
         }
 
         const run = data.pipelineRunOrError;
-        const queued = run.eventConnection.events;
+        const queued = data.logsForRun.events;
         const status = run.status;
-        const cursor = run.eventConnection.cursor;
+        const cursor = data.logsForRun.cursor;
 
         const hasMore =
           !!status &&
@@ -317,23 +321,29 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
 `;
 
 const RUN_LOGS_QUERY = gql`
-  query RunLogsQuery($runId: ID!, $cursor: String) {
+  query RunLogsQuery($runId: ID!, $cursor: String, $limit: Int) {
     pipelineRunOrError(runId: $runId) {
       ... on Run {
         id
         runId
         status
         canTerminate
-        eventConnection(afterCursor: $cursor) {
-          events {
-            __typename
-            ... on MessageEvent {
-              runId
-            }
-            ...RunDagsterRunEventFragment
+      }
+    }
+    logsForRun(runId: $runId, afterCursor: $cursor, limit: $limit) {
+      ... on EventConnection {
+        events {
+          __typename
+          ... on MessageEvent {
+            runId
           }
-          cursor
+          ...RunDagsterRunEventFragment
         }
+        cursor
+      }
+      ... on PythonError {
+        message
+        stack
       }
     }
   }

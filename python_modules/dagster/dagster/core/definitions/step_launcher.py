@@ -21,7 +21,6 @@ class StepRunRef(
             ("retry_mode", RetryMode),
             ("step_key", str),
             ("recon_pipeline", ReconstructablePipeline),
-            ("prior_attempts_count", int),
             ("known_state", Optional["KnownExecutionState"]),
         ],
     )
@@ -39,7 +38,6 @@ class StepRunRef(
         retry_mode: RetryMode,
         step_key: str,
         recon_pipeline: ReconstructablePipeline,
-        prior_attempts_count: int,
         known_state: Optional["KnownExecutionState"],
     ):
         from dagster.core.execution.plan.state import KnownExecutionState
@@ -52,7 +50,6 @@ class StepRunRef(
             check.inst_param(retry_mode, "retry_mode", RetryMode),
             check.str_param(step_key, "step_key"),
             check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline),
-            check.int_param(prior_attempts_count, "prior_attempts_count"),
             check.opt_inst_param(known_state, "known_state", KnownExecutionState),
         )
 
@@ -63,11 +60,10 @@ class StepLauncher(ABC):
     """
 
     @abstractmethod
-    def launch_step(self, step_context, prior_attempts_count):
+    def launch_step(self, step_context):
         """
         Args:
             step_context (StepExecutionContext): The context that we're executing the step in.
-            prior_attempts_count (int): The number of times this step has been attempted in the same run.
 
         Returns:
             Iterator[DagsterEvent]: The events for the step.

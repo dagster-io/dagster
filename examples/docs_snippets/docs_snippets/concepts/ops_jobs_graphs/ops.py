@@ -1,4 +1,5 @@
-# pylint: disable=unused-argument
+# isort: skip_file
+# pylint: disable=unused-argument,reimported
 
 import requests
 
@@ -117,3 +118,37 @@ def my_op_factory(
 
 
 # end_op_factory_pattern_marker
+
+# start_return_annotation
+from dagster import op
+
+
+@op
+def return_annotation_op() -> int:
+    return 5
+
+
+# end_return_annotation
+# start_tuple_return
+from dagster import op
+from typing import Tuple
+
+
+@op(out={"int_output": Out(), "str_output": Out()})
+def my_multiple_output_annotation_op() -> Tuple[int, str]:
+    return (5, "foo")
+
+
+# end_tuple_return
+
+# start_single_output_tuple
+from dagster import op
+from typing import Tuple
+
+
+@op
+def my_single_tuple_output_op() -> Tuple[int, str]:
+    return (5, "foo")  # Will be viewed as one output
+
+
+# end_single_output_tuple

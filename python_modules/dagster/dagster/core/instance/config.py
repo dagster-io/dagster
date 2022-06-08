@@ -3,9 +3,10 @@ import warnings
 
 from dagster import Array, Bool
 from dagster import _check as check
-from dagster.config import Field, Permissive
+from dagster.config import Field, Permissive, Selector
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError
+from dagster.core.storage.config import mysql_config, pg_config
 from dagster.serdes import class_from_code_pointer
 from dagster.utils import merge_dicts
 from dagster.utils.yaml_utils import load_yaml_from_globs
@@ -62,6 +63,30 @@ def dagster_instance_config(
         custom_instance_class = None
         schema = dagster_instance_config_schema()
 
+    if "storage" in dagster_config_dict and (
+        "run_storage" in dagster_config_dict
+        or "event_log_storage" in dagster_config_dict
+        or "schedule_storage" in dagster_config_dict
+    ):
+        raise DagsterInvalidConfigError(
+            (
+                "Found config for `storage` which is incompatible with `run_storage`, "
+                "`event_log_storage`, and `schedule_storage` config entries."
+            ),
+            [],
+            None,
+        )
+    elif "storage" in dagster_config_dict:
+        if len(dagster_config_dict["storage"]) != 1:
+            raise DagsterInvalidConfigError(
+                (
+                    f"Errors whilst loading dagster storage at {config_filename}, Expected one of:"
+                    "['postgres', 'mysql', 'sqlite', 'custom']"
+                ),
+                [],
+                dagster_config_dict["storage"],
+            )
+
     dagster_config = validate_config(schema, dagster_config_dict)
     if not dagster_config.success:
         raise DagsterInvalidConfigError(
@@ -75,6 +100,20 @@ def dagster_instance_config(
 
 def config_field_for_configurable_class():
     return Field(configurable_class_schema(), is_required=False)
+
+
+def storage_config_schema():
+    return Field(
+        Selector(
+            {
+                "postgres": Field(pg_config()),
+                "mysql": Field(mysql_config()),
+                "sqlite": Field({"base_dir": str}),
+                "custom": Field(configurable_class_schema()),
+            }
+        ),
+        is_required=False,
+    )
 
 
 def configurable_class_schema():
@@ -105,6 +144,7 @@ def dagster_instance_config_schema():
     return {
         "local_artifact_storage": config_field_for_configurable_class(),
         "compute_logs": config_field_for_configurable_class(),
+        "storage": storage_config_schema(),
         "run_storage": config_field_for_configurable_class(),
         "event_log_storage": config_field_for_configurable_class(),
         "schedule_storage": config_field_for_configurable_class(),

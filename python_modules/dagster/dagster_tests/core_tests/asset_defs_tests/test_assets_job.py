@@ -256,6 +256,8 @@ def test_source_asset():
             assert context.resources.subresource == 9
             assert context.upstream_output.resources.subresource == 9
             assert context.upstream_output.asset_key == AssetKey("source1")
+            assert context.upstream_output.metadata == {"a": "b"}
+            assert context.upstream_output.resource_config["a"] == 7
             assert context.asset_key == AssetKey("source1")
             return 5
 
@@ -266,7 +268,11 @@ def test_source_asset():
     job = build_assets_job(
         "a",
         [asset1],
-        source_assets=[SourceAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
+        source_assets=[
+            SourceAsset(
+                AssetKey("source1"), io_manager_key="special_io_manager", metadata={"a": "b"}
+            )
+        ],
         resource_defs={
             "special_io_manager": my_io_manager.configured({"a": 7}),
             "subresource": ResourceDefinition.hardcoded_resource(9),
@@ -285,7 +291,7 @@ def test_missing_io_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="input manager with key 'special_io_manager' required by input 'source1' of op 'asset1' was not provided",
+        match="Error when attempting to build job 'a': IO Manager required for key 'special_io_manager', but none was provided.",
     ):
         build_assets_job(
             "a",
@@ -1303,3 +1309,138 @@ def test_op_outputs_with_default_asset_io_mgr():
 
     result = execute_pipeline(my_job)
     assert result.success
+
+
+def test_graph_output_is_input_within_graph():
+    @op
+    def return_stuff():
+        return 1
+
+    @op
+    def transform(data):
+        return data * 2
+
+    @op
+    def one_more_transformation(transformed_data):
+        return transformed_data + 1
+
+    @graph(
+        out={
+            "one": GraphOut(),
+            "two": GraphOut(),
+        },
+    )
+    def nested():
+        result = transform(return_stuff())
+        return one_more_transformation(result), result
+
+    @graph(
+        out={
+            "asset_1": GraphOut(),
+            "asset_2": GraphOut(),
+            "asset_3": GraphOut(),
+        },
+    )
+    def complicated_graph():
+        one, two = nested()
+        return one, two, transform(two)
+
+    my_job = AssetGroup(
+        [AssetsDefinition.from_graph(complicated_graph)],
+    ).build_job("my_job")
+
+    result = my_job.execute_in_process()
+    assert result.success
+
+    assert result.output_for_node("complicated_graph.nested", "one") == 3
+    assert result.output_for_node("complicated_graph.nested", "two") == 2
+
+    assert result.output_for_node("complicated_graph", "asset_1") == 3
+    assert result.output_for_node("complicated_graph", "asset_2") == 2
+    assert result.output_for_node("complicated_graph", "asset_3") == 4
+
+
+def test_source_asset_io_manager_def():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return 5
+
+    @io_manager
+    def the_manager():
+        return MyIOManager()
+
+    my_source_asset = SourceAsset(key=AssetKey("my_source_asset"), io_manager_def=the_manager)
+
+    @asset
+    def my_derived_asset(my_source_asset):
+        return my_source_asset + 4
+
+    source_asset_job = AssetGroup(
+        assets=[my_derived_asset],
+        source_assets=[my_source_asset],
+    ).build_job("source_asset_job")
+
+    result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
+    assert result.success
+    assert result.output_for_node("my_derived_asset") == 9
+
+
+def test_source_asset_io_manager_not_provided():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return 5
+
+    @io_manager
+    def the_manager():
+        return MyIOManager()
+
+    my_source_asset = SourceAsset(key=AssetKey("my_source_asset"))
+
+    @asset
+    def my_derived_asset(my_source_asset):
+        return my_source_asset + 4
+
+    source_asset_job = AssetGroup(
+        assets=[my_derived_asset],
+        source_assets=[my_source_asset],
+        resource_defs={"io_manager": the_manager},
+    ).build_job("source_asset_job")
+
+    result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
+    assert result.success
+    assert result.output_for_node("my_derived_asset") == 9
+
+
+def test_source_asset_io_manager_key_provided():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return 5
+
+    @io_manager
+    def the_manager():
+        return MyIOManager()
+
+    my_source_asset = SourceAsset(key=AssetKey("my_source_asset"), io_manager_key="some_key")
+
+    @asset
+    def my_derived_asset(my_source_asset):
+        return my_source_asset + 4
+
+    source_asset_job = AssetGroup(
+        assets=[my_derived_asset],
+        source_assets=[my_source_asset],
+        resource_defs={"some_key": the_manager},
+    ).build_job("source_asset_job")
+
+    result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
+    assert result.success
+    assert result.output_for_node("my_derived_asset") == 9

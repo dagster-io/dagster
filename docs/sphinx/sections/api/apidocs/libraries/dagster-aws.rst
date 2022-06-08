@@ -41,9 +41,6 @@ S3
 .. autoconfigurable:: dagster_aws.s3.s3_pickle_io_manager
   :annotation: IOManagerDefinition
 
-.. autoconfigurable:: dagster_aws.s3.s3_pickle_asset_io_manager
-  :annotation: IOManagerDefinition
-
 
 ECS
 ---
@@ -88,7 +85,7 @@ CloudWatch
 SecretsManager
 --------------
 
-Resources which surface SecretsManager secrets for use in Dagster resources and jobs. 
+Resources which surface SecretsManager secrets for use in Dagster resources and jobs.
 
 .. autoconfigurable:: dagster_aws.secretsmanager.secretsmanager_resource
   :annotation: ResourceDefinition
