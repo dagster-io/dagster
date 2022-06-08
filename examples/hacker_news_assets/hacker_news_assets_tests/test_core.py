@@ -2,18 +2,24 @@ import tempfile
 
 import pytest
 from dagster_pyspark import pyspark_resource
-from hacker_news_assets.core import core_assets_prod
+from hacker_news_assets.core import assets
 from hacker_news_assets.resources.hn_resource import hn_snapshot_client
 from hacker_news_assets.resources.parquet_io_manager import local_partitioned_parquet_io_manager
 
-from dagster import AssetGroup, ResourceDefinition, fs_io_manager, mem_io_manager
+from dagster import (
+    AssetGroup,
+    ResourceDefinition,
+    assets_from_package_module,
+    fs_io_manager,
+    mem_io_manager,
+)
 
 
 @pytest.mark.skip()
 def test_download():
     with tempfile.TemporaryDirectory() as temp_dir:
         test_job = AssetGroup(
-            core_assets_prod.assets,
+            assets_from_package_module(assets),
             resource_defs={
                 "io_manager": fs_io_manager,
                 "partition_start": ResourceDefinition.string_resource(),
