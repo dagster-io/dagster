@@ -29,7 +29,7 @@ from dagster.core.definitions.dependency import (
 )
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.executor_definition import ExecutorDefinition
-from dagster.core.definitions.graph_definition import GraphDefinition
+from dagster.core.definitions.graph_definition import GraphDefinition, default_job_io_manager
 from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.partition import PartitionedConfig, PartitionsDefinition
@@ -38,6 +38,7 @@ from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.with_resources import with_resources
 from dagster.core.selector.subset_selector import AssetSelectionData
+from dagster.utils import merge_dicts
 from dagster.utils.backcompat import experimental
 
 from .asset_partitions import get_upstream_partitions_for_partition_range
@@ -99,6 +100,7 @@ def build_assets_job(
     check.opt_str_param(description, "description")
     check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
+    resource_defs = merge_dicts({"io_manager": default_job_io_manager}, resource_defs)
 
     assets = with_resources(assets, resource_defs)
     source_assets = with_resources(source_assets, resource_defs)
