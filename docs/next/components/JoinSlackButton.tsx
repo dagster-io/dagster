@@ -27,7 +27,7 @@ export const JoinSlackButton: React.FC<{ header?: boolean }> = ({ header }) => {
           {open && (
             <iframe
               src="https://dagster-slackin.herokuapp.com/"
-              className="inset-0 absolute w-full h-full"
+              className="inset-0 absolute w-full h-full bg-red-300"
             />
           )}
         </div>
