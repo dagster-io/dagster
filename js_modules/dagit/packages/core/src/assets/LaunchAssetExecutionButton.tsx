@@ -48,13 +48,25 @@ type LaunchAssetsState =
 export const LaunchAssetExecutionButton: React.FC<{
   assetKeys: AssetKey[]; // Memoization not required
   liveDataByNode: LiveData;
+  context?: 'all' | 'selected';
+  intent?: 'primary' | 'none';
   preferredJobName?: string;
-}> = ({assetKeys, liveDataByNode, preferredJobName}) => {
+}> = ({assetKeys, liveDataByNode, preferredJobName, context, intent = 'primary'}) => {
   const {canLaunchPipelineExecution} = usePermissions();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
   const [state, setState] = React.useState<LaunchAssetsState>({type: 'none'});
   const client = useApolloClient();
+
+  const count = assetKeys.length > 1 ? ` (${assetKeys.length})` : '';
+  const isRematerializeForAll = (assetKeys.length
+    ? assetKeys.map((n) => liveDataByNode[toGraphId(n)])
+    : Object.values(liveDataByNode)
+  ).every((e) => !!e?.lastMaterialization);
+
+  const label = `${isRematerializeForAll ? 'Rematerialize' : 'Materialize'}${
+    context === 'all' ? ` all${count}` : context === 'selected' ? ` selected${count}` : count
+  }`;
 
   if (!assetKeys.length || !canLaunchPipelineExecution) {
     return (
@@ -65,8 +77,8 @@ export const LaunchAssetExecutionButton: React.FC<{
             : 'Select one or more assets to materialize.'
         }
       >
-        <Button intent="primary" icon={<Icon name="materialization" />} disabled>
-          Materialize
+        <Button intent={intent} icon={<Icon name="materialization" />} disabled>
+          {label}
         </Button>
       </Tooltip>
     );
@@ -102,7 +114,7 @@ export const LaunchAssetExecutionButton: React.FC<{
   return (
     <>
       <Button
-        intent="primary"
+        intent={intent}
         onClick={onClick}
         icon={
           state.type === 'loading' ? (
@@ -112,7 +124,7 @@ export const LaunchAssetExecutionButton: React.FC<{
           )
         }
       >
-        {titleForLaunch(assetKeys, liveDataByNode)}
+        {label}
       </Button>
       {state.type === 'launchpad' && (
         <AssetLaunchpad
@@ -248,21 +260,6 @@ function stateForLaunchingAssets(
     },
   };
 }
-
-const titleForLaunch = (assetKeys: AssetKey[], liveDataByNode: LiveData) => {
-  const isRematerializeForAll = (assetKeys.length
-    ? assetKeys.map((n) => liveDataByNode[toGraphId(n)])
-    : Object.values(liveDataByNode)
-  ).every((e) => !!e?.lastMaterialization);
-
-  const count = assetKeys.length !== 1 ? ` (${assetKeys.length})` : '';
-
-  return `${isRematerializeForAll ? 'Rematerialize' : 'Materialize'} ${
-    assetKeys.length === 0 || assetKeys.length === Object.keys(liveDataByNode).length
-      ? `All${count}`
-      : `Selected${count}`
-  }`;
-};
 
 export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
   fragment LaunchAssetExecutionAssetNodeFragment on AssetNode {

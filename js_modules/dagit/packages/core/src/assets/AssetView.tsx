@@ -2,9 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
-  ButtonGroup,
   ButtonLink,
-  Checkbox,
   Colors,
   NonIdealState,
   Spinner,
@@ -34,7 +32,8 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 import {AssetEvents} from './AssetEvents';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
 import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
-import {AssetLineageScope, AssetNodeLineageGraph} from './AssetNodeLineageGraph';
+import {AssetNodeLineage} from './AssetNodeLineage';
+import {AssetLineageScope} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
@@ -148,7 +147,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           </Tabs>
         }
         right={
-          <Box style={{margin: '-4px 0'}} flex={{gap: 8, alignItems: 'baseline'}}>
+          <Box style={{margin: '-4px 0'}} flex={{gap: 12, alignItems: 'baseline'}}>
             <Box margin={{top: 4}}>
               <QueryRefreshCountdown refreshState={refreshState} />
             </Box>
@@ -198,41 +197,13 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         ) : params.view === 'lineage' ? (
           definition ? (
             assetGraphData ? (
-              <>
-                <Box
-                  flex={{justifyContent: 'space-between', alignItems: 'center'}}
-                  padding={{horizontal: 24, vertical: 12}}
-                  border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
-                >
-                  <ButtonGroup<AssetLineageScope>
-                    activeItems={new Set([params.lineageScope || 'neighbors'])}
-                    buttons={[
-                      {id: 'neighbors', label: 'Nearest Neighbors', icon: 'graph_neighbors'},
-                      {id: 'upstream', label: 'Upstream', icon: 'graph_upstream'},
-                      {id: 'downstream', label: 'Downstream', icon: 'graph_downstream'},
-                    ]}
-                    onClick={(lineageScope) => setParams({...params, lineageScope})}
-                  />
-                  <Checkbox
-                    format="switch"
-                    label="Show secondary edges"
-                    checked={params.lineageShowSecondaryEdges === true}
-                    onChange={() =>
-                      setParams({
-                        ...params,
-                        lineageShowSecondaryEdges: params.lineageShowSecondaryEdges
-                          ? undefined
-                          : true,
-                      })
-                    }
-                  />
-                </Box>
-                <AssetNodeLineageGraph
-                  assetNode={definition}
-                  liveDataByNode={liveDataByNode}
-                  assetGraphData={assetGraphData}
-                />
-              </>
+              <AssetNodeLineage
+                params={params}
+                setParams={setParams}
+                assetNode={definition}
+                liveDataByNode={liveDataByNode}
+                assetGraphData={assetGraphData}
+              />
             ) : (
               <Box style={{flex: 1}} flex={{alignItems: 'center', justifyContent: 'center'}}>
                 <Spinner purpose="page" />

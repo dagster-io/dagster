@@ -277,7 +277,7 @@ const AssetEntryRow: React.FC<{
         <td>
           {asset ? (
             <Box flex={{gap: 8, alignItems: 'center'}}>
-              <AnchorButton to={`/instance/assets/${path.join('/')}`}>View Details</AnchorButton>
+              <AnchorButton to={`/instance/assets/${path.join('/')}`}>View details</AnchorButton>
               <Popover
                 position="bottom-right"
                 content={
@@ -288,7 +288,7 @@ const AssetEntryRow: React.FC<{
                         repoAddress && asset.definition?.groupName
                           ? workspacePathFromAddress(
                               repoAddress,
-                              `/asset_groups/${asset.definition.groupName}`,
+                              `/asset-groups/${asset.definition.groupName}`,
                             )
                           : ''
                       }
