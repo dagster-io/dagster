@@ -1,5 +1,5 @@
 def execute_query(query):
-    pass
+    del query
 
 
 # start_marker
