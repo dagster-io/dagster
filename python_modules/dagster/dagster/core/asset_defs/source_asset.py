@@ -107,7 +107,7 @@ class SourceAsset(
             group_name=self.group_name,
         )
 
-    def with_group(self, group_name: str) -> "SourceAsset":
+    def with_group_name(self, group_name: str) -> "SourceAsset":
         if self.group_name != DEFAULT_GROUP_NAME:
             raise DagsterInvalidDefinitionError(
                 f"A group name has already been provided to source asset {self.key.to_user_string()}"

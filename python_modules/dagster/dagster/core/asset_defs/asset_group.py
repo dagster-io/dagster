@@ -23,7 +23,7 @@ from ..definitions.partition import PartitionsDefinition
 from ..definitions.resource_definition import ResourceDefinition
 from ..errors import DagsterInvalidDefinitionError
 from .assets import AssetsDefinition
-from .assets_from_modules import (
+from .load_assets_from_modules import (
     assets_and_source_assets_from_modules,
     assets_and_source_assets_from_package_module,
     prefix_assets,

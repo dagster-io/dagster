@@ -70,7 +70,7 @@ def assets_and_source_assets_from_modules(
     return assets, source_assets
 
 
-def assets_from_modules(
+def load_assets_from_modules(
     modules: Iterable[ModuleType],
     group_name: Optional[str] = None,
     key_prefix: Optional[str] = None,
@@ -80,7 +80,9 @@ def assets_from_modules(
 
     Args:
         modules (Iterable[ModuleType]): The Python modules to look for assets inside.
-        group_name (Optional[str]): The group name for assets within the modules.
+        group_name (Optional[str]):
+            Group name to apply to the loaded assets. The returned assets will be copies of the
+            loaded objects, with the group name added
         key_prefix (Optional[str]): Asset key prefix for assets within the modules.
 
     Returns:
@@ -100,12 +102,12 @@ def assets_from_modules(
             )
             for asset in assets
         ]
-        source_assets = [source_asset.with_group(group_name) for source_asset in source_assets]
+        source_assets = [source_asset.with_group_name(group_name) for source_asset in source_assets]
 
     return [*assets, *source_assets]
 
 
-def assets_from_current_module(
+def load_assets_from_current_module(
     group_name: Optional[str] = None,
     key_prefix: Optional[str] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
@@ -113,7 +115,9 @@ def assets_from_current_module(
     Constructs a list of assets and source assets from the module where this function is called.
 
     Args:
-        group_name (Optional[str]): The group name for assets within the module.
+        group_name (Optional[str]):
+            Group name to apply to the loaded assets. The returned assets will be copies of the
+            loaded objects, with the group name added
         key_prefix (Optional[str]): Asset key prefix for assets within the module.
 
     Returns:
@@ -125,7 +129,7 @@ def assets_from_current_module(
     if module is None:
         check.failed("Could not find a module for the caller")
 
-    return assets_from_modules(
+    return load_assets_from_modules(
         [module],
         group_name=group_name,
         key_prefix=key_prefix,
@@ -153,7 +157,7 @@ def assets_and_source_assets_from_package_module(
     )
 
 
-def assets_from_package_module(
+def load_assets_from_package_module(
     package_module: ModuleType,
     group_name: Optional[str] = None,
     key_prefix: Optional[str] = None,
@@ -166,7 +170,9 @@ def assets_from_package_module(
 
     Args:
         package_module (ModuleType): The package module to looks for assets inside.
-        group_name (Optional[str]): The group name for assets within the modules.
+        group_name (Optional[str]):
+            Group name to apply to the loaded assets. The returned assets will be copies of the
+            loaded objects, with the group name added
         key_prefix (Optional[str]): Asset key prefix for assets within the modules.
 
     Returns:
@@ -186,12 +192,12 @@ def assets_from_package_module(
             )
             for asset in assets
         ]
-        source_assets = [asset.with_group(group_name) for asset in source_assets]
+        source_assets = [asset.with_group_name(group_name) for asset in source_assets]
 
     return [*assets, *source_assets]
 
 
-def assets_from_package_name(
+def load_assets_from_package_name(
     package_name: str,
     group_name: Optional[str] = None,
     key_prefix: Optional[str] = None,
@@ -202,7 +208,9 @@ def assets_from_package_name(
 
     Args:
         package_name (str): The name of a Python package to look for assets inside.
-        group_name (Optional[str]): The group name for assets within the modules.
+        group_name (Optional[str]):
+            Group name to apply to the loaded assets. The returned assets will be copies of the
+            loaded objects, with the group name added
         key_prefix (Optional[str]): Asset key prefix for assets within the modules.
 
     Returns:
@@ -210,7 +218,7 @@ def assets_from_package_name(
             A list containing assets and source assets defined in the module.
     """
     package_module = import_module(package_name)
-    return assets_from_package_module(
+    return load_assets_from_package_module(
         package_module,
         group_name=group_name,
         key_prefix=key_prefix,
@@ -233,7 +241,9 @@ def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]
         )
 
 
-def prefix_assets(assets_defs: List[AssetsDefinition], key_prefix: str) -> List[AssetsDefinition]:
+def prefix_assets(
+    assets_defs: Sequence[AssetsDefinition], key_prefix: str
+) -> List[AssetsDefinition]:
     """
     Given an list of assets, prefix the input and output asset keys with key_prefix.
     The prefix is not added to source assets.
