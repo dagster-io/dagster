@@ -6,10 +6,8 @@ from dagster import (
     AssetGroup,
     AssetsDefinition,
     ResourceDefinition,
-    asset,
     graph,
     op,
-    resource,
 )
 
 
