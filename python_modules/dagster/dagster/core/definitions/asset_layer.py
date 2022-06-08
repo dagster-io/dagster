@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from dagster.core.execution.context.output import OutputContext
 
     from .job_definition import JobDefinition
-    from .partition import PartitionsDefinition, PartitionedConfig
+    from .partition import PartitionedConfig, PartitionsDefinition
 
 
 class AssetOutputInfo(

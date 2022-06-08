@@ -722,9 +722,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.pipeline_def.asset_layer
-        assets_def = asset_layer.assets_def_for_asset(
-            next(iter(asset_layer.asset_keys_for_node(self.solid_handle)))
-        )
+        asset_keys_for_node = asset_layer.asset_keys_for_node(self.solid_handle)
+        if not asset_keys_for_node:
+            return False
+        assets_def = asset_layer.assets_def_for_asset(next(iter(asset_keys_for_node)))
         upstream_asset_key = asset_layer.asset_key_for_input(self.solid_handle, input_name)
 
         return (
