@@ -372,15 +372,15 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         ),
         (["d", "e", "f"], False, None),
         (["d", "e", "f"], True, None),
-        (["*final"], False, None),
+        (["start+"], False, None),
         (
-            ["*final"],
+            ["start+"],
             True,
             (
                 DagsterInvalidSubsetError,
                 r"When building job, the AssetsDefinition 'abc_' contains asset keys "
                 r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\], but attempted to "
-                r"select only \[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\)\]",
+                r"select only \[AssetKey\(\['a'\]\)\]",
             ),
         ),
     ],
