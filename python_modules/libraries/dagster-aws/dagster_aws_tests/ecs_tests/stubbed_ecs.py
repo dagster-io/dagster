@@ -44,12 +44,12 @@ def stubbed(function):
                 self.stubber.deactivate()
                 self.stubber.assert_no_pending_responses()
             return copy.deepcopy(response)
-        except Exception as ex:
+        except Exception:
             # Exceptions should reset the stubber
             self.stub_count = 0
             self.stubber.deactivate()
             self.stubber = Stubber(self.client)
-            raise ex
+            raise
 
     return wrapper
 
