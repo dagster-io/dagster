@@ -52,7 +52,9 @@ basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
 In order to run schedules for assets, you can [build a job that materializes assets](/concepts/assets/software-defined-assets#building-jobs-that-materialize-assets) and construct a <PyObject object="ScheduleDefinition" /> similarly:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_asset_schedule endbefore=end_basic_asset_schedule
-asset_job = AssetGroup([my_asset]).build_job("asset_job")
+from dagster import AssetSelection, define_asset_job
+
+asset_job = define_asset_job(AssetSelection.groups("some_asset_group"))
 
 basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
 ```
@@ -113,9 +115,11 @@ do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
 The Partitioned Jobs concepts page also includes an [example of a date-partitioned asset](/concepts/partitions-schedules-sensors/partitions#partitioned-assets). You can define a schedule similarly using <PyObject object="build_schedule_from_partitioned_job"/>:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_partitioned_asset_schedule endbefore=end_partitioned_asset_schedule
-from dagster import AssetGroup
+from dagster import define_asset_job
 
-partitioned_asset_job = AssetGroup([partitioned_asset]).build_job("partitioned_job")
+partitioned_asset_job = define_asset_job("partitioned_job").resolve(
+    [partitioned_asset], []
+)
 
 
 asset_partitioned_schedule = build_schedule_from_partitioned_job(

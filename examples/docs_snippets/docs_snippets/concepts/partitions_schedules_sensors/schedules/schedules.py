@@ -27,8 +27,9 @@ def my_asset():
 
 
 # start_basic_asset_schedule
+from dagster import AssetSelection, define_asset_job
 
-asset_job = AssetGroup([my_asset]).build_job("asset_job")
+asset_job = define_asset_job(AssetSelection.groups("some_asset_group"))
 
 basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
 

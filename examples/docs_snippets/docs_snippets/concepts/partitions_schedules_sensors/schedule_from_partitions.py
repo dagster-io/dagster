@@ -27,9 +27,11 @@ def partitioned_asset():
 
 
 # start_partitioned_asset_schedule
-from dagster import AssetGroup
+from dagster import define_asset_job
 
-partitioned_asset_job = AssetGroup([partitioned_asset]).build_job("partitioned_job")
+partitioned_asset_job = define_asset_job("partitioned_job").resolve(
+    [partitioned_asset], []
+)
 
 
 asset_partitioned_schedule = build_schedule_from_partitioned_job(
