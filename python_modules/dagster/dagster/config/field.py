@@ -5,6 +5,7 @@ from dagster.builtins import BuiltinEnum
 from dagster.config.config_schema import ConfigSchemaType
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster.serdes import serialize_value
+from dagster.seven import is_subclass
 from dagster.utils import is_enum_value
 from dagster.utils.typing_api import is_closed_python_optional_type, is_typing_type
 
@@ -13,7 +14,7 @@ from .field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, all_optional_type
 
 
 def _is_config_type_class(obj):
-    return isinstance(obj, type) and issubclass(obj, ConfigType)
+    return isinstance(obj, type) and is_subclass(obj, ConfigType)
 
 
 def helpful_list_error_string():
@@ -111,7 +112,7 @@ def resolve_to_config_type(dagster_type: object) -> Union[ConfigType, bool]:
             'another dagster config type. E.g. "Noneable(Permissive)" should instead be "Noneable(Permissive())".',
         )
 
-    if isinstance(dagster_type, type) and issubclass(dagster_type, DagsterType):
+    if isinstance(dagster_type, type) and is_subclass(dagster_type, DagsterType):
         raise DagsterInvalidDefinitionError(
             "You have passed a DagsterType class {dagster_type} to the config system. "
             "The DagsterType and config schema systems are separate. "

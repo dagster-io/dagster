@@ -168,3 +168,19 @@ def get_import_error_message(import_error):
 @contextmanager
 def nullcontext():
     yield
+
+
+def is_subclass(child_type, parent_type):
+    """Due to some pathological interactions betwen bugs in the Python typing library
+    (https://github.com/python/cpython/issues/88459 and
+    https://github.com/python/cpython/issues/89010), some types (list[str] in Python 3.9, for
+    example) pass inspect.isclass check above but then raise an exception if issubclass is called
+    with the same class. This function provides a workaround for that issue."""
+
+    if not inspect.isclass(child_type):
+        return False
+
+    try:
+        return issubclass(child_type, parent_type)
+    except TypeError:
+        return False
