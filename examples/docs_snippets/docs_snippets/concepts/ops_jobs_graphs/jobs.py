@@ -1,4 +1,6 @@
-# pylint: disable=unused-argument
+# isort: skip_file
+
+# pylint: disable=unused-argument,reimported
 
 from dagster import DependencyDefinition, GraphDefinition, job, op
 
@@ -68,3 +70,34 @@ def my_tags_job():
 
 
 # end_tags_pipeline
+
+
+def do_something(x):
+    return x
+
+
+# start_top_level_input_graph
+from dagster import graph, op
+
+
+@op
+def op_with_input(x):
+    return do_something(x)
+
+
+@graph
+def wires_input(x):
+    op_with_input(x)
+
+
+# end_top_level_input_graph
+
+# start_top_level_input_job
+the_job = wires_input.to_job(input_values={"x": 5})
+# end_top_level_input_job
+
+# start_execute_in_process_input
+graph_result = wires_input.execute_in_process(input_values={"x": 5})
+
+job_result = the_job.execute_in_process(input_values={"x": 6})  # Overrides existing input value
+# end_execute_in_process_input

@@ -11,9 +11,12 @@ from docs_snippets.concepts.ops_jobs_graphs.dynamic import (
 from docs_snippets.concepts.ops_jobs_graphs.fan_in_job import fan_in
 from docs_snippets.concepts.ops_jobs_graphs.jobs import (
     alias,
+    graph_result,
+    job_result,
     one_plus_one,
     one_plus_one_from_constructor,
     tagged_add_one,
+    the_job,
 )
 from docs_snippets.concepts.ops_jobs_graphs.jobs_from_graphs import local_job, prod_job
 from docs_snippets.concepts.ops_jobs_graphs.linear_job import linear
@@ -87,3 +90,10 @@ def test_retry_examples():
 def test_jobs_from_graphs():
     assert local_job.execute_in_process()
     assert prod_job.execute_in_process()
+
+
+def test_input_values():
+    assert the_job.execute_in_process().success
+    assert graph_result.success
+    assert job_result.success
+    assert job_result.output_for_node("op_with_input") == 6

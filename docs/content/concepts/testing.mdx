@@ -268,3 +268,35 @@ def test_event_stream():
     assert isinstance(materialization, AssetMaterialization)
     assert materialization.label == "persisted_string"
 ```
+
+### Testing jobs with top-level inputs
+
+You can wire inputs from the top-level of a job to the constituent ops. Consider the following op and graph:
+
+```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_top_level_input_graph endbefore=end_top_level_input_graph
+from dagster import graph, op
+
+
+@op
+def op_with_input(x):
+    return do_something(x)
+
+
+@graph
+def wires_input(x):
+    op_with_input(x)
+```
+
+Turn the graph into a job by calling <PyObject object="GraphDefinition" method="to_job" />, and provide a value to the input `x` using the `input_values` argument:
+
+```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_top_level_input_job endbefore=end_top_level_input_job
+the_job = wires_input.to_job(input_values={"x": 5})
+```
+
+You can also provide input values using <PyObject object="JobDefinition" method="execute_in_process" /> or <PyObject object="GraphDefinition" method="execute_in_process" />:
+
+```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_execute_in_process_input endbefore=end_execute_in_process_input
+graph_result = wires_input.execute_in_process(input_values={"x": 5})
+
+job_result = the_job.execute_in_process(input_values={"x": 6})  # Overrides existing input value
+```
