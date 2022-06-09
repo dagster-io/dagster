@@ -328,7 +328,7 @@ _DEPRECATED = {
     "AssetGroup": (
         "dagster.core.asset_defs",
         "0.16.0",
-        "Instead, place a set of assets wrapped with `with_resources` on a repository.",
+        "Instead, place a set of assets wrapped with `with_resources` directly on a repository.",
     ),
 }
 
