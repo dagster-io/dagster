@@ -525,6 +525,11 @@
     "permanent": true
   },
   {
+    "source": "/tutorial/advanced-tutorial/materializations",
+    "destination": "/concepts/assets/asset-materializations",
+    "permanent": true
+  },
+  {
     "source": "/concepts/solids-pipelines/solids",
     "destination": "/concepts/ops-jobs-graphs/ops",
     "permanent": true
