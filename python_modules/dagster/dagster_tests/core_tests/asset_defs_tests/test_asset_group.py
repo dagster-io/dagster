@@ -1263,7 +1263,7 @@ def test_add_asset_groups_different_executors():
 
 
 def test_to_source_assets():
-    @asset
+    @asset(group_name="abc")
     def my_asset():
         ...
 
@@ -1282,6 +1282,7 @@ def test_to_source_assets():
             AssetKey(["my_asset"]),
             io_manager_key="io_manager",
             resource_defs={"io_manager": fs_io_manager},
+            group_name="abc",
         ),
         SourceAsset(
             AssetKey(["my_asset_name"]),
