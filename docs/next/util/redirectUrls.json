@@ -520,6 +520,11 @@
     "permanent": true
   },
   {
+    "source": "/tutorial/advanced-tutorial/scheduling",
+    "destination": "/concepts/partitions-schedules-sensors/schedules",
+    "permanent": true
+  },
+  {
     "source": "/concepts/solids-pipelines/solids",
     "destination": "/concepts/ops-jobs-graphs/ops",
     "permanent": true
