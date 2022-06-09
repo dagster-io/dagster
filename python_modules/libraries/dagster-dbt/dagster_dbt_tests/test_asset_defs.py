@@ -116,7 +116,9 @@ def assert_assets_match_project(dbt_assets):
     assert not dbt_assets[0].asset_deps[AssetKey(["sort_by_calories"])]
 
 
-def test_fail_immediately(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
+def test_fail_immediately(
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir
+):  # pylint: disable=unused-argument
     from dagster import build_init_resource_context
 
     dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
