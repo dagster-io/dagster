@@ -3,7 +3,6 @@ import json
 import sys
 import tempfile
 from functools import update_wrapper
-from typing import List
 
 import pytest
 
@@ -116,8 +115,8 @@ def test_is_subclass():
     assert not is_subclass(ListType, str)
 
     # type that aren't classes can be passed into is_subclass
-    assert not inspect.isclass(List[str])
-    assert not is_subclass(List[str], DagsterType)
+    assert not inspect.isclass(2)
+    assert not is_subclass(2, DagsterType)
 
 
 @pytest.mark.skipif(
