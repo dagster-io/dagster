@@ -258,14 +258,14 @@ class Node:
             solid_def = self.definition.ensure_solid_def()
             for requirement in solid_def.get_resource_requirements((cur_node_handle, asset_layer)):
                 # If requirement is a root input manager requirement, but the corresponding node has an upstream output, then ignore the requirement.
-                if (
-                    isinstance(requirement, InputManagerRequirement)
-                    and outer_container.dependency_structure.has_deps(
-                        SolidInputHandle(self, solid_def.input_def_named(requirement.input_name))
-                    )
-                    and requirement.root_input
-                ):
-                    continue
+                # if (
+                #     isinstance(requirement, InputManagerRequirement)
+                #     and outer_container.dependency_structure.has_deps(
+                #         SolidInputHandle(self, solid_def.input_def_named(requirement.input_name))
+                #     )
+                #     and requirement.root_input
+                # ):
+                #     continue
                 yield requirement
             for hook_def in self.hook_defs:
                 yield from hook_def.get_resource_requirements(self.describe_node())

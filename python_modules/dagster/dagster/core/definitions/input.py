@@ -95,12 +95,20 @@ class InputDefinition:
 
         self._default_value = _check_default_value(self._name, self._dagster_type, default_value)
 
+        if root_manager_key and input_manager_key:
+            # TODO make real exception
+            raise Exception(
+                f"can't have both root input manager key {root_manager_key} and input manager key {input_manager_key} for input {name}"
+            )
+
         if root_manager_key:
+            # TODO deprecation warning
             experimental_arg_warning("root_manager_key", "InputDefinition.__init__")
-
-        self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
-
-        self._input_manager_key = check.opt_str_param(input_manager_key, "input_manager_key")
+            self._input_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
+        elif input_manager_key:
+            self._input_manager_key = check.opt_str_param(input_manager_key, "input_manager_key")
+        else:
+            self._input_manager_key = None
 
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         self._metadata_entries = check.is_list(
@@ -153,7 +161,7 @@ class InputDefinition:
 
     @property
     def root_manager_key(self):
-        return self._root_manager_key
+        return self._input_manager_key
 
     @property
     def input_manager_key(self):
@@ -274,7 +282,7 @@ class InputDefinition:
             dagster_type=dagster_type,
             description=description,
             default_value=default_value,
-            root_manager_key=self._root_manager_key,
+            root_manager_key=None,
             metadata=self._metadata,
             asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
@@ -404,6 +412,16 @@ class In(
         asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
         input_manager_key: Optional[str] = None,
     ):
+
+        if root_manager_key and input_manager_key:
+            # TODO make real exception
+
+            raise Exception(
+                f"can't have both root input manager key {root_manager_key} and input manager key {input_manager_key}"
+            )
+        # TODO deprecation warning
+        input_key = root_manager_key if root_manager_key else input_manager_key
+
         return super(In, cls).__new__(
             cls,
             dagster_type=NoValueSentinel
@@ -411,11 +429,11 @@ class In(
             else resolve_dagster_type(dagster_type),
             description=check.opt_str_param(description, "description"),
             default_value=default_value,
-            root_manager_key=check.opt_str_param(root_manager_key, "root_manager_key"),
+            root_manager_key=check.opt_str_param(input_key, "root_manager_key"),
             metadata=check.opt_dict_param(metadata, "metadata", key_type=str),
             asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),
             asset_partitions=asset_partitions,
-            input_manager_key=input_manager_key,
+            input_manager_key=check.opt_str_param(input_key, "input_manager_key"),
         )
 
     @staticmethod
@@ -424,7 +442,7 @@ class In(
             dagster_type=input_def.dagster_type,
             description=input_def.description,
             default_value=input_def._default_value,  # pylint: disable=protected-access
-            root_manager_key=input_def.root_manager_key,
+            root_manager_key=None,
             metadata=input_def.metadata,
             asset_key=input_def._asset_key,  # pylint: disable=protected-access
             asset_partitions=input_def._asset_partitions_fn,  # pylint: disable=protected-access
@@ -438,7 +456,7 @@ class In(
             dagster_type=dagster_type,
             description=self.description,
             default_value=self.default_value,
-            root_manager_key=self.root_manager_key,
+            root_manager_key=None,
             metadata=self.metadata,
             asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,

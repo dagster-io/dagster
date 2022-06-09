@@ -134,10 +134,11 @@ def _check_top_level_inputs_for_node(
         cur_node_handle = NodeHandle(node.name, parent_handle)
         op_def = cast(OpDefinition, node.definition)
         input_def = op_def.input_def_named(input_name)
+        # need a way to ensure that input_manager can load from no output
         if (
             not input_def.dagster_type.loader
             and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-            and not input_def.root_manager_key
+            and not input_def.input_manager_key
             and not input_def.has_default_value
             and not top_level_input_provided
         ):

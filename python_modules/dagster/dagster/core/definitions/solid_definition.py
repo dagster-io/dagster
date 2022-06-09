@@ -244,10 +244,12 @@ class SolidDefinition(NodeDefinition):
         handle = cast(NodeHandle, check.inst_param(handle, "handle", NodeHandle))
         unresolveable_input_defs = []
         for input_def in self.input_defs:
+            # TODO - figure out how to do this condition - we could have an input with an input manager
+            # but that input manager can't load without an output
             if (
                 not input_def.dagster_type.loader
                 and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-                and not input_def.root_manager_key
+                and not input_def.input_manager_key
                 and not input_def.has_default_value
             ):
                 input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
@@ -309,19 +311,18 @@ class SolidDefinition(NodeDefinition):
                 key=resource_key, node_description=node_description
             )
         for input_def in self.input_defs:
-            if input_def.root_manager_key:
-                yield InputManagerRequirement(
-                    key=input_def.root_manager_key,
-                    node_description=node_description,
-                    input_name=input_def.name,
-                    root_input=True,
-                )
-            elif input_def.input_manager_key:
+            # if input_def.root_manager_key:
+            #     yield InputManagerRequirement(
+            #         key=input_def.root_manager_key,
+            #         node_description=node_description,
+            #         input_name=input_def.name,
+            #         root_input=True,
+            #     )
+            if input_def.input_manager_key:
                 yield InputManagerRequirement(
                     key=input_def.input_manager_key,
                     node_description=node_description,
                     input_name=input_def.name,
-                    root_input=False,
                 )
             elif asset_layer and handle:
                 input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
@@ -331,7 +332,6 @@ class SolidDefinition(NodeDefinition):
                         key=io_manager_key,
                         node_description=node_description,
                         input_name=input_def.name,
-                        root_input=False,  # TODO maybe need to be true
                     )
 
         for output_def in self.output_defs:
