@@ -194,7 +194,7 @@ def repo():
 
 #### Without software-defined assets
 
-This example does the same things as the [previous example](#a-job-that-materializes-two-interdependent-tables), with one difference. This job performs IO inside of the ops instead of delegating it to IO managers and root input managers:
+This example does the same things as the [previous example](#materialize-two-interdependent-tables), with one difference. This job performs IO inside of the ops instead of delegating it to IO managers and root input managers:
 
 ```python file=/guides/dagster/enriching_with_software_defined_assets/vanilla_nothing.py
 from pandas import read_sql
