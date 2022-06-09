@@ -9,10 +9,10 @@ Dagster enables you to build testable and maintainable data applications. It pro
 
 ## Relevant APIs
 
-| Name                                                               | Description                                                                                                 |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts. |
-| <PyObject object="build_op_context"  />                            | A method to construct an `OpExecutionContext`, typically to provide to the invocation of an op for testing. |
+| Name                                                               | Description                                                                                                          |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts.          |
+| <PyObject object="build_op_context"  />                            | A method to construct an `OpExecutionContext`, typically to provide to the invocation of an op or asset for testing. |
 
 ## Overview
 
@@ -39,7 +39,7 @@ So, unit tests should be viewed primarily as productivity and code quality tools
 
 ### Testing a Job Execution
 
-The workhouse function for unit-testing a job is the <PyObject object="JobDefinition" method="execute_in_process"/> function. Using this function you can execute a job in process and then test execution properties using the <PyObject object="ExecuteInProcessResult" /> object that it returns.
+The workhorse function for unit-testing a job is the <PyObject object="JobDefinition" method="execute_in_process"/> function. Using this function you can execute a job in process and then test execution properties using the <PyObject object="ExecuteInProcessResult" /> object that it returns.
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_job_marker endbefore=end_test_job_marker
 def test_job():
@@ -193,13 +193,105 @@ def my_foo_resource(context):
 
 
 def test_op_resource_def():
-    context = build_op_context(
-        resources={"foo": my_foo_resource.configured({"my_str": "bar"})}
-    )
+    context = build_op_context(resources={"foo": my_foo_resource.configured({"my_str": "bar"})})
     assert op_requires_foo(context) == "found bar"
 ```
 
-### Testing job execution with configs
+Note that when directly invoking ops, io managers specified on inputs and outputs are not used.
+
+### Testing assets
+
+Similar to ops, <PyObject object="asset" decorator /> decorated functions can be directly invoked. Doing so will invoke the underlying op computation.
+
+A basic asset, with no dependencies:
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_basic_asset endbefore=end_test_basic_asset
+from dagster import asset
+
+
+@asset
+def basic_asset():
+    return 5
+
+
+# An example unit test for basic_asset.
+def test_basic_asset():
+    assert basic_asset() == 5
+```
+
+An asset with input dependencies:
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_input_asset endbefore=end_test_input_asset
+from dagster import asset
+
+
+@asset
+def asset_with_inputs(x, y):
+    return x + y
+
+
+# An example unit test for asset_with_inputs.
+def test_asset_with_inputs():
+    assert asset_with_inputs(5, 6) == 11
+```
+
+Any resources defined on your asset (either directly, or using <PyObject object="with_resources" />) will be picked up when invoking the asset. Simply provide a context using <PyObject object="build_op_context" />.
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_resource_asset endbefore=end_test_resource_asset
+from dagster import asset, resource, build_op_context, with_resources
+
+
+@asset(required_resource_keys={"service"})
+def asset_reqs_service(context):
+    service = context.resources.service
+    ...
+
+
+@resource
+def service():
+    ...
+
+
+# asset_with_service now has resource service specified.
+asset_with_service = with_resources([asset_reqs_service], {"service": service})[0]
+
+
+def test_asset_with_service():
+    # When invoking asset_with_service, service resource will
+    # automatically be used.
+    result = asset_with_service(build_op_context())
+    ...
+```
+
+Resources provided on <PyObject object="build_op_context" /> will override any resources provided directly on the asset. This means you can avoid using your prod resources when testing.
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_resource_override_asset endbefore=end_test_resource_override_asset
+from dagster import resource, asset, build_op_context
+
+
+@resource
+def prod_resource():
+    return "i am prod"
+
+
+# asset_uses_service has the prod resource hardcoded to the definition.
+@asset(resource_defs={"service": prod_resource})
+def asset_uses_service(context):
+    service = context.resources.service
+    ...
+
+
+def test_asset_mock_service():
+    @resource
+    def mock_resource():
+        return "i am mock"
+
+    # When testing, we override prod_resource with mock_resource.
+    result = asset_uses_service(build_op_context(resources={"service": mock_resource}))
+    ...
+```
+
+### Testing job execution with config
 
 Sometimes, you may want to test with different configuration. You can execute job with a specified run config via the `run_config`:
 
