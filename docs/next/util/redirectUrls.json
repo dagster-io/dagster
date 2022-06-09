@@ -486,12 +486,17 @@
   },
   {
     "source": "/tutorial/intro-tutorial/configuring-solids",
-    "destination": "/tutorial/advanced-tutorial/configuring-ops",
+    "destination": "/concepts/configuration/config-schema",
     "permanent": true
   },
   {
     "source": "/tutorial/advanced-tutorial/configuring-solids",
     "destination": "/tutorial/advanced-tutorial/configuring-ops",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced-tutorial/configuring-ops",
+    "destination": "/concepts/configuration/config-schema",
     "permanent": true
   },
   {
