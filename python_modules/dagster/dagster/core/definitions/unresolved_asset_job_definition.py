@@ -117,7 +117,7 @@ def define_asset_job(
 
     Args:
         name (str):
-            The name for the Job.
+            The name for the job.
         selection (Union[str, Sequence[str], AssetSelection]):
             A selection over the set of Assets available on your repository. This can be a string
             such as "my_asset*", a list of such strings (representing a union of these selections),
@@ -139,11 +139,6 @@ def define_asset_job(
             If a :py:class:`ConfigMapping` object is provided, then the schema for the job's run config is
             determined by the config mapping, and the ConfigMapping, which should return
             configuration in the standard format to configure the job.
-
-            If a :py:class:`PartitionedConfig` object is provided, then it defines a discrete set of config
-            values that can parameterize the job, as well as a function for mapping those
-            values to the base config. The values provided will be viewable and editable in the
-            Dagit playground, so be careful with secrets.
         tags (Optional[Mapping[str, Any]]):
             Arbitrary information that will be attached to the execution of the Job.
             Values that are not strings will be json encoded and must meet the criteria that
@@ -151,6 +146,9 @@ def define_asset_job(
             values provided at invocation time.
         description (Optional[str]):
             A description for the Job.
+        partitions_def (Optional[PartitionsDefinition]):
+            Defines the set of partitions for this job. All AssetDefinitions selected for this job
+            must have a matching PartitionsDefinition.
     """
     from dagster.core.asset_defs.asset_selection import AssetSelection
 

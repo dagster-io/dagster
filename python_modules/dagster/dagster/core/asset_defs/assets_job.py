@@ -95,11 +95,10 @@ def build_assets_job(
     )
     check.opt_str_param(description, "description")
     check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
-    source_assets_by_key = build_source_assets_by_key(source_assets)
 
+    # figure out what partitions (if any) exist for this job
     partitions_def = partitions_def or build_job_partitions_from_assets(assets)
 
-    deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
     resource_defs = merge_dicts({"io_manager": default_job_io_manager}, resource_defs)
 
@@ -107,8 +106,8 @@ def build_assets_job(
     source_assets = with_resources(source_assets, resource_defs)
 
     source_assets_by_key = build_source_assets_by_key(source_assets)
-
     deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
+
     # attempt to resolve cycles using multi-asset subsetting
     if _has_cycles(deps):
         assets = _attempt_resolve_cycles(assets)
