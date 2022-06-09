@@ -5,7 +5,9 @@ from dagster import (
     AssetSelection,
     AssetsDefinition,
     DagsterEventType,
+    DailyPartitionsDefinition,
     EventRecordsFilter,
+    HourlyPartitionsDefinition,
     IOManager,
     Out,
     Output,
@@ -14,7 +16,10 @@ from dagster import (
     in_process_executor,
     io_manager,
     op,
+    repository,
+    schedule_from_partitions,
 )
+from dagster._check import CheckError
 from dagster.core.asset_defs import asset, multi_asset
 from dagster.core.asset_defs.load_assets_from_modules import prefix_assets
 from dagster.core.errors import DagsterInvalidSubsetError
@@ -405,3 +410,130 @@ def test_description():
     description = "Some very important description"
     job = define_asset_job("with_tags", description=description).resolve([foo], [])
     assert job.description == description
+
+
+def _get_partitioned_assets(partitions_def):
+    @asset(partitions_def=partitions_def)
+    def a():
+        return 1
+
+    @asset(partitions_def=partitions_def)
+    def b(a):
+        return a + 1
+
+    @asset(partitions_def=partitions_def)
+    def c(b):
+        return b + 1
+
+    return [a, b, c]
+
+
+def test_config():
+    @asset
+    def foo():
+        return 1
+
+    @asset(config_schema={"val": int})
+    def config_asset(context, foo):
+        return foo + context.op_config["val"]
+
+    @asset(config_schema={"val": int})
+    def other_config_asset(context, config_asset):
+        return config_asset + context.op_config["val"]
+
+    job = define_asset_job(
+        "config_job",
+        config={
+            "ops": {
+                "config_asset": {"config": {"val": 2}},
+                "other_config_asset": {"config": {"val": 3}},
+            }
+        },
+    ).resolve(assets=[foo, config_asset, other_config_asset], source_assets=[])
+
+    result = job.execute_in_process()
+
+    assert result.output_for_node("other_config_asset") == 1 + 2 + 3
+
+
+def test_simple_partitions():
+    partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
+    job = define_asset_job("hourly", partitions_def=partitions_def).resolve(
+        _get_partitioned_assets(partitions_def), []
+    )
+    assert job.partitions_def == partitions_def
+
+
+def test_partitioned_schedule():
+    partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
+    job = define_asset_job("hourly", partitions_def=partitions_def)
+
+    schedule = schedule_from_partitions(job)
+
+    spd = schedule.get_partition_set()._partitions_def  # pylint: disable=protected-access
+    assert spd == partitions_def
+
+
+def test_partitioned_schedule_on_repo():
+    partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
+    job = define_asset_job("hourly", partitions_def=partitions_def)
+
+    schedule = schedule_from_partitions(job)
+
+    @repository
+    def my_repo():
+        return [
+            job,
+            schedule,
+            *_get_partitioned_assets(partitions_def),
+        ]
+
+    assert my_repo()
+
+
+def test_intersecting_partitions_on_repo_invalid():
+    partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
+    job = define_asset_job("hourly", partitions_def=partitions_def)
+
+    schedule = schedule_from_partitions(job)
+
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
+    def d(c):
+        return c
+
+    with pytest.raises(CheckError, match="partitions_def of Daily"):
+
+        @repository
+        def my_repo():
+            return [
+                job,
+                schedule,
+                *_get_partitioned_assets(partitions_def),
+                d,
+            ]
+
+
+def test_intersecting_partitions_on_repo_valid():
+    partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
+    partitions_def2 = DailyPartitionsDefinition(start_date="2020-01-01")
+    job = define_asset_job("hourly", partitions_def=partitions_def, selection="a++")
+    job2 = define_asset_job("daily", partitions_def=partitions_def2, selection="d")
+
+    schedule = schedule_from_partitions(job)
+    schedule2 = schedule_from_partitions(job2)
+
+    @asset(partitions_def=partitions_def2)
+    def d(c):
+        return c
+
+    @repository
+    def my_repo():
+        return [
+            job,
+            schedule,
+            schedule2,
+            *_get_partitioned_assets(partitions_def),
+            d,
+        ]
+
+    assert my_repo

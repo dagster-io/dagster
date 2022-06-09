@@ -25,6 +25,7 @@ from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils.backcompat import ExperimentalWarning
 
 from ..errors import DagsterInvalidSubsetError
+from .config import ConfigMapping
 from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle, SolidOutputHandle
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
@@ -37,7 +38,7 @@ if TYPE_CHECKING:
     from dagster.core.execution.context.output import OutputContext
 
     from .job_definition import JobDefinition
-    from .partition import PartitionsDefinition
+    from .partition import PartitionedConfig, PartitionsDefinition
 
 
 class AssetOutputInfo(
@@ -575,6 +576,9 @@ class AssetLayer:
     def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._assets_defs_by_key
 
+    def assets_def_for_asset(self, asset_key: AssetKey) -> "AssetsDefinition":
+        return self._assets_defs_by_key[asset_key]
+
     def asset_keys_for_node(self, node_handle: NodeHandle) -> AbstractSet[AssetKey]:
         return self._asset_keys_by_node_handle[node_handle]
 
@@ -616,12 +620,26 @@ class AssetLayer:
 
         return group_names
 
+    def partitions_def_for_asset(self, asset_key: AssetKey) -> Optional["PartitionsDefinition"]:
+        assets_def = self._assets_defs_by_key.get(asset_key)
+
+        if assets_def is not None:
+            return assets_def.partitions_def
+        else:
+            source_asset = self._source_assets_by_key.get(asset_key)
+            if source_asset is not None:
+                return source_asset.partitions_def
+
+        return None
+
 
 def build_asset_selection_job(
     name: str,
     assets: Iterable["AssetsDefinition"],
     source_assets: Iterable["SourceAsset"],
     executor_def: Optional[ExecutorDefinition] = None,
+    config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
+    partitions_def: Optional["PartitionsDefinition"] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
     tags: Optional[Dict[str, Any]] = None,
@@ -638,14 +656,25 @@ def build_asset_selection_job(
         included_assets = cast(Iterable["AssetsDefinition"], assets)
         excluded_assets = list(source_assets)
 
+    if partitions_def:
+        for asset in included_assets:
+            check.invariant(
+                asset.partitions_def == partitions_def,
+                f"Assets defined for node '{asset.node_def.name}' have a partitions_def of "
+                f"{asset.partitions_def}, but job '{name}' has non-matching partitions_def of "
+                f"{partitions_def}.",
+            )
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=ExperimentalWarning)
         asset_job = build_assets_job(
             name=name,
             assets=included_assets,
+            config=config,
             source_assets=excluded_assets,
             resource_defs=resource_defs,
             executor_def=executor_def,
+            partitions_def=partitions_def,
             description=description,
             tags=tags,
             _asset_selection_data=asset_selection_data,
