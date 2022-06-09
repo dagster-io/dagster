@@ -107,6 +107,50 @@ def assert_assets_match_project(dbt_assets):
     assert not dbt_assets[0].asset_deps[AssetKey(["test-schema", "sort_by_calories"])]
 
 
+def test_fail_immediately(
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir
+):  # pylint: disable=unused-argument
+    from dagster import build_init_resource_context
+
+    dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
+    good_dbt = dbt_cli_resource.configured(
+        {
+            "project_dir": test_project_dir,
+            "profiles_dir": dbt_config_dir,
+        }
+    )
+
+    # ensure that there will be a run results json
+    result = build_assets_job(
+        "test_job",
+        dbt_assets,
+        resource_defs={"dbt": good_dbt},
+    ).execute_in_process()
+
+    assert good_dbt(build_init_resource_context()).get_run_results_json()
+
+    result = build_assets_job(
+        "test_job",
+        dbt_assets,
+        resource_defs={
+            "dbt": dbt_cli_resource.configured(
+                {
+                    "project_dir": test_project_dir,
+                    "profiles_dir": "BAD PROFILES DIR",
+                }
+            )
+        },
+    ).execute_in_process(raise_on_error=False)
+
+    assert not result.success
+    materializations = [
+        event.event_specific_data.materialization
+        for event in result.events_for_node(dbt_assets[0].op.name)
+        if event.event_type_value == "ASSET_MATERIALIZATION"
+    ]
+    assert len(materializations) == 0
+
+
 @pytest.mark.parametrize("use_build, fail_test", [(True, False), (True, True), (False, False)])
 def test_basic(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build, fail_test

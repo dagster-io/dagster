@@ -187,23 +187,26 @@ def _dbt_nodes_to_assets(
     )
     def dbt_op(context):
         dbt_output = None
-        try:
-            # in the case that we're running everything, opt for the cleaner selection string
-            if len(context.selected_output_names) == len(outs):
-                subselect = select
-            else:
-                # for each output that we want to emit, translate to a dbt select string by converting
-                # the out to it's corresponding fqn
-                subselect = [
-                    ".".join(out_name_to_node_info[out_name]["fqn"])
-                    for out_name in context.selected_output_names
-                ]
 
+        # clean up any run results from the last run
+        context.resources.dbt.remove_run_results_json()
+
+        # in the case that we're running everything, opt for the cleaner selection string
+        if len(context.selected_output_names) == len(outs):
+            subselect = select
+        else:
+            # for each output that we want to emit, translate to a dbt select string by converting
+            # the out to it's corresponding fqn
+            subselect = [
+                ".".join(out_name_to_node_info[out_name]["fqn"])
+                for out_name in context.selected_output_names
+            ]
+
+        try:
             if use_build_command:
                 dbt_output = context.resources.dbt.build(select=subselect)
             else:
                 dbt_output = context.resources.dbt.run(select=subselect)
-
         finally:
             # in the case that the project only partially runs successfully, still attempt to generate
             # events for the parts that were successful

@@ -7,7 +7,7 @@ from dagster.utils.merger import merge_dicts
 from ..dbt_resource import DbtResource
 from .constants import CLI_COMMON_FLAGS_CONFIG_SCHEMA, CLI_COMMON_OPTIONS_CONFIG_SCHEMA
 from .types import DbtCliOutput
-from .utils import execute_cli, parse_manifest, parse_run_results
+from .utils import execute_cli, parse_manifest, parse_run_results, remove_run_results
 
 
 class DbtCliResource(DbtResource):
@@ -278,6 +278,14 @@ class DbtCliResource(DbtResource):
         project_dir = kwargs.get("project_dir", self.default_flags["project-dir"])
         target_path = kwargs.get("target_path", self._target_path)
         return parse_run_results(project_dir, target_path)
+
+    def remove_run_results_json(self, **kwargs):
+        """
+        Remove the run_results.json file from previous runs (if it exists).
+        """
+        project_dir = kwargs.get("project_dir", self.default_flags["project-dir"])
+        target_path = kwargs.get("target_path", self._target_path)
+        remove_run_results(project_dir, target_path)
 
     def get_manifest_json(self, **kwargs) -> Optional[Dict[str, Any]]:
         """

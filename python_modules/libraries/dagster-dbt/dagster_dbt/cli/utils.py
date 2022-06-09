@@ -126,6 +126,13 @@ def parse_run_results(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> 
         raise DagsterDbtCliOutputsNotFoundError(path=run_results_path)
 
 
+def remove_run_results(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH):
+    """Parses the `target/run_results.json` artifact that is produced by a dbt process."""
+    run_results_path = os.path.join(path, target_path, "run_results.json")
+    if os.path.exists(run_results_path):
+        os.remove(run_results_path)
+
+
 def parse_manifest(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> Dict[str, Any]:
     """Parses the `target/manifest.json` artifact that is produced by a dbt process."""
     manifest_path = os.path.join(path, target_path, "manifest.json")
