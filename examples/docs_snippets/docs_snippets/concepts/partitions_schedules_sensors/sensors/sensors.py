@@ -50,7 +50,7 @@ def my_asset():
 
 
 # start_asset_job_sensor_marker
-asset_job = define_asset_job("asset_job", AssetSelection.all())
+asset_job = define_asset_job("asset_job", "*")
 
 
 @sensor(job=asset_job)

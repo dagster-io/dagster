@@ -117,8 +117,10 @@ The Partitioned Jobs concepts page also includes an [example of a date-partition
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_partitioned_asset_schedule endbefore=end_partitioned_asset_schedule
 from dagster import define_asset_job
 
-partitioned_asset_job = define_asset_job("partitioned_job").resolve(
-    [partitioned_asset], []
+partitioned_asset_job = define_asset_job(
+    "partitioned_job",
+    "*",
+    partitions_def=HourlyPartitionsDefinition(start_date="2022-05-31", fmt="%Y-%m-%d"),
 )
 
 

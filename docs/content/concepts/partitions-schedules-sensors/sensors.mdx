@@ -86,7 +86,7 @@ This sensor iterates through all the files in `MY_DIRECTORY` and `yields` a <PyO
 To write a sensor that materializes assets, you can [build a job that materializes assets](/concepts/assets/software-defined-assets#building-jobs-that-materialize-assets):
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_job_sensor_marker endbefore=end_asset_job_sensor_marker
-asset_job = define_asset_job("asset_job", AssetSelection.all())
+asset_job = define_asset_job("asset_job", "*")
 
 
 @sensor(job=asset_job)

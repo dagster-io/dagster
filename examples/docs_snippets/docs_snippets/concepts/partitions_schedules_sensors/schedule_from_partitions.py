@@ -19,18 +19,13 @@ do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
 # end_marker
 
 
-@asset(
-    partitions_def=HourlyPartitionsDefinition(start_date="2022-05-31", fmt="%Y-%m-%d")
-)
-def partitioned_asset():
-    return 1
-
-
 # start_partitioned_asset_schedule
 from dagster import define_asset_job
 
-partitioned_asset_job = define_asset_job("partitioned_job").resolve(
-    [partitioned_asset], []
+partitioned_asset_job = define_asset_job(
+    "partitioned_job",
+    "*",
+    partitions_def=HourlyPartitionsDefinition(start_date="2022-05-31", fmt="%Y-%m-%d"),
 )
 
 
