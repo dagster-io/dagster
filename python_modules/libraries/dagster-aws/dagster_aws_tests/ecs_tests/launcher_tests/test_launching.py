@@ -7,7 +7,7 @@ import pytest
 from botocore.exceptions import ClientError
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
 from dagster_aws.ecs.launcher import RUNNING_STATUSES, STOPPED_STATUSES
-from dagster_aws.ecs.tasks import TaskMetadata
+from dagster_aws.ecs.tasks import DagsterEcsTaskConfig
 
 from dagster._check import CheckError
 from dagster._core.code_pointer import FileCodePointer
@@ -167,7 +167,7 @@ def test_reuse_task_definition(instance):
             },
         ],
     }
-    metadata = TaskMetadata(
+    metadata = DagsterEcsTaskConfig(
         cluster="cluster",
         subnets=[],
         security_groups=[],

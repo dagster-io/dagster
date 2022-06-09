@@ -1,6 +1,6 @@
 import os
-import typing
 from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 import requests
 
@@ -9,13 +9,77 @@ from dagster._utils.backoff import backoff
 
 
 @dataclass
-class TaskMetadata:
+class DagsterEcsTaskConfig:
+    """All the information needs that Dagster needs to launch an ECS task."""
+
+    image: str
+    container_name: str
+    command: Optional[str]
+    family: str
     cluster: str
-    subnets: typing.List[str]
-    security_groups: typing.List[str]
-    task_definition: typing.Dict[str, typing.Any]
-    container_definition: typing.Dict[str, typing.Any]
+    subnets: List[str]
+    security_groups: List[str]
+    execution_role_arn: Optional[str]
+    task_role_arn: Optional[str]
     assign_public_ip: bool
+    secrets: Optional[List[Dict[str, str]]]
+    environment: Optional[List[Dict[str, str]]]
+    log_configuration: Optional[Dict[str, str]]
+
+    @property
+    def network_configuration(self):
+        return {
+            "awsvpcConfiguration": {
+                "subnets": self.subnets,
+                "assignPublicIp": self.assign_public_ip,
+                "securityGroups": self.security_groups,
+            }
+        }
+
+    @property
+    def log_configuration(self):
+        return (
+            {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": self.log_group,
+                    "awslogs-region": self.ecs.meta.region_name,
+                    "awslogs-stream-prefix": self.family,
+                },
+            },
+        )
+
+    def task_definition(self):
+        kwargs = dict(
+            family=self.family,
+            requiresCompatibilities=["FARGATE"],
+            networkMode="awsvpc",
+            containerDefinitions=[
+                merge_dicts(
+                    {
+                        "name": self.container_name,
+                        "image": self.image,
+                    },
+                    (
+                        {"logConfiguration": self.log_configuration}
+                        if self.log_configuration
+                        else {}
+                    ),
+                    ({"command": self.command} if self.command else {}),
+                    ({"secrets": self.secrets} if self.secrets else {}),
+                    ({"environment": self.environment} if self.environment else {}),
+                )
+            ],
+            executionRoleArn=self.execution_role_arn,
+            # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
+            cpu="256",
+            memory="512",
+        )
+
+        if self.task_role_arn:
+            kwargs.update(dict(taskRoleArn=self.task_role_arn))
+
+        return kwargs
 
 
 # 9 retries polls for up to 51.1 seconds with exponential backoff.
@@ -36,7 +100,7 @@ class EcsNoTasksFound(Exception):
 def default_ecs_task_definition(
     ecs,
     family,
-    metadata,
+    current_task_definition,
     image,
     container_name,
     environment,
@@ -44,6 +108,19 @@ def default_ecs_task_definition(
     secrets=None,
     include_sidecars=False,
 ):
+
+    current_container_name = current_ecs_container_name()
+
+    container_definition = next(
+        iter(
+            [
+                container
+                for container in current_task_definition["containerDefinitions"]
+                if container["name"] == current_container_name
+            ]
+        )
+    )
+
     # Start with the current process's task's definition but remove
     # extra keys that aren't useful for creating a new task definition
     # (status, revision, etc.)
@@ -51,9 +128,9 @@ def default_ecs_task_definition(
         key for key in ecs.meta.service_model.shape_for("RegisterTaskDefinitionRequest").members
     ]
     task_definition = dict(
-        (key, metadata.task_definition[key])
+        (key, current_task_definition[key])
         for key in expected_keys
-        if key in metadata.task_definition.keys()
+        if key in current_task_definition.keys()
     )
 
     # The current process might not be running in a container that has the
@@ -66,20 +143,20 @@ def default_ecs_task_definition(
     # https://aws.amazon.com/blogs/opensource/demystifying-entrypoint-cmd-docker/
     new_container_definition = merge_dicts(
         {
-            **metadata.container_definition,
+            **container_definition,
             "name": container_name,
             "image": image,
             "entryPoint": [],
             "command": command if command else [],
         },
         ({"environment": environment} if environment else {}),
-        secrets or {},
+        ({"secrets": secrets} if secrets else {}),
         {} if include_sidecars else {"dependsOn": []},
     )
 
     if include_sidecars:
-        container_definitions = metadata.task_definition.get("containerDefinitions")
-        container_definitions.remove(metadata.container_definition)
+        container_definitions = current_task_definition.get("containerDefinitions")
+        container_definitions.remove(container_definition)
         container_definitions.append(new_container_definition)
     else:
         container_definitions = [new_container_definition]
@@ -90,14 +167,25 @@ def default_ecs_task_definition(
         "containerDefinitions": container_definitions,
     }
 
-    # Register the task overridden task definition as a revision to the
-    # "dagster-run" family.
-    ecs.register_task_definition(**task_definition)
-
     return task_definition
 
 
-def default_ecs_task_metadata(ec2, ecs):
+@dataclass
+class CurrentEcsTaskMetadata:
+    cluster: str
+    task_arn: str
+
+
+def current_ecs_task_metadata() -> CurrentEcsTaskMetadata:
+    task_metadata_uri = _container_metadata_uri() + "/task"
+    response = requests.get(task_metadata_uri).json()
+    cluster = response.get("Cluster")
+    task_arn = response.get("TaskARN")
+
+    return CurrentEcsTaskMetadata(cluster=cluster, task_arn=task_arn)
+
+
+def _container_metadata_uri():
     """
     ECS injects an environment variable into each Fargate task. The value
     of this environment variable is a url that can be queried to introspect
@@ -105,17 +193,19 @@ def default_ecs_task_metadata(ec2, ecs):
 
     https://docs.aws.amazon.com/AmazonECS/latest/userguide/task-metadata-endpoint-v4-fargate.html
     """
-    container_metadata_uri = os.environ.get("ECS_CONTAINER_METADATA_URI_V4")
-    name = requests.get(container_metadata_uri).json()["Name"]
+    return os.environ.get("ECS_CONTAINER_METADATA_URI_V4")
 
-    task_metadata_uri = container_metadata_uri + "/task"
-    response = requests.get(task_metadata_uri).json()
-    cluster = response.get("Cluster")
-    task_arn = response.get("TaskARN")
 
+def current_ecs_container_name():
+    return requests.get(_container_metadata_uri()).json()["Name"]
+
+
+def current_ecs_task(ecs, task_arn, cluster):
     def describe_task_or_raise(task_arn, cluster):
         try:
-            return ecs.describe_tasks(tasks=[task_arn], cluster=cluster)["tasks"][0]
+            return ecs.describe_tasks(tasks=[task_arn], cluster=cluster,)[
+                "tasks"
+            ][0]
         except IndexError:
             raise EcsNoTasksFound
 
@@ -129,6 +219,19 @@ def default_ecs_task_metadata(ec2, ecs):
     except EcsNoTasksFound:
         raise EcsEventualConsistencyTimeout
 
+    return task
+
+
+def current_ecs_task_config(
+    ec2,
+    cluster,
+    task,
+    task_definition,
+    environment,
+    secrets,
+    container_name,
+    image,
+):
     enis = []
     subnets = []
     for attachment in task["attachments"]:
@@ -147,26 +250,20 @@ def default_ecs_task_metadata(ec2, ecs):
         for group in eni.groups:
             security_groups.append(group["GroupId"])
 
-    task_definition_arn = task["taskDefinitionArn"]
-    task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)[
-        "taskDefinition"
-    ]
+    execution_role_arn = task_definition.get("executionRoleArn")
+    task_role_arn = task_definition.get("taskRoleArn")
 
-    container_definition = next(
-        iter(
-            [
-                container
-                for container in task_definition["containerDefinitions"]
-                if container["name"] == name
-            ]
-        )
-    )
-
-    return TaskMetadata(
+    return DagsterEcsTaskConfig(
+        container_name=container_name,
+        image=image,
+        family=task_definition["family"],
         cluster=cluster,
         subnets=subnets,
         security_groups=security_groups,
-        task_definition=task_definition,
-        container_definition=container_definition,
+        execution_role_arn=execution_role_arn,
+        task_role_arn=task_role_arn,
         assign_public_ip="ENABLED" if public_ip else "DISABLED",
+        environment=environment,
+        secrets=secrets,
+        command=None,
     )
