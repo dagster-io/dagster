@@ -1,5 +1,3 @@
-from typing import Dict
-
 import sqlalchemy as db
 
 import dagster._check as check
@@ -10,7 +8,6 @@ from dagster.core.storage.runs import (
     RunStorageSqlMetadata,
     SqlRunStorage,
 )
-from dagster.core.storage.runs.schema import KeyValueStoreTable
 from dagster.core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -149,18 +146,6 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
                     timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                     daemon_id=daemon_heartbeat.daemon_id,
                     body=serialize_dagster_namedtuple(daemon_heartbeat),
-                )
-            )
-
-    def kvs_set(self, pairs: Dict[str, str]) -> None:
-        check.dict_param(pairs, "pairs", key_type=str, value_type=str)
-        db_values = [{"key": k, "value": v} for k, v in pairs.items()]
-
-        with self.connect() as conn:
-            insert_stmt = db.dialects.mysql.insert(KeyValueStoreTable).values(db_values)
-            conn.execute(
-                insert_stmt.on_duplicate_key_update(
-                    value=insert_stmt.inserted.value,
                 )
             )
 
