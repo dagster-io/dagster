@@ -298,5 +298,7 @@ You can also provide input values using <PyObject object="JobDefinition" method=
 ```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_execute_in_process_input endbefore=end_execute_in_process_input
 graph_result = wires_input.execute_in_process(input_values={"x": 5})
 
-job_result = the_job.execute_in_process(input_values={"x": 6})  # Overrides existing input value
+job_result = the_job.execute_in_process(
+    input_values={"x": 6}
+)  # Overrides existing input value
 ```
