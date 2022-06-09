@@ -26,6 +26,7 @@ So, why use resources?
 | <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resource, config, and other run information.                                                                                 |
 | <PyObject object="build_init_resource_context"/> | Function for building an <PyObject object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                        |
 | <PyObject object="build_resources"/>             | Function for initializing a set of resources outside of the context of a job's execution.                                                                                                                                   |
+| <PyObject object="with_resources"/>              | Function for providing resources to assets and source assets.                                                                                                                                                               |
 
 ---
 
@@ -54,6 +55,18 @@ def cereal_fetcher(init_context):
 - [In ops](#in-ops)
 - [In assets](#in-assets)
 
+### In assets
+
+Assets use resource keys to access resources:
+
+```python file=/concepts/assets/asset_config.py startafter=start_example endbefore=end_example
+@asset(config_schema={"api_endpoint": str})
+def my_configurable_asset(context):
+    api_endpoint = context.op_config["api_endpoint"]
+    data = requests.get(f"{api_endpoint}/data").json()
+    return data
+```
+
 ### In ops
 
 Ops use resource keys to access resources, like so:
@@ -69,19 +82,28 @@ def op_requires_resources(context):
     context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
 ```
 
-### In assets
-
-As assets are functionally similar to ops, assets also use resource keys to access resources:
-
-```python file=/concepts/assets/asset_config.py startafter=start_example endbefore=end_example
-@asset(config_schema={"api_endpoint": str})
-def my_configurable_asset(context):
-    api_endpoint = context.op_config["api_endpoint"]
-    data = requests.get(f"{api_endpoint}/data").json()
-    return data
-```
-
 ---
+
+## Providing resources to assets
+
+Resources can be provided to assets using the <PyObject object="with_resources" /> function, which takes in a sequence of assets, and returns transformed versions of those assets with the provided resources specified.
+
+```python file=/concepts/resources/resources.py startafter=start_with_resources_example endbefore=end_with_resources_example
+from dagster import with_resources, asset, resource
+
+
+@asset(required_resource_keys={"foo"})
+def asset_requires_resource(context):
+    do_something_with_resource(context.resources.foo)
+
+
+@resource
+def foo_resource():
+    ...
+
+
+transformed_asset = with_resources([asset_requires_resource], {"foo": foo_resource})[0]
+```
 
 ## Providing resources to a job
 
