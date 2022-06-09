@@ -32,15 +32,17 @@ class LocalFileSystemIOManager(IOManager):
 
 # io_manager_end
 
-# asset_group_start
+# gather_assets_start
 # imports the module called "assets" from the package containing the current module
 # the "assets" module contains the asset definitions
 from . import assets
+from dagster import load_assets_from_modules, with_resources
 
-weather_assets = AssetGroup.from_modules(
-    modules=[assets],
+weather_assets = with_resources(
+    load_assets_from_modules(modules=[assets]),
     resource_defs={
         "io_manager": IOManagerDefinition.hardcoded_io_manager(LocalFileSystemIOManager())
     },
 )
-# asset_group_end
+
+# gather_assets_end
