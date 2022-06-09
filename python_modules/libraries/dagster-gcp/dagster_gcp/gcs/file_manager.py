@@ -92,7 +92,8 @@ class GCSFileManager(FileManager):
         check.inst_param(data, "data", bytes)
         return self.write(io.BytesIO(data), mode="wb", key=key, ext=ext)
 
-    def write(self, file_obj, mode="wb", key: Optional[str] = str(uuid.uuid4()), ext=None):
+    def write(self, file_obj, mode="wb", key: Optional[str] = None, ext=None):
+        key = check.opt_str_param(key, "key", default=str(uuid.uuid4()))
         check_file_like_obj(file_obj)
         gcs_key = self.get_full_key(key + (("." + ext) if ext is not None else ""))
         bucket_obj = self._client.bucket(self._gcs_bucket)
