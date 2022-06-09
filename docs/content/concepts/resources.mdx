@@ -69,7 +69,7 @@ def my_configurable_asset(context):
 
 ### In ops
 
-Ops use resource keys to access resources, like so:
+Ops use resource keys to access resources:
 
 ```python file=/concepts/resources/resources.py startafter=start_op_with_resources_example endbefore=end_op_with_resources_example
 from dagster import op
@@ -84,9 +84,14 @@ def op_requires_resources(context):
 
 ---
 
-## Providing resources to assets
+## Providing resources
 
-Resources can be provided to assets using the <PyObject object="with_resources" /> function, which takes in a sequence of assets, and returns transformed versions of those assets with the provided resources specified.
+- [To assets](#to-assets)
+- [To jobs](#to-jobs)
+
+### To assets
+
+Resources can be provided to assets using the <PyObject object="with_resources" /> function. This function takes in a sequence of assets and returns transformed versions of those assets with the provided resources specified:
 
 ```python file=/concepts/resources/resources.py startafter=start_with_resources_example endbefore=end_with_resources_example
 from dagster import with_resources, asset, resource
@@ -105,7 +110,7 @@ def foo_resource():
 transformed_asset = with_resources([asset_requires_resource], {"foo": foo_resource})[0]
 ```
 
-## Providing resources to a job
+### To jobs
 
 Jobs provide resources to the ops inside them. A job has a dictionary that maps resource keys to resource definitions. You can supply this dictionary to the `resource_defs` argument when using either of the ways to construct a job: <PyObject object="GraphDefinition" method="to_job" /> or <PyObject object="job" decorator />.
 
