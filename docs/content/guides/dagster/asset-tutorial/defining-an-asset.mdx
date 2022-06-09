@@ -75,10 +75,10 @@ Success!
 If you'd rather materialize your asset as a script, you can do that without spinning up Dagit. Just add a few lines to `cereal.py`. This executes a run within the Python process.
 
 ```python file=/guides/dagster/asset_tutorial/cereal.py startafter=start_materialize_marker endbefore=end_materialize_marker
-from dagster import AssetGroup
+from dagster import materialize
 
 if __name__ == "__main__":
-    AssetGroup([cereals]).materialize()
+    materialize([cereals, nabisco_cereals])
 ```
 
 Now you can just run:
