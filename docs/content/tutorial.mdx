@@ -1,28 +1,34 @@
 ---
-title: Tutorial | Dagster
-description: Getting familiar with Dagster's feature set and tooling through a hands-on tutorial
+title: Tutorials | Dagster
+description: Getting familiar with Dagster's feature set and tooling through hands-on tutorials.
 ---
 
-# Tutorial
+# Tutorials
 
-If you're new to Dagster, we recommend working through this tutorial to become familiar with Dagster's feature set and tooling, using small examples that are intended to be illustrative of real data problems.
+Get up to speed by working through these tutorials, which use small examples illustrative of real data problems.
 
-## Intro Tutorial
+**Before you get started, make sure you [install Dagster](/tutorial/setup)!**
 
-The tutorial is divided into several sections:
+---
 
-- [**Setup for the Tutorial**](/tutorial/intro-tutorial/setup) has instructions for installing Dagster.
-- [**A Single-Op Job**](/tutorial/intro-tutorial/single-op-job) explains Dagster's core concepts and shows how to execute a single-step job.
-- [**Connecting Ops in Job**](/tutorial/intro-tutorial/connecting-ops) shows how to build jobs with multiple ops.
-- [**Testing Ops and Jobs**](/tutorial/intro-tutorial/testable) shows how to write unit-tests for ops and jobs.
+## Assets
 
-## Advanced Tutorials
+<Note>
+  <strong>New to Dagster?</strong> Start here!
+</Note>
 
-These sections will introduce some advanced features and give you deeper insight into Dagster.
+Dagster is used to build and maintain data assets. In this tutorial, we'll walk you through the basics of creating, maintaining, and testing assets in Dagster:
 
-- [**Configuring Ops**](/tutorial/advanced-tutorial/configuring-ops) shows how to parameterize pipelines with configuration.
-- [**Dagster Types**](/tutorial/advanced-tutorial/types) covers Dagster's type system.
-- [**Resources & Built-In Config**](/tutorial/advanced-tutorial/resources) demonstrates how to hold your business logic constant while interacting with external services in different environments.
-- [**Materializations**](/tutorial/advanced-tutorial/materializations) demonstrates a way to make Dagster aware of your persistent artifacts outside the system.
-- [**Organizing Jobs in Repositories & Workspaces**](/tutorial/advanced-tutorial/repositories) demonstrates constructs that are useful when you have many jobs that you need to organize.
-- [**Scheduling Job Runs**](/tutorial/advanced-tutorial/scheduling) will show you how to schedule jobs to run at regular intervals.
+- [**Define an asset**](/tutorial/assets/defining-an-asset) using a sample CSV dataset
+- [**Build graphs of assets**](/tutorial/assets/asset-graph) using multiple assets
+- [**Test assets**](/tutorial/assets/testing-assets), whether a single asset or multiple
+
+---
+
+## Ops and jobs
+
+Dagster's asset functionality sits on top of a general orchestration engine that can be used for tasks other than creating and maintaining assets. Check out this op-focused tutorial to learn more:
+
+- [**Write and execute an op job**](/tutorial/ops-jobs/single-op-job) using a sample CSV dataset
+- [**Connect ops in jobs**](/tutorial/ops-jobs/connecting-ops) to create complex, multi-op jobs using a sample CSV dataset
+- [**Test ops and jobs**](/tutorial/ops-jobs/testable) with unit tests
