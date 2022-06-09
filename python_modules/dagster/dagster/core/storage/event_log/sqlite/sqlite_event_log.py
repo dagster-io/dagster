@@ -246,7 +246,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def get_event_records(
         self,
-        event_records_filter: Optional[EventRecordsFilter] = None,
+        event_records_filter: EventRecordsFilter,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Iterable[EventLogRecord]:
@@ -271,15 +271,13 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             )
 
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
-        if event_records_filter and event_records_filter.asset_key:
+        if event_records_filter.asset_key:
             asset_details = next(iter(self._get_assets_details([event_records_filter.asset_key])))
         else:
             asset_details = None
 
-        if (
-            event_records_filter
-            and event_records_filter.after_cursor != None
-            and not isinstance(event_records_filter.after_cursor, RunShardedEventsCursor)
+        if event_records_filter.after_cursor != None and not isinstance(
+            event_records_filter.after_cursor, RunShardedEventsCursor
         ):
             raise Exception(
                 """
@@ -307,8 +305,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # whose events may qualify the query, and then open run_connection per run_id at a time.
         run_updated_after = (
             event_records_filter.after_cursor.run_updated_after
-            if event_records_filter
-            and isinstance(event_records_filter.after_cursor, RunShardedEventsCursor)
+            if isinstance(event_records_filter.after_cursor, RunShardedEventsCursor)
             else None
         )
         run_records = self._instance.get_run_records(
