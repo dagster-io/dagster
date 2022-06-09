@@ -80,12 +80,14 @@ export const getJobItemsForOption = (option: DagsterRepoOption) => {
 };
 
 const Label = styled.div<{$hasIcon: boolean}>`
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
   align-items: center;
   gap: 8px;
-  width: ${({$hasIcon}) => ($hasIcon ? '260px' : '280px')};
+  margin-right: ${({$hasIcon}) => ($hasIcon ? '20px' : '0')};
 `;
 
 const LabelTooltipStyles = JSON.stringify({

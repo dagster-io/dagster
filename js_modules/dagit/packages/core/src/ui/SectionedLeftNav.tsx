@@ -116,6 +116,11 @@ export const SectionedLeftNav = () => {
 const HEADER_HEIGHT = 48;
 const HEADER_HEIGHT_WITH_LOCATION = 64;
 
+// Note: This component uses React.memo so that it only re-renders when it's props change.
+// This means opening/closing a collapsed section doesn't re-render other sections (a nice
+// perf win) but more importantly opening a section doesn't cause the view to scroll back
+// to the selected item, which could be offscreen.
+//
 interface SectionProps {
   expanded: boolean;
   onToggle: (repoAddress: RepoAddress) => void;
@@ -125,13 +130,14 @@ interface SectionProps {
   showRepoLocation: boolean;
 }
 
-export const Section: React.FC<SectionProps> = (props) => {
+export const Section: React.FC<SectionProps> = React.memo((props) => {
   const {expanded, onToggle, option, match, repoAddress, showRepoLocation} = props;
   const matchRef = React.useRef<HTMLDivElement>(null);
 
   const jobItems = React.useMemo(() => getJobItemsForOption(option), [option]);
   const assetGroupItems = React.useMemo(() => getAssetGroupItemsForOption(option), [option]);
   const empty = jobItems.length === 0 && assetGroupItems.length === 0;
+  const showTypeLabels = expanded && jobItems.length > 0 && assetGroupItems.length > 0;
 
   React.useEffect(() => {
     if (match && matchRef.current) {
@@ -147,12 +153,10 @@ export const Section: React.FC<SectionProps> = (props) => {
     if (!shownItems.length) {
       return null;
     }
+
     return (
-      <Box
-        padding={{vertical: 8, horizontal: 12}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
-        {expanded && (
+      <Box padding={{vertical: 8, horizontal: 12}}>
+        {showTypeLabels && (
           <ItemTypeLabel>{type === 'asset-group' ? 'Asset Groups' : 'Jobs'}</ItemTypeLabel>
         )}
         {shownItems.map((item) => (
@@ -168,9 +172,10 @@ export const Section: React.FC<SectionProps> = (props) => {
   };
 
   return (
-    <Box background={Colors.Gray100}>
+    <Box background={Colors.Gray100} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
       <SectionHeader
         $open={expanded && !empty}
+        $showTypeLabels={showTypeLabels}
         $showRepoLocation={showRepoLocation}
         disabled={empty}
         onClick={() => onToggle(repoAddress)}
@@ -208,47 +213,49 @@ export const Section: React.FC<SectionProps> = (props) => {
       {visibleItems({type: 'asset-group', items: assetGroupItems})}
     </Box>
   );
-};
+});
 
-type PathMatch =
-  | {
-      repoPath: string;
-      pipelinePath: string;
-    }
-  | {
-      repoPath: string;
-      groupName: string;
-    };
+type PathMatch = {
+  repoPath: string;
+  pipelinePath?: string;
+  groupName?: string;
+};
 
 const usePathMatch = () => {
   const match = useRouteMatch<PathMatch>([
     '/workspace/:repoPath/(jobs|pipelines)/:pipelinePath',
     '/workspace/:repoPath/asset-groups/:groupName',
   ]);
-  if (!match) {
-    return null;
-  }
-  const repoAddress = repoAddressFromPath(match.params.repoPath);
-  if (!repoAddress) {
-    return null;
-  }
+  const {groupName, repoPath, pipelinePath} = match?.params || {};
 
-  return 'pipelinePath' in match.params
-    ? {
-        repoAddress,
-        itemName: explorerPathFromString(match.params.pipelinePath).pipelineName,
-        itemType: 'job' as const,
-      }
-    : {
-        repoAddress,
-        itemName: match.params.groupName,
-        itemType: 'asset-group' as const,
-      };
+  return React.useMemo(() => {
+    if (!repoPath) {
+      return null;
+    }
+    const repoAddress = repoAddressFromPath(repoPath);
+    if (!repoAddress) {
+      return null;
+    }
+
+    return pipelinePath
+      ? {
+          repoAddress,
+          itemName: explorerPathFromString(pipelinePath).pipelineName,
+          itemType: 'job' as const,
+        }
+      : groupName
+      ? {
+          repoAddress,
+          itemName: groupName,
+          itemType: 'asset-group' as const,
+        }
+      : null;
+  }, [groupName, repoPath, pipelinePath]);
 };
 
 const ItemTypeLabel = styled.div`
   color: ${Colors.Gray600};
-  padding: 8px 12px 4px;
+  padding: 0 12px 4px;
   font-size: 12px;
 `;
 
@@ -258,7 +265,11 @@ const Container = styled.div`
   overflow-x: hidden;
 `;
 
-const SectionHeader = styled.button<{$open: boolean; $showRepoLocation: boolean}>`
+const SectionHeader = styled.button<{
+  $open: boolean;
+  $showTypeLabels: boolean;
+  $showRepoLocation: boolean;
+}>`
   background: ${Colors.Gray100};
   border: 0;
   border-radius: 4px;
@@ -274,7 +285,8 @@ const SectionHeader = styled.button<{$open: boolean; $showRepoLocation: boolean}
     $showRepoLocation ? HEADER_HEIGHT_WITH_LOCATION : HEADER_HEIGHT}px;
   width: 100%;
   margin: 0;
-
+  margin-bottom: ${({$showTypeLabels}) => ($showTypeLabels ? '8px' : 0)};
+  
   box-shadow: inset 0px -1px 0 ${Colors.KeylineGray};
 
   :disabled {
