@@ -505,6 +505,11 @@
     "permanent": true
   },
   {
+    "source": "/tutorial/advanced-tutorial/types",
+    "destination": "/concepts/types",
+    "permanent": true
+  },
+  {
     "source": "/concepts/solids-pipelines/solids",
     "destination": "/concepts/ops-jobs-graphs/ops",
     "permanent": true
