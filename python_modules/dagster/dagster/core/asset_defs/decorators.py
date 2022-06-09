@@ -30,11 +30,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import IOManagerDefinition
 from dagster.core.types.dagster_type import DagsterType
 from dagster.seven import funcsigs
-from dagster.utils.backcompat import (
-    ExperimentalWarning,
-    canonicalize_backcompat_args,
-    experimental_decorator,
-)
+from dagster.utils.backcompat import ExperimentalWarning, canonicalize_backcompat_args
 
 from .asset_in import AssetIn
 from .assets import AssetsDefinition
@@ -72,7 +68,6 @@ def asset(
     ...
 
 
-@experimental_decorator
 def asset(
     name: Optional[Union[Callable[..., Any], Optional[str]]] = None,
     namespace: Optional[Sequence[str]] = None,
@@ -306,7 +301,6 @@ class _Asset:
         )
 
 
-@experimental_decorator
 def multi_asset(
     outs: Dict[str, Out],
     name: Optional[str] = None,
