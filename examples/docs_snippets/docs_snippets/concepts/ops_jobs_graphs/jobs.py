@@ -96,8 +96,10 @@ def wires_input(x):
 the_job = wires_input.to_job(input_values={"x": 5})
 # end_top_level_input_job
 
+# fmt: off
 # start_execute_in_process_input
 graph_result = wires_input.execute_in_process(input_values={"x": 5})
 
 job_result = the_job.execute_in_process(input_values={"x": 6})  # Overrides existing input value
 # end_execute_in_process_input
+# fmt: on
