@@ -111,7 +111,6 @@ const Header = ({ openMobileDocsMenu }) => {
           <div className="self-center hidden xl:block">
             <JoinSlackButton />
           </div>
-          <div className="self-center hidden xl:block"></div>
         </div>
 
         <div className="flex items-center md:hidden z-50">

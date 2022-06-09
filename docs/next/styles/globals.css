@@ -56,10 +56,6 @@ div.section {
 /* By default, the anchor link icon is a bit too close and too visible. This property moves it to the
 right makes it less visible.  */
 
-.DocSearch-Dropdown {
-  background-color: red;
-}
-
 a.headerlink {
   @apply ml-4 text-gray-300 hover:text-blue-400;
 }
