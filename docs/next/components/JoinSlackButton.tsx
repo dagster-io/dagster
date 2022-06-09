@@ -5,25 +5,22 @@ export const JoinSlackButton: React.FC<{}> = () => {
 
   return (
     <>
-      <div
-        onClick={() => setOpen(false)}
-        style={{ marginLeft: 0 }}
-        className={`h-screen inset-0 fixed z-50 flex flex-col justify-center items-center bg-opacity-25 bg-black transition-opacity bg-red-300
-        ${open ? "opacity-1" : "opacity-0 pointer-events-none"} `}
-      >
+      {open && (
         <div
-          className={`w-10/12 md:w-4/6 lg:w-3/6 rounded-3xl shadow-xl relative overflow-hidden bg-white transition-transform
-           ${open ? "transform -translate-y-2" : ""}`}
-          style={{ height: 600 }}
+          onClick={() => setOpen(false)}
+          className={`h-screen inset-0 fixed z-50 flex flex-col justify-center items-center bg-opacity-25 bg-black ml-0 bg-red-300`}
         >
-          {open && (
+          <div
+            className="w-10/12 md:w-4/6 lg:w-3/6 rounded-3xl shadow-xl relative overflow-hidden bg-white"
+            style={{ height: 600 }}
+          >
             <iframe
               src="https://dagster-slackin.herokuapp.com/"
               className="inset-0 absolute w-full h-full"
             />
-          )}
+          </div>
         </div>
-      </div>
+      )}
       <a
         onClick={() => setOpen(true)}
         className="px-4 py-1 border border-gable-green cursor-pointer bg-transparent hover:bg-gable-green hover:text-white inline-flex gap-2 leading-8 items-center rounded-full whitespace-nowrap transition"
