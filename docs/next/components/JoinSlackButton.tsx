@@ -7,9 +7,11 @@ export const JoinSlackButton: React.FC<{ header?: boolean }> = ({ header }) => {
 
   console.log("query", query);
   console.log("header", header);
+  console.log("open", open);
 
   React.useEffect(() => {
     if (header && query.slack) {
+      console.log("??????", header, query, query.slack);
       setOpen(true);
     }
   }, [query.slack]);
