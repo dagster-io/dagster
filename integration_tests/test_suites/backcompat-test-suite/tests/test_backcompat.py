@@ -83,7 +83,6 @@ def docker_service_up(docker_compose_file, build_args=None):
         finally:
 
             # collect logs from the containers and upload to buildkite
-            # containers = ["dagit", "docker_daemon", "dagster_grpc_server", "docker_postgresql"]
             client = docker.client.from_env()
             containers = client.containers.list()
 
