@@ -1,6 +1,8 @@
 from abc import abstractmethod
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Callable, Optional, Set, Union, cast, overload
+from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Set, Union, cast, overload
+
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster.config.config_schema import ConfigSchemaType
@@ -11,16 +13,16 @@ from dagster.core.definitions.definition_config_schema import (
 )
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.resource_definition import ResourceDefinition
-from dagster.core.execution.context.input import InputContext
-from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.input_manager import InputManager
 from dagster.core.storage.output_manager import IOutputManagerDefinition, OutputManager
 from dagster.core.storage.root_input_manager import IInputManagerDefinition
 
 if TYPE_CHECKING:
     from dagster.core.execution.context.init import InitResourceContext
+    from dagster.core.execution.context.input import InputContext
+    from dagster.core.execution.context.output import OutputContext
 
-IOManagerFunction = Callable[["InitResourceContext"], "IOManager"]
+IOManagerFunction: TypeAlias = Callable[["InitResourceContext"], "IOManager"]
 
 
 class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputManagerDefinition):
@@ -38,12 +40,12 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
     def __init__(
         self,
         resource_fn: IOManagerFunction,
-        config_schema: Optional[ConfigSchemaType] = None,
+        config_schema: Optional[Union[IDefinitionConfigSchema, ConfigSchemaType]] = None,
         description: Optional[str] = None,
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[AbstractSet[str]] = None,
         version: Optional[str] = None,
-        input_config_schema: Optional[ConfigSchemaType] = None,
-        output_config_schema: Optional[ConfigSchemaType] = None,
+        input_config_schema: Optional[Union[IDefinitionConfigSchema, ConfigSchemaType]] = None,
+        output_config_schema: Optional[Union[IDefinitionConfigSchema, ConfigSchemaType]] = None,
     ):
         self._input_config_schema = convert_user_facing_definition_config_schema(
             input_config_schema
@@ -74,7 +76,12 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
     def output_config_schema(self) -> Optional[IDefinitionConfigSchema]:
         return self._output_config_schema
 
-    def copy_for_configured(self, description: Optional[str], config_schema: ConfigSchemaType, _) -> "IOManagerDefinition":
+    def copy_for_configured(
+        self,
+        description: Optional[str],
+        config_schema: Union[ConfigSchemaType, IDefinitionConfigSchema],
+        _,
+    ) -> "IOManagerDefinition":
         return IOManagerDefinition(
             config_schema=config_schema,
             description=description or self.description,
@@ -85,7 +92,9 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         )
 
     @staticmethod
-    def hardcoded_io_manager(value: "IOManager", description: Optional[str]=None) -> "IOManagerDefinition":
+    def hardcoded_io_manager(
+        value: "IOManager", description: Optional[str] = None
+    ) -> "IOManagerDefinition":
         """A helper function that creates an ``IOManagerDefinition`` with a hardcoded IOManager.
 
         Args:
@@ -110,11 +119,11 @@ class IOManager(InputManager, OutputManager):
     """
 
     @abstractmethod
-    def load_input(self, context: InputContext) -> object:
+    def load_input(self, context: "InputContext") -> object:
         """User-defined method that loads an input to an op.
 
         Args:
-            context (InputContext): The input context, which describes the input that's being loaded
+            context ("InputContext"): The input context, which describes the input that's being loaded
                 and the upstream output that's being loaded from.
 
         Returns:
@@ -122,7 +131,7 @@ class IOManager(InputManager, OutputManager):
         """
 
     @abstractmethod
-    def handle_output(self, context: OutputContext, obj: object) -> None:
+    def handle_output(self, context: "OutputContext", obj: object) -> None:
         """User-defined method that stores an output of an op.
 
         Args:
@@ -130,7 +139,7 @@ class IOManager(InputManager, OutputManager):
             obj (Any): The object, returned by the op, to be stored.
         """
 
-    def get_output_asset_key(self, _context: OutputContext) -> Optional[AssetKey]:
+    def get_output_asset_key(self, _context: "OutputContext") -> Optional[AssetKey]:
         """User-defined method that associates outputs handled by this IOManager with a particular
         AssetKey.
 
@@ -139,7 +148,7 @@ class IOManager(InputManager, OutputManager):
         """
         return None
 
-    def get_output_asset_partitions(self, _context: OutputContext) -> Set[str]:
+    def get_output_asset_partitions(self, _context: "OutputContext") -> Set[str]:
         """User-defined method that associates outputs handled by this IOManager with a set of
         partitions of an AssetKey.
 
@@ -148,7 +157,7 @@ class IOManager(InputManager, OutputManager):
         """
         return set()
 
-    def get_input_asset_key(self, context: InputContext) -> Optional[AssetKey]:
+    def get_input_asset_key(self, context: "InputContext") -> Optional[AssetKey]:
         """User-defined method that associates inputs loaded by this IOManager with a particular
         AssetKey.
 
@@ -156,9 +165,10 @@ class IOManager(InputManager, OutputManager):
             context (InputContext): The input context, which describes the input that's being loaded
                 and the upstream output that's being loaded from.
         """
-        return self.get_output_asset_key(context.upstream_output)
+        upstream_output_context = check.not_none(context.upstream_output)
+        return self.get_output_asset_key(upstream_output_context)
 
-    def get_input_asset_partitions(self, context: InputContext) -> Set[str]:
+    def get_input_asset_partitions(self, context: "InputContext") -> Set[str]:
         """User-defined method that associates inputs loaded by this IOManager with a set of
         partitions of an AssetKey.
 
@@ -166,11 +176,12 @@ class IOManager(InputManager, OutputManager):
             context (InputContext): The input context, which describes the input that's being loaded
                 and the upstream output that's being loaded from.
         """
-        return self.get_output_asset_partitions(context.upstream_output)
+        upstream_output_context = check.not_none(context.upstream_output)
+        return self.get_output_asset_partitions(upstream_output_context)
 
 
 @overload
-def io_manager(config_schema=Callable[["InitResourceContext"], IOManager]) -> IOManagerDefinition:
+def io_manager(config_schema=IOManagerFunction) -> IOManagerDefinition:
     ...
 
 
@@ -187,9 +198,7 @@ def io_manager(
 
 
 def io_manager(
-    config_schema: Union[
-        Callable[["InitResourceContext"], IOManager], Optional[ConfigSchemaType]
-    ] = None,
+    config_schema: Union[IOManagerFunction, Optional[ConfigSchemaType]] = None,
     description: Optional[str] = None,
     output_config_schema: Optional[ConfigSchemaType] = None,
     input_config_schema: Optional[ConfigSchemaType] = None,
@@ -247,9 +256,10 @@ def io_manager(
 
     """
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
+        config_schema = cast(IOManagerFunction, config_schema)
         return _IOManagerDecoratorCallable()(config_schema)
 
-    def _wrap(resource_fn):
+    def _wrap(resource_fn: IOManagerFunction) -> IOManagerDefinition:
         return _IOManagerDecoratorCallable(
             config_schema=cast(Optional[ConfigSchemaType], config_schema),
             description=description,
@@ -280,7 +290,7 @@ class _IOManagerDecoratorCallable:
         self.output_config_schema = output_config_schema
         self.input_config_schema = input_config_schema
 
-    def __call__(self, fn):
+    def __call__(self, fn: IOManagerFunction) -> IOManagerDefinition:
         check.callable_param(fn, "fn")
 
         io_manager_def = IOManagerDefinition(

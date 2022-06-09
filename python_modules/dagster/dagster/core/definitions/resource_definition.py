@@ -13,6 +13,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import TypeAlias
+
 import dagster._check as check
 from dagster.config.config_schema import ConfigSchemaType
 from dagster.core.decorator_utils import format_docstring_for_description
@@ -48,6 +50,8 @@ from .scoped_resources_builder import (  # type: ignore
 
 if TYPE_CHECKING:
     from dagster.core.execution.resources_init import InitResourceContext
+
+ResourceFunction: TypeAlias = Callable[["InitResourceContext"], Any]
 
 
 def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
@@ -173,7 +177,10 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
         )
 
     def copy_for_configured(
-        self, description: Optional[str], config_schema: IDefinitionConfigSchema, _
+        self,
+        description: Optional[str],
+        config_schema: Union[ConfigSchemaType, IDefinitionConfigSchema],
+        _,
     ) -> "ResourceDefinition":
         return ResourceDefinition(
             config_schema=config_schema,
