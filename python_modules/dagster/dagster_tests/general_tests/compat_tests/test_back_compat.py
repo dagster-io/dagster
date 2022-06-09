@@ -992,3 +992,24 @@ def test_add_bulk_actions_columns():
             assert "idx_bulk_actions_selector_id" not in get_sqlite3_indexes(
                 db_path, "bulk_actions"
             )
+
+
+def test_add_kvs_table():
+    src_dir = file_relative_path(__file__, "snapshot_0_14_16_bulk_actions_columns/sqlite")
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert not "kvs" in get_sqlite3_tables(db_path)
+            assert get_sqlite3_indexes(db_path, "kvs") == []
+
+            instance.upgrade()
+
+            assert "kvs" in get_sqlite3_tables(db_path)
+            assert get_sqlite3_indexes(db_path, "kvs") == ["idx_kvs_keys_unique"]
+
+            instance._run_storage._alembic_downgrade(rev="6860f830e40c")
+
+            assert not "kvs" in get_sqlite3_tables(db_path)
+            assert get_sqlite3_indexes(db_path, "kvs") == []
