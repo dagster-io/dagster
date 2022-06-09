@@ -1,5 +1,6 @@
 # pylint: disable=protected-access
 # pylint: disable=unused-variable
+
 import copy
 
 import dagster_aws
@@ -7,7 +8,7 @@ import pytest
 from botocore.exceptions import ClientError
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
 from dagster_aws.ecs.launcher import RUNNING_STATUSES, STOPPED_STATUSES
-from dagster_aws.ecs.tasks import TaskMetadata
+from dagster_aws.ecs.tasks import DagsterEcsTaskDefinitionConfig
 
 from dagster._check import CheckError
 from dagster._core.code_pointer import FileCodePointer
@@ -54,11 +55,12 @@ def test_default_launcher(
     assert container_definition["image"] == image
     assert not container_definition.get("entryPoint")
     assert not container_definition.get("dependsOn")
-    # But other stuff is inhereted from the parent task definition
+    # But other stuff is inherited from the parent task definition
     assert container_definition["environment"] == environment
 
     # A new task is launched
     tasks = ecs.list_tasks()["taskArns"]
+
     assert len(tasks) == len(initial_tasks) + 1
     task_arn = list(set(tasks).difference(initial_tasks))[0]
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
@@ -98,6 +100,94 @@ def test_default_launcher(
     # check status and stop task
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
     ecs.stop_task(task=task_arn)
+
+
+def test_launcher_dont_use_current_task(
+    ecs,
+    instance_dont_use_current_task,
+    workspace,
+    external_pipeline,
+    pipeline,
+    subnet,
+    image,
+    environment,
+):
+    instance = instance_dont_use_current_task
+    run = instance.create_run_for_pipeline(
+        pipeline,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
+    )
+
+    cluster = instance.run_launcher.run_task_kwargs["cluster"]
+    assert cluster == "my_cluster"
+
+    assert not run.tags
+
+    initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    initial_tasks = ecs.list_tasks(cluster=cluster)["taskArns"]
+
+    instance.launch_run(run.run_id, workspace)
+
+    # A new task definition is still created
+    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    assert len(task_definitions) == len(initial_task_definitions) + 1
+    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
+    task_definition = task_definition["taskDefinition"]
+
+    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
+
+    # It has a new family, name, and image
+    # We get the family name from the location name. With the InProcessExecutor that we use in tests,
+    # the location name is always <<in_process>>. And we sanitize it so it's compatible with the ECS API.
+    assert task_definition["family"] == "in_process"
+    assert len(task_definition["containerDefinitions"]) == 1
+    container_definition = task_definition["containerDefinitions"][0]
+    assert container_definition["name"] == "run"
+    assert container_definition["image"] == image
+    assert not container_definition.get("entryPoint")
+    assert not container_definition.get("dependsOn")
+    # It takes in the environment configured on the instance
+    assert container_definition["environment"] == environment
+
+    # A new task is launched
+    tasks = ecs.list_tasks(cluster=cluster)["taskArns"]
+
+    assert len(tasks) == len(initial_tasks) + 1
+    task_arn = list(set(tasks).difference(initial_tasks))[0]
+    task = ecs.describe_tasks(cluster=cluster, tasks=[task_arn])["tasks"][0]
+    assert subnet.id in str(task)
+    assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
+
+    # The run is tagged with info about the ECS task
+    assert instance.get_run_by_id(run.run_id).tags["ecs/task_arn"] == task_arn
+    cluster_arn = ecs._cluster_arn(cluster)
+    assert instance.get_run_by_id(run.run_id).tags["ecs/cluster"] == cluster_arn
+
+    assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["key"] == "dagster/run_id"
+    assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["value"] == run.run_id
+
+    # We set pipeline-specific overides
+    overrides = task["overrides"]["containerOverrides"]
+    assert len(overrides) == 1
+    override = overrides[0]
+    assert override["name"] == "run"
+    assert "execute_run" in override["command"]
+    assert run.run_id in str(override["command"])
+
+    # And we log
+    events = instance.event_log_storage.get_logs_for_run(run.run_id)
+    latest_event = events[-1]
+    assert latest_event.message == "[EcsRunLauncher] Launching run in ECS task"
+    event_metadata = latest_event.dagster_event.engine_event_data.metadata_entries
+    assert MetadataEntry("ECS Task ARN", value=task_arn) in event_metadata
+    assert MetadataEntry("ECS Cluster", value=cluster_arn) in event_metadata
+    assert MetadataEntry("Run ID", value=run.run_id) in event_metadata
+
+    # check status and stop task
+    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
+    ecs.stop_task(cluster=cluster, task=task_arn)
 
 
 def test_task_definition_registration(
@@ -148,7 +238,8 @@ def test_task_definition_registration(
     assert len(ecs.list_task_definitions()["taskDefinitionArns"]) == len(task_definitions) + 1
 
 
-def test_reuse_task_definition(instance):
+def test_reuse_task_definition(instance, ecs):
+
     image = "image"
     secrets = []
     environment = [
@@ -158,6 +249,7 @@ def test_reuse_task_definition(instance):
         }
     ]
     original_task_definition = {
+        "family": "hello",
         "containerDefinitions": [
             {
                 "image": image,
@@ -166,41 +258,46 @@ def test_reuse_task_definition(instance):
                 "environment": environment,
             },
         ],
+        "cpu": "256",
+        "memory": "512",
     }
-    metadata = TaskMetadata(
-        cluster="cluster",
-        subnets=[],
-        security_groups=[],
-        task_definition=original_task_definition,
-        container_definition={},
-        assign_public_ip=True,
+
+    task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+        original_task_definition, instance.run_launcher.container_name
     )
 
-    # The same task definition passes
-    task_definition = copy.deepcopy(original_task_definition)
-    assert instance.run_launcher._reuse_task_definition(
-        task_definition, metadata, image, secrets, environment
-    )
+    # New task definition not re-used since it is new
+    assert not instance.run_launcher._reuse_task_definition(task_definition_config)
+    # Once it's registered, it is re-used
+
+    ecs.register_task_definition(**original_task_definition)
+
+    assert instance.run_launcher._reuse_task_definition(task_definition_config)
 
     # Changed image fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["image"] = "new-image"
+
     assert not instance.run_launcher._reuse_task_definition(
-        task_definition, metadata, image, secrets, environment
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            task_definition, instance.run_launcher.container_name
+        )
     )
 
     # Changed container name fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["name"] = "new-container"
     assert not instance.run_launcher._reuse_task_definition(
-        task_definition, metadata, image, secrets, environment
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, "new-container")
     )
 
     # Changed secrets fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["secrets"].append("new-secrets")
     assert not instance.run_launcher._reuse_task_definition(
-        task_definition, metadata, image, secrets, environment
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            task_definition, instance.run_launcher.container_name
+        )
     )
 
     # Changed environment fails
@@ -210,28 +307,36 @@ def test_reuse_task_definition(instance):
         {"name": "MY_ENV_VAR", "value": "MY_ENV_VALUE"}
     )
     assert not instance.run_launcher._reuse_task_definition(
-        task_definition, metadata, image, secrets, environment
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            task_definition, instance.run_launcher.container_name
+        )
     )
 
     # Changed execution role fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["executionRoleArn"] = "new-role"
     assert not instance.run_launcher._reuse_task_definition(
-        task_definition, metadata, image, secrets, environment
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            task_definition, instance.run_launcher.container_name
+        )
     )
 
     # Changed task role fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["taskRoleArn"] = "new-role"
     assert not instance.run_launcher._reuse_task_definition(
-        task_definition, metadata, image, secrets, environment
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            task_definition, instance.run_launcher.container_name
+        )
     )
 
     # Any other diff passes
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["somethingElse"] = "boom"
     assert instance.run_launcher._reuse_task_definition(
-        task_definition, metadata, image, secrets, environment
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            task_definition, instance.run_launcher.container_name
+        )
     )
 
 
