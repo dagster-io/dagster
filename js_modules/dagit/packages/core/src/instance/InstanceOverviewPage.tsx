@@ -206,12 +206,12 @@ export const InstanceOverviewPage = () => {
   }, [bucketed, visibleRepos, searchValue]);
 
   const lastTenRunsFlattened = React.useMemo(() => {
-    if (!lastTenRunsData) {
+    if (lastTenRunsLoading || !lastTenRunsData) {
       return null;
     }
 
     const flattened: {[key: string]: RunTimeFragment[]} = {};
-    if (!lastTenRunsLoading && lastTenRunsData?.workspaceOrError.__typename === 'Workspace') {
+    if (lastTenRunsData.workspaceOrError.__typename === 'Workspace') {
       for (const locationEntry of lastTenRunsData.workspaceOrError.locationEntries) {
         if (
           locationEntry.__typename === 'WorkspaceLocationEntry' &&
@@ -243,7 +243,7 @@ export const InstanceOverviewPage = () => {
     const appendRuns = (jobItem: JobItem) => {
       const {job, repoAddress} = jobItem;
       const jobKey = makeJobKey(repoAddress, job.name);
-      const matchingRuns = lastTenRunsFlattened ? lastTenRunsFlattened[jobKey] : [];
+      const matchingRuns = lastTenRunsFlattened ? lastTenRunsFlattened[jobKey] || [] : [];
       return {...jobItem, runs: [...matchingRuns].reverse()};
     };
 
