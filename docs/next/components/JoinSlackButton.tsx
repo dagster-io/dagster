@@ -1,20 +1,7 @@
-import { useRouter } from "next/router";
 import React from "react";
 
-export const JoinSlackButton: React.FC<{ header?: boolean }> = ({ header }) => {
+export const JoinSlackButton: React.FC<{}> = () => {
   const [open, setOpen] = React.useState(false);
-  const { query } = useRouter();
-
-  console.log("query", query);
-  console.log("header", header);
-  console.log("open", open);
-
-  React.useEffect(() => {
-    if (header && query.slack) {
-      console.log("??????", header, query, query.slack);
-      setOpen(true);
-    }
-  }, [query.slack]);
 
   return (
     <>

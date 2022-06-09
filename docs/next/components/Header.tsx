@@ -109,7 +109,7 @@ const Header = ({ openMobileDocsMenu }) => {
             Sign in
           </a>
           <div className="self-center hidden xl:block">
-            <JoinSlackButton header />
+            <JoinSlackButton />
           </div>
           <div className="self-center hidden xl:block"></div>
         </div>
