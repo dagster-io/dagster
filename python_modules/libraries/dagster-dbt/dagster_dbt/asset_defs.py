@@ -62,11 +62,11 @@ def _select_unique_ids_from_manifest_json(
         import dbt.graph.selector as graph_selector
         from dbt.contracts.graph.manifest import Manifest
         from networkx import DiGraph
-    except ImportError:
-        check.failed(
+    except ImportError as e:
+        raise check.CheckError(
             "In order to use the `select` argument on load_assets_from_dbt_manifest, you must have"
             "`dbt-core >= 1.0.0` and `networkx` installed."
-        )
+        ) from e
 
     class _DictShim(dict):
         """Shim to enable hydrating a dictionary into a dot-accessible object"""
@@ -101,7 +101,7 @@ def _get_node_name(node_info: Mapping[str, Any]):
     return "__".join([node_info["resource_type"], node_info["package_name"], node_info["name"]])
 
 
-def _get_node_asset_key(node_info):
+def _get_node_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
     """By default, a dbt node's key is the union of its model name and any schema configured on
     the model itself.
     """
@@ -112,6 +112,15 @@ def _get_node_asset_key(node_info):
         components = [node_info["name"]]
 
     return AssetKey(components)
+
+
+def _get_node_group_name(node_info: Mapping[str, Any]) -> Optional[str]:
+    """A node's group name is obtained by concatenating the subfolders it resides in (if any)"""
+    fqn = node_info.get("fqn", [])
+    # the first component is the package name, and the last component is the model name
+    if len(fqn) < 3:
+        return None
+    return "_".join(fqn[1:-1])
 
 
 def _get_node_description(node_info):
@@ -136,6 +145,7 @@ def _dbt_nodes_to_assets(
 ) -> AssetsDefinition:
 
     outs: Dict[str, Out] = {}
+    group_names: Dict[AssetKey, str] = {}
     asset_ins: Dict[AssetKey, Tuple[str, In]] = {}
 
     asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
@@ -174,8 +184,13 @@ def _dbt_nodes_to_assets(
         )
         out_name_to_node_info[node_name] = node_info
 
+        asset_key = node_info_to_asset_key(node_info)
+
         # set the asset dependencies for this asset
-        asset_deps[node_info_to_asset_key(node_info)] = cur_asset_deps
+        asset_deps[asset_key] = cur_asset_deps
+
+        # set the group for this asset
+        group_names[asset_key] = _get_node_group_name(node_info)
 
     # prevent op name collisions between multiple dbt multi-assets
     op_name = f"run_dbt_{package_name}"
@@ -255,6 +270,7 @@ def _dbt_nodes_to_assets(
         node_def=dbt_op,
         can_subset=True,
         asset_deps=asset_deps,
+        group_names=group_names,
     )
 
 

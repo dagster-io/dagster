@@ -110,6 +110,12 @@ def assert_assets_match_project(dbt_assets):
         assert dbt_assets[0].asset_keys_by_output_name[output_name] == asset_key
         assert dbt_assets[0].asset_deps[asset_key] == {AssetKey(["sort_by_calories"])}
 
+    for asset_key, group_name in dbt_assets[0].group_names.items():
+        if asset_key == AssetKey(["subdir_schema", "least_caloric"]):
+            assert group_name == "subdir"
+        else:
+            assert group_name == "default"
+
     assert dbt_assets[0].asset_keys_by_output_name["sort_by_calories"] == AssetKey(
         ["sort_by_calories"]
     )
