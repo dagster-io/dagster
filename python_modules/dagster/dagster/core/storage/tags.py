@@ -41,7 +41,9 @@ PRIORITY_TAG = "{prefix}priority".format(prefix=SYSTEM_TAG_PREFIX)
 
 DOCKER_IMAGE_TAG = "{prefix}image".format(prefix=SYSTEM_TAG_PREFIX)
 
-USER_EDITABLE_SYSTEM_TAGS = [PRIORITY_TAG]
+MAX_RETRIES_TAG = "{prefix}max_retries".format(prefix=SYSTEM_TAG_PREFIX)
+
+USER_EDITABLE_SYSTEM_TAGS = [PRIORITY_TAG, MAX_RETRIES_TAG]
 
 
 class TagType(Enum):
