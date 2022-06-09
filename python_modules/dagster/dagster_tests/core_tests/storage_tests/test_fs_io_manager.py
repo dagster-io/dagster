@@ -195,15 +195,15 @@ def test_fs_io_manager_unpicklable():
 
 
 def get_assets_job(io_manager_def, partitions_def=None):
-    asset1_namespace = ["one", "two", "three"]
+    asset1_key_prefix = ["one", "two", "three"]
 
-    @asset(namespace=["one", "two", "three"], partitions_def=partitions_def)
+    @asset(key_prefix=["one", "two", "three"], partitions_def=partitions_def)
     def asset1():
         return [1, 2, 3]
 
     @asset(
-        namespace=["four", "five"],
-        ins={"asset1": AssetIn(namespace=asset1_namespace)},
+        key_prefix=["four", "five"],
+        ins={"asset1": AssetIn(key_prefix=asset1_key_prefix)},
         partitions_def=partitions_def,
     )
     def asset2(asset1):

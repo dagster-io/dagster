@@ -20,7 +20,7 @@ from dagster.config import Field
 from dagster.config.config_schema import ConfigSchemaType
 from dagster.core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster.core.definitions.decorators.op_decorator import _Op
-from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.events import ASSET_KEY_DELIMITER, AssetKey
 from dagster.core.definitions.input import In
 from dagster.core.definitions.output import Out
 from dagster.core.definitions.partition import PartitionsDefinition
@@ -30,7 +30,11 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import IOManagerDefinition
 from dagster.core.types.dagster_type import DagsterType
 from dagster.seven import funcsigs
-from dagster.utils.backcompat import ExperimentalWarning, experimental_decorator
+from dagster.utils.backcompat import (
+    ExperimentalWarning,
+    canonicalize_backcompat_args,
+    experimental_decorator,
+)
 
 from .asset_in import AssetIn
 from .assets import AssetsDefinition
@@ -48,6 +52,7 @@ def asset(
 def asset(
     name: Optional[str] = ...,
     namespace: Optional[Sequence[str]] = ...,
+    key_prefix: Optional[Union[str, Sequence[str]]] = None,
     ins: Optional[Mapping[str, AssetIn]] = ...,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     metadata: Optional[Mapping[str, Any]] = ...,
@@ -71,6 +76,7 @@ def asset(
 def asset(
     name: Optional[Union[Callable[..., Any], Optional[str]]] = None,
     namespace: Optional[Sequence[str]] = None,
+    key_prefix: Optional[Union[str, Sequence[str]]] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
@@ -101,8 +107,11 @@ def asset(
     Args:
         name (Optional[str]): The name of the asset.  If not provided, defaults to the name of the
             decorated function.
-        namespace (Optional[Sequence[str]]): The namespace that the asset resides in.  The namespace + the
-            name forms the asset key.
+        namespace (Optional[Sequence[str]]): **Deprecated (use `key_prefix`)**. The namespace that
+            the asset resides in.  The namespace + the name forms the asset key.
+        key_prefix (Optional[Union[str, Sequence[str]]]): Optional prefix to apply to the asset key. If `Sequence[str]`,
+            elements are prepended to function name to form the asset key. If `str`, will be split on "{asset_key_delimiter}"
+            and then prepended. If `None` asset key is simply the name of the function. name forms the asset key.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
             and namespaces.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are
@@ -143,9 +152,15 @@ def asset(
             @asset
             def my_asset(my_upstream_asset: int) -> int:
                 return my_upstream_asset + 1
-    """
+    """.format(
+        asset_key_delimiter=ASSET_KEY_DELIMITER
+    )
     if callable(name):
         return _Asset()(name)
+
+    key_prefix = canonicalize_backcompat_args(
+        key_prefix, "key_prefix", namespace, "namespace", "0.16.0"
+    )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         check.invariant(
@@ -154,7 +169,7 @@ def asset(
         )
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
-            namespace=namespace,
+            key_prefix=key_prefix,
             ins=ins,
             non_argument_deps=_make_asset_keys(non_argument_deps),
             metadata=metadata,
@@ -178,7 +193,7 @@ class _Asset:
     def __init__(
         self,
         name: Optional[str] = None,
-        namespace: Optional[Sequence[str]] = None,
+        key_prefix: Optional[Union[str, Sequence[str]]] = None,
         ins: Optional[Mapping[str, AssetIn]] = None,
         non_argument_deps: Optional[Set[AssetKey]] = None,
         metadata: Optional[Mapping[str, Any]] = None,
@@ -196,7 +211,9 @@ class _Asset:
     ):
         self.name = name
         # if user inputs a single string, coerce to list
-        self.namespace = [namespace] if isinstance(namespace, str) else namespace
+        self.key_prefix = (
+            key_prefix.split(ASSET_KEY_DELIMITER) if isinstance(key_prefix, str) else key_prefix
+        )
         self.ins = ins or {}
         self.non_argument_deps = non_argument_deps
         self.metadata = metadata
@@ -221,9 +238,9 @@ class _Asset:
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
 
-        asset_ins = build_asset_ins(fn, self.namespace, self.ins or {}, self.non_argument_deps)
+        asset_ins = build_asset_ins(fn, self.key_prefix, self.ins or {}, self.non_argument_deps)
 
-        out_asset_key = AssetKey(list(filter(None, [*(self.namespace or []), asset_name])))
+        out_asset_key = AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
@@ -436,7 +453,7 @@ def multi_asset(
 
 def build_asset_ins(
     fn: Callable,
-    asset_namespace: Optional[Sequence[str]],
+    asset_key_prefix: Optional[Sequence[str]],
     asset_ins: Mapping[str, AssetIn],
     non_argument_deps: Optional[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
@@ -475,13 +492,13 @@ def build_asset_ins(
         if input_name in asset_ins:
             asset_key = asset_ins[input_name].asset_key
             metadata = asset_ins[input_name].metadata or {}
-            namespace = asset_ins[input_name].namespace
+            key_prefix = asset_ins[input_name].key_prefix
         else:
             metadata = {}
-            namespace = None
+            key_prefix = None
 
         asset_key = asset_key or AssetKey(
-            list(filter(None, [*(namespace or asset_namespace or []), input_name]))
+            list(filter(None, [*(key_prefix or asset_key_prefix or []), input_name]))
         )
 
         ins_by_asset_key[asset_key] = (input_name.replace("-", "_"), In(metadata=metadata))

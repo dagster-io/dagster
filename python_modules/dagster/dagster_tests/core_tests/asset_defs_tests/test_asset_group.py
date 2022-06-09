@@ -827,7 +827,7 @@ def test_cycle_resolution_impossible():
 def test_asset_group_build_job_selection_multi_component():
     source_asset = SourceAsset(["apple", "banana"])
 
-    @asset(namespace="abc")
+    @asset(key_prefix="abc")
     def asset1():
         ...
 
@@ -1143,7 +1143,7 @@ def test_assets_prefixed_disambiguate():
     def asset2():
         ...
 
-    @asset(ins={"apple": AssetIn(namespace="core")})
+    @asset(ins={"apple": AssetIn(key_prefix="core")})
     def orange(apple):
         del apple
 
@@ -1165,7 +1165,7 @@ def test_assets_prefixed_disambiguate():
 def test_assets_prefixed_source_asset():
     asset1 = SourceAsset(key=AssetKey(["upstream_prefix", "asset1"]))
 
-    @asset(ins={"asset1": AssetIn(namespace="upstream_prefix")})
+    @asset(ins={"asset1": AssetIn(key_prefix="upstream_prefix")})
     def asset2(asset1):
         del asset1
 

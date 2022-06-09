@@ -25,7 +25,7 @@ from dagster import (
 
 
 def mock_output_context(asset_key):
-    @asset(name=asset_key.path[-1], namespace=asset_key.path[:-1])
+    @asset(name=asset_key.path[-1], key_prefix=asset_key.path[:-1])
     def my_asset():
         pass
 
