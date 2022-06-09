@@ -215,9 +215,9 @@ def fetch_connected(
     graph: DependencyGraph,
     *,
     direction: Direction,
-    depth: int = None,
+    depth: Optional[int] = None,
 ) -> FrozenSet[str]:
-    if not depth:
+    if depth is None:
         depth = MAX_NUM
     if direction == "downstream":
         return Traverser(graph).fetch_downstream(item, depth)
