@@ -87,7 +87,8 @@ class GCSFileManager(FileManager):
         with self.read(file_handle, mode="rb") as file_obj:
             return file_obj.read()
 
-    def write_data(self, data, key: Optional[str] = str(uuid.uuid4()), ext=None):
+    def write_data(self, data, key: Optional[str] = None, ext=None):
+        key = check.opt_str_param(key, "key", default=str(uuid.uuid4()))
         check.inst_param(data, "data", bytes)
         return self.write(io.BytesIO(data), mode="wb", key=key, ext=ext)
 
