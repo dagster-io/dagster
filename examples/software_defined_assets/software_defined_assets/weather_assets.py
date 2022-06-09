@@ -9,7 +9,7 @@ import os
 import pandas as pd
 from pandas import DataFrame
 
-from dagster import AssetGroup, AssetKey, IOManager, IOManagerDefinition
+from dagster import AssetKey, IOManager, IOManagerDefinition
 
 # io_manager_start
 class LocalFileSystemIOManager(IOManager):
