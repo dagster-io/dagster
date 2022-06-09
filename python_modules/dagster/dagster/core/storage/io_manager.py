@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Set, Union, cast, overload
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Set, Union, cast, overload
 
 from typing_extensions import TypeAlias
 
@@ -22,7 +22,10 @@ if TYPE_CHECKING:
     from dagster.core.execution.context.input import InputContext
     from dagster.core.execution.context.output import OutputContext
 
-IOManagerFunction: TypeAlias = Callable[["InitResourceContext"], "IOManager"]
+IOManagerFunction: TypeAlias = Union[
+    Callable[["InitResourceContext"], "IOManager"],
+    Callable[[], "IOManager"],
+]
 
 
 class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputManagerDefinition):
@@ -119,7 +122,7 @@ class IOManager(InputManager, OutputManager):
     """
 
     @abstractmethod
-    def load_input(self, context: "InputContext") -> object:
+    def load_input(self, context: "InputContext") -> Any:
         """User-defined method that loads an input to an op.
 
         Args:
@@ -131,7 +134,7 @@ class IOManager(InputManager, OutputManager):
         """
 
     @abstractmethod
-    def handle_output(self, context: "OutputContext", obj: object) -> None:
+    def handle_output(self, context: "OutputContext", obj: Any) -> None:
         """User-defined method that stores an output of an op.
 
         Args:
