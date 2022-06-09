@@ -33,6 +33,64 @@ class EcsNoTasksFound(Exception):
     pass
 
 
+def dagster_task_definition_dict(
+    name,
+    image,
+    command,
+    execution_role_arn,
+    region_name,
+    task_role_arn=None,
+    env=None,
+    secrets=None,
+    log_group=None,
+):
+    if not env:
+        env = {}
+
+    family = name
+    container_name = name
+
+    secrets_dict = (
+        {"secrets": [{"name": key, "valueFrom": value} for key, value in secrets.items()]}
+        if secrets
+        else {}
+    )
+
+    kwargs = dict(
+        family=family,
+        requiresCompatibilities=["FARGATE"],
+        networkMode="awsvpc",
+        containerDefinitions=[
+            merge_dicts(
+                {
+                    "name": container_name,
+                    "image": image,
+                    "environment": [{"name": key, "value": value} for key, value in env.items()],
+                    "command": command,
+                    "logConfiguration": {
+                        "logDriver": "awslogs",
+                        "options": {
+                            "awslogs-group": log_group,
+                            "awslogs-region": region_name,
+                            "awslogs-stream-prefix": family,
+                        },
+                    },
+                },
+                secrets_dict,
+            )
+        ],
+        executionRoleArn=execution_role_arn,
+        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
+        cpu="256",
+        memory="512",
+    )
+
+    if task_role_arn:
+        kwargs.update(dict(taskRoleArn=task_role_arn))
+
+    return kwargs
+
+
 def default_ecs_task_definition(
     ecs,
     family,
