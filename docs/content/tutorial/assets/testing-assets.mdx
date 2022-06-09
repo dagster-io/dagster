@@ -9,7 +9,7 @@ Creating testable and verifiable data pipelines is one of the focuses of Dagster
 
 ## Testing the Cereal Asset Definitions
 
-Let's go back to the assets we defined in the [prior section](/guides/dagster/asset-tutorial/asset-graph#a-more-complex-asset-graph), and ensure that they work as expected by writing some unit tests.
+Let's go back to the assets we defined in the [prior section](/tutorial/assets/asset-graph#a-more-complex-asset-graph), and ensure that they work as expected by writing some unit tests.
 
 We'll start by writing a test for the `nabisco_cereals` asset definition, which filters the larger list of cereals down to the those that were manufactured by Nabisco. To run the function that derives an asset from its upstream dependencies, we can invoke it directly, as if it's a regular Python function:
 
