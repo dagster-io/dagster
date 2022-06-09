@@ -22,6 +22,7 @@ from dagster import (
     define_asset_job,
     fs_io_manager,
     graph,
+    in_process_executor,
     io_manager,
     job,
     lambda_solid,
@@ -34,6 +35,7 @@ from dagster import (
     solid,
 )
 from dagster._check import CheckError
+from dagster.core.definitions.executor_definition import multi_or_in_process_executor
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster.core.errors import DagsterInvalidSubsetError
 
@@ -1236,3 +1238,29 @@ def test_dupe_jobs_pipelines_invalid():
         @repository
         def the_repo_dupe_graph_pipeline_invalid_schedule_graph():
             return [the_graph, the_schedule]
+
+
+def test_default_executor_repo():
+    @repository(default_executor_def=in_process_executor)
+    def the_repo():
+        return []
+
+
+def test_default_executor_assets_repo():
+    @graph
+    def doesnt_use_provided():
+        pass
+
+    @asset
+    def the_asset():
+        pass
+
+    @repository(default_executor_def=in_process_executor)
+    def the_repo():
+        return [doesnt_use_provided, the_asset]
+
+    # pylint: disable=comparison-with-callable
+    assert the_repo.get_job("__ASSET_JOB").executor_def == in_process_executor
+    # The default_executor_def is currently only used on the asset job. We may
+    # want to change this behavior in the future.
+    assert the_repo.get_job("doesnt_use_provided").executor_def == multi_or_in_process_executor
