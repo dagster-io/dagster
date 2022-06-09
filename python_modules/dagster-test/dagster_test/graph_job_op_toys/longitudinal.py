@@ -132,6 +132,7 @@ def longitudinal():
 
 
 longitudinal_job = longitudinal.to_job(
+    name="longitudinal_no_schedule",
     description=(
         "Demo job that simulates updating tables of users and video views and training a "
         "video recommendation model. The growth of execution-time and data-throughput follows"

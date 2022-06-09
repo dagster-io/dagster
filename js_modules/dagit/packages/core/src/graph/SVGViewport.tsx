@@ -273,17 +273,15 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     this.element.current?.focus();
   }
 
-  autocenter(animate = false) {
+  autocenter(animate = false, scale?: number) {
     const el = this.element.current!;
     const ownerRect = {width: el.clientWidth, height: el.clientHeight};
 
     const dw = ownerRect.width / this.props.graphWidth;
     const dh = ownerRect.height / this.props.graphHeight;
     const desiredScale = Math.min(dw, dh);
-    const boundedScale = Math.max(
-      Math.min(desiredScale, this.props.maxAutocenterZoom),
-      MIN_AUTOCENTER_ZOOM,
-    );
+    const boundedScale =
+      scale || Math.max(Math.min(desiredScale, this.props.maxAutocenterZoom), MIN_AUTOCENTER_ZOOM);
 
     if (
       this.state.scale < boundedScale &&

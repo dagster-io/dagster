@@ -96,6 +96,13 @@ InstanceInfo = db.Table(
     db.Column("run_storage_id", db.Text),
 )
 
+KeyValueStoreTable = db.Table(
+    "kvs",
+    RunStorageSqlMetadata,
+    db.Column("key", db.Text, nullable=False),
+    db.Column("value", db.Text),
+)
+
 db.Index("idx_run_tags", RunTagsTable.c.key, RunTagsTable.c.value, mysql_length=64)
 db.Index("idx_run_partitions", RunsTable.c.partition_set, RunsTable.c.partition, mysql_length=64)
 db.Index("idx_bulk_actions", BulkActionsTable.c.key, mysql_length=32)
@@ -114,3 +121,4 @@ db.Index(
         "create_timestamp": 8,
     },
 )
+db.Index("idx_kvs_keys_unique", KeyValueStoreTable.c.key, unique=True, mysql_length=64)

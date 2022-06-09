@@ -5,7 +5,29 @@ description: Resources enable you to separate graph logic from environment, and 
 
 # Resources
 
-Resources provide a way to manage dependencies to external components and share implementations across multiple ops in a job.
+Resources provide a way to manage dependencies to external components and share implementations across multiple ops or assets in a job.
+
+Using resources, you could:
+
+- Provide access to features of the execution environment to ops
+- Bind a set of resources and other environment information to a job so that those resources can be available to the ops within that job
+- Construct different jobs for the same graph, each with different resources, to represent the execution environments that the graph will be run in
+
+### Why use resources?
+
+External dependencies as resources are:
+
+- **Pluggable**: Map a resource to a key in one job and then map a different resource to that same key in a different job. This is useful if there is a heavy external dependency that you want to use in production, but avoid using in testing.
+
+  You can simply provide different resource sets for each execution case: one for production with the heavy dependency (e.g., AWS) as a resource, and one for testing with something lighter (i.e., in-memory store) mapped to the same key. For more information about this capability, check out [Separating Business Logic from Environments](/concepts/testing#separating-business-logic-from-environments).
+
+- **Job Scoped**: Since resources are job scoped, if you provide a resource to a job, then it becomes available for use with every op in that job.
+
+- **Configurable**: Resources can be configured using a strongly typed [configuration system](/concepts/configuration/config-schema).
+
+- **Dependencies**: Resources can depend on other resources. This makes it possible to cleanly represent external environment objects that rely on other external environment information for initialization.
+
+---
 
 ## Relevant APIs
 
@@ -17,20 +39,9 @@ Resources provide a way to manage dependencies to external components and share 
 | <PyObject object="build_init_resource_context"/> | Function for building an <PyObject object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                        |
 | <PyObject object="build_resources"/>             | Function for initializing a set of resources outside of the context of a job's execution.                                                                                                                                   |
 
-## Overview
+---
 
-You can use **resources** to provide access to features of the execution environment to ops. You can bind a set of resources (and other environment information) to a job so that those resources can be available to the ops within that job. You can construct different jobs for the same graph, each with different resources, to represent the execution environments that your graph will be run within.
-
-### Why Use Resources
-
-Representing external dependencies as resources, in conjunction with jobs, has very convenient properties:
-
-- **Pluggable**: You can map a resource to a key in one job, and then map a different resource to that same key in a different job. This is useful if there is a heavy external dependency that you want to use in production, but avoid using it in testing. You can simply provide different resource sets for each execution case: one for production with the heavy dependency (e.g., AWS) as a resource, and one for testing with something lighter (i.e., in-memory store) mapped to the same key. For more information about this capability, check out [Separating Business Logic from Environments](/concepts/testing#separating-business-logic-from-environments).
-- **Job Scoped**: Since resources are job scoped, if you provide a resource to a job, then it becomes available for use with every op in that job.
-- **Configurable**: Resources can be configured, using a strongly typed [configuration system](/concepts/configuration/config-schema).
-- **Dependencies**: Resources can depend on other resources. This makes it possible to cleanly represent external environment objects that rely on other external environment information for initialization.
-
-## Defining a Resource
+## Defining a resource
 
 To define a resource, use the <PyObject object="resource" decorator/> decorator. Wrap a function that takes an `init_context` as the first parameter, which is an instance of <PyObject object="InitResourceContext"/>. From this function, return or yield the object that you would like to be available as a resource.
 
