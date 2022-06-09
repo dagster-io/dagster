@@ -8,7 +8,7 @@ export const JoinSlackButton: React.FC<{}> = () => {
       <div
         onClick={() => setOpen(false)}
         style={{ marginLeft: 0 }}
-        className={`h-screen inset-0 fixed z-50 flex flex-col justify-center items-center bg-opacity-25 bg-black transition-opacity
+        className={`h-screen inset-0 fixed z-50 flex flex-col justify-center items-center bg-opacity-25 bg-black transition-opacity bg-red-300
         ${open ? "opacity-1" : "opacity-0 pointer-events-none"} `}
       >
         <div
