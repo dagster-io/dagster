@@ -1,7 +1,0 @@
-load_from:
-  - python_file:
-      relative_path: "/path/to/team/pipelines.py"
-      executable_path: "/path/to/team/virtualenv/bin/python"
-  - python_package:
-      package_name: "other_team_package"
-      executable_path: "/path/to/other_/virtualenv/bin/python"

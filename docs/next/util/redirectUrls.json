@@ -510,6 +510,16 @@
     "permanent": true
   },
   {
+    "source": "/tutorial/advanced-tutorial/resources",
+    "destination": "/concepts/resources",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced-tutorial/repositories",
+    "destination": "/concepts/repositories-workspaces/repositories",
+    "permanent": true
+  },
+  {
     "source": "/concepts/solids-pipelines/solids",
     "destination": "/concepts/ops-jobs-graphs/ops",
     "permanent": true
