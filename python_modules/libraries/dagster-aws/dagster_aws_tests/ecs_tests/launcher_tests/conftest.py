@@ -139,6 +139,21 @@ def instance(instance_cm):
 
 
 @pytest.fixture
+def instance_dont_use_current_task_definition(instance_cm, subnet):
+    with instance_cm(
+        config={
+            "use_current_task_definition": False,
+            "cluster": "my_cluster",
+            "subnets": [subnet.id],
+            "execution_role_arn": "fake-role",
+            "log_group": "my_log_group",
+            "env_vars": ["FOO=bar"],
+        }
+    ) as dagster_instance:
+        yield dagster_instance
+
+
+@pytest.fixture
 def workspace(instance, image):
     with in_process_test_workspace(
         instance,
