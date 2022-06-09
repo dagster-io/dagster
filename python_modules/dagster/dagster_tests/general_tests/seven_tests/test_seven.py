@@ -105,6 +105,10 @@ class Bar(Foo):
     pass
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 7),
+    reason="py36 returns inspect.isclass(List[str]) as True",
+)
 def test_is_subclass():
     assert is_subclass(Bar, Foo)
     assert not is_subclass(Foo, Bar)
