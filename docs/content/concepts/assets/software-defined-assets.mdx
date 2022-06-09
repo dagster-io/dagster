@@ -177,6 +177,31 @@ Using source assets has a few advantages over having the code inside of an asset
 - **Dagster can use data-loading code factored into an <PyObject object="IOManager" /> to load the contents of the source asset**.
 - **Asset dependencies can be written in a consistent way,** independent of whether they're downstream from a source asset or a derived asset. This makes it easy to swap out a source asset for a derived asset and vice versa.
 
+#### Non-argument dependencies
+
+Alternatively, you can define dependencies where data from an upstream asset doesn’t need to be loaded by Dagster to compute the output of a downstream asset. When used, `non_argument_deps` defines the dependency between assets but doesn’t pass data through Dagster.
+
+Consider the following example:
+
+1. `upstream_asset` creates a new table (`sugary_cereals`) by selecting records from the `cereals` table
+2. `downstream_asset` then creates a new table (`shopping_list`) by selecting records from `sugary_cereals`
+
+```python file=/concepts/assets/non_argument_deps.py startafter=start_marker endbefore=end_marker
+from dagster import asset
+
+
+@asset
+def upstream_asset():
+    execute_query("CREATE TABLE sugary_cereals AS SELECT * FROM cereals")
+
+
+@asset(non_argument_deps={"upstream_asset"})
+def downstream_asset():
+    execute_query("CREATE TABLE shopping_list AS SELECT * FROM sugary_cereals")
+```
+
+In this example, Dagster doesn’t need to load data from `upstream_asset` to successfully compute the `downstream_asset`. While `downstream_asset` does depend on `upstream_asset`, the key difference with `non_argument_deps` is that data isn’t being passed between the functions. Specifically, the data from the `sugary_cereals` table isn't being passed as an argument to `downstream_asset`.
+
 ### Graph-backed assets
 
 [Basic software-defined assets](#a-basic-software-defined-asset) can only produce one data artifact. If generating an asset involves multiple discrete computations, you can use graph-backed assets by separating each computation into an op and building a graph to combine your computations. This way, each discrete computation can be reused in other assets and jobs.
