@@ -2,6 +2,25 @@
 
 This test suite ensures that the branch Dagster code can successfully communicate cross-process with older Dagster code.
 
+## Looking at test artifacts in BuildKite
+In buildkite the backcompat test suite uploads the docker logs of all of the containers it spins up during the test. If you
+see these tests failing, looking at the logs should be your first step in debugging.
+
+Logs from the following containers should get uploaded:
+* dagit
+* docker_daemon
+* dagster_grpc_server
+* docker_postgresql
+
+To download the logs, go to the Artifacts tab in the buildkite test.
+
+If for some reason you don't see logs for one of the containers, there might be some helpful information
+in the test logs. If you download those logs you can search for some stdout and see if any of the following occurred:
+* if you search for `container log dump failed with stdout` you will find the stdout and stderr for the command
+`docker logs <container>` if the command failed.
+* if you search for `Buildkite artifact added with stdout` you will get the stdout and stderr for the command to upload
+artifacts to buildkite.
+
 ## Running tests locally
 
 In order to run, the `EARLIEST_TESTED_RELEASE` environment variable needs to be set.
