@@ -45,6 +45,8 @@ export const getJobItemsForOption = (option: DagsterRepoOption) => {
   const address = buildRepoAddress(repository.name, repositoryLocation.name);
 
   const {schedules, sensors} = repository;
+  const someInRepoHasIcon = !!(schedules.length || sensors.length);
+
   for (const pipeline of repository.pipelines) {
     if (isHiddenAssetGroupJob(pipeline.name)) {
       continue;
@@ -61,7 +63,7 @@ export const getJobItemsForOption = (option: DagsterRepoOption) => {
       isJob,
       leftIcon: 'job',
       label: (
-        <Label $hasIcon={!!(schedules.length || sensors.length) || !isJob}>
+        <Label $hasIcon={someInRepoHasIcon}>
           <TruncatingName data-tooltip={name} data-tooltip-style={LabelTooltipStyles}>
             {name}
           </TruncatingName>
@@ -87,7 +89,8 @@ const Label = styled.div<{$hasIcon: boolean}>`
   justify-content: flex-start;
   align-items: center;
   gap: 8px;
-  margin-right: ${({$hasIcon}) => ($hasIcon ? '20px' : '0')};
+  margin-right: ${({$hasIcon}) => ($hasIcon === true ? '20px' : '0px')};
+  white-space: nowrap;
 `;
 
 const LabelTooltipStyles = JSON.stringify({

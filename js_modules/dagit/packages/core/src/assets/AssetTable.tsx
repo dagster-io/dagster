@@ -62,7 +62,6 @@ export const AssetTable = ({
   const {canWipeAssets} = usePermissions();
 
   const groupedByFirstComponent: {[pathComponent: string]: Asset[]} = {};
-  const checkedAssets: Asset[] = [];
 
   assets.forEach((asset) => {
     const displayPathKey = JSON.stringify(displayPathForAsset(asset));
@@ -76,9 +75,13 @@ export const AssetTable = ({
     Object.keys(groupedByFirstComponent),
   );
 
+  const checkedAssets: Asset[] = [];
+  const checkedPathsOnscreen: string[] = [];
+
   const pageDisplayPathKeys = Object.keys(groupedByFirstComponent).sort().slice(0, maxDisplayCount);
   pageDisplayPathKeys.forEach((pathKey) => {
     if (checkedPaths.has(pathKey)) {
+      checkedPathsOnscreen.push(pathKey);
       checkedAssets.push(...(groupedByFirstComponent[pathKey] || []));
     }
   });
@@ -94,7 +97,7 @@ export const AssetTable = ({
           {checkedAssets.some((c) => !c.definition) ? (
             <Tooltip content="One or more selected assets are not software-defined and cannot be launched directly.">
               <Button intent="primary" icon={<Icon name="materialization" />} disabled>
-                Materialize
+                {checkedAssets.length > 1 ? `Materialize (${checkedAssets.length})` : 'Materialize'}
               </Button>
             </Tooltip>
           ) : (
@@ -112,12 +115,13 @@ export const AssetTable = ({
             <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
               <Checkbox
                 indeterminate={
-                  checkedPaths.size > 0 && checkedPaths.size !== pageDisplayPathKeys.length
+                  checkedPathsOnscreen.length > 0 &&
+                  checkedPathsOnscreen.length !== pageDisplayPathKeys.length
                 }
-                checked={checkedPaths.size === pageDisplayPathKeys.length}
+                checked={checkedPathsOnscreen.length === pageDisplayPathKeys.length}
                 onChange={(e) => {
                   if (e.target instanceof HTMLInputElement) {
-                    onToggleAll(checkedPaths.size !== pageDisplayPathKeys.length);
+                    onToggleAll(checkedPathsOnscreen.length !== pageDisplayPathKeys.length);
                   }
                 }}
               />
