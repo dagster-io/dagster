@@ -1,18 +1,4 @@
 #################
-# Getting started
-#################
-
-- path: getting-started/dagit-run.png
-  defs_file: examples/docs_snippets/docs_snippets/getting_started/hello_world.py
-  url: http://127.0.0.1:3000/
-  steps:
-    - launch job
-
-- path: getting-started/dagit-def.png
-  defs_file: examples/docs_snippets/docs_snippets/getting_started/hello_world.py
-  url: http://127.0.0.1:3000/
-
-#################
 # Tutorial
 #################
 
