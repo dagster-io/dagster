@@ -5,11 +5,45 @@ description: TODO
 
 # Graphs
 
-<Note>
-<strong>Relevant APIs</strong>
+A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-graphs. Graphs form the core of [jobs](/concepts/ops-jobs-graphs/jobs).
+
+---
+
+## Relevant APIs
 
 | Name                                                   | Description                                                                                                                                                                                                                   |
 | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject module="dagster" object="graph" decorator /> | The decorator used to define a graph, which can form the basis for multiple jobs.                                                                                                                                             |
 | <PyObject module="dagster" object="GraphDefinition" /> | A graph definition, which is a set of ops (or [sub-graphs](/concepts/ops-jobs-graphs/nesting-graphs)) wired together. Forms the core of a job. Typically constructed using the <PyObject object="job" decorator /> decorator. |
-| </Note>                                                |                                                                                                                                                                                                                               |
+|                                              |                                                                                                                                                                                                                               |
+
+---
+
+## Creating graphs
+
+- Input/output?
+- Config?
+- Resources?
+
+### Using the @graph decorator
+
+### To back assets
+
+[TODO](/concepts/assets/software-defined-assets#graph-backed-assets)
+
+### Complex graphs
+
+- [Nesting graphs](/concepts/ops-jobs-graphs/nesting-graphs), which are graphs that contain other graphs
+- [Dynamic graphs](/concepts/ops-jobs-graphs/dynamic-graphs)
+
+---
+
+## Defining dependencies
+
+
+
+---
+
+## Building jobs
+
+[todo](/concepts/ops-jobs-graphs/jobs)
