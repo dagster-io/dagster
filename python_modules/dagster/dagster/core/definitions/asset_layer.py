@@ -723,13 +723,13 @@ def _subset_assets_defs(
                 "asset keys produced by this asset."
             )
 
-    missed_keys = selected_asset_keys - included_keys
+    missed_keys = selected_asset_keys - included_keys - {sa.key for sa in source_assets}
     if missed_keys:
         raise DagsterInvalidSubsetError(
             f"When building job, the AssetKey(s) {[key.to_user_string() for key in missed_keys]} "
-            "were selected, but are not produced by any of the provided AssetsDefinitions. Make "
-            "sure that keys are spelled correctly and that all of the expected definitions are "
-            "provided."
+            "were selected, but are not produced by any of the provided AssetsDefinitions or "
+            "SourceAssets. Make sure that keys are spelled correctly and that all of the expected "
+            "definitions are provided."
         )
     all_excluded_assets: Sequence[Union["AssetsDefinition", "SourceAsset"]] = [
         *excluded_assets,

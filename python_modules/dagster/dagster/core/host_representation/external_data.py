@@ -802,6 +802,8 @@ def external_asset_graph_from_defs(
     for pipeline_def in pipelines:
         asset_info_by_node_output = pipeline_def.asset_layer.asset_info_by_node_output_handle
         for node_output_handle, asset_info in asset_info_by_node_output.items():
+            if not asset_info.is_required:
+                continue
             output_key = asset_info.key
             if output_key not in op_names_by_asset_key:
                 op_names_by_asset_key[output_key] = [

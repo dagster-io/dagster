@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import AssetKey, AssetsDefinition, GraphOut, In, Out, graph, job, op
+from dagster import AssetKey, AssetsDefinition, GraphOut, In, Out, define_asset_job, graph, job, op
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
 from dagster.core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -148,6 +148,56 @@ def test_input_name_matches_output_name():
             group_name=DEFAULT_GROUP_NAME,
         ),
     ]
+
+
+def test_assets_excluded_from_subset_not_in_job():
+    @multi_asset(outs={"a": Out(), "b": Out(), "c": Out()}, can_subset=True)
+    def abc():
+        pass
+
+    @asset
+    def a2(a):
+        return a
+
+    @asset
+    def c2(c):
+        return c
+
+    all_assets = [abc, a2, c2]
+    as_job = define_asset_job("as_job", selection="a*").resolve(all_assets, [])
+    cs_job = define_asset_job("cs_job", selection="*c2").resolve(all_assets, [])
+
+    external_asset_nodes = external_asset_graph_from_defs([as_job, cs_job], source_assets_by_key={})
+
+    assert (
+        ExternalAssetNode(
+            asset_key=AssetKey("a"),
+            dependencies=[],
+            depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey("a2"))],
+            op_name="abc",
+            graph_name=None,
+            op_names=["abc"],
+            job_names=["as_job"],  # the important line
+            output_name="a",
+            group_name=DEFAULT_GROUP_NAME,
+        )
+        in external_asset_nodes
+    )
+
+    assert (
+        ExternalAssetNode(
+            asset_key=AssetKey("c"),
+            dependencies=[],
+            depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey("c2"))],
+            op_name="abc",
+            graph_name=None,
+            op_names=["abc"],
+            job_names=["cs_job"],  # the important line
+            output_name="c",
+            group_name=DEFAULT_GROUP_NAME,
+        )
+        in external_asset_nodes
+    )
 
 
 def test_two_downstream_assets_job():
