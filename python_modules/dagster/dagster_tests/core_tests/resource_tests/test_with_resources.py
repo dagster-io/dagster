@@ -8,6 +8,7 @@ from dagster import (
     io_manager,
     mem_io_manager,
     resource,
+    with_resources,
 )
 from dagster.core.asset_defs import AssetsDefinition, SourceAsset, asset, build_assets_job
 from dagster.core.errors import (
@@ -16,7 +17,6 @@ from dagster.core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster.core.execution.with_resources import with_resources
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
 
 # pylint: disable=comparison-with-callable,unbalanced-tuple-unpacking

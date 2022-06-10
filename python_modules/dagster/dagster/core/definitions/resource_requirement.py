@@ -75,6 +75,10 @@ class ResourceAddable(ABC):
     ) -> "ResourceAddable":
         raise NotImplementedError()
 
+    @abstractmethod
+    def without_resources(self) -> "ResourceAddable":
+        raise NotImplementedError()
+
 
 class SolidDefinitionResourceRequirement(
     NamedTuple("_SolidDefinitionResourceRequirement", [("key", str), ("node_description", str)]),

@@ -231,7 +231,7 @@ from dagster.core.execution.results import (
     SolidExecutionResult,
 )
 from dagster.core.execution.validate_run_config import validate_run_config
-from dagster.core.execution.with_resources import with_resources
+from dagster.core.execution.with_resources import with_resources, without_resources
 from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
@@ -512,6 +512,7 @@ __all__ = [
     "PipelineExecutionResult",
     "RetryRequested",
     "with_resources",
+    "without_resources",
     "build_resources",
     "SolidExecutionResult",
     "SolidExecutionContext",

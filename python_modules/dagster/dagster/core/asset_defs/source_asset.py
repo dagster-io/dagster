@@ -69,6 +69,7 @@ class SourceAsset(
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         # Add additional fields to with_resources and with_group below
     ):
+        from .assets import io_manager_key_for_asset_key
 
         key = AssetKey.from_coerceable(key)
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
@@ -77,8 +78,7 @@ class SourceAsset(
         io_manager_def = check.opt_inst_param(io_manager_def, "io_manager_def", IOManagerDefinition)
         if io_manager_def:
             if not io_manager_key:
-                source_asset_path = "__".join(key.path)
-                io_manager_key = f"{source_asset_path}__io_manager"
+                io_manager_key = io_manager_key_for_asset_key(key)
 
             if io_manager_key in resource_defs and resource_defs[io_manager_key] != io_manager_def:
                 raise DagsterInvalidDefinitionError(
@@ -158,6 +158,25 @@ class SourceAsset(
             partitions_def=self.partitions_def,
             _metadata_entries=self.metadata_entries,
             resource_defs=relevant_resource_defs,
+            group_name=self.group_name,
+        )
+
+    def without_resources(self) -> "SourceAsset":
+        from .assets import io_manager_key_for_asset_key
+
+        if self.get_io_manager_key() == "io_manager":
+            io_manager_key = None
+        elif self.get_io_manager_key() == io_manager_key_for_asset_key(self.key):
+            io_manager_key = None
+        else:
+            io_manager_key = self.get_io_manager_key()
+        return SourceAsset(
+            key=self.key,
+            io_manager_key=io_manager_key,
+            description=self.description,
+            partitions_def=self.partitions_def,
+            _metadata_entries=self.metadata_entries,
+            resource_defs=None,
             group_name=self.group_name,
         )
 
