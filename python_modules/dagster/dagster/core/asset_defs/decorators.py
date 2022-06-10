@@ -203,6 +203,8 @@ class _Asset:
     ):
         self.name = name
 
+        if isinstance(key_prefix, str):
+            key_prefix = [key_prefix]
         self.key_prefix = key_prefix
         self.ins = ins or {}
         self.non_argument_deps = non_argument_deps

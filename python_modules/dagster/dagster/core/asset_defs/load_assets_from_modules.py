@@ -281,6 +281,8 @@ def prefix_assets(
 
     """
     asset_keys = {asset_key for assets_def in assets_defs for asset_key in assets_def.asset_keys}
+    print("--------")
+    print(key_prefix)
     if isinstance(key_prefix, str):
         key_prefix = [key_prefix]
     key_prefix = check.is_list(key_prefix, of_type=str)
