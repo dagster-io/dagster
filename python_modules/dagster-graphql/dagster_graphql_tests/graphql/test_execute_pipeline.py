@@ -316,6 +316,8 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         return [
             "RunStartingEvent",
             "RunStartEvent",
+            "ResourceInitStartedEvent",
+            "ResourceInitSuccessEvent",
             "LogsCapturedEvent",
             "ExecutionStepStartEvent",
             "ExecutionStepInputEvent",
