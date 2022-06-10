@@ -2,7 +2,7 @@ import keyword
 import os
 import re
 from glob import glob
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 import pkg_resources
 import yaml
@@ -87,12 +87,13 @@ def struct_to_string(name, **kwargs):
     return "{name}({props_str})".format(name=name, props_str=props_str)
 
 
-def validate_tags(tags: Optional[Dict[str, Any]], allow_reserved_tags=True) -> Dict[str, str]:
+def validate_tags(tags: Optional[Mapping[str, Any]], allow_reserved_tags=True) -> Dict[str, str]:
     valid_tags = {}
     for key, value in check.opt_dict_param(tags, "tags", key_type=str).items():
         if not isinstance(value, str):
             valid = False
             err_reason = 'Could not JSON encode value "{}"'.format(value)
+            str_val = None
             try:
                 str_val = seven.json.dumps(value)
                 err_reason = 'JSON encoding "{json}" of value "{val}" is not equivalent to original value'.format(

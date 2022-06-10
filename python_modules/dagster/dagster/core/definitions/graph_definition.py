@@ -189,7 +189,7 @@ class GraphDefinition(NodeDefinition):
         input_mappings: Optional[List[InputMapping]] = None,
         output_mappings: Optional[List[OutputMapping]] = None,
         config: Optional[ConfigMapping] = None,
-        tags: Optional[Dict[str, Any]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
         **kwargs,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)

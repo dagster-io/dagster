@@ -198,7 +198,8 @@ class Node:
 
     @property
     def tags(self) -> frozentags:
-        return self.definition.tags.updated_with(self._additional_tags)
+        # Type-ignore temporarily pending assessment of right data structure for `tags`
+        return self.definition.tags.updated_with(self._additional_tags)  # type: ignore
 
     def container_maps_input(self, input_name: str) -> bool:
         return (

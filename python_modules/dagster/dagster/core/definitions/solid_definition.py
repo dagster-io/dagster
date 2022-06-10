@@ -6,6 +6,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -108,7 +109,7 @@ class SolidDefinition(NodeDefinition):
         output_defs: Sequence[OutputDefinition],
         config_schema: Optional[Union[UserConfigSchema, IDefinitionConfigSchema]] = None,
         description: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         required_resource_keys: Optional[AbstractSet[str]] = None,
         version: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
@@ -401,16 +402,16 @@ class CompositeSolidDefinition(GraphDefinition):
     def __init__(
         self,
         name: str,
-        solid_defs: List[NodeDefinition],
-        input_mappings: Optional[List[InputMapping]] = None,
-        output_mappings: Optional[List[OutputMapping]] = None,
+        solid_defs: Sequence[NodeDefinition],
+        input_mappings: Optional[Sequence[InputMapping]] = None,
+        output_mappings: Optional[Sequence[OutputMapping]] = None,
         config_mapping: Optional[ConfigMapping] = None,
         dependencies: Optional[
             Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
         ] = None,
         description: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
-        positional_inputs: Optional[List[str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        positional_inputs: Optional[Sequence[str]] = None,
     ):
         _check_io_managers_on_composite_solid(name, input_mappings, output_mappings)
 

@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Dict, Iterable, List, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster.core.definitions.configurable import NamedConfigurableDefinition
@@ -20,14 +20,24 @@ if TYPE_CHECKING:
 # base class for SolidDefinition and GraphDefinition
 # represents that this is embedable within a graph
 class NodeDefinition(NamedConfigurableDefinition):
+
+    _name: str
+    _description: Optional[str]
+    _tags: Mapping[str, str]
+    _input_dict: Mapping[str, "InputDefinition"]
+    _input_defs: Sequence["InputDefinition"]
+    _output_dict: Mapping[str, "OutputDefinition"]
+    _output_defs: Sequence["OutputDefinition"]
+    _positional_inputs = Sequence[str]
+
     def __init__(
         self,
-        name,
-        input_defs,
-        output_defs,
-        description=None,
-        tags=None,
-        positional_inputs=None,
+        name: str,
+        input_defs: Iterable[InputDefinition],
+        output_defs: Iterable[OutputDefinition],
+        description: Optional[str] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        positional_inputs: Optional[Sequence[str]] = None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
@@ -49,31 +59,31 @@ class NodeDefinition(NamedConfigurableDefinition):
 
     @property
     @abstractmethod
-    def node_type_str(self):
-        raise NotImplementedError()
+    def node_type_str(self) -> str:
+        ...
 
     @property
     @abstractmethod
     def is_graph_job_op_node(self) -> bool:
-        raise NotImplementedError()
+        ...
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
-    def describe_node(self):
+    def describe_node(self) -> str:
         return f"{self.node_type_str} '{self.name}'"
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         return self._description
 
     @property
-    def tags(self):
+    def tags(self) -> Mapping[str, str]:
         return self._tags
 
     @property
-    def positional_inputs(self):
+    def positional_inputs(self) -> Sequence[str]:
         return self._positional_inputs
 
     @property

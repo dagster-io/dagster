@@ -343,6 +343,22 @@ class BoundSolidExecutionContext(OpExecutionContext):
     been validated.
     """
 
+    _solid_def: SolidDefinition
+    _solid_config: Any
+    _resources: "Resources"
+    _resources_config: Dict[str, Any]
+    _instance: DagsterInstance
+    _log_manager: DagsterLogManager
+    _pdb: Optional[ForkedPdb]
+    _tags: Mapping[str, str]
+    _hook_defs: Optional[AbstractSet[HookDefinition]]
+    _alias: str
+    _user_events: List[UserEvent]
+    _seen_outputs: Dict[str, Union[str, Set[str]]]
+    _output_metadata: Dict[str, Any]
+    _mapping_key: Optional[str]
+
+
     def __init__(
         self,
         solid_def: SolidDefinition,
@@ -369,9 +385,9 @@ class BoundSolidExecutionContext(OpExecutionContext):
         self._hook_defs = hook_defs
         self._alias = alias if alias else self._solid_def.name
         self._resources_config = resources_config
-        self._user_events: List[UserEvent] = user_events
-        self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
-        self._output_metadata: Dict[str, Any] = output_metadata
+        self._user_events = user_events
+        self._seen_outputs = {}
+        self._output_metadata = output_metadata
         self._mapping_key = mapping_key
 
     @property
@@ -457,7 +473,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
     def has_tag(self, key: str) -> bool:
         return key in self._tags
 
-    def get_tag(self, key: str) -> str:
+    def get_tag(self, key: str) -> Optional[str]:
         return self._tags.get(key)
 
     @property
@@ -476,7 +492,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
     def get_mapping_key(self) -> Optional[str]:
         return self._mapping_key
 
-    def describe_op(self):
+    def describe_op(self) -> str:
         if isinstance(self.solid_def, OpDefinition):
             return f'op "{self.solid_def.name}"'
 
