@@ -15,17 +15,17 @@ An individual op should perform relatively simple tasks, such as:
 - Querying an API and storing the result in a data warehouse
 - Sending an email or Slack message
 
-Collections of ops can be assembled to create a [graph](/concepts/ops-jobs-graphs/jobs-graphs).
+Collections of ops can be assembled to create a [graph](/concepts/ops-jobs-graphs/graphs).
 
 <Image alt="ops" src="/images/ops.png" width={3200} height={1040} />
 
 Ops support a variety of useful features for data orchestration, such as:
 
-- **Flexible execution strategies**: Painlessly transition from development to production with ops, as they are sealed units of logic independent of execution strategy. Collections of ops - called [graphs](/concepts/ops-jobs-graphs/jobs-graphs) - can be bound via [jobs](/concepts/ops-jobs-graphs/jobs-graphs) to an appropriate [executor](/deployment/executors) for single-process execution or distribution across a cluster.
+- **Flexible execution strategies**: Painlessly transition from development to production with ops, as they are sealed units of logic independent of execution strategy. Collections of ops - called [graphs](/concepts/ops-jobs-graphs/graphs) - can be bound via [jobs](/concepts/ops-jobs-graphs/jobs) to an appropriate [executor](/deployment/executors) for single-process execution or distribution across a cluster.
 
 - **Pluggable external systems**: If your data pipeline interfaces with external systems, you may want to use local substitutes during development over a cloud-based production system. Dagster provides [resources](/concepts/resources) as an abstraction layer for this purpose.
 
-  Ops can be written against abstract resources (e.g. `database`), with resource definitions later bound at the [job](/concepts/ops-jobs-graphs/jobs-graphs) level. Op logic can thus remain uncoupled to any particular implementation of an external system.
+  Ops can be written against abstract resources (e.g. `database`), with resource definitions later bound at the [job](/concepts/ops-jobs-graphs/jobs) level. Op logic can thus remain uncoupled to any particular implementation of an external system.
 
 - **Input and output management**: Ops have defined [inputs and outputs](#inputs-and-outputs), analogous to the arguments and return value(s) of a Python function. An input or output can be annotated with a [Dagster type](/concepts/types) for arbitrarily complex runtime validation. Outputs can additionally be tagged with an [IO Manager](/concepts/io-management/io-managers) to manage storage of the associated data in between ops. This enables easy swapping of I/O strategy depending on the execution environment, as well as efficient caching of data intermediates.
 
@@ -193,7 +193,7 @@ def my_configurable_op(context):
 
 ## Using an op
 
-Ops are used within a [Job or Graph](/concepts/ops-jobs-graphs/jobs-graphs). You can also execute a single op, usually within a test context, by directly invoking it. More information can be found at [Testing ops](/concepts/testing#testing-ops).
+Ops are used within a [job](/concepts/ops-jobs-graphs/jobs) or [graph](/concepts/ops-jobs-graphs/graphs). You can also execute a single op, usually within a test context, by directly invoking it. More information can be found at [Testing ops](/concepts/testing#testing-ops).
 
 ## Patterns
 

@@ -64,6 +64,6 @@ What if you want to do more?
 - **Automating asset materialization** - This tutorial covered how to manually materialize assets. Dagster can also kick off materializations automatically: on fixed [schedules](/concepts/partitions-schedules-sensors/schedules) or when your [sensor](/concepts/partitions-schedules-sensors/sensors) says to.
 - **Partitioning assets** - This tutorial covered assets whose entire contents get re-computed and overwritten with every materialization. When assets are large, it’s common to [partition](/concepts/partitions-schedules-sensors/partitions) them, so that each run only materializes a single partition.
 - **Customizing asset storage** - The assets in this tutorial were materialized as pickle files on the local filesystem. [IO managers](/concepts/io-management/io-managers) let you customize how and where assets are stored - e.g. as tables in Snowflake or Parquet files in S3.
-- **Non-asset jobs** - This tutorial assumed that your only goal was producing assets. You can also build and run arbitrary [jobs](/concepts/ops-jobs-graphs/jobs-graphs), on top of the same [op](/concepts/ops-jobs-graphs/ops) and [graph](/concepts/ops-jobs-graphs/jobs-graphs) abstractions that underlie assets.
+- **Non-asset jobs** - This tutorial assumed that your only goal was producing assets. You can also build and run arbitrary [jobs](/concepts/ops-jobs-graphs/jobs), on top of the same [op](/concepts/ops-jobs-graphs/ops) and [graph](/concepts/ops-jobs-graphs/graphs) abstractions that underlie assets.
 
 <br />

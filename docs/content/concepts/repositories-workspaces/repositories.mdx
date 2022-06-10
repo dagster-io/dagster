@@ -18,7 +18,7 @@ A repository is a collection of jobs, schedules, and sensor definitions that the
 
 A repository is a convenient way to organize your job and other definitions. Each repository:
 
-- Includes various definitions: [Jobs](/concepts/ops-jobs-graphs/jobs-graphs), [Schedules](/concepts/partitions-schedules-sensors/schedules), [Sensors](/concepts/partitions-schedules-sensors/sensors).
+- Includes various definitions: [Jobs](/concepts/ops-jobs-graphs/jobs), [Schedules](/concepts/partitions-schedules-sensors/schedules), [Sensors](/concepts/partitions-schedules-sensors/sensors).
 - Is loaded in a different process than Dagster system processes like Dagit. Any communication between the Dagster system and repository code occurs over an RPC mechanism, ensuring that problems in repository code can't affect Dagster or other repositories.
 - Can be loaded in its own Python environment, so you can manage your dependencies (or even your own Python versions) separately.
 

@@ -15,7 +15,7 @@ A software-defined asset includes the following:
 - A set of upstream asset keys, which refer to assets that the contents of the software-defined asset are derived from.
 - An [op](/concepts/ops-jobs-graphs/ops), which is a function responsible for computing the contents of the asset from its upstream dependencies.
 
-  **Note**: A crucial distinction between software-defined assets and [ops](/concepts/ops-jobs-graphs/ops) is that software-defined assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/jobs-graphs).
+  **Note**: A crucial distinction between software-defined assets and [ops](/concepts/ops-jobs-graphs/ops) is that software-defined assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/graphs).
 
 **Materializing** an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [Dagit](/concepts/dagit/dagit) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is [fully customizable](#customizing-how-assets-are-materialized-with-io-managers). It's possible to materialize an asset in multiple storage environments, such as production and staging.
 
@@ -273,7 +273,7 @@ To view and materialize assets in Dagit, you can point it at a module that conta
 
     dagit -m module_with_assets
 
-If you want Dagit to contain both assets and [jobs](/concepts/ops-jobs-graphs/jobs-graphs) that target the assets, you can place the assets and jobs together inside a [repository](/concepts/repositories-workspaces/repositories).
+If you want Dagit to contain both assets and [jobs](/concepts/ops-jobs-graphs/jobs) that target the assets, you can place the assets and jobs together inside a [repository](/concepts/repositories-workspaces/repositories).
 
 ### Viewing assets in Dagit
 

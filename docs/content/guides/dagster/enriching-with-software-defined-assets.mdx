@@ -11,7 +11,7 @@ Before we jump in, here's a quick refresher:
 
 - An **asset** is a persistent object in storage, such as a table, machine learning (ML) model, or file.
 - An [**op**](/concepts/ops-jobs-graphs/ops) is the core unit of computation in Dagster. For example, an op might accept tabular data as its input and produce transformed tabular data as its output.
-- A [**graph**](/concepts/ops-jobs-graphs/jobs-graphs) is a directed acyclic graph of ops or other graphs, which execute in order and pass data to each other.
+- A [**graph**](/concepts/ops-jobs-graphs/graphs) is a directed acyclic graph of ops or other graphs, which execute in order and pass data to each other.
 - A [**software-defined asset**](/concepts/assets/software-defined-assets) is a declaration of an asset that should exist and a description of how to compute it: the op or graph that needs to run and the upstream assets that it should run on.
 
 **Software-defined assets aren't a replacement for Dagster's core computational concepts** - ops are, in fact, the core unit of computation that occurs **within an asset**. Think of them as a top layer that links ops, graphs, and jobs to the long-lived objects they interact with.
@@ -372,7 +372,7 @@ Still not sure how software-defined assets fit into your current Dagster usage? 
 | Without software-defined assets                                                                                | With software-defined assets                                                                   |
 | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | An [op](/concepts/ops-jobs-graphs/ops) is the basic unit of computation                                        | Every software-defined asset includes a graph or an op                                         |
-| A [graph](/concepts/ops-jobs-graphs/jobs-graphs) is a composite unit of computation that connects multiple ops | Every software-defined asset includes a graph or an op                                         |
+| A [graph](/concepts/ops-jobs-graphs/graphs) is a composite unit of computation that connects multiple ops | Every software-defined asset includes a graph or an op                                         |
 | Ops can have multiple outputs                                                                                  | Multiple assets can be produced by a single op when defined using the `@multi_asset` decorator |
 | Ops can use [config](/concepts/ops-jobs-graphs/ops#op-configuration)                                           | Assets can use [config](/concepts/assets/software-defined-assets)                              |
 | Ops can access <PyObject object="OpExecutionContext" />                                                        | Assets can access <PyObject object="OpExecutionContext" />                                     |

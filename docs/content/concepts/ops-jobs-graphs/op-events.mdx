@@ -38,7 +38,7 @@ Yielding events from within the body of an op is a useful way of communicating w
 
 Because returning a value from an op is such a fundamental part of creating a data pipeline, we have a few different interfaces for this functionality.
 
-For many use cases, Dagster ops can be used directly with python's native type annotations without additional modification. Check out the docs on [Op Outputs](/concepts/ops-jobs-graphs/ops#outputs) to learn more about this functionality. Dagster also provides the <PyObject object="Output"/> object, which opens up additional functionality to outputs when using Dagster, such as [specifying output metadata](/concepts/ops-jobs-graphs/op-events#attaching-metadata-to-outputs) and [conditional branching](/concepts/ops-jobs-graphs/jobs-graphs#conditional-branching), all while maintaining coherent type annotations.
+For many use cases, Dagster ops can be used directly with python's native type annotations without additional modification. Check out the docs on [Op Outputs](/concepts/ops-jobs-graphs/ops#outputs) to learn more about this functionality. Dagster also provides the <PyObject object="Output"/> object, which opens up additional functionality to outputs when using Dagster, such as [specifying output metadata](/concepts/ops-jobs-graphs/op-events#attaching-metadata-to-outputs) and [conditional branching](/concepts/ops-jobs-graphs/graphs#conditional-branching), all while maintaining coherent type annotations.
 
 <PyObject object="Output" /> objects can be either returned or yielded. The Output
 type is also generic, for use with return annotations:
