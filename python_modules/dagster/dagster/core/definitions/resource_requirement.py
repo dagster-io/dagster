@@ -205,3 +205,12 @@ def ensure_requirements_satisfied(
             raise DagsterInvalidDefinitionError(
                 f"{requirement.describe_requirement()} was not provided{mode_descriptor}. Please provide a {str(requirement.expected_type)} to key '{requirement.key}', or change the required key to one of the following keys which points to an {str(requirement.expected_type)}: {requirement.keys_of_expected_type(resource_defs)}"
             )
+
+
+def get_resource_key_conflicts(
+    resource_defs: Mapping[str, "ResourceDefinition"],
+    other_resource_defs: Mapping[str, "ResourceDefinition"],
+) -> AbstractSet[str]:
+    overlapping_keys = set(resource_defs.keys()).intersection(set(other_resource_defs.keys()))
+    overlapping_keys = {key for key in overlapping_keys if key != "io_manager"}
+    return overlapping_keys
