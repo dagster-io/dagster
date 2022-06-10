@@ -220,15 +220,12 @@ class K8sStepHandler(StepHandler):
             },
         )
 
-        yield DagsterEvent.engine_event(
+        yield DagsterEvent.step_process_starting(
             step_handler_context.get_step_context(step_key),
             message=f"Executing step {step_key} in Kubernetes job {job_name}",
-            event_specific_data=EngineEventData(
-                [
-                    MetadataEntry("Step key", value=step_key),
-                    MetadataEntry("Kubernetes Job name", value=job_name),
-                ],
-            ),
+            metadata_entries=[
+                MetadataEntry("Kubernetes Job name", value=job_name),
+            ],
         )
 
         self._batch_api.create_namespaced_job(body=job, namespace=container_context.namespace)

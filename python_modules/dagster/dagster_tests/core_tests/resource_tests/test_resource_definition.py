@@ -903,7 +903,8 @@ def test_resource_teardown_failure():
     error_events = [
         event
         for event in result.event_list
-        if event.is_engine_event and event.event_specific_data.error
+        if event.event_type == DagsterEventType.RESOURCE_TEARDOWN_FAILURE
+        and event.event_specific_data.error
     ]
     assert len(error_events) == 1
     assert called == ["A", "B"]
@@ -967,7 +968,8 @@ def test_multiprocessing_resource_teardown_failure():
         error_events = [
             event
             for event in result.event_list
-            if event.is_engine_event and event.event_specific_data.error
+            if event.event_type == DagsterEventType.RESOURCE_TEARDOWN_FAILURE
+            and event.event_specific_data.error
         ]
         assert len(error_events) == 1
 

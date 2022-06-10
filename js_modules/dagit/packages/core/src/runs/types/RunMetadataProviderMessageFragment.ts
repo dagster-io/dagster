@@ -16,8 +16,8 @@ export interface RunMetadataProviderMessageFragment_ExecutionStepFailureEvent {
   stepKey: string | null;
 }
 
-export interface RunMetadataProviderMessageFragment_EngineEvent {
-  __typename: "EngineEvent";
+export interface RunMetadataProviderMessageFragment_ResourceInitFailureEvent {
+  __typename: "ResourceInitFailureEvent" | "ResourceInitStartedEvent" | "ResourceInitSuccessEvent" | "ResourceTeardownFailureEvent" | "StepProcessStartedEvent" | "StepProcessStartingEvent" | "EngineEvent";
   message: string;
   timestamp: string;
   stepKey: string | null;
@@ -207,4 +207,4 @@ export interface RunMetadataProviderMessageFragment_LogsCapturedEvent {
   pid: number | null;
 }
 
-export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_ExecutionStepFailureEvent | RunMetadataProviderMessageFragment_EngineEvent | RunMetadataProviderMessageFragment_ObjectStoreOperationEvent | RunMetadataProviderMessageFragment_LogsCapturedEvent;
+export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_ExecutionStepFailureEvent | RunMetadataProviderMessageFragment_ResourceInitFailureEvent | RunMetadataProviderMessageFragment_ObjectStoreOperationEvent | RunMetadataProviderMessageFragment_LogsCapturedEvent;

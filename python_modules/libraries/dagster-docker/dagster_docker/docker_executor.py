@@ -202,15 +202,12 @@ class DockerStepHandler(StepHandler):
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         step_key = step_keys_to_execute[0]
 
-        yield DagsterEvent.engine_event(
+        yield DagsterEvent.step_process_starting(
             step_handler_context.get_step_context(step_key),
             message="Launching step in Docker container",
-            event_specific_data=EngineEventData(
-                [
-                    MetadataEntry("Step key", value=step_key),
-                    MetadataEntry("Docker container id", value=step_container.id),
-                ],
-            ),
+            metadata_entries=[
+                MetadataEntry("Docker container id", value=step_container.id),
+            ],
         )
         step_container.start()
 

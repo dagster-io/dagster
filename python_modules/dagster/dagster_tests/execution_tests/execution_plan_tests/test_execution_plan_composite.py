@@ -62,8 +62,8 @@ def test_execution_plan_for_composite_solid():
     )
 
     assert [e.event_type_value for e in events] == [
-        "ENGINE_EVENT",
-        "ENGINE_EVENT",
+        "RESOURCE_INIT_STARTED",
+        "RESOURCE_INIT_SUCCESS",
         "LOGS_CAPTURED",
         "STEP_START",
         "STEP_OUTPUT",
@@ -104,8 +104,8 @@ def test_execution_plan_for_composite_solid_with_config_mapping():
     )
 
     assert [e.event_type_value for e in events] == [
-        "ENGINE_EVENT",
-        "ENGINE_EVENT",
+        "RESOURCE_INIT_STARTED",
+        "RESOURCE_INIT_SUCCESS",
         "LOGS_CAPTURED",
         "STEP_START",
         "STEP_OUTPUT",

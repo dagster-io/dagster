@@ -184,6 +184,10 @@ def from_dagster_event_record(event_record, pipeline_name):
         GrapheneMaterializationEvent,
         GrapheneObjectStoreOperationEvent,
         GrapheneObservationEvent,
+        GrapheneResourceInitFailureEvent,
+        GrapheneResourceInitStartedEvent,
+        GrapheneResourceInitSuccessEvent,
+        GrapheneResourceTeardownFailureEvent,
         GrapheneRunCanceledEvent,
         GrapheneRunCancelingEvent,
         GrapheneRunDequeuedEvent,
@@ -193,6 +197,8 @@ def from_dagster_event_record(event_record, pipeline_name):
         GrapheneRunStartingEvent,
         GrapheneRunSuccessEvent,
         GrapheneStepExpectationResultEvent,
+        GrapheneStepProcessStartedEvent,
+        GrapheneStepProcessStartingEvent,
     )
 
     # Lots of event types. Pylint thinks there are too many branches
@@ -336,8 +342,8 @@ def from_dagster_event_record(event_record, pipeline_name):
             error=GraphenePythonError(dagster_event.engine_event_data.error)
             if dagster_event.engine_event_data.error
             else None,
-            marker_start=dagster_event.engine_event_data.marker_start,
-            marker_end=dagster_event.engine_event_data.marker_end,
+            markerStart=dagster_event.engine_event_data.marker_start,
+            markerEnd=dagster_event.engine_event_data.marker_end,
             **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.HOOK_COMPLETED:
@@ -353,6 +359,48 @@ def from_dagster_event_record(event_record, pipeline_name):
             logKey=dagster_event.logs_captured_data.log_key,
             stepKeys=dagster_event.logs_captured_data.step_keys,
             pid=dagster_event.pid,
+            **basic_params,
+        )
+    elif dagster_event.event_type == DagsterEventType.STEP_PROCESS_STARTING:
+        return GrapheneStepProcessStartingEvent(
+            metadataEntries=_to_metadata_entries(dagster_event.engine_event_data.metadata_entries),
+            markerStart=dagster_event.engine_event_data.marker_start,
+            markerEnd=dagster_event.engine_event_data.marker_end,
+            **basic_params,
+        )
+    elif dagster_event.event_type == DagsterEventType.STEP_PROCESS_STARTED:
+        return GrapheneStepProcessStartedEvent(
+            metadataEntries=_to_metadata_entries(dagster_event.engine_event_data.metadata_entries),
+            markerStart=dagster_event.engine_event_data.marker_start,
+            markerEnd=dagster_event.engine_event_data.marker_end,
+            **basic_params,
+        )
+    elif dagster_event.event_type == DagsterEventType.RESOURCE_INIT_STARTED:
+        return GrapheneResourceInitStartedEvent(
+            metadataEntries=_to_metadata_entries(dagster_event.engine_event_data.metadata_entries),
+            markerStart=dagster_event.engine_event_data.marker_start,
+            markerEnd=dagster_event.engine_event_data.marker_end,
+            **basic_params,
+        )
+    elif dagster_event.event_type == DagsterEventType.RESOURCE_INIT_SUCCESS:
+        return GrapheneResourceInitSuccessEvent(
+            metadataEntries=_to_metadata_entries(dagster_event.engine_event_data.metadata_entries),
+            markerStart=dagster_event.engine_event_data.marker_start,
+            markerEnd=dagster_event.engine_event_data.marker_end,
+            **basic_params,
+        )
+    elif dagster_event.event_type == DagsterEventType.RESOURCE_INIT_FAILURE:
+        return GrapheneResourceInitFailureEvent(
+            metadataEntries=_to_metadata_entries(dagster_event.engine_event_data.metadata_entries),
+            markerStart=dagster_event.engine_event_data.marker_start,
+            markerEnd=dagster_event.engine_event_data.marker_end,
+            error=GraphenePythonError(dagster_event.engine_event_data.error),
+            **basic_params,
+        )
+    elif dagster_event.event_type == DagsterEventType.RESOURCE_TEARDOWN_FAILURE:
+        return GrapheneResourceTeardownFailureEvent(
+            metadataEntries=_to_metadata_entries(dagster_event.engine_event_data.metadata_entries),
+            error=GraphenePythonError(dagster_event.engine_event_data.error),
             **basic_params,
         )
     else:

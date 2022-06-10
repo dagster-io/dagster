@@ -9,6 +9,7 @@ from contextlib import contextmanager
 import pytest
 
 from dagster import (
+    DagsterEventType,
     DefaultRunLauncher,
     ModeDefinition,
     file_relative_path,
@@ -533,7 +534,21 @@ def test_cleanup_after_force_terminate(run_config):
 
 
 def _get_engine_events(event_records):
-    return [er for er in event_records if er.dagster_event and er.dagster_event.is_engine_event]
+    return [
+        er
+        for er in event_records
+        if er.dagster_event
+        and er.dagster_event.event_type
+        in {
+            DagsterEventType.ENGINE_EVENT,
+            DagsterEventType.STEP_PROCESS_STARTING,
+            DagsterEventType.STEP_PROCESS_STARTED,
+            DagsterEventType.RESOURCE_INIT_STARTED,
+            DagsterEventType.RESOURCE_INIT_SUCCESS,
+            DagsterEventType.RESOURCE_INIT_FAILURE,
+            DagsterEventType.RESOURCE_TEARDOWN_FAILURE,
+        }
+    ]
 
 
 def _get_successful_step_keys(event_records):
