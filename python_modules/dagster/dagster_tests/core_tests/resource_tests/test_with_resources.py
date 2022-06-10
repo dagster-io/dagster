@@ -8,6 +8,7 @@ from dagster import (
     ResourceDefinition,
     io_manager,
     mem_io_manager,
+    build_op_context,
     resource,
 )
 from dagster.core.asset_defs import AssetsDefinition, SourceAsset, asset, build_assets_job
@@ -344,3 +345,82 @@ def test_asset_circular_resource_dependency():
         DagsterInvariantViolationError, match='Resource key "bar" transitively depends on itself.'
     ):
         with_resources([the_asset], resource_defs={"foo": foo, "bar": bar})
+
+
+def get_resource_and_asset_for_config_tests():
+    @asset(required_resource_keys={"foo", "bar"})
+    def the_asset(context):
+        assert context.resources.foo == "blah"
+        assert context.resources.bar == "baz"
+
+    @resource(config_schema=str)
+    def the_resource(context):
+        return context.resource_config
+
+    return the_asset, the_resource
+
+
+def test_config():
+    the_asset, the_resource = get_resource_and_asset_for_config_tests()
+
+    transformed_asset = with_resources(
+        [the_asset],
+        resource_defs={"foo": the_resource, "bar": the_resource},
+        resource_config_by_key={"foo": {"config": "blah"}, "bar": {"config": "baz"}},
+    )[0]
+
+    transformed_asset(build_op_context())
+
+
+def test_config_not_satisfied():
+    the_asset, the_resource = get_resource_and_asset_for_config_tests()
+
+    transformed_asset = with_resources(
+        [the_asset],
+        resource_defs={"foo": the_resource, "bar": the_resource},
+    )[0]
+
+    result = build_assets_job(
+        "test",
+        [transformed_asset],
+        config={"resources": {"foo": {"config": "blah"}, "bar": {"config": "baz"}}},
+    ).execute_in_process()
+
+    assert result.success
+
+
+def test_bad_key_provided():
+
+    the_asset, the_resource = get_resource_and_asset_for_config_tests()
+
+    transformed_asset = with_resources(
+        [the_asset],
+        resource_defs={"foo": the_resource, "bar": the_resource},
+        resource_config_by_key={
+            "foo": {"config": "blah"},
+            "bar": {"config": "baz"},
+            "bad": "whatever",
+        },
+    )[0]
+
+    transformed_asset(build_op_context())
+
+
+def test_bad_config_provided():
+    the_asset, the_resource = get_resource_and_asset_for_config_tests()
+
+    with_resources(
+        [the_asset],
+        resource_defs={"foo": the_resource, "bar": the_resource},
+        resource_config_by_key={
+            "foo": {"config": object()},
+        },
+    )
+
+    with_resources(
+        [the_asset],
+        resource_defs={"foo": the_resource, "bar": the_resource},
+        resource_config_by_key={
+            "foo": "bad",
+        },
+    )
