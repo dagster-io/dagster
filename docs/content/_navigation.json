@@ -143,19 +143,7 @@
             "path": "/concepts/ops-jobs-graphs/jobs-graphs"
           },
           {
-            "title": "Creating Jobs",
-            "path": "/concepts/ops-jobs-graphs/jobs-graphs#creating-jobs"
-          },
-          {
-            "title": "Configuring Jobs",
-            "path": "/concepts/ops-jobs-graphs/jobs-graphs#configuring-jobs"
-          },
-          {
-            "title": "Testing Jobs",
-            "path": "/concepts/ops-jobs-graphs/jobs-graphs#testing-jobs"
-          },
-          {
-            "title": "Executing Jobs",
+            "title": "Job Execution",
             "path": "/concepts/ops-jobs-graphs/job-execution"
           }
         ]
