@@ -94,6 +94,11 @@ def test_asset_selection_keys(all_assets):
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
 
 
+def test_asset_selection_assets(all_assets):
+    sel = AssetSelection.assets(alice, bob)
+    assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
+
+
 def test_asset_selection_or(all_assets):
     sel = AssetSelection.keys("alice", "bob") | AssetSelection.keys("bob", "candace")
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob, candace})
