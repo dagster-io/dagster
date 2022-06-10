@@ -230,7 +230,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             query = query.where(
                 db.or_(
                     *(
-                        db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
+                        db.and_(
+                            RunTagsTable.c.key == key,
+                            (
+                                RunTagsTable.c.value == value
+                                if isinstance(value, str)
+                                else RunTagsTable.c.value.in_(value)
+                            ),
+                        )
                         for key, value in filters.tags.items()
                     )
                 )

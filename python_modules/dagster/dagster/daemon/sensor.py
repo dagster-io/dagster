@@ -20,8 +20,8 @@ from dagster.core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter, TagBucket
-from dagster.core.storage.tags import RUN_KEY_TAG
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
+from dagster.core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster.core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster.core.workspace import IWorkspace
 from dagster.utils import merge_dicts
@@ -512,38 +512,18 @@ def _fetch_existing_runs(instance, external_sensor, run_requests):
     if not run_keys:
         return {}
 
+    runs_with_run_keys = instance.get_runs(filters=RunsFilter(tags={RUN_KEY_TAG: run_keys}))
+
+    valid_runs = [
+        run for run in runs_with_run_keys if run.tags.get(SENSOR_NAME_TAG) == external_sensor.name
+    ]
+
     existing_runs = {}
+    for run in valid_runs:
+        tags = run.tags or {}
+        run_key = tags.get(RUN_KEY_TAG)
+        existing_runs[run_key] = run
 
-    if instance.supports_bucket_queries:
-        runs = instance.get_runs(
-            filters=RunsFilter(
-                tags=PipelineRun.tags_for_sensor(external_sensor),
-            ),
-            bucket_by=TagBucket(
-                tag_key=RUN_KEY_TAG,
-                bucket_limit=1,
-                tag_values=run_keys,
-            ),
-        )
-        for run in runs:
-            tags = run.tags or {}
-            run_key = tags.get(RUN_KEY_TAG)
-            existing_runs[run_key] = run
-        return existing_runs
-
-    else:
-        for run_key in run_keys:
-            runs = instance.get_runs(
-                filters=RunsFilter(
-                    tags=merge_dicts(
-                        PipelineRun.tags_for_sensor(external_sensor),
-                        {RUN_KEY_TAG: run_key},
-                    )
-                ),
-                limit=1,
-            )
-            if runs:
-                existing_runs[run_key] = runs[0]
     return existing_runs
 
 

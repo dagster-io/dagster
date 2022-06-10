@@ -1,7 +1,18 @@
 import warnings
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    FrozenSet,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Type,
+    Union,
+)
 
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey
@@ -510,7 +521,7 @@ class RunsFilter(
             ("run_ids", List[str]),
             ("job_name", Optional[str]),
             ("statuses", List[PipelineRunStatus]),
-            ("tags", Dict[str, str]),
+            ("tags", Dict[str, Union[str, List[str]]]),
             ("snapshot_id", Optional[str]),
             ("updated_after", Optional[datetime]),
             ("mode", Optional[str]),
@@ -523,7 +534,7 @@ class RunsFilter(
         run_ids: Optional[List[str]] = None,
         job_name: Optional[str] = None,
         statuses: Optional[List[PipelineRunStatus]] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[Dict[str, Union[str, List[str]]]] = None,
         snapshot_id: Optional[str] = None,
         updated_after: Optional[datetime] = None,
         mode: Optional[str] = None,
@@ -539,7 +550,7 @@ class RunsFilter(
             run_ids=check.opt_list_param(run_ids, "run_ids", of_type=str),
             job_name=check.opt_str_param(job_name, "job_name"),
             statuses=check.opt_list_param(statuses, "statuses", of_type=PipelineRunStatus),
-            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
+            tags=check.opt_dict_param(tags, "tags", key_type=str),
             snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
             updated_after=check.opt_inst_param(updated_after, "updated_after", datetime),
             mode=check.opt_str_param(mode, "mode"),
