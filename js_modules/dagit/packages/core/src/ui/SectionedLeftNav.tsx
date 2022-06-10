@@ -102,7 +102,8 @@ export const SectionedLeftNav = () => {
               onToggle={onToggle}
               option={repo}
               repoAddress={repoAddress}
-              expanded={expandedKeys.includes(addressAsString)}
+              expanded={sortedRepos.length === 1 || expandedKeys.includes(addressAsString)}
+              collapsible={sortedRepos.length > 1}
               showRepoLocation={duplicateRepoNames.has(repoName)}
               match={match?.repoAddress === repoAddress ? match : null}
             />
@@ -123,6 +124,7 @@ const HEADER_HEIGHT_WITH_LOCATION = 64;
 //
 interface SectionProps {
   expanded: boolean;
+  collapsible: boolean;
   onToggle: (repoAddress: RepoAddress) => void;
   option: DagsterRepoOption;
   match: {itemName: string; itemType: 'asset-group' | 'job'} | null;
@@ -131,7 +133,7 @@ interface SectionProps {
 }
 
 export const Section: React.FC<SectionProps> = React.memo((props) => {
-  const {expanded, onToggle, option, match, repoAddress, showRepoLocation} = props;
+  const {expanded, collapsible, onToggle, option, match, repoAddress, showRepoLocation} = props;
   const matchRef = React.useRef<HTMLDivElement>(null);
 
   const jobItems = React.useMemo(() => getJobItemsForOption(option), [option]);
@@ -178,14 +180,17 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
         $showTypeLabels={showTypeLabels}
         $showRepoLocation={showRepoLocation}
         disabled={empty}
-        onClick={() => onToggle(repoAddress)}
+        onClick={collapsible ? () => onToggle(repoAddress) : undefined}
       >
-        <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 8}}>
+        <Box
+          flex={{direction: 'row', alignItems: 'flex-start', gap: 8}}
+          style={{flex: 1, maxWidth: '100%'}}
+        >
           <Box margin={{top: 2}}>
             <Icon name="folder_open" size={16} />
           </Box>
           <RepoNameContainer>
-            <div style={{minWidth: 0}}>
+            <Box flex={{direction: 'column'}} style={{flex: 1, minWidth: 0}}>
               <RepoName style={{fontWeight: 500}} data-tooltip={option.repository.name}>
                 {option.repository.name}
               </RepoName>
@@ -194,7 +199,8 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
                   @{option.repositoryLocation.name}
                 </RepoLocation>
               ) : null}
-            </div>
+            </Box>
+
             {/* Wrapper div to prevent tag from stretching vertically */}
             <div>
               <BaseTag
@@ -204,9 +210,11 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
               />
             </div>
           </RepoNameContainer>
-          <Box margin={{top: 2}}>
-            <Icon name="arrow_drop_down" />
-          </Box>
+          {collapsible && (
+            <Box margin={{top: 2}}>
+              <Icon name="arrow_drop_down" />
+            </Box>
+          )}
         </Box>
       </SectionHeader>
       {visibleItems({type: 'job', items: jobItems})}
@@ -335,7 +343,8 @@ const RepoNameContainer = styled.div`
   display: flex;
   justify-content: space-between;
   margin-top: 2px;
-  width: 244px;
+  flex: 1;
+  min-width: 0;
 `;
 
 const RepoName = styled.div`
