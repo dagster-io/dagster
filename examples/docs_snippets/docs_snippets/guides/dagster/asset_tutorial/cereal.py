@@ -47,6 +47,15 @@ def nabisco_cereals(cereals):
 from dagster import materialize
 
 if __name__ == "__main__":
-    materialize([cereals, nabisco_cereals])
+    materialize([cereals])
 
 # end_materialize_marker
+
+
+# start_multiple_materialize_marker
+from dagster import materialize
+
+if __name__ == "__main__":
+    materialize([cereals, nabisco_cereals])
+
+# end_multiple_materialize_marker

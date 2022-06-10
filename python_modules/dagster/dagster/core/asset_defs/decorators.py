@@ -20,7 +20,7 @@ from dagster.config import Field
 from dagster.config.config_schema import ConfigSchemaType
 from dagster.core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster.core.definitions.decorators.op_decorator import _Op
-from dagster.core.definitions.events import ASSET_KEY_DELIMITER, AssetKey
+from dagster.core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster.core.definitions.input import In
 from dagster.core.definitions.output import Out
 from dagster.core.definitions.partition import PartitionsDefinition
@@ -48,7 +48,7 @@ def asset(
 def asset(
     name: Optional[str] = ...,
     namespace: Optional[Sequence[str]] = ...,
-    key_prefix: Optional[Union[str, Sequence[str]]] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = ...,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     metadata: Optional[Mapping[str, Any]] = ...,
@@ -71,7 +71,7 @@ def asset(
 def asset(
     name: Optional[Union[Callable[..., Any], Optional[str]]] = None,
     namespace: Optional[Sequence[str]] = None,
-    key_prefix: Optional[Union[str, Sequence[str]]] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
@@ -104,9 +104,8 @@ def asset(
             decorated function.
         namespace (Optional[Sequence[str]]): **Deprecated (use `key_prefix`)**. The namespace that
             the asset resides in.  The namespace + the name forms the asset key.
-        key_prefix (Optional[Union[str, Sequence[str]]]): Optional prefix to apply to the asset key. If `Sequence[str]`,
-            elements are prepended to function name to form the asset key. If `str`, will be split on "{asset_key_delimiter}"
-            and then prepended. If `None` asset key is simply the name of the function. name forms the asset key.
+        key_prefix (Optional[Union[str, Sequence[str]]]): Optional prefix to apply to the asset key.
+            If `None`, asset key is simply the name of the function.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
             and namespaces.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are
@@ -147,9 +146,7 @@ def asset(
             @asset
             def my_asset(my_upstream_asset: int) -> int:
                 return my_upstream_asset + 1
-    """.format(
-        asset_key_delimiter=ASSET_KEY_DELIMITER
-    )
+    """
     if callable(name):
         return _Asset()(name)
 
@@ -188,7 +185,7 @@ class _Asset:
     def __init__(
         self,
         name: Optional[str] = None,
-        key_prefix: Optional[Union[str, Sequence[str]]] = None,
+        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         ins: Optional[Mapping[str, AssetIn]] = None,
         non_argument_deps: Optional[Set[AssetKey]] = None,
         metadata: Optional[Mapping[str, Any]] = None,
@@ -205,10 +202,10 @@ class _Asset:
         group_name: Optional[str] = None,
     ):
         self.name = name
-        # if user inputs a single string, coerce to list
-        self.key_prefix = (
-            key_prefix.split(ASSET_KEY_DELIMITER) if isinstance(key_prefix, str) else key_prefix
-        )
+
+        if isinstance(key_prefix, str):
+            key_prefix = [key_prefix]
+        self.key_prefix = key_prefix
         self.ins = ins or {}
         self.non_argument_deps = non_argument_deps
         self.metadata = metadata

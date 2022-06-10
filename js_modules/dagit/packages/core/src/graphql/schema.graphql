@@ -283,7 +283,7 @@ type MaterializationEvent implements MessageEvent & StepEvent & DisplayableEvent
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
   assetKey: AssetKey
@@ -363,7 +363,7 @@ interface StepEvent {
 }
 
 interface DisplayableEvent {
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
 }
@@ -540,7 +540,7 @@ enum StepEventStatus {
 }
 
 type ExpectationResult implements DisplayableEvent {
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
   success: Boolean!
@@ -651,7 +651,7 @@ type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
   assetKey: AssetKey
@@ -724,7 +724,7 @@ enum ErrorSource {
 }
 
 type FailureMetadata implements DisplayableEvent {
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
 }
@@ -742,7 +742,7 @@ type ExecutionStepInputEvent implements MessageEvent & StepEvent {
 }
 
 type TypeCheck implements DisplayableEvent {
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
   success: Boolean!
@@ -756,7 +756,7 @@ type ExecutionStepOutputEvent implements MessageEvent & StepEvent & DisplayableE
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
   outputName: String!
@@ -926,7 +926,7 @@ type HandledOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
   outputName: String!
@@ -941,7 +941,7 @@ type LoadedInputEvent implements MessageEvent & StepEvent & DisplayableEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
   inputName: String!
@@ -975,7 +975,7 @@ type ObjectStoreOperationEvent implements MessageEvent & StepEvent {
 }
 
 type ObjectStoreOperationResult implements DisplayableEvent {
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
   op: ObjectStoreOperationType!
@@ -1007,7 +1007,7 @@ type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
   error: PythonError

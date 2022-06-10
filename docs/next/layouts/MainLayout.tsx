@@ -36,7 +36,7 @@ const Layout = ({ children }) => {
               isMobileDocsMenuOpen={isMobileDocsMenuOpen}
               closeMobileDocsMenu={closeMobileDocsMenu}
             />
-            {children}
+            <div className="lg:pl-80 flex w-full">{children}</div>
           </div>
         </div>
       </div>

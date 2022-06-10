@@ -111,7 +111,7 @@ export const LeftNavItem = React.forwardRef(
       <ItemContainer ref={ref}>
         <Item $active={active} to={path}>
           <Icon name={leftIcon} color={active ? Colors.Blue700 : Colors.Dark} />
-          <div>{label}</div>
+          {label}
         </Item>
         {rightIcon()}
       </ItemContainer>

@@ -104,24 +104,21 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       level
       stepKey
     }
-    ... on MaterializationEvent {
-      assetKey {
-        path
-      }
+    ... on DisplayableEvent {
       label
       description
       metadataEntries {
         ...MetadataEntryFragment
       }
     }
-    ... on ObservationEvent {
+    ... on MaterializationEvent {
       assetKey {
         path
       }
-      label
-      description
-      metadataEntries {
-        ...MetadataEntryFragment
+    }
+    ... on ObservationEvent {
+      assetKey {
+        path
       }
     }
     ... on RunFailureEvent {
@@ -166,9 +163,6 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
           ...MetadataEntryFragment
         }
       }
-      metadataEntries {
-        ...MetadataEntryFragment
-      }
     }
     ... on StepExpectationResultEvent {
       expectationResult {
@@ -191,23 +185,14 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
     ... on HandledOutputEvent {
       outputName
       managerKey
-      metadataEntries {
-        ...MetadataEntryFragment
-      }
     }
     ... on LoadedInputEvent {
       inputName
       managerKey
       upstreamOutputName
       upstreamStepKey
-      metadataEntries {
-        ...MetadataEntryFragment
-      }
     }
     ... on EngineEvent {
-      metadataEntries {
-        ...MetadataEntryFragment
-      }
       engineError: error {
         ...PythonErrorFragment
       }

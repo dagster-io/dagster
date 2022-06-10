@@ -207,7 +207,7 @@ export interface AssetEventsQuery_assetOrError_Asset_assetObservations {
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  label: string;
+  label: string | null;
   description: string | null;
   metadataEntries: AssetEventsQuery_assetOrError_Asset_assetObservations_metadataEntries[];
 }
@@ -412,7 +412,7 @@ export interface AssetEventsQuery_assetOrError_Asset_assetMaterializations {
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  label: string;
+  label: string | null;
   description: string | null;
   metadataEntries: AssetEventsQuery_assetOrError_Asset_assetMaterializations_metadataEntries[];
   assetLineage: AssetEventsQuery_assetOrError_Asset_assetMaterializations_assetLineage[];

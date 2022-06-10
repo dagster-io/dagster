@@ -20,23 +20,21 @@ def test_nabisco_cereals():
 
 # end_asset_test
 
-# start_asset_group_test
-from dagster import AssetGroup
+# start_all_assets_test
+from dagster import materialize
 
 
-def test_cereal_asset_group():
-    group = AssetGroup(
-        [
-            nabisco_cereals,
-            cereals,
-            cereal_protein_fractions,
-            highest_protein_nabisco_cereal,
-        ]
-    )
+def test_cereal_assets():
+    assets = [
+        nabisco_cereals,
+        cereals,
+        cereal_protein_fractions,
+        highest_protein_nabisco_cereal,
+    ]
 
-    result = group.materialize()
+    result = materialize(assets)
     assert result.success
     assert result.output_for_node("highest_protein_nabisco_cereal") == "100% Bran"
 
 
-# end_asset_group_test
+# end_all_assets_test

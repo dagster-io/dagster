@@ -214,14 +214,14 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
 
     @asset(partitions_def=upstream_partitions_def)
     def upstream_asset(context):
-        assert context.output_asset_partition_key() == "2"
+        assert context.asset_partition_key_for_output() == "2"
 
     @asset(
         partitions_def=downstream_partitions_def,
         partition_mappings={"upstream_asset": TrailingWindowPartitionMapping()},
     )
     def downstream_asset(context, upstream_asset):
-        assert context.output_asset_partition_key() == "2"
+        assert context.asset_partition_key_for_output() == "2"
         assert upstream_asset is None
 
     my_job = build_assets_job(
@@ -257,7 +257,7 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
 
     @asset(partitions_def=upstream_partitions_def)
     def upstream_asset(context):
-        assert context.output_asset_partition_key() == "b"
+        assert context.asset_partition_key_for_output() == "b"
 
     @asset
     def downstream_asset(upstream_asset):
@@ -614,8 +614,8 @@ def test_multi_asset_non_identity_partition_mapping():
         partitions_def=upstream_partitions_def,
     )
     def upstream_asset(context):
-        assert context.output_asset_partition_key("out1") == "2"
-        assert context.output_asset_partition_key("out2") == "2"
+        assert context.asset_partition_key_for_output("out1") == "2"
+        assert context.asset_partition_key_for_output("out2") == "2"
         return (Output(1, output_name="out1"), Output(2, output_name="out2"))
 
     @asset(
@@ -623,7 +623,7 @@ def test_multi_asset_non_identity_partition_mapping():
         partition_mappings={"upstream_asset_1": TrailingWindowPartitionMapping()},
     )
     def downstream_asset_1(context, upstream_asset_1):
-        assert context.output_asset_partition_key() == "2"
+        assert context.asset_partition_key_for_output() == "2"
         assert upstream_asset_1 is None
 
     @asset(
@@ -631,7 +631,7 @@ def test_multi_asset_non_identity_partition_mapping():
         partition_mappings={"upstream_asset_2": TrailingWindowPartitionMapping()},
     )
     def downstream_asset_2(context, upstream_asset_2):
-        assert context.output_asset_partition_key() == "2"
+        assert context.asset_partition_key_for_output() == "2"
         assert upstream_asset_2 is None
 
     my_job = build_assets_job(
@@ -657,7 +657,7 @@ def test_from_graph():
 
     @op
     def my_op(context):
-        assert context.output_asset_partition_key() == "a"
+        assert context.asset_partition_key_for_output() == "a"
 
     @graph
     def upstream_asset():
@@ -665,7 +665,7 @@ def test_from_graph():
 
     @op
     def my_op2(context, upstream_asset):
-        assert context.output_asset_partition_key() == "a"
+        assert context.asset_partition_key_for_output() == "a"
         return upstream_asset
 
     @graph

@@ -125,3 +125,13 @@ const StyledInput = styled.input<StyledInputProps>`
       ${Colors.KeylineGray} inset 2px 2px 1.5px, rgba(58, 151, 212, 0.6) 0 0 0 3px;
   }
 `;
+
+interface TextAreaProps {
+  $resize: React.CSSProperties['resize'];
+}
+
+export const TextArea = styled.textarea<TextAreaProps>`
+  ${TextInputStyles}
+
+  ${({$resize}) => ($resize ? `resize: ${$resize};` : null)}
+`;
