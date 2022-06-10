@@ -25,8 +25,7 @@ height={1040}
 
 ## Overview
 
-Dagster ops have [inputs and outputs](/concepts/ops-jobs-graphs/ops#inputs-and-outputs). When an op returns an output and a downstream op takes that output as an input, where does the data live in between? <PyObject module="dagster" object="IOManager" pluralize /> let the user decide.
-Similarly, <PyObject module="dagster" object="IOManager" pluralize /> are responsible for storing asset outputs and loading inputs in downstream assets.
+Dagster ops have [inputs and outputs](/concepts/ops-jobs-graphs/ops#inputs-and-outputs). When an op returns an output and a downstream op takes that output as an input, where does the data live in between? <PyObject module="dagster" object="IOManager" pluralize /> let the user decide. Similarly, <PyObject module="dagster" object="IOManager" pluralize /> are responsible for storing asset outputs and loading inputs in downstream assets.
 
 The IO manager APIs make it easy to separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results. Assets and ops can focus on business logic, while IO managers handle I/O. This separation makes it easier to test the business logic and run it in different environments.
 
@@ -35,8 +34,9 @@ Not all inputs depend on upstream outputs. The [Unconnected Inputs](/concepts/io
 ### Outputs and downstream inputs
 
 <PyObject module="dagster" object="IOManager" pluralize /> are user-provided objects
-that are responsible for storing the output of an asset or op and loading it as input to downstream
-assets or ops. For example, an IO Manager might store and load objects from files on a filesystem.
+that are responsible for storing the output of an asset or op and loading it as input
+to downstream assets or ops. For example, an IO Manager might store and load objects
+from files on a filesystem.
 
 For ops, each op output can have its own IO manager, or multiple op outputs can share an IO manager. The IO manager that's used for handling a particular op output is automatically used for loading it in downstream ops.
 
