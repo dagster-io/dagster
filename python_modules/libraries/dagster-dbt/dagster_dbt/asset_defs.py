@@ -147,7 +147,7 @@ def _dbt_nodes_to_assets(
 ) -> AssetsDefinition:
 
     outs: Dict[str, Out] = {}
-    group_names: Dict[AssetKey, Optional[str]] = {}
+    group_names: Dict[AssetKey, str] = {}
     asset_ins: Dict[AssetKey, Tuple[str, In]] = {}
 
     asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
@@ -192,7 +192,9 @@ def _dbt_nodes_to_assets(
         asset_deps[asset_key] = cur_asset_deps
 
         # set the group for this asset
-        group_names[asset_key] = _get_node_group_name(node_info)
+        group_name = _get_node_group_name(node_info)
+        if group_name is not None:
+            group_names[asset_key] = group_name
 
     # prevent op name collisions between multiple dbt multi-assets
     op_name = f"run_dbt_{package_name}"
