@@ -209,7 +209,7 @@ export interface AssetMaterializationFragment {
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  label: string;
+  label: string | null;
   description: string | null;
   metadataEntries: AssetMaterializationFragment_metadataEntries[];
   assetLineage: AssetMaterializationFragment_assetLineage[];
