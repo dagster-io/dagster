@@ -40,11 +40,11 @@ export const RepoNavItem: React.FC<Props> = (props) => {
       return <span style={{color: Colors.Gray700}}>No repositories</span>;
     }
     if (allRepos.length === 1) {
-      return <SingleRepoSummary repo={allRepos[0]} />;
+      return <SingleRepoSummary repo={allRepos[0]} onlyRepo />;
     }
     if (selected.length === 1) {
       const selectedRepo = Array.from(selected)[0];
-      return <SingleRepoSummary repo={selectedRepo} />;
+      return <SingleRepoSummary repo={selectedRepo} onlyRepo={false} />;
     }
     return <span>{`${selected.length} of ${allRepos.length} shown`}</span>;
   };
@@ -84,7 +84,9 @@ export const RepoNavItem: React.FC<Props> = (props) => {
                 </Box>
               </DialogFooter>
             </Dialog>
-            <Button onClick={() => setOpen(true)}>Filter</Button>
+            <Box margin={{left: 4}}>
+              <Button onClick={() => setOpen(true)}>Filter</Button>
+            </Box>
           </>
         ) : null}
       </Box>
@@ -92,7 +94,10 @@ export const RepoNavItem: React.FC<Props> = (props) => {
   );
 };
 
-const SingleRepoSummary: React.FC<{repo: RepoSelectorOption}> = ({repo}) => {
+const SingleRepoSummary: React.FC<{repo: RepoSelectorOption; onlyRepo: boolean}> = ({
+  repo,
+  onlyRepo,
+}) => {
   const repoAddress = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
   const {canReloadRepositoryLocation} = usePermissions();
   return (
@@ -100,6 +105,7 @@ const SingleRepoSummary: React.FC<{repo: RepoSelectorOption}> = ({repo}) => {
       <SingleRepoNameLink
         to={workspacePathFromAddress(repoAddress)}
         title={repoAddressAsString(repoAddress)}
+        $onlyRepo={onlyRepo}
       >
         {repoAddress.name}
       </SingleRepoNameLink>
@@ -148,10 +154,10 @@ const SummaryText = styled.div`
   line-height: 32px;
 `;
 
-const SingleRepoNameLink = styled(Link)`
+const SingleRepoNameLink = styled(Link)<{$onlyRepo: boolean}>`
   color: ${Colors.Gray900};
   display: block;
-  max-width: 234px;
+  max-width: ${({$onlyRepo}) => ($onlyRepo ? '248px' : '192px')};
   overflow-x: hidden;
   text-overflow: ellipsis;
   transition: color 100ms linear;

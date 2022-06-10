@@ -5,7 +5,7 @@ from typing import AbstractSet, FrozenSet, Optional, Sequence
 
 import dagster._check as check
 from dagster.core.asset_defs.assets import AssetsDefinition
-from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.events import AssetKey, CoerceableToAssetKey
 from dagster.core.selector.subset_selector import (
     fetch_connected,
     generate_asset_dep_graph,
@@ -19,26 +19,33 @@ class AssetSelection(ABC):
         return AllAssetSelection()
 
     @staticmethod
-    def keys(*key_strs: str) -> "KeysAssetSelection":
-        return KeysAssetSelection(*key_strs)
+    def keys(*asset_keys: CoerceableToAssetKey) -> "KeysAssetSelection":
+        _asset_keys = [AssetKey.from_coerceable(key) for key in asset_keys]
+        return KeysAssetSelection(*_asset_keys)
 
     @staticmethod
     def groups(*group_strs) -> "GroupsAssetSelection":
+        check.tuple_param(group_strs, "group_strs", of_type=str)
         return GroupsAssetSelection(*group_strs)
 
     def downstream(self, depth: Optional[int] = None) -> "DownstreamAssetSelection":
+        check.opt_int_param(depth, "depth")
         return DownstreamAssetSelection(self, depth=depth)
 
     def upstream(self, depth: Optional[int] = None) -> "UpstreamAssetSelection":
+        check.opt_int_param(depth, "depth")
         return UpstreamAssetSelection(self, depth=depth)
 
     def __or__(self, other: "AssetSelection") -> "OrAssetSelection":
+        check.inst_param(other, "other", AssetSelection)
         return OrAssetSelection(self, other)
 
     def __and__(self, other: "AssetSelection") -> "AndAssetSelection":
+        check.inst_param(other, "other", AssetSelection)
         return AndAssetSelection(self, other)
 
     def resolve(self, all_assets: Sequence[AssetsDefinition]) -> FrozenSet[AssetKey]:
+        check.sequence_param(all_assets, "all_assets", AssetsDefinition)
         return Resolver(all_assets).resolve(self)
 
 
@@ -63,7 +70,7 @@ class GroupsAssetSelection(AssetSelection):
 
 
 class KeysAssetSelection(AssetSelection):
-    def __init__(self, *children: str):
+    def __init__(self, *children: AssetKey):
         self.children = children
 
 
@@ -121,7 +128,7 @@ class Resolver:
                 [_match_groups(assets_def, set(node.children)) for assets_def in self.all_assets],
             )
         elif isinstance(node, KeysAssetSelection):
-            return set(node.children)
+            return set([child.to_user_string() for child in node.children])
         elif isinstance(node, OrAssetSelection):
             child_1, child_2 = [self._resolve(child) for child in node.children]
             return child_1 | child_2

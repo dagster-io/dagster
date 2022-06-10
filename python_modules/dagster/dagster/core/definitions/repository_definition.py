@@ -1,4 +1,3 @@
-import warnings
 from abc import ABC, abstractmethod
 from inspect import isfunction
 from types import FunctionType
@@ -23,6 +22,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from dagster.utils import merge_dicts
 
 from .events import AssetKey
+from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .job_definition import JobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
@@ -632,6 +632,7 @@ class CachingRepositoryData(RepositoryData):
                 UnresolvedAssetJobDefinition,
             ]
         ],
+        default_executor_def: Optional[ExecutorDefinition] = None,
     ) -> "CachingRepositoryData":
         """Static constructor.
 
@@ -734,7 +735,11 @@ class CachingRepositoryData(RepositoryData):
                 raise DagsterInvalidDefinitionError(
                     "A repository can't have both an AssetGroup and direct asset defs"
                 )
-            combined_asset_group = AssetGroup(assets=assets_defs, source_assets=source_assets)
+            combined_asset_group = AssetGroup(
+                assets=assets_defs,
+                source_assets=source_assets,
+                executor_def=default_executor_def,
+            )
 
         if combined_asset_group:
             for job_def in combined_asset_group.get_base_jobs():
@@ -1251,13 +1256,13 @@ def _process_and_validate_target(
             # the same definition by reference equality
             if target.name in pipelines_or_jobs:
                 dupe_target_type = pipelines_or_jobs[target.name].target_type
-                warnings.warn(
+                raise DagsterInvalidDefinitionError(
                     _get_error_msg_for_target_conflict(
                         targeter, "graph", target.name, dupe_target_type
                     )
                 )
         elif coerced_graphs[target.name].graph != target:
-            warnings.warn(
+            raise DagsterInvalidDefinitionError(
                 _get_error_msg_for_target_conflict(targeter, "graph", target.name, "graph")
             )
         coerced_job = target.coerce_to_job()
@@ -1269,13 +1274,13 @@ def _process_and_validate_target(
             # be the same definition by reference equality
             if target.name in pipelines_or_jobs:
                 dupe_target_type = pipelines_or_jobs[target.name].target_type
-                warnings.warn(
+                raise DagsterInvalidDefinitionError(
                     _get_error_msg_for_target_conflict(
                         targeter, "unresolved asset job", target.name, dupe_target_type
                     )
                 )
         elif unresolved_jobs[target.name].selection != target.selection:
-            warnings.warn(
+            raise DagsterInvalidDefinitionError(
                 _get_error_msg_for_target_conflict(
                     targeter, "unresolved asset job", target.name, "unresolved asset job"
                 )
@@ -1290,7 +1295,7 @@ def _process_and_validate_target(
                 if target.name in unresolved_jobs
                 else pipelines_or_jobs[target.name].target_type
             )
-            warnings.warn(
+            raise DagsterInvalidDefinitionError(
                 _get_error_msg_for_target_conflict(
                     targeter, target.target_type, target.name, dupe_target_type
                 )
@@ -1299,4 +1304,4 @@ def _process_and_validate_target(
 
 
 def _get_error_msg_for_target_conflict(targeter, target_type, target_name, dupe_target_type):
-    return f"{targeter} targets {target_type} '{target_name}', but a different {dupe_target_type} with the same name was provided. The {target_type} provided to {targeter} will override the existing {dupe_target_type}, but in Dagster 0.15.0, this will result in an error. Disambiguate between these by providing a separate name to one of them."
+    return f"{targeter} targets {target_type} '{target_name}', but a different {dupe_target_type} with the same name was provided. Disambiguate between these by providing a separate name to one of them."

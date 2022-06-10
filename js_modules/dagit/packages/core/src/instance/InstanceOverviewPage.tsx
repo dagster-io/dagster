@@ -102,7 +102,7 @@ export const InstanceOverviewPage = () => {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
   });
-  const {data: lastTenRunsData} = queryResultLastRuns;
+  const {data: lastTenRunsData, loading: lastTenRunsLoading} = queryResultLastRuns;
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(queryResultLastRuns, FIFTEEN_SECONDS),
@@ -129,7 +129,7 @@ export const InstanceOverviewPage = () => {
       return a.job.name.toLocaleLowerCase().localeCompare(b.job.name.toLocaleLowerCase());
     };
 
-    if (data && data?.workspaceOrError.__typename === 'Workspace') {
+    if (!loading && data?.workspaceOrError.__typename === 'Workspace') {
       for (const locationEntry of data.workspaceOrError.locationEntries) {
         if (
           locationEntry.__typename === 'WorkspaceLocationEntry' &&
@@ -182,7 +182,7 @@ export const InstanceOverviewPage = () => {
     neverRan.sort(sortFn);
 
     return {failed, inProgress, queued, succeeded, neverRan};
-  }, [data]);
+  }, [data, loading]);
 
   const filteredJobs = React.useMemo(() => {
     const searchToLower = searchValue.toLocaleLowerCase();
@@ -206,12 +206,12 @@ export const InstanceOverviewPage = () => {
   }, [bucketed, visibleRepos, searchValue]);
 
   const lastTenRunsFlattened = React.useMemo(() => {
-    if (!lastTenRunsData) {
+    if (lastTenRunsLoading || !lastTenRunsData) {
       return null;
     }
 
     const flattened: {[key: string]: RunTimeFragment[]} = {};
-    if (lastTenRunsData && lastTenRunsData?.workspaceOrError.__typename === 'Workspace') {
+    if (lastTenRunsData.workspaceOrError.__typename === 'Workspace') {
       for (const locationEntry of lastTenRunsData.workspaceOrError.locationEntries) {
         if (
           locationEntry.__typename === 'WorkspaceLocationEntry' &&
@@ -231,7 +231,7 @@ export const InstanceOverviewPage = () => {
     }
 
     return flattened;
-  }, [lastTenRunsData]);
+  }, [lastTenRunsData, lastTenRunsLoading]);
 
   const filteredJobsFlattened: JobItem[] = React.useMemo(() => {
     return Object.values(filteredJobs).reduce((accum, jobList) => {
@@ -243,7 +243,7 @@ export const InstanceOverviewPage = () => {
     const appendRuns = (jobItem: JobItem) => {
       const {job, repoAddress} = jobItem;
       const jobKey = makeJobKey(repoAddress, job.name);
-      const matchingRuns = lastTenRunsFlattened ? lastTenRunsFlattened[jobKey] : [];
+      const matchingRuns = lastTenRunsFlattened ? lastTenRunsFlattened[jobKey] || [] : [];
       return {...jobItem, runs: [...matchingRuns].reverse()};
     };
 

@@ -180,7 +180,6 @@ def execute_core_compute(
     omitted_outputs = solid_output_names.difference(emitted_result_names)
     if omitted_outputs:
         step_context.log.info(
-            "Solid {solid} did not fire outputs {outputs}".format(
-                solid=str(step.solid_handle), outputs=repr(omitted_outputs)
-            )
+            f"{step_context.solid_def.node_type_str} '{str(step.solid_handle)}' did not fire "
+            f"outputs {repr(omitted_outputs)}"
         )
