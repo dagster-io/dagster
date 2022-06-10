@@ -11,6 +11,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
+from dagster.core.asset_defs.assets import io_manager_key_for_asset_key
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
 
@@ -385,3 +386,20 @@ def test_asset_invocation_resource_errors():
         match="resource with key 'foo' required by op 'required_key_not_provided' was not provided.",
     ):
         required_key_not_provided(build_op_context())
+
+
+def test_with_io_manager_def():
+    @io_manager
+    def the_manager():
+        InMemoryIOManager()
+
+    @asset
+    def the_asset():
+        pass
+
+    transformed_asset = the_asset.with_io_manager_def(the_manager)
+    assert transformed_asset.resource_defs == {
+        io_manager_key_for_asset_key(transformed_asset.asset_key): the_manager
+    }
+    result = build_assets_job([transformed_asset]).execute_in_process()
+    assert result.success

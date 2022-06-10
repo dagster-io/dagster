@@ -11,6 +11,7 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.output import OutputDefinition
+from dagster.core.storage.io_manager import IOManagerDefinition
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster.core.errors import DagsterInvalidInvocationError
@@ -531,6 +532,72 @@ class AssetsDefinition(ResourceAddable):
             selected_asset_keys=self._selected_asset_keys,
             can_subset=self._can_subset,
             resource_defs=None,
+            group_names=self._group_names,
+        )
+
+    def with_io_manager_def(self, io_manager_def: IOManagerDefinition) -> "AssetsDefinition":
+        if len(self.asset_keys) > 1:
+            raise DagsterInvalidInvocationError(
+                "with_io_manager_def is not available on multi assets."
+            )
+
+        if isinstance(self.node_def, GraphDefinition):
+            raise DagsterInvalidInvocationError(
+                "with_io_manager_def is not available on graph-backed assets."
+            )
+
+        op_def = self.op
+        io_manager_key = op_def.output_defs[0].io_manager_key
+
+        # If an io manager key has not been set, we use a system-provided key s.t. we don't run into conflicts later.
+        if io_manager_key == "io_manager":
+            io_manager_key = io_manager_key_for_asset_key(self.asset_key)
+            output_def = OutputDefinition(
+                dagster_type=output_def.dagster_type,
+                name=output_def.name,
+                description=output_def.description,
+                is_required=output_def.is_required,
+                io_manager_key=io_manager_key,
+                metadata=output_def.metadata,
+                asset_key=output_def._asset_key,
+                asset_partitions=output_def._asset_partitions_fn,
+                asset_partitions_def=output_def._asset_partitions_def,
+            )
+
+            node_def = OpDefinition(
+                name=op_def.name,
+                input_defs=op_def.input_defs,
+                output_defs=[output_def],
+                compute_fn=op_def.compute_fn,
+                config_schema=op_def.config_schema,
+                description=op_def.description,
+                tags=op_def.tags,
+                required_resource_keys=new_required_keys,
+                version=op_def.version,
+                retry_policy=op_def.retry_policy,
+            )
+            resource_defs = {
+                key: resource_def
+                for key, resource_def in self.resource_defs.items()
+                if key != "io_manager"
+            }
+            resource_defs = merge_dicts(resource_defs, {io_manager_key: io_manager_def})
+        else:
+            node_def = op_def
+            io_manager_key = node_def.output_defs[0].io_manager_key
+
+            resource_defs = merge_dicts(self.resource_defs, {io_manager_key: io_manager_def})
+
+        return AssetsDefinition(
+            asset_keys_by_input_name=self._asset_keys_by_input_name,
+            asset_keys_by_output_name=self._asset_keys_by_output_name,
+            node_def=node_def,
+            partitions_def=self._partitions_def,
+            partition_mappings=self._partition_mappings,
+            asset_deps=self._asset_deps,
+            selected_asset_keys=self._selected_asset_keys,
+            can_subset=self._can_subset,
+            resource_defs=resource_defs,
             group_names=self._group_names,
         )
 
