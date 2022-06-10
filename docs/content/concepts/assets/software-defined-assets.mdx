@@ -236,6 +236,61 @@ graph_asset = AssetsDefinition.from_graph(store_slack_files_in_sql)
 
 **Note**: All output assets must be selected when using a graph-backed asset to create a job. Dagster will select all graph output automatically upon creating a job.
 
+#### Defining basic dependencies
+
+The `from_graph` attribute on the `AssetsDefinition` object will infer upstream and downstream asset dependencies from the graph definition provided. In the most simple case when the graph returns a singular output, Dagster infers the name of the graph to be the outputted asset key.
+
+In the example below, Dagster creates an asset with key `middle_asset` from the `middle_asset` graph. Just like assets defined via <PyObject object="asset" decorator />, each argument to the decorated graph function is an upstream asset name. `middle_asset` depends on `upstream_asset`, and `downstream_asset` depends on `middle_asset`.
+
+```python file=/concepts/assets/graph_backed_asset.py startafter=start_basic_dependencies endbefore=end_basic_dependencies
+@asset
+def upstream_asset():
+    return 1
+
+
+@graph
+def middle_asset(upstream_asset):
+    return add_one(upstream_asset)
+
+
+middle_asset = AssetsDefinition.from_graph(middle_asset)
+
+
+@asset
+def downstream_asset(middle_asset):
+    return middle_asset + 1
+```
+
+When your graph returns multiple outputs, Dagster infers each output name to be the outputted asset key. In the below example, `two_assets_graph` accepts `upstream_asset` and outputs two assets, `first_asset` and `second_asset`.
+
+```python file=/concepts/assets/graph_backed_asset.py startafter=start_basic_dependencies_2 endbefore=end_basic_dependencies_2
+@graph(out={"first_asset": GraphOut(), "second_asset": GraphOut()})
+def two_assets_graph(upstream_asset):
+    one, two = two_outputs(upstream_asset)
+    return {"first_asset": one, "second_asset": two}
+
+
+two_assets = AssetsDefinition.from_graph(two_assets_graph)
+```
+
+#### Defining explicit dependencies
+
+You can also define dependencies for graph-backed assets explicitly via the `asset_keys_by_input_name` and `asset_keys_by_output_name` arguments to `from_graph`:
+
+```python file=/concepts/assets/graph_backed_asset.py startafter=start_explicit_dependencies endbefore=end_explicit_dependencies
+@graph(out={"one": GraphOut(), "two": GraphOut()})
+def return_one_and_two(zero):
+    one, two = two_outputs(zero)
+    return {"one": one, "two": two}
+
+
+explicit_deps_asset = AssetsDefinition.from_graph(
+    return_one_and_two,
+    asset_keys_by_input_name={"zero": AssetKey("upstream_asset")},
+    asset_keys_by_output_name={"one": AssetKey("asset_one"), "two": AssetKey("asset_two")},
+)
+```
+
 ### Asset context
 
 Since a software-defined asset contains an op, all the typical functionality of an op - like the use of [resources](/concepts/resources) and [configuration](#asset-configuration) - is available to an asset. Supplying the `context` parameter provides access to system information for the op, for example:
