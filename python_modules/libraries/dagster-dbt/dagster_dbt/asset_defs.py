@@ -24,6 +24,8 @@ from dagster import (
 )
 from dagster import _check as check
 from dagster import get_dagster_logger, op
+from dagster.core.asset_defs.load_assets_from_modules import prefix_assets
+from dagster.core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster.core.definitions.metadata import RawMetadataValue
 from dagster.core.errors import DagsterInvalidSubsetError
 
@@ -300,6 +302,7 @@ def load_assets_from_dbt_project(
     profiles_dir: Optional[str] = None,
     target_dir: Optional[str] = None,
     select: Optional[str] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     runtime_metadata_fn: Optional[
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
@@ -321,8 +324,8 @@ def load_assets_from_dbt_project(
             Defaults to "target" underneath the project_dir.
         select (Optional[str]): A DBT selection string for the models in a project that you want
             to include. Defaults to "*".
-        key_prefix (Optional[Union[str, List[str]]]):
-            pass
+        key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all models in the dbt
+            project. Does not apply to sources.
         runtime_metadata_fn: (Optional[Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]]):
             A function that will be run after any of the assets are materialized and returns
             metadata entries for the asset, to be displayed in the asset catalog for that run.
@@ -336,45 +339,34 @@ def load_assets_from_dbt_project(
             for this asset, rather than `dbt run`.
 
     """
-    check.str_param(project_dir, "project_dir")
+    project_dir = check.str_param(project_dir, "project_dir")
     profiles_dir = check.opt_str_param(
         profiles_dir, "profiles_dir", os.path.join(project_dir, "config")
     )
     target_dir = check.opt_str_param(target_dir, "target_dir", os.path.join(project_dir, "target"))
+    select = check.opt_str_param(select, "select", "*")
 
     manifest_json, cli_output = _load_manifest_for_project(
-        project_dir, profiles_dir, target_dir, select or "*"
+        project_dir, profiles_dir, target_dir, select
     )
     selected_unique_ids: Set[str] = set(
         filter(None, (line.get("unique_id") for line in cli_output.logs))
     )
     return load_assets_from_dbt_manifest(
         manifest_json=manifest_json,
+        key_prefix=key_prefix,
         runtime_metadata_fn=runtime_metadata_fn,
         io_manager_key=io_manager_key,
         selected_unique_ids=selected_unique_ids,
         select=select,
         node_info_to_asset_key=node_info_to_asset_key,
         use_build_command=use_build_command,
-        key_prefix=key_prefix,
     )
-
-    dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"]}
-    return [
-        _dbt_nodes_to_assets(
-            dbt_nodes,
-            select=select or "*",
-            selected_unique_ids=selected_unique_ids,
-            runtime_metadata_fn=runtime_metadata_fn,
-            io_manager_key=io_manager_key,
-            node_info_to_asset_key=node_info_to_asset_key,
-            use_build_command=use_build_command,
-        ),
-    ]
 
 
 def load_assets_from_dbt_manifest(
     manifest_json: Mapping[str, Any],
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     runtime_metadata_fn: Optional[
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
@@ -423,7 +415,7 @@ def load_assets_from_dbt_manifest(
         # must resolve the selection string using the existing manifest.json data (hacky)
         selected_unique_ids = _select_unique_ids_from_manifest_json(manifest_json, select)
 
-    return [
+    dbt_assets = [
         _dbt_nodes_to_assets(
             dbt_nodes,
             runtime_metadata_fn=runtime_metadata_fn,
@@ -434,3 +426,7 @@ def load_assets_from_dbt_manifest(
             use_build_command=use_build_command,
         )
     ]
+
+    if key_prefix:
+        dbt_assets = prefix_assets(dbt_assets, key_prefix)
+    return dbt_assets

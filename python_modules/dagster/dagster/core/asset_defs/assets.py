@@ -309,6 +309,11 @@ class AssetsDefinition(ResourceAddable):
                 f"Group name already exists on assets {', '.join(defined_group_names)}"
             )
 
+        replaced_group_names = {
+            output_asset_key_replacements.get(key, key): group_name
+            for key, group_name in self.group_names.items()
+        }
+
         return self.__class__(
             asset_keys_by_input_name={
                 input_name: input_asset_key_replacements.get(key, key)
@@ -337,7 +342,7 @@ class AssetsDefinition(ResourceAddable):
                 output_asset_key_replacements.get(key, key) for key in self._selected_asset_keys
             },
             resource_defs=self.resource_defs,
-            group_names={**self.group_names, **group_names},
+            group_names={**replaced_group_names, **group_names},
         )
 
     def subset_for(self, selected_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":

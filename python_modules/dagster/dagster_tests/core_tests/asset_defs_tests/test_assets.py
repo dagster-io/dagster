@@ -81,6 +81,17 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
     assert subbed.asset_deps == abc_.asset_deps
 
 
+def test_retain_group():
+    @asset(group_name="foo")
+    def bar():
+        pass
+
+    replaced = bar.with_prefix_or_group(
+        output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
+    )
+    assert replaced.group_names[AssetKey("baz")] == "foo"
+
+
 def test_chain_replace_and_subset_for():
     @multi_asset(
         outs={"a": Out(), "b": Out(), "c": Out()},
