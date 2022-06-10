@@ -178,7 +178,7 @@ def test_asset_with_key_prefix():
         AssetKey(["one", "two", "three", "multi_component_list_asset"])
     }
 
-    @asset(key_prefix="one/two/three")
+    @asset(key_prefix=["one", "two", "three"])
     def multi_component_str_asset():
         pass
 
@@ -285,7 +285,7 @@ def test_input_namespace_list():
 
 
 def test_input_key_prefix_str():
-    @asset(ins={"arg1": AssetIn(key_prefix="abc/xyz")})
+    @asset(ins={"arg1": AssetIn(key_prefix=["abc", "xyz"])})
     def my_asset(arg1):
         assert arg1
 

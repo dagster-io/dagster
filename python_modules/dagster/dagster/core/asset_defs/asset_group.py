@@ -7,7 +7,7 @@ from typing import Any, Dict, FrozenSet, Iterable, List, Mapping, Optional, Sequ
 
 import dagster._check as check
 from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
@@ -418,7 +418,7 @@ class AssetGroup:
 
                 return jobs
 
-    def prefixed(self, key_prefix: str):
+    def prefixed(self, key_prefix: CoercibleToAssetKeyPrefix):
         """
         Returns an AssetGroup that's identical to this AssetGroup, but with prefixes on all the
         asset keys. The prefix is not added to source assets.

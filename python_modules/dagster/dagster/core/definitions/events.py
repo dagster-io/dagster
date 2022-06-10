@@ -151,7 +151,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
         return None
 
     @staticmethod
-    def from_coerceable(arg: "CoerceableToAssetKey") -> "AssetKey":
+    def from_coerceable(arg: "CoercibleToAssetKey") -> "AssetKey":
         if isinstance(arg, AssetKey):
             return check.inst_param(arg, "arg", AssetKey)
         elif isinstance(arg, str):
@@ -164,7 +164,8 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
             return AssetKey(arg)
 
 
-CoerceableToAssetKey = Union[AssetKey, str, Sequence[str]]
+CoercibleToAssetKey = Union[AssetKey, str, Sequence[str]]
+CoercibleToAssetKeyPrefix = Union[str, Sequence[str]]
 
 
 DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]
@@ -401,7 +402,7 @@ class AssetMaterialization(
 
     def __new__(
         cls,
-        asset_key: CoerceableToAssetKey,
+        asset_key: CoercibleToAssetKey,
         description: Optional[str] = None,
         metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         partition: Optional[str] = None,
