@@ -5,7 +5,7 @@ from typing import AbstractSet, FrozenSet, Optional, Sequence
 
 import dagster._check as check
 from dagster.core.asset_defs.assets import AssetsDefinition
-from dagster.core.definitions.events import AssetKey, CoerceableToAssetKey
+from dagster.core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster.core.selector.subset_selector import (
     fetch_connected,
     generate_asset_dep_graph,
@@ -25,7 +25,7 @@ class AssetSelection(ABC):
         )
 
     @staticmethod
-    def keys(*asset_keys: CoerceableToAssetKey) -> "KeysAssetSelection":
+    def keys(*asset_keys: CoercibleToAssetKey) -> "KeysAssetSelection":
         _asset_keys = [AssetKey.from_coerceable(key) for key in asset_keys]
         return KeysAssetSelection(*_asset_keys)
 

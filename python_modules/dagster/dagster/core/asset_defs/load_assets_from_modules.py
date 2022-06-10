@@ -6,7 +6,7 @@ from types import ModuleType
 from typing import Dict, Generator, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 import dagster._check as check
-from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 
 from ..errors import DagsterInvalidDefinitionError
 from .assets import AssetsDefinition
@@ -73,7 +73,7 @@ def assets_and_source_assets_from_modules(
 def load_assets_from_modules(
     modules: Iterable[ModuleType],
     group_name: Optional[str] = None,
-    key_prefix: Optional[str] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
     Constructs a list of assets and source assets from the given modules.
@@ -83,14 +83,14 @@ def load_assets_from_modules(
         group_name (Optional[str]):
             Group name to apply to the loaded assets. The returned assets will be copies of the
             loaded objects, with the group name added
-        key_prefix (Optional[str]): Asset key prefix for assets within the modules.
+        key_prefix (Optional[Union[str, List[str]]]): Asset key prefix for assets within the modules.
 
     Returns:
         List[Union[AssetsDefinition, SourceAsset]]:
             A list containing assets and source assets defined in the given modules.
     """
     group_name = check.opt_str_param(group_name, "group_name")
-    key_prefix = check.opt_str_param(key_prefix, "key_prefix")
+    key_prefix = check.opt_inst_param(key_prefix, "key_prefix", (str, list))
 
     assets, source_assets = assets_and_source_assets_from_modules(modules)
     if key_prefix:
@@ -109,7 +109,7 @@ def load_assets_from_modules(
 
 def load_assets_from_current_module(
     group_name: Optional[str] = None,
-    key_prefix: Optional[str] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
     Constructs a list of assets and source assets from the module where this function is called.
@@ -118,7 +118,7 @@ def load_assets_from_current_module(
         group_name (Optional[str]):
             Group name to apply to the loaded assets. The returned assets will be copies of the
             loaded objects, with the group name added
-        key_prefix (Optional[str]): Asset key prefix for assets within the module.
+        key_prefix (Optional[Union[str, List[str]]]): Asset key prefix for assets within the module.
 
     Returns:
         List[Union[AssetsDefinition, SourceAsset]]:
@@ -160,7 +160,7 @@ def assets_and_source_assets_from_package_module(
 def load_assets_from_package_module(
     package_module: ModuleType,
     group_name: Optional[str] = None,
-    key_prefix: Optional[str] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
     Constructs a list of assets and source assets that includes all asset
@@ -173,14 +173,14 @@ def load_assets_from_package_module(
         group_name (Optional[str]):
             Group name to apply to the loaded assets. The returned assets will be copies of the
             loaded objects, with the group name added
-        key_prefix (Optional[str]): Asset key prefix for assets within the modules.
+        key_prefix (Optional[Union[str, List[str]]]): Asset key prefix for assets within the modules.
 
     Returns:
         List[Union[AssetsDefinition, SourceAsset]]:
             A list containing assets and source assets defined in the module.
     """
     group_name = check.opt_str_param(group_name, "group_name")
-    key_prefix = check.opt_str_param(key_prefix, "key_prefix")
+    key_prefix = check.opt_inst_param(key_prefix, "key_prefix", (str, list))
 
     assets, source_assets = assets_and_source_assets_from_package_module(package_module)
     if key_prefix:
@@ -200,7 +200,7 @@ def load_assets_from_package_module(
 def load_assets_from_package_name(
     package_name: str,
     group_name: Optional[str] = None,
-    key_prefix: Optional[str] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
     Constructs a list of assets and source assets that include all asset
@@ -211,7 +211,7 @@ def load_assets_from_package_name(
         group_name (Optional[str]):
             Group name to apply to the loaded assets. The returned assets will be copies of the
             loaded objects, with the group name added
-        key_prefix (Optional[str]): Asset key prefix for assets within the modules.
+        key_prefix (Optional[Union[str, List[str]]]): Asset key prefix for assets within the modules.
 
     Returns:
         List[Union[AssetsDefinition, SourceAsset]]:
@@ -242,7 +242,7 @@ def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]
 
 
 def prefix_assets(
-    assets_defs: Sequence[AssetsDefinition], key_prefix: str
+    assets_defs: Sequence[AssetsDefinition], key_prefix: CoercibleToAssetKeyPrefix
 ) -> List[AssetsDefinition]:
     """
     Given a list of assets, prefix the input and output asset keys with key_prefix.
@@ -281,18 +281,20 @@ def prefix_assets(
 
     """
     asset_keys = {asset_key for assets_def in assets_defs for asset_key in assets_def.asset_keys}
+    if isinstance(key_prefix, str):
+        key_prefix = [key_prefix]
+    key_prefix = check.is_list(key_prefix, of_type=str)
 
     result_assets: List[AssetsDefinition] = []
     for assets_def in assets_defs:
         output_asset_key_replacements = {
-            asset_key: AssetKey([key_prefix] + asset_key.path)
-            for asset_key in assets_def.asset_keys
+            asset_key: AssetKey(key_prefix + asset_key.path) for asset_key in assets_def.asset_keys
         }
         input_asset_key_replacements = {}
         for dep_asset_key in assets_def.dependency_asset_keys:
             if dep_asset_key in asset_keys:
                 input_asset_key_replacements[dep_asset_key] = AssetKey(
-                    (key_prefix, *dep_asset_key.path)
+                    key_prefix + dep_asset_key.path
                 )
 
         result_assets.append(

@@ -1,7 +1,7 @@
 from typing import Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster.core.definitions.events import ASSET_KEY_DELIMITER, AssetKey, CoerceableToAssetKey
+from dagster.core.definitions.events import ASSET_KEY_DELIMITER, AssetKey, CoercibleToAssetKey
 from dagster.utils.backcompat import canonicalize_backcompat_args
 
 
@@ -17,7 +17,7 @@ class AssetIn(
 ):
     def __new__(
         cls,
-        asset_key: Optional[CoerceableToAssetKey] = None,
+        asset_key: Optional[CoercibleToAssetKey] = None,
         metadata: Optional[Mapping[str, Any]] = None,
         namespace: Optional[Sequence[str]] = None,
         key_prefix: Optional[Union[str, Sequence[str]]] = None,
