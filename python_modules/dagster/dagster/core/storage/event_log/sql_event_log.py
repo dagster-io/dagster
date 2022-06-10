@@ -34,7 +34,6 @@ from .base import (
     EventLogStorage,
     EventRecordsFilter,
     RunShardedEventsCursor,
-    extract_asset_events_cursor,
 )
 from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DATA_MIGRATIONS
 from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable
@@ -170,15 +169,11 @@ class SqlEventLogStorage(EventLogStorage):
                 }
             )
             if has_asset_key_index_cols:
-                materialization = event.dagster_event.step_materialization_data.materialization
                 entry_values.update(
                     {
                         "last_materialization_timestamp": utc_datetime_from_timestamp(
                             event.timestamp
                         ),
-                        "tags": seven.json.dumps(materialization.tags)
-                        if materialization.tags
-                        else None,
                     }
                 )
         elif event.dagster_event.is_asset_materialization_planned:
@@ -1084,40 +1079,6 @@ class SqlEventLogStorage(EventLogStorage):
                 )
 
         return query
-
-    def get_asset_events(
-        self,
-        asset_key,
-        partitions=None,
-        before_cursor=None,
-        after_cursor=None,
-        limit=None,
-        ascending=False,
-        include_cursor=False,  # deprecated
-        before_timestamp=None,
-        cursor=None,  # deprecated
-    ):
-        check.inst_param(asset_key, "asset_key", AssetKey)
-        check.opt_list_param(partitions, "partitions", of_type=str)
-        before_cursor, after_cursor = extract_asset_events_cursor(
-            cursor, before_cursor, after_cursor, ascending
-        )
-        event_records = self.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=asset_key,
-                asset_partitions=partitions,
-                before_cursor=before_cursor,
-                after_cursor=after_cursor,
-                before_timestamp=before_timestamp,
-            ),
-            limit=limit,
-            ascending=ascending,
-        )
-        if include_cursor:
-            return [tuple([record.storage_id, record.event_log_entry]) for record in event_records]
-        else:
-            return [record.event_log_entry for record in event_records]
 
     def get_asset_run_ids(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)

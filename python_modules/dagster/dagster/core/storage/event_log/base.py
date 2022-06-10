@@ -3,18 +3,7 @@ import warnings
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
-from typing import (
-    Callable,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import Callable, Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, Union
 
 import dagster._check as check
 from dagster.core.assets import AssetDetails
@@ -294,11 +283,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def reindex_events(self, print_fn: Callable = lambda _: None, force: bool = False):
+    def reindex_events(self, print_fn: Optional[Callable] = None, force: bool = False):
         """Call this method to run any data migrations across the event_log tables."""
 
     @abstractmethod
-    def reindex_assets(self, print_fn: Callable = lambda _: None, force: bool = False):
+    def reindex_assets(self, print_fn: Optional[Callable] = None, force: bool = False):
         """Call this method to run any data migrations across the asset tables."""
 
     @abstractmethod
@@ -376,21 +365,6 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         pass
 
     @abstractmethod
-    def get_asset_events(
-        self,
-        asset_key: AssetKey,
-        partitions: Optional[List[str]] = None,
-        before_cursor: Optional[int] = None,
-        after_cursor: Optional[int] = None,
-        limit: Optional[int] = None,
-        ascending: bool = False,
-        include_cursor: bool = False,
-        before_timestamp=None,
-        cursor: Optional[int] = None,  # deprecated
-    ) -> Union[Iterable[EventLogEntry], Iterable[Tuple[int, EventLogEntry]]]:
-        pass
-
-    @abstractmethod
     def get_asset_run_ids(self, asset_key: AssetKey) -> Iterable[str]:
         pass
 
@@ -406,28 +380,3 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
     def alembic_version(self):
         return None
-
-
-def extract_asset_events_cursor(cursor, before_cursor, after_cursor, ascending):
-    if cursor:
-        warnings.warn(
-            "Parameter `cursor` is a deprecated for `get_asset_events`. Use `before_cursor` or `after_cursor` instead"
-        )
-        if ascending and after_cursor is None:
-            after_cursor = cursor
-        if not ascending and before_cursor is None:
-            before_cursor = cursor
-
-    if after_cursor is not None:
-        try:
-            after_cursor = int(after_cursor)
-        except ValueError:
-            after_cursor = None
-
-    if before_cursor is not None:
-        try:
-            before_cursor = int(before_cursor)
-        except ValueError:
-            before_cursor = None
-
-    return before_cursor, after_cursor

@@ -4,11 +4,7 @@ import pytest
 from azure.storage.filedatalake import DataLakeLeaseClient
 from dagster_azure.adls2 import create_adls2_client
 from dagster_azure.adls2.fake_adls2_resource import fake_adls2_resource
-from dagster_azure.adls2.io_manager import (
-    PickledObjectADLS2IOManager,
-    adls2_pickle_asset_io_manager,
-    adls2_pickle_io_manager,
-)
+from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
 from dagster_azure.adls2.resources import adls2_resource
 from dagster_azure.blob import create_blob_client
 
@@ -19,6 +15,7 @@ from dagster import (
     DagsterInstance,
     DynamicOutput,
     DynamicOutputDefinition,
+    GraphOut,
     InputDefinition,
     Int,
     OutputDefinition,
@@ -30,6 +27,7 @@ from dagster import (
     op,
     resource,
 )
+from dagster.core.asset_defs.assets import AssetsDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import execute_plan
@@ -217,22 +215,42 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
 
 def test_asset_io_manager(storage_account, file_system, credential):
+    # if you add new assets to this test, make sure that the output names include _id so that we don't
+    # run into issues with the azure leasing system in CI
+    # when this test is run for multiple python versions in parallel the azure leasing system will
+    # cause failures if two tests try to access the same asset at the same time
     _id = f"{uuid4()}".replace("-", "")
 
-    @asset(name=f"upstream_{_id}")
-    def upstream():
-        return 2
+    @op
+    def first_op():
+        return 5
+
+    @op
+    def second_op(op_1):
+        assert op_1 == 5
+        return op_1 + 1
+
+    @graph(name=f"graph_asset_{_id}", out={f"asset3_{_id}": GraphOut()})
+    def graph_asset():
+        return second_op(first_op())
+
+    @asset(
+        name=f"upstream_{_id}",
+        ins={"asset3": AssetIn(asset_key=AssetKey([f"asset3_{_id}"]))},
+    )
+    def upstream(asset3):
+        return asset3 + 1
 
     @asset(
         name=f"downstream_{_id}", ins={"upstream": AssetIn(asset_key=AssetKey([f"upstream_{_id}"]))}
     )
     def downstream(upstream):
-        assert upstream == 2
+        assert upstream == 7
         return 1 + upstream
 
     asset_group = AssetGroup(
-        [upstream, downstream],
-        resource_defs={"io_manager": adls2_pickle_asset_io_manager, "adls2": adls2_resource},
+        [upstream, downstream, AssetsDefinition.from_graph(graph_asset)],
+        resource_defs={"io_manager": adls2_pickle_io_manager, "adls2": adls2_resource},
     )
     asset_job = asset_group.build_job(name="my_asset_job")
 

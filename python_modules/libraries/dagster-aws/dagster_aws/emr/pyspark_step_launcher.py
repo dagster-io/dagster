@@ -293,10 +293,8 @@ class EmrPySparkStepLauncher(StepLauncher):
 
             _upload_file_to_s3(step_run_ref_local_path, PICKLED_STEP_RUN_REF_FILE_NAME)
 
-    def launch_step(self, step_context, prior_attempts_count):
-        step_run_ref = step_context_to_step_run_ref(
-            step_context, prior_attempts_count, self.local_job_package_path
-        )
+    def launch_step(self, step_context):
+        step_run_ref = step_context_to_step_run_ref(step_context, self.local_job_package_path)
 
         run_id = step_context.pipeline_run.run_id
         log = step_context.log

@@ -18,10 +18,11 @@ from .schedule_definition import (
     ScheduleEvaluationContext,
 )
 from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
+from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 
 def build_schedule_from_partitioned_job(
-    job: JobDefinition,
+    job: Union[JobDefinition, UnresolvedAssetJobDefinition],
     description: Optional[str] = None,
     name: Optional[str] = None,
     minute_of_hour: Optional[int] = None,
@@ -35,20 +36,24 @@ def build_schedule_from_partitioned_job(
 
     The schedule executes at the cadence specified by the partitioning of the given job.
     """
-    check.invariant(len(job.mode_definitions) == 1, "job must only have one mode")
-    check.invariant(
-        job.mode_definitions[0].partitioned_config is not None, "job must be a partitioned job"
-    )
     check.invariant(
         not (day_of_week and day_of_month),
         "Cannot provide both day_of_month and day_of_week parameter to build_schedule_from_partitioned_job.",
     )
+    if isinstance(job, JobDefinition):
+        check.invariant(len(job.mode_definitions) == 1, "job must only have one mode")
+        check.invariant(
+            job.mode_definitions[0].partitioned_config is not None, "job must be a partitioned job"
+        )
 
-    partitioned_config = cast(PartitionedConfig, job.mode_definitions[0].partitioned_config)
-    partition_set = cast(PartitionSetDefinition, job.get_partition_set_def())
+        partitioned_config = cast(PartitionedConfig, job.mode_definitions[0].partitioned_config)
+        partition_set = cast(PartitionSetDefinition, job.get_partition_set_def())
+        partitions_def = cast(TimeWindowPartitionsDefinition, partitioned_config.partitions_def)
+    else:
+        partition_set = cast(PartitionSetDefinition, job.get_partition_set_def())
+        partitions_def = cast(TimeWindowPartitionsDefinition, job.partitions_def)
 
-    check.inst(partitioned_config.partitions_def, TimeWindowPartitionsDefinition)
-    partitions_def = cast(TimeWindowPartitionsDefinition, partitioned_config.partitions_def)
+    check.inst(partitions_def, TimeWindowPartitionsDefinition)
 
     minute_of_hour = cast(
         int,

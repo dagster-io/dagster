@@ -2,9 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
-  ButtonGroup,
   ButtonLink,
-  Checkbox,
   Colors,
   NonIdealState,
   Spinner,
@@ -13,6 +11,7 @@ import {
   Tag,
 } from '@dagster-io/ui';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 
 import {
   FIFTEEN_SECONDS,
@@ -21,19 +20,20 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
-import {displayNameForAssetKey, GraphData, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
+import {GraphData, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetEvents} from './AssetEvents';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
 import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
-import {AssetLineageScope, AssetNodeLineageGraph} from './AssetNodeLineageGraph';
+import {AssetNodeLineage} from './AssetNodeLineage';
+import {AssetLineageScope} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
@@ -53,8 +53,6 @@ export interface AssetViewParams {
 }
 
 export const AssetView: React.FC<Props> = ({assetKey}) => {
-  useDocumentTitle(`Asset: ${displayNameForAssetKey(assetKey)}`);
-
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
 
   const queryResult = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
@@ -83,11 +81,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   );
 
   const {upstream, downstream} = useNeighborsFromGraph(assetGraphData, assetKey);
-
-  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(
-    assetGraphData?.nodes,
-    graphAssetKeys,
-  );
+  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(graphAssetKeys);
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS),
@@ -117,6 +111,18 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             {definition && repoAddress && (
               <AssetNodeInstigatorTag assetNode={definition} repoAddress={repoAddress} />
             )}
+            {definition && repoAddress && definition.groupName && (
+              <Tag icon="asset_group">
+                <Link
+                  to={workspacePathFromAddress(
+                    repoAddress,
+                    `/asset-groups/${definition.groupName}`,
+                  )}
+                >
+                  {definition.groupName}
+                </Link>
+              </Tag>
+            )}
           </>
         }
         tabs={
@@ -141,16 +147,14 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           </Tabs>
         }
         right={
-          <Box style={{margin: '-4px 0'}} flex={{gap: 8, alignItems: 'baseline'}}>
+          <Box style={{margin: '-4px 0'}} flex={{gap: 12, alignItems: 'baseline'}}>
             <Box margin={{top: 4}}>
               <QueryRefreshCountdown refreshState={refreshState} />
             </Box>
             {definition && definition.jobNames.length > 0 && repoAddress && upstream && (
               <LaunchAssetExecutionButton
-                assets={[definition]}
-                upstreamAssetKeys={upstream.map((u) => u.assetKey)}
-                preferredJobName={definition.jobNames[0]}
-                title={lastMaterializedAt ? 'Rematerialize' : 'Materialize'}
+                assetKeys={[definition.assetKey]}
+                liveDataByNode={liveDataByNode}
               />
             )}
           </Box>
@@ -193,41 +197,13 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         ) : params.view === 'lineage' ? (
           definition ? (
             assetGraphData ? (
-              <>
-                <Box
-                  flex={{justifyContent: 'space-between', alignItems: 'center'}}
-                  padding={{horizontal: 24, vertical: 12}}
-                  border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
-                >
-                  <ButtonGroup<AssetLineageScope>
-                    activeItems={new Set([params.lineageScope || 'neighbors'])}
-                    buttons={[
-                      {id: 'neighbors', label: 'Nearest Neighbors', icon: 'graph_neighbors'},
-                      {id: 'upstream', label: 'Upstream', icon: 'graph_upstream'},
-                      {id: 'downstream', label: 'Downstream', icon: 'graph_downstream'},
-                    ]}
-                    onClick={(lineageScope) => setParams({...params, lineageScope})}
-                  />
-                  <Checkbox
-                    format="switch"
-                    label="Show secondary edges"
-                    checked={params.lineageShowSecondaryEdges === true}
-                    onChange={() =>
-                      setParams({
-                        ...params,
-                        lineageShowSecondaryEdges: params.lineageShowSecondaryEdges
-                          ? undefined
-                          : true,
-                      })
-                    }
-                  />
-                </Box>
-                <AssetNodeLineageGraph
-                  assetNode={definition}
-                  liveDataByNode={liveDataByNode}
-                  assetGraphData={assetGraphData}
-                />
-              </>
+              <AssetNodeLineage
+                params={params}
+                setParams={setParams}
+                assetNode={definition}
+                liveDataByNode={liveDataByNode}
+                assetGraphData={assetGraphData}
+              />
             ) : (
               <Box style={{flex: 1}} flex={{alignItems: 'center', justifyContent: 'center'}}>
                 <Spinner purpose="page" />
@@ -294,6 +270,7 @@ const ASSET_QUERY = gql`
 
         definition {
           id
+          groupName
           partitionDefinition
           repository {
             id

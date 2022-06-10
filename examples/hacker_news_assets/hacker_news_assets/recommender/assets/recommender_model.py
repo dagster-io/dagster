@@ -30,7 +30,7 @@ def recommender_model(user_story_matrix: IndexedCooMatrix) -> Output[TruncatedSV
 
 
 @asset(
-    ins={"stories": AssetIn(namespace="core", metadata={"columns": ["id", "title"]})},
+    ins={"stories": AssetIn(key_prefix="core", metadata={"columns": ["id", "title"]})},
     io_manager_key="warehouse_io_manager",
 )
 def component_top_stories(

@@ -35,7 +35,6 @@ from .output import OutputDefinition, OutputMapping
 from .resource_requirement import (
     InputManagerRequirement,
     OutputManagerRequirement,
-    RequiresResources,
     ResourceRequirement,
     SolidDefinitionResourceRequirement,
 )
@@ -46,7 +45,7 @@ if TYPE_CHECKING:
     from .decorators.solid_decorator import DecoratedSolidFunction
 
 
-class SolidDefinition(NodeDefinition, RequiresResources):
+class SolidDefinition(NodeDefinition):
     """
     The definition of a Solid that performs a user-defined computation.
 
@@ -298,7 +297,7 @@ class SolidDefinition(NodeDefinition, RequiresResources):
         outer_context: Optional[object] = None,
     ) -> Iterator[ResourceRequirement]:
         # Outer requiree in this context is the outer-calling node handle. If not provided, then just use the solid name.
-        outer_context = cast(Optional[Tuple[NodeHandle, "AssetLayer"]], outer_context)
+        outer_context = cast(Optional[Tuple[NodeHandle, Optional["AssetLayer"]]], outer_context)
         if not outer_context:
             handle = None
             asset_layer = None

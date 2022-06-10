@@ -168,14 +168,13 @@ def test_construct_dagster_k8s_job_with_mounts():
 
 
 def test_construct_dagster_k8s_job_with_env():
-    with environ({"ENV_VAR_1": "one", "ENV_VAR_2": "two"}):
-        cfg = DagsterK8sJobConfig(
-            job_image="test/foo:latest",
-            dagster_home="/opt/dagster/dagster_home",
-            instance_config_map="some-instance-configmap",
-            env_vars=["ENV_VAR_1", "ENV_VAR_2"],
-        )
-
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="some-instance-configmap",
+        env_vars=["ENV_VAR_1", "ENV_VAR_2=two"],
+    )
+    with environ({"ENV_VAR_1": "one"}):
         job = construct_dagster_k8s_job(cfg, ["foo", "bar"], "job").to_dict()
 
         env = job["spec"]["template"]["spec"]["containers"][0]["env"]
@@ -185,6 +184,11 @@ def test_construct_dagster_k8s_job_with_env():
         assert len(env_mapping) == 3
         assert env_mapping["ENV_VAR_1"]["value"] == "one"
         assert env_mapping["ENV_VAR_2"]["value"] == "two"
+
+    with pytest.raises(
+        Exception, match="Tried to load environment variable ENV_VAR_1, but it was not set"
+    ):
+        construct_dagster_k8s_job(cfg, ["foo", "bar"], "job").to_dict()
 
 
 def test_construct_dagster_k8s_job_with_user_defined_env_camelcase():

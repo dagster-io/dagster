@@ -28,6 +28,7 @@ from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
 from .run_request import RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
+from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name, validate_tags
 
 T = TypeVar("T")
@@ -230,7 +231,9 @@ class ScheduleDefinition:
             Union[Callable[[ScheduleEvaluationContext], Any], DecoratedScheduleFunction]
         ] = None,
         description: Optional[str] = None,
-        job: Optional[Union[GraphDefinition, PipelineDefinition]] = None,
+        job: Optional[
+            Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]
+        ] = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     ):
 
@@ -449,7 +452,7 @@ class ScheduleDefinition:
         return self._execution_timezone
 
     @property
-    def job(self) -> Union[GraphDefinition, PipelineDefinition]:
+    def job(self) -> Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]:
         if isinstance(self._target, DirectTarget):
             return self._target.target
         raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
@@ -518,7 +521,9 @@ class ScheduleDefinition:
     def has_loadable_target(self):
         return isinstance(self._target, DirectTarget)
 
-    def load_target(self) -> Union[GraphDefinition, PipelineDefinition]:
+    def load_target(
+        self,
+    ) -> Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]:
         if isinstance(self._target, DirectTarget):
             return self._target.load()
 

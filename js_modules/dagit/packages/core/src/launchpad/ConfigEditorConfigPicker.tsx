@@ -267,7 +267,6 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
         onItemSelect={(item) => {
           onSelect(repositorySelector, partitionSetName, item.name);
         }}
-        popoverProps={{modifiers: {offset: {enabled: true, offset: '-5px 8px'}}}}
       />
     );
   },

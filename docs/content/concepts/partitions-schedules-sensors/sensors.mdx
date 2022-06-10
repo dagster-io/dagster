@@ -83,10 +83,21 @@ def my_directory_sensor():
 
 This sensor iterates through all the files in `MY_DIRECTORY` and `yields` a <PyObject object="RunRequest"/> for each file. Note that despite the `yield` syntax, the function will run to completion before any runs are submitted.
 
-Once `my_directory_sensor` is added to a <PyObject object="repository"/> with `log_file_job`, it can be started and will start creating runs. You can start or stop sensors in Dagit, or by setting the default status to `DefaultSensorStatus.RUNNING` in code:
+To write a sensor that materializes assets, you can [build a job that materializes assets](/concepts/assets/software-defined-assets#building-jobs-that-materialize-assets):
+
+```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_job_sensor_marker endbefore=end_asset_job_sensor_marker
+asset_job = define_asset_job("asset_job", "*")
+
+
+@sensor(job=asset_job)
+def materializes_asset_sensor():
+    yield RunRequest(...)
+```
+
+Once a sensor is added to a <PyObject object="repository"/> with the job it yields a <PyObject object="RunRequest"/> for, it can be started and will start creating runs. You can start or stop sensors in Dagit, or by setting the default status to `DefaultSensorStatus.RUNNING` in code:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_running_in_code endbefore=end_running_in_code
-@sensor(job=log_file_job, default_status=DefaultSensorStatus.RUNNING)
+@sensor(job=asset_job, default_status=DefaultSensorStatus.RUNNING)
 def my_running_sensor():
     ...
 ```
@@ -94,6 +105,87 @@ def my_running_sensor():
 If you manually start or stop a sensor in Dagit, that will override any default status that is set in code.
 
 Once your sensor is started, if you're running the [dagster-daemon](/deployment/dagster-daemon) process as part of your deployment, the sensor will begin executing immediately, without needing to restart the dagster-daemon process.
+
+## Asset sensors
+
+A useful pattern is to create a sensor that checks for new <PyObject object="AssetMaterialization" /> events for a particular asset key. This can be used to kick off a job that computes downstream assets or notifies appropriate stakeholders.
+
+One benefit of this pattern is that it enables cross-job and even cross-repository dependencies. Each job run instigated by an asset sensor is agnostic to the job that caused it.
+
+Dagster provides a special asset sensor definition format for sensors that fire a single <PyObject object="RunRequest"/> based on a single asset materialization. Here is an example of a sensor that generates a <PyObject object="RunRequest"/> for every materialization for the asset key `my_table`:
+
+```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_sensor_marker endbefore=end_asset_sensor_marker
+from dagster import AssetKey, asset_sensor
+
+
+@asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
+def my_asset_sensor(context, asset_event):
+    yield RunRequest(
+        run_key=context.cursor,
+        run_config={
+            "ops": {
+                "read_materialization": {
+                    "config": {
+                        "asset_key": asset_event.dagster_event.asset_key.path,
+                    }
+                }
+            }
+        },
+    )
+```
+
+### Multi-asset sensors
+
+Multi-asset sensors, which can trigger job executions based on some combination of states from multiple asset materialization event streams, can be handled using the base sensor definition and manual cursor management based on the asset event streams. These asset event streams can be queried using the `instance` attribute off of the <PyObject object="SensorEvaluationContext" /> object.
+
+```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
+import json
+from dagster import EventRecordsFilter, DagsterEventType
+
+
+@sensor(job=my_job)
+def multi_asset_sensor(context):
+    cursor_dict = json.loads(context.cursor) if context.cursor else {}
+    a_cursor = cursor_dict.get("a")
+    b_cursor = cursor_dict.get("b")
+
+    a_event_records = context.instance.get_event_records(
+        EventRecordsFilter(
+            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+            asset_key=AssetKey("table_a"),
+            after_cursor=a_cursor,
+        ),
+        ascending=False,
+        limit=1,
+    )
+    b_event_records = context.instance.get_event_records(
+        EventRecordsFilter(
+            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+            asset_key=AssetKey("table_b"),
+            after_cursor=b_cursor,
+        ),
+        ascending=False,
+        limit=1,
+    )
+
+    if not a_event_records or not b_event_records:
+        return
+
+    # make sure we only generate events if both table_a and table_b have been materialized since
+    # the last evaluation.
+    yield RunRequest(run_key=None)
+
+    # update the sensor cursor by combining the individual event cursors from the two separate
+    # asset event streams
+    context.update_cursor(
+        json.dumps(
+            {
+                "a": a_event_records[0].storage_id,
+                "b": b_event_records[0].storage_id,
+            }
+        )
+    )
+```
 
 ## Idempotence and Cursors
 
@@ -289,87 +381,6 @@ src="/images/concepts/partitions-schedules-sensors/sensors/sensor-A.png"
 width={1982}
 height={1400}
 />
-
-## Asset sensors
-
-A useful pattern is to create a sensor that checks for new <PyObject object="AssetMaterialization" /> events for a particular asset key. This can be used to kick off a job that computes downstream assets or notifies appropriate stakeholders.
-
-One benefit of this pattern is that it enables cross-job and even cross-repository dependencies. Each job run instigated by an asset sensor is agnostic to the job that caused it.
-
-Dagster provides a special asset sensor definition format for sensors that fire a single RunRequest based on a single asset materialization. Here is an example of a sensor that generates a RunRequest for every materialization for the asset key `my_table`:
-
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_sensor_marker endbefore=end_asset_sensor_marker
-from dagster import AssetKey, asset_sensor
-
-
-@asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
-def my_asset_sensor(context, asset_event):
-    yield RunRequest(
-        run_key=context.cursor,
-        run_config={
-            "ops": {
-                "read_materialization": {
-                    "config": {
-                        "asset_key": asset_event.dagster_event.asset_key.path,
-                    }
-                }
-            }
-        },
-    )
-```
-
-### Multi-asset sensors
-
-Multi-asset sensors, which can trigger job executions based on some combination of states from multiple asset materialization event streams, can be handled using the base sensor definition and manual cursor management based on the asset event streams. These asset event streams can be queried using the `instance` attribute off of the <PyObject object="SensorEvaluationContext" /> object.
-
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
-import json
-from dagster import EventRecordsFilter, DagsterEventType
-
-
-@sensor(job=my_job)
-def multi_asset_sensor(context):
-    cursor_dict = json.loads(context.cursor) if context.cursor else {}
-    a_cursor = cursor_dict.get("a")
-    b_cursor = cursor_dict.get("b")
-
-    a_event_records = context.instance.get_event_records(
-        EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-            asset_key=AssetKey("table_a"),
-            after_cursor=a_cursor,
-        ),
-        ascending=False,
-        limit=1,
-    )
-    b_event_records = context.instance.get_event_records(
-        EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-            asset_key=AssetKey("table_b"),
-            after_cursor=b_cursor,
-        ),
-        ascending=False,
-        limit=1,
-    )
-
-    if not a_event_records or not b_event_records:
-        return
-
-    # make sure we only generate events if both table_a and table_b have been materialized since
-    # the last evaluation.
-    yield RunRequest(run_key=None)
-
-    # update the sensor cursor by combining the individual event cursors from the two separate
-    # asset event streams
-    context.update_cursor(
-        json.dumps(
-            {
-                "a": a_event_records[0].storage_id,
-                "b": b_event_records[0].storage_id,
-            }
-        )
-    )
-```
 
 ## Run status sensors
 

@@ -9,7 +9,6 @@ from typing import (
     List,
     Optional,
     Set,
-    Tuple,
     Union,
 )
 
@@ -168,8 +167,8 @@ class PipelineDefinition:
         version_strategy: Optional[VersionStrategy] = None,
         asset_layer: Optional[AssetLayer] = None,
     ):
-        # If a graph is specificed directly use it
-        if check.opt_inst_param(graph_def, "graph_def", GraphDefinition):
+        # If a graph is specified directly use it
+        if isinstance(graph_def, GraphDefinition):
             self._graph_def = graph_def
             self._name = name or graph_def.name
 
@@ -274,7 +273,7 @@ class PipelineDefinition:
         self._graph_def.get_inputs_must_be_resolved_top_level(self._asset_layer)
 
     def _get_resource_requirements_for_mode(self, mode_def: ModeDefinition) -> Set[str]:
-        from ..execution.resources_init import get_dependencies, resolve_resource_dependencies
+        from ..execution.resources_init import get_transitive_required_resource_keys
 
         requirements = list(self._graph_def.get_resource_requirements(self.asset_layer))
         for hook_def in self._hook_defs:
@@ -284,23 +283,10 @@ class PipelineDefinition:
                 )
             )
         ensure_requirements_satisfied(mode_def.resource_defs, requirements, mode_def.name)
-        required_keys = sorted([requirement.key for requirement in requirements])
-        resource_dependencies = resolve_resource_dependencies(mode_def.resource_defs)
-        seen = set()
-        while required_keys:
-            required_key = required_keys.pop()
-            if required_key in seen:
-                continue
-            seen.add(required_key)
-            for requirement in mode_def.resource_defs[required_key].get_resource_requirements(
-                outer_context=required_key
-            ):
-                ensure_requirements_satisfied(mode_def.resource_defs, [requirement], mode_def.name)
-                requirements.append(requirement)
-
-            required_keys += get_dependencies(required_key, resource_dependencies)
-
-        return set([requirement.key for requirement in requirements])
+        required_keys = {requirement.key for requirement in requirements}
+        return required_keys.union(
+            get_transitive_required_resource_keys(required_keys, mode_def.resource_defs)
+        )
 
     @property
     def name(self):
@@ -836,14 +822,3 @@ def _create_run_config_schema(
         config_type_dict_by_key=config_type_dict_by_key,
         config_mapping=mode_definition.config_mapping,
     )
-
-
-def _add_resource_req(
-    resource_reqs: Dict[str, Tuple[str, Set[str]]],
-    resource_key: str,
-    resource_type: str,
-    requiree_descriptor: str,
-) -> None:
-    if resource_key not in resource_reqs:
-        resource_reqs[resource_key] = (resource_type, set())
-    resource_reqs[resource_key][1].add(requiree_descriptor)

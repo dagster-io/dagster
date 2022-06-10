@@ -1,4 +1,4 @@
-from software_defined_assets.spark_weather_assets_group import spark_weather_assets
+from software_defined_assets.spark_weather_assets import spark_weather_assets
 
 from dagster import repository
 

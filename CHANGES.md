@@ -1,5 +1,21 @@
 # Changelog
 
+# 0.14.20
+
+
+### New
+
+* [dagster-aws] Added an `env_vars` field to the EcsRunLauncher that allows you to configure environment variables in the ECS task for launched runs.
+* [dagster-k8s] The `env_vars` field on `K8sRunLauncher` and `k8s_job_executor` can now except input of the form ENV_VAR_NAME=ENV_VAR_VALUE, and will set the value of ENV_VAR_NAME to ENV_VAR_VALUE. Previously, it only accepted input of the form ENV_VAR_NAME, and the environment variable had to be available in the pod launching the job.
+* [dagster-k8s] setting ‘includeConfigInLaunchedRuns’ on a user code deployment will now also include any image pull secrets from the user code deployment in the pod  for the launched runs.
+
+### Bugfixes
+
+* A recent change had made it so that, when  `IOManager.load_input` was called to load an asset that was not being materialized as part of the run, the provided context would not include the metadata for that asset. `context.upstream_output.metadata` now correctly returns the metadata on the upstream asset.
+* Fixed an issue where using generic type aliases introduced in Python 3.9 (like `list[str]`) as the type of an input would raise an exception.
+* [dagster-k8s] Fixed an issue where upgrading the Helm chart version without upgrading your user code deployment version would result in an “Received unexpected config entry "scheme" at path root:postgres_db" error.
+
+
 # 0.14.19
 
 ### New

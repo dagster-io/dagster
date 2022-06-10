@@ -687,7 +687,6 @@
                 "postgresqlPassword",
                 "postgresqlDatabase",
                 "postgresqlParams",
-                "postgresqlScheme",
                 "service"
             ]
         },

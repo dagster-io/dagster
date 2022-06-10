@@ -8,6 +8,7 @@ from enum import Enum
 from gzip import GzipFile
 from typing import NamedTuple, Optional, Union
 
+import pendulum
 import pytest
 import sqlalchemy as db
 
@@ -18,6 +19,7 @@ from dagster.cli.debug import DebugRunPayload
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.events.log import EventLogEntry
+from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick
 from dagster.core.storage.event_log.migration import migrate_event_log_data
@@ -455,10 +457,8 @@ def test_0_12_0_extract_asset_index_cols():
 
     @solid
     def asset_solid(_):
-        yield AssetMaterialization(
-            asset_key=AssetKey(["a"]), partition="partition_1", tags={"foo": "FOO"}
-        )
-        yield AssetMaterialization(asset_key=AssetKey(["b"]), tags={"bar": "BAR"})
+        yield AssetMaterialization(asset_key=AssetKey(["a"]), partition="partition_1")
+        yield AssetMaterialization(asset_key=AssetKey(["b"]))
         yield Output(1)
 
     @pipeline
@@ -902,3 +902,112 @@ def test_repo_label_tag_migration():
 
             count = instance.get_runs_count(job_repo_filter)
             assert count == 2
+
+
+def test_add_bulk_actions_columns():
+    from dagster.core.host_representation.origin import (
+        ExternalPartitionSetOrigin,
+        ExternalRepositoryOrigin,
+        GrpcServerRepositoryLocationOrigin,
+    )
+    from dagster.core.storage.runs.schema import BulkActionsTable
+
+    src_dir = file_relative_path(__file__, "snapshot_0_14_16_bulk_actions_columns/sqlite")
+
+    with copy_directory(src_dir) as test_dir:
+
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        assert {"id", "key", "status", "timestamp", "body"} == set(
+            get_sqlite3_columns(db_path, "bulk_actions")
+        )
+        assert "idx_bulk_actions_action_type" not in get_sqlite3_indexes(db_path, "bulk_actions")
+        assert "idx_bulk_actions_selector_id" not in get_sqlite3_indexes(db_path, "bulk_actions")
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
+
+            assert {
+                "id",
+                "key",
+                "status",
+                "timestamp",
+                "body",
+                "action_type",
+                "selector_id",
+            } == set(get_sqlite3_columns(db_path, "bulk_actions"))
+            assert "idx_bulk_actions_action_type" in get_sqlite3_indexes(db_path, "bulk_actions")
+            assert "idx_bulk_actions_selector_id" in get_sqlite3_indexes(db_path, "bulk_actions")
+
+            # check data migration
+            backfill_count = len(instance.get_backfills())
+            migrated_row_count = instance._run_storage.fetchone(
+                db.select([db.func.count()])
+                .select_from(BulkActionsTable)
+                .where(BulkActionsTable.c.selector_id.isnot(None))
+            )[0]
+            assert migrated_row_count > 0
+            assert backfill_count == migrated_row_count
+
+            # check that we are writing to selector id, action types
+            external_origin = ExternalPartitionSetOrigin(
+                external_repository_origin=ExternalRepositoryOrigin(
+                    repository_location_origin=GrpcServerRepositoryLocationOrigin(
+                        port=1234, host="localhost"
+                    ),
+                    repository_name="fake_repository",
+                ),
+                partition_set_name="fake",
+            )
+            instance.add_backfill(
+                PartitionBackfill(
+                    backfill_id="simple",
+                    partition_set_origin=external_origin,
+                    status=BulkActionStatus.REQUESTED,
+                    partition_names=["one", "two", "three"],
+                    from_failure=False,
+                    reexecution_steps=None,
+                    tags=None,
+                    backfill_timestamp=pendulum.now().timestamp(),
+                )
+            )
+            unmigrated_row_count = instance._run_storage.fetchone(
+                db.select([db.func.count()])
+                .select_from(BulkActionsTable)
+                .where(BulkActionsTable.c.selector_id == None)
+            )[0]
+            assert unmigrated_row_count == 0
+
+            # test downgrade
+            instance._run_storage._alembic_downgrade(rev="721d858e1dda")
+
+            assert get_current_alembic_version(db_path) == "721d858e1dda"
+            assert {"id", "key", "status", "timestamp", "body"} == set(
+                get_sqlite3_columns(db_path, "bulk_actions")
+            )
+            assert "idx_bulk_actions_action_type" not in get_sqlite3_indexes(
+                db_path, "bulk_actions"
+            )
+            assert "idx_bulk_actions_selector_id" not in get_sqlite3_indexes(
+                db_path, "bulk_actions"
+            )
+
+
+def test_add_kvs_table():
+    src_dir = file_relative_path(__file__, "snapshot_0_14_16_bulk_actions_columns/sqlite")
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert not "kvs" in get_sqlite3_tables(db_path)
+            assert get_sqlite3_indexes(db_path, "kvs") == []
+
+            instance.upgrade()
+
+            assert "kvs" in get_sqlite3_tables(db_path)
+            assert get_sqlite3_indexes(db_path, "kvs") == ["idx_kvs_keys_unique"]
+
+            instance._run_storage._alembic_downgrade(rev="6860f830e40c")
+
+            assert not "kvs" in get_sqlite3_tables(db_path)
+            assert get_sqlite3_indexes(db_path, "kvs") == []

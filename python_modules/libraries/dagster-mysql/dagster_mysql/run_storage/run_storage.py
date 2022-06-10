@@ -1,6 +1,7 @@
 import sqlalchemy as db
 
 import dagster._check as check
+from dagster.core.storage.config import mysql_config
 from dagster.core.storage.runs import (
     DaemonHeartbeatsTable,
     InstanceInfo,
@@ -20,7 +21,6 @@ from ..utils import (
     MYSQL_POOL_RECYCLE,
     create_mysql_connection,
     mysql_alembic_config,
-    mysql_config,
     mysql_url_from_config,
     retry_mysql_connection_fn,
     retry_mysql_creation_fn,
@@ -35,7 +35,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
 
-    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-mysql.yaml
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-mysql-legacy.yaml
        :caption: dagster.yaml
        :start-after: start_marker_runs
        :end-before: end_marker_runs

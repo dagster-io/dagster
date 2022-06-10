@@ -1,13 +1,24 @@
 import json
 from unittest.mock import MagicMock
 
+import psycopg2
 import pytest
 from dagster_dbt import dbt_cli_resource
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError
 from dagster_dbt.types import DbtOutput
 
-from dagster import AssetGroup, AssetKey, MetadataEntry, ResourceDefinition, asset, repository
+from dagster import (
+    AssetGroup,
+    AssetIn,
+    AssetKey,
+    IOManager,
+    MetadataEntry,
+    ResourceDefinition,
+    asset,
+    io_manager,
+    repository,
+)
 from dagster.core.asset_defs import build_assets_job
 from dagster.utils import file_relative_path
 
@@ -89,22 +100,64 @@ def assert_assets_match_project(dbt_assets):
         "sort_hot_cereals_by_calories",
         "sort_cold_cereals_by_calories",
     }
-    for model_name in [
-        "least_caloric",
+    for asset_name in [
+        "subdir_schema/least_caloric",
         "sort_hot_cereals_by_calories",
-        "sort_cold_cereals_by_calories",
+        "cold_schema/sort_cold_cereals_by_calories",
     ]:
-        assert dbt_assets[0].asset_keys_by_output_name[model_name] == AssetKey(
-            ["test-schema", model_name]
-        )
-        assert dbt_assets[0].asset_deps[AssetKey(["test-schema", model_name])] == {
-            AssetKey(["test-schema", "sort_by_calories"])
-        }
+        asset_key = AssetKey(asset_name.split("/"))
+        output_name = asset_key.path[-1]
+        assert dbt_assets[0].asset_keys_by_output_name[output_name] == asset_key
+        assert dbt_assets[0].asset_deps[asset_key] == {AssetKey(["sort_by_calories"])}
 
     assert dbt_assets[0].asset_keys_by_output_name["sort_by_calories"] == AssetKey(
-        ["test-schema", "sort_by_calories"]
+        ["sort_by_calories"]
     )
-    assert not dbt_assets[0].asset_deps[AssetKey(["test-schema", "sort_by_calories"])]
+    assert not dbt_assets[0].asset_deps[AssetKey(["sort_by_calories"])]
+
+
+def test_fail_immediately(
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir
+):  # pylint: disable=unused-argument
+    from dagster import build_init_resource_context
+
+    dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
+    good_dbt = dbt_cli_resource.configured(
+        {
+            "project_dir": test_project_dir,
+            "profiles_dir": dbt_config_dir,
+        }
+    )
+
+    # ensure that there will be a run results json
+    result = build_assets_job(
+        "test_job",
+        dbt_assets,
+        resource_defs={"dbt": good_dbt},
+    ).execute_in_process()
+
+    assert good_dbt(build_init_resource_context()).get_run_results_json()
+
+    result = build_assets_job(
+        "test_job",
+        dbt_assets,
+        resource_defs={
+            "dbt": dbt_cli_resource.configured(
+                {
+                    "project_dir": test_project_dir,
+                    "profiles_dir": "BAD PROFILES DIR",
+                }
+            )
+        },
+    ).execute_in_process(raise_on_error=False)
+
+    assert not result.success
+    materializations = [
+        event.event_specific_data.materialization
+        for event in result.events_for_node(dbt_assets[0].op.name)
+        if event.event_type_value == "ASSET_MATERIALIZATION"
+    ]
+    assert len(materializations) == 0
 
 
 @pytest.mark.parametrize("use_build, fail_test", [(True, False), (True, True), (False, False)])
@@ -141,7 +194,7 @@ def test_basic(
     if fail_test:
         # the test will fail after the first model is completed, so others will not be emitted
         assert len(materializations) == 1
-        assert materializations[0].asset_key == AssetKey(["test-schema", "sort_by_calories"])
+        assert materializations[0].asset_key == AssetKey(["sort_by_calories"])
     else:
         assert len(materializations) == 4
     observations = [
@@ -314,16 +367,18 @@ def test_node_info_to_asset_key(
     [
         (
             "*",
-            "sort_by_calories,sort_cold_cereals_by_calories,sort_hot_cereals_by_calories,least_caloric,hanger1,hanger2",
+            "sort_by_calories,cold_schema/sort_cold_cereals_by_calories,"
+            "sort_hot_cereals_by_calories,subdir_schema/least_caloric,hanger1,hanger2",
         ),
         (
-            "test-schema>sort_by_calories+",
-            "sort_by_calories,least_caloric,sort_cold_cereals_by_calories,sort_hot_cereals_by_calories,hanger1",
+            "sort_by_calories+",
+            "sort_by_calories,subdir_schema/least_caloric,cold_schema/sort_cold_cereals_by_calories,"
+            "sort_hot_cereals_by_calories,hanger1",
         ),
-        ("*test-schema>hanger2", "hanger2,least_caloric,sort_by_calories"),
+        ("*hanger2", "hanger2,subdir_schema/least_caloric,sort_by_calories"),
         (
-            ["test-schema>sort_cold_cereals_by_calories", "test-schema>least_caloric"],
-            "sort_cold_cereals_by_calories,least_caloric",
+            ["cold_schema/sort_cold_cereals_by_calories", "subdir_schema/least_caloric"],
+            "cold_schema/sort_cold_cereals_by_calories,subdir_schema/least_caloric",
         ),
     ],
 )
@@ -338,11 +393,11 @@ def test_subsetting(
 
     dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
 
-    @asset(namespace="test-schema")
+    @asset
     def hanger1(sort_by_calories):
         return None
 
-    @asset(namespace="test-schema")
+    @asset(ins={"least_caloric": AssetIn(namespace="subdir_schema")})
     def hanger2(least_caloric):
         return None
 
@@ -365,7 +420,7 @@ def test_subsetting(
         for event in result.all_events
         if event.event_type_value == "ASSET_MATERIALIZATION"
     }
-    expected_keys = {AssetKey(["test-schema", name]) for name in expected_asset_names.split(",")}
+    expected_keys = {AssetKey(name.split("/")) for name in expected_asset_names.split(",")}
     assert all_keys == expected_keys
 
 
@@ -377,31 +432,31 @@ def test_subsetting(
             "*",
             {
                 "sort_by_calories",
-                "sort_cold_cereals_by_calories",
-                "least_caloric",
+                "cold_schema/sort_cold_cereals_by_calories",
+                "subdir_schema/least_caloric",
                 "sort_hot_cereals_by_calories",
             },
         ),
         (
             "+least_caloric",
-            {"sort_by_calories", "least_caloric"},
+            {"sort_by_calories", "subdir_schema/least_caloric"},
         ),
         (
             "sort_by_calories least_caloric",
-            {"sort_by_calories", "least_caloric"},
+            {"sort_by_calories", "subdir_schema/least_caloric"},
         ),
         (
             "tag:bar+",
             {
                 "sort_by_calories",
-                "sort_cold_cereals_by_calories",
-                "least_caloric",
+                "cold_schema/sort_cold_cereals_by_calories",
+                "subdir_schema/least_caloric",
                 "sort_hot_cereals_by_calories",
             },
         ),
         (
             "tag:foo",
-            {"sort_by_calories", "sort_cold_cereals_by_calories"},
+            {"sort_by_calories", "cold_schema/sort_cold_cereals_by_calories"},
         ),
         (
             "tag:foo,tag:bar",
@@ -429,7 +484,7 @@ def test_dbt_selects(
             project_dir=test_project_dir, profiles_dir=dbt_config_dir, select=select
         )
 
-    expected_asset_keys = {AssetKey(["test-schema", key]) for key in expected_asset_names}
+    expected_asset_keys = {AssetKey(key.split("/")) for key in expected_asset_names}
     assert dbt_assets[0].asset_keys == expected_asset_keys
 
     result = (
@@ -465,3 +520,85 @@ def test_static_select_invalid_selection(select, error_match):
 
     with pytest.raises(Exception, match=error_match):
         load_assets_from_dbt_manifest(manifest_json, select=select)
+
+
+def test_python_interleaving(
+    conn_string, dbt_python_sources, test_python_project_dir, dbt_python_config_dir
+):  # pylint: disable=unused-argument
+    dbt_assets = load_assets_from_dbt_project(test_python_project_dir, dbt_python_config_dir)
+
+    @io_manager
+    def test_io_manager(_context):
+        class TestIOManager(IOManager):
+            def handle_output(self, context, obj):
+                # handling dbt output
+                if obj is None:
+                    return
+                table = context.asset_key.path[-1]
+                try:
+                    conn = psycopg2.connect(conn_string)
+                    cur = conn.cursor()
+                    cur.execute(
+                        f'CREATE TABLE IF NOT EXISTS "test-python-schema"."{table}" (user_id integer, is_bot bool)'
+                    )
+                    cur.executemany(
+                        f'INSERT INTO "test-python-schema"."{table}"' + " VALUES(%s,%s)", obj
+                    )
+                    conn.commit()
+                    cur.close()
+                except (Exception, psycopg2.DatabaseError) as error:
+                    raise (error)
+                finally:
+                    if conn is not None:
+                        conn.close()
+
+            def load_input(self, context):
+                table = context.asset_key.path[-1]
+                result = None
+                conn = None
+                try:
+                    conn = psycopg2.connect(conn_string)
+                    cur = conn.cursor()
+                    cur.execute(f'SELECT * FROM "test-python-schema"."{table}"')
+                    result = cur.fetchall()
+                except (Exception, psycopg2.DatabaseError) as error:
+                    raise error
+                finally:
+                    if conn is not None:
+                        conn.close()
+                return result
+
+        return TestIOManager()
+
+    @asset
+    def bot_labeled_users(cleaned_users):
+        # super advanced bot labeling algorithm
+        return [(uid, uid % 5 == 0) for _, uid in cleaned_users]
+
+    job = AssetGroup(
+        [*dbt_assets, bot_labeled_users],
+        resource_defs={
+            "io_manager": test_io_manager,
+            "dbt": dbt_cli_resource.configured(
+                {"project_dir": test_python_project_dir, "profiles_dir": dbt_python_config_dir}
+            ),
+        },
+    ).build_job("interleave_job")
+
+    result = job.execute_in_process()
+    assert result.success
+    all_keys = {
+        event.event_specific_data.materialization.asset_key
+        for event in result.all_events
+        if event.event_type_value == "ASSET_MATERIALIZATION"
+    }
+    expected_asset_names = [
+        "cleaned_events",
+        "cleaned_users",
+        "daily_aggregated_events",
+        "daily_aggregated_users",
+        "bot_labeled_users",
+        "bot_labeled_events",
+    ]
+    expected_keys = {AssetKey([name]) for name in expected_asset_names}
+    assert all_keys == expected_keys

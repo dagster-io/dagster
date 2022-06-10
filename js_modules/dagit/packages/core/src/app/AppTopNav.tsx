@@ -15,9 +15,15 @@ import {WebSocketStatus} from './WebSocketProvider';
 interface Props {
   searchPlaceholder: string;
   rightOfSearchBar?: React.ReactNode;
+  showStatusWarningIcon?: boolean;
 }
 
-export const AppTopNav: React.FC<Props> = ({children, rightOfSearchBar, searchPlaceholder}) => {
+export const AppTopNav: React.FC<Props> = ({
+  children,
+  rightOfSearchBar,
+  searchPlaceholder,
+  showStatusWarningIcon = true,
+}) => {
   const history = useHistory();
 
   return (
@@ -51,7 +57,7 @@ export const AppTopNav: React.FC<Props> = ({children, rightOfSearchBar, searchPl
             <TopNavLink to="/instance">
               <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                 Status
-                <InstanceWarningIcon />
+                {showStatusWarningIcon ? <InstanceWarningIcon /> : null}
               </Box>
             </TopNavLink>
           </ShortcutHandler>
@@ -99,12 +105,7 @@ export const AppTopNavLogo: React.FC = () => {
         shortcutLabel="."
         shortcutFilter={(e) => e.key === '.'}
       >
-        <NavButton
-          onClick={onToggle}
-          onKeyDown={onKeyDown}
-          ref={navButton}
-          $visible={nav.isCollapsible}
-        >
+        <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
           <Icon name="menu" color={Colors.White} size={24} />
         </NavButton>
       </ShortcutHandler>
@@ -214,7 +215,7 @@ const LogoContainer = styled.div`
   }
 `;
 
-const NavButton = styled.button<{$visible: boolean}>`
+const NavButton = styled.button`
   border-radius: 20px;
   cursor: pointer;
   margin-left: 4px;
@@ -222,7 +223,7 @@ const NavButton = styled.button<{$visible: boolean}>`
   padding: 6px;
   border: none;
   background: transparent;
-  display: ${(p) => (p.$visible ? `block` : 'none')};
+  display: block;
 
   ${IconWrapper} {
     transition: background 100ms linear;

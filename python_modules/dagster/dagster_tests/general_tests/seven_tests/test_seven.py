@@ -1,10 +1,14 @@
+import inspect
 import json
+import sys
 import tempfile
 from functools import update_wrapper
 
 import pytest
 
-from dagster import seven
+from dagster import DagsterType, seven
+from dagster.core.types.dagster_type import ListType
+from dagster.seven import is_subclass
 from dagster.utils import file_relative_path
 
 
@@ -90,3 +94,37 @@ def test_is_fn_or_decor_inst():
     assert seven.is_function_or_decorator_instance_of(bar, Quux) == True
     assert seven.is_function_or_decorator_instance_of(baz, Quux) == False
     assert seven.is_function_or_decorator_instance_of(yoodles, Quux) == True
+
+
+class Foo:
+    pass
+
+
+class Bar(Foo):
+    pass
+
+
+def test_is_subclass():
+    assert is_subclass(Bar, Foo)
+    assert not is_subclass(Foo, Bar)
+
+    assert is_subclass(DagsterType, DagsterType)
+    assert is_subclass(str, str)
+    assert is_subclass(ListType, DagsterType)
+    assert not is_subclass(DagsterType, ListType)
+    assert not is_subclass(ListType, str)
+
+    # type that aren't classes can be passed into is_subclass
+    assert not inspect.isclass(2)
+    assert not is_subclass(2, DagsterType)
+
+
+@pytest.mark.skipif(
+    sys.version_info.minor < 9, reason="Generic aliases only exist on py39 or later"
+)
+def test_is_subclass_generic_alias():
+    # See comments around is_subclass for why this fails
+    with pytest.raises(TypeError):
+        issubclass(list[str], DagsterType)
+
+    assert not is_subclass(list[str], DagsterType)

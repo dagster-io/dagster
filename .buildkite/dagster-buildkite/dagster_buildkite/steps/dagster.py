@@ -6,9 +6,8 @@ from ..defines import GIT_REPO_ROOT
 from ..python_version import AvailablePythonVersion
 from ..step_builder import CommandStepBuilder
 from ..utils import BuildkiteStep, CommandStep, safe_getenv
-from .docs import build_docs_steps
 from .helm import build_helm_steps
-from .packages import build_packages_steps
+from .packages import build_library_packages_steps
 from .test_images import build_test_image_steps
 
 branch_name = safe_getenv("BUILDKITE_BRANCH")
@@ -24,7 +23,7 @@ def build_dagster_steps() -> List[BuildkiteStep]:
     # "Package" used loosely here to mean roughly "a directory with some python modules". For
     # instances, a directory of unrelated scripts counts as a package. All packages must have a
     # toxfile that defines the tests for that package.
-    steps += build_packages_steps()
+    steps += build_library_packages_steps()
 
     # Other linters are run in per-package environments because they rely on the dependencies of the
     # target. `black`, `isort`, and `check-manifest` are run for the whole repo at once.
@@ -32,7 +31,6 @@ def build_dagster_steps() -> List[BuildkiteStep]:
     steps += build_repo_wide_black_steps()
     steps += build_repo_wide_check_manifest_steps()
 
-    steps += build_docs_steps()
     steps += build_helm_steps()
     steps += build_sql_schema_check_steps()
     steps += build_graphql_python_client_backcompat_steps()

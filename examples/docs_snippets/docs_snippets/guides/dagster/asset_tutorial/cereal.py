@@ -18,9 +18,9 @@ def cereals():
 # end_asset_marker
 
 # start_materialize_marker
-from dagster import AssetGroup
+from dagster import materialize
 
 if __name__ == "__main__":
-    AssetGroup([cereals]).materialize()
+    materialize([cereals])
 
 # end_materialize_marker
