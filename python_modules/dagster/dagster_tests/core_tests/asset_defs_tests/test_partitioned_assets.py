@@ -3,6 +3,7 @@ import pytest
 
 from dagster import (
     AssetMaterialization,
+    AssetsDefinition,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
@@ -13,6 +14,8 @@ from dagster import (
     PartitionsDefinition,
     SourceAsset,
     StaticPartitionsDefinition,
+    graph,
+    op,
 )
 from dagster.core.asset_defs import asset, build_assets_job, multi_asset
 from dagster.core.asset_defs.asset_partitions import (
@@ -647,3 +650,43 @@ def test_multi_asset_non_identity_partition_mapping():
     assert result.asset_materializations_for_node("downstream_asset_2") == [
         AssetMaterialization(AssetKey(["downstream_asset_2"]), partition="2")
     ]
+
+
+def test_from_graph():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+    @op
+    def my_op(context):
+        assert context.output_asset_partition_key() == "a"
+
+    @graph
+    def upstream_asset():
+        return my_op()
+
+    @op
+    def my_op2(context, upstream_asset):
+        assert context.output_asset_partition_key() == "a"
+        return upstream_asset
+
+    @graph
+    def downstream_asset(upstream_asset):
+        return my_op2(upstream_asset)
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert context.asset_partition_key == "a"
+            assert context.has_asset_partitions
+
+        def load_input(self, context):
+            assert context.asset_partition_key == "a"
+            assert context.has_asset_partitions
+
+    my_job = build_assets_job(
+        "my_job",
+        assets=[
+            AssetsDefinition.from_graph(upstream_asset, partitions_def=partitions_def),
+            AssetsDefinition.from_graph(downstream_asset, partitions_def=partitions_def),
+        ],
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+    assert my_job.execute_in_process(partition_key="a").success

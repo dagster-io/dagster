@@ -241,3 +241,27 @@ def uses_db_connection():
 
 
 # end_build_resources_example
+
+
+def do_something_with_resource(_):
+    pass
+
+
+# start_with_resources_example
+from dagster import with_resources, asset, resource
+
+
+@asset(required_resource_keys={"foo"})
+def asset_requires_resource(context):
+    do_something_with_resource(context.resources.foo)
+
+
+@resource
+def foo_resource():
+    ...
+
+
+transformed_asset = with_resources([asset_requires_resource], {"foo": foo_resource})[0]
+
+
+# end_with_resources_example

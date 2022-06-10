@@ -1,9 +1,9 @@
 from docs_snippets.concepts.assets.asset_io_manager_prod_local import (
-    local_asset_group,
-    prod_asset_group,
+    local_assets,
+    prod_assets,
 )
 
 
 def test_asset_groups():
-    assert len(local_asset_group.assets) == 2
-    assert len(prod_asset_group.assets) == 2
+    assert len(local_assets) == 2
+    assert len(prod_assets) == 2

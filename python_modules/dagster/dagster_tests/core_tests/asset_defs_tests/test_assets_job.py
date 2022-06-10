@@ -195,14 +195,14 @@ def test_asset_key_and_inferred():
     assert _asset_keys_for_node(result, "asset_baz") == {AssetKey("asset_baz")}
 
 
-def test_asset_key_for_asset_with_namespace_list():
-    @asset(namespace=["hell", "o"])
+def test_asset_key_for_asset_with_key_prefix_list():
+    @asset(key_prefix=["hell", "o"])
     def asset_foo():
         return "foo"
 
     @asset(
         ins={"foo": AssetIn(asset_key=AssetKey("asset_foo"))}
-    )  # Should fail because asset_foo is defined with namespace, so has asset key ["hello", "asset_foo"]
+    )  # Should fail because asset_foo is defined with key_prefix, so has asset key ["hello", "asset_foo"]
     def failing_asset(foo):  # pylint: disable=unused-argument
         pass
 
@@ -225,8 +225,8 @@ def test_asset_key_for_asset_with_namespace_list():
     }
 
 
-def test_asset_key_for_asset_with_namespace_str():
-    @asset(namespace="hello")
+def test_asset_key_for_asset_with_key_prefix_str():
+    @asset(key_prefix="hello")
     def asset_foo():
         return "foo"
 
@@ -371,7 +371,7 @@ def test_multiple_non_argument_deps():
     def foo():
         pass
 
-    @asset(namespace="namespace")
+    @asset(key_prefix="key_prefix")
     def bar():
         pass
 
@@ -379,7 +379,7 @@ def test_multiple_non_argument_deps():
     def baz():
         return 1
 
-    @asset(non_argument_deps={AssetKey("foo"), AssetKey(["namespace", "bar"])})
+    @asset(non_argument_deps={AssetKey("foo"), AssetKey(["key_prefix", "bar"])})
     def qux(baz):
         return baz
 
@@ -389,21 +389,21 @@ def test_multiple_non_argument_deps():
     index = DependencyStructureIndex(dep_structure_snapshot)
 
     assert index.get_invocation("foo")
-    assert index.get_invocation("namespace__bar")
+    assert index.get_invocation("key_prefix__bar")
     assert index.get_invocation("baz")
 
     assert index.get_upstream_outputs("qux", "foo") == [
         OutputHandleSnap("foo", "result"),
     ]
-    assert index.get_upstream_outputs("qux", "namespace_bar") == [
-        OutputHandleSnap("namespace__bar", "result")
+    assert index.get_upstream_outputs("qux", "key_prefix_bar") == [
+        OutputHandleSnap("key_prefix__bar", "result")
     ]
     assert index.get_upstream_outputs("qux", "baz") == [OutputHandleSnap("baz", "result")]
 
     result = job.execute_in_process()
     assert result.success
     assert result.output_for_node("qux") == 1
-    assert _asset_keys_for_node(result, "namespace__bar") == {AssetKey(["namespace", "bar"])}
+    assert _asset_keys_for_node(result, "key_prefix__bar") == {AssetKey(["key_prefix", "bar"])}
     assert _asset_keys_for_node(result, "qux") == {AssetKey("qux")}
 
 

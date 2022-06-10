@@ -1449,22 +1449,22 @@ class TestEventLogStorage:
     def test_latest_materializations(self, storage, instance):
         @solid
         def one(_):
-            yield AssetMaterialization(AssetKey("a"), tags={"num": str(1)})
-            yield AssetMaterialization(AssetKey("b"), tags={"num": str(1)})
-            yield AssetMaterialization(AssetKey("c"), tags={"num": str(1)})
-            yield AssetMaterialization(AssetKey("d"), tags={"num": str(1)})
+            yield AssetMaterialization(AssetKey("a"), partition="1")
+            yield AssetMaterialization(AssetKey("b"), partition="1")
+            yield AssetMaterialization(AssetKey("c"), partition="1")
+            yield AssetMaterialization(AssetKey("d"), partition="1")
             yield AssetObservation(AssetKey("a"), metadata={"foo": "bar"})
             yield Output(1)
 
         @solid
         def two(_):
-            yield AssetMaterialization(AssetKey("b"), tags={"num": str(2)})
-            yield AssetMaterialization(AssetKey("c"), tags={"num": str(2)})
+            yield AssetMaterialization(AssetKey("b"), partition="2")
+            yield AssetMaterialization(AssetKey("c"), partition="2")
             yield Output(2)
 
-        def _event_tags(event):
+        def _event_partition(event):
             assert event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
-            return event.dagster_event.step_materialization_data.materialization.tags
+            return event.dagster_event.step_materialization_data.materialization.partition
 
         def _fetch_events(storage):
             return storage.get_latest_materialization_events(
@@ -1487,10 +1487,6 @@ class TestEventLogStorage:
 
             events_by_key = _fetch_events(storage)
             assert len(events_by_key) == 4
-            assert _event_tags(events_by_key[AssetKey("a")])["num"] == "1"
-            assert _event_tags(events_by_key[AssetKey("b")])["num"] == "1"
-            assert _event_tags(events_by_key[AssetKey("c")])["num"] == "1"
-            assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"
 
             # wipe 2 of the assets, make sure we respect that
             if self.can_wipe():
@@ -1499,8 +1495,6 @@ class TestEventLogStorage:
                 events_by_key = _fetch_events(storage)
                 assert events_by_key.get(AssetKey("a")) is None
                 assert events_by_key.get(AssetKey("b")) is None
-                assert _event_tags(events_by_key[AssetKey("c")])["num"] == "1"
-                assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"
 
                 # rematerialize one of the wiped assets, one of the existing assets
                 events, _ = _synthesize_events(lambda: two(), run_id=run_id_2)
@@ -1509,19 +1503,12 @@ class TestEventLogStorage:
 
                 events_by_key = _fetch_events(storage)
                 assert events_by_key.get(AssetKey("a")) is None
-                assert _event_tags(events_by_key[AssetKey("b")])["num"] == "2"
-                assert _event_tags(events_by_key[AssetKey("c")])["num"] == "2"
-                assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"
 
             else:
                 events, _ = _synthesize_events(lambda: two(), run_id=run_id_2)
                 for event in events:
                     storage.store_event(event)
                 events_by_key = _fetch_events(storage)
-                assert _event_tags(events_by_key[AssetKey("a")])["num"] == "1"
-                assert _event_tags(events_by_key[AssetKey("b")])["num"] == "2"
-                assert _event_tags(events_by_key[AssetKey("c")])["num"] == "2"
-                assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"
 
     def test_asset_keys(self, storage, instance):
         with instance_for_test() as created_instance:

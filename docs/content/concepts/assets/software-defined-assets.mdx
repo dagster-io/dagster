@@ -23,15 +23,20 @@ A software-defined asset includes the following:
 
 ## Relevant APIs
 
-| Name                                  | Description                                                                                                                                                                                                                                           |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="asset" decorator /> | A decorator used to define assets.                                                                                                                                                                                                                    |
-| <PyObject object="AssetGroup" />      | A group of software-defined assets.                                                                                                                                                                                                                   |
-| <PyObject object="SourceAsset" />     | A class that describes an asset, but doesn't define how to compute it. Within an <PyObject object="AssetGroup" />, <PyObject object="SourceAsset" />s are used to represent assets that other assets depend on, but can't be materialized themselves. |
+| Name                                  | Description                                                                                                                                                                                                                  |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="asset" decorator /> | A decorator used to define assets.                                                                                                                                                                                           |
+| <PyObject object="SourceAsset" />     | A class that describes an asset, but doesn't define how to compute it. <PyObject object="SourceAsset" />s are used to represent assets that other assets depend on, in settings where they can't be materialized themselves. |
 
 ---
 
 ## Defining assets
+
+Once you've defined a set of assets, you can:
+
+- [View them in Dagit](#viewing-assets-in-dagit).
+- [Materialize an ad-hoc set of them in Dagit](#materializing-assets-in-dagit).
+- [Build a job](#building-jobs-that-materialize-assets), which materializes a fixed selection of the assets, and can be put on a schedule or sensor.
 
 ### A basic software-defined asset
 
@@ -114,12 +119,12 @@ def another_downstream_asset(upstream):
 
 #### Defining external asset dependencies
 
-Software-defined assets frequently depend on assets that are generated elsewhere. Using <PyObject object="SourceAsset" />, you can include these external assets and allow the assets in your <PyObject object="AssetGroup" /> to depend on them.
+Software-defined assets frequently depend on assets that are generated elsewhere. Using <PyObject object="SourceAsset" />, you can include these external assets and allow your other assets to depend on them.
 
 For example:
 
 ```python file=/concepts/assets/source_asset.py startafter=start_marker endbefore=end_marker
-from dagster import AssetGroup, AssetKey, SourceAsset, asset
+from dagster import AssetKey, SourceAsset, asset
 
 my_source_asset = SourceAsset(key=AssetKey("a_source_asset"))
 
@@ -127,9 +132,6 @@ my_source_asset = SourceAsset(key=AssetKey("a_source_asset"))
 @asset
 def my_derived_asset(a_source_asset):
     return a_source_asset + [4]
-
-
-asset_group = AssetGroup(assets=[my_derived_asset], source_assets=[my_source_asset])
 ```
 
 **Note**: The source asset's asset key must be provided as the argument to downstream assets. In the previous example, the asset key is `a_source_asset` and not `my_source_asset`.
@@ -137,7 +139,7 @@ asset_group = AssetGroup(assets=[my_derived_asset], source_assets=[my_source_ass
 You can also re-use assets across repositories by including them as source assets:
 
 ```python file=/concepts/assets/cross_repository_asset.py
-from dagster import AssetGroup, AssetKey, SourceAsset, asset, repository
+from dagster import AssetKey, SourceAsset, asset, repository
 
 
 @asset
@@ -145,12 +147,9 @@ def repository_a_asset():
     return 5
 
 
-repository_a_asset_group = AssetGroup(assets=[repository_a_asset])
-
-
 @repository
 def repository_a():
-    return [repository_a_asset_group]
+    return [repository_a_asset]
 
 
 repository_a_source_asset = SourceAsset(key=AssetKey("repository_a_asset"))
@@ -161,21 +160,41 @@ def repository_b_asset(repository_a_asset):
     return repository_a_asset + 6
 
 
-repository_b_asset_group = AssetGroup(
-    assets=[repository_b_asset], source_assets=[repository_a_source_asset]
-)
-
-
 @repository
 def repository_b():
-    return [repository_b_asset_group]
+    return [repository_b_asset, repository_a_source_asset]
 ```
 
 Using source assets has a few advantages over having the code inside of an asset's op load the data:
 
-- **Dagit can show asset lineage that includes the source assets**. If a different <PyObject object="AssetGroup" /> in the same [workspace](/concepts/repositories-workspaces/workspaces) contains an asset definition with the same asset key as a <PyObject object="SourceAsset" />, Dagit can represent the asset lineage across those groups.
+- **Dagit can show asset lineage that includes the source assets**. If a different asset definition in a different repository in the same [workspace](/concepts/repositories-workspaces/workspaces) has the same asset key as a <PyObject object="SourceAsset" />, Dagit can represent the asset lineage across those repositories.
 - **Dagster can use data-loading code factored into an <PyObject object="IOManager" /> to load the contents of the source asset**.
 - **Asset dependencies can be written in a consistent way,** independent of whether they're downstream from a source asset or a derived asset. This makes it easy to swap out a source asset for a derived asset and vice versa.
+
+#### Non-argument dependencies
+
+Alternatively, you can define dependencies where data from an upstream asset doesn’t need to be loaded by Dagster to compute the output of a downstream asset. When used, `non_argument_deps` defines the dependency between assets but doesn’t pass data through Dagster.
+
+Consider the following example:
+
+1. `upstream_asset` creates a new table (`sugary_cereals`) by selecting records from the `cereals` table
+2. `downstream_asset` then creates a new table (`shopping_list`) by selecting records from `sugary_cereals`
+
+```python file=/concepts/assets/non_argument_deps.py startafter=start_marker endbefore=end_marker
+from dagster import asset
+
+
+@asset
+def upstream_asset():
+    execute_query("CREATE TABLE sugary_cereals AS SELECT * FROM cereals")
+
+
+@asset(non_argument_deps={"upstream_asset"})
+def downstream_asset():
+    execute_query("CREATE TABLE shopping_list AS SELECT * FROM sugary_cereals")
+```
+
+In this example, Dagster doesn’t need to load data from `upstream_asset` to successfully compute the `downstream_asset`. While `downstream_asset` does depend on `upstream_asset`, the key difference with `non_argument_deps` is that data isn’t being passed between the functions. Specifically, the data from the `sugary_cereals` table isn't being passed as an argument to `downstream_asset`.
 
 ### Graph-backed assets
 
@@ -246,52 +265,15 @@ Refer to the [Config schema documentation](/concepts/configuration/config-schema
 
 ---
 
-## Combining assets in groups
-
-To materialize assets or load them in Dagit, you first need to combine them into an <PyObject object="AssetGroup" />, which is a set of assets with no unsatisfied dependencies. For example:
-
-```python file=/concepts/assets/asset_group.py startafter=start_marker endbefore=end_marker
-from dagster import AssetGroup, asset
-
-
-@asset
-def upstream_asset():
-    return [1, 2, 3]
-
-
-@asset
-def downstream_asset(upstream_asset):
-    return upstream_asset + [4]
-
-
-asset_group = AssetGroup([upstream_asset, downstream_asset])
-```
-
-To save you from needing to add each asset individually to the group, Dagster provides the <PyObject object="AssetGroup" method="from_package_name" /> method for building <PyObject object="AssetGroup" />s out of all the assets within all Python modules underneath a Python package:
-
-```python file=/concepts/assets/from_package_name.py
-from dagster import AssetGroup
-
-asset_group = AssetGroup.from_package_name(
-    "docs_snippets.concepts.assets.package_with_assets"
-)
-```
-
-Once assets are bundled into an asset group, you can:
-
-- [View them in Dagit](#viewing-assets-in-dagit).
-- [Materialize an ad-hoc set of them in Dagit](#materializing-assets-in-dagit).
-- [Build a job](#building-jobs-that-materialize-assets), which materializes a fixed selection of the assets in the group, and can be put on a schedule or sensor.
-
 ## Viewing and materializing assets in Dagit
 
 ### Loading assets into Dagit
 
-To view and materialize assets in Dagit, you can point it at a module that contains an <PyObject object="AssetGroup" />. E.g.
+To view and materialize assets in Dagit, you can point it at a module that contains asset definitions or lists of asset definitions as module-level attributes:
 
-    dagit -m module_with_asset_group
+    dagit -m module_with_assets
 
-If you want Dagit to contain both an asset group and a set of [jobs](/concepts/ops-jobs-graphs/jobs-graphs) that target the assets, you can place the <PyObject object="AssetGroup" /> and jobs together inside a [repository](/concepts/repositories-workspaces/repositories).
+If you want Dagit to contain both assets and [jobs](/concepts/ops-jobs-graphs/jobs-graphs) that target the assets, you can place the assets and jobs together inside a [repository](/concepts/repositories-workspaces/repositories).
 
 ### Viewing assets in Dagit
 
@@ -354,7 +336,7 @@ You can resolve this issue by re-materializing the downstream asset. This will r
   Currently, the <strong>upstream changed</strong> indicator won't display in
   the following scenarios:
   <ul>
-    <li>The upstream asset is in another asset group or job</li>
+    <li>The upstream asset is in another repository or job</li>
     <li>The assets are partitioned</li>
   </ul>
 </Note>
@@ -372,12 +354,12 @@ By default, materializing an asset will pickle it to a local file named "my_asse
 
 [IO managers](/concepts/io-management/io-managers) enable fully overriding this behavior and storing asset contents in any way you wish - e.g. writing them as tables in a database or as objects in a cloud object store. Dagster also provides built-in IO managers that pickle assets to AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), and GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />), or you can write your own.
 
-To apply an IO manager to a set of assets, you can include it with them in an <PyObject object="AssetGroup" />.
+To apply an IO manager to a set of assets, you can use <PyObject object="with_resources" />:
 
 ```python file=/concepts/assets/asset_io_manager.py startafter=start_marker endbefore=end_marker
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
-from dagster import AssetGroup, asset
+from dagster import asset, with_resources
 
 
 @asset
@@ -390,7 +372,7 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 
 
-asset_group = AssetGroup(
+assets_with_io_manager = with_resources(
     [upstream_asset, downstream_asset],
     resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_resource},
 )
@@ -405,7 +387,7 @@ Different assets can have different IO managers:
 ```python file=/concepts/assets/asset_different_io_managers.py startafter=start_marker endbefore=end_marker
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
-from dagster import AssetGroup, asset, fs_io_manager
+from dagster import asset, fs_io_manager, with_resources
 
 
 @asset(io_manager_key="s3_io_manager")
@@ -418,7 +400,7 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 
 
-asset_group = AssetGroup(
+assets_with_io_managers = with_resources(
     [upstream_asset, downstream_asset],
     resource_defs={
         "s3_io_manager": s3_pickle_io_manager,
@@ -435,7 +417,7 @@ The same assets can be bound to different resources and IO managers in different
 ```python file=/concepts/assets/asset_io_manager_prod_local.py startafter=start_marker endbefore=end_marker
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
-from dagster import AssetGroup, asset, fs_io_manager
+from dagster import asset, fs_io_manager, with_resources
 
 
 @asset
@@ -448,12 +430,12 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 
 
-prod_asset_group = AssetGroup(
+prod_assets = with_resources(
     [upstream_asset, downstream_asset],
     resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_resource},
 )
 
-local_asset_group = AssetGroup(
+local_assets = with_resources(
     [upstream_asset, downstream_asset],
     resource_defs={"io_manager": fs_io_manager},
 )
@@ -461,43 +443,30 @@ local_asset_group = AssetGroup(
 
 ## Building jobs that materialize assets
 
-You can define a job that materializes a fixed selection of the assets in an <PyObject object="AssetGroup" /> each time it runs.
-
-The following snippet shows examples of three different jobs you might create out of an <PyObject object="AssetGroup" />.
+You can define a job that materializes a fixed selection of assets each time it runs. Multiple jobs within the same repository can target overlapping sets of assets.
 
 ```python file=/concepts/assets/build_job.py startafter=start_marker endbefore=end_marker
-from dagster import AssetGroup, asset
+from dagster import asset, define_asset_job, repository
 
 
 @asset
-def upstream():
+def asset1():
     return [1, 2, 3]
 
 
 @asset
-def downstream_1(upstream):
-    return upstream + [4]
+def asset2(asset1):
+    return asset1 + [4]
 
 
-@asset
-def downstream_2(upstream):
-    return len(upstream)
+all_assets_job = define_asset_job(name="all_assets_job")
+asset1_job = define_asset_job(name="asset1_job", selection="asset1")
 
 
-asset_group = AssetGroup([upstream, downstream_1, downstream_2])
-
-all_assets = asset_group.build_job(name="my_asset_job")
-
-downstream_assets = asset_group.build_job(
-    name="my_asset_job", selection=["upstream", "downstream_1"]
-)
-
-upstream_and_downstream_1 = asset_group.build_job(
-    name="my_asset_job", selection="*downstream_1"
-)
+@repository
+def repo():
+    return [asset1, asset2, all_assets_job, asset1_job]
 ```
-
-Multiple jobs within the same repository can target overlapping sets of assets.
 
 Like regular jobs, asset jobs can be placed on [schedules](/concepts/partitions-schedules-sensors/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors).
 
@@ -560,18 +529,18 @@ def test_uses_context():
 
 ### Multi-component asset keys
 
-Assets are often objects in systems with hierarchical namespaces, like filesystems. Because of this, it often makes sense for an asset key to be a list of strings, instead of just a single string.
+Assets are often objects in systems with hierarchical namespaces, like filesystems. Because of this, it often makes sense for an asset key to be a list of strings, instead of just a single string. To define an asset with a multi-part asset key, use the `key_prefix` argument-- this can be either a list of strings or a single string with segments delimited by "/". The full asset key is formed by prepending the `key_prefix` to the asset name (which defaults to the name of the decorated function).
 
 ```python file=/concepts/assets/multi_component_asset_key.py startafter=start_marker endbefore=end_marker
 from dagster import AssetIn, asset
 
 
-@asset(namespace=["one", "two", "three"])
+@asset(key_prefix=["one", "two", "three"])
 def upstream_asset():
     return [1, 2, 3]
 
 
-@asset(ins={"upstream_asset": AssetIn(namespace=["one", "two", "three"])})
+@asset(ins={"upstream_asset": AssetIn(key_prefix="one/two/three")})
 def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 ```
@@ -600,7 +569,6 @@ For more examples of software-defined assets, check out the following in our [SD
 - [Loading assets from dbt](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/activity_analytics/\__init\_\_.py)
 - [Per-asset IO manager](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/core/assets/items.py)
 - [Partitioned assets](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/core/assets/items.py)
-- [AssetGroups](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/core/\__init\_\_.py)
 
 Our [Modern Data Stack example](https://github.com/dagster-io/dagster/tree/master/examples/modern_data_stack_assets) also covers:
 

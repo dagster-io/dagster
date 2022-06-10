@@ -1,32 +1,25 @@
 # pylint: disable=redefined-outer-name
 # start_marker
-from dagster import AssetGroup, asset
+from dagster import asset, define_asset_job, repository
 
 
 @asset
-def upstream():
+def asset1():
     return [1, 2, 3]
 
 
 @asset
-def downstream_1(upstream):
-    return upstream + [4]
+def asset2(asset1):
+    return asset1 + [4]
 
 
-@asset
-def downstream_2(upstream):
-    return len(upstream)
+all_assets_job = define_asset_job(name="all_assets_job")
+asset1_job = define_asset_job(name="asset1_job", selection="asset1")
 
 
-asset_group = AssetGroup([upstream, downstream_1, downstream_2])
+@repository
+def repo():
+    return [asset1, asset2, all_assets_job, asset1_job]
 
-all_assets = asset_group.build_job(name="my_asset_job")
 
-downstream_assets = asset_group.build_job(
-    name="my_asset_job", selection=["upstream", "downstream_1"]
-)
-
-upstream_and_downstream_1 = asset_group.build_job(
-    name="my_asset_job", selection="*downstream_1"
-)
 # end_marker

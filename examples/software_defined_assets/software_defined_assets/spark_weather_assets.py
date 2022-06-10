@@ -17,7 +17,7 @@ from pandas import DataFrame as PandasDF
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import SparkSession
 
-from dagster import AssetGroup, AssetKey, IOManager, IOManagerDefinition, _check as check
+from dagster import AssetKey, IOManager, IOManagerDefinition, _check as check
 
 # io_manager_start
 class LocalFileSystemIOManager(IOManager):
@@ -78,13 +78,14 @@ class LocalFileSystemIOManager(IOManager):
 
 # io_manager_end
 
-# asset_group_start
+# gather_assets_start
 from . import assets, spark_asset
+from dagster import load_assets_from_modules, with_resources
 
-spark_weather_assets = AssetGroup.from_modules(
-    modules=[assets, spark_asset],
+spark_weather_assets = with_resources(
+    load_assets_from_modules(modules=[assets, spark_asset]),
     resource_defs={
         "io_manager": IOManagerDefinition.hardcoded_io_manager(LocalFileSystemIOManager())
     },
 )
-# asset_group_end
+# gather_assets_end
