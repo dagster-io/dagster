@@ -610,7 +610,6 @@ def _store_output(
                     description=materialization.description,
                     metadata_entries=manager_metadata_entries,
                     partition=materialization.partition,
-                    tags=materialization.tags,
                     metadata=None,
                 )
         yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)

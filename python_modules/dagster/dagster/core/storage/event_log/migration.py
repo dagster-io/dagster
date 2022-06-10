@@ -1,7 +1,7 @@
 import sqlalchemy as db
 from tqdm import tqdm
 
-from dagster import AssetKey, seven
+from dagster import AssetKey
 from dagster.core.events.log import EventLogEntry
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
@@ -142,14 +142,12 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                         wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp)
                         if wipe_timestamp
                         else None,
-                        tags=None,
                     )
                     .where(
                         AssetKeyTable.c.asset_key == asset_key.to_string(),
                     )
                 )
             else:
-                tags = event.dagster_event.step_materialization_data.materialization.tags
                 conn.execute(
                     AssetKeyTable.update()
                     .values(  # pylint: disable=no-value-for-parameter
@@ -158,7 +156,6 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                         wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp)
                         if wipe_timestamp
                         else None,
-                        tags=seven.json.dumps(tags) if tags else None,
                     )
                     .where(
                         AssetKeyTable.c.asset_key == asset_key.to_string(),
