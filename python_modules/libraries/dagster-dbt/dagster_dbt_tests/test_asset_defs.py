@@ -23,7 +23,15 @@ from dagster.core.asset_defs import build_assets_job
 from dagster.utils import file_relative_path
 
 
-def test_load_from_manifest_json():
+@pytest.mark.parametrize(
+    "prefix",
+    [
+        None,
+        "snowflake",
+        ["snowflake", "dbt_schema"],
+    ],
+)
+def test_load_from_manifest_json(prefix):
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
     with open(manifest_path, "r", encoding="utf8") as f:
         manifest_json = json.load(f)
@@ -32,8 +40,8 @@ def test_load_from_manifest_json():
     with open(run_results_path, "r", encoding="utf8") as f:
         run_results_json = json.load(f)
 
-    dbt_assets = load_assets_from_dbt_manifest(manifest_json=manifest_json)
-    assert_assets_match_project(dbt_assets)
+    dbt_assets = load_assets_from_dbt_manifest(manifest_json=manifest_json, key_prefix=prefix)
+    assert_assets_match_project(dbt_assets, prefix)
 
     dbt = MagicMock()
     dbt.get_run_results_json.return_value = run_results_json
@@ -89,7 +97,12 @@ def test_runtime_metadata_fn():
     ]
 
 
-def assert_assets_match_project(dbt_assets):
+def assert_assets_match_project(dbt_assets, prefix=None):
+    if prefix is None:
+        prefix = []
+    elif isinstance(prefix, str):
+        prefix = [prefix]
+
     assert len(dbt_assets) == 1
     assets_op = dbt_assets[0].op
     assert assets_op.tags == {"kind": "dbt"}
@@ -105,15 +118,21 @@ def assert_assets_match_project(dbt_assets):
         "sort_hot_cereals_by_calories",
         "cold_schema/sort_cold_cereals_by_calories",
     ]:
-        asset_key = AssetKey(asset_name.split("/"))
+        asset_key = AssetKey(prefix + asset_name.split("/"))
         output_name = asset_key.path[-1]
         assert dbt_assets[0].asset_keys_by_output_name[output_name] == asset_key
-        assert dbt_assets[0].asset_deps[asset_key] == {AssetKey(["sort_by_calories"])}
+        assert dbt_assets[0].asset_deps[asset_key] == {AssetKey(prefix + ["sort_by_calories"])}
+
+    for asset_key, group_name in dbt_assets[0].group_names.items():
+        if asset_key == AssetKey(prefix + ["subdir_schema", "least_caloric"]):
+            assert group_name == "subdir"
+        else:
+            assert group_name == "default"
 
     assert dbt_assets[0].asset_keys_by_output_name["sort_by_calories"] == AssetKey(
-        ["sort_by_calories"]
+        prefix + ["sort_by_calories"]
     )
-    assert not dbt_assets[0].asset_deps[AssetKey(["sort_by_calories"])]
+    assert not dbt_assets[0].asset_deps[AssetKey(prefix + ["sort_by_calories"])]
 
 
 def test_fail_immediately(
@@ -208,9 +227,17 @@ def test_basic(
         assert len(observations) == 0
 
 
+@pytest.mark.parametrize(
+    "prefix",
+    [
+        None,
+        "snowflake",
+        ["snowflake", "dbt_schema"],
+    ],
+)
 @pytest.mark.parametrize("use_build", [True, False])
 def test_select_from_project(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build, prefix
 ):  # pylint: disable=unused-argument
 
     dbt_assets = load_assets_from_dbt_project(
@@ -218,7 +245,17 @@ def test_select_from_project(
         dbt_config_dir,
         select="sort_by_calories subdir.least_caloric",
         use_build_command=use_build,
+        key_prefix=prefix,
     )
+
+    if prefix is None:
+        prefix = []
+    elif isinstance(prefix, str):
+        prefix = [prefix]
+    assert dbt_assets[0].asset_keys == {
+        AssetKey(prefix + suffix)
+        for suffix in (["sort_by_calories"], ["subdir_schema", "least_caloric"])
+    }
 
     assert dbt_assets[0].op.name == "run_dbt_dagster_dbt_test_project_e4753"
 
