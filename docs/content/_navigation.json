@@ -135,20 +135,36 @@
         ]
       },
       {
-        "title": "Resources",
+        "title": "Schedules, Sensors, & Partitions",
         "children": [
           {
-            "title": "Resources",
-            "path": "/concepts/resources"
+            "title": "Schedules",
+            "path": "/concepts/partitions-schedules-sensors/schedules"
+          },
+          {
+            "title": "Sensors",
+            "path": "/concepts/partitions-schedules-sensors/sensors"
+          },
+          {
+            "title": "Partitions",
+            "path": "/concepts/partitions-schedules-sensors/partitions"
+          },
+          {
+            "title": "Backfills",
+            "path": "/concepts/partitions-schedules-sensors/backfills"
           }
         ]
       },
       {
-        "title": "Testing",
+        "title": "IO Management",
         "children": [
           {
-            "title": "Testing",
-            "path": "/concepts/testing"
+            "title": "IO Managers",
+            "path": "/concepts/io-management/io-managers"
+          },
+          {
+            "title": "Unconnected Inputs",
+            "path": "/concepts/io-management/unconnected-inputs"
           }
         ]
       },
@@ -166,24 +182,24 @@
         ]
       },
       {
-        "title": "Dagster Types",
+        "title": "Repositories & Workspaces",
         "children": [
           {
-            "title": "Dagster Types",
-            "path": "/concepts/types"
+            "title": "Repositories",
+            "path": "/concepts/repositories-workspaces/repositories"
+          },
+          {
+            "title": "Workspaces",
+            "path": "/concepts/repositories-workspaces/workspaces"
           }
         ]
       },
       {
-        "title": "IO Management",
+        "title": "Resources",
         "children": [
           {
-            "title": "IO Managers",
-            "path": "/concepts/io-management/io-managers"
-          },
-          {
-            "title": "Unconnected Inputs",
-            "path": "/concepts/io-management/unconnected-inputs"
+            "title": "Resources",
+            "path": "/concepts/resources"
           }
         ]
       },
@@ -205,15 +221,11 @@
         ]
       },
       {
-        "title": "Repositories & Workspaces",
+        "title": "Dagster Types",
         "children": [
           {
-            "title": "Repositories",
-            "path": "/concepts/repositories-workspaces/repositories"
-          },
-          {
-            "title": "Workspaces",
-            "path": "/concepts/repositories-workspaces/workspaces"
+            "title": "Dagster Types",
+            "path": "/concepts/types"
           }
         ]
       },
@@ -231,23 +243,11 @@
         ]
       },
       {
-        "title": "Partitions, Schedules, & Sensors",
+        "title": "Testing",
         "children": [
           {
-            "title": "Schedules",
-            "path": "/concepts/partitions-schedules-sensors/schedules"
-          },
-          {
-            "title": "Sensors",
-            "path": "/concepts/partitions-schedules-sensors/sensors"
-          },
-          {
-            "title": "Partitions",
-            "path": "/concepts/partitions-schedules-sensors/partitions"
-          },
-          {
-            "title": "Backfills",
-            "path": "/concepts/partitions-schedules-sensors/backfills"
+            "title": "Testing",
+            "path": "/concepts/testing"
           }
         ]
       }
