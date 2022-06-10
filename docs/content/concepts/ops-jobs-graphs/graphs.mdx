@@ -7,6 +7,15 @@ description: TODO
 
 A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-graphs. Graphs form the core of [jobs](/concepts/ops-jobs-graphs/jobs).
 
+<!-- 
+
+- Input/output?
+- Config?
+- Resources?
+- Factories?
+
+ -->
+
 ---
 
 ## Relevant APIs
@@ -21,9 +30,7 @@ A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-g
 
 ## Creating graphs
 
-- Input/output?
-- Config?
-- Resources?
+
 
 ### Using the @graph decorator
 
@@ -38,9 +45,184 @@ A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-g
 
 ---
 
-## Defining dependencies
+## Defining and constructing dependencies
 
 
+- [Defining dependencies]()
+- [Constructing dependencies]()
+
+### Defining dependencies
+
+- [Linear dependencies]()
+- [Nothing dependencies]()
+
+#### Linear dependencies
+
+The simplest graph structure is the linear graph. We return one output from the root op, and pass along data through single inputs and outputs.
+
+<Image
+alt="Linear Graph"
+src="/images/concepts/pipelines/linear.png"
+width={1000}
+height={250}
+/>
+
+```python file=/concepts/ops_jobs_graphs/linear_job.py startafter=start_marker endbefore=end_marker
+from dagster import job, op
+
+
+@op
+def return_one(context) -> int:
+    return 1
+
+
+@op
+def add_one(context, number: int) -> int:
+    return number + 1
+
+
+@job
+def linear():
+    add_one(add_one(add_one(return_one())))
+```
+
+#### Nothing dependencies
+
+Dependencies in Dagster are primarily _data dependencies_. Using data dependencies means each input of an op depends on the output of an upstream op.
+
+If you have an op, say `Op A`, that does not depend on any outputs of another op, say `Op B`, there theoretically shouldn't be a reason for `Op A` to run after `Op B`. In most cases, these two ops should be parallelizable. However, there are some cases where an explicit ordering is required, but it doesn't make sense to pass data through inputs and outputs to model the dependency.
+
+If you need to model an explicit ordering dependency, you can use the <PyObject object="Nothing"/> Dagster type on the input definition of the downstream op. This type specifies that you are passing "nothing" via Dagster between the ops, while still uses inputs and outputs to model the dependency between the two ops.
+
+```python file=/concepts/ops_jobs_graphs/order_based_dependency_job.py startafter=start_marker endbefore=end_marker
+from dagster import In, Nothing, job, op
+
+
+@op
+def create_table_1():
+    get_database_connection().execute(
+        "create table_1 as select * from some_source_table"
+    )
+
+
+@op(ins={"start": In(Nothing)})
+def create_table_2():
+    get_database_connection().execute("create table_2 as select * from table_1")
+
+
+@job
+def nothing_dependency():
+    create_table_2(start=create_table_1())
+```
+
+In this example, `create_table_2` has an input of type `Nothing` meaning that it doesn't expect any data to be provided by the upstream op. This lets us connect them in the graph definition so that `create_table_2` executes only after `create_table_1` successfully executes.
+
+`Nothing` type inputs do not have a corresponding parameter in the function since there is no data to pass. When connecting the dependencies, it is recommended to use keyword args to prevent mix-ups with other positional inputs.
+
+Note that in most cases, it is usually possible to pass some data dependency. In the example above, even though we probably don't want to pass the table data itself between the ops, we could pass table pointers. For example, `create_table_1` could return a `table_pointer` output of type `str` with a value of `table_1`, and this table name can be used in `create_table_2` to more accurately model the data dependency.
+
+Dagster also provides more advanced abstractions to handle dependencies and IO. If you find that you are finding it difficult to model data dependencies when using external storages, check out [IOManagers](/concepts/io-management/io-managers).
+
+### Constructing dependencies
+
+- [Using GraphDefinitions]()
+- [Using YAML (GraphDSL)]()
+
+#### Using GraphDefinitions
+
+You may run into a situation where you need to programmatically construct the dependencies for a graph. In that case, you can directly define the <PyObject module="dagster" object="GraphDefinition"/> object.
+
+To construct a GraphDefinition, you need to pass the constructor a graph name, a list of op or graph definitions, and a dictionary defining the dependency structure. The dependency structure declares the dependencies of each op’s inputs on the outputs of other ops in the graph. The top-level keys of the dependency dictionary are the string names of ops or graphs. If you are using op aliases, be sure to use the aliased name. Values of the top-level keys are also dictionary, which maps input names to a <PyObject object="DependencyDefinition"/>.
+
+```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_pipeline_definition_marker endbefore=end_pipeline_definition_marker
+one_plus_one_from_constructor = GraphDefinition(
+    name="one_plus_one",
+    node_defs=[return_one, add_one],
+    dependencies={"add_one": {"number": DependencyDefinition("return_one")}},
+).to_job()
+```
+
+#### Using YAML (GraphDSL)
+
+Sometimes you may want to construct the dependencies of a graph definition from a YAML file or similar. This is useful when migrating to Dagster from other workflow systems.
+
+For example, you can have a YAML like this:
+
+```YAML file=/concepts/ops_jobs_graphs/my_graph.yaml
+name: some_example
+description: blah blah blah
+ops:
+  - def: add_one
+    alias: A
+  - def: add_one
+    alias: B
+    deps:
+      num:
+        op: A
+  - def: add_two
+    alias: C
+    deps:
+      num:
+        op: A
+  - def: subtract
+    deps:
+      left:
+        op: B
+      right:
+        op: C
+```
+
+You can programmatically generate a GraphDefinition from this YAML:
+
+```python file=/concepts/ops_jobs_graphs/dep_dsl.py
+import os
+
+from dagster import DependencyDefinition, GraphDefinition, NodeInvocation, op
+from dagster.utils.yaml_utils import load_yaml_from_path
+
+
+@op
+def add_one(num: int) -> int:
+    return num + 1
+
+
+@op
+def add_two(num: int) -> int:
+    return num + 2
+
+
+@op
+def subtract(left: int, right: int) -> int:
+    return left + right
+
+
+def construct_graph_with_yaml(yaml_file, op_defs) -> GraphDefinition:
+    yaml_data = load_yaml_from_path(yaml_file)
+
+    deps = {}
+
+    for op_yaml_data in yaml_data["ops"]:
+        def_name = op_yaml_data["def"]
+        alias = op_yaml_data.get("alias", def_name)
+        op_deps_entry = {}
+        for input_name, input_data in op_yaml_data.get("deps", {}).items():
+            op_deps_entry[input_name] = DependencyDefinition(
+                solid=input_data["op"], output=input_data.get("output", "result")
+            )
+        deps[NodeInvocation(name=def_name, alias=alias)] = op_deps_entry
+
+    return GraphDefinition(
+        name=yaml_data["name"],
+        description=yaml_data.get("description"),
+        node_defs=op_defs,
+        dependencies=deps,
+    )
+
+
+def define_dep_dsl_graph() -> GraphDefinition:
+    path = os.path.join(os.path.dirname(__file__), "my_graph.yaml")
+    return construct_graph_with_yaml(path, [add_one, add_two, subtract])
+```
 
 ---
 
