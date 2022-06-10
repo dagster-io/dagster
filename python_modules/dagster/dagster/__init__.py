@@ -1,3 +1,4 @@
+import importlib
 import sys
 import typing
 
@@ -19,7 +20,6 @@ from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Sh
 from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.asset_defs import (
-    AssetGroup,
     AssetIn,
     AssetSelection,
     AssetsDefinition,
@@ -273,7 +273,7 @@ from dagster.core.types.python_tuple import Tuple
 from dagster.serdes import deserialize_value, serialize_value
 from dagster.utils import file_relative_path
 from dagster.utils.alert import make_email_on_run_failure_sensor
-from dagster.utils.backcompat import ExperimentalWarning, rename_warning
+from dagster.utils.backcompat import ExperimentalWarning, deprecation_warning, rename_warning
 from dagster.utils.log import get_dagster_logger
 from dagster.utils.partitions import (
     create_offset_partition_selector,
@@ -300,6 +300,8 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 # in `_DEPRECATED` is required  for us to generate the deprecation warning.
 
 if typing.TYPE_CHECKING:
+    from dagster.core.asset_defs import AssetGroup
+
     # pylint:disable=reimported
     from dagster.core.definitions import DagsterAssetMetadataValue as DagsterAssetMetadataEntryData
     from dagster.core.definitions import (
@@ -323,6 +325,14 @@ if typing.TYPE_CHECKING:
     # pylint:enable=reimported
 
 _DEPRECATED = {
+    "AssetGroup": (
+        "dagster.core.asset_defs",
+        "0.16.0",
+        "Instead, place a set of assets wrapped with `with_resources` directly on a repository.",
+    ),
+}
+
+_DEPRECATED_RENAMED = {
     "EventMetadataEntry": (MetadataEntry, "0.15.0"),
     "EventMetadata": (MetadataValue, "0.15.0"),
     "TextMetadataEntryData": (TextMetadataValue, "0.15.0"),
@@ -354,7 +364,13 @@ _DEPRECATED = {
 
 def __getattr__(name: str) -> typing.Any:
     if name in _DEPRECATED:
-        value, breaking_version = _DEPRECATED[name]
+        module, breaking_version, additional_warn_text = _DEPRECATED[name]
+        value = getattr(importlib.import_module(module), name)
+        stacklevel = 3 if sys.version_info >= (3, 7) else 4
+        deprecation_warning(name, breaking_version, additional_warn_text, stacklevel=stacklevel)
+        return value
+    elif name in _DEPRECATED_RENAMED:
+        value, breaking_version = _DEPRECATED_RENAMED[name]
         stacklevel = 3 if sys.version_info >= (3, 7) else 4
         rename_warning(value.__name__, name, breaking_version, stacklevel=stacklevel)
         return value

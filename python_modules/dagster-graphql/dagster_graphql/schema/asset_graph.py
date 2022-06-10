@@ -241,7 +241,11 @@ class GrapheneAssetNode(graphene.ObjectType):
     # TODO: Prob want a more efficient way of resolving this
     def resolve_configField(self, _graphene_info) -> Optional[GrapheneConfigTypeField]:
         op = self.get_op_definition()
-        return op.resolve_config_field(_graphene_info) if op else None
+        return (
+            op.resolve_config_field(_graphene_info)
+            if op and isinstance(op, GrapheneSolidDefinition)
+            else None
+        )
 
     def resolve_computeKind(self, _graphene_info) -> Optional[str]:
         return self._external_asset_node.compute_kind

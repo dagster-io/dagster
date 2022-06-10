@@ -169,15 +169,11 @@ class SqlEventLogStorage(EventLogStorage):
                 }
             )
             if has_asset_key_index_cols:
-                materialization = event.dagster_event.step_materialization_data.materialization
                 entry_values.update(
                     {
                         "last_materialization_timestamp": utc_datetime_from_timestamp(
                             event.timestamp
                         ),
-                        "tags": seven.json.dumps(materialization.tags)
-                        if materialization.tags
-                        else None,
                     }
                 )
         elif event.dagster_event.is_asset_materialization_planned:

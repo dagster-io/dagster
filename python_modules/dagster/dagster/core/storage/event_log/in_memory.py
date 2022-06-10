@@ -147,9 +147,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
 
         asset["last_materialization_timestamp"] = utc_datetime_from_timestamp(event.timestamp)
         if event.dagster_event.is_step_materialization:
-            materialization = event.dagster_event.step_materialization_data.materialization
             asset["last_materialization"] = event
-            asset["tags"] = materialization.tags if materialization.tags else None
         if (
             event.dagster_event.is_step_materialization
             or event.dagster_event.is_asset_materialization_planned

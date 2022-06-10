@@ -1,7 +1,7 @@
 # isort: skip_file
 
 from .partitioned_job import my_partitioned_config
-from dagster import asset, HourlyPartitionsDefinition
+from dagster import HourlyPartitionsDefinition
 
 # start_marker
 from dagster import build_schedule_from_partitioned_job, job
@@ -19,17 +19,14 @@ do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
 # end_marker
 
 
-@asset(
-    partitions_def=HourlyPartitionsDefinition(start_date="2022-05-31", fmt="%Y-%m-%d")
-)
-def partitioned_asset():
-    return 1
-
-
 # start_partitioned_asset_schedule
-from dagster import AssetGroup
+from dagster import define_asset_job
 
-partitioned_asset_job = AssetGroup([partitioned_asset]).build_job("partitioned_job")
+partitioned_asset_job = define_asset_job(
+    "partitioned_job",
+    selection="*",
+    partitions_def=HourlyPartitionsDefinition(start_date="2022-05-31", fmt="%Y-%m-%d"),
+)
 
 
 asset_partitioned_schedule = build_schedule_from_partitioned_job(

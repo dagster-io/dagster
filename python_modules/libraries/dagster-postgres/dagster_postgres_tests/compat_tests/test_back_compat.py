@@ -310,9 +310,7 @@ def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
 
     @solid
     def asset_solid(_):
-        yield AssetMaterialization(
-            asset_key=AssetKey(["a"]), partition="partition_1", tags={"foo": "FOO"}
-        )
+        yield AssetMaterialization(asset_key=AssetKey(["a"]), partition="partition_1")
         yield Output(1)
 
     @pipeline

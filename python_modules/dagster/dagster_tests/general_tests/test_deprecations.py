@@ -28,6 +28,16 @@ from dagster.core.definitions.output import OutputDefinition
 from dagster.core.types.dagster_type import DagsterType
 
 # ########################
+# ##### ASSET GROUP
+# ########################
+
+
+def test_asset_group_import():
+    with pytest.warns(DeprecationWarning, match=re.escape("AssetGroup is deprecated")):
+        getattr(dagster, "AssetGroup")
+
+
+# ########################
 # ##### METADATA IMPORTS
 # ########################
 

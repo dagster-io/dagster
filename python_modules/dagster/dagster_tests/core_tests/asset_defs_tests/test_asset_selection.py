@@ -6,6 +6,7 @@ import pytest
 
 from dagster.core.asset_defs.asset_selection import AssetSelection
 from dagster.core.asset_defs.decorators import asset
+from dagster.core.definitions.events import AssetKey
 
 
 @asset(group_name="ladies")
@@ -86,6 +87,9 @@ def test_asset_selection_groups(all_assets):
 
 
 def test_asset_selection_keys(all_assets):
+    sel = AssetSelection.keys(AssetKey("alice"), AssetKey("bob"))
+    assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
+
     sel = AssetSelection.keys("alice", "bob")
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
 

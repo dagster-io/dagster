@@ -405,12 +405,3 @@ class InMemoryRunStorage(RunStorage):
     def update_backfill(self, partition_backfill: PartitionBackfill):
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
         self._bulk_actions[partition_backfill.backfill_id] = partition_backfill
-
-    def supports_kvs(self):
-        return False
-
-    def kvs_get(self, keys: Set[str]) -> Dict[str, str]:
-        raise NotImplementedError()
-
-    def kvs_set(self, pairs: Dict[str, str]) -> None:
-        raise NotImplementedError()
