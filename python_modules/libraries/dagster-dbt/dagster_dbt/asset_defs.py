@@ -147,7 +147,7 @@ def _dbt_nodes_to_assets(
 ) -> AssetsDefinition:
 
     outs: Dict[str, Out] = {}
-    group_names: Dict[AssetKey, str] = {}
+    group_names: Dict[AssetKey, Optional[str]] = {}
     asset_ins: Dict[AssetKey, Tuple[str, In]] = {}
 
     asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
