@@ -1,34 +1,43 @@
 ---
-title: Jobs & Graphs | Dagster
+title: Jobs | Dagster
 description: A job is an executable graph of ops, with optional resources and configuration.
 ---
 
-# Jobs & Graphs
+# Jobs
 
-A job is an executable graph of ops, with optional resources and configuration.
+Jobs are the main unit of execution and monitoring in Dagster. The core of a job is a [graph](/concepts/ops-jobs-graphs/graphs) of [ops](/concepts/ops-jobs-graphs/ops) connected via data dependencies.
+
+Ops are linked together by defining the dependencies between their inputs and outputs. An important difference between Dagster and other workflow systems is that, in Dagster, op dependencies are expressed as data dependencies, not just execution dependencies.
+
+This difference enables Dagster to support richer modeling of dependencies. Instead of merely ensuring that the order of execution is correct, dependencies in Dagster provide a variety of compile and run-time checks.
+
+Using jobs, you can:
+
+- Determine op behavior using [resources](/concepts/resources) and [configuration](/concepts/configuration/config-schema)
+- Define [schedules](/concepts/partitions-schedules-sensors/schedules) to execute jobs at fixed intervals
+- Define [sensors](/concepts/partitions-schedules-sensors/sensors) to trigger jobs when external changes occur
+
+---
 
 ## Relevant APIs
 
-| Name                                                   | Description                                                                                                                                                                                                                   |
-| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="job" decorator />                    | The decorator used to create a job.                                                                                                                                                                                           |
-| <PyObject object="JobDefinition" />                    | A job definition. Jobs are the main unit of execution and monitoring in Dagster. Typically constructed using the <PyObject object="job" decorator /> decorator.                                                               |
-| <PyObject module="dagster" object="graph" decorator /> | The decorator used to define a graph, which can form the basis for multiple jobs.                                                                                                                                             |
-| <PyObject module="dagster" object="GraphDefinition" /> | A graph definition, which is a set of ops (or [sub-graphs](/concepts/ops-jobs-graphs/nesting-graphs)) wired together. Forms the core of a job. Typically constructed using the <PyObject object="job" decorator /> decorator. |
+| Name                                | Description                                                                                                                                                     |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="job" decorator /> | The decorator used to create a job.                                                                                                                             |
+| <PyObject object="JobDefinition" /> | A job definition. Jobs are the main unit of execution and monitoring in Dagster. Typically constructed using the <PyObject object="job" decorator /> decorator. |
+|                              |
 
-_Jobs_ are the main unit of execution and monitoring in Dagster. The core of a job is a _graph_ of ops - connected via data dependencies. Jobs can also contain [resources](/concepts/resources) and [configuration](/concepts/configuration/config-schema), which determine some of the behavior of those ops.
+---
 
-Ops are linked together by defining the dependencies between their inputs and outputs. An important difference between Dagster and other workflow systems is that, in Dagster, op dependencies are expressed as data dependencies, not just execution dependencies. This difference enables Dagster to support richer modeling of dependencies. Instead of merely ensuring that the order of execution is correct, dependencies in Dagster provide a variety of compile and run-time checks.
+## Creating jobs
 
-You can run a job in a variety of ways - in the Python process where it's defined, via the command line, from Dagit, or via a GraphQL API.
+Jobs can be created in several ways:
 
-The [Dagit UI](/concepts/dagit/dagit) centers on jobs. Dagit makes it easy to view all the historical runs of each job in one place, as well as to manually kick off runs for a job.
+- [Using the <PyObject object="job" decorator /> decorator](#using-the-job-decorator)
+- [From assets](#from-assets)
+- [From a graph](#from-a-graph)
 
-You can define [schedules](/concepts/partitions-schedules-sensors/schedules) to execute jobs at fixed intervals or define [sensors](/concepts/partitions-schedules-sensors/sensors) to trigger jobs when external changes occur.
-
-## Creating a job
-
-### From scratch
+### Using the @job decorator
 
 The simplest way to create a job is to use the <PyObject object="job"/> decorator.
 
@@ -54,6 +63,10 @@ def do_stuff():
 ```
 
 When defining a job, you can provide [resources](/concepts/resources), [configuration](/concepts/configuration/config-schema), [hooks](/concepts/ops-jobs-graphs/op-hooks), tags, and an [executor](/deployment/executors) (follow the links for explanation of how to use each of these).
+
+### From assets
+
+<TODO />
 
 ### From a graph
 
@@ -93,129 +106,38 @@ local_job = do_stuff.to_job(
 
 `to_job` accepts the same arguments as the <PyObject object="job" decorator /> decorator: you can provide [resources](/concepts/resources), [configuration](/concepts/configuration/config-schema), [hooks](/concepts/ops-jobs-graphs/op-hooks), tags, and an [executor](/deployment/executors).
 
-## Including a job in a repository
+---
 
-You make jobs available to Dagit, GraphQLs, and the command line by including them inside [repositories](/concepts/repositories-workspaces/repositories). If you include schedules or sensors in a repository, the repository will automatically include jobs that those schedules or sensors target.
-
-```python file=/concepts/ops_jobs_graphs/repo_with_job.py
-from dagster import job, repository
-
-
-@job
-def do_it_all():
-    ...
-
-
-@repository
-def my_repo():
-    return [do_it_all]
-```
-
-## Advanced job configuration
-
-Ops and resources often accept [configuration](/concepts/configuration/config-schema) that determines how they behave. By default, you supply configuration for these ops and resources at the time you launch the job.
-
-When constructing a job, you can customize how that configuration will be satisfied, by passing a value to the `config` parameter of the <PyObject object="GraphDefinition" method="to_job" /> method or the <PyObject object="job" decorator /> decorator. The options are discussed below:
-
-### Hardcoded configuration
-
-You can supply a config dictionary. The supplied dictionary will be used to configure the job whenever the job is launched. It will show up in the Dagit Launchpad and can be overridden.
-
-```python file=/concepts/ops_jobs_graphs/jobs_with_default_config.py
-from dagster import job, op
-
-
-@op(config_schema={"config_param": str})
-def do_something(context):
-    context.log.info("config_param: " + context.op_config["config_param"])
-
-
-default_config = {"ops": {"do_something": {"config": {"config_param": "stuff"}}}}
-
-
-@job(config=default_config)
-def do_it_all_with_default_config():
-    do_something()
-
-
-if __name__ == "__main__":
-    # Will log "config_param: stuff"
-    do_it_all_with_default_config.execute_in_process()
-```
-
-### Partitioned jobs
-
-You can supply a <PyObject object="PartitionedConfig" />. It defines a discrete set of "partitions", along with a function for generating config for a partition. You can configure a job run by selecting a partition.
-
-For more information on how this works, take a look at the [Partitions concept page](/concepts/partitions-schedules-sensors/partitions).
-
-### Config mapping
-
-You can supply a <PyObject object="ConfigMapping" />. This allows you to expose a narrower config interface to your job. Instead of needing to configure every op and resource individually when launching the job, you can supply a smaller number of values to the outer config, and the <PyObject object="ConfigMapping" /> can translate it into config for all the job's ops and resources.
-
-```python file=/concepts/ops_jobs_graphs/jobs_with_config_mapping.py
-from dagster import config_mapping, job, op
-
-
-@op(config_schema={"config_param": str})
-def do_something(context):
-    context.log.info("config_param: " + context.op_config["config_param"])
-
-
-@config_mapping(config_schema={"simplified_param": str})
-def simplified_config(val):
-    return {
-        "ops": {"do_something": {"config": {"config_param": val["simplified_param"]}}}
-    }
-
-
-@job(config=simplified_config)
-def do_it_all_with_simplified_config():
-    do_something()
-
-
-if __name__ == "__main__":
-    # Will log "config_param: stuff"
-    do_it_all_with_simplified_config.execute_in_process(
-        run_config={"simplified_param": "stuff"}
-    )
-```
-
-## Examples
+## Building jobs
 
 This section covers a few basic patterns you can use to build more complex graphs and jobs.
 
-### Linear Dependencies
+- [That use the same op twice]()
+- [With multiple inputs]()
+- [With conditional branching]()
+- [With a fixed fan-in]()
 
-The simplest graph structure is the linear graph. We return one output from the root op, and pass along data through single inputs and outputs.
+### That use the same op twice
 
-<Image
-alt="Linear Graph"
-src="/images/concepts/pipelines/linear.png"
-width={1000}
-height={250}
-/>
+You can use the same op definition multiple times in the same graph/job.
 
-```python file=/concepts/ops_jobs_graphs/linear_job.py startafter=start_marker endbefore=end_marker
-from dagster import job, op
-
-
-@op
-def return_one(context) -> int:
-    return 1
-
-
-@op
-def add_one(context, number: int) -> int:
-    return number + 1
-
-
+```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_multiple_usage_pipeline endbefore=end_multiple_usage_pipeline
 @job
-def linear():
-    add_one(add_one(add_one(return_one())))
+def multiple_usage():
+    add_one(add_one(return_one()))
 ```
 
-### Multiple Inputs
+To differentiate between the two invocations of `add_one`, Dagster automatically aliases the op names to be `add_one` and `add_one_2`.
+
+You can also manually define the alias by using the `.alias` method on the op invocation.
+
+```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_alias_pipeline endbefore=end_alias_pipeline
+@job
+def alias():
+    add_one.alias("second_addition")(add_one(return_one()))
+``` 
+
+### With multiple inputs
 
 <Image
 alt="Multiple Inputs"
@@ -253,7 +175,7 @@ def inputs_and_outputs():
     adder(a, b)
 ```
 
-### Conditional Branching
+### With conditional branching
 
 <Image
 alt="Conditional Branch"
@@ -261,8 +183,6 @@ src="/images/concepts/pipelines/conditional.png"
 width={1000}
 height={250}
 />
-
-<!-- visual: https://excalidraw.com/#json=6007093500837888,QdGSxQO6qRgaMZwJIGSyMA -->
 
 An op only starts to execute once all of its inputs have been resolved. We can use this behavior to model conditional execution of ops.
 
@@ -302,7 +222,7 @@ def branching():
 
 When using conditional branching, <PyObject object="Output" /> objects must be yielded instead of returned.
 
-### Fixed Fan-in
+### With a fixed fan-in
 
 <Image
 alt="Fixed Fan-in"
@@ -339,9 +259,47 @@ def fan_in():
     sum_fan_in(fan_outs)
 ```
 
-In this example, we have 10 op that all output the number `1`. The `sum_fan_in` op takes all of these outputs as a list and sums them.
+In this example, we have 10 ops that all output the number `1`. The `sum_fan_in` op takes all of these outputs as a list and sums them.
 
-### Order-based Dependencies (Nothing dependencies)
+---
+
+## Defining dependencies
+
+- [Linear dependencies]()
+- [Nothing dependencies]()
+- [Graph dependencies]()
+
+### Linear dependencies
+
+The simplest graph structure is the linear graph. We return one output from the root op, and pass along data through single inputs and outputs.
+
+<Image
+alt="Linear Graph"
+src="/images/concepts/pipelines/linear.png"
+width={1000}
+height={250}
+/>
+
+```python file=/concepts/ops_jobs_graphs/linear_job.py startafter=start_marker endbefore=end_marker
+from dagster import job, op
+
+
+@op
+def return_one(context) -> int:
+    return 1
+
+
+@op
+def add_one(context, number: int) -> int:
+    return number + 1
+
+
+@job
+def linear():
+    add_one(add_one(add_one(return_one())))
+```
+
+### Nothing dependencies
 
 Dependencies in Dagster are primarily _data dependencies_. Using data dependencies means each input of an op depends on the output of an upstream op.
 
@@ -378,29 +336,12 @@ Note that in most cases, it is usually possible to pass some data dependency. In
 
 Dagster also provides more advanced abstractions to handle dependencies and IO. If you find that you are finding it difficult to model data dependencies when using external storages, check out [IOManagers](/concepts/io-management/io-managers).
 
-### Using the Same Op Twice
+### Graph dependencies
 
-You can use the same op definition multiple times in the same graph/job.
+- [GraphDefinitions]()
+- [YAML (GraphDSL)]()
 
-```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_multiple_usage_pipeline endbefore=end_multiple_usage_pipeline
-@job
-def multiple_usage():
-    add_one(add_one(return_one()))
-```
-
-To differentiate between the two invocations of `add_one`, Dagster automatically aliases the op names to be `add_one` and `add_one_2`.
-
-You can also manually define the alias by using the `.alias` method on the op invocation.
-
-```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_alias_pipeline endbefore=end_alias_pipeline
-@job
-def alias():
-    add_one.alias("second_addition")(add_one(return_one()))
-```
-
-## Patterns
-
-### Constructing GraphDefinitions
+#### GraphDefinitions
 
 You may run into a situation where you need to programmatically construct the dependencies for a graph. In that case, you can directly define the <PyObject module="dagster" object="GraphDefinition"/> object.
 
@@ -414,7 +355,7 @@ one_plus_one_from_constructor = GraphDefinition(
 ).to_job()
 ```
 
-### Graph DSL
+#### YAML (GraphDSL)
 
 Sometimes you may want to construct the dependencies of a graph definition from a YAML file or similar. This is useful when migrating to Dagster from other workflow systems.
 
@@ -495,6 +436,123 @@ def define_dep_dsl_graph() -> GraphDefinition:
     path = os.path.join(os.path.dirname(__file__), "my_graph.yaml")
     return construct_graph_with_yaml(path, [add_one, add_two, subtract])
 ```
+
+---
+
+## Configuring jobs
+
+Ops and resources often accept [configuration](/concepts/configuration/config-schema) that determines how they behave. By default, you supply configuration for these ops and resources at the time you launch the job.
+
+When constructing a job, you can customize how that configuration will be satisfied, by passing a value to the `config` parameter of the <PyObject object="GraphDefinition" method="to_job" /> method or the <PyObject object="job" decorator /> decorator. The options are discussed below:
+
+- [Hardcoded configuration](#hardcoded-configuration)
+- [Partitioned configuration](#partitioned-configuration)
+- [Config mapping](#config-mapping)
+
+### Hardcoded configuration
+
+You can supply a config dictionary. The supplied dictionary will be used to configure the job whenever the job is launched. It will show up in the Dagit Launchpad and can be overridden.
+
+```python file=/concepts/ops_jobs_graphs/jobs_with_default_config.py
+from dagster import job, op
+
+
+@op(config_schema={"config_param": str})
+def do_something(context):
+    context.log.info("config_param: " + context.op_config["config_param"])
+
+
+default_config = {"ops": {"do_something": {"config": {"config_param": "stuff"}}}}
+
+
+@job(config=default_config)
+def do_it_all_with_default_config():
+    do_something()
+
+
+if __name__ == "__main__":
+    # Will log "config_param: stuff"
+    do_it_all_with_default_config.execute_in_process()
+```
+
+### Partitioned jobs
+
+You can supply a <PyObject object="PartitionedConfig" />. It defines a discrete set of "partitions", along with a function for generating config for a partition. You can configure a job run by selecting a partition.
+
+For more information on how this works, take a look at the [Partitions concept page](/concepts/partitions-schedules-sensors/partitions).
+
+### Config mapping
+
+You can supply a <PyObject object="ConfigMapping" />. This allows you to expose a narrower config interface to your job. Instead of needing to configure every op and resource individually when launching the job, you can supply a smaller number of values to the outer config, and the <PyObject object="ConfigMapping" /> can translate it into config for all the job's ops and resources.
+
+```python file=/concepts/ops_jobs_graphs/jobs_with_config_mapping.py
+from dagster import config_mapping, job, op
+
+
+@op(config_schema={"config_param": str})
+def do_something(context):
+    context.log.info("config_param: " + context.op_config["config_param"])
+
+
+@config_mapping(config_schema={"simplified_param": str})
+def simplified_config(val):
+    return {
+        "ops": {"do_something": {"config": {"config_param": val["simplified_param"]}}}
+    }
+
+
+@job(config=simplified_config)
+def do_it_all_with_simplified_config():
+    do_something()
+
+
+if __name__ == "__main__":
+    # Will log "config_param: stuff"
+    do_it_all_with_simplified_config.execute_in_process(
+        run_config={"simplified_param": "stuff"}
+    )
+```
+
+---
+
+## Including jobs in repositories
+
+You make jobs available to Dagit, GraphQLs, and the command line by including them inside [repositories](/concepts/repositories-workspaces/repositories). If you include schedules or sensors in a repository, the repository will automatically include jobs that those schedules or sensors target.
+
+```python file=/concepts/ops_jobs_graphs/repo_with_job.py
+from dagster import job, repository
+
+
+@job
+def do_it_all():
+    ...
+
+
+@repository
+def my_repo():
+    return [do_it_all]
+```
+
+---
+
+## Testing jobs
+
+Dagster has built-in support for testing your data applications, including separating business logic from environments and setting explicit expectations on uncontrollable inputs. Refer to the [Testing guide](/concepts/testing) for more info and examples.
+
+---
+
+## Executing jobs
+
+You can run a job in a variety of ways:
+
+- In the Python process where it's defined
+- Via the command line
+- Via a GraphQL API, or 
+- In [Dagit](/concepts/dagit/dagit). Dagit centers on jobs, making it a one-stop-shop - you can manually kick off runs for a job and view all historical runs.
+
+Refer to the [Job execution guide](/concepts/ops-jobs-graphs/job-execution) for more info and examples.
+
+---
 
 ## See it in action
 
