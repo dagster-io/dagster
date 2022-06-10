@@ -2,16 +2,20 @@ import pytest
 
 from dagster import (
     AssetKey,
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
     IOManager,
     ResourceDefinition,
+    build_op_context,
     io_manager,
     mem_io_manager,
-    build_op_context,
     resource,
 )
 from dagster.core.asset_defs import AssetsDefinition, SourceAsset, asset, build_assets_job
+from dagster.core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+)
 from dagster.core.execution.with_resources import with_resources
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
 
@@ -409,18 +413,24 @@ def test_bad_key_provided():
 def test_bad_config_provided():
     the_asset, the_resource = get_resource_and_asset_for_config_tests()
 
-    with_resources(
-        [the_asset],
-        resource_defs={"foo": the_resource, "bar": the_resource},
-        resource_config_by_key={
-            "foo": {"config": object()},
-        },
-    )
+    with pytest.raises(
+        DagsterInvalidConfigError, match="Error when applying config for resource with key 'foo'"
+    ):
+        with_resources(
+            [the_asset],
+            resource_defs={"foo": the_resource, "bar": the_resource},
+            resource_config_by_key={
+                "foo": {"config": object()},
+            },
+        )
 
-    with_resources(
-        [the_asset],
-        resource_defs={"foo": the_resource, "bar": the_resource},
-        resource_config_by_key={
-            "foo": "bad",
-        },
-    )
+    with pytest.raises(
+        DagsterInvalidInvocationError, match="Error with config for resource key 'foo'"
+    ):
+        with_resources(
+            [the_asset],
+            resource_defs={"foo": the_resource, "bar": the_resource},
+            resource_config_by_key={
+                "foo": "bad",
+            },
+        )

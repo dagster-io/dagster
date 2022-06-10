@@ -1,12 +1,12 @@
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, TypeVar, cast
+from typing import Any, Iterable, List, Mapping, Optional, Sequence, TypeVar, cast
 
 from dagster import _check as check
 from dagster.utils import merge_dicts
 
 from ...config import Shape
-from ..errors import DagsterInvalidInvocationError
 from ..definitions import ResourceDefinition
 from ..definitions.resource_requirement import ResourceAddable
+from ..errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
 
 T = TypeVar("T", bound=ResourceAddable)
 
@@ -16,14 +16,19 @@ def with_resources(
     resource_defs: Mapping[str, ResourceDefinition],
     resource_config_by_key: Optional[Mapping[str, Any]] = None,
 ) -> Sequence[T]:
-    """Function that provides dagster resources to resource-requiring dagster definitions.
+    """Function that adds dagster resources to copies of resource-requiring dagster definitions.
 
     An error will be thrown if any provided definitions have a conflicting resource definition provided for a key provided to resource_defs. Resource config can be provided, with keys in the config dictionary corresponding to the keys for each resource definition. If any definition has unsatisfied resource keys after applying with_resources, an error will be thrown.
 
     Args:
         definitions (Iterable[ResourceAddable]): Dagster definitions to provide resources to.
-        resource_defs (Mapping[str, ResourceDefinition]): Mapping of resource keys to ResourceDefinition objects to satisfy resource requirements of provided dagster definitions.
-        resource_config_by_key (Optional[Mapping[str, Any]]): Specifies config for provided resources. The key in this dictionary corresponds to configuring the same key in the resource_defs dictionary.
+        resource_defs (Mapping[str, ResourceDefinition]):
+            Mapping of resource keys to ResourceDefinition objects to satisfy
+            resource requirements of provided dagster definitions.
+        resource_config_by_key (Optional[Mapping[str, Any]]):
+            Specifies config for provided resources. The key in this dictionary
+            corresponds to configuring the same key in the resource_defs
+            dictionary.
 
     Examples:
 
@@ -56,8 +61,8 @@ def with_resources(
 
 
     """
-    from dagster.core.storage.fs_io_manager import fs_io_manager
     from dagster.config.validate import validate_config
+    from dagster.core.storage.fs_io_manager import fs_io_manager
 
     check.mapping_param(resource_defs, "resource_defs")
     resource_config_by_key = check.opt_mapping_param(
@@ -78,6 +83,12 @@ def with_resources(
 
             outer_config_shape = Shape({"config": resource_def.get_config_field()})
             config_evr = validate_config(outer_config_shape, resource_config)
+            if not config_evr.success:
+                raise DagsterInvalidConfigError(
+                    f"Error when applying config for resource with key '{key}' ",
+                    config_evr.errors,
+                    resource_config,
+                )
             resource_defs[key] = resource_defs[key].configured(resource_config["config"])
 
     transformed_defs: List[T] = []
