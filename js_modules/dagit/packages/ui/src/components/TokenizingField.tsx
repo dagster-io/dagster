@@ -402,7 +402,7 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   );
 };
 
-const StyledTagInput = styled(TagInput)`
+export const StyledTagInput = styled(TagInput)`
   border: none;
   border-radius: 8px;
   box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px;
