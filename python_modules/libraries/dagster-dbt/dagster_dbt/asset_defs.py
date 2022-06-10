@@ -115,12 +115,12 @@ def _get_node_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
 
 
 def _get_node_group_name(node_info: Mapping[str, Any]) -> Optional[str]:
-    """A node's group name is obtained by concatenating the subfolders it resides in (if any)"""
+    """A node's group name is subdirectory that it resides in"""
     fqn = node_info.get("fqn", [])
     # the first component is the package name, and the last component is the model name
     if len(fqn) < 3:
         return None
-    return "_".join(fqn[1:-1])
+    return fqn[1]
 
 
 def _get_node_description(node_info):
@@ -319,8 +319,10 @@ def load_assets_from_dbt_project(
             Defaults to a directory called "config" inside the project_dir.
         target_dir (Optional[str]): The target directory where DBT will place compiled artifacts.
             Defaults to "target" underneath the project_dir.
-        select (str): A DBT selection string for the models in a project that you want to include.
-            Defaults to "*".
+        select (Optional[str]): A DBT selection string for the models in a project that you want
+            to include. Defaults to "*".
+        key_prefix (Optional[Union[str, List[str]]]):
+            pass
         runtime_metadata_fn: (Optional[Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]]):
             A function that will be run after any of the assets are materialized and returns
             metadata entries for the asset, to be displayed in the asset catalog for that run.
@@ -345,6 +347,16 @@ def load_assets_from_dbt_project(
     )
     selected_unique_ids: Set[str] = set(
         filter(None, (line.get("unique_id") for line in cli_output.logs))
+    )
+    return load_assets_from_dbt_manifest(
+        manifest_json=manifest_json,
+        runtime_metadata_fn=runtime_metadata_fn,
+        io_manager_key=io_manager_key,
+        selected_unique_ids=selected_unique_ids,
+        select=select,
+        node_info_to_asset_key=node_info_to_asset_key,
+        use_build_command=use_build_command,
+        key_prefix=key_prefix,
     )
 
     dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"]}
