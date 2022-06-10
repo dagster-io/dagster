@@ -213,7 +213,7 @@ const SidebarContents = () => {
     <>
       {/* Sidebar component, swap this element with another sidebar if you like */}
       {/* Search Bar*/}
-      <div className="h-0 flex-1 flex flex-col overflow-y-auto ">
+      <div className="flex-1 flex flex-col">
         <div className="px-3 mt-5">
           <div className="block w-full pl-4 border-gray-300 rounded-full border bg-white">
             <Search />
@@ -222,7 +222,7 @@ const SidebarContents = () => {
         {/* End Search Bar */}
 
         {/* Navigation */}
-        <nav className="px-3 mt-6">
+        <nav className="px-3 mt-6 overflow-y-scroll max-h-(screen-60)">
           <TopLevelNavigation />
         </nav>
       </div>
