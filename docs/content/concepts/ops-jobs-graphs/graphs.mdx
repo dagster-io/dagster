@@ -30,8 +30,6 @@ A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-g
 
 ## Creating graphs
 
-
-
 ### Using the @graph decorator
 
 ### To back assets
@@ -42,13 +40,12 @@ A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-g
 
 This section covers a few basic patterns you can use to build more complex graphs:
 
-- [Nesting graphs](/concepts/ops-jobs-graphs/nesting-graphs), which are graphs that contain other graphs
-- [Dynamic graphs](/concepts/ops-jobs-graphs/dynamic-graphs)
-
 - [That use the same op twice]()
 - [With multiple inputs]()
 - [With conditional branching]()
 - [With a fixed fan-in]()
+- [That contain other graphs]()
+- [That use dynamic outputs]()
 
 #### That use the same op twice
 
@@ -193,6 +190,14 @@ def fan_in():
 ```
 
 In this example, we have 10 ops that all output the number `1`. The `sum_fan_in` op takes all of these outputs as a list and sums them.
+
+#### That contain other graphs
+
+[Nesting graphs](/concepts/ops-jobs-graphs/nesting-graphs)
+
+#### That use dynamic outputs
+
+[Dynamic graphs](/concepts/ops-jobs-graphs/dynamic-graphs)
 
 ---
 
