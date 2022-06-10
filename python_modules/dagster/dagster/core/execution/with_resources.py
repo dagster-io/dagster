@@ -96,3 +96,19 @@ def with_resources(
         transformed_defs.append(cast(T, definition.with_resources(resource_defs)))
 
     return transformed_defs
+
+
+def without_resources(definitions: Iterable[T]) -> Sequence[T]:
+    """Returns a version of each provided definition without resources attached.
+
+    Provided resources will be converted to required resources.
+
+    Args:
+        definitions (Iterable[ResourceAddable]): Dagster definitions to remove resources from.
+    """
+
+    transformed_defs: List[T] = []
+    for definition in definitions:
+        transformed_defs.append(cast(T, definition.without_resources()))
+
+    return transformed_defs

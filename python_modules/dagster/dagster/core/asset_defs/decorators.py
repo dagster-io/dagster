@@ -33,7 +33,7 @@ from dagster.seven import funcsigs
 from dagster.utils.backcompat import ExperimentalWarning, canonicalize_backcompat_args
 
 from .asset_in import AssetIn
-from .assets import AssetsDefinition
+from .assets import AssetsDefinition, io_manager_key_for_asset_key
 from .partition_mapping import PartitionMapping
 
 
@@ -242,8 +242,7 @@ class _Asset:
                 io_manager_def = check.inst_param(
                     self.io_manager, "io_manager", IOManagerDefinition
                 )
-                out_asset_resource_key = "__".join(out_asset_key.path)
-                io_manager_key = f"{out_asset_resource_key}__io_manager"
+                io_manager_key = io_manager_key_for_asset_key(out_asset_key)
                 self.resource_defs[io_manager_key] = cast(ResourceDefinition, io_manager_def)
             else:
                 io_manager_key = "io_manager"

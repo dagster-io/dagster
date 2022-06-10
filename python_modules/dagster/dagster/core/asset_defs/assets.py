@@ -10,6 +10,7 @@ from dagster.core.definitions import (
     ResourceDefinition,
 )
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster.core.errors import DagsterInvalidInvocationError
@@ -470,6 +471,69 @@ class AssetsDefinition(ResourceAddable):
             group_names=self._group_names,
         )
 
+    def without_resources(self) -> "AssetsDefinition":
+        # In the case where we provided a system-created resource key, we need
+        # to remove it without requiring users provide it later.
+        if len(self.asset_keys) == 1 and isinstance(self.node_def, OpDefinition):
+
+            io_manager_key = io_manager_key_for_asset_key(self.asset_key)
+
+            op_def = self.op
+            output_def = op_def.output_defs[0]
+            if output_def.io_manager_key == io_manager_key_for_asset_key(self.asset_key):
+                io_manager_key = "io_manager"
+                new_required_keys = {
+                    io_manager_key,
+                    *{
+                        key
+                        for key in op_def.required_resource_keys
+                        if key != io_manager_key_for_asset_key(self.asset_key)
+                    },
+                }
+
+            else:
+                io_manager_key = output_def.io_manager_key
+                new_required_keys = op_def.required_resource_keys
+
+            output_def = OutputDefinition(
+                dagster_type=output_def.dagster_type,
+                name=output_def.name,
+                description=output_def.description,
+                is_required=output_def.is_required,
+                io_manager_key=io_manager_key,
+                metadata=output_def.metadata,
+                asset_key=output_def._asset_key,
+                asset_partitions=output_def._asset_partitions_fn,
+                asset_partitions_def=output_def._asset_partitions_def,
+            )
+
+            node_def = OpDefinition(
+                name=op_def.name,
+                input_defs=op_def.input_defs,
+                output_defs=[output_def],
+                compute_fn=op_def.compute_fn,
+                config_schema=op_def.config_schema,
+                description=op_def.description,
+                tags=op_def.tags,
+                required_resource_keys=new_required_keys,
+                version=op_def.version,
+                retry_policy=op_def.retry_policy,
+            )
+        else:
+            node_def = self.node_def
+        return AssetsDefinition(
+            asset_keys_by_input_name=self._asset_keys_by_input_name,
+            asset_keys_by_output_name=self._asset_keys_by_output_name,
+            node_def=node_def,
+            partitions_def=self._partitions_def,
+            partition_mappings=self._partition_mappings,
+            asset_deps=self._asset_deps,
+            selected_asset_keys=self._selected_asset_keys,
+            can_subset=self._can_subset,
+            resource_defs=None,
+            group_names=self._group_names,
+        )
+
 
 def _infer_asset_keys_by_input_names(
     graph_def: GraphDefinition, asset_keys_by_input_name: Mapping[str, AssetKey]
@@ -553,3 +617,8 @@ def _build_invocation_context_with_included_resources(
         # If user is mocking OpExecutionContext, send it through (we don't know
         # what modifications they might be making, and we don't want to override)
         return context
+
+
+def io_manager_key_for_asset_key(asset_key: AssetKey):
+    asset_path = "__".join(asset_key.path)
+    return f"{asset_path}__io_manager"
