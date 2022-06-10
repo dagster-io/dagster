@@ -140,7 +140,7 @@
         "children": [
           {
             "title": "Jobs",
-            "path": "/concepts/ops-jobs-graphs/jobs-graphs"
+            "path": "/concepts/ops-jobs-graphs/jobs"
           },
           {
             "title": "Job Execution",
