@@ -22,6 +22,14 @@ from .graphql_context_test_suite import (
 from .setup import csv_hello_world_solids_config
 from .utils import step_did_not_run, step_did_succeed, sync_execute_get_run_log_data
 
+ENGINE_EVENT_TYPES = [
+    "EngineEvent",
+    "RunEnqueuedEvent",
+    "RunDequeuedEvent",
+    "ResourceInitStartedEvent",
+    "ResourceInitSuccessEvent",
+]
+
 
 class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
     def test_start_pipeline_execution(self, graphql_context):
@@ -349,7 +357,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         non_engine_event_types = [
             message["__typename"]
             for message in run_logs["messages"]
-            if message["__typename"] not in ("EngineEvent", "RunEnqueuedEvent", "RunDequeuedEvent")
+            if message["__typename"] not in ENGINE_EVENT_TYPES
         ]
 
         assert non_engine_event_types == self._csv_hello_world_event_sequence()
@@ -394,7 +402,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         non_engine_event_types = [
             message["__typename"]
             for message in events_result.data["logsForRun"]["events"]
-            if message["__typename"] not in ("EngineEvent", "RunEnqueuedEvent", "RunDequeuedEvent")
+            if message["__typename"] not in ENGINE_EVENT_TYPES
         ]
         assert non_engine_event_types == self._csv_hello_world_event_sequence()
 
@@ -459,7 +467,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         non_engine_event_types = [
             message["__typename"]
             for message in full_logs
-            if message["__typename"] not in ("EngineEvent", "RunEnqueuedEvent", "RunDequeuedEvent")
+            if message["__typename"] not in ENGINE_EVENT_TYPES
         ]
         assert non_engine_event_types == self._csv_hello_world_event_sequence()
 

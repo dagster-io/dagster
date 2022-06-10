@@ -218,7 +218,15 @@ export function extractMetadataFromLogs(
       }
     }
 
-    if (log.__typename === 'EngineEvent' && !log.stepKey) {
+    if (
+      log.__typename === 'EngineEvent' ||
+      log.__typename === 'ResourceInitFailureEvent' ||
+      log.__typename === 'ResourceInitStartedEvent' ||
+      log.__typename === 'ResourceInitSuccessEvent' ||
+      log.__typename === 'ResourceTeardownFailureEvent' ||
+      log.__typename === 'StepProcessStartedEvent' ||
+      log.__typename === 'StepProcessStartingEvent'
+    ) {
       if (log.markerStart) {
         upsertMarker(metadata.globalMarkers, log.markerStart).start = timestamp;
       }
@@ -276,13 +284,6 @@ export function extractMetadataFromLogs(
         upsertState(step, timestamp + 1, IStepState.PREPARING);
       } else if (log.__typename === 'ExecutionStepRestartEvent') {
         upsertState(step, timestamp, IStepState.RUNNING);
-      } else if (log.__typename === 'EngineEvent') {
-        if (log.markerStart) {
-          upsertMarker(step.markers, log.markerStart).start = timestamp;
-        }
-        if (log.markerEnd) {
-          upsertMarker(step.markers, log.markerEnd).end = timestamp;
-        }
       } else if (log.__typename === 'ObjectStoreOperationEvent') {
         // this indicates the step was skipped and its previous intermediates were copied
         // so we will drop the step because we didn't execute it
@@ -343,7 +344,7 @@ export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
       timestamp
       stepKey
     }
-    ... on EngineEvent {
+    ... on MarkerEvent {
       markerStart
       markerEnd
     }

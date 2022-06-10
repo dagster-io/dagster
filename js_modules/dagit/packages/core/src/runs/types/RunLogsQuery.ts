@@ -376,6 +376,366 @@ export interface RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepOut
   typeCheck: RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepOutputEvent_typeCheck;
 }
 
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries = RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_PathMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_JsonMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_UrlMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TextMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_MarkdownMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_PythonArtifactMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_FloatMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_IntMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_BoolMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_PipelineRunMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_AssetMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry;
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_error_cause | null;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent {
+  __typename: "ResourceInitFailureEvent" | "ResourceTeardownFailureEvent" | "EngineEvent";
+  runId: string;
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  eventType: DagsterEventType | null;
+  label: string | null;
+  description: string | null;
+  metadataEntries: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries[];
+  markerStart: string | null;
+  markerEnd: string | null;
+  error: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_error | null;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries = RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_PathMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_JsonMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_UrlMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TextMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_MarkdownMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_PythonArtifactMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_FloatMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_IntMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_BoolMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_PipelineRunMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_AssetMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry;
+
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent {
+  __typename: "ResourceInitStartedEvent" | "ResourceInitSuccessEvent" | "StepProcessStartedEvent" | "StepProcessStartingEvent";
+  runId: string;
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  eventType: DagsterEventType | null;
+  label: string | null;
+  description: string | null;
+  metadataEntries: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent_metadataEntries[];
+  markerStart: string | null;
+  markerEnd: string | null;
+}
+
 export interface RunLogsQuery_logsForRun_EventConnection_events_HandledOutputEvent_metadataEntries_PathMetadataEntry {
   __typename: "PathMetadataEntry";
   label: string;
@@ -1078,217 +1438,6 @@ export interface RunLogsQuery_logsForRun_EventConnection_events_ObservationEvent
   assetKey: RunLogsQuery_logsForRun_EventConnection_events_ObservationEvent_assetKey | null;
 }
 
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_PathMetadataEntry {
-  __typename: "PathMetadataEntry";
-  label: string;
-  description: string | null;
-  path: string;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_JsonMetadataEntry {
-  __typename: "JsonMetadataEntry";
-  label: string;
-  description: string | null;
-  jsonString: string;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_UrlMetadataEntry {
-  __typename: "UrlMetadataEntry";
-  label: string;
-  description: string | null;
-  url: string;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TextMetadataEntry {
-  __typename: "TextMetadataEntry";
-  label: string;
-  description: string | null;
-  text: string;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_MarkdownMetadataEntry {
-  __typename: "MarkdownMetadataEntry";
-  label: string;
-  description: string | null;
-  mdStr: string;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_PythonArtifactMetadataEntry {
-  __typename: "PythonArtifactMetadataEntry";
-  label: string;
-  description: string | null;
-  module: string;
-  name: string;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_FloatMetadataEntry {
-  __typename: "FloatMetadataEntry";
-  label: string;
-  description: string | null;
-  floatValue: number | null;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_IntMetadataEntry {
-  __typename: "IntMetadataEntry";
-  label: string;
-  description: string | null;
-  intValue: number | null;
-  intRepr: string;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_BoolMetadataEntry {
-  __typename: "BoolMetadataEntry";
-  label: string;
-  description: string | null;
-  boolValue: boolean | null;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_PipelineRunMetadataEntry {
-  __typename: "PipelineRunMetadataEntry";
-  label: string;
-  description: string | null;
-  runId: string;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_AssetMetadataEntry_assetKey {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_AssetMetadataEntry {
-  __typename: "AssetMetadataEntry";
-  label: string;
-  description: string | null;
-  assetKey: RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_AssetMetadataEntry_assetKey;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
-  __typename: "TableColumnConstraints";
-  nullable: boolean;
-  unique: boolean;
-  other: string[];
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
-  __typename: "TableColumn";
-  name: string;
-  description: string | null;
-  type: string;
-  constraints: RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
-  __typename: "TableConstraints";
-  other: string[];
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableMetadataEntry_table_schema {
-  __typename: "TableSchema";
-  columns: RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
-  constraints: RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableMetadataEntry_table {
-  __typename: "Table";
-  records: string[];
-  schema: RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableMetadataEntry_table_schema;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableMetadataEntry {
-  __typename: "TableMetadataEntry";
-  label: string;
-  description: string | null;
-  table: RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableMetadataEntry_table;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
-  __typename: "TableColumnConstraints";
-  nullable: boolean;
-  unique: boolean;
-  other: string[];
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
-  __typename: "TableColumn";
-  name: string;
-  description: string | null;
-  type: string;
-  constraints: RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
-  __typename: "TableConstraints";
-  other: string[];
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema {
-  __typename: "TableSchema";
-  columns: RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
-  constraints: RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableSchemaMetadataEntry {
-  __typename: "TableSchemaMetadataEntry";
-  label: string;
-  description: string | null;
-  schema: RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema;
-}
-
-export type RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries = RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_PathMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_JsonMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_UrlMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TextMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_MarkdownMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_PythonArtifactMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_FloatMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_IntMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_BoolMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_PipelineRunMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_AssetMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries_TableSchemaMetadataEntry;
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_engineError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_engineError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_engineError_cause | null;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_EngineEvent {
-  __typename: "EngineEvent";
-  runId: string;
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  stepKey: string | null;
-  eventType: DagsterEventType | null;
-  label: string | null;
-  description: string | null;
-  metadataEntries: RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_metadataEntries[];
-  engineError: RunLogsQuery_logsForRun_EventConnection_events_EngineEvent_engineError | null;
-  markerStart: string | null;
-  markerEnd: string | null;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_RunFailureEvent_pipelineFailureError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_RunFailureEvent_pipelineFailureError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: RunLogsQuery_logsForRun_EventConnection_events_RunFailureEvent_pipelineFailureError_cause | null;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_RunFailureEvent {
-  __typename: "RunFailureEvent";
-  runId: string;
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  stepKey: string | null;
-  eventType: DagsterEventType | null;
-  pipelineFailureError: RunLogsQuery_logsForRun_EventConnection_events_RunFailureEvent_pipelineFailureError | null;
-}
-
 export interface RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepFailureEvent_error_cause {
   __typename: "PythonError";
   message: string;
@@ -1492,7 +1641,7 @@ export interface RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepUpF
 }
 
 export interface RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepUpForRetryEvent {
-  __typename: "ExecutionStepUpForRetryEvent";
+  __typename: "ExecutionStepUpForRetryEvent" | "RunFailureEvent" | "HookErroredEvent";
   runId: string;
   message: string;
   timestamp: string;
@@ -2032,30 +2181,6 @@ export interface RunLogsQuery_logsForRun_EventConnection_events_ObjectStoreOpera
   operationResult: RunLogsQuery_logsForRun_EventConnection_events_ObjectStoreOperationEvent_operationResult;
 }
 
-export interface RunLogsQuery_logsForRun_EventConnection_events_HookErroredEvent_error_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_HookErroredEvent_error {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: RunLogsQuery_logsForRun_EventConnection_events_HookErroredEvent_error_cause | null;
-}
-
-export interface RunLogsQuery_logsForRun_EventConnection_events_HookErroredEvent {
-  __typename: "HookErroredEvent";
-  runId: string;
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  stepKey: string | null;
-  eventType: DagsterEventType | null;
-  error: RunLogsQuery_logsForRun_EventConnection_events_HookErroredEvent_error | null;
-}
-
 export interface RunLogsQuery_logsForRun_EventConnection_events_LogsCapturedEvent {
   __typename: "LogsCapturedEvent";
   runId: string;
@@ -2069,7 +2194,7 @@ export interface RunLogsQuery_logsForRun_EventConnection_events_LogsCapturedEven
   pid: number | null;
 }
 
-export type RunLogsQuery_logsForRun_EventConnection_events = RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepSkippedEvent | RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepOutputEvent | RunLogsQuery_logsForRun_EventConnection_events_HandledOutputEvent | RunLogsQuery_logsForRun_EventConnection_events_LoadedInputEvent | RunLogsQuery_logsForRun_EventConnection_events_MaterializationEvent | RunLogsQuery_logsForRun_EventConnection_events_ObservationEvent | RunLogsQuery_logsForRun_EventConnection_events_EngineEvent | RunLogsQuery_logsForRun_EventConnection_events_RunFailureEvent | RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepFailureEvent | RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepUpForRetryEvent | RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepInputEvent | RunLogsQuery_logsForRun_EventConnection_events_StepExpectationResultEvent | RunLogsQuery_logsForRun_EventConnection_events_ObjectStoreOperationEvent | RunLogsQuery_logsForRun_EventConnection_events_HookErroredEvent | RunLogsQuery_logsForRun_EventConnection_events_LogsCapturedEvent;
+export type RunLogsQuery_logsForRun_EventConnection_events = RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepSkippedEvent | RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepOutputEvent | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitStartedEvent | RunLogsQuery_logsForRun_EventConnection_events_HandledOutputEvent | RunLogsQuery_logsForRun_EventConnection_events_LoadedInputEvent | RunLogsQuery_logsForRun_EventConnection_events_MaterializationEvent | RunLogsQuery_logsForRun_EventConnection_events_ObservationEvent | RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepFailureEvent | RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepUpForRetryEvent | RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepInputEvent | RunLogsQuery_logsForRun_EventConnection_events_StepExpectationResultEvent | RunLogsQuery_logsForRun_EventConnection_events_ObjectStoreOperationEvent | RunLogsQuery_logsForRun_EventConnection_events_LogsCapturedEvent;
 
 export interface RunLogsQuery_logsForRun_EventConnection {
   __typename: "EventConnection";

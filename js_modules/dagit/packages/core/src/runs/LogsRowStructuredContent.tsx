@@ -178,38 +178,30 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       return <DefaultContent eventType={eventType} message={node.message} eventIntent="success" />;
     case 'AlertFailureEvent':
       return <DefaultContent eventType={eventType} message={node.message} eventIntent="warning" />;
+    case 'ResourceInitFailureEvent':
+    case 'ResourceTeardownFailureEvent':
     case 'RunFailureEvent':
-      if (node.pipelineFailureError) {
-        return (
-          <FailureContent
-            message={node.message}
-            error={node.pipelineFailureError}
-            eventType={eventType}
-          />
-        );
+      if (node.error) {
+        return <FailureContent message={node.message} error={node.error} eventType={eventType} />;
       }
-
       return <DefaultContent message={node.message} eventType={eventType} eventIntent="danger" />;
     case 'RunSuccessEvent':
       return <DefaultContent message={node.message} eventType={eventType} eventIntent="success" />;
-
     case 'RunStartEvent':
-      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'RunEnqueuedEvent':
-      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'RunDequeuedEvent':
-      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'RunStartingEvent':
-      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'RunCancelingEvent':
+    case 'ResourceInitStartedEvent':
+    case 'ResourceInitSuccessEvent':
+    case 'StepProcessStartedEvent':
+    case 'StepProcessStartingEvent':
       return <DefaultContent message={node.message} eventType={eventType} />;
     case 'RunCanceledEvent':
       return <FailureContent message={node.message} eventType={eventType} />;
     case 'EngineEvent':
-      if (node.engineError) {
-        return (
-          <FailureContent message={node.message} error={node.engineError} eventType={eventType} />
-        );
+      if (node.error) {
+        return <FailureContent message={node.message} error={node.error} eventType={eventType} />;
       }
       return (
         <DefaultContent
