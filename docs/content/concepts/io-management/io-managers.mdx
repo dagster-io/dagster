@@ -1,11 +1,11 @@
 ---
 title: IO Managers | Dagster
-description: IO Managers determine how to store op outputs and load op inputs.
+description: IO Managers determine how to store asset/op outputs and load asset/op inputs.
 ---
 
 # IO Managers
 
-IO Managers are user-provided objects that store op outputs and load them as inputs to downstream ops.
+IO Managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops.
 
 <Image
 alt="IO Manager Diagram"
@@ -26,18 +26,19 @@ height={1040}
 ## Overview
 
 Dagster ops have [inputs and outputs](/concepts/ops-jobs-graphs/ops#inputs-and-outputs). When an op returns an output and a downstream op takes that output as an input, where does the data live in between? <PyObject module="dagster" object="IOManager" pluralize /> let the user decide.
+Similarly, <PyObject module="dagster" object="IOManager" pluralize /> are responsible for storing asset outputs and loading inputs in downstream assets.
 
-The IO manager APIs make it easy to separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results. Ops can focus on business logic, while IO managers handle I/O. This separation makes it easier to test the business logic and run it in different environments.
+The IO manager APIs make it easy to separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results. Assets and ops can focus on business logic, while IO managers handle I/O. This separation makes it easier to test the business logic and run it in different environments.
 
 Not all inputs depend on upstream outputs. The [Unconnected Inputs](/concepts/io-management/unconnected-inputs) overview covers <PyObject module="dagster" object="DagsterTypeLoader" pluralize /> and <PyObject module="dagster" object="RootInputManager" displayText="RootInputManagers (experimental)" />, which let you decide how inputs at the beginning of a job are loaded.
 
 ### Outputs and downstream inputs
 
 <PyObject module="dagster" object="IOManager" pluralize /> are user-provided objects
-that are responsible for storing the output of an op and loading it as input to downstream
-ops. For example, an IO Manager might store and load objects from files on a filesystem.
+that are responsible for storing the output of an asset or op and loading it as input to downstream
+assets or ops. For example, an IO Manager might store and load objects from files on a filesystem.
 
-Each op output can have its own IO manager, or multiple op outputs can share an IO manager. The IO manager that's used for handling a particular op output is automatically used for loading it in downstream ops.
+For ops, each op output can have its own IO manager, or multiple op outputs can share an IO manager. The IO manager that's used for handling a particular op output is automatically used for loading it in downstream ops.
 
 <Image
 alt="two-io-managers"
@@ -49,6 +50,8 @@ height={1040}
 <!-- https://excalidraw.com/#json=4546514944786432,52cpcHHoWfzOMro2eFC6MQ -->
 
 This diagram shows a job with two IO managers, each of which is shared across a few inputs and outputs.
+
+For assets, each asset can have its own IO manager. In the [multi-asset](/concepts/assets/multi-assets) case where multiple assets are outputted, each outputted asset can be handled with a different IO manager.
 
 The default IO manager, <PyObject module="dagster" object="fs_io_manager" />, stores and retrieves values in the filesystem while pickling. If a job is invoked via <PyObject object="JobDefinition" method="execute_in_process" />, the default IO manager is switched to <PyObject module="dagster" object="mem_io_manager"/>, which stores outputs in memory.
 
@@ -116,6 +119,117 @@ def op_2(a):
 )
 def my_job():
     op_2(op_1())
+```
+
+### Applying IO managers to assets
+
+By default, materializing an asset will pickle it to a local file named "my_asset", in a temporary directory. You can specify this directory by providing a value for the `local_artifact_storage` property in your dagster.yaml file.
+
+[IO managers](/concepts/io-management/io-managers) enable fully overriding this behavior and storing asset contents in any way you wish - e.g. writing them as tables in a database or as objects in a cloud object store. Dagster also provides built-in IO managers that pickle assets to AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), and GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />), or you can write your own.
+
+To apply an IO manager to a set of assets, you can use <PyObject object="with_resources" />:
+
+```python file=/concepts/assets/asset_io_manager.py startafter=start_marker endbefore=end_marker
+from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+
+from dagster import asset, with_resources
+
+
+@asset
+def upstream_asset():
+    return [1, 2, 3]
+
+
+@asset
+def downstream_asset(upstream_asset):
+    return upstream_asset + [4]
+
+
+assets_with_io_manager = with_resources(
+    [upstream_asset, downstream_asset],
+    resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_resource},
+)
+```
+
+This example also includes `"s3": s3_resource`, because the `s3_pickle_io_manager` depends on an s3 resource.
+
+When `upstream_asset` is materialized, the value `[1, 2, 3]` will be will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a different object on S3.
+
+### Per-asset IO manager
+
+Different assets can have different IO managers:
+
+```python file=/concepts/assets/asset_different_io_managers.py startafter=start_marker endbefore=end_marker
+from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+
+from dagster import asset, fs_io_manager, with_resources
+
+
+@asset(io_manager_key="s3_io_manager")
+def upstream_asset():
+    return [1, 2, 3]
+
+
+@asset(io_manager_key="fs_io_manager")
+def downstream_asset(upstream_asset):
+    return upstream_asset + [4]
+
+
+assets_with_io_managers = with_resources(
+    [upstream_asset, downstream_asset],
+    resource_defs={
+        "s3_io_manager": s3_pickle_io_manager,
+        "s3": s3_resource,
+        "fs_io_manager": fs_io_manager,
+    },
+)
+```
+
+When `upstream_asset` is materialized, the value `[1, 2, 3]` will be will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a file on the local filesystem.
+
+In the multi-asset case, you can customize how each asset is materialized by specifying an `io_manager_key` on each output of the multi-asset.
+
+```python file=/concepts/assets/multi_assets.py startafter=start_io_manager_multi_asset endbefore=end_io_manager_multi_asset
+from dagster import Out, multi_asset
+
+
+@multi_asset(
+    outs={
+        "s3_asset": Out(io_manager_key="s3_io_manager"),
+        "adls_asset": Out(io_manager_key="adls2_io_manager"),
+    },
+)
+def my_assets():
+    return "store_me_on_s3", "store_me_on_adls2"
+```
+
+The same assets can be bound to different resources and IO managers in different environments. For example, for local development, you might want to store assets on your local filesystem while, in production, you might want to store the assets in S3.
+
+```python file=/concepts/assets/asset_io_manager_prod_local.py startafter=start_marker endbefore=end_marker
+from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+
+from dagster import asset, fs_io_manager, with_resources
+
+
+@asset
+def upstream_asset():
+    return [1, 2, 3]
+
+
+@asset
+def downstream_asset(upstream_asset):
+    return upstream_asset + [4]
+
+
+prod_assets = with_resources(
+    [upstream_asset, downstream_asset],
+    resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_resource},
+)
+
+local_assets = with_resources(
+    [upstream_asset, downstream_asset],
+    resource_defs={"io_manager": fs_io_manager},
+)
 ```
 
 ## Defining an IO manager
