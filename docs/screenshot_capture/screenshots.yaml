@@ -32,38 +32,6 @@
   defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/complex_pipeline.py
   url: http://127.0.0.1:3000/
 
-- path: tutorial/config_filled_out.png
-  defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/advanced/configuring_ops/configurable_job.py
-  url: http://127.0.0.1:3000/workspace/__repository__configurable_job@configurable_job.py/jobs/configurable_job/playground
-  steps:
-    - fill out config
-
-- path: tutorial/inputs_figure_two.png
-  defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/advanced/configuring_ops/configurable_job.py
-  url: http://127.0.0.1:3000/workspace/__repository__configurable_job@configurable_job.py/jobs/configurable_job/playground
-  steps:
-    - hit Ctrl-space
-
-- path: tutorial/repos.png
-  defs_file: examples/docs_snippets/docs_snippets/concepts/repositories_workspaces/repository_definition.py
-  url: http://127.0.0.1:3000/
-  width: 1536
-  height: 1152
-
-- path: tutorial/materializations.png
-  vetted: false
-
-- path: tutorial/schedules.png
-  defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/advanced/scheduling/scheduler.py
-  url: http://127.0.0.1:3000/
-  steps:
-    - bring up left nav
-
-- path: tutorial/good_morning_schedule.png
-  defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/advanced/scheduling/scheduler.py
-  url: http://127.0.0.1:3000/workspace/hello_cereal_repository@scheduler.py/schedules/good_morning_schedule
-  vetted: false
-
 #################
 # Asset tutorial
 #################
