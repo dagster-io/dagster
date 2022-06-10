@@ -160,7 +160,7 @@ def assets_and_source_assets_from_package_module(
 def load_assets_from_package_module(
     package_module: ModuleType,
     group_name: Optional[str] = None,
-    key_prefix: Optional[str] = None,
+    key_prefix: Optional[Union[str, Sequence[str]]] = None,
 ) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
     Constructs a list of assets and source assets that includes all asset
@@ -180,11 +180,11 @@ def load_assets_from_package_module(
             A list containing assets and source assets defined in the module.
     """
     group_name = check.opt_str_param(group_name, "group_name")
-    key_prefix = check.opt_str_param(key_prefix, "key_prefix")
+    # key_prefix = check.opt_str_param(key_prefix, "key_prefix")
 
     assets, source_assets = assets_and_source_assets_from_package_module(package_module)
-    if key_prefix:
-        assets = prefix_assets(assets, key_prefix)
+    for prefix in reversed(key_prefix or []):
+        assets = prefix_assets(assets, prefix)
     if group_name:
         assets = [
             asset.with_prefix_or_group(

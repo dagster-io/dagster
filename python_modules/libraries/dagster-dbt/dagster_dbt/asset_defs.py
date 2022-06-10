@@ -102,14 +102,29 @@ def _get_node_name(node_info: Mapping[str, Any]):
 
 
 def _get_node_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
-    """By default, a dbt node's key is the union of its model name and any schema configured on
+    """By default, a dbt model's key is the union of its model name and any schema configured on
     the model itself.
+
+    A dbt source's key is the union of its name and the name of the source it resides in.
     """
-    configured_schema = node_info["config"].get("schema")
-    if configured_schema is not None:
-        components = [configured_schema, node_info["name"]]
+    if node_info["resource_type"] == "source":
+        # check for manually-specified dagster key
+        dagster_meta = node_info.get("meta", {}).get("dagster")
+        if dagster_meta:
+            if "key" not in dagster_meta:
+                check.failed(
+                    f"Must define the `key` property under dagster.meta for dbt source {node.unique_id}"
+                )
+            components = dagster_meta["key"].split("/")
+        # otherwise, just use schema, name
+        else:
+            components = [node_info["schema"], node_info["name"]]
     else:
-        components = [node_info["name"]]
+        configured_schema = node_info["config"].get("schema")
+        if configured_schema is not None:
+            components = [configured_schema, node_info["name"]]
+        else:
+            components = [node_info["name"]]
 
     return AssetKey(components)
 
@@ -179,7 +194,12 @@ def _dbt_nodes_to_assets(
         outs[node_name] = Out(
             description=_get_node_description(node_info),
             io_manager_key=io_manager_key,
-            metadata=_columns_to_metadata(node_info["columns"]),
+            metadata={
+                **_columns_to_metadata(node_info["columns"]),
+                "database": node_info.get("database"),
+                "schema": node_info.get("schema"),
+                "table": node_info.get("name"),
+            },
             is_required=False,
         )
         out_name_to_node_info[node_name] = node_info
@@ -277,7 +297,7 @@ def _dbt_nodes_to_assets(
 def _columns_to_metadata(columns: Mapping[str, Any]) -> Optional[Mapping[str, Any]]:
     return (
         {
-            "schema": MetadataValue.table_schema(
+            "table_schema": MetadataValue.table_schema(
                 TableSchema(
                     columns=[
                         TableColumn(
@@ -291,7 +311,7 @@ def _columns_to_metadata(columns: Mapping[str, Any]) -> Optional[Mapping[str, An
             )
         }
         if len(columns) > 0
-        else None
+        else {}
     )
 
 
