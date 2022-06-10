@@ -480,7 +480,7 @@ def build_asset_ins(
         asset_key = None
 
         if input_name in asset_ins:
-            asset_key = asset_ins[input_name].asset_key
+            asset_key = asset_ins[input_name].key
             metadata = asset_ins[input_name].metadata or {}
             key_prefix = asset_ins[input_name].key_prefix
         else:

@@ -435,7 +435,7 @@ class AssetGroup:
                     ...
 
                 result = AssetGroup([asset1]).prefixed("my_prefix")
-                assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset1"])
+                assert result.assets[0].key == AssetKey(["my_prefix", "asset1"])
 
         Example with dependencies within the list of assets:
 
@@ -450,9 +450,9 @@ class AssetGroup:
                     ...
 
                 result = AssetGroup([asset1, asset2]).prefixed("my_prefix")
-                assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset1"])
-                assert result.assets[1].asset_key == AssetKey(["my_prefix", "asset2"])
-                assert result.assets[1].dependency_asset_keys == {AssetKey(["my_prefix", "asset1"])}
+                assert result.assets[0].key == AssetKey(["my_prefix", "asset1"])
+                assert result.assets[1].key == AssetKey(["my_prefix", "asset2"])
+                assert result.assets[1].dependency_keys == {AssetKey(["my_prefix", "asset1"])}
 
         Examples with input prefixes provided by source assets:
 
@@ -466,8 +466,8 @@ class AssetGroup:
 
                 result = AssetGroup([asset2], source_assets=[asset1]).prefixed("my_prefix")
                 assert len(result.assets) == 1
-                assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset2"])
-                assert result.assets[0].dependency_asset_keys == {AssetKey(["upstream_prefix", "asset1"])}
+                assert result.assets[0].key == AssetKey(["my_prefix", "asset2"])
+                assert result.assets[0].dependency_keys == {AssetKey(["upstream_prefix", "asset1"])}
                 assert result.source_assets[0].key == AssetKey(["upstream_prefix", "asset1"])
         """
         prefixed_assets = prefix_assets(self.assets, key_prefix)

@@ -159,8 +159,8 @@ def build_job_partitions_from_assets(
     first_assets_with_partitions_def: AssetsDefinition = assets_with_partitions_defs[0]
     for assets_def in assets_with_partitions_defs:
         if assets_def.partitions_def != first_assets_with_partitions_def.partitions_def:
-            first_asset_key = next(iter(assets_def.asset_keys)).to_string()
-            second_asset_key = next(iter(first_assets_with_partitions_def.asset_keys)).to_string()
+            first_asset_key = next(iter(assets_def.keys)).to_string()
+            second_asset_key = next(iter(first_assets_with_partitions_def.keys)).to_string()
             raise DagsterInvalidDefinitionError(
                 "When an assets job contains multiple partitions assets, they must have the "
                 f"same partitions definitions, but asset '{first_asset_key}' and asset "
@@ -194,7 +194,7 @@ def build_deps(
     Mapping[NodeHandle, AssetsDefinition],
 ]:
     # sort so that nodes get a consistent name
-    assets_defs = sorted(assets_defs, key=lambda ad: (sorted((ak for ak in ad.asset_keys))))
+    assets_defs = sorted(assets_defs, key=lambda ad: (sorted((ak for ak in ad.keys))))
 
     # if the same graph/op is used in multiple assets_definitions, their invocations must have
     # different names. we keep track of definitions that share a name and add a suffix to their
@@ -240,7 +240,7 @@ def build_deps(
                 if not input_def.dagster_type.is_nothing:
                     raise DagsterInvalidDefinitionError(
                         f"Input asset '{upstream_asset_key.to_string()}' for asset "
-                        f"'{next(iter(assets_def.asset_keys)).to_string()}' is not "
+                        f"'{next(iter(assets_def.keys)).to_string()}' is not "
                         "produced by any of the provided asset ops and is not one of the provided "
                         "sources"
                     )
@@ -292,7 +292,7 @@ def _attempt_resolve_cycles(
     # index AssetsDefinitions by their asset names
     assets_defs_by_asset_name = {}
     for assets_def in assets_defs:
-        for asset_key in assets_def.asset_keys:
+        for asset_key in assets_def.keys:
             assets_defs_by_asset_name[asset_key.to_user_string()] = assets_def
 
     # color for each asset
@@ -302,7 +302,7 @@ def _attempt_resolve_cycles(
     def _dfs(name, cur_color):
         colors[name] = cur_color
         if name in assets_defs_by_asset_name:
-            cur_node_asset_keys = assets_defs_by_asset_name[name].asset_keys
+            cur_node_asset_keys = assets_defs_by_asset_name[name].keys
         else:
             # in a SourceAsset, treat all downstream as if they're in the same node
             cur_node_asset_keys = asset_deps["downstream"][name]
