@@ -285,7 +285,7 @@ def test_input_namespace_list():
 
 
 def test_input_key_prefix_str():
-    @asset(ins={"arg1": AssetIn(key_prefix=["abc","xyz"])})
+    @asset(ins={"arg1": AssetIn(key_prefix=["abc", "xyz"])})
     def my_asset(arg1):
         assert arg1
 
