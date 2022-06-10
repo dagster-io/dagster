@@ -37,7 +37,7 @@ class AssetsDefinition(ResourceAddable):
         selected_asset_keys: Optional[AbstractSet[AssetKey]] = None,
         can_subset: bool = False,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        group_names: Optional[Mapping[AssetKey, str]] = None,
+        group_names_by_asset_key: Optional[Mapping[AssetKey, str]] = None,
         # if adding new fields, make sure to handle them in the with_prefix_or_group method
     ):
         self._node_def = node_def
@@ -72,12 +72,16 @@ class AssetsDefinition(ResourceAddable):
         )
         self._resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
 
-        group_names = check.mapping_param(group_names, "group_names") if group_names else {}
-        self._group_names = {}
+        group_names_by_asset_key = (
+            check.mapping_param(group_names_by_asset_key, "group_names_by_asset_key")
+            if group_names_by_asset_key
+            else {}
+        )
+        self._group_names_by_asset_key = {}
         # assets that don't have a group name get a DEFAULT_GROUP_NAME
         for key in all_asset_keys:
-            group_name = group_names.get(key)
-            self._group_names[key] = validate_group_name(group_name)
+            group_name = group_names_by_asset_key.get(key)
+            self._group_names_by_asset_key[key] = validate_group_name(group_name)
 
         if selected_asset_keys is not None:
             self._selected_asset_keys = selected_asset_keys
@@ -188,8 +192,8 @@ class AssetsDefinition(ResourceAddable):
         return self._can_subset
 
     @property
-    def group_names(self) -> Mapping[AssetKey, str]:
-        return self._group_names
+    def group_names_by_asset_key(self) -> Mapping[AssetKey, str]:
+        return self._group_names_by_asset_key
 
     @property
     def op(self) -> OpDefinition:
@@ -294,7 +298,7 @@ class AssetsDefinition(ResourceAddable):
         self,
         output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
-        group_names: Optional[Mapping[AssetKey, str]] = None,
+        group_names_by_asset_key: Optional[Mapping[AssetKey, str]] = None,
     ) -> "AssetsDefinition":
         from dagster import DagsterInvalidDefinitionError
 
@@ -310,23 +314,24 @@ class AssetsDefinition(ResourceAddable):
             key_type=AssetKey,
             value_type=AssetKey,
         )
-        group_names = check.opt_dict_param(
-            group_names, "group_names", key_type=AssetKey, value_type=str
+        group_names_by_asset_key = check.opt_dict_param(
+            group_names_by_asset_key, "group_names_by_asset_key", key_type=AssetKey, value_type=str
         )
 
         defined_group_names = [
             asset_key.to_user_string()
-            for asset_key in group_names
-            if asset_key in self.group_names and self.group_names[asset_key] != DEFAULT_GROUP_NAME
+            for asset_key in group_names_by_asset_key
+            if asset_key in self.group_names_by_asset_key
+            and self.group_names_by_asset_key[asset_key] != DEFAULT_GROUP_NAME
         ]
         if defined_group_names:
             raise DagsterInvalidDefinitionError(
                 f"Group name already exists on assets {', '.join(defined_group_names)}"
             )
 
-        replaced_group_names = {
+        replaced_group_names_by_asset_key = {
             output_asset_key_replacements.get(key, key): group_name
-            for key, group_name in self.group_names.items()
+            for key, group_name in self.group_names_by_asset_key.items()
         }
 
         return self.__class__(
@@ -357,7 +362,10 @@ class AssetsDefinition(ResourceAddable):
                 output_asset_key_replacements.get(key, key) for key in self._selected_asset_keys
             },
             resource_defs=self.resource_defs,
-            group_names={**replaced_group_names, **group_names},
+            group_names_by_asset_key={
+                **replaced_group_names_by_asset_key,
+                **group_names_by_asset_key,
+            },
         )
 
     def subset_for(self, selected_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
@@ -401,7 +409,7 @@ class AssetsDefinition(ResourceAddable):
                     description=output_def.description,
                     resource_defs=self.resource_defs,
                     partitions_def=self.partitions_def,
-                    group_name=self.group_names[asset_key],
+                    group_name=self.group_names_by_asset_key[asset_key],
                 )
             )
 
@@ -445,7 +453,7 @@ class AssetsDefinition(ResourceAddable):
             selected_asset_keys=self._selected_asset_keys,
             can_subset=self._can_subset,
             resource_defs=relevant_resource_defs,
-            group_names=self._group_names,
+            group_names_by_asset_key=self._group_names_by_asset_key,
         )
 
 

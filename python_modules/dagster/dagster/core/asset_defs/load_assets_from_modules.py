@@ -100,7 +100,11 @@ def load_assets_from_modules(
     if group_name:
         assets = [
             asset.with_prefix_or_group(
+<<<<<<< HEAD
                 group_names={asset_key: group_name for asset_key in asset.keys}
+=======
+                group_names_by_asset_key={asset_key: group_name for asset_key in asset.asset_keys}
+>>>>>>> 2dabd4f63f... AssetsDefinition.group_names -> group_names_by_asset_key
             )
             for asset in assets
         ]
@@ -194,7 +198,7 @@ def load_assets_from_package_module(
     if group_name:
         assets = [
             asset.with_prefix_or_group(
-                group_names={asset_key: group_name for asset_key in asset.keys}
+                group_names_by_asset_key={asset_key: group_name for asset_key in asset.keys}
             )
             for asset in assets
         ]
