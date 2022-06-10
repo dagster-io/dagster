@@ -116,10 +116,7 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
           <Route path="/workspace/:repoPath/graphs" exact>
             <RepositoryGraphsList repoAddress={repoAddress} />
           </Route>
-          <Route
-            path="/workspace/:repoPath/(.*)?"
-            render={() => <Redirect to={workspacePathFromAddress(repoAddress, `/jobs`)} />}
-          />
+          <Route path="/workspace/:repoPath/(.*)?" render={() => <Redirect to={tabs[0].href} />} />
         </Switch>
       </Container>
     </Box>
