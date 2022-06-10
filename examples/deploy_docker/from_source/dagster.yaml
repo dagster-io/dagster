@@ -17,6 +17,9 @@ run_launcher:
     network: docker_example_network
     container_kwargs:
       auto_remove: true
+      volumes: # Make docker client accessible to any launched containers as well
+        - /var/run/docker.sock:/var/run/docker.sock
+        - /tmp/io_manager_storage:/tmp/io_manager_storage
 
 run_storage:
   module: dagster_postgres.run_storage
