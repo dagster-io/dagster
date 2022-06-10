@@ -312,8 +312,8 @@ export const OP_NODE_DEFINITION_FRAGMENT = gql`
 `;
 
 export const NodeHighlightColors = {
-  Border: 'rgba(255, 69, 0, 1)',
-  Background: 'rgba(255, 69, 0, 0.2)',
+  Border: Colors.Blue500,
+  Background: Colors.Blue50,
 };
 
 const NodeContainer = styled.div<{
@@ -326,17 +326,17 @@ const NodeContainer = styled.div<{
   pointer-events: auto;
 
   .highlight-box {
+    border-radius: 6px;
+    background: ${(p) => (p.$selected ? NodeHighlightColors.Background : 'transparent')};
+  }
+  .node-box {
     border: ${(p) =>
       p.$selected
         ? `2px dashed ${NodeHighlightColors.Border}`
         : p.$secondaryHighlight
         ? `2px solid ${Colors.Blue500}55`
-        : '2px solid transparent'};
-    border-radius: 6px;
-    background: ${(p) => (p.$selected ? NodeHighlightColors.Background : 'transparent')};
-  }
-  .node-box {
-    border: 2px solid #dcd5ca;
+        : '2px solid #dcd5ca'};
+
     border-width: ${(p) => (p.$minified ? '3px' : '2px')};
     border-radius: 5px;
     background: ${(p) => (p.$minified ? Colors.Gray50 : Colors.White)};

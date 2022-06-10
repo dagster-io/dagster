@@ -38,6 +38,7 @@ from dagster.core.execution.plan.external_step import (
     step_context_to_step_run_ref,
     step_run_ref_to_step_context,
 )
+from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -68,13 +69,11 @@ def make_run_config(scratch_dir, mode):
 
 
 class RequestRetryLocalExternalStepLauncher(LocalExternalStepLauncher):
-    def launch_step(self, step_context, prior_attempts_count):
-        if prior_attempts_count == 0:
+    def launch_step(self, step_context):
+        if step_context.previous_attempt_count == 0:
             raise RetryRequested()
         else:
-            return super(RequestRetryLocalExternalStepLauncher, self).launch_step(
-                step_context, prior_attempts_count
-            )
+            return super(RequestRetryLocalExternalStepLauncher, self).launch_step(step_context)
 
 
 @resource(config_schema=local_external_step_launcher.config_schema)
@@ -311,7 +310,10 @@ def initialize_step_context(scratch_dir, instance):
         pass
     pipeline_context = initialization_manager.get_context()
 
-    step_context = pipeline_context.for_step(plan.get_step_by_key("return_two"))
+    step_context = pipeline_context.for_step(
+        plan.get_step_by_key("return_two"),
+        KnownExecutionState(),
+    )
     return step_context
 
 
@@ -319,7 +321,7 @@ def test_step_context_to_step_run_ref():
     with DagsterInstance.ephemeral() as instance:
         step_context = initialize_step_context("", instance)
         step = step_context.step
-        step_run_ref = step_context_to_step_run_ref(step_context, 0)
+        step_run_ref = step_context_to_step_run_ref(step_context)
         assert step_run_ref.run_config == step_context.pipeline_run.run_config
         assert step_run_ref.run_id == step_context.pipeline_run.run_id
 
@@ -340,7 +342,7 @@ def test_local_external_step_launcher():
             step_context = initialize_step_context(tmpdir, instance)
 
             step_launcher = LocalExternalStepLauncher(tmpdir)
-            events = list(step_launcher.launch_step(step_context, 0))
+            events = list(step_launcher.launch_step(step_context))
             event_types = [event.event_type for event in events]
             assert DagsterEventType.STEP_START in event_types
             assert DagsterEventType.STEP_SUCCESS in event_types

@@ -1,0 +1,69 @@
+---
+title: Testing Assets | Dagster
+description: Dagster enables you to unit-test individual assets and graphs of assets
+---
+
+# Testing Assets
+
+Creating testable and verifiable data pipelines is one of the focuses of Dagster. We believe ensuring data quality is critical for managing the complexity of data systems. Here, we'll cover how to write unit tests for individual assets, as well as for graphs of assets together.
+
+## Testing the Cereal Asset Definitions
+
+Let's go back to the assets we defined in the [prior section](/tutorial/assets/asset-graph#a-more-complex-asset-graph), and ensure that they work as expected by writing some unit tests.
+
+We'll start by writing a test for the `nabisco_cereals` asset definition, which filters the larger list of cereals down to the those that were manufactured by Nabisco. To run the function that derives an asset from its upstream dependencies, we can invoke it directly, as if it's a regular Python function:
+
+```python file=/guides/dagster/asset_tutorial/complex_asset_graph_tests.py startafter=start_asset_test endbefore=end_asset_test
+def test_nabisco_cereals():
+    cereals = [
+        {"name": "cereal1", "mfr": "N"},
+        {"name": "cereal2", "mfr": "K"},
+    ]
+    result = nabisco_cereals(cereals)
+    assert len(result) == 1
+    assert result == [{"name": "cereal1", "mfr": "N"}]
+```
+
+We'll also write a test for all the assets together. To do that, we need to combine them into an <PyObject object="AssetGroup" />. Then, we can invoke <PyObject object="AssetGroup" method="materialize_in_process" />, which returns an <PyObject module="dagster" object="ExecuteInProcessResult" />, whose methods let us investigate, in detail, the success or failure of execution, the values produced by the computation, and (as we'll see later) other events associated with execution.
+
+```python file=/guides/dagster/asset_tutorial/complex_asset_graph_tests.py startafter=start_asset_group_test endbefore=end_asset_group_test
+from dagster import AssetGroup
+
+
+def test_cereal_asset_group():
+    group = AssetGroup(
+        [
+            nabisco_cereals,
+            cereals,
+            cereal_protein_fractions,
+            highest_protein_nabisco_cereal,
+        ]
+    )
+
+    result = group.materialize()
+    assert result.success
+    assert result.output_for_node("highest_protein_nabisco_cereal") == "100% Bran"
+```
+
+Now you can use pytest, or your test runner of choice, to run the unit tests.
+
+```bash
+pytest test_complex_asset_graph.py
+```
+
+Dagster is written to make testing easy in a domain where it has historically been very difficult. You can learn more about Testing in Dagster by reading the [Testing](/concepts/testing) page.
+
+<br />
+
+## Conclusion
+
+🎉 Congratulations! Having reached this far, you now have a working, tested group of software-defined assets.
+
+What if you want to do more?
+
+- **Automating asset materialization** - This tutorial covered how to manually materialize assets. Dagster can also kick off materializations automatically: on fixed [schedules](/concepts/partitions-schedules-sensors/schedules) or when your [sensor](/concepts/partitions-schedules-sensors/sensors) says to.
+- **Partitioning assets** - This tutorial covered assets whose entire contents get re-computed and overwritten with every materialization. When assets are large, it’s common to [partition](/concepts/partitions-schedules-sensors/partitions) them, so that each run only materializes a single partition.
+- **Customizing asset storage** - The assets in this tutorial were materialized as pickle files on the local filesystem. [IO managers](/concepts/io-management/io-managers) let you customize how and where assets are stored - e.g. as tables in Snowflake or Parquet files in S3.
+- **Non-asset jobs** - This tutorial assumed that your only goal was producing assets. You can also build and run arbitrary [jobs](/concepts/ops-jobs-graphs/jobs-graphs), on top of the same [op](/concepts/ops-jobs-graphs/ops) and [graph](/concepts/ops-jobs-graphs/jobs-graphs) abstractions that underlie assets.
+
+<br />

@@ -13,30 +13,45 @@ from dagster_buildkite.utils import (
 )
 
 
-def build_packages_steps() -> List[BuildkiteStep]:
+def build_example_packages_steps() -> List[BuildkiteStep]:
+    custom_example_pkg_roots = [pkg.directory for pkg in EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG]
+    example_packages_with_standard_config = [
+        PackageSpec(
+            pkg,
+            upload_coverage=False,
+        )
+        for pkg in _get_uncustomized_pkg_roots("examples", custom_example_pkg_roots)
+    ]
 
-    custom_pkg_roots = [pkg.directory for pkg in PACKAGES_WITH_CUSTOM_CONFIG]
-    packages_with_standard_config = [
+    return _build_steps_from_package_specs(
+        EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config
+    )
+
+
+def build_library_packages_steps() -> List[BuildkiteStep]:
+    custom_library_pkg_roots = [pkg.directory for pkg in LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG]
+    library_packages_with_standard_config = [
         *[
             PackageSpec(pkg, upload_coverage=False)
-            for pkg in _get_uncustomized_pkg_roots("python_modules", custom_pkg_roots)
+            for pkg in _get_uncustomized_pkg_roots("python_modules", custom_library_pkg_roots)
         ],
         *[
             PackageSpec(pkg)
-            for pkg in _get_uncustomized_pkg_roots("python_modules/libraries", custom_pkg_roots)
-        ],
-        *[
-            PackageSpec(
-                pkg,
-                upload_coverage=False,
+            for pkg in _get_uncustomized_pkg_roots(
+                "python_modules/libraries", custom_library_pkg_roots
             )
-            for pkg in _get_uncustomized_pkg_roots("examples", custom_pkg_roots)
         ],
     ]
 
+    return _build_steps_from_package_specs(
+        LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG + library_packages_with_standard_config
+    )
+
+
+def _build_steps_from_package_specs(package_specs: List[PackageSpec]) -> List[BuildkiteStep]:
     steps: List[BuildkiteStep] = []
     all_packages = sorted(
-        PACKAGES_WITH_CUSTOM_CONFIG + packages_with_standard_config,
+        package_specs,
         key=lambda p: f"{_PACKAGE_TYPE_ORDER.index(p.package_type)} {p.name}",
     )
     for pkg in all_packages:
@@ -299,40 +314,68 @@ postgres_extra_cmds = [
 
 # Some Dagster packages have more involved test configs or support only certain Python version;
 # special-case those here
-PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
+EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/airflow_ingest",
         unsupported_python_versions=[AvailablePythonVersion.V3_9],
-        upload_coverage=False,
+    ),
+    PackageSpec(
+        "examples/bollinger",
+        unsupported_python_versions=[
+            # dependency on dagster-pandera
+            AvailablePythonVersion.V3_6,
+        ],
     ),
     PackageSpec(
         "examples/dbt_example",
         pytest_extra_cmds=dbt_example_extra_cmds,
-        upload_coverage=False,
+        unsupported_python_versions=[
+            # dependency on dagster-dbt
+            AvailablePythonVersion.V3_6,
+        ],
     ),
     PackageSpec(
         "examples/deploy_docker",
         pytest_extra_cmds=deploy_docker_example_extra_cmds,
-        upload_coverage=False,
     ),
     PackageSpec(
         "examples/docs_snippets",
         pytest_extra_cmds=docs_snippets_extra_cmds,
-        upload_coverage=False,
         run_mypy=False,
+        unsupported_python_versions=[
+            # dependency on various 3.6 and 3.9-incompatible extension libs
+            AvailablePythonVersion.V3_6,
+            AvailablePythonVersion.V3_9,
+        ],
     ),
     PackageSpec(
-        "examples/hacker_news_assets",
-        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
-        upload_coverage=False,
+        "examples/ge_example",
+        unsupported_python_versions=[
+            # dependency on dagster-ge
+            AvailablePythonVersion.V3_6,
+        ],
     ),
     PackageSpec(
         "examples/hacker_news",
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
-        upload_coverage=False,
+        unsupported_python_versions=[
+            # dependency on dagster-dbt
+            AvailablePythonVersion.V3_6,
+        ],
     ),
-    PackageSpec("python_modules/dagit", pytest_extra_cmds=dagit_extra_cmds),
+    PackageSpec(
+        "examples/hacker_news_assets",
+        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
+        unsupported_python_versions=[
+            # dependency on dagster-dbt
+            AvailablePythonVersion.V3_6,
+        ],
+    ),
+]
+
+LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec("python_modules/automation"),
+    PackageSpec("python_modules/dagit", pytest_extra_cmds=dagit_extra_cmds),
     PackageSpec(
         "python_modules/dagster",
         pytest_extra_cmds=dagster_extra_cmds,
@@ -472,6 +515,7 @@ PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             AvailablePythonVersion.V3_6,
         ],
+        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
     ),
     PackageSpec("python_modules/libraries/dagster-postgres", pytest_extra_cmds=postgres_extra_cmds),
     PackageSpec(

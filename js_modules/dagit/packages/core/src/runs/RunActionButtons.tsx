@@ -24,17 +24,15 @@ interface RunActionButtonsProps {
   onLaunch: (style: ReExecutionStyle) => Promise<void>;
 }
 
-const CancelRunButton: React.FC<{run: RunFragment | undefined; isFinalStatus: boolean}> = ({
-  run,
-  isFinalStatus,
-}) => {
+export const CancelRunButton: React.FC<{run: RunFragment}> = ({run}) => {
+  const {id: runId, canTerminate} = run;
   const [showDialog, setShowDialog] = React.useState<boolean>(false);
   const closeDialog = React.useCallback(() => setShowDialog(false), []);
 
   const onComplete = React.useCallback(
     (terminationState: TerminationState) => {
       const {errors} = terminationState;
-      const error = run?.id && errors[run.id];
+      const error = runId && errors[runId];
       if (error && 'message' in error) {
         SharedToaster.show({
           message: error.message,
@@ -43,30 +41,28 @@ const CancelRunButton: React.FC<{run: RunFragment | undefined; isFinalStatus: bo
         });
       }
     },
-    [run?.id],
+    [runId],
   );
 
-  if (!run) {
+  if (!runId) {
     return null;
   }
 
   return (
     <>
-      {!isFinalStatus ? (
-        <Button
-          icon={<Icon name="cancel" />}
-          intent="danger"
-          disabled={showDialog}
-          onClick={() => setShowDialog(true)}
-        >
-          Terminate
-        </Button>
-      ) : null}
+      <Button
+        icon={<Icon name="cancel" />}
+        intent="danger"
+        disabled={showDialog}
+        onClick={() => setShowDialog(true)}
+      >
+        Terminate
+      </Button>
       <TerminationDialog
         isOpen={showDialog}
         onClose={closeDialog}
         onComplete={onComplete}
-        selectedRuns={{[run.id]: run.canTerminate}}
+        selectedRuns={{[runId]: canTerminate}}
       />
     </>
   );
@@ -122,7 +118,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const full: LaunchButtonConfiguration = {
     icon: 'cached',
     scope: '*',
-    title: 'All Steps in Root Run',
+    title: 'All steps in root run',
     tooltip: 'Re-execute the pipeline run from scratch',
     disabled: !canRunAllSteps(run),
     onClick: () => onLaunch({type: 'all'}),
@@ -131,7 +127,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const same: LaunchButtonConfiguration = {
     icon: 'linear_scale',
     scope: currentRunSelection?.query || '*',
-    title: 'Same Steps',
+    title: 'Same steps',
     disabled: !currentRunSelection || !(currentRunSelection.finished || currentRunSelection.failed),
     tooltip: (
       <div>
@@ -149,7 +145,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const selected: LaunchButtonConfiguration = {
     icon: 'op',
     scope: selection.query,
-    title: selection.keys.length > 1 ? 'Selected Steps' : 'Selected Step',
+    title: selection.keys.length > 1 ? 'Selected steps' : 'Selected step',
     disabled: !selection.present || !(selection.finished || selection.failed),
     tooltip: (
       <div>
@@ -166,7 +162,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
 
   const fromSelected: LaunchButtonConfiguration = {
     icon: 'arrow_forward',
-    title: 'From Selected',
+    title: 'From selected',
     disabled: !canRunAllSteps(run) || selection.keys.length !== 1,
     tooltip: 'Re-execute the pipeline downstream from the selected steps',
     onClick: () => {
@@ -193,7 +189,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
 
   const fromFailure: LaunchButtonConfiguration = {
     icon: 'arrow_forward',
-    title: 'From Failure',
+    title: 'From failure',
     disabled: !fromFailureEnabled,
     tooltip: !fromFailureEnabled
       ? 'Retry is only enabled when the pipeline has failed.'
@@ -236,7 +232,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
           options={options}
           title={
             primary.scope === '*'
-              ? `Re-execute All (*)`
+              ? `Re-execute all (*)`
               : primary.scope
               ? `Re-execute (${primary.scope})`
               : `Re-execute ${primary.title}`
@@ -246,7 +242,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
           disabled={pipelineError?.disabled || !canLaunchPipelineReexecution}
         />
       </Box>
-      <CancelRunButton run={run} isFinalStatus={canRunAllSteps(run)} />
+      {!doneStatuses.has(run.status) ? <CancelRunButton run={run} /> : null}
     </Group>
   );
 };

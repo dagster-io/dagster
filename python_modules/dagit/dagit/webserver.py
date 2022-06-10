@@ -77,7 +77,6 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
     def make_security_headers(self) -> dict:
         return {
             "Cache-Control": "no-store",
-            "Clear-Site-Data": "*",
             "Feature-Policy": "microphone 'none'; camera 'none'",
             "Referrer-Policy": "strict-origin-when-cross-origin",
             "X-Content-Type-Options": "nosniff",

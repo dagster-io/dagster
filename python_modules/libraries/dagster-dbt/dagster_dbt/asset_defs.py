@@ -12,7 +12,10 @@ from dagster_dbt.utils import generate_events
 from dagster import (
     AssetKey,
     AssetMaterialization,
+    AssetsDefinition,
+    In,
     MetadataValue,
+    Nothing,
     Out,
     Output,
     SolidExecutionContext,
@@ -20,9 +23,9 @@ from dagster import (
     TableSchema,
 )
 from dagster import _check as check
-from dagster import get_dagster_logger
-from dagster.core.asset_defs import AssetsDefinition, multi_asset
+from dagster import get_dagster_logger, op
 from dagster.core.definitions.metadata import RawMetadataValue
+from dagster.core.errors import DagsterInvalidSubsetError
 
 
 def _load_manifest_for_project(
@@ -50,17 +53,74 @@ def _load_manifest_for_project(
         return json.load(f), cli_output
 
 
+def _select_unique_ids_from_manifest_json(
+    manifest_json: Mapping[str, Any], select: str
+) -> AbstractSet[str]:
+    """Method to apply a selection string to an existing manifest.json file."""
+    try:
+        import dbt.graph.cli as graph_cli
+        import dbt.graph.selector as graph_selector
+        from dbt.contracts.graph.manifest import Manifest
+        from networkx import DiGraph
+    except ImportError:
+        check.failed(
+            "In order to use the `select` argument on load_assets_from_dbt_manifest, you must have"
+            "`dbt-core >= 1.0.0` and `networkx` installed."
+        )
+
+    class _DictShim(dict):
+        """Shim to enable hydrating a dictionary into a dot-accessible object"""
+
+        def __getattr__(self, item):
+            ret = super().get(item)
+            # allow recursive access e.g. foo.bar.baz
+            return _DictShim(ret) if isinstance(ret, dict) else ret
+
+    # generate a dbt-compatible graph from the existing child map
+    graph = graph_selector.Graph(DiGraph(incoming_graph_data=manifest_json["child_map"]))
+    manifest = Manifest(
+        # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
+        nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},
+        sources={
+            unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()
+        },
+    )
+
+    # create a parsed selection from the select string
+    parsed_spec = graph_cli.parse_union([select], True)
+
+    # execute this selection against the graph
+    selector = graph_selector.NodeSelector(graph, manifest)
+    selected, _ = selector.select_nodes(parsed_spec)
+    if len(selected) == 0:
+        raise DagsterInvalidSubsetError(f"No dbt models match the selection string '{select}'.")
+    return selected
+
+
 def _get_node_name(node_info: Mapping[str, Any]):
     return "__".join([node_info["resource_type"], node_info["package_name"], node_info["name"]])
 
 
 def _get_node_asset_key(node_info):
-    if node_info.get("schema") is not None:
-        components = [node_info["schema"], node_info["name"]]
+    """By default, a dbt node's key is the union of its model name and any schema configured on
+    the model itself.
+    """
+    configured_schema = node_info["config"].get("schema")
+    if configured_schema is not None:
+        components = [configured_schema, node_info["name"]]
     else:
         components = [node_info["name"]]
 
     return AssetKey(components)
+
+
+def _get_node_description(node_info):
+    code_block = textwrap.indent(node_info["raw_sql"], "    ")
+    description_sections = [
+        node_info["description"],
+        f"#### Raw SQL:\n```\n{code_block}\n```",
+    ]
+    return "\n\n".join(filter(None, description_sections))
 
 
 def _dbt_nodes_to_assets(
@@ -74,64 +134,83 @@ def _dbt_nodes_to_assets(
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
     use_build_command: bool = False,
 ) -> AssetsDefinition:
+
     outs: Dict[str, Out] = {}
-    sources: Set[AssetKey] = set()
+    asset_ins: Dict[AssetKey, Tuple[str, In]] = {}
+
+    asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
+
     out_name_to_node_info: Dict[str, Mapping[str, Any]] = {}
-    internal_asset_deps: Dict[str, Set[AssetKey]] = {}
+
     package_name = None
     for unique_id in selected_unique_ids:
-        asset_deps = set()
+        cur_asset_deps = set()
         node_info = dbt_nodes[unique_id]
+        if node_info["resource_type"] != "model":
+            continue
         package_name = node_info.get("package_name", package_name)
+
         for dep_name in node_info["depends_on"]["nodes"]:
             dep_type = dbt_nodes[dep_name]["resource_type"]
-            # ignore seeds/snapshots
+            # ignore seeds/snapshots/tests
             if dep_type not in ["source", "model"]:
                 continue
             dep_asset_key = node_info_to_asset_key(dbt_nodes[dep_name])
 
             # if it's a source, it will be used as an input to this multi-asset
             if dep_type == "source":
-                sources.add(dep_asset_key)
-            # regardless of type, list this as a dependency for the current asset
-            asset_deps.add(dep_asset_key)
-        code_block = textwrap.indent(node_info["raw_sql"], "    ")
-        description_sections = [
-            node_info["description"],
-            f"#### Raw SQL:\n```\n{code_block}\n```",
-        ]
-        description = "\n\n".join(filter(None, description_sections))
+                asset_ins[dep_asset_key] = (dep_name.replace(".", "_"), In(Nothing))
 
+            # regardless of type, list this as a dependency for the current asset
+            cur_asset_deps.add(dep_asset_key)
+
+        # generate the Out that corresponds to this model
         node_name = node_info["name"]
         outs[node_name] = Out(
-            asset_key=node_info_to_asset_key(node_info),
-            description=description,
+            description=_get_node_description(node_info),
             io_manager_key=io_manager_key,
             metadata=_columns_to_metadata(node_info["columns"]),
+            is_required=False,
         )
         out_name_to_node_info[node_name] = node_info
-        internal_asset_deps[node_name] = asset_deps
+
+        # set the asset dependencies for this asset
+        asset_deps[node_info_to_asset_key(node_info)] = cur_asset_deps
 
     # prevent op name collisions between multiple dbt multi-assets
     op_name = f"run_dbt_{package_name}"
     if select != "*":
         op_name += "_" + hashlib.md5(select.encode()).hexdigest()[-5:]
 
-    @multi_asset(
+    @op(
         name=op_name,
-        non_argument_deps=sources,
-        outs=outs,
+        tags={"kind": "dbt"},
+        ins=dict(asset_ins.values()),
+        out=outs,
         required_resource_keys={"dbt"},
-        compute_kind="dbt",
-        internal_asset_deps=internal_asset_deps,
     )
-    def _dbt_project_multi_assset(context):
+    def dbt_op(context):
         dbt_output = None
+
+        # clean up any run results from the last run
+        context.resources.dbt.remove_run_results_json()
+
+        # in the case that we're running everything, opt for the cleaner selection string
+        if len(context.selected_output_names) == len(outs):
+            subselect = select
+        else:
+            # for each output that we want to emit, translate to a dbt select string by converting
+            # the out to it's corresponding fqn
+            subselect = [
+                ".".join(out_name_to_node_info[out_name]["fqn"])
+                for out_name in context.selected_output_names
+            ]
+
         try:
             if use_build_command:
-                dbt_output = context.resources.dbt.build(select=select)
+                dbt_output = context.resources.dbt.build(select=subselect)
             else:
-                dbt_output = context.resources.dbt.run(select=select)
+                dbt_output = context.resources.dbt.run(select=subselect)
         finally:
             # in the case that the project only partially runs successfully, still attempt to generate
             # events for the parts that were successful
@@ -165,7 +244,18 @@ def _dbt_nodes_to_assets(
                 else:
                     yield event
 
-    return _dbt_project_multi_assset
+    return AssetsDefinition(
+        asset_keys_by_input_name={
+            input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
+        },
+        asset_keys_by_output_name={
+            output_name: node_info_to_asset_key(out_name_to_node_info[output_name])
+            for output_name in outs.keys()
+        },
+        node_def=dbt_op,
+        can_subset=True,
+        asset_deps=asset_deps,
+    )
 
 
 def _columns_to_metadata(columns: Mapping[str, Any]) -> Optional[Mapping[str, Any]]:
@@ -262,6 +352,7 @@ def load_assets_from_dbt_manifest(
     ] = None,
     io_manager_key: Optional[str] = None,
     selected_unique_ids: Optional[AbstractSet[str]] = None,
+    select: Optional[str] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
     use_build_command: bool = False,
 ) -> Sequence[AssetsDefinition]:
@@ -291,20 +382,19 @@ def load_assets_from_dbt_manifest(
     check.dict_param(manifest_json, "manifest_json", key_type=str)
     dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"]}
 
-    def _unique_id_to_selector(uid):
-        # take the fully-qualified node name and use it to select the model
-        return ".".join(dbt_nodes[uid]["fqn"])
+    if select is None:
+        if selected_unique_ids:
+            # generate selection string from unique ids
+            select = " ".join(".".join(dbt_nodes[uid]["fqn"]) for uid in selected_unique_ids)
+        else:
+            # if no selection specified, default to "*"
+            select = "*"
+            selected_unique_ids = manifest_json["nodes"].keys()
 
-    select = (
-        "*"
-        if selected_unique_ids is None
-        else " ".join(_unique_id_to_selector(uid) for uid in selected_unique_ids)
-    )
-    selected_unique_ids = selected_unique_ids or set(
-        unique_id
-        for unique_id, node_info in dbt_nodes.items()
-        if node_info["resource_type"] == "model"
-    )
+    if selected_unique_ids is None:
+        # must resolve the selection string using the existing manifest.json data (hacky)
+        selected_unique_ids = _select_unique_ids_from_manifest_json(manifest_json, select)
+
     return [
         _dbt_nodes_to_assets(
             dbt_nodes,

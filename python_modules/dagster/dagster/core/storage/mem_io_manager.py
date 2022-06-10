@@ -6,11 +6,11 @@ class InMemoryIOManager(IOManager):
         self.values = {}
 
     def handle_output(self, context, obj):
-        keys = tuple(context.get_output_identifier())
+        keys = tuple(context.get_identifier())
         self.values[keys] = obj
 
     def load_input(self, context):
-        keys = tuple(context.upstream_output.get_output_identifier())
+        keys = tuple(context.get_identifier())
         return self.values[keys]
 
 

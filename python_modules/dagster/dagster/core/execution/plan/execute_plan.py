@@ -40,9 +40,7 @@ def inner_plan_execution_iterator(
             step = active_execution.get_next_step()
             step_context = cast(
                 StepExecutionContext,
-                pipeline_context.for_step(
-                    step, active_execution.retry_state.get_attempt_count(step.key)
-                ),
+                pipeline_context.for_step(step, active_execution.get_known_state()),
             )
             step_event_list = []
 
@@ -221,9 +219,7 @@ def dagster_event_sequence_for_step(
     try:
         if step_context.step_launcher and not force_local_execution:
             # info all on step_context - should deprecate second arg
-            step_events = step_context.step_launcher.launch_step(
-                step_context, step_context.previous_attempt_count
-            )
+            step_events = step_context.step_launcher.launch_step(step_context)
         else:
             step_events = core_dagster_event_sequence_for_step(step_context)
 

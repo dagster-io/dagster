@@ -68,7 +68,7 @@ def metadata_for_actions(df):
 
 class MyDatabaseIOManager(PickledObjectFilesystemIOManager):
     def _get_path(self, context):
-        keys = context.get_output_identifier()
+        keys = context.get_identifier()
 
         return os.path.join("/tmp", *keys)
 

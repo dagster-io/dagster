@@ -6,7 +6,10 @@ import * as React from 'react';
 import {WebSocketContext} from '../app/WebSocketProvider';
 import {RunStatus} from '../types/globalTypes';
 
+import {LogLevelCounts} from './LogsToolbar';
 import {RunFragments} from './RunFragments';
+import {logNodeLevel} from './logNodeLevel';
+import {LogNode} from './types';
 import {
   PipelineRunLogsSubscription,
   PipelineRunLogsSubscriptionVariables,
@@ -27,11 +30,9 @@ export interface LogFilter {
   hideNonMatches: boolean;
 }
 
-type LogNode = RunDagsterRunEventFragment & {clientsideKey: string};
-type Nodes = LogNode[];
-
 export interface LogsProviderLogs {
   allNodes: LogNode[];
+  counts: LogLevelCounts;
   loading: boolean;
 }
 
@@ -60,34 +61,56 @@ const pipelineStatusFromMessages = (messages: RunDagsterRunEventFragment[]) => {
 };
 
 const BATCH_INTERVAL = 100;
+const QUERY_LOG_LIMIT = 10000;
 
 type State = {
-  nodes: Nodes;
+  nodes: LogNode[];
   cursor: string | null;
+  counts: LogLevelCounts;
   loading: boolean;
 };
 
 type Action =
   | {type: 'append'; queued: RunDagsterRunEventFragment[]; hasMore: boolean; cursor: string}
+  | {type: 'set-cursor'; cursor: string}
   | {type: 'reset'};
+
+const emptyCounts = {
+  DEBUG: 0,
+  INFO: 0,
+  WARNING: 0,
+  ERROR: 0,
+  CRITICAL: 0,
+  EVENT: 0,
+};
 
 const reducer = (state: State, action: Action) => {
   switch (action.type) {
-    case 'append':
-      const nodes = [...state.nodes, ...action.queued].map((m, idx) => ({
-        ...m,
-        clientsideKey: `csk${idx}`,
+    case 'append': {
+      const queuedNodes = action.queued.map((node, ii) => ({
+        ...node,
+        clientsideKey: `csk${node.timestamp}-${ii}`,
       }));
-      return {...state, nodes, loading: action.hasMore, cursor: action.cursor};
+      const nodes = [...state.nodes, ...queuedNodes];
+      const counts = {...state.counts};
+      queuedNodes.forEach((node) => {
+        const level = logNodeLevel(node);
+        counts[level]++;
+      });
+      return {nodes, counts, loading: action.hasMore, cursor: action.cursor};
+    }
+    case 'set-cursor':
+      return {...state, cursor: action.cursor};
     case 'reset':
-      return {nodes: [], cursor: null, loading: true};
+      return {nodes: [], counts: emptyCounts, cursor: null, loading: true};
     default:
       return state;
   }
 };
 
-const initialState = {
+const initialState: State = {
   nodes: [],
+  counts: emptyCounts,
   cursor: null,
   loading: true,
 };
@@ -143,7 +166,7 @@ const useLogsProviderWithSubscription = (runId: string) => {
     }, BATCH_INTERVAL);
   }, []);
 
-  const {nodes, cursor, loading} = state;
+  const {nodes, counts, cursor, loading} = state;
 
   useSubscription<PipelineRunLogsSubscription, PipelineRunLogsSubscriptionVariables>(
     PIPELINE_RUN_LOGS_SUBSCRIPTION,
@@ -173,8 +196,8 @@ const useLogsProviderWithSubscription = (runId: string) => {
   );
 
   return React.useMemo(
-    () => (nodes !== null ? {allNodes: nodes, loading} : {allNodes: [], loading}),
-    [loading, nodes],
+    () => (nodes !== null ? {allNodes: nodes, counts, loading} : {allNodes: [], counts, loading}),
+    [counts, loading, nodes],
   );
 };
 
@@ -197,45 +220,40 @@ const POLL_INTERVAL = 5000;
 
 const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
   const {children, runId} = props;
-  const [nodes, setNodes] = React.useState<LogNode[]>(() => []);
-  const [cursor, setCursor] = React.useState<string | null>(null);
+  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const {counts, cursor, nodes} = state;
 
   const {stopPolling, startPolling} = useQuery<RunLogsQuery, RunLogsQueryVariables>(
     RUN_LOGS_QUERY,
     {
       notifyOnNetworkStatusChange: true,
-      variables: {runId, cursor},
+      variables: {runId, cursor, limit: QUERY_LOG_LIMIT},
       pollInterval: POLL_INTERVAL,
       onCompleted: (data: RunLogsQuery) => {
         // We have to stop polling in order to update the `after` value.
         stopPolling();
 
-        const slice = () => {
-          const count = nodes.length;
-          if (data?.pipelineRunOrError.__typename === 'Run') {
-            return data?.pipelineRunOrError.eventConnection.events.map((event, ii) => ({
-              ...event,
-              clientsideKey: `csk${count + ii}`,
-            }));
-          }
-          return [];
-        };
-
-        const newSlice = slice();
-        setNodes((current) => [...current, ...newSlice]);
-        if (data?.pipelineRunOrError.__typename === 'Run') {
-          setCursor(data.pipelineRunOrError.eventConnection.cursor);
+        if (
+          data?.pipelineRunOrError.__typename !== 'Run' ||
+          data?.logsForRun.__typename !== 'EventConnection'
+        ) {
+          return;
         }
 
-        const status =
-          data?.pipelineRunOrError.__typename === 'Run' ? data?.pipelineRunOrError.status : null;
+        const run = data.pipelineRunOrError;
+        const queued = data.logsForRun.events;
+        const status = run.status;
+        const cursor = data.logsForRun.cursor;
 
-        if (
-          status &&
+        const hasMore =
+          !!status &&
           status !== RunStatus.FAILURE &&
           status !== RunStatus.SUCCESS &&
-          status !== RunStatus.CANCELED
-        ) {
+          status !== RunStatus.CANCELED;
+
+        dispatch({type: 'append', queued, hasMore, cursor});
+
+        if (hasMore) {
           startPolling(POLL_INTERVAL);
         }
       },
@@ -246,8 +264,8 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
     <>
       {children(
         nodes !== null && nodes.length > 0
-          ? {allNodes: nodes, loading: false}
-          : {allNodes: [], loading: true},
+          ? {allNodes: nodes, counts, loading: false}
+          : {allNodes: [], counts, loading: true},
       )}
     </>
   );
@@ -263,7 +281,7 @@ export const LogsProvider: React.FC<LogsProviderProps> = (props) => {
   }
 
   if (availability === 'attempting-to-connect') {
-    return <>{children({allNodes: [], loading: true})}</>;
+    return <>{children({allNodes: [], counts: emptyCounts, loading: true})}</>;
   }
 
   return <LogsProviderWithSubscription runId={runId}>{children}</LogsProviderWithSubscription>;
@@ -303,23 +321,29 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
 `;
 
 const RUN_LOGS_QUERY = gql`
-  query RunLogsQuery($runId: ID!, $cursor: String) {
+  query RunLogsQuery($runId: ID!, $cursor: String, $limit: Int) {
     pipelineRunOrError(runId: $runId) {
       ... on Run {
         id
         runId
         status
         canTerminate
-        eventConnection(afterCursor: $cursor) {
-          events {
-            __typename
-            ... on MessageEvent {
-              runId
-            }
-            ...RunDagsterRunEventFragment
+      }
+    }
+    logsForRun(runId: $runId, afterCursor: $cursor, limit: $limit) {
+      ... on EventConnection {
+        events {
+          __typename
+          ... on MessageEvent {
+            runId
           }
-          cursor
+          ...RunDagsterRunEventFragment
         }
+        cursor
+      }
+      ... on PythonError {
+        message
+        stack
       }
     }
   }

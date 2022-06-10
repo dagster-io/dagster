@@ -89,6 +89,10 @@ class PartitionBackfill(
             check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
+    @property
+    def selector_id(self):
+        return self.partition_set_origin.get_selector_id()
+
     def with_status(self, status):
         check.inst_param(status, "status", BulkActionStatus)
         return PartitionBackfill(
@@ -247,10 +251,10 @@ def create_backfill_run(
             )
         step_keys_to_execute = backfill_job.reexecution_steps
         if last_run and last_run.status == PipelineRunStatus.SUCCESS:
-            known_state = KnownExecutionState.for_reexecution(
-                instance.all_logs(parent_run_id),
-                step_keys_to_execute,
-            )
+            known_state = KnownExecutionState.build_for_reexecution(
+                instance,
+                last_run,
+            ).update_for_step_selection(step_keys_to_execute)
         else:
             known_state = None
 

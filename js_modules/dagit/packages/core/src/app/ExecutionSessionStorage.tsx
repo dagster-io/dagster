@@ -1,6 +1,8 @@
 import * as React from 'react';
 
 import {getJSONForKey, useStateWithStorage} from '../hooks/useStateWithStorage';
+import {LaunchpadSessionPartitionSetsFragment} from '../launchpad/types/LaunchpadSessionPartitionSetsFragment';
+import {LaunchpadSessionPipelineFragment} from '../launchpad/types/LaunchpadSessionPipelineFragment';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
@@ -79,6 +81,24 @@ export function applyChangesToSession(
   };
 }
 
+export const createSingleSession = (initial: IExecutionSessionChanges = {}, key?: string) => {
+  return {
+    name: 'New Run',
+    runConfigYaml: '',
+    mode: null,
+    base: null,
+    needsRefresh: false,
+    solidSelection: null,
+    solidSelectionQuery: '*',
+    flattenGraphs: false,
+    tags: null,
+    runId: undefined,
+    ...initial,
+    configChangedSinceRun: false,
+    key: key || `s${Date.now()}`,
+  };
+};
+
 export function applyCreateSession(
   data: IStorageData,
   initial: IExecutionSessionChanges = {},
@@ -89,21 +109,7 @@ export function applyCreateSession(
     current: key,
     sessions: {
       ...data.sessions,
-      [key]: {
-        name: 'New Run',
-        runConfigYaml: '',
-        mode: null,
-        base: null,
-        needsRefresh: false,
-        solidSelection: null,
-        solidSelectionQuery: '*',
-        flattenGraphs: false,
-        tags: null,
-        runId: undefined,
-        ...initial,
-        configChangedSinceRun: false,
-        key,
-      },
+      [key]: createSingleSession(initial, key),
     },
     selectedExecutionType: data.selectedExecutionType,
   };
@@ -214,4 +220,31 @@ export const useInvalidateConfigsForRepo = () => {
   );
 
   return onSave;
+};
+
+export const useInitialDataForMode = (
+  pipeline: LaunchpadSessionPipelineFragment,
+  partitionSets: LaunchpadSessionPartitionSetsFragment,
+) => {
+  const {isJob, presets} = pipeline;
+  const partitionSetsForMode = partitionSets.results;
+
+  return React.useMemo(() => {
+    const presetsForMode = isJob ? (presets.length ? [presets[0]] : []) : presets;
+
+    if (presetsForMode.length === 1 && partitionSetsForMode.length === 0) {
+      return {
+        base: {presetName: presetsForMode[0].name, tags: null},
+        runConfigYaml: presetsForMode[0].runConfigYaml,
+      };
+    }
+
+    if (!presetsForMode.length && partitionSetsForMode.length === 1) {
+      return {
+        base: {partitionsSetName: partitionSetsForMode[0].name, partitionName: null, tags: null},
+      };
+    }
+
+    return {};
+  }, [isJob, partitionSetsForMode, presets]);
 };

@@ -60,7 +60,7 @@ def test_process_killed_after_client_finished():
     while server_process.server_process.poll() is None:
         time.sleep(0.05)
         # Verify server process cleans up eventually
-        assert time.time() - start_time < 1.5
+        assert time.time() - start_time < 5
 
     # verify socket is cleaned up
     assert not os.path.exists(socket)

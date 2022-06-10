@@ -1,2 +1,3 @@
 sphinx/_build/
 .env
+next/.env

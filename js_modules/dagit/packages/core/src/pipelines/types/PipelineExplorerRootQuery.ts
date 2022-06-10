@@ -9,6 +9,164 @@ import { PipelineSelector } from "./../../types/globalTypes";
 // GraphQL query operation: PipelineExplorerRootQuery
 // ====================================================
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries = PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_PathMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_JsonMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_UrlMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TextMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_MarkdownMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_PythonArtifactMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_FloatMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_IntMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_BoolMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_PipelineRunMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_AssetMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry;
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
@@ -1476,6 +1634,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   __typename: "PipelineSnapshot";
   id: string;
   name: string;
+  metadataEntries: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries[];
   description: string | null;
   modes: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes[];
   solidHandle: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle | null;

@@ -893,13 +893,6 @@ class TestEventLogStorage:
                 storage.store_event(event)
 
             assert asset_key in set(storage.all_asset_keys())
-            events = storage.get_asset_events(asset_key)
-            assert len(events) == 1
-            event = events[0]
-            assert isinstance(event, EventLogEntry)
-            assert (
-                event.dagster_event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION.value
-            )
 
             records = storage.get_event_records(
                 EventRecordsFilter(
@@ -909,7 +902,7 @@ class TestEventLogStorage:
             assert len(records) == 1
             record = records[0]
             assert isinstance(record, EventLogRecord)
-            assert record.event_log_entry == event
+            assert record.event_log_entry.dagster_event.asset_key == asset_key
 
     def test_asset_events_error_parsing(self, storage):
         if not isinstance(storage, SqlEventLogStorage):
@@ -932,7 +925,7 @@ class TestEventLogStorage:
         with instance_for_test() as instance:
             if not storage._instance:  # pylint: disable=protected-access
                 storage.register_instance(instance)
-            events_one, _ = _synthesize_events(_solids)
+            events_one, _ = _synthesize_events(_solids, instance=instance)
             for event in events_one:
                 storage.store_event(event)
 
@@ -959,8 +952,7 @@ class TestEventLogStorage:
                 )
 
                 assert asset_key in set(storage.all_asset_keys())
-                events = storage.get_asset_events(asset_key)
-                assert len(events) == 0
+                _records = storage.get_event_records(EventRecordsFilter(asset_key=asset_key))
                 assert len(_logs) == 1
                 assert re.match("Could not resolve event record as EventLogEntry", _logs[0])
 
@@ -988,8 +980,7 @@ class TestEventLogStorage:
                     )
                 )
                 assert asset_key in set(storage.all_asset_keys())
-                events = storage.get_asset_events(asset_key)
-                assert len(events) == 0
+                _records = storage.get_event_records(EventRecordsFilter(asset_key=asset_key))
                 assert len(_logs) == 1
                 assert re.match("Could not parse event record id", _logs[0])
 
@@ -1458,22 +1449,22 @@ class TestEventLogStorage:
     def test_latest_materializations(self, storage, instance):
         @solid
         def one(_):
-            yield AssetMaterialization(AssetKey("a"), tags={"num": str(1)})
-            yield AssetMaterialization(AssetKey("b"), tags={"num": str(1)})
-            yield AssetMaterialization(AssetKey("c"), tags={"num": str(1)})
-            yield AssetMaterialization(AssetKey("d"), tags={"num": str(1)})
+            yield AssetMaterialization(AssetKey("a"), partition="1")
+            yield AssetMaterialization(AssetKey("b"), partition="1")
+            yield AssetMaterialization(AssetKey("c"), partition="1")
+            yield AssetMaterialization(AssetKey("d"), partition="1")
             yield AssetObservation(AssetKey("a"), metadata={"foo": "bar"})
             yield Output(1)
 
         @solid
         def two(_):
-            yield AssetMaterialization(AssetKey("b"), tags={"num": str(2)})
-            yield AssetMaterialization(AssetKey("c"), tags={"num": str(2)})
+            yield AssetMaterialization(AssetKey("b"), partition="2")
+            yield AssetMaterialization(AssetKey("c"), partition="2")
             yield Output(2)
 
-        def _event_tags(event):
+        def _event_partition(event):
             assert event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
-            return event.dagster_event.step_materialization_data.materialization.tags
+            return event.dagster_event.step_materialization_data.materialization.partition
 
         def _fetch_events(storage):
             return storage.get_latest_materialization_events(
@@ -1496,10 +1487,6 @@ class TestEventLogStorage:
 
             events_by_key = _fetch_events(storage)
             assert len(events_by_key) == 4
-            assert _event_tags(events_by_key[AssetKey("a")])["num"] == "1"
-            assert _event_tags(events_by_key[AssetKey("b")])["num"] == "1"
-            assert _event_tags(events_by_key[AssetKey("c")])["num"] == "1"
-            assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"
 
             # wipe 2 of the assets, make sure we respect that
             if self.can_wipe():
@@ -1508,8 +1495,6 @@ class TestEventLogStorage:
                 events_by_key = _fetch_events(storage)
                 assert events_by_key.get(AssetKey("a")) is None
                 assert events_by_key.get(AssetKey("b")) is None
-                assert _event_tags(events_by_key[AssetKey("c")])["num"] == "1"
-                assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"
 
                 # rematerialize one of the wiped assets, one of the existing assets
                 events, _ = _synthesize_events(lambda: two(), run_id=run_id_2)
@@ -1518,19 +1503,12 @@ class TestEventLogStorage:
 
                 events_by_key = _fetch_events(storage)
                 assert events_by_key.get(AssetKey("a")) is None
-                assert _event_tags(events_by_key[AssetKey("b")])["num"] == "2"
-                assert _event_tags(events_by_key[AssetKey("c")])["num"] == "2"
-                assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"
 
             else:
                 events, _ = _synthesize_events(lambda: two(), run_id=run_id_2)
                 for event in events:
                     storage.store_event(event)
                 events_by_key = _fetch_events(storage)
-                assert _event_tags(events_by_key[AssetKey("a")])["num"] == "1"
-                assert _event_tags(events_by_key[AssetKey("b")])["num"] == "2"
-                assert _event_tags(events_by_key[AssetKey("c")])["num"] == "2"
-                assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"
 
     def test_asset_keys(self, storage, instance):
         with instance_for_test() as created_instance:
@@ -1574,111 +1552,6 @@ class TestEventLogStorage:
 
                 assert storage.has_asset_key(AssetKey(["path", "to", "asset_3"]))
                 assert not storage.has_asset_key(AssetKey(["path", "to", "bogus", "asset"]))
-
-    def test_asset_events(self, storage, instance):
-        with instance_for_test() as created_instance:
-            if not storage._instance:  # pylint: disable=protected-access
-                storage.register_instance(created_instance)
-
-            events_one, result_1 = _synthesize_events(
-                lambda: one_asset_solid(), instance=created_instance
-            )
-            events_two, result_2 = _synthesize_events(
-                lambda: two_asset_solids(), instance=created_instance
-            )
-
-            with create_and_delete_test_runs(instance, [result_1.run_id, result_2.run_id]):
-
-                for event in events_one + events_two:
-                    storage.store_event(event)
-
-                asset_events = storage.get_asset_events(AssetKey("asset_1"))
-                assert len(asset_events) == 2
-                for event in asset_events:
-                    assert isinstance(event, EventLogEntry)
-                    assert event.is_dagster_event
-                    assert event.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION
-                    assert event.dagster_event.asset_key
-
-                asset_events = storage.get_asset_events(AssetKey(["path", "to", "asset_3"]))
-                assert len(asset_events) == 1
-
-    def test_asset_events_range(self, storage, instance):
-        with instance_for_test() as created_instance:
-            if not storage._instance:  # pylint: disable=protected-access
-                storage.register_instance(created_instance)
-
-            events_one, result_1 = _synthesize_events(
-                lambda: one_asset_solid(), instance=created_instance
-            )
-            two_asset_solids_first, result_2 = _synthesize_events(
-                lambda: two_asset_solids(), instance=created_instance
-            )
-            two_asset_solids_second, result_3 = _synthesize_events(
-                lambda: two_asset_solids(), instance=created_instance
-            )
-
-            with create_and_delete_test_runs(
-                instance, [result_1.run_id, result_2.run_id, result_3.run_id]
-            ):
-
-                for event in events_one + two_asset_solids_first + two_asset_solids_second:
-                    storage.store_event(event)
-
-                # descending
-                asset_events = storage.get_asset_events(AssetKey("asset_1"), include_cursor=True)
-                assert len(asset_events) == 3
-                [id_three, id_two, id_one] = [id for id, event in asset_events]
-
-                after_events = storage.get_asset_events(
-                    AssetKey("asset_1"), include_cursor=True, after_cursor=id_one
-                )
-                assert len(after_events) == 2
-                assert [id for id, event in after_events] == [id_three, id_two]
-
-                before_events = storage.get_asset_events(
-                    AssetKey("asset_1"), include_cursor=True, before_cursor=id_three
-                )
-                assert len(before_events) == 2
-                assert [id for id, event in before_events] == [id_two, id_one]
-
-                between_events = storage.get_asset_events(
-                    AssetKey("asset_1"),
-                    include_cursor=True,
-                    before_cursor=id_three,
-                    after_cursor=id_one,
-                )
-                assert len(between_events) == 1
-                assert [id for id, event in between_events] == [id_two]
-
-                # ascending
-                asset_events = storage.get_asset_events(
-                    AssetKey("asset_1"), include_cursor=True, ascending=True
-                )
-                assert len(asset_events) == 3
-                [id_one, id_two, id_three] = [id for id, event in asset_events]
-
-                after_events = storage.get_asset_events(
-                    AssetKey("asset_1"), include_cursor=True, after_cursor=id_one, ascending=True
-                )
-                assert len(after_events) == 2
-                assert [id for id, event in after_events] == [id_two, id_three]
-
-                before_events = storage.get_asset_events(
-                    AssetKey("asset_1"), include_cursor=True, before_cursor=id_three, ascending=True
-                )
-                assert len(before_events) == 2
-                assert [id for id, event in before_events] == [id_one, id_two]
-
-                between_events = storage.get_asset_events(
-                    AssetKey("asset_1"),
-                    include_cursor=True,
-                    before_cursor=id_three,
-                    after_cursor=id_one,
-                    ascending=True,
-                )
-                assert len(between_events) == 1
-                assert [id for id, event in between_events] == [id_two]
 
     def test_asset_run_ids(self, storage, instance):
         with instance_for_test() as created_instance:
@@ -1745,8 +1618,6 @@ class TestEventLogStorage:
                 asset_keys = storage.all_asset_keys()
                 assert len(asset_keys) == 3
                 assert storage.has_asset_key(AssetKey("asset_1"))
-                asset_events = storage.get_asset_events(AssetKey("asset_1"))
-                assert len(asset_events) == 2
                 asset_run_ids = storage.get_asset_run_ids(AssetKey("asset_1"))
                 assert set(asset_run_ids) == set([one_run_id, two_run_id])
 
@@ -1758,8 +1629,6 @@ class TestEventLogStorage:
                     asset_keys = storage.all_asset_keys()
                     assert len(asset_keys) == 0
                     assert not storage.has_asset_key(AssetKey("asset_1"))
-                    asset_events = storage.get_asset_events(AssetKey("asset_1"))
-                    assert len(asset_events) == 0
                     asset_run_ids = storage.get_asset_run_ids(AssetKey("asset_1"))
                     assert set(asset_run_ids) == set()
                     assert log_count == len(storage.get_logs_for_run(one_run_id))
@@ -1775,8 +1644,6 @@ class TestEventLogStorage:
                         asset_keys = storage.all_asset_keys()
                         assert len(asset_keys) == 1
                         assert storage.has_asset_key(AssetKey("asset_1"))
-                        asset_events = storage.get_asset_events(AssetKey("asset_1"))
-                        assert len(asset_events) == 1
                         asset_run_ids = storage.get_asset_run_ids(AssetKey("asset_1"))
                         assert set(asset_run_ids) == set([one_run_id])
 
@@ -1850,13 +1717,18 @@ class TestEventLogStorage:
                     for event in run_events:
                         storage.store_event(event)
 
-                events = storage.get_asset_events(AssetKey("asset_key"))
-                assert len(events) == 4
-
-                events = storage.get_asset_events(
-                    AssetKey("asset_key"), partitions=["partition_a", "partition_b"]
+                records = storage.get_event_records(
+                    EventRecordsFilter(asset_key=AssetKey("asset_key"))
                 )
-                assert len(events) == 3
+                assert len(records) == 4
+
+                records = storage.get_event_records(
+                    EventRecordsFilter(
+                        asset_key=AssetKey("asset_key"),
+                        asset_partitions=["partition_a", "partition_b"],
+                    )
+                )
+                assert len(records) == 3
 
     def test_get_asset_keys(self, storage, test_run_id):
         @op

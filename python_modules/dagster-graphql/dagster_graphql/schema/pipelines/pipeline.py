@@ -1,6 +1,10 @@
 # pylint: disable=missing-graphene-docstring
+from typing import List
+
 import graphene
 import yaml
+from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 
 import dagster._check as check
 from dagster.core.events import DagsterEventType
@@ -168,9 +172,18 @@ class GrapheneAsset(graphene.ObjectType):
 
 
 class GrapheneEventConnection(graphene.ObjectType):
+    class Meta:
+        name = "EventConnection"
+
     events = non_null_list(GrapheneDagsterRunEvent)
     cursor = graphene.NonNull(graphene.String)
     hasMore = graphene.NonNull(graphene.Boolean)
+
+
+class GrapheneEventConnectionOrError(graphene.Union):
+    class Meta:
+        types = (GrapheneEventConnection, GrapheneRunNotFoundError, GraphenePythonError)
+        name = "EventConnectionOrError"
 
 
 class GraphenePipelineRun(graphene.Interface):
@@ -449,6 +462,7 @@ class GrapheneIPipelineSnapshotMixin:
         handleID=graphene.Argument(graphene.NonNull(graphene.String)),
     )
     tags = non_null_list(GraphenePipelineTag)
+    metadata_entries = non_null_list(GrapheneMetadataEntry)
     runs = graphene.Field(
         non_null_list(GrapheneRun),
         cursor=graphene.String(),
@@ -550,6 +564,10 @@ class GrapheneIPipelineSnapshotMixin:
             for key, value in represented_pipeline.pipeline_snapshot.tags.items()
         ]
 
+    def resolve_metadata_entries(self, _graphene_info) -> List[GrapheneMetadataEntry]:
+        represented_pipeline = self.get_represented_pipeline()
+        return list(iterate_metadata_entries(represented_pipeline.pipeline_snapshot.metadata))
+
     def resolve_solidSelection(self, _graphene_info):
         return self.get_represented_pipeline().solid_selection
 
@@ -609,6 +627,7 @@ class GrapheneIPipelineSnapshot(graphene.Interface):
         handleID=graphene.Argument(graphene.NonNull(graphene.String)),
     )
     tags = non_null_list(GraphenePipelineTag)
+    metadata_entries = non_null_list(GrapheneMetadataEntry)
     runs = graphene.Field(
         non_null_list(GrapheneRun),
         cursor=graphene.String(),
@@ -800,11 +819,3 @@ class GrapheneRunOrError(graphene.Union):
     class Meta:
         types = (GrapheneRun, GrapheneRunNotFoundError, GraphenePythonError)
         name = "RunOrError"
-
-
-class GrapheneLatestRun(graphene.ObjectType):
-    stepKey = graphene.NonNull(graphene.String)
-    run = graphene.Field(GrapheneRun)
-
-    class Meta:
-        name = "LatestRun"

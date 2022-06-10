@@ -2,6 +2,9 @@ import typing as t
 from abc import abstractmethod
 from enum import Enum as PythonEnum
 from functools import partial
+from typing import AbstractSet as TypingAbstractSet
+from typing import Iterator as TypingIterator
+from typing import Optional as TypingOptional
 from typing import cast
 
 import dagster._check as check
@@ -12,7 +15,13 @@ from dagster.core.definitions.events import DynamicOutput, Output, TypeCheck
 from dagster.core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.serdes import whitelist_for_serdes
+from dagster.seven import is_subclass
 
+from ..definitions.resource_requirement import (
+    RequiresResources,
+    ResourceRequirement,
+    TypeResourceRequirement,
+)
 from .builtin_config_schemas import BuiltinSchemas
 from .config_schema import DagsterTypeLoader, DagsterTypeMaterializer
 
@@ -35,7 +44,7 @@ class DagsterTypeKind(PythonEnum):
     REGULAR = "REGULAR"
 
 
-class DagsterType:
+class DagsterType(RequiresResources):
     """Define a type in dagster. These can be used in the inputs and outputs of ops.
 
     Args:
@@ -122,7 +131,7 @@ class DagsterType:
             materializer, "materializer", DagsterTypeMaterializer
         )
 
-        self.required_resource_keys = check.opt_set_param(
+        self._required_resource_keys = check.opt_set_param(
             required_resource_keys,
             "required_resource_keys",
         )
@@ -176,6 +185,10 @@ class DagsterType:
         return self._metadata_entries  # type: ignore
 
     @property
+    def required_resource_keys(self) -> TypingAbstractSet[str]:
+        return self._required_resource_keys
+
+    @property
     def display_name(self) -> str:
         """Either the name or key (if name is `None`) of the type, overridden in many subclasses"""
         return cast(str, self._name or self.key)
@@ -224,6 +237,16 @@ class DagsterType:
                 name=self.display_name
             )
         )
+
+    def get_resource_requirements(
+        self, _outer_context: TypingOptional[object] = None
+    ) -> TypingIterator[ResourceRequirement]:
+        for resource_key in sorted(list(self.required_resource_keys)):
+            yield TypeResourceRequirement(key=resource_key, type_display_name=self.display_name)
+        if self.loader:
+            yield from self.loader.get_resource_requirements(outer_context=self.display_name)
+        if self.materializer:
+            yield from self.materializer.get_resource_requirements(outer_context=self.display_name)
 
 
 def _validate_type_check_fn(fn: t.Callable, name: t.Optional[str]) -> bool:
@@ -813,12 +836,12 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     from .transform_typing import transform_typing_type
 
     check.invariant(
-        not (isinstance(dagster_type, type) and issubclass(dagster_type, ConfigType)),
+        not is_subclass(dagster_type, ConfigType),
         "Cannot resolve a config type to a runtime type",
     )
 
     check.invariant(
-        not (isinstance(dagster_type, type) and issubclass(dagster_type, DagsterType)),
+        not is_subclass(dagster_type, DagsterType),
         "Do not pass runtime type classes. Got {}".format(dagster_type),
     )
 
@@ -885,12 +908,12 @@ def is_dynamic_output_annotation(dagster_type: object) -> bool:
     from dagster.seven.typing import get_args, get_origin
 
     check.invariant(
-        not (isinstance(dagster_type, type) and issubclass(dagster_type, ConfigType)),
+        not is_subclass(dagster_type, ConfigType),
         "Cannot resolve a config type to a runtime type",
     )
 
     check.invariant(
-        not (isinstance(dagster_type, type) and issubclass(dagster_type, DagsterType)),
+        not is_subclass(dagster_type, DagsterType),
         "Do not pass runtime type classes. Got {}".format(dagster_type),
     )
 

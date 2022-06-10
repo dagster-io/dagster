@@ -106,7 +106,8 @@ class PackageSpec(
             Defaults to None.
         tox_file (str, optional): The tox file to use. Defaults to {directory}/tox.ini.
         retries (int, optional): Whether to retry these tests on failure
-        upload_coverage (bool, optional): Whether to copy coverage artifacts. Enabled by default.
+        upload_coverage (bool, optional): Whether to copy coverage artifacts. By default, enabled
+            for packages of type "core" or "library", disabled for other packages.
         timeout_in_minutes (int, optional): Fail after this many minutes.
         queue (BuildkiteQueue, optional): Schedule steps to this queue.
         run_pytest (bool, optional): Whether to run pytest. Enabled by default.
@@ -128,18 +129,19 @@ class PackageSpec(
         env_vars: Optional[List[str]] = None,
         tox_file: Optional[str] = None,
         retries: Optional[int] = None,
-        upload_coverage: bool = True,
+        upload_coverage: Optional[bool] = None,
         timeout_in_minutes: Optional[int] = None,
         queue: Optional[BuildkiteQueue] = None,
         run_pytest: bool = True,
         run_mypy: bool = True,
         run_pylint: bool = True,
     ):
+        package_type = package_type or _infer_package_type(directory)
         return super(PackageSpec, cls).__new__(
             cls,
             directory,
             name or os.path.basename(directory),
-            package_type or _infer_package_type(directory),
+            package_type,
             unsupported_python_versions or [],
             pytest_extra_cmds,
             pytest_step_dependencies,
@@ -147,7 +149,7 @@ class PackageSpec(
             env_vars or [],
             tox_file,
             retries,
-            upload_coverage,
+            upload_coverage if upload_coverage is not None else package_type in ("core", "library"),
             timeout_in_minutes,
             queue,
             run_pytest,

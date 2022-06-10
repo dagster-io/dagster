@@ -32,7 +32,8 @@ If release name contains chart name it will be used as a full name.
   {{- $ := index . 0 }}
 
   {{- with index . 1 }}
-    {{- $tag := .tag | default $.Chart.Version | toYaml }}
+    {{- /* Filter the tag to parse strings, string integers, and string floats. */}}
+    {{- $tag := .tag | default $.Chart.Version | toYaml | trimAll "\"" }}
     {{- printf "%s:%s" .repository $tag }}
   {{- end }}
 {{- end }}
@@ -98,6 +99,9 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
   {{- with index . 1 }}
   k8s:
     image_pull_policy: {{ .image.pullPolicy }}
+    {{- if $.Values.imagePullSecrets }}
+    image_pull_secrets: {{- $.Values.imagePullSecrets | toYaml | nindent 6 }}
+    {{- end }}
     env_config_maps:
     - {{ include "dagster.fullname" $ }}-{{ .name }}-user-env
     {{- range $envConfigMap := .envConfigMaps }}

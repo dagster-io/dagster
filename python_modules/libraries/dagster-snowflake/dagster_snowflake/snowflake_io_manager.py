@@ -54,7 +54,7 @@ class SnowflakeDbClient(DbClient):
         with SnowflakeConnection(
             dict(**(context.resource_config or {}), schema=table_slice.schema), context.log
         ).get_connection() as con:
-            con.execute(_get_cleanup_statement(table_slice))
+            con.execute_string(_get_cleanup_statement(table_slice))
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:

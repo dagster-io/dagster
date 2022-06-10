@@ -1,5 +1,6 @@
 import os
 import pickle
+from typing import Union
 
 import dagster._check as check
 from dagster.config import Field
@@ -24,7 +25,17 @@ def fs_io_manager(init_context):
     your dagster.yaml file (which will be a temporary directory if not explicitly set).
 
     Serializes and deserializes output values using pickling and automatically constructs
-    the filepaths for the assets.
+    the filepaths for ops and assets.
+
+    Assigns each op output to a unique filepath containing run ID, step key, and output name.
+    Assigns each asset to a single filesystem path, at "<base_dir>/<asset_key>". If the asset key
+    has multiple components, the final component is used as the name of the file, and the preceding
+    components as parent directories under the base_dir.
+
+    Subsequent materializations of an asset will overwrite previous materializations of that asset.
+    So, with a base directory of "/my/base/path", an asset with key
+    `AssetKey(["one", "two", "three"])` would be stored in a file called "three" in a directory
+    with path "/my/base/path/one/two/".
 
     Example usage:
 
@@ -94,11 +105,14 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         self.write_mode = "wb"
         self.read_mode = "rb"
 
-    def _get_path(self, context):
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         """Automatically construct filepath."""
-        keys = context.get_output_identifier()
+        if context.has_asset_key:
+            path = context.get_asset_identifier()
+        else:
+            path = context.get_identifier()
 
-        return os.path.join(self.base_dir, *keys)
+        return os.path.join(self.base_dir, *path)
 
     def has_output(self, context):
         filepath = self._get_path(context)
@@ -148,7 +162,7 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         """Unpickle the file and Load it to a data object."""
         check.inst_param(context, "context", InputContext)
 
-        filepath = self._get_path(context.upstream_output)
+        filepath = self._get_path(context)
         context.add_input_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
 
         with open(filepath, self.read_mode) as read_obj:

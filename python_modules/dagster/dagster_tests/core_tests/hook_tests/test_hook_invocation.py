@@ -5,7 +5,11 @@ import pytest
 
 from dagster import HookContext, build_hook_context, failure_hook, resource, solid, success_hook
 from dagster.core.definitions.decorators.hook_decorator import event_list_hook
-from dagster.core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
+from dagster.core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+)
 
 
 def test_event_list_hook_invocation():
@@ -134,9 +138,8 @@ def test_success_hook_with_resources(hook_decorator, is_event_list_hook):
         hook(build_hook_context(resources={"foo": "foo", "bar": bar_resource}))
 
     with pytest.raises(
-        DagsterInvariantViolationError,
-        match=r"The hook 'my_hook_reqs_resources' requires resource '\w+', "
-        r"which was not provided by the context.",
+        DagsterInvalidDefinitionError,
+        match="resource with key 'bar' required by hook 'my_hook_reqs_resources'  was not provided",
     ):
         if is_event_list_hook:
             hook(None, None)

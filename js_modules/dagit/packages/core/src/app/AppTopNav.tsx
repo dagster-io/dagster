@@ -99,12 +99,7 @@ export const AppTopNavLogo: React.FC = () => {
         shortcutLabel="."
         shortcutFilter={(e) => e.key === '.'}
       >
-        <NavButton
-          onClick={onToggle}
-          onKeyDown={onKeyDown}
-          ref={navButton}
-          $visible={nav.isCollapsible}
-        >
+        <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
           <Icon name="menu" color={Colors.White} size={24} />
         </NavButton>
       </ShortcutHandler>
@@ -214,7 +209,7 @@ const LogoContainer = styled.div`
   }
 `;
 
-const NavButton = styled.button<{$visible: boolean}>`
+const NavButton = styled.button`
   border-radius: 20px;
   cursor: pointer;
   margin-left: 4px;
@@ -222,7 +217,7 @@ const NavButton = styled.button<{$visible: boolean}>`
   padding: 6px;
   border: none;
   background: transparent;
-  display: ${(p) => (p.$visible ? `block` : 'none')};
+  display: block;
 
   ${IconWrapper} {
     transition: background 100ms linear;

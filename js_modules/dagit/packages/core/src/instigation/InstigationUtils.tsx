@@ -5,8 +5,9 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {LastRunSummary} from '../instance/LastRunSummary';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
-import {titleForRun} from '../runs/RunUtils';
+import {RUN_TIME_FRAGMENT, titleForRun} from '../runs/RunUtils';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
 import {InstigationStateFragment} from './types/InstigationStateFragment';
@@ -18,7 +19,7 @@ export const InstigatedRunStatus: React.FC<{
   if (!instigationState.runs.length) {
     return <span style={{color: Colors.Gray300}}>None</span>;
   }
-  return <RunStatusLink run={instigationState.runs[0]} />;
+  return <LastRunSummary run={instigationState.runs[0]} />;
 };
 
 export const RunStatusLink: React.FC<{run: RunStatusFragment}> = ({run}) => (
@@ -59,6 +60,7 @@ export const INSTIGATION_STATE_FRAGMENT = gql`
     runs(limit: 1) {
       id
       ...RunStatusFragment
+      ...RunTimeFragment
     }
     status
     ticks(limit: 1) {
@@ -71,6 +73,7 @@ export const INSTIGATION_STATE_FRAGMENT = gql`
   ${PYTHON_ERROR_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
   ${RUN_STATUS_FRAGMENT}
+  ${RUN_TIME_FRAGMENT}
 `;
 
 export const StatusTable = styled.table`

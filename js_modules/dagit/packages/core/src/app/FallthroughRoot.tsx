@@ -2,7 +2,7 @@ import {Box, ExternalAnchorButton, Colors, NonIdealState, Spinner} from '@dagste
 import * as React from 'react';
 import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 
-import {isAssetGroup} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
@@ -51,11 +51,13 @@ const FinalRedirectOrLoadingRoot = () => {
 
   const reposWithAJob = allRepos.filter((r) => r.repository.pipelines.length > 0);
 
-  // If every loaded repo only contains asset jobs, route to the asset graph
+  // If every loaded repo only contains asset jobs, route to the asset catalog
   if (
-    reposWithAJob.every(({repository}) => repository.pipelines.every((p) => isAssetGroup(p.name)))
+    reposWithAJob.every(({repository}) =>
+      repository.pipelines.every((p) => isHiddenAssetGroupJob(p.name)),
+    )
   ) {
-    return <Redirect to="/instance/asset-graph" />;
+    return <Redirect to="/instance/assets" />;
   }
 
   // If we have exactly one repo with one job, route to the job overview

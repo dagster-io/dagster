@@ -169,9 +169,8 @@ def test_solid_invocation_with_resources():
     # resource.
     context = build_solid_context()
     with pytest.raises(
-        DagsterInvalidInvocationError,
-        match='solid "solid_requires_resources" requires resource "foo", but no resource '
-        "with that key was found on the context.",
+        DagsterInvalidDefinitionError,
+        match="resource with key 'foo' required by solid 'solid_requires_resources' was not provided",
     ):
         solid_requires_resources(context)
 

@@ -3,6 +3,7 @@ from dagster import (
     RunRequest,
     ScheduleDefinition,
     ScheduleEvaluationContext,
+    asset,
     job,
     op,
     schedule,
@@ -17,6 +18,21 @@ def my_job():
 
 basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
 # end_basic_schedule
+
+
+@asset
+def my_asset():
+    return 1
+
+
+# start_basic_asset_schedule
+from dagster import AssetSelection, define_asset_job
+
+asset_job = define_asset_job("asset_job", AssetSelection.groups("some_asset_group"))
+
+basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
+
+# end_basic_asset_schedule
 
 # start_run_config_schedule
 @op(config_schema={"scheduled_date": str})

@@ -1,6 +1,5 @@
 # pylint: disable=missing-graphene-docstring
 import graphene
-from dagster_graphql.implementation.fetch_runs import get_latest_asset_run_by_step_key
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 
@@ -14,10 +13,10 @@ from dagster.core.host_representation import (
 )
 from dagster.core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 
-from .asset_graph import GrapheneAssetNode
+from .asset_graph import GrapheneAssetGroup, GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
 from .partition_sets import GraphenePartitionSet
-from .pipelines.pipeline import GrapheneJob, GrapheneLatestRun, GraphenePipeline
+from .pipelines.pipeline import GrapheneJob, GraphenePipeline
 from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
 from .schedules import GrapheneSchedule
 from .sensors import GrapheneSensor
@@ -162,7 +161,7 @@ class GrapheneRepository(graphene.ObjectType):
     sensors = non_null_list(GrapheneSensor)
     assetNodes = non_null_list(GrapheneAssetNode)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
-    latestRunByStep = non_null_list(GrapheneLatestRun)
+    assetGroups = non_null_list(GrapheneAssetGroup)
 
     class Meta:
         name = "Repository"
@@ -255,13 +254,20 @@ class GrapheneRepository(graphene.ObjectType):
             for external_asset_node in self._repository.get_external_asset_nodes()
         ]
 
-    def resolve_latestRunByStep(self, graphene_info):
-        asset_node = [node for node in self._repository.get_external_asset_nodes() if node.op_name]
+    def resolve_assetGroups(self, _graphene_info):
+        groups = {}
+        for external_asset_node in self._repository.get_external_asset_nodes():
+            if not external_asset_node.group_name:
+                continue
+            external_assets = groups.setdefault(external_asset_node.group_name, [])
+            external_assets.append(external_asset_node)
 
-        return get_latest_asset_run_by_step_key(
-            graphene_info,
-            asset_node,
-        )
+        return [
+            GrapheneAssetGroup(
+                group_name, [external_node.asset_key for external_node in external_nodes]
+            )
+            for group_name, external_nodes in groups.items()
+        ]
 
 
 class GrapheneRepositoryConnection(graphene.ObjectType):

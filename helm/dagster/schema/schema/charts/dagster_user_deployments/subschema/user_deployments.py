@@ -36,4 +36,5 @@ class UserDeployment(BaseModel):
 class UserDeployments(BaseModel):
     enabled: bool
     enableSubchart: bool
+    imagePullSecrets: List[kubernetes.SecretRef]
     deployments: List[UserDeployment]

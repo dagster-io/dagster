@@ -4,6 +4,7 @@ import sqlalchemy as db
 
 import dagster._check as check
 from dagster.core.events.log import EventLogEntry
+from dagster.core.storage.config import pg_config
 from dagster.core.storage.event_log import (
     AssetKeyTable,
     SqlEventLogStorage,
@@ -23,7 +24,6 @@ from dagster.serdes import ConfigurableClass, ConfigurableClassData, deserialize
 from ..utils import (
     create_pg_connection,
     pg_alembic_config,
-    pg_config,
     pg_statement_timeout,
     pg_url_from_config,
     retry_pg_connection_fn,
@@ -44,7 +44,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     To use Postgres for event log storage, you can add a block such as the following to your
     ``dagster.yaml``:
 
-    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg.yaml
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg-legacy.yaml
        :caption: dagster.yaml
        :lines: 12-21
        :language: YAML
@@ -214,7 +214,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             conn.execute(query)
 
     def _connect(self):
-        return create_pg_connection(self._engine, pg_alembic_config(__file__), "event log")
+        return create_pg_connection(self._engine)
 
     def run_connection(self, run_id=None):
         return self._connect()

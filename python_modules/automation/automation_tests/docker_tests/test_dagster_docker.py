@@ -12,5 +12,6 @@ def test_image_path():
         "docker",
         "images",
     )
-    assert DagsterDockerImage("foo").path == os.path.join(default_images_path, "foo")
-    assert DagsterDockerImage("foo", path="bar").path == "bar"
+    assert DagsterDockerImage("foo", default_images_path).path == os.path.join(
+        default_images_path, "foo"
+    )

@@ -1,3 +1,4 @@
+import importlib
 import sys
 import typing
 
@@ -14,18 +15,22 @@ sys.meta_path.insert(
         }
     ),
 )
-
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
 from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.asset_defs import (
-    AssetGroup,
     AssetIn,
+    AssetSelection,
     AssetsDefinition,
     SourceAsset,
     asset,
     build_assets_job,
+    load_assets_from_current_module,
+    load_assets_from_modules,
+    load_assets_from_package_module,
+    load_assets_from_package_name,
+    materialize,
     multi_asset,
 )
 from dagster.core.definitions import (
@@ -163,6 +168,7 @@ from dagster.core.definitions.run_status_sensor_definition import build_run_stat
 from dagster.core.definitions.schedule_definition import build_schedule_context
 from dagster.core.definitions.sensor_definition import build_sensor_context
 from dagster.core.definitions.step_launcher import StepLauncher
+from dagster.core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster.core.definitions.utils import (
     config_from_files,
     config_from_pkg_resources,
@@ -221,6 +227,7 @@ from dagster.core.execution.results import (
     SolidExecutionResult,
 )
 from dagster.core.execution.validate_run_config import validate_run_config
+from dagster.core.execution.with_resources import with_resources
 from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
@@ -233,7 +240,6 @@ from dagster.core.storage.event_log import (
     RunShardedEventsCursor,
 )
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
-from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster.core.storage.mem_io_manager import mem_io_manager
@@ -267,7 +273,7 @@ from dagster.core.types.python_tuple import Tuple
 from dagster.serdes import deserialize_value, serialize_value
 from dagster.utils import file_relative_path
 from dagster.utils.alert import make_email_on_run_failure_sensor
-from dagster.utils.backcompat import ExperimentalWarning, rename_warning
+from dagster.utils.backcompat import ExperimentalWarning, deprecation_warning, rename_warning
 from dagster.utils.log import get_dagster_logger
 from dagster.utils.partitions import (
     create_offset_partition_selector,
@@ -294,6 +300,8 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 # in `_DEPRECATED` is required  for us to generate the deprecation warning.
 
 if typing.TYPE_CHECKING:
+    from dagster.core.asset_defs import AssetGroup
+
     # pylint:disable=reimported
     from dagster.core.definitions import DagsterAssetMetadataValue as DagsterAssetMetadataEntryData
     from dagster.core.definitions import (
@@ -317,6 +325,14 @@ if typing.TYPE_CHECKING:
     # pylint:enable=reimported
 
 _DEPRECATED = {
+    "AssetGroup": (
+        "dagster.core.asset_defs",
+        "0.16.0",
+        "Instead, place a set of assets wrapped with `with_resources` directly on a repository.",
+    ),
+}
+
+_DEPRECATED_RENAMED = {
     "EventMetadataEntry": (MetadataEntry, "0.15.0"),
     "EventMetadata": (MetadataValue, "0.15.0"),
     "TextMetadataEntryData": (TextMetadataValue, "0.15.0"),
@@ -348,7 +364,13 @@ _DEPRECATED = {
 
 def __getattr__(name: str) -> typing.Any:
     if name in _DEPRECATED:
-        value, breaking_version = _DEPRECATED[name]
+        module, breaking_version, additional_warn_text = _DEPRECATED[name]
+        value = getattr(importlib.import_module(module), name)
+        stacklevel = 3 if sys.version_info >= (3, 7) else 4
+        deprecation_warning(name, breaking_version, additional_warn_text, stacklevel=stacklevel)
+        return value
+    elif name in _DEPRECATED_RENAMED:
+        value, breaking_version = _DEPRECATED_RENAMED[name]
         stacklevel = 3 if sys.version_info >= (3, 7) else 4
         rename_warning(value.__name__, name, breaking_version, stacklevel=stacklevel)
         return value
@@ -374,6 +396,7 @@ __all__ = [
     "AssetIn",
     "AssetMaterialization",
     "AssetObservation",
+    "AssetSelection",
     "AssetSensorDefinition",
     "AssetsDefinition",
     "DagsterAssetMetadataValue",
@@ -483,6 +506,7 @@ __all__ = [
     "OpExecutionContext",
     "PipelineExecutionResult",
     "RetryRequested",
+    "with_resources",
     "build_resources",
     "SolidExecutionResult",
     "SolidExecutionContext",
@@ -546,6 +570,11 @@ __all__ = [
     "config_from_yaml_strings",
     "configured",
     "build_assets_job",
+    "load_assets_from_modules",
+    "load_assets_from_current_module",
+    "load_assets_from_package_module",
+    "load_assets_from_package_name",
+    "materialize",
     # types
     "Any",
     "Bool",
@@ -645,7 +674,6 @@ __all__ = [
     "RootInputManager",
     "RootInputManagerDefinition",
     "root_input_manager",
-    "fs_asset_io_manager",
     "fs_io_manager",
     "mem_io_manager",
     "custom_path_fs_io_manager",

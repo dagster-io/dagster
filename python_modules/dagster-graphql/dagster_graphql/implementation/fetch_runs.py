@@ -10,9 +10,10 @@ from dagster.core.definitions import create_run_config_schema
 from dagster.core.errors import DagsterRunNotFoundError
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster.core.host_representation import PipelineSelector
-from dagster.core.storage.pipeline_run import PipelineRun, RunRecord, RunsFilter
+from dagster.core.storage.pipeline_run import RunRecord, RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 
+from .events import from_event_record
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import UserFacingGraphQLError, capture_error
 
@@ -124,6 +125,7 @@ IN_PROGRESS_STATUSES = [
 def get_assets_live_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, List[str]]):
     from ..schema.asset_graph import GrapheneAssetLatestInfo
     from ..schema.logs.events import GrapheneMaterializationEvent
+    from ..schema.pipelines.pipeline import GrapheneRun
 
     instance = graphene_info.context.instance
 
@@ -139,16 +141,24 @@ def get_assets_live_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, Li
         for asset_record in asset_records
     }
 
-    latest_run_ids = [  # last_run_id column is written to upon run creation (via ASSET_MATERIALIZATION_PLANNED event)
-        asset_record.asset_entry.last_run_id
+    latest_run_ids_by_asset: Dict[
+        AssetKey, str
+    ] = {  # last_run_id column is written to upon run creation (via ASSET_MATERIALIZATION_PLANNED event)
+        asset_record.asset_entry.asset_key: asset_record.asset_entry.last_run_id
         for asset_record in asset_records
         if asset_record.asset_entry.last_run_id
-    ]
-    in_progress_records = (
-        instance.get_run_records(RunsFilter(run_ids=latest_run_ids, statuses=PENDING_STATUSES))
-        if latest_run_ids
-        else []
-    )
+    }
+
+    run_records_by_run_id = {}
+    in_progress_records = []
+    run_ids = list(set(latest_run_ids_by_asset.values())) if latest_run_ids_by_asset else []
+    if run_ids:
+        run_records = instance.get_run_records(RunsFilter(run_ids=run_ids))
+        for run_record in run_records:
+            if run_record.pipeline_run.status in PENDING_STATUSES:
+                in_progress_records.append(run_record)
+            run_records_by_run_id[run_record.pipeline_run.run_id] = run_record
+
     in_progress_run_ids_by_asset, unstarted_run_ids_by_asset = _get_in_progress_runs_for_assets(
         graphene_info, in_progress_records, step_keys_by_asset
     )
@@ -159,6 +169,9 @@ def get_assets_live_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, Li
             latest_materialization_by_asset.get(asset_key),
             list(unstarted_run_ids_by_asset.get(asset_key, [])),
             list(in_progress_run_ids_by_asset.get(asset_key, [])),
+            GrapheneRun(run_records_by_run_id[latest_run_ids_by_asset[asset_key]])
+            if asset_key in latest_run_ids_by_asset
+            else None,
         )
         for asset_key in step_keys_by_asset.keys()
     ]
@@ -221,38 +234,6 @@ def _get_in_progress_runs_for_assets(
                 unstarted_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
 
     return in_progress_run_ids_by_asset, unstarted_run_ids_by_asset
-
-
-def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
-    from ..schema.pipelines.pipeline import GrapheneLatestRun, GrapheneRun
-
-    instance = graphene_info.context.instance
-
-    latest_run_by_step: Dict[str, PipelineRun] = {}
-    latest_run_id_by_asset: Dict[AssetKey, str] = {}
-
-    for record in instance.get_asset_records([asset.asset_key for asset in asset_nodes]):
-        asset_key = record.asset_entry.asset_key
-        last_run_id = record.asset_entry.last_run_id
-        if last_run_id:
-            latest_run_id_by_asset[asset_key] = last_run_id
-
-    run_records_by_run_id = {}
-    run_ids = list(set(latest_run_id_by_asset.values()))
-    if run_ids:
-        run_records = instance.get_run_records(RunsFilter(run_ids=run_ids))
-        for run_record in run_records:
-            run_records_by_run_id[run_record.pipeline_run.run_id] = run_record
-
-    for asset in asset_nodes:
-        run_id = latest_run_id_by_asset.get(asset.asset_key)
-        step_key = asset.op_name
-        # return run = None when no runs have occurred for the asset
-        latest_run_by_step[step_key] = GrapheneLatestRun(
-            step_key, GrapheneRun(run_records_by_run_id[run_id]) if run_id else None
-        )
-
-    return [latest_run_by_step.get(asset_node.op_name) for asset_node in asset_nodes]
 
 
 def get_runs_count(graphene_info, filters):
@@ -334,3 +315,23 @@ def get_step_stats(graphene_info, run_id, step_keys=None):
 
     step_stats = graphene_info.context.instance.get_run_step_stats(run_id, step_keys)
     return [GrapheneRunStepStats(stats) for stats in step_stats]
+
+
+@capture_error
+def get_logs_for_run(graphene_info, run_id, cursor=None, limit=None):
+    from ..schema.errors import GrapheneRunNotFoundError
+    from ..schema.pipelines.pipeline import GrapheneEventConnection
+
+    instance = graphene_info.context.instance
+    run = instance.get_run_by_id(run_id)
+    if not run:
+        return GrapheneRunNotFoundError(run_id)
+
+    conn = instance.get_records_for_run(run_id, cursor=cursor, limit=limit)
+    return GrapheneEventConnection(
+        events=[
+            from_event_record(record.event_log_entry, run.pipeline_name) for record in conn.records
+        ],
+        cursor=conn.cursor,
+        hasMore=conn.has_more,
+    )

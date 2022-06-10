@@ -4,7 +4,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    FrozenSet,
     Iterator,
     List,
     Optional,
@@ -19,7 +18,7 @@ from dagster.config.config_schema import ConfigSchemaType
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster.core.types.dagster_type import DagsterType
+from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import get_function_params
@@ -33,9 +32,16 @@ from .graph_definition import GraphDefinition
 from .input import InputDefinition, InputMapping
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
+from .resource_requirement import (
+    InputManagerRequirement,
+    OutputManagerRequirement,
+    ResourceRequirement,
+    SolidDefinitionResourceRequirement,
+)
 from .solid_invocation import solid_invocation_result
 
 if TYPE_CHECKING:
+    from .asset_layer import AssetLayer
     from .decorators.solid_decorator import DecoratedSolidFunction
 
 
@@ -211,7 +217,7 @@ class SolidDefinition(NodeDefinition):
         return self._config_schema
 
     @property
-    def required_resource_keys(self) -> Optional[FrozenSet[str]]:
+    def required_resource_keys(self) -> AbstractSet[str]:
         return frozenset(self._required_resource_keys)
 
     @property
@@ -231,6 +237,27 @@ class SolidDefinition(NodeDefinition):
         self, output_name: str, handle: NodeHandle
     ) -> Tuple[OutputDefinition, NodeHandle]:
         return self.output_def_named(output_name), handle
+
+    def get_inputs_must_be_resolved_top_level(
+        self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
+    ) -> List[InputDefinition]:
+        handle = cast(NodeHandle, check.inst_param(handle, "handle", NodeHandle))
+        unresolveable_input_defs = []
+        for input_def in self.input_defs:
+            if (
+                not input_def.dagster_type.loader
+                and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
+                and not input_def.root_manager_key
+                and not input_def.has_default_value
+            ):
+                input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
+                # If input_asset_key is present, this input can be resolved
+                # by a source asset, so input does not need to be resolved
+                # at the top level.
+                if input_asset_key:
+                    continue
+                unresolveable_input_defs.append(input_def)
+        return unresolveable_input_defs
 
     def input_has_default(self, input_name: str) -> InputDefinition:
         return self.input_def_named(input_name).has_default_value
@@ -264,6 +291,46 @@ class SolidDefinition(NodeDefinition):
     @property
     def retry_policy(self) -> Optional[RetryPolicy]:
         return self._retry_policy
+
+    def get_resource_requirements(
+        self,
+        outer_context: Optional[object] = None,
+    ) -> Iterator[ResourceRequirement]:
+        # Outer requiree in this context is the outer-calling node handle. If not provided, then just use the solid name.
+        outer_context = cast(Optional[Tuple[NodeHandle, Optional["AssetLayer"]]], outer_context)
+        if not outer_context:
+            handle = None
+            asset_layer = None
+        else:
+            handle, asset_layer = outer_context
+        node_description = f"{self.node_type_str} '{handle or self.name}'"
+        for resource_key in sorted(list(self.required_resource_keys)):
+            yield SolidDefinitionResourceRequirement(
+                key=resource_key, node_description=node_description
+            )
+        for input_def in self.input_defs:
+            if input_def.root_manager_key:
+                yield InputManagerRequirement(
+                    key=input_def.root_manager_key,
+                    node_description=node_description,
+                    input_name=input_def.name,
+                )
+            elif asset_layer and handle:
+                input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
+                if input_asset_key:
+                    io_manager_key = asset_layer.io_manager_key_for_asset(input_asset_key)
+                    yield InputManagerRequirement(
+                        key=io_manager_key,
+                        node_description=node_description,
+                        input_name=input_def.name,
+                    )
+
+        for output_def in self.output_defs:
+            yield OutputManagerRequirement(
+                key=output_def.io_manager_key,
+                node_description=node_description,
+                output_name=output_def.name,
+            )
 
 
 class CompositeSolidDefinition(GraphDefinition):

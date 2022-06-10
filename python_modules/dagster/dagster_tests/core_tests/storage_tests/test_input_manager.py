@@ -322,17 +322,14 @@ def test_resource_not_input_manager():
     def solid_requires_manager(_, _input):
         pass
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"not_manager": resource_not_manager})])
-    def basic():
-        solid_requires_manager()
-
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Input '_input' for solid 'solid_requires_manager' requires root_manager_key "
-        "'not_manager', but the resource definition provided is not an "
-        "IInputManagerDefinition",
+        match="input manager with key 'not_manager' required by input '_input' of solid 'solid_requires_manager', but received <class 'dagster.core.definitions.resource_definition.ResourceDefinition'>",
     ):
-        execute_pipeline(basic)
+
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"not_manager": resource_not_manager})])
+        def basic():
+            solid_requires_manager()
 
 
 def test_mode_missing_input_manager():

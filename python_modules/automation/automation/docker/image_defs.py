@@ -8,7 +8,7 @@ from automation.git import git_repo_root
 
 import dagster._check as check
 
-from .dagster_docker import DagsterDockerImage
+from .dagster_docker import DagsterDockerImage, default_images_path
 
 
 def get_dagster_repo() -> str:
@@ -207,12 +207,12 @@ def list_images(images_path: Optional[str] = None) -> List[DagsterDockerImage]:
         List[DagsterDockerImage]: A list of all images managed by this tool.
     """
 
-    images_path = images_path or os.path.join(os.path.dirname(__file__), "images")
+    images_path = images_path or default_images_path()
     image_folders = [f.name for f in os.scandir(images_path) if f.is_dir()]
 
     images = []
     for image in image_folders:
-        img = DagsterDockerImage(image, path=os.path.join(images_path, image))
+        img = DagsterDockerImage(image, images_path=images_path)
         if image in CUSTOM_BUILD_CONTEXTMANAGERS:
             img = img._replace(build_cm=CUSTOM_BUILD_CONTEXTMANAGERS[image])
         images.append(img)

@@ -5,7 +5,17 @@ description: Resources enable you to separate graph logic from environment, and 
 
 # Resources
 
-Resources provide a way to manage dependencies to external components and share implementations across multiple ops in a job.
+Resources are objects that are shared across the implementations of multiple [assets](/concepts/assets/software-defined-assets) and [ops](/concepts/ops-jobs-graphs/ops) and that can be plugged in after defining those ops and assets.
+
+Resources typically model external components that assets and ops interact with. For example, a resource might be a connection to a data warehouse like Snowflake or a service like Slack.
+
+So, why use resources?
+
+- **Plug in different implementations in different environments** - If you have a heavy external dependency that you want to use in production, but avoid using in testing, you can accomplish this by providing different resources in each environment. Check out [Separating Business Logic from Environments](/concepts/testing#separating-business-logic-from-environments) for more info about this capability.
+- **Share configuration across multiple ops or assets** - Resources are configurable and shared, so you can supply configuration in one place instead of configuring the ops and assets individually.
+- **Share implementations across multiple ops or assets** - When multiple ops access the same external services, resources provide a standard way to structure your code to share the implementations.
+
+---
 
 ## Relevant APIs
 
@@ -16,21 +26,11 @@ Resources provide a way to manage dependencies to external components and share 
 | <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resource, config, and other run information.                                                                                 |
 | <PyObject object="build_init_resource_context"/> | Function for building an <PyObject object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                        |
 | <PyObject object="build_resources"/>             | Function for initializing a set of resources outside of the context of a job's execution.                                                                                                                                   |
+| <PyObject object="with_resources"/>              | Function for providing resources to assets and source assets.                                                                                                                                                               |
 
-## Overview
+---
 
-You can use **resources** to provide access to features of the execution environment to ops. You can bind a set of resources (and other environment information) to a job so that those resources can be available to the ops within that job. You can construct different jobs for the same graph, each with different resources, to represent the execution environments that your graph will be run within.
-
-### Why Use Resources
-
-Representing external dependencies as resources, in conjunction with jobs, has very convenient properties:
-
-- **Pluggable**: You can map a resource to a key in one job, and then map a different resource to that same key in a different job. This is useful if there is a heavy external dependency that you want to use in production, but avoid using it in testing. You can simply provide different resource sets for each execution case: one for production with the heavy dependency (e.g., AWS) as a resource, and one for testing with something lighter (i.e., in-memory store) mapped to the same key. For more information about this capability, check out [Separating Business Logic from Environments](/concepts/testing#separating-business-logic-from-environments).
-- **Job Scoped**: Since resources are job scoped, if you provide a resource to a job, then it becomes available for use with every op in that job.
-- **Configurable**: Resources can be configured, using a strongly typed [configuration system](/concepts/configuration/config-schema).
-- **Dependencies**: Resources can depend on other resources. This makes it possible to cleanly represent external environment objects that rely on other external environment information for initialization.
-
-## Defining a Resource
+## Defining a resource
 
 To define a resource, use the <PyObject object="resource" decorator/> decorator. Wrap a function that takes an `init_context` as the first parameter, which is an instance of <PyObject object="InitResourceContext"/>. From this function, return or yield the object that you would like to be available as a resource.
 
@@ -48,9 +48,28 @@ def cereal_fetcher(init_context):
     return ExternalCerealFetcher()
 ```
 
-## Accessing Resources in Ops
+---
 
-Ops use resource keys to access resources, like so:
+## Accessing resources
+
+- [In ops](#in-ops)
+- [In assets](#in-assets)
+
+### In assets
+
+Assets use resource keys to access resources:
+
+```python file=/concepts/assets/asset_config.py startafter=start_example endbefore=end_example
+@asset(config_schema={"api_endpoint": str})
+def my_configurable_asset(context):
+    api_endpoint = context.op_config["api_endpoint"]
+    data = requests.get(f"{api_endpoint}/data").json()
+    return data
+```
+
+### In ops
+
+Ops use resource keys to access resources:
 
 ```python file=/concepts/resources/resources.py startafter=start_op_with_resources_example endbefore=end_op_with_resources_example
 from dagster import op
@@ -63,7 +82,35 @@ def op_requires_resources(context):
     context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
 ```
 
-## Providing Resources to a Job
+---
+
+## Providing resources
+
+- [To assets](#to-assets)
+- [To jobs](#to-jobs)
+
+### To assets
+
+Resources can be provided to assets using the <PyObject object="with_resources" /> function. This function takes in a sequence of assets and returns transformed versions of those assets with the provided resources specified:
+
+```python file=/concepts/resources/resources.py startafter=start_with_resources_example endbefore=end_with_resources_example
+from dagster import with_resources, asset, resource
+
+
+@asset(required_resource_keys={"foo"})
+def asset_requires_resource(context):
+    do_something_with_resource(context.resources.foo)
+
+
+@resource
+def foo_resource():
+    ...
+
+
+transformed_asset = with_resources([asset_requires_resource], {"foo": foo_resource})[0]
+```
+
+### To jobs
 
 Jobs provide resources to the ops inside them. A job has a dictionary that maps resource keys to resource definitions. You can supply this dictionary to the `resource_defs` argument when using either of the ways to construct a job: <PyObject object="GraphDefinition" method="to_job" /> or <PyObject object="job" decorator />.
 
@@ -97,7 +144,9 @@ def do_database_stuff_job():
     op_requires_resources()
 ```
 
-## Resource Configuration
+---
+
+## Resource configuration
 
 <PyObject object="ResourceDefinition" pluralize /> can have a config schema, which
 allows you to customize behavior at runtime through run configuration.
@@ -116,7 +165,9 @@ def db_resource(init_context):
     return DatabaseConnection(connection)
 ```
 
-## Context Manager Resources
+---
+
+## Context manager resources
 
 Dagster resources can serve as context managers, for scenarios where it is necessary to perform some sort of cleanup of the resource after execution. Let’s take the example of a database connection. We might want to clean up the connection once we are done using it. We can incorporate this into our resource like so:
 
@@ -144,7 +195,9 @@ Once execution finishes, the finally block of the resource init function will ru
 
 An important nuance is that resources are initialized (and torn down) once per process. This means that if using the in-process executor, which runs all steps in a single process, resources will be initialized at the beginning of execution, and torn down after every single step is finished executing. In contrast, when using the multiprocess executor (or other out-of-process executors), where there is a single process for each step, at the beginning of each step execution, the resource will be initialized, and at the end of that step’s execution, the finally block will be run.
 
-## Testing Resource Initialization
+---
+
+## Testing resource initialization
 
 You can test the initialization of a resource by invoking the resource definition. This will run the underlying decorated function.
 
@@ -197,7 +250,9 @@ def test_cm_resource():
         assert initialized_resource == "foo"
 ```
 
-## Initializing Resources Outside of Execution
+---
+
+## Initializing resources outside of execution
 
 There are scenarios where you might want to reuse the code written within your resources outside of the context of execution. Consider a case where you have a resource `db_connection`, and you want to use that resource outside of the context of an execution. You can use the <PyObject object="build_resources"/> API to initialize this resource outside of execution.
 
@@ -223,7 +278,9 @@ def uses_db_connection():
         ...
 ```
 
-## Resource to Resource Dependencies
+---
+
+## Resource-to-resource dependencies
 
 Resources can depend upon other resources. Use the `required_resource_keys` parameter of the <PyObject object="resource" decorator/> decorator to specify which resources to depend upon. Access the required resources through the context object provided to the wrapped function.
 
@@ -242,7 +299,7 @@ def client(init_context):
     return Client(username, password)
 ```
 
-Now, consider an op that will use the `client` resource.
+Now, consider an op that will use the `client` resource:
 
 ```python file=/concepts/resources/resources.py startafter=start_resource_dep_op endbefore=end_resource_dep_op
 from dagster import graph, op
@@ -260,6 +317,8 @@ When constructing a job that includes that op, we provide the resource `client`,
 def connect():
     get_client()
 ```
+
+---
 
 ## See it in action
 

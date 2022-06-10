@@ -1122,6 +1122,28 @@ def opt_nullable_sequence_param(
 
 
 # ########################
+# ##### Iterable
+# ########################
+
+
+def iterable_param(
+    obj: Iterable[T],
+    param_name: str,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Iterable[T]:
+    if not isinstance(obj, collections.abc.Iterable):
+        raise _param_type_mismatch_exception(
+            obj, (collections.abc.Iterable,), param_name, additional_message
+        )
+
+    if not of_type:
+        return obj
+
+    return _check_iterable_items(obj, of_type, "iterable")
+
+
+# ########################
 # ##### SET
 # ########################
 

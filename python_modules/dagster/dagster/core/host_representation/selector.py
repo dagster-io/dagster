@@ -201,3 +201,30 @@ class GraphSelector(
             "repositoryName": self.repository_name,
             "graphName": self.graph_name,
         }
+
+
+@whitelist_for_serdes
+class PartitionSetSelector(
+    NamedTuple(
+        "_PartitionSetSelector",
+        [("location_name", str), ("repository_name", str), ("partition_set_name", str)],
+    )
+):
+    """
+    The information needed to resolve a partition set within a host process.
+    """
+
+    def __new__(cls, location_name: str, repository_name: str, partition_set_name: str):
+        return super(PartitionSetSelector, cls).__new__(
+            cls,
+            location_name=check.str_param(location_name, "location_name"),
+            repository_name=check.str_param(repository_name, "repository_name"),
+            partition_set_name=check.str_param(partition_set_name, "partition_set_name"),
+        )
+
+    def to_graphql_input(self):
+        return {
+            "repositoryLocationName": self.location_name,
+            "repositoryName": self.repository_name,
+            "partitionSetName": self.partition_set_name,
+        }

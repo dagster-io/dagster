@@ -29,6 +29,10 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["dagster_mlflow_tests*"]),
-        install_requires=["dagster", "mlflow", "pandas"],
+        install_requires=[
+            "dagster",
+            "mlflow<=1.26.0",  # https://github.com/mlflow/mlflow/issues/5968
+            "pandas",
+        ],
         zip_safe=False,
     )

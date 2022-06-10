@@ -187,7 +187,8 @@ def test_mode_with_resource_deps():
     assert called["count"] == 1
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match=r"'a' is required by solid 'requires_a'"
+        DagsterInvalidDefinitionError,
+        match="resource with key 'a' required by solid 'requires_a' was not provided",
     ):
         PipelineDefinition(
             name="mode_with_bad_deps",

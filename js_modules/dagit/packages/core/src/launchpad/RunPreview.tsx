@@ -12,6 +12,7 @@ import {
   Tag,
   Code,
   Tooltip,
+  FontFamily,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -56,9 +57,11 @@ const stateToHint: {[key: string]: {title: string; intent: Intent}} = {
 const RemoveExtraConfigButton = ({
   onRemoveExtraPaths,
   extraNodes,
+  disabled,
 }: {
   extraNodes: string[];
   onRemoveExtraPaths: (paths: string[]) => void;
+  disabled: boolean;
 }) => {
   const confirm = useConfirmation();
 
@@ -126,15 +129,29 @@ const RemoveExtraConfigButton = ({
     onRemoveExtraPaths(extraNodes);
   };
 
-  return <Button onClick={onClick}>Remove Extra Config</Button>;
+  return (
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+      <Button disabled={disabled} onClick={onClick}>
+        Remove extra config
+      </Button>
+      {disabled ? (
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          <Icon name="check_circle" color={Colors.Green500} />
+          No extra config to remove
+        </Box>
+      ) : null}
+    </Box>
+  );
 };
 
 const ScaffoldConfigButton = ({
   onScaffoldMissingConfig,
   missingNodes,
+  disabled,
 }: {
   missingNodes: string[];
   onScaffoldMissingConfig: () => void;
+  disabled: boolean;
 }) => {
   const confirm = useConfirmation();
 
@@ -167,7 +184,19 @@ const ScaffoldConfigButton = ({
     onScaffoldMissingConfig();
   };
 
-  return <Button onClick={onClick}>Scaffold missing config</Button>;
+  return (
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+      <Button disabled={disabled} onClick={onClick}>
+        Scaffold missing config
+      </Button>
+      {disabled ? (
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          <Icon name="check_circle" color={Colors.Green500} />
+          No missing config
+        </Box>
+      ) : null}
+    </Box>
+  );
 };
 
 interface RunPreviewProps {
@@ -344,30 +373,32 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
         <ErrorListContainer>
           <Section>
             <SectionTitle>Errors</SectionTitle>
-            {errorsAndPaths.map((item, idx) => (
-              <ErrorRow key={idx} error={item.error} onHighlight={onHighlightPath} />
-            ))}
-          </Section>
-
-          {(extraNodes.length > 0 || missingNodes.length > 0) && (
-            <Section>
-              <SectionTitle>Bulk Actions:</SectionTitle>
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 8}} padding={{top: 4}}>
-                {extraNodes.length ? (
-                  <RemoveExtraConfigButton
-                    onRemoveExtraPaths={onRemoveExtraPaths}
-                    extraNodes={extraNodes}
-                  />
-                ) : null}
-                {missingNodes.length ? (
-                  <ScaffoldConfigButton
-                    onScaffoldMissingConfig={onScaffoldMissingConfig}
-                    missingNodes={missingNodes}
-                  />
-                ) : null}
+            {errorsAndPaths.length ? (
+              errorsAndPaths.map((item, idx) => (
+                <ErrorRow key={idx} error={item.error} onHighlight={onHighlightPath} />
+              ))
+            ) : (
+              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                <Icon name="check_circle" color={Colors.Green500} />
+                No errors
               </Box>
-            </Section>
-          )}
+            )}
+          </Section>
+          <Section>
+            <SectionTitle>Config actions:</SectionTitle>
+            <Box flex={{direction: 'column', gap: 8}} padding={{top: 4}}>
+              <ScaffoldConfigButton
+                onScaffoldMissingConfig={onScaffoldMissingConfig}
+                missingNodes={missingNodes}
+                disabled={!missingNodes.length}
+              />
+              <RemoveExtraConfigButton
+                onRemoveExtraPaths={onRemoveExtraPaths}
+                extraNodes={extraNodes}
+                disabled={!extraNodes.length}
+              />
+            </Box>
+          </Section>
         </ErrorListContainer>
       }
       firstInitialPercent={50}
@@ -515,13 +546,14 @@ const ErrorRowContainer = styled.div<{hoverable: boolean}>`
   font-size: 13px;
   white-space: pre-wrap;
   word-break: break-word;
+  font-family: ${FontFamily.monospace};
+  cursor: pointer;
   display: flex;
   flex-direction: row;
   align-items: flex-start;
   border-bottom: 1px solid #ccc;
-  padding: 7px 0;
-  padding-right: 7px;
-  margin-bottom: 8px;
+  padding: 8px;
+  margin: 8px 12px 0 -8px;
   &:last-child {
     border-bottom: 0;
     margin-bottom: 15px;

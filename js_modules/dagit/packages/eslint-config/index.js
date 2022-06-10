@@ -1,6 +1,7 @@
 module.exports = {
   parser: '@typescript-eslint/parser',
   extends: [
+    'plugin:eslint-plugin-dagster-rules/all',
     'plugin:react/recommended',
     'plugin:jest/recommended',
     'plugin:@typescript-eslint/recommended',

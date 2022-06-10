@@ -35,7 +35,7 @@ from .utils import delete_job
         {
             "job_namespace": Field(StringSource, is_required=False),
             "retries": get_retries_config(),
-            "max_concurrency": Field(
+            "max_concurrent": Field(
                 IntSource,
                 is_required=False,
                 description="Limit on the number of pods that will run concurrently within the scope "
@@ -214,7 +214,7 @@ class K8sStepHandler(StepHandler):
             component="step_worker",
             user_defined_k8s_config=user_defined_k8s_config,
             labels={
-                "dagster/job": step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
+                "dagster/job": step_handler_context.pipeline_run.pipeline_name,
                 "dagster/op": step_key,
                 "dagster/run-id": step_handler_context.execute_step_args.pipeline_run_id,
             },
@@ -223,7 +223,7 @@ class K8sStepHandler(StepHandler):
         events.append(
             DagsterEvent(
                 event_type_value=DagsterEventType.ENGINE_EVENT.value,
-                pipeline_name=step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
+                pipeline_name=step_handler_context.pipeline_run.pipeline_name,
                 step_key=step_key,
                 message=f"Executing step {step_key} in Kubernetes job {job_name}",
                 event_specific_data=EngineEventData(
@@ -257,7 +257,7 @@ class K8sStepHandler(StepHandler):
             return [
                 DagsterEvent(
                     event_type_value=DagsterEventType.STEP_FAILURE.value,
-                    pipeline_name=step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
+                    pipeline_name=step_handler_context.pipeline_run.pipeline_name,
                     step_key=step_key,
                     message=f"Discovered failed Kubernetes job {job_name} for step {step_key}",
                     event_specific_data=StepFailureData(

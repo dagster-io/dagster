@@ -46,6 +46,7 @@ describe('PipelineRoot', () => {
       id: REPO_NAME,
       name: REPO_NAME,
       pipelines: () => [...new Array(1)],
+      assetGroups: () => [...new Array(0)],
     }),
   };
 

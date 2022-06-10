@@ -76,6 +76,7 @@ class OutputContext:
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
         asset_info: Optional[AssetOutputInfo] = None,
+        warn_on_step_context_use: bool = False,
     ):
         from dagster.core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster.core.execution.build_resources import build_resources
@@ -97,6 +98,7 @@ class OutputContext:
         self._resource_config = resource_config
         self._step_context = step_context
         self._asset_info = asset_info
+        self._warn_on_step_context_use = warn_on_step_context_use
 
         if isinstance(resources, Resources):
             self._resources_cm = None
@@ -262,6 +264,14 @@ class OutputContext:
 
     @property
     def step_context(self) -> "StepExecutionContext":
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.step_context"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
         if self._step_context is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access step_context, "
@@ -273,6 +283,14 @@ class OutputContext:
     @property
     def has_partition_key(self) -> bool:
         """Whether the current run is a partitioned run"""
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.has_partition_key"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
         return self.step_context.has_partition_key
 
     @property
@@ -281,10 +299,26 @@ class OutputContext:
 
         Raises an error if the current run is not a partitioned run.
         """
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.partition_key"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
         return self.step_context.partition_key
 
     @property
     def has_asset_partitions(self) -> bool:
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.has_asset_partitions"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
         if self._step_context is not None:
             return self._step_context.has_asset_partitions_for_output(self.name)
         else:
@@ -297,6 +331,14 @@ class OutputContext:
         Raises an error if the output asset has no partitioning, or if the run covers a partition
         range for the output asset.
         """
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.asset_partition_key"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
         return self.step_context.asset_partition_key_for_output(self.name)
 
     @property
@@ -305,6 +347,14 @@ class OutputContext:
 
         Raises an error if the output asset has no partitioning.
         """
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.asset_partition_key_range"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
         return self.step_context.asset_partition_key_range_for_output(self.name)
 
     @property
@@ -315,6 +365,14 @@ class OutputContext:
         - The output asset has no partitioning.
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
         """
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.asset_partitions_time_window"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
         return self.step_context.asset_partitions_time_window_for_output(self.name)
 
     def get_run_scoped_output_identifier(self) -> List[str]:
@@ -336,7 +394,7 @@ class OutputContext:
 
         warnings.warn(
             "`OutputContext.get_run_scoped_output_identifier` is deprecated. Use "
-            "`OutputContext.get_output_identifier` instead."
+            "`OutputContext.get_identifier` instead."
         )
         # if run_id is None and this is a re-execution, it means we failed to find its source run id
         check.invariant(
@@ -360,7 +418,7 @@ class OutputContext:
 
         return [run_id, step_key, name]
 
-    def get_output_identifier(self) -> List[str]:
+    def get_identifier(self) -> List[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique
         step output.
 
@@ -397,7 +455,15 @@ class OutputContext:
 
         return identifier
 
-    def get_asset_output_identifier(self) -> Sequence[str]:
+    def get_output_identifier(self) -> List[str]:
+        warnings.warn(
+            "`OutputContext.get_output_identifier` is deprecated. Use "
+            "`OutputContext.get_identifier` instead."
+        )
+
+        return self.get_identifier()
+
+    def get_asset_identifier(self) -> Sequence[str]:
         if self.asset_key is not None:
             if self.has_asset_partitions:
                 return self.asset_key.path + [self.asset_partition_key]
@@ -405,6 +471,14 @@ class OutputContext:
                 return self.asset_key.path
         else:
             check.failed("Can't get asset output identifier for an output with no asset key")
+
+    def get_asset_output_identifier(self) -> Sequence[str]:
+        warnings.warn(
+            "`OutputContext.get_asset_output_identifier` is deprecated. Use "
+            "`OutputContext.get_asset_identifier` instead."
+        )
+
+        return self.get_asset_identifier()
 
     def log_event(
         self, event: Union[AssetObservation, AssetMaterialization, Materialization]
@@ -534,6 +608,7 @@ def get_output_context(
     step_context: Optional["StepExecutionContext"],
     resources: Optional["Resources"],
     version: Optional[str],
+    warn_on_step_context_use: bool = False,
 ) -> "OutputContext":
     """
     Args:
@@ -587,6 +662,7 @@ def get_output_context(
         resource_config=resource_config,
         resources=resources,
         asset_info=asset_info,
+        warn_on_step_context_use=warn_on_step_context_use,
     )
 
 

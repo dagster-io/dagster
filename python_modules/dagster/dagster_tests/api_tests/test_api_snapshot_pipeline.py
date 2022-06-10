@@ -71,6 +71,6 @@ def test_pipeline_with_invalid_definition_snapshot_api_grpc(instance):
         except DagsterUserCodeProcessError:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             assert (
-                "Input 'some_input' of solid 'fail_subset' has no upstream output, no default value, and no dagster type loader."
+                "Input 'some_input' of solid 'fail_subset' has no way of being resolved"
                 in error_info.cause.message
             )

@@ -39,6 +39,9 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_runs {
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface RepositorySchedulesFragment_schedules_scheduleState_ticks_error_cause {

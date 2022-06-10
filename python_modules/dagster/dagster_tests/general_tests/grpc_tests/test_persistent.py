@@ -474,6 +474,7 @@ def test_lazy_load_with_error():
         process.terminate()
 
 
+@pytest.mark.skip(reason="Sporadically failing with segfault")
 def test_lazy_load_via_env_var():
     with environ({"DAGSTER_CLI_API_GRPC_LAZY_LOAD_USER_CODE": "1"}):
         port = find_free_port()

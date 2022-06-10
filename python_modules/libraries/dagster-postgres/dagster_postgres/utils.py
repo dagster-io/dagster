@@ -7,9 +7,9 @@ import psycopg2
 import psycopg2.errorcodes
 import sqlalchemy
 
-from dagster import Field, IntSource, Permissive, StringSource
 from dagster import _check as check
 from dagster.core.definitions.policy import Backoff, Jitter, calculate_delay
+from dagster.core.storage.config import pg_config  # pylint: disable=unused-import
 from dagster.core.storage.sql import get_alembic_config
 
 
@@ -21,24 +21,6 @@ def get_conn(conn_string):
     conn = psycopg2.connect(conn_string)
     conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
     return conn
-
-
-def pg_config():
-    return {
-        "postgres_url": Field(StringSource, is_required=False),
-        "postgres_db": Field(
-            {
-                "username": StringSource,
-                "password": StringSource,
-                "hostname": StringSource,
-                "db_name": StringSource,
-                "port": Field(IntSource, is_required=False, default_value=5432),
-                "params": Field(Permissive(), is_required=False, default_value={}),
-            },
-            is_required=False,
-        ),
-        "should_autocreate_tables": Field(bool, is_required=False, default_value=True),
-    }
 
 
 def pg_url_from_config(config_value):
@@ -58,8 +40,10 @@ def pg_url_from_config(config_value):
         return get_conn_string(**config_value["postgres_db"])
 
 
-def get_conn_string(username, password, hostname, db_name, port="5432", params=None):
-    uri = f"postgresql://{quote(username)}:{quote(password)}@{hostname}:{port}/{db_name}"
+def get_conn_string(
+    username, password, hostname, db_name, port="5432", params=None, scheme="postgresql"
+):
+    uri = f"{scheme}://{quote(username)}:{quote(password)}@{hostname}:{port}/{db_name}"
 
     if params:
         query_string = f"{urlencode(params, quote_via=quote)}"
@@ -153,15 +137,8 @@ def pg_alembic_config(dunder_file, script_location=None):
 
 
 @contextmanager
-def create_pg_connection(engine, _alembic_config, storage_type_desc=None):
+def create_pg_connection(engine):
     check.inst_param(engine, "engine", sqlalchemy.engine.Engine)
-    check.opt_str_param(storage_type_desc, "storage_type_desc", "")
-
-    if storage_type_desc:
-        storage_type_desc += " "
-    else:
-        storage_type_desc = ""
-
     conn = None
     try:
         # Retry connection to gracefully handle transient connection issues

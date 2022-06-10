@@ -15,7 +15,6 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
-    Sequence,
     Set,
     Union,
     cast,
@@ -27,6 +26,7 @@ from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
@@ -60,6 +60,7 @@ if TYPE_CHECKING:
     from dagster.core.definitions.resource_definition import Resources
     from dagster.core.events import DagsterEvent
     from dagster.core.execution.plan.plan import ExecutionPlan
+    from dagster.core.execution.plan.state import KnownExecutionState
     from dagster.core.instance import DagsterInstance
 
     from .hook import HookContext
@@ -295,7 +296,11 @@ class PlanExecutionContext(IPlanContext):
     def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
         return self._output_capture
 
-    def for_step(self, step: ExecutionStep, previous_attempt_count: int = 0) -> IStepContext:
+    def for_step(
+        self,
+        step: ExecutionStep,
+        known_state: Optional["KnownExecutionState"] = None,
+    ) -> IStepContext:
 
         return StepExecutionContext(
             plan_data=self.plan_data,
@@ -303,7 +308,7 @@ class PlanExecutionContext(IPlanContext):
             log_manager=self._log_manager.with_tags(**step.logging_tags),
             step=step,
             output_capture=self.output_capture,
-            previous_attempt_count=previous_attempt_count,
+            known_state=known_state,
         )
 
     @property
@@ -372,7 +377,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         log_manager: DagsterLogManager,
         step: ExecutionStep,
         output_capture: Optional[Dict[StepOutputHandle, Any]],
-        previous_attempt_count: int,
+        known_state: Optional["KnownExecutionState"],
     ):
         from dagster.core.execution.resources_init import get_required_resource_keys_for_step
 
@@ -391,7 +396,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._resources = execution_data.scoped_resources_builder.build(
             self._required_resource_keys
         )
-        self._previous_attempt_count = previous_attempt_count
+        self._known_state = known_state
         self._input_lineage: List[AssetLineageInfo] = []
 
         resources_iter = cast(Iterable, self._resources)
@@ -502,14 +507,40 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         source_handle: Optional[StepOutputHandle] = None,
         resource_config: Any = None,
         resources: Optional["Resources"] = None,
+        artificial_output_context: Optional["OutputContext"] = None,
     ) -> InputContext:
+        if source_handle and artificial_output_context:
+            check.failed("Cannot specify both source_handle and artificial_output_context.")
+
+        upstream_output: Optional[OutputContext] = None
+
+        if source_handle is not None:
+            version = self.execution_plan.get_version_for_step_output_handle(source_handle)
+
+            # NOTE: this is using downstream step_context for upstream OutputContext. step_context
+            # will be set to None for 0.15 release.
+            upstream_output = get_output_context(
+                self.execution_plan,
+                self.pipeline_def,
+                self.resolved_run_config,
+                source_handle,
+                self._get_source_run_id(source_handle),
+                log_manager=self.log,
+                step_context=self,
+                resources=None,
+                version=version,
+                warn_on_step_context_use=True,
+            )
+        else:
+            upstream_output = artificial_output_context
+
         return InputContext(
             pipeline_name=self.pipeline_def.name,
             name=name,
             solid_def=self.solid_def,
             config=config,
             metadata=metadata,
-            upstream_output=self.get_output_context(source_handle) if source_handle else None,
+            upstream_output=upstream_output,
             dagster_type=dagster_type,
             log_manager=self.log,
             step_context=self,
@@ -522,19 +553,20 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         return HookContext(self, hook_def)
 
+    def get_known_state(self) -> "KnownExecutionState":
+        if not self._known_state:
+            check.failed(
+                "Attempted to access KnownExecutionState but it was not provided at context creation"
+            )
+        return self._known_state
+
     def can_load(
         self,
         step_output_handle: StepOutputHandle,
-        step_output_events: Sequence["DagsterEvent"],
     ) -> bool:
-        # Whether IO Manager can load the source
-        # FIXME https://github.com/dagster-io/dagster/issues/3511
-        # This is a stopgap which asks the instance to check the event logs to find out step skipping
-
         # can load from upstream in the same run
-        for event in step_output_events:
-            if step_output_handle == event.step_output_data.step_output_handle:
-                return True
+        if step_output_handle in self.get_known_state().ready_outputs:
+            return True
 
         if (
             self._should_load_from_previous_runs(step_output_handle)
@@ -613,28 +645,19 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return metadata
 
     def _get_source_run_id_from_logs(self, step_output_handle: StepOutputHandle) -> Optional[str]:
-        from dagster.core.events import DagsterEventType
 
         # walk through event logs to find the right run_id based on the run lineage
-        run_group = self.instance.get_run_group(self.run_id)
-        if run_group is None:
-            check.failed(f"Failed to load run group {self.run_id}")
 
-        _, runs = run_group
-        run_id_to_parent_run_id = {run.run_id: run.parent_run_id for run in runs}
-        source_run_id = self.pipeline_run.parent_run_id
-        while source_run_id:
-            # note: this would cost N db calls where N = number of parent runs
-            step_output_record = self.instance.all_logs(
-                source_run_id, of_type=DagsterEventType.STEP_OUTPUT
-            )
+        parent_state = self.get_known_state().parent_state
+        while parent_state:
+
             # if the parent run has yielded an StepOutput event for the given step output,
             # we find the source run id
-            for r in step_output_record:
-                if r.dagster_event.step_output_data.step_output_handle == step_output_handle:
-                    return source_run_id
+            if step_output_handle in parent_state.produced_outputs:
+                return parent_state.run_id
+
             # else, keep looking backwards
-            source_run_id = run_id_to_parent_run_id.get(source_run_id)
+            parent_state = parent_state.get_parent_state()
 
         # When a fixed path is provided via io manager, it's able to run step subset using an execution
         # plan when the ascendant outputs were not previously created by dagster-controlled
@@ -690,7 +713,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def previous_attempt_count(self) -> int:
-        return self._previous_attempt_count
+        return self.get_known_state().get_retry_state().get_attempt_count(self._step.key)
 
     @property
     def op_config(self) -> Any:
@@ -698,27 +721,40 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return solid_config.config if solid_config else None
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
-        op_config = self.op_config
+        asset_layer = self.pipeline_def.asset_layer
+        asset_keys_for_node = asset_layer.asset_keys_for_node(self.solid_handle)
+        if not asset_keys_for_node:
+            return False
+        assets_def = asset_layer.assets_def_for_asset(next(iter(asset_keys_for_node)))
+        upstream_asset_key = asset_layer.asset_key_for_input(self.solid_handle, input_name)
 
-        if is_iterable(op_config) and "assets" in op_config:
-            all_input_asset_partitions = op_config["assets"].get("input_partitions")
-            if all_input_asset_partitions is not None:
-                this_input_asset_partitions = all_input_asset_partitions.get(input_name)
-                if this_input_asset_partitions is not None:
-                    return True
-
-        return False
+        return (
+            upstream_asset_key is not None
+            and assets_def.partitions_def is not None
+            and asset_layer.partitions_def_for_asset(upstream_asset_key) is not None
+        )
 
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        op_config = self.op_config
-        if is_iterable(op_config) and "assets" in op_config:
-            all_input_asset_partitions = op_config["assets"].get("input_partitions")
-            if all_input_asset_partitions is not None:
-                this_input_asset_partitions = all_input_asset_partitions.get(input_name)
-                if this_input_asset_partitions is not None:
-                    return PartitionKeyRange(
-                        this_input_asset_partitions["start"], this_input_asset_partitions["end"]
-                    )
+        from dagster.core.asset_defs.asset_partitions import (
+            get_upstream_partitions_for_partition_range,
+        )
+
+        asset_layer = self.pipeline_def.asset_layer
+        assets_def = asset_layer.assets_def_for_asset(
+            next(iter(asset_layer.asset_keys_for_node(self.solid_handle)))
+        )
+        upstream_asset_key = asset_layer.asset_key_for_input(self.solid_handle, input_name)
+
+        if upstream_asset_key is not None:
+            upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
+
+            if assets_def.partitions_def is not None and upstream_asset_partitions_def is not None:
+                return get_upstream_partitions_for_partition_range(
+                    assets_def,
+                    upstream_asset_partitions_def,
+                    upstream_asset_key,
+                    PartitionKeyRange(self.partition_key, self.partition_key),
+                )
 
         check.failed("The input has no asset partitions")
 
@@ -732,27 +768,21 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 f"but the step input has a partition range: '{start}' to '{end}'."
             )
 
-    def has_asset_partitions_for_output(self, output_name: str) -> bool:
-        op_config = self.op_config
-        if is_iterable(op_config) and "assets" in op_config:
-            all_output_asset_partitions = op_config["assets"].get("output_partitions")
-            if all_output_asset_partitions is not None:
-                this_output_asset_partitions = all_output_asset_partitions.get(output_name)
-                if this_output_asset_partitions is not None:
-                    return True
+    def _partitions_def_for_output(self, output_name: str) -> Optional[PartitionsDefinition]:
+        asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
+            node_handle=self.solid_handle, output_name=output_name
+        )
+        if asset_info:
+            return asset_info.partitions_def
+        else:
+            return asset_info
 
-        return False
+    def has_asset_partitions_for_output(self, output_name: str) -> bool:
+        return self._partitions_def_for_output(output_name) is not None
 
     def asset_partition_key_range_for_output(self, output_name: str) -> PartitionKeyRange:
-        op_config = self.op_config
-        if is_iterable(op_config) and "assets" in op_config:
-            all_output_asset_partitions = op_config["assets"].get("output_partitions")
-            if all_output_asset_partitions is not None:
-                this_output_asset_partitions = all_output_asset_partitions.get(output_name)
-                if this_output_asset_partitions is not None:
-                    return PartitionKeyRange(
-                        this_output_asset_partitions["start"], this_output_asset_partitions["end"]
-                    )
+        if self._partitions_def_for_output(output_name) is not None:
+            return PartitionKeyRange(self.partition_key, self.partition_key)
 
         check.failed("The output has no asset partitions")
 
@@ -773,10 +803,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         - The output asset has no partitioning.
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
         """
-        asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
-            self.solid_handle, output_name
-        )
-        partitions_def = asset_info.partitions_def if asset_info else None
+        partitions_def = self._partitions_def_for_output(output_name)
 
         if not partitions_def:
             raise ValueError(

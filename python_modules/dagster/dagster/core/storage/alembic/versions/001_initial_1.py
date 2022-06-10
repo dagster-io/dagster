@@ -11,8 +11,7 @@ Create Date: 2019-11-21 09:59:57.028730
 
 import sqlalchemy as sa
 from alembic import context, op
-from sqlalchemy import Column
-from sqlalchemy.engine import reflection
+from sqlalchemy import Column, inspect
 
 from dagster.core.storage.event_log import SqlEventLogStorageTable
 
@@ -27,9 +26,7 @@ def upgrade():
     # This is our root migration, and we don't have a common base. Before this revision, sqlite- and
     # postgres-based event logs had different schemas. The conditionality below is to deal with dev
     # databases that might not have been stamped by Alembic.
-    bind = op.get_context().bind
-
-    inspector = reflection.Inspector.from_engine(bind)
+    inspector = inspect(op.get_bind())
     has_tables = inspector.get_table_names()
 
     if "event_log" not in has_tables:

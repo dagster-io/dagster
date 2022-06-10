@@ -138,9 +138,19 @@ export function Search() {
 
                 const hash = a.hash === "#content-wrapper" ? "" : a.hash;
 
+                let url = `${a.pathname}${hash}`;
+
+                // Handle URLs for GitHub Discussions which are external links
+                if (a.pathname.startsWith("/dagster-io/dagster/discussions/")) {
+                  url = a.pathname.replace(
+                    "/dagster-io/dagster/discussions",
+                    "https://github.com/dagster-io/dagster/discussions"
+                  );
+                }
+
                 return {
                   ...item,
-                  url: `${a.pathname}${hash}`,
+                  url,
                 };
               });
             }}

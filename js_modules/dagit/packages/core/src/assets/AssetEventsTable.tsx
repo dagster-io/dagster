@@ -17,7 +17,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
-import {isAssetGroup} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
@@ -230,7 +230,7 @@ const EventGroupRow: React.FC<{
         </Group>
       </td>
       <td>
-        {!isAssetGroup(run.pipelineName) && (
+        {!isHiddenAssetGroupJob(run.pipelineName) && (
           <Box margin={{bottom: 4}}>
             <Box padding={{left: 8}}>
               <PipelineReference

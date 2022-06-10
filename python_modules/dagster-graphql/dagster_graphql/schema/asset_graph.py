@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, List, Optional, Sequence, Union
 
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.schema.solids import (
     GrapheneCompositeSolidDefinition,
@@ -24,7 +25,7 @@ from . import external
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
 from .logs.events import GrapheneMaterializationEvent
-from .pipelines.pipeline import GrapheneMaterializationCount, GraphenePipeline
+from .pipelines.pipeline import GrapheneMaterializationCount, GraphenePipeline, GrapheneRun
 from .util import non_null_list
 
 if TYPE_CHECKING:
@@ -81,6 +82,7 @@ class GrapheneAssetLatestInfo(graphene.ObjectType):
     latestMaterialization = graphene.Field(GrapheneMaterializationEvent)
     unstartedRunIds = non_null_list(graphene.String)
     inProgressRunIds = non_null_list(graphene.String)
+    latestRun = graphene.Field(GrapheneRun)
 
     class Meta:
         name = "AssetLatestInfo"
@@ -97,6 +99,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         limit=graphene.Int(),
     )
     computeKind = graphene.String()
+    configField = graphene.Field(GrapheneConfigTypeField)
     dependedBy = non_null_list(GrapheneAssetDependency)
     dependedByKeys = non_null_list(GrapheneAssetKey)
     dependencies = non_null_list(GrapheneAssetDependency)
@@ -118,6 +121,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     partitionKeys = non_null_list(graphene.String)
     partitionDefinition = graphene.String()
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
+    groupName = graphene.String()
 
     class Meta:
         name = "AssetNode"
@@ -153,6 +157,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             assetKey=external_asset_node.asset_key,
             description=external_asset_node.op_description,
             opName=external_asset_node.op_name,
+            groupName=external_asset_node.group_name,
         )
 
     @property
@@ -166,6 +171,16 @@ class GrapheneAssetNode(graphene.ObjectType):
     @property
     def external_asset_node(self) -> ExternalAssetNode:
         return self._external_asset_node
+
+    def get_op_definition(
+        self,
+    ) -> Optional[Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]]:
+        if len(self._external_asset_node.job_names) >= 1:
+            pipeline_name = self._external_asset_node.job_names[0]
+            pipeline = self._external_repository.get_full_external_pipeline(pipeline_name)
+            return build_solid_definition(pipeline, self._external_asset_node.op_name)
+        else:
+            return None
 
     def get_partition_keys(self) -> Sequence[str]:
         # TODO: Add functionality for dynamic partitions definition
@@ -222,6 +237,15 @@ class GrapheneAssetNode(graphene.ObjectType):
                 limit=limit,
             )
         ]
+
+    # TODO: Prob want a more efficient way of resolving this
+    def resolve_configField(self, _graphene_info) -> Optional[GrapheneConfigTypeField]:
+        op = self.get_op_definition()
+        return (
+            op.resolve_config_field(_graphene_info)
+            if op and isinstance(op, GrapheneSolidDefinition)
+            else None
+        )
 
     def resolve_computeKind(self, _graphene_info) -> Optional[str]:
         return self._external_asset_node.compute_kind
@@ -375,12 +399,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_op(
         self, _graphene_info
     ) -> Optional[Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]]:
-        if len(self._external_asset_node.job_names) >= 1:
-            pipeline_name = self._external_asset_node.job_names[0]
-            pipeline = self._external_repository.get_full_external_pipeline(pipeline_name)
-            return build_solid_definition(pipeline, self._external_asset_node.op_name)
-        else:
-            return None
+        return self.get_op_definition()
 
     def resolve_opNames(self, _graphene_info) -> Sequence[str]:
         return self._external_asset_node.op_names or []
@@ -401,6 +420,14 @@ class GrapheneAssetNode(graphene.ObjectType):
         return external.GrapheneRepository(
             graphene_info.context.instance, self._external_repository, self._repository_location
         )
+
+
+class GrapheneAssetGroup(graphene.ObjectType):
+    groupName = graphene.NonNull(graphene.String)
+    assetKeys = non_null_list(GrapheneAssetKey)
+
+    class Meta:
+        name = "AssetGroup"
 
 
 class GrapheneAssetNodeOrError(graphene.Union):

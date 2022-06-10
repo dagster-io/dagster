@@ -74,6 +74,9 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_error_cause {

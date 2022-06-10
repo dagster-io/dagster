@@ -7,6 +7,7 @@ import tempfile
 
 import pytest
 import sqlalchemy as db
+from sqlalchemy import inspect
 
 from dagster import (
     AssetKey,
@@ -25,6 +26,18 @@ from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster.utils import file_relative_path
+
+
+def get_columns(instance, table_name: str):
+    return set(c["name"] for c in inspect(instance.run_storage._engine).get_columns(table_name))
+
+
+def get_indexes(instance, table_name: str):
+    return set(c["name"] for c in inspect(instance.run_storage._engine).get_indexes(table_name))
+
+
+def get_tables(instance):
+    return instance.run_storage._engine.table_names()
 
 
 def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
@@ -297,9 +310,7 @@ def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
 
     @solid
     def asset_solid(_):
-        yield AssetMaterialization(
-            asset_key=AssetKey(["a"]), partition="partition_1", tags={"foo": "FOO"}
-        )
+        yield AssetMaterialization(asset_key=AssetKey(["a"]), partition="partition_1")
         yield Output(1)
 
     @pipeline
@@ -570,3 +581,64 @@ def test_jobs_selector_id_migration(hostname, conn_string):
                 .where(JobTickTable.c.selector_id.isnot(None))
             )[0][0]
             assert migrated_tick_count == legacy_tick_count
+
+
+def test_add_bulk_actions_columns(hostname, conn_string):
+    new_columns = {"selector_id", "action_type"}
+    new_indexes = {"idx_bulk_actions_action_type", "idx_bulk_actions_selector_id"}
+
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            # use an old snapshot, it has the bulk actions table but not the new columns
+            __file__,
+            "snapshot_0_14_6_post_schema_pre_data_migration/postgres/pg_dump.txt",
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert get_columns(instance, "bulk_actions") & new_columns == set()
+            assert get_indexes(instance, "bulk_actions") & new_indexes == set()
+
+            instance.upgrade()
+            assert new_columns <= get_columns(instance, "bulk_actions")
+            assert new_indexes <= get_indexes(instance, "bulk_actions")
+
+
+def test_add_kvs_table(hostname, conn_string):
+
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            # use an old snapshot
+            __file__,
+            "snapshot_0_14_6_post_schema_pre_data_migration/postgres/pg_dump.txt",
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "kvs" not in get_tables(instance)
+
+            instance.upgrade()
+            assert "kvs" in get_tables(instance)
+            assert "idx_kvs_keys_unique" in get_indexes(instance, "kvs")

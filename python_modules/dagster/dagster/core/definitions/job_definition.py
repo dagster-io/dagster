@@ -40,7 +40,6 @@ from dagster.core.selector.subset_selector import (
     OpSelectionData,
     parse_op_selection,
 )
-from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.utils import str_format_set
 from dagster.utils import merge_dicts
 
@@ -50,6 +49,7 @@ from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
+from .metadata import RawMetadataValue
 from .mode import ModeDefinition
 from .partition import PartitionSetDefinition, PartitionedConfig, PartitionsDefinition
 from .pipeline_definition import PipelineDefinition
@@ -77,6 +77,7 @@ class JobDefinition(PipelineDefinition):
         description: Optional[str] = None,
         preset_defs: Optional[List[PresetDefinition]] = None,
         tags: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
@@ -116,6 +117,7 @@ class JobDefinition(PipelineDefinition):
             mode_defs=[mode_def],
             preset_defs=preset_defs,
             tags=tags,
+            metadata=metadata,
             hook_defs=hook_defs,
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,
@@ -326,10 +328,21 @@ class JobDefinition(PipelineDefinition):
             asset_selection=asset_selection,
             parent_job_def=self,
         )
+
+        check.invariant(
+            self.asset_layer.assets_defs_by_key is not None,
+            "Asset layer must have _asset_defs argument defined",
+        )
+
         new_job = build_asset_selection_job(
-            job_to_subselect=self,
+            name=self.name,
+            assets=set(self.asset_layer.assets_defs_by_key.values()),
+            source_assets=self.asset_layer.source_assets_by_key.values(),
+            executor_def=self.executor_def,
+            resource_defs=self.resource_defs,
+            description=self.description,
+            tags=self.tags,
             asset_selection=asset_selection,
-            asset_layer=self.asset_layer,
             asset_selection_data=asset_selection_data,
         )
         return new_job
@@ -478,7 +491,7 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: Pipeline
 
     if (
         # pylint: disable=comparison-with-callable
-        resources.get("io_manager") in [default_job_io_manager, fs_asset_io_manager]
+        resources.get("io_manager") in [default_job_io_manager]
         and job.version_strategy is None
     ):
         updated_resources = dict(resources)

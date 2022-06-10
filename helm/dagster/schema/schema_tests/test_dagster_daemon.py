@@ -74,7 +74,7 @@ def test_daemon_command_with_user_deployments(template: HelmTemplate):
         dagsterDaemon=Daemon.construct(
             image=kubernetes.Image.construct(repository=repository, tag=tag)
         ),
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
             deployments=[create_simple_user_deployment("simple-deployment-one")],
@@ -99,7 +99,7 @@ def test_daemon_command_without_user_deployments(template: HelmTemplate):
         dagsterDaemon=Daemon.construct(
             image=kubernetes.Image.construct(repository=repository, tag=tag)
         ),
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=False,
             enableSubchart=False,
             deployments=[],

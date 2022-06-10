@@ -34,12 +34,14 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_l
 export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   status: InstigationStatus;
 }
 
 export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules {
   __typename: "Schedule";
   id: string;
+  cronSchedule: string;
   mode: string;
   name: string;
   pipelineName: string;
@@ -55,12 +57,14 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_l
 export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors_sensorState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   status: InstigationStatus;
 }
 
 export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors {
   __typename: "Sensor";
   id: string;
+  jobOriginId: string;
   name: string;
   targets: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors_targets[] | null;
   sensorState: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors_sensorState;
@@ -71,6 +75,11 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_l
   id: string;
   mode: string;
   pipelineName: string;
+}
+
+export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_assetGroups {
+  __typename: "AssetGroup";
+  groupName: string;
 }
 
 export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_location {
@@ -93,6 +102,7 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_l
   schedules: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules[];
   sensors: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors[];
   partitionSets: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_partitionSets[];
+  assetGroups: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_assetGroups[];
   location: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_location;
   displayMetadata: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_displayMetadata[];
 }

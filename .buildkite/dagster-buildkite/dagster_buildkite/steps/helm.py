@@ -12,6 +12,12 @@ def build_helm_steps() -> List[BuildkiteStep]:
     steps += _build_lint_steps()
     schema_group = PackageSpec(
         os.path.join("helm", "dagster", "schema"),
+        unsupported_python_versions=[
+            # run helm schema tests only once, on the latest python version
+            AvailablePythonVersion.V3_6,
+            AvailablePythonVersion.V3_7,
+            AvailablePythonVersion.V3_8,
+        ],
         name="dagster-helm-schema",
         upload_coverage=False,
         retries=2,
@@ -52,8 +58,9 @@ def _build_lint_steps() -> List[CommandStep]:
         .with_retry(2)
         .build(),
         CommandStepBuilder("dagster dependency build")
+        # https://github.com/dagster-io/dagster/issues/8167
         .run(
-            "helm repo add bitnami https://charts.bitnami.com/bitnami",
+            "helm repo add bitnami-pre-2022 https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami",
             "helm dependency build helm/dagster",
         )
         .on_integration_image(AvailablePythonVersion.get_default())

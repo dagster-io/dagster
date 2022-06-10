@@ -5,3 +5,6 @@ grpcio-health-checking<1.44.0
 # 5.2+ stops pulling in `ipython_genutils`, on which the old version of `nbconvert` we use
 # implicitly depends. Can remove this pin when/if dagit cap on nbconvert is lifted.
 nbformat<=5.1.3
+
+# protobuf 4 retroactively breaks old versions of dagster
+protobuf>=3.13.0,<4

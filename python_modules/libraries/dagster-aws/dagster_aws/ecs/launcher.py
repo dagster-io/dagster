@@ -19,7 +19,7 @@ from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass
 
 from ..secretsmanager import get_secrets_from_arns
-from .container_context import EcsContainerContext
+from .container_context import SHARED_ECS_SCHEMA, EcsContainerContext
 from .tasks import default_ecs_task_definition, default_ecs_task_metadata
 from .utils import sanitize_family
 
@@ -47,6 +47,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         container_name="run",
         secrets=None,
         secrets_tag="dagster",
+        env_vars=None,
         include_sidecars=False,
     ):
         self._inst_data = inst_data
@@ -59,6 +60,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.container_name = container_name
 
         self.secrets = check.opt_list_param(secrets, "secrets")
+
+        self.env_vars = check.opt_list_param(env_vars, "env_vars")
 
         if self.secrets and all(isinstance(secret, str) for secret in self.secrets):
             warnings.warn(
@@ -146,6 +149,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     "Defaults to False."
                 ),
             ),
+            **SHARED_ECS_SCHEMA,
         }
 
     @staticmethod
@@ -197,8 +201,22 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             "family"
         ]
 
+        # ECS limits overrides to 8192 characters including json formatting
+        # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
+        # When container_context is serialized as part of the ExecuteRunArgs, we risk
+        # going over this limit (for example, if many secrets have been set). This strips
+        # the container context off of our pipeline origin because we don't actually need
+        # it to launch the run; we only needed it to create the task definition.
+        repository_origin = pipeline_origin.repository_origin
+        # pylint: disable=protected-access
+        stripped_repository_origin = repository_origin._replace(container_context={})
+        stripped_pipeline_origin = pipeline_origin._replace(
+            repository_origin=stripped_repository_origin
+        )
+        # pylint: enable=protected-access
+
         args = ExecuteRunArgs(
-            pipeline_origin=pipeline_origin,
+            pipeline_origin=stripped_pipeline_origin,
             pipeline_run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         )
@@ -298,6 +316,11 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             task_definition = self.ecs.describe_task_definition(taskDefinition=self.task_definition)
             return task_definition["taskDefinition"]
 
+        environment = [
+            {"name": key, "value": value}
+            for key, value in container_context.get_environment_dict().items()
+        ]
+
         secrets = container_context.get_secrets_dict(self.secrets_manager)
         secrets_definition = (
             {"secrets": [{"name": key, "valueFrom": value} for key, value in secrets.items()]}
@@ -311,7 +334,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 "taskDefinition"
             ]
         secrets = secrets_definition.get("secrets", [])
-        if self._reuse_task_definition(task_definition, metadata, image, secrets):
+        if self._reuse_task_definition(task_definition, metadata, image, secrets, environment):
             return task_definition
 
         return default_ecs_task_definition(
@@ -320,11 +343,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             metadata,
             image,
             self.container_name,
+            environment=environment,
             secrets=secrets_definition,
             include_sidecars=self.include_sidecars,
         )
 
-    def _reuse_task_definition(self, task_definition, metadata, image, secrets):
+    def _reuse_task_definition(self, task_definition, metadata, image, secrets, environment):
         container_definitions_match = False
         task_definitions_match = False
 
@@ -335,6 +359,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 container_definition.get("image") == image
                 and container_definition.get("name") == self.container_name
                 and container_definition.get("secrets") == secrets
+                and ((not environment) or container_definition.get("environment") == environment)
             ):
                 container_definitions_match = True
 

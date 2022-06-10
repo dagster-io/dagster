@@ -6,16 +6,17 @@ from docs_snippets.concepts.ops_jobs_graphs.dynamic import (
     multiple,
     naive,
     other_arg,
-)
-from docs_snippets.concepts.ops_jobs_graphs.dynamic_pipeline.dynamic_job import (
-    process_directory,
+    return_dynamic,
 )
 from docs_snippets.concepts.ops_jobs_graphs.fan_in_job import fan_in
 from docs_snippets.concepts.ops_jobs_graphs.jobs import (
     alias,
+    graph_result,
+    job_result,
     one_plus_one,
     one_plus_one_from_constructor,
     tagged_add_one,
+    the_job,
 )
 from docs_snippets.concepts.ops_jobs_graphs.jobs_from_graphs import local_job, prod_job
 from docs_snippets.concepts.ops_jobs_graphs.linear_job import linear
@@ -63,18 +64,6 @@ def test_fan_in():
     assert result.output_for_node("sum_fan_in") == 10
 
 
-def test_dynamic():
-    result = process_directory.execute_in_process()
-    assert result.success
-
-    assert result.output_for_node("process_file") == {
-        "empty_stuff_bin": 0,
-        "program_py": 34,
-        "words_txt": 40,
-    }
-    assert result.output_for_node("summarize_directory") == 74
-
-
 def test_dep_dsl():
     result = define_dep_dsl_graph().execute_in_process(
         run_config={"ops": {"A": {"inputs": {"num": 0}}}}
@@ -89,6 +78,7 @@ def test_dynamic_examples():
     assert chained.execute_in_process().success
     assert other_arg.execute_in_process().success
     assert multiple.execute_in_process().success
+    assert return_dynamic()
 
 
 def test_retry_examples():
@@ -100,3 +90,10 @@ def test_retry_examples():
 def test_jobs_from_graphs():
     assert local_job.execute_in_process()
     assert prod_job.execute_in_process()
+
+
+def test_input_values():
+    assert the_job.execute_in_process().success
+    assert graph_result.success
+    assert job_result.success
+    assert job_result.output_for_node("op_with_input") == 6

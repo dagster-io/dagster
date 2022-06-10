@@ -1,6 +1,6 @@
 import hashlib
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Callable, Iterator, Optional, Union
+from typing import TYPE_CHECKING, AbstractSet, Callable, Iterator, Optional, Union, cast
 
 import dagster._check as check
 from dagster.config.config_type import ConfigType
@@ -9,6 +9,12 @@ from dagster.core.definitions.events import AssetMaterialization, Materializatio
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import ensure_gen
 from dagster.utils.backcompat import experimental_arg_warning
+
+from ..definitions.resource_requirement import (
+    ResourceRequirement,
+    TypeLoaderResourceRequirement,
+    TypeMaterializerResourceRequirement,
+)
 
 if TYPE_CHECKING:
     from dagster.core.execution.context.system import StepExecutionContext
@@ -46,6 +52,15 @@ class DagsterTypeLoader(ABC):
     def required_resource_keys(self) -> AbstractSet[str]:
         return frozenset()
 
+    def get_resource_requirements(
+        self, outer_context: Optional[object] = None
+    ) -> Iterator[ResourceRequirement]:
+        type_display_name = cast(str, outer_context)
+        for resource_key in sorted(list(self.required_resource_keys())):
+            yield TypeLoaderResourceRequirement(
+                key=resource_key, type_display_name=type_display_name
+            )
+
 
 class DagsterTypeMaterializer(ABC):
     """
@@ -71,6 +86,15 @@ class DagsterTypeMaterializer(ABC):
 
     def required_resource_keys(self) -> AbstractSet[str]:
         return frozenset()
+
+    def get_resource_requirements(
+        self, outer_context: Optional[object] = None
+    ) -> Iterator[ResourceRequirement]:
+        type_display_name = cast(str, outer_context)
+        for resource_key in sorted(list(self.required_resource_keys())):
+            yield TypeMaterializerResourceRequirement(
+                key=resource_key, type_display_name=type_display_name
+            )
 
 
 class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):

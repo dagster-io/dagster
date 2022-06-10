@@ -42,12 +42,6 @@ export interface AssetEventsQuery_assetOrError_Asset_assetObservations_runOrErro
 
 export type AssetEventsQuery_assetOrError_Asset_assetObservations_runOrError = AssetEventsQuery_assetOrError_Asset_assetObservations_runOrError_RunNotFoundError | AssetEventsQuery_assetOrError_Asset_assetObservations_runOrError_Run;
 
-export interface AssetEventsQuery_assetOrError_Asset_assetObservations_stepStats {
-  __typename: "RunStepStats";
-  endTime: number | null;
-  startTime: number | null;
-}
-
 export interface AssetEventsQuery_assetOrError_Asset_assetObservations_metadataEntries_PathMetadataEntry {
   __typename: "PathMetadataEntry";
   label: string;
@@ -213,7 +207,6 @@ export interface AssetEventsQuery_assetOrError_Asset_assetObservations {
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetEventsQuery_assetOrError_Asset_assetObservations_stepStats;
   label: string;
   description: string | null;
   metadataEntries: AssetEventsQuery_assetOrError_Asset_assetObservations_metadataEntries[];

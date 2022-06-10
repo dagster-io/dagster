@@ -2,16 +2,14 @@ from contextlib import contextmanager
 
 import sqlalchemy as db
 from alembic import op
-from sqlalchemy.engine import reflection
+from sqlalchemy import inspect
 
 import dagster._check as check
 from dagster.core.storage.sql import get_current_timestamp
 
 
 def get_inspector():
-    # pylint: disable=no-member
-    bind = op.get_context().bind
-    return reflection.Inspector.from_engine(bind)
+    return inspect(op.get_bind())
 
 
 def get_table_names():

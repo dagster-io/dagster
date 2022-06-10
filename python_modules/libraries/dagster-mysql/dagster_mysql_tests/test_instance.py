@@ -49,6 +49,18 @@ def full_mysql_config(hostname):
     )
 
 
+def unified_mysql_config(hostname):
+    return f"""
+      storage:
+        mysql:
+          mysql_db:
+            username: test
+            password: test
+            hostname: {hostname}
+            db_name: test
+    """
+
+
 def test_connection_leak(hostname, conn_string):
     num_instances = 20
 
@@ -93,6 +105,10 @@ def test_load_instance(conn_string, hostname):
 
     # Now load from scratch, verify it loads without errors
     with instance_for_test(overrides=yaml.safe_load(full_mysql_config(hostname))):
+        pass
+
+    # Now load from scratch, using unified storage config
+    with instance_for_test(overrides=yaml.safe_load(unified_mysql_config(hostname))):
         pass
 
 

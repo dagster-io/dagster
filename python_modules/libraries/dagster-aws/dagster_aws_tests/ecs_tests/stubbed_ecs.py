@@ -342,6 +342,11 @@ class StubbedEcs:
                     raise StubbedEcsError
 
             overrides = kwargs.get("overrides", {})
+            # overrides is limited to 8192 characters including json formatting
+            # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
+            if len(str(overrides)) > 8192:
+                self.stubber.add_client_error(method="run_task", expected_params={**kwargs})
+
             cpu = overrides.get("cpu") or task_definition.get("cpu")
             memory = overrides.get("memory") or task_definition.get("memory")
             if not self._valid_cpu_and_memory(cpu=cpu, memory=memory):

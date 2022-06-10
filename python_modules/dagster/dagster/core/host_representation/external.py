@@ -325,6 +325,10 @@ class ExternalPipeline(RepresentedPipeline):
         return self._pipeline_index.pipeline_snapshot.tags
 
     @property
+    def metadata(self):
+        return self._pipeline_index.pipeline_snapshot.metadata
+
+    @property
     def computed_pipeline_snapshot_id(self):
         return self._pipeline_index.pipeline_snapshot_id
 

@@ -51,6 +51,7 @@ def dagit_debug_command(input_files, port):
         port=port,
         host=DEFAULT_DAGIT_HOST,
         path_prefix="",
+        log_level="debug",
     )
 
 

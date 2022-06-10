@@ -15,6 +15,7 @@ import {
 import {ColumnWidthsProvider, Headers} from './LogsScrollingTableHeader';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
+import {logNodeLevel} from './logNodeLevel';
 import {RunDagsterRunEventFragment} from './types/RunDagsterRunEventFragment';
 
 const LOGS_PADDING_BOTTOM = 50;
@@ -52,7 +53,7 @@ function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: s
     if (node.__typename === 'AssetMaterializationPlannedEvent') {
       return false;
     }
-    const l = node.__typename === 'LogMessageEvent' ? node.level : 'EVENT';
+    const l = logNodeLevel(node);
     if (!filter.levels[l]) {
       return false;
     }

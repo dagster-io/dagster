@@ -29,4 +29,4 @@ def make_list_of_source_assets():
     return [buddy_holly, jerry_lee_lewis]
 
 
-list_of_assets_and_source_assets = make_list_of_assets() + make_list_of_source_assets()
+list_of_assets_and_source_assets = [*make_list_of_assets(), *make_list_of_source_assets()]

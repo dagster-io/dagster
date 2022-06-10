@@ -6,6 +6,7 @@ import yaml
 
 import dagster._check as check
 
+from ..git import git_repo_root
 from .ecr import ecr_image, get_aws_account_id, get_aws_region
 from .utils import (
     execute_docker_build,
@@ -26,27 +27,56 @@ def do_nothing(_cwd: str) -> Iterator[None]:
     yield
 
 
+def default_images_path():
+    return os.path.join(
+        git_repo_root(),
+        "python_modules",
+        "automation",
+        "automation",
+        "docker",
+        "images",
+    )
+
+
 class DagsterDockerImage(
-    NamedTuple("_DagsterDockerImage", [("image", str), ("build_cm", Callable), ("path", str)])
+    NamedTuple(
+        "_DagsterDockerImage",
+        [
+            ("image", str),
+            ("images_path", str),
+            ("build_cm", Callable),
+        ],
+    )
 ):
     """Represents a Dagster image.
 
     Properties:
         image (str): Name of the image
+        images_path (Optional(str)): The base folder for the images.
         build_cm (function): function that is a context manager for build (e.g. for populating a
             build cache)
-        path (Optional(str)): The path to the image's path. Defaults to docker/images/<IMAGE NAME>
     """
 
-    def __new__(cls, image: str, build_cm: Callable = do_nothing, path: Optional[str] = None):
+    def __new__(
+        cls,
+        image: str,
+        images_path: Optional[str] = None,
+        build_cm: Callable = do_nothing,
+    ):
         return super(DagsterDockerImage, cls).__new__(
             cls,
             check.str_param(image, "image"),
-            check.callable_param(build_cm, "build_cm"),
             check.opt_str_param(
-                path, "path", default=os.path.join(os.path.dirname(__file__), "images", image)
+                images_path,
+                "images_path",
+                default_images_path(),
             ),
+            check.callable_param(build_cm, "build_cm"),
         )
+
+    @property
+    def path(self) -> str:
+        return os.path.join(self.images_path, self.image)
 
     @property
     def python_versions(self) -> List[str]:
@@ -130,7 +160,9 @@ class DagsterDockerImage(
                 "BASE_IMAGE" not in docker_args, "Cannot override an existing BASE_IMAGE"
             )
 
-            base_image = DagsterDockerImage(image_info["base_image"]["name"])
+            base_image = DagsterDockerImage(
+                image_info["base_image"]["name"], images_path=self.images_path
+            )
             source = image_info["base_image"]["source"]
 
             if source == "aws":

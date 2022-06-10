@@ -40,7 +40,6 @@ if TYPE_CHECKING:
     from dagster.core.execution.context.input import InputContext
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.storage.input_manager import InputManager
-    from dagster.core.types.dagster_type import DagsterType
 
 
 def _get_asset_lineage_from_fns(
@@ -140,6 +139,130 @@ class StepInputSource(ABC):
 
 
 @whitelist_for_serdes
+class FromSourceAsset(
+    NamedTuple(
+        "_FromSourceAsset",
+        [
+            ("solid_handle", NodeHandle),
+            ("input_name", str),
+        ],
+    ),
+    StepInputSource,
+):
+    """
+    Load input value from an asset
+    """
+
+    def load_input_object(
+        self,
+        step_context: "StepExecutionContext",
+        input_def: InputDefinition,
+    ) -> Iterator["DagsterEvent"]:
+        from dagster.core.definitions.asset_layer import AssetOutputInfo
+        from dagster.core.events import DagsterEvent
+        from dagster.core.execution.context.output import OutputContext
+
+        asset_layer = step_context.pipeline_def.asset_layer
+
+        input_asset_key = asset_layer.asset_key_for_input(
+            self.solid_handle, input_name=self.input_name
+        )
+        assert input_asset_key is not None
+
+        input_manager_key = asset_layer.io_manager_key_for_asset(input_asset_key)
+
+        op_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
+        config_data = op_config.inputs.get(self.input_name) if op_config else None
+
+        loader = getattr(step_context.resources, input_manager_key)
+        resources = build_resources_for_manager(input_manager_key, step_context)
+        resource_config = step_context.resolved_run_config.resources[input_manager_key].config
+        load_input_context = step_context.for_input_manager(
+            input_def.name,
+            config_data,
+            metadata=input_def.metadata,
+            dagster_type=input_def.dagster_type,
+            resource_config=step_context.resolved_run_config.resources[input_manager_key].config,
+            resources=resources,
+            artificial_output_context=OutputContext(
+                resources=resources,
+                asset_info=AssetOutputInfo(key=input_asset_key),
+                name=input_asset_key.path[-1],
+                step_key="none",
+                metadata=asset_layer.metadata_for_asset(input_asset_key),
+                resource_config=resource_config,
+            ),
+        )
+
+        yield from _load_input_with_input_manager(loader, load_input_context)
+
+        metadata_entries = load_input_context.consume_metadata_entries()
+
+        yield DagsterEvent.loaded_input(
+            step_context,
+            input_name=input_def.name,
+            manager_key=input_manager_key,
+            metadata_entries=[
+                entry for entry in metadata_entries if isinstance(entry, MetadataEntry)
+            ],
+        )
+
+    def compute_version(self, step_versions, pipeline_def, resolved_run_config) -> Optional[str]:
+        from ..resolve_versions import check_valid_version, resolve_config_version
+
+        op = pipeline_def.get_solid(self.solid_handle)
+        io_manager_key = op.input_def_named(self.input_name).io_manager_key
+        io_manager_def = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs[
+            io_manager_key
+        ]
+
+        op_config = resolved_run_config.solids.get(op.name)
+        input_config = op_config.inputs.get(self.input_name)
+        resource_config = resolved_run_config.resources.get(io_manager_key).config
+
+        version_context = ResourceVersionContext(
+            resource_def=io_manager_def,
+            resource_config=resource_config,
+        )
+
+        if pipeline_def.version_strategy is not None:
+            io_manager_def_version = pipeline_def.version_strategy.get_resource_version(
+                version_context
+            )
+        else:
+            io_manager_def_version = io_manager_def.version
+
+        if io_manager_def_version is None:
+            raise DagsterInvariantViolationError(
+                f"While using memoization, version for io manager '{io_manager_def}' was "
+                "None. Please either provide a versioning strategy for your job, or provide a "
+                "version using the io_manager decorator."
+            )
+
+        check_valid_version(io_manager_def_version)
+        return join_and_hash(
+            resolve_config_version(input_config),
+            resolve_config_version(resource_config),
+            io_manager_def_version,
+        )
+
+    def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
+        input_asset_key = pipeline_def.asset_layer.asset_key_for_input(
+            self.solid_handle, self.input_name
+        )
+        if input_asset_key is None:
+            check.failed(
+                f"Must have an asset key associated with input {self.input_name} to load it using FromSourceAsset",
+            )
+        input_manager_key = pipeline_def.asset_layer.io_manager_key_for_asset(input_asset_key)
+        if input_manager_key is None:
+            check.failed(
+                f"Must have an io_manager associated with asset {input_asset_key} to load it using FromSourceAsset"
+            )
+        return {input_manager_key}
+
+
+@whitelist_for_serdes
 class FromRootInputManager(
     NamedTuple(
         "_FromRootInputManager",
@@ -184,6 +307,7 @@ class FromRootInputManager(
             ].config,
             resources=build_resources_for_manager(input_def.root_manager_key, step_context),
         )
+
         yield from _load_input_with_input_manager(loader, load_input_context)
 
         metadata_entries = load_input_context.consume_metadata_entries()
@@ -635,22 +759,14 @@ class FromMultipleSources(
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
     ):
-        from dagster.core.events import DagsterEvent, DagsterEventType
+        from dagster.core.events import DagsterEvent
 
         values = []
-
-        # https://github.com/dagster-io/dagster/issues/3511
-        step_output_events = [
-            record.dagster_event
-            for record in step_context.instance.all_logs(
-                step_context.run_id, of_type=DagsterEventType.STEP_OUTPUT
-            )
-        ]
 
         # some upstream steps may have skipped and we allow fan-in to continue in their absence
         source_handles_to_skip = list(
             filter(
-                lambda x: not step_context.can_load(x, step_output_events),
+                lambda x: not step_context.can_load(x),
                 self.step_output_handle_dependencies,
             )
         )

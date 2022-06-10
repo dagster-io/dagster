@@ -71,6 +71,26 @@ Within our `@job` decorated composition function, the object representing the dy
 
 ## Advanced Mapping Examples
 
+### Returning Dynamic Outputs
+
+In addition to yielding, <PyObject object="DynamicOutput" /> objects can also be returned as part of a list.
+
+```python file=/concepts/ops_jobs_graphs/dynamic.py startafter=dyn_out_return_start endbefore=dyn_out_return_end
+from dagster import DynamicOut, DynamicOutput, op
+from typing import List
+
+
+@op(out=DynamicOut())
+def return_dynamic() -> List[DynamicOutput[str]]:
+    outputs = []
+    for idx, page_key in get_pages():
+        outputs.append(DynamicOutput(page_key, mapping_key=idx))
+    return outputs
+```
+
+<PyObject object="DynamicOutput" /> can be used as a generic type annotation describing
+the expected type of the output.
+
 ### Chaining
 
 The following two examples are equivalent ways to establish a sequence of ops that occur for each dynamic output.

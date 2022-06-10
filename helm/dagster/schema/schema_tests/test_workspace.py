@@ -24,7 +24,7 @@ def helm_template() -> HelmTemplate:
 
 def test_workspace_renders_fail(template: HelmTemplate, capfd):
     helm_values = DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=False,
             enableSubchart=True,
             deployments=[],
@@ -43,7 +43,7 @@ def test_workspace_renders_fail(template: HelmTemplate, capfd):
 
 def test_workspace_does_not_render(template: HelmTemplate, capfd):
     helm_values = DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=False,
             enableSubchart=False,
             deployments=[create_simple_user_deployment("deployment-one")],
@@ -63,7 +63,7 @@ def test_workspace_renders_from_helm_user_deployments(template: HelmTemplate):
         create_simple_user_deployment("deployment-two"),
     ]
     helm_values = DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
             deployments=deployments,
@@ -95,7 +95,7 @@ def test_workspace_renders_from_helm_dagit(template: HelmTemplate):
     ]
     helm_values = DagsterHelmValues.construct(
         dagit=Dagit.construct(workspace=Workspace(enabled=True, servers=servers)),
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
             deployments=[
@@ -129,7 +129,7 @@ def test_workspace_server_location_name_renders_from_helm_dagit(template: HelmTe
     ]
     helm_values = DagsterHelmValues.construct(
         dagit=Dagit.construct(workspace=Workspace(enabled=True, servers=servers)),
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
             deployments=[
@@ -162,7 +162,7 @@ def test_workspace_renders_empty(template: HelmTemplate):
     servers: List[Server] = []
     helm_values = DagsterHelmValues.construct(
         dagit=Dagit.construct(workspace=Workspace(enabled=True, servers=servers)),
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
             deployments=[],
@@ -192,7 +192,7 @@ def test_workspace_external_configmap_fail(template: HelmTemplate, capfd):
                 externalConfigmap="test",
             )
         ),
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
             deployments=[create_simple_user_deployment("deployment-one")],
@@ -215,7 +215,7 @@ def test_workspace_external_configmap_not_present(template: HelmTemplate, capfd)
                 externalConfigmap="test",
             )
         ),
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=False,
             deployments=[],

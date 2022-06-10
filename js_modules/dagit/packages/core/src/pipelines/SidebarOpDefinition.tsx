@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {breakOnUnderscores} from '../app/Util';
-import {displayNameForAssetKey, isAssetGroup} from '../asset-graph/Utils';
+import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignature';
 import {pluginForMetadata} from '../plugins';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
@@ -258,7 +258,7 @@ const InvocationList: React.FC<{
   onClickInvocation: (arg: SidebarOpInvocationInfo) => void;
 }> = ({invocations, onClickInvocation}) => {
   const [showAll, setShowAll] = React.useState<boolean>(false);
-  const visible = invocations.filter((i) => !isAssetGroup(i.pipelineName || ''));
+  const visible = invocations.filter((i) => !isHiddenAssetGroupJob(i.pipelineName || ''));
   const clipped = showAll ? visible : visible.slice(0, DEFAULT_INVOCATIONS_SHOWN);
 
   return (

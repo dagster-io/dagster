@@ -208,16 +208,13 @@ export const AssetEvents: React.FC<Props> = ({
             <Spinner purpose="section" />
           </Box>
         </Box>
-        <Box
-          style={{width: '40%'}}
-          border={{side: 'left', color: Colors.KeylineGray, width: 1}}
-        ></Box>
+        <Box style={{width: '40%'}} border={{side: 'left', color: Colors.KeylineGray, width: 1}} />
       </Box>
     );
   }
 
   return (
-    <Box style={{display: 'flex'}}>
+    <Box style={{display: 'flex', flex: 1}}>
       <Box style={{flex: 1}}>
         <Box
           flex={{justifyContent: 'space-between', alignItems: 'center'}}
@@ -257,7 +254,7 @@ export const AssetEvents: React.FC<Props> = ({
         ) : (
           <Box padding={{vertical: 20}} border={{side: 'top', color: Colors.KeylineGray, width: 1}}>
             <NonIdealState
-              icon="asset"
+              icon="materialization"
               title="No materializations"
               description="No materializations were found for this asset."
             />
@@ -268,6 +265,8 @@ export const AssetEvents: React.FC<Props> = ({
             Showing materializations for the last {loadedPartitionKeys.length} partitions.
           </Box>
         )}
+        {/** Ensures the line between the left and right columns goes to the bottom of the page */}
+        <div style={{flex: 1}} />
       </Box>
       <Box style={{width: '40%'}} border={{side: 'left', color: Colors.KeylineGray, width: 1}}>
         <AssetMaterializationGraphs
@@ -364,10 +363,6 @@ const ASSET_EVENTS_QUERY = gql`
     runId
     timestamp
     stepKey
-    stepStats {
-      endTime
-      startTime
-    }
     label
     description
     metadataEntries {

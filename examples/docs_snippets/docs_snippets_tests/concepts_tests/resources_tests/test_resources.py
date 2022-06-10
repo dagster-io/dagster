@@ -11,6 +11,7 @@ from docs_snippets.concepts.resources.resources import (
     test_cm_resource,
     test_my_resource,
     test_my_resource_with_context,
+    transformed_asset,
     use_db_connection,
     uses_db_connection,
 )
@@ -62,3 +63,7 @@ def test_cm_resource_op():
 
 def test_build_resources_example():
     uses_db_connection()
+
+
+def test_with_resources_example():
+    transformed_asset(build_op_context())

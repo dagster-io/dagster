@@ -6,7 +6,7 @@ Create Date: 2020-02-10 18:13:58.993653
 
 """
 from alembic import op
-from sqlalchemy.engine import reflection
+from sqlalchemy import inspect
 
 # pylint: disable=no-member
 
@@ -18,8 +18,7 @@ depends_on = None
 
 
 def upgrade():
-    bind = op.get_context().bind
-    inspector = reflection.Inspector.from_engine(bind)
+    inspector = inspect(op.get_bind())
     has_tables = inspector.get_table_names()
 
     if "runs" in has_tables and "run_tags" in has_tables:

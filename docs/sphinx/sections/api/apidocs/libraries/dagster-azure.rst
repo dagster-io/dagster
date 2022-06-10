@@ -18,9 +18,6 @@ dependency on an old version, via ``snowflake-connector-python``.
 
 .. autoclass:: dagster_azure.adls2.FakeADLS2Resource
 
-.. autoconfigurable:: dagster_azure.adls2.adls2_file_cache
-  :annotation: ResourceDefinition
-
 .. autoclass:: dagster_azure.blob.AzureBlobComputeLogManager
 
 .. autoconfigurable:: dagster_azure.adls2.adls2_file_manager
@@ -30,7 +27,4 @@ dependency on an old version, via ``snowflake-connector-python``.
   :members:
 
 .. autoconfigurable:: dagster_azure.adls2.adls2_pickle_io_manager
-  :annotation: IOManagerDefinition
-
-.. autoconfigurable:: dagster_azure.adls2.adls2_pickle_asset_io_manager
   :annotation: IOManagerDefinition

@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "deepmerge": "^4.2.2",
-    "react-markdown": "6.0.3",
+    "react-markdown": "^6.0.3",
     "react-virtualized": "^9.22.3",
     "remark-gfm": "1.0.0"
   },
@@ -85,7 +85,8 @@
     "rollup-plugin-node-globals": "^1.4.0",
     "rollup-plugin-polyfill-node": "^0.8.0",
     "rollup-plugin-styles": "^4.0.0",
-    "typescript": "^4.6.4"
+    "typescript": "^4.6.4",
+    "webpack": "^5.0.0"
   },
   "browserslist": {
     "production": [

@@ -197,7 +197,7 @@ class UnboundHookContext(HookContext):
         job_name: Optional[str],
         op_exception: Optional[Exception],
     ):  # pylint: disable=super-init-not-called
-        from ..build_resources import build_resources
+        from ..build_resources import build_resources, wrap_resources_for_execution
         from ..context_creation_pipeline import initialize_console_manager
 
         self._mode_def = mode_def
@@ -212,7 +212,8 @@ class UnboundHookContext(HookContext):
             self._op = temp_graph.solids[0]
 
         # Open resource context manager
-        self._resources_cm = build_resources(resources)
+        self._resource_defs = wrap_resources_for_execution(resources)
+        self._resources_cm = build_resources(self._resource_defs)
         self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
         self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
 

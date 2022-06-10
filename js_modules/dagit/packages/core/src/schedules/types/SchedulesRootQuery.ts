@@ -43,6 +43,9 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_sched
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_ticks_error_cause {
@@ -158,6 +161,9 @@ export interface SchedulesRootQuery_unloadableInstigationStatesOrError_Instigati
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause {

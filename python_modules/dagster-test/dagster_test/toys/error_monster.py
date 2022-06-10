@@ -32,14 +32,14 @@ class ErrorableIOManager(IOManager):
         if self._throw_output:
             raise ExampleException("throwing up trying to handle output")
 
-        keys = tuple(context.get_output_identifier())
+        keys = tuple(context.get_identifier())
         self._values[keys] = obj
 
     def load_input(self, context):
         if self._throw_input:
             raise ExampleException("throwing up trying to load input")
 
-        keys = tuple(context.upstream_output.get_output_identifier())
+        keys = tuple(context.upstream_output.get_identifier())
         return self._values[keys]
 
 

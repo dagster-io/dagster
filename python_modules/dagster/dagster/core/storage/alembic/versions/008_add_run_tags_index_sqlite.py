@@ -6,7 +6,7 @@ Create Date: 2020-12-01 12:10:23.650381
 
 """
 from alembic import op
-from sqlalchemy.engine import reflection
+from sqlalchemy import inspect
 
 # pylint: disable=no-member
 
@@ -18,8 +18,7 @@ depends_on = None
 
 
 def upgrade():
-    bind = op.get_context().bind
-    inspector = reflection.Inspector.from_engine(bind)
+    inspector = inspect(op.get_bind())
     has_tables = inspector.get_table_names()
     if "run_tags" in has_tables:
         indices = [x.get("name") for x in inspector.get_indexes("run_tags")]
@@ -28,8 +27,7 @@ def upgrade():
 
 
 def downgrade():
-    bind = op.get_context().bind
-    inspector = reflection.Inspector.from_engine(bind)
+    inspector = inspect(op.get_bind())
     has_tables = inspector.get_table_names()
     if "run_tags" in has_tables:
         indices = [x.get("name") for x in inspector.get_indexes("run_tags")]

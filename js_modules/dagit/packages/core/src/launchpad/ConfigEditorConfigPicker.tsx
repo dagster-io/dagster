@@ -17,12 +17,15 @@ import {
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {RepositorySelector} from '../types/globalTypes';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -143,9 +146,13 @@ interface ConfigEditorPartitionPickerProps {
   repoAddress: RepoAddress;
 }
 
+const SORT_ORDER_KEY_BASE = 'dagit.partition-sort-order';
+type SortOrder = 'asc' | 'desc';
+
 const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = React.memo(
   (props) => {
     const {partitionSetName, value, onSelect, repoAddress} = props;
+    const {basePath} = React.useContext(AppContext);
     const repositorySelector = repoAddressToSelector(repoAddress);
     const {data, loading} = useQuery<ConfigPartitionsQuery, ConfigPartitionsQueryVariables>(
       CONFIG_PARTITIONS_QUERY,
@@ -155,7 +162,13 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
       },
     );
 
-    const [sortOrder, setSortOrder] = React.useState('asc');
+    const sortOrderKey = `${SORT_ORDER_KEY_BASE}-${basePath}-${repoAddressAsString(
+      repoAddress,
+    )}-${partitionSetName}`;
+
+    const [sortOrder, setSortOrder] = useStateWithStorage<SortOrder>(sortOrderKey, (value: any) =>
+      value === undefined ? 'asc' : value,
+    );
 
     const partitions: Partition[] = React.useMemo(() => {
       const retrieved =
@@ -174,10 +187,13 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
 
     const selected = partitions.find((p) => p.name === value);
 
-    const onClickSort = React.useCallback((event) => {
-      event.preventDefault();
-      setSortOrder((order) => (order === 'asc' ? 'desc' : 'asc'));
-    }, []);
+    const onClickSort = React.useCallback(
+      (event) => {
+        event.preventDefault();
+        setSortOrder((order) => (order === 'asc' ? 'desc' : 'asc'));
+      },
+      [setSortOrder],
+    );
 
     const rightElement = partitions.length ? (
       <SortButton onMouseDown={onClickSort}>
@@ -251,7 +267,6 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
         onItemSelect={(item) => {
           onSelect(repositorySelector, partitionSetName, item.name);
         }}
-        popoverProps={{modifiers: {offset: {enabled: true, offset: '-5px 8px'}}}}
       />
     );
   },

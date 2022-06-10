@@ -146,7 +146,7 @@ def test_deployments_enabled_subchart_disabled(template: HelmTemplate, capfd):
     with pytest.raises(subprocess.CalledProcessError):
         template.render(
             DagsterHelmValues.construct(
-                dagsterUserDeployments=UserDeployments(
+                dagsterUserDeployments=UserDeployments.construct(
                     enabled=True,
                     enableSubchart=False,
                     deployments=[create_simple_user_deployment("simple-deployment-one")],
@@ -162,7 +162,7 @@ def test_deployments_disabled_subchart_enabled(template: HelmTemplate, capfd):
     with pytest.raises(subprocess.CalledProcessError):
         template.render(
             DagsterHelmValues.construct(
-                dagsterUserDeployments=UserDeployments(
+                dagsterUserDeployments=UserDeployments.construct(
                     enabled=False,
                     enableSubchart=True,
                     deployments=[create_simple_user_deployment("simple-deployment-one")],
@@ -181,7 +181,7 @@ def test_deployments_disabled_subchart_disabled(template: HelmTemplate, capfd):
     with pytest.raises(subprocess.CalledProcessError):
         template.render(
             DagsterHelmValues.construct(
-                dagsterUserDeployments=UserDeployments(
+                dagsterUserDeployments=UserDeployments.construct(
                     enabled=False,
                     enableSubchart=False,
                     deployments=[create_simple_user_deployment("simple-deployment-one")],
@@ -197,21 +197,21 @@ def test_deployments_disabled_subchart_disabled(template: HelmTemplate, capfd):
     "helm_values",
     [
         DagsterHelmValues.construct(
-            dagsterUserDeployments=UserDeployments(
+            dagsterUserDeployments=UserDeployments.construct(
                 enabled=True,
                 enableSubchart=True,
                 deployments=[create_simple_user_deployment("simple-deployment-one")],
             )
         ),
         DagsterHelmValues.construct(
-            dagsterUserDeployments=UserDeployments(
+            dagsterUserDeployments=UserDeployments.construct(
                 enabled=True,
                 enableSubchart=True,
                 deployments=[create_complex_user_deployment("complex-deployment-one")],
             )
         ),
         DagsterHelmValues.construct(
-            dagsterUserDeployments=UserDeployments(
+            dagsterUserDeployments=UserDeployments.construct(
                 enabled=True,
                 enableSubchart=True,
                 deployments=[
@@ -221,7 +221,7 @@ def test_deployments_disabled_subchart_disabled(template: HelmTemplate, capfd):
             )
         ),
         DagsterHelmValues.construct(
-            dagsterUserDeployments=UserDeployments(
+            dagsterUserDeployments=UserDeployments.construct(
                 enabled=True,
                 enableSubchart=True,
                 deployments=[
@@ -247,7 +247,7 @@ def test_deployments_render(helm_values: DagsterHelmValues, template: HelmTempla
 
 def test_chart_does_not_render(full_template: HelmTemplate, capfd):
     helm_values = DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=False,
             enableSubchart=True,
             deployments=[create_simple_user_deployment("simple-deployment-one")],
@@ -268,7 +268,7 @@ def test_chart_does_not_render(full_template: HelmTemplate, capfd):
     "helm_values",
     [
         DagsterHelmValues.construct(
-            dagsterUserDeployments=UserDeployments(
+            dagsterUserDeployments=UserDeployments.construct(
                 enabled=True,
                 enableSubchart=False,
                 deployments=[
@@ -277,7 +277,7 @@ def test_chart_does_not_render(full_template: HelmTemplate, capfd):
             )
         ),
         DagsterHelmValues.construct(
-            dagsterUserDeployments=UserDeployments(
+            dagsterUserDeployments=UserDeployments.construct(
                 enabled=True,
                 enableSubchart=False,
                 deployments=[
@@ -303,7 +303,7 @@ def test_chart_does_render(helm_values: DagsterHelmValues, full_template: HelmTe
     "helm_values",
     [
         DagsterHelmValues.construct(
-            dagsterUserDeployments=UserDeployments(
+            dagsterUserDeployments=UserDeployments.construct(
                 enabled=True,
                 enableSubchart=True,
                 deployments=[
@@ -312,7 +312,7 @@ def test_chart_does_render(helm_values: DagsterHelmValues, full_template: HelmTe
             )
         ),
         DagsterHelmValues.construct(
-            dagsterUserDeployments=UserDeployments(
+            dagsterUserDeployments=UserDeployments.construct(
                 enabled=True,
                 enableSubchart=True,
                 deployments=[
@@ -348,7 +348,7 @@ def test_user_deployment_checksum_unchanged(helm_values: DagsterHelmValues, temp
 
 def test_user_deployment_checksum_changes(template: HelmTemplate):
     pre_upgrade_helm_values = DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
             deployments=[
@@ -358,7 +358,7 @@ def test_user_deployment_checksum_changes(template: HelmTemplate):
         )
     )
     post_upgrade_helm_values = DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
             deployments=[
@@ -504,13 +504,13 @@ def test_user_deployment_default_image_tag_is_chart_version(
     assert image_tag == chart_version
 
 
-@pytest.mark.parametrize("tag", [5176135, "abc1234"])
+@pytest.mark.parametrize("tag", [5176135, "abc1234", "20220531.1", "1234"])
 def test_user_deployment_tag_can_be_numeric(template: HelmTemplate, tag: Union[str, int]):
     deployment = create_simple_user_deployment("foo")
     deployment.image.tag = tag
 
     helm_values = DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
             deployments=[deployment],
@@ -533,10 +533,15 @@ def _assert_no_container_context(user_deployment):
     assert "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT" not in env_names
 
 
+def _assert_has_container_context(user_deployment):
+    env_names = [env.name for env in user_deployment.spec.template.spec.containers[0].env]
+    assert "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT" in env_names
+
+
 def test_user_deployment_image(template: HelmTemplate):
     deployment = create_simple_user_deployment("foo")
     helm_values = DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
             deployments=[deployment],
@@ -553,23 +558,27 @@ def test_user_deployment_image(template: HelmTemplate):
     assert image_name == deployment.image.repository
     assert image_tag == deployment.image.tag
 
-    _assert_no_container_context(user_deployments[0])
+    _assert_has_container_context(user_deployments[0])
 
 
-def test_user_deployment_include_config(template: HelmTemplate):
-    deployment = create_simple_user_deployment("foo", include_config_in_launched_runs=True)
+def test_user_deployment_include_config_in_launched_runs(template: HelmTemplate):
+    deployments = [
+        create_simple_user_deployment("foo", include_config_in_launched_runs=True),
+        create_simple_user_deployment("bar", include_config_in_launched_runs=None),
+        create_simple_user_deployment("baz", include_config_in_launched_runs=False),
+    ]
+
     helm_values = DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
-            enabled=True,
-            enableSubchart=True,
-            deployments=[deployment],
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True, enableSubchart=True, deployments=deployments
         )
     )
 
     user_deployments = template.render(helm_values)
 
-    assert len(user_deployments) == 1
+    assert len(user_deployments) == 3
 
+    # Setting to true results in container context being set
     container_context = user_deployments[0].spec.template.spec.containers[0].env[2]
     assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
     assert json.loads(container_context.value) == {
@@ -580,6 +589,15 @@ def test_user_deployment_include_config(template: HelmTemplate):
             "service_account_name": "release-name-dagster-user-deployments-user-deployments",
         }
     }
+
+    # Setting to None also results in container context being set
+    assert (
+        user_deployments[1].spec.template.spec.containers[0].env[2].name
+        == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+    )
+
+    # setting to false means no container context
+    _assert_no_container_context(user_deployments[2])
 
 
 @pytest.mark.parametrize("include_config_in_launched_runs", [False, True])
@@ -614,7 +632,7 @@ def test_user_deployment_volumes(template: HelmTemplate, include_config_in_launc
     )
 
     helm_values = DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
             deployments=[deployment],
@@ -692,7 +710,7 @@ def test_user_deployment_secrets_and_configmaps(
     )
 
     helm_values = DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
             deployments=[deployment],
@@ -741,7 +759,7 @@ def test_user_deployment_labels(template: HelmTemplate, include_config_in_launch
     )
 
     helm_values = DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
             deployments=[deployment],
@@ -789,7 +807,7 @@ def test_user_deployment_resources(template: HelmTemplate, include_config_in_lau
     )
 
     helm_values = DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
+        dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
             deployments=[deployment],
@@ -818,10 +836,18 @@ def test_user_deployment_resources(template: HelmTemplate, include_config_in_lau
         _assert_no_container_context(user_deployments[0])
 
 
-def test_subchart_image_pull_secrets(subchart_template: HelmTemplate):
+@pytest.mark.parametrize("include_config_in_launched_runs", [False, True])
+def test_subchart_image_pull_secrets(
+    subchart_template: HelmTemplate, include_config_in_launched_runs: bool
+):
     image_pull_secrets = [{"name": "super-duper-secret"}]
     deployment_values = DagsterUserDeploymentsHelmValues.construct(
         imagePullSecrets=image_pull_secrets,
+        deployments=[
+            create_simple_user_deployment(
+                "foo", include_config_in_launched_runs=include_config_in_launched_runs
+            )
+        ],
     )
 
     deployment_templates = subchart_template.render(deployment_values)
@@ -832,6 +858,23 @@ def test_subchart_image_pull_secrets(subchart_template: HelmTemplate):
     pod_spec = deployment_template.spec.template.spec
 
     assert pod_spec.image_pull_secrets[0].name == image_pull_secrets[0]["name"]
+
+    if include_config_in_launched_runs:
+        container_context = deployment_template.spec.template.spec.containers[0].env[2]
+        assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        assert json.loads(container_context.value) == {
+            "k8s": {
+                "env_config_maps": [
+                    "release-name-dagster-user-deployments-foo-user-env",
+                ],
+                "image_pull_policy": "Always",
+                "image_pull_secrets": image_pull_secrets,
+                "namespace": "default",
+                "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+            }
+        }
+    else:
+        _assert_no_container_context(deployment_template)
 
 
 def test_subchart_postgres_password_global_override(subchart_template: HelmTemplate):

@@ -154,21 +154,19 @@ def test_resource_cyclic_dependencies():
         called["dep_solid"] = True
         assert context.resources.bar_resource == "foobar"
 
-    pipeline_def = PipelineDefinition(
-        name="with_dep_resource",
-        solid_defs=[dep_solid],
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"foo_resource": foo_resource, "bar_resource": bar_resource}
-            )
-        ],
-    )
-
     with pytest.raises(
         DagsterInvariantViolationError,
         match='Resource key "(foo_resource|bar_resource)" transitively depends on itself.',
     ):
-        execute_pipeline(pipeline_def)
+        PipelineDefinition(
+            name="with_dep_resource",
+            solid_defs=[dep_solid],
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs={"foo_resource": foo_resource, "bar_resource": bar_resource}
+                )
+            ],
+        )
 
 
 def test_yield_resource():
@@ -1142,13 +1140,20 @@ def test_resource_needs_resource():
     def foo_resource(init_context):
         return init_context.resources.bar_resource + "foo"
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="is required by resource"):
+    @op(required_resource_keys={"foo_resource"})
+    def op_requires_foo():
+        pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Resource with key 'bar_resource' required by resource with key 'foo_resource', but not provided.",
+    ):
 
         @pipeline(
             mode_defs=[ModeDefinition(resource_defs={"foo_resource": foo_resource})],
         )
         def _fail():
-            pass
+            op_requires_foo()
 
 
 def test_resource_op_subset():

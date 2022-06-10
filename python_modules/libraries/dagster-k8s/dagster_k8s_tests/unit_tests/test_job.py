@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
 from dagster_k8s.job import (
@@ -166,14 +168,13 @@ def test_construct_dagster_k8s_job_with_mounts():
 
 
 def test_construct_dagster_k8s_job_with_env():
-    with environ({"ENV_VAR_1": "one", "ENV_VAR_2": "two"}):
-        cfg = DagsterK8sJobConfig(
-            job_image="test/foo:latest",
-            dagster_home="/opt/dagster/dagster_home",
-            instance_config_map="some-instance-configmap",
-            env_vars=["ENV_VAR_1", "ENV_VAR_2"],
-        )
-
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="some-instance-configmap",
+        env_vars=["ENV_VAR_1", "ENV_VAR_2=two"],
+    )
+    with environ({"ENV_VAR_1": "one"}):
         job = construct_dagster_k8s_job(cfg, ["foo", "bar"], "job").to_dict()
 
         env = job["spec"]["template"]["spec"]["containers"][0]["env"]
@@ -183,6 +184,11 @@ def test_construct_dagster_k8s_job_with_env():
         assert len(env_mapping) == 3
         assert env_mapping["ENV_VAR_1"]["value"] == "one"
         assert env_mapping["ENV_VAR_2"]["value"] == "two"
+
+    with pytest.raises(
+        Exception, match="Tried to load environment variable ENV_VAR_1, but it was not set"
+    ):
+        construct_dagster_k8s_job(cfg, ["foo", "bar"], "job").to_dict()
 
 
 def test_construct_dagster_k8s_job_with_user_defined_env_camelcase():
@@ -681,3 +687,30 @@ def test_sanitize_labels():
 
     assert job["metadata"]["labels"]["dagster/op"] == "get_f-o.o-bar-0"
     assert job["metadata"]["labels"]["my_label"] == "WhatsUP"
+
+
+# Taken from the k8s error message when a label is invalid
+K8s_LABEL_REGEX = r"(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?"
+
+
+def test_sanitize_labels_regex():
+
+    assert re.fullmatch(K8s_LABEL_REGEX, sanitize_k8s_label("normal-string"))
+
+    assert not re.fullmatch(
+        K8s_LABEL_REGEX,
+        "string-with-period.",
+    )
+
+    assert re.fullmatch(
+        K8s_LABEL_REGEX,
+        sanitize_k8s_label("string-with-period."),
+    )
+
+    # string that happens to end with a period after being truncated to 63 characters
+    assert re.fullmatch(
+        K8s_LABEL_REGEX,
+        sanitize_k8s_label(
+            "data_pipe_graph_abcdefghi_jklmn.raw_data_graph_abcdefghi_jklmn.opqrstuvwxyz"
+        ),
+    )

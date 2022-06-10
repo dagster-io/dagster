@@ -29,7 +29,7 @@ export const SensorsTable: React.FC<{
           <th style={{width: '60px'}}></th>
           <th>Sensor Name</th>
           <th style={{width: '15%'}}>Frequency</th>
-          <th style={{width: '15%'}}>
+          <th style={{width: '10%'}}>
             <Box flex={{gap: 8, alignItems: 'end'}}>
               Last tick
               <Tooltip position="top" content={lastTick}>
@@ -37,7 +37,7 @@ export const SensorsTable: React.FC<{
               </Tooltip>
             </Box>
           </th>
-          <th style={{width: '20%'}}>
+          <th style={{width: '25%'}}>
             <Box flex={{gap: 8, alignItems: 'end'}}>
               Last Run
               <Tooltip position="top" content={lastRun}>
@@ -92,7 +92,7 @@ const SensorRow: React.FC<{
           {sensor.metadata.assetKeys && sensor.metadata.assetKeys.length ? (
             <Box flex={{direction: 'column', gap: 2}}>
               {sensor.metadata.assetKeys.map((key) => (
-                <AssetLink key={key.path.join('/')} path={key.path} displayIcon={true} />
+                <AssetLink key={key.path.join('/')} path={key.path} icon="asset" />
               ))}
             </Box>
           ) : null}

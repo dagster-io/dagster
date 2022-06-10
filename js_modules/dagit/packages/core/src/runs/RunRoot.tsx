@@ -4,7 +4,7 @@ import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
 import {formatElapsedTime} from '../app/Util';
-import {isAssetGroup} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
@@ -69,7 +69,7 @@ export const RunRoot = () => {
             run ? (
               <>
                 <RunStatusTag status={run.status} />
-                {isAssetGroup(run.pipelineName) ? (
+                {isHiddenAssetGroupJob(run.pipelineName) ? (
                   <RunAssetKeyTags assetKeys={assetKeysForRun(run)} clickableTags />
                 ) : (
                   <>

@@ -10,8 +10,10 @@ from dagster_aws.ecs.launcher import RUNNING_STATUSES, STOPPED_STATUSES
 from dagster_aws.ecs.tasks import TaskMetadata
 
 from dagster._check import CheckError
+from dagster.core.code_pointer import FileCodePointer
 from dagster.core.events import MetadataEntry
 from dagster.core.launcher.base import WorkerStatus
+from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 
 
 @pytest.mark.parametrize("task_long_arn_format", ["enabled", "disabled"])
@@ -149,12 +151,19 @@ def test_task_definition_registration(
 def test_reuse_task_definition(instance):
     image = "image"
     secrets = []
+    environment = [
+        {
+            "name": "MY_ENV_VAR",
+            "value": "MY_VALUE",
+        }
+    ]
     original_task_definition = {
         "containerDefinitions": [
             {
                 "image": image,
                 "name": instance.run_launcher.container_name,
                 "secrets": secrets,
+                "environment": environment,
             },
         ],
     }
@@ -169,47 +178,61 @@ def test_reuse_task_definition(instance):
 
     # The same task definition passes
     task_definition = copy.deepcopy(original_task_definition)
-    assert instance.run_launcher._reuse_task_definition(task_definition, metadata, image, secrets)
+    assert instance.run_launcher._reuse_task_definition(
+        task_definition, metadata, image, secrets, environment
+    )
 
     # Changed image fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["image"] = "new-image"
     assert not instance.run_launcher._reuse_task_definition(
-        task_definition, metadata, image, secrets
+        task_definition, metadata, image, secrets, environment
     )
 
     # Changed container name fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["name"] = "new-container"
     assert not instance.run_launcher._reuse_task_definition(
-        task_definition, metadata, image, secrets
+        task_definition, metadata, image, secrets, environment
     )
 
     # Changed secrets fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["secrets"].append("new-secrets")
     assert not instance.run_launcher._reuse_task_definition(
-        task_definition, metadata, image, secrets
+        task_definition, metadata, image, secrets, environment
+    )
+
+    # Changed environment fails
+
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][0]["environment"].append(
+        {"name": "MY_ENV_VAR", "value": "MY_ENV_VALUE"}
+    )
+    assert not instance.run_launcher._reuse_task_definition(
+        task_definition, metadata, image, secrets, environment
     )
 
     # Changed execution role fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["executionRoleArn"] = "new-role"
     assert not instance.run_launcher._reuse_task_definition(
-        task_definition, metadata, image, secrets
+        task_definition, metadata, image, secrets, environment
     )
 
     # Changed task role fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["taskRoleArn"] = "new-role"
     assert not instance.run_launcher._reuse_task_definition(
-        task_definition, metadata, image, secrets
+        task_definition, metadata, image, secrets, environment
     )
 
     # Any other diff passes
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["somethingElse"] = "boom"
-    assert instance.run_launcher._reuse_task_definition(task_definition, metadata, image, secrets)
+    assert instance.run_launcher._reuse_task_definition(
+        task_definition, metadata, image, secrets, environment
+    )
 
 
 def test_launching_custom_task_definition(
@@ -415,3 +438,34 @@ def test_status(ecs, instance, workspace, run):
 
     task["lastStatus"] = "foo"
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.UNKNOWN
+
+
+def test_overrides_too_long(
+    instance,
+    workspace,
+    pipeline,
+    external_pipeline,
+):
+
+    large_container_context = {i: "boom" for i in range(10000)}
+
+    mock_pipeline_code_origin = PipelinePythonOrigin(
+        pipeline_name="test",
+        repository_origin=RepositoryPythonOrigin(
+            executable_path="/",
+            code_pointer=FileCodePointer(
+                python_file="foo.py",
+                fn_name="foo",
+            ),
+            container_image="test:latest",
+            container_context=large_container_context,
+        ),
+    )
+
+    run = instance.create_run_for_pipeline(
+        pipeline,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=mock_pipeline_code_origin,
+    )
+
+    instance.launch_run(run.run_id, workspace)
