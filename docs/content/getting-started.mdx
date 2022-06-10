@@ -105,8 +105,9 @@ You can also use the [Dagster Python API](/concepts/ops-jobs-graphs/job-executio
 
 Add a few lines to `cereal.py`, which executes a run within the Python process:
 
-```python file=/intro_tutorial/basics/materialize_cereal.py
+```python file=/intro_tutorial/basics/materialize_cereal.py startafter=start_example endbefore=end_example
 from dagster import materialize
+
 
 if __name__ == "__main__":
     materialize([cereals, nabisco_cereals])
