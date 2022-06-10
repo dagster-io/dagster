@@ -19,6 +19,12 @@ class AssetSelection(ABC):
         return AllAssetSelection()
 
     @staticmethod
+    def assets(*assets_defs: AssetsDefinition) -> "KeysAssetSelection":
+        return KeysAssetSelection(
+            *(key for assets_def in assets_defs for key in assets_def.asset_keys)
+        )
+
+    @staticmethod
     def keys(*asset_keys: CoerceableToAssetKey) -> "KeysAssetSelection":
         _asset_keys = [AssetKey.from_coerceable(key) for key in asset_keys]
         return KeysAssetSelection(*_asset_keys)
