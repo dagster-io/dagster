@@ -5,6 +5,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Mapping,
     Optional,
     Sequence,
     Set,
@@ -47,7 +48,7 @@ class _Op:
         decorator_takes_context: Optional[bool] = True,
         retry_policy: Optional[RetryPolicy] = None,
         ins: Optional[Dict[str, In]] = None,
-        out: Optional[Union[Out, Dict[str, Out]]] = None,
+        out: Optional[Union[Out, Mapping[str, Out]]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.input_defs = check.opt_nullable_sequence_param(
@@ -141,14 +142,14 @@ class _Op:
 
 
 def _resolve_output_defs_from_outs(
-    inferred_out: InferredOutputProps, out: Optional[Union[Out, dict]]
+    inferred_out: InferredOutputProps, out: Optional[Union[Out, Mapping]]
 ) -> Optional[List[OutputDefinition]]:
     if out is None:
         return None
     if isinstance(out, Out):
         return [out.to_definition(inferred_out.annotation, name=None)]
     else:
-        check.dict_param(out, "out", key_type=str, value_type=Out)
+        check.mapping_param(out, "out", key_type=str, value_type=Out)
 
         # If only a single entry has been provided to the out dict, then slurp the
         # annotation into the entry.
@@ -206,7 +207,7 @@ def op(
     name: Optional[Union[Callable[..., Any], str]] = None,
     description: Optional[str] = None,
     ins: Optional[Dict[str, In]] = None,
-    out: Optional[Union[Out, Dict[str, Out]]] = None,
+    out: Optional[Union[Out, Mapping[str, Out]]] = None,
     config_schema: Optional[ConfigSchemaType] = None,
     required_resource_keys: Optional[Set[str]] = None,
     tags: Optional[Dict[str, Any]] = None,

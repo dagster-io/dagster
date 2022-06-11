@@ -1,5 +1,6 @@
 from .asset_group import AssetGroup
 from .asset_in import AssetIn
+from .asset_out import AssetOut
 from .asset_selection import AssetSelection
 from .assets import AssetsDefinition
 from .assets_job import build_assets_job
