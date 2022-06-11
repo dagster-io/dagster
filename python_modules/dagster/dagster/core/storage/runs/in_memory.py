@@ -48,7 +48,8 @@ def build_run_filter(filters: Optional[RunsFilter]) -> Callable[[PipelineRun], b
             return False
 
         if filters.tags and not all(
-            run.tags.get(key) == value for key, value in filters.tags.items()
+            (run.tags.get(key) == value if isinstance(value, str) else run.tags.get(key) in value)
+            for key, value in filters.tags.items()
         ):
             return False
 
