@@ -1,20 +1,13 @@
 ---
-title: Graphs
+title: Graphs | Dagster
 description: TODO
 ---
 
 # Graphs
 
-A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-graphs. Graphs form the core of [jobs](/concepts/ops-jobs-graphs/jobs).
+A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-graphs. While each op should perform a relatively simple task, a collection of ops can be assembled into a graph to accomplish complex tasks.
 
-<!-- 
-
-- Input/output?
-- Config?
-- Resources?
-- Factories?
-
- -->
+Graphs form the core of [jobs](/concepts/ops-jobs-graphs/jobs).
 
 ---
 
@@ -24,48 +17,75 @@ A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-g
 | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject module="dagster" object="graph" decorator /> | The decorator used to define a graph, which can form the basis for multiple jobs.                                                                                                                                             |
 | <PyObject module="dagster" object="GraphDefinition" /> | A graph definition, which is a set of ops (or [sub-graphs](/concepts/ops-jobs-graphs/nesting-graphs)) wired together. Forms the core of a job. Typically constructed using the <PyObject object="job" decorator /> decorator. |
-|                                              |                                                                                                                                                                                                                               |
+|                                                        |                                                                                                                                                                                                                               |
 
 ---
 
 ## Creating graphs
 
+- [Using the @graph decorator](#using-the-graph-decorator)
+- [To back assets](#to-back-assets)
+- [With graph patterns](#with-graph-patterns)
+
 ### Using the @graph decorator
+
+To create a graph, use the <PyObject module="dagster" object="graph" decorator /> decorator.
+
+In the following example, we return one output from the root op (`return_one`) and pass data along through single inputs and outputs:
+
+```python file=/concepts/ops_jobs_graphs/graphs/linear_graph.py startafter=start_marker endbefore=end_marker
+from dagster import graph, op
+
+
+@op
+def return_one(context) -> int:
+    return 1
+
+
+@op
+def add_one(context, number: int) -> int:
+    return number + 1
+
+
+@graph
+def linear():
+    add_one(add_one(add_one(return_one())))
+```
 
 ### To back assets
 
 [TODO](/concepts/assets/software-defined-assets#graph-backed-assets)
 
-### Complex graphs
+### With graph patterns
 
-This section covers a few basic patterns you can use to build more complex graphs:
+Need some inspiration? Using these patterns, you can build graphs:
 
-- [That use the same op twice]()
-- [With multiple inputs]()
-- [With conditional branching]()
-- [With a fixed fan-in]()
-- [That contain other graphs]()
-- [That use dynamic outputs]()
+- [That re-use ops](#that-re-use-ops)
+- [With multiple inputs](#with-multiple-inputs)
+- [With conditional branching](#with-conditional-branching)
+- [With a fixed fan-in](#with-a-fixed-fan-in)
+- [That contain other graphs](#that-contain-other-graphs)
+- [That use dynamic outputs](#that-use-dynamic-outputs)
 
-#### That use the same op twice
+#### That re-use ops
 
-You can use the same op definition multiple times in the same graph/job.
+You can use the same op definition multiple times in the same graph. Note that this approach can also apply to [jobs](/concepts/ops-jobs-graphs/jobs).
 
-```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_multiple_usage_pipeline endbefore=end_multiple_usage_pipeline
-@job
+```python file=/concepts/ops_jobs_graphs/graphs/graphs.py startafter=start_multiple_usage_graph endbefore=end_multiple_usage_graph
+@graph
 def multiple_usage():
     add_one(add_one(return_one()))
 ```
 
 To differentiate between the two invocations of `add_one`, Dagster automatically aliases the op names to be `add_one` and `add_one_2`.
 
-You can also manually define the alias by using the `.alias` method on the op invocation.
+You can also manually define the alias by using the `.alias` method on the op invocation:
 
-```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_alias_pipeline endbefore=end_alias_pipeline
-@job
+```python file=/concepts/ops_jobs_graphs/graphs/graphs.py startafter=start_alias_graph endbefore=end_alias_graph
+@graph
 def alias():
     add_one.alias("second_addition")(add_one(return_one()))
-``` 
+```
 
 #### With multiple inputs
 
@@ -76,10 +96,10 @@ width={1000}
 height={250}
 />
 
-A single output can be passed to multiple inputs on downstream ops. In this example, the output from the first op is passed to two different ops. The outputs of those ops are combined and passed to the final op.
+A single output can be passed to multiple inputs on downstream ops. In this example, the output from the first op is passed to two different ops. The outputs of those ops are combined and passed to the final op:
 
-```python file=/concepts/ops_jobs_graphs/multiple_io_job.py startafter=start_marker endbefore=end_marker
-from dagster import job, op
+```python file=/concepts/ops_jobs_graphs/graphs/multiple_io_graph.py startafter=start_marker endbefore=end_marker
+from dagster import graph, op
 
 
 @op
@@ -97,7 +117,7 @@ def adder(context, a: int, b: int) -> int:
     return a + b
 
 
-@job
+@graph
 def inputs_and_outputs():
     value = return_one()
     a = add_one(value)
@@ -114,14 +134,14 @@ width={1000}
 height={250}
 />
 
-An op only starts to execute once all of its inputs have been resolved. We can use this behavior to model conditional execution of ops.
+As an op only starts to execute once all its inputs have been resolved, you can use this behavior to model conditional execution.
 
-In this example, the `branching_op` outputs either the `branch_1` result or `branch_2` result. Since op execution is skipped for ops that have unresolved inputs, only one of the downstream ops will execute.
+In this example, the `branching_op` outputs either the `branch_1` result or `branch_2` result. Since op execution is skipped for ops that have unresolved inputs, only one of the downstream ops will execute:
 
-```python file=/concepts/ops_jobs_graphs/branching_job.py startafter=start_marker endbefore=end_marker
+```python file=/concepts/ops_jobs_graphs/graphs/branching_graph.py startafter=start_marker endbefore=end_marker
 import random
 
-from dagster import Out, Output, job, op
+from dagster import Out, Output, graph, op
 
 
 @op(out={"branch_1": Out(is_required=False), "branch_2": Out(is_required=False)})
@@ -143,14 +163,14 @@ def branch_2_op(_input):
     pass
 
 
-@job
+@graph
 def branching():
     branch_1, branch_2 = branching_op()
     branch_1_op(branch_1)
     branch_2_op(branch_2)
 ```
 
-When using conditional branching, <PyObject object="Output" /> objects must be yielded instead of returned.
+**Note**: When using conditional branching, <PyObject object="Output" /> objects must be yielded instead of returned.
 
 #### With a fixed fan-in
 
@@ -161,14 +181,14 @@ width={1000}
 height={250}
 />
 
-If you have a fixed set of op that all return the same output type, you can collect all the outputs into a list and pass them into a single downstream op.
+If you have a fixed set of ops that all return the same output type, you can collect the outputs into a list and pass them into a single downstream op.
 
-The downstream op executes only if all of the outputs were successfully created by the upstream op.
+The downstream op executes only if all of the outputs were successfully created by the upstream op:
 
-```python file=/concepts/ops_jobs_graphs/fan_in_job.py startafter=start_marker endbefore=end_marker
+```python file=/concepts/ops_jobs_graphs/graphs/fan_in_graph.py startafter=start_marker endbefore=end_marker
 from typing import List
 
-from dagster import job, op
+from dagster import graph, op
 
 
 @op
@@ -181,7 +201,7 @@ def sum_fan_in(nums: List[int]) -> int:
     return sum(nums)
 
 
-@job
+@graph
 def fan_in():
     fan_outs = []
     for i in range(0, 10):
@@ -195,7 +215,7 @@ In this example, we have 10 ops that all output the number `1`. The `sum_fan_in`
 
 [Nesting graphs](/concepts/ops-jobs-graphs/nesting-graphs)
 
-#### That use dynamic outputs
+#### Using dynamic outputs
 
 [Dynamic graphs](/concepts/ops-jobs-graphs/dynamic-graphs)
 
@@ -208,38 +228,7 @@ In this example, we have 10 ops that all output the number `1`. The `sum_fan_in`
 
 ### Defining dependencies
 
-- [Linear dependencies]()
 - [Nothing dependencies]()
-
-#### Linear dependencies
-
-The simplest graph structure is the linear graph. We return one output from the root op, and pass along data through single inputs and outputs.
-
-<Image
-alt="Linear Graph"
-src="/images/concepts/pipelines/linear.png"
-width={1000}
-height={250}
-/>
-
-```python file=/concepts/ops_jobs_graphs/linear_job.py startafter=start_marker endbefore=end_marker
-from dagster import job, op
-
-
-@op
-def return_one(context) -> int:
-    return 1
-
-
-@op
-def add_one(context, number: int) -> int:
-    return number + 1
-
-
-@job
-def linear():
-    add_one(add_one(add_one(return_one())))
-```
 
 #### Nothing dependencies
 
@@ -247,10 +236,10 @@ Dependencies in Dagster are primarily _data dependencies_. Using data dependenci
 
 If you have an op, say `Op A`, that does not depend on any outputs of another op, say `Op B`, there theoretically shouldn't be a reason for `Op A` to run after `Op B`. In most cases, these two ops should be parallelizable. However, there are some cases where an explicit ordering is required, but it doesn't make sense to pass data through inputs and outputs to model the dependency.
 
-If you need to model an explicit ordering dependency, you can use the <PyObject object="Nothing"/> Dagster type on the input definition of the downstream op. This type specifies that you are passing "nothing" via Dagster between the ops, while still uses inputs and outputs to model the dependency between the two ops.
+If you need to model an explicit ordering dependency, you can use the <PyObject object="Nothing"/> Dagster type on the input definition of the downstream op. This type specifies that you are passing "nothing" via Dagster between the ops, while still using inputs and outputs to model the dependency between the two ops.
 
-```python file=/concepts/ops_jobs_graphs/order_based_dependency_job.py startafter=start_marker endbefore=end_marker
-from dagster import In, Nothing, job, op
+```python file=/concepts/ops_jobs_graphs/graphs/order_based_dependency.py startafter=start_marker endbefore=end_marker
+from dagster import In, Nothing, graph, op
 
 
 @op
@@ -265,7 +254,7 @@ def create_table_2():
     get_database_connection().execute("create table_2 as select * from table_1")
 
 
-@job
+@graph
 def nothing_dependency():
     create_table_2(start=create_table_1())
 ```
@@ -276,7 +265,7 @@ In this example, `create_table_2` has an input of type `Nothing` meaning that it
 
 Note that in most cases, it is usually possible to pass some data dependency. In the example above, even though we probably don't want to pass the table data itself between the ops, we could pass table pointers. For example, `create_table_1` could return a `table_pointer` output of type `str` with a value of `table_1`, and this table name can be used in `create_table_2` to more accurately model the data dependency.
 
-Dagster also provides more advanced abstractions to handle dependencies and IO. If you find that you are finding it difficult to model data dependencies when using external storages, check out [IOManagers](/concepts/io-management/io-managers).
+Dagster also provides more advanced abstractions to handle dependencies and IO. If you find that you are finding it difficult to model data dependencies when using external storage, check out [IO managers](/concepts/io-management/io-managers).
 
 ### Constructing dependencies
 
