@@ -369,15 +369,15 @@ Still not sure how software-defined assets fit into your current Dagster usage? 
 
 ### Ops and graphs
 
-| Without software-defined assets                                                                                | With software-defined assets                                                                   |
-| -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| An [op](/concepts/ops-jobs-graphs/ops) is the basic unit of computation                                        | Every software-defined asset includes a graph or an op                                         |
+| Without software-defined assets                                                                           | With software-defined assets                                                                   |
+| --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| An [op](/concepts/ops-jobs-graphs/ops) is the basic unit of computation                                   | Every software-defined asset includes a graph or an op                                         |
 | A [graph](/concepts/ops-jobs-graphs/graphs) is a composite unit of computation that connects multiple ops | Every software-defined asset includes a graph or an op                                         |
-| Ops can have multiple outputs                                                                                  | Multiple assets can be produced by a single op when defined using the `@multi_asset` decorator |
-| Ops can use [config](/concepts/ops-jobs-graphs/ops#op-configuration)                                           | Assets can use [config](/concepts/assets/software-defined-assets)                              |
-| Ops can access <PyObject object="OpExecutionContext" />                                                        | Assets can access <PyObject object="OpExecutionContext" />                                     |
-| Ops can require resources                                                                                      | Software-defined assets can require resources                                                  |
-| Ops can be tested by directly invoking them                                                                    | Assets can be tested by directly invoking them                                                 |
+| Ops can have multiple outputs                                                                             | Multiple assets can be produced by a single op when defined using the `@multi_asset` decorator |
+| Ops can use [config](/concepts/ops-jobs-graphs/ops#op-configuration)                                      | Assets can use [config](/concepts/assets/software-defined-assets)                              |
+| Ops can access <PyObject object="OpExecutionContext" />                                                   | Assets can access <PyObject object="OpExecutionContext" />                                     |
+| Ops can require resources                                                                                 | Software-defined assets can require resources                                                  |
+| Ops can be tested by directly invoking them                                                               | Assets can be tested by directly invoking them                                                 |
 
 ### Jobs
 
