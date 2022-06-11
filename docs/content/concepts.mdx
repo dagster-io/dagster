@@ -26,28 +26,14 @@ Each page in this section contains:
     Ops, Jobs, and Graphs are the building blocks of Dagster code. This section
     covers how to define and use both ops and jobs.
   </LinkGridItem>
-  <LinkGridItem title="Resources" href="/concepts/resources">
-    Resources enable you to separate logic from its heavyweight external
-    dependencies. This makes testing and developing data jobs possible in
-    various environments.
-  </LinkGridItem>
-  <LinkGridItem title="Testing" href="/concepts/testing">
-    Dagster enables you to build testable and maintainable data applications.
-    This section shows that Dagster enables you to unit-test your data jobs,
-    separate business logic from external dependencies, and run data quality
-    tests.
-  </LinkGridItem>
   <LinkGridItem
-    title="Configuration System"
-    href="/concepts/configuration/config-schema"
+    title="Schedules, Sensors, and Partitions"
+    href="/concepts/partitions-schedules-sensors/schedules"
   >
-    Dagster provides a configuration system that allows you to document,
-    schematize, and error-check your configuration. This section demonstrates
-    how configurations work with different Dagster entities.
-  </LinkGridItem>
-  <LinkGridItem title="Dagster Types" href="/concepts/types">
-    Dagster includes gradual, opt-in typing for the inputs and outputs of ops.
-    This section explains how to define, use, and test types in Dagster.
+    Schedulers can launch runs on a fixed interval, while sensors allow you to
+    run based on any external state change. This section demonstrates how to
+    define them and their convenient capabilities like partitioning and
+    backfilling.
   </LinkGridItem>
   <LinkGridItem
     title="IO Management"
@@ -58,10 +44,13 @@ Each page in this section contains:
     management and shows how to define and use IO managers and other IO-related
     features.
   </LinkGridItem>
-  <LinkGridItem title="Dagit & GraphQL API" href="/concepts/dagit/dagit">
-    Dagit is a web-based interface for viewing and interacting with Dagster
-    objects. This section walks you through Dagit's functionalities and the
-    GraphQL API used to interact with Dagster programatically.
+  <LinkGridItem
+    title="Configuration"
+    href="/concepts/configuration/config-schema"
+  >
+    Dagster provides a configuration system that allows you to document,
+    schematize, and error-check your configuration. This section demonstrates
+    how configurations work with different Dagster entities.
   </LinkGridItem>
   <LinkGridItem
     title="Repositories and Workspaces"
@@ -72,18 +61,29 @@ Each page in this section contains:
     workspaces to load user code. This section shows how to define and when to
     use repositories and workspaces.
   </LinkGridItem>
-  <LinkGridItem
-    title="Schedules, Sensors, and Partitions"
-    href="/concepts/partitions-schedules-sensors/schedules"
-  >
-    Schedulers can launch runs on a fixed interval, while sensors allow you to
-    run based on any external state change. This section demonstrates how to
-    define them and their convenient capabilities like partitioning and
-    backfilling.
+  <LinkGridItem title="Resources" href="/concepts/resources">
+    Resources enable you to separate logic from its heavyweight external
+    dependencies. This makes testing and developing data jobs possible in
+    various environments.
+  </LinkGridItem>
+  <LinkGridItem title="Dagit & GraphQL API" href="/concepts/dagit/dagit">
+    Dagit is a web-based interface for viewing and interacting with Dagster
+    objects. This section walks you through Dagit's functionalities and the
+    GraphQL API used to interact with Dagster programatically.
+  </LinkGridItem>
+  <LinkGridItem title="Dagster Types" href="/concepts/types">
+    Dagster includes gradual, opt-in typing for the inputs and outputs of ops.
+    This section explains how to define, use, and test types in Dagster.
   </LinkGridItem>
   <LinkGridItem title="Logging" href="/concepts/logging/loggers">
     Dagster includes a rich and extensible logging system. This section
     showcases Dagster's built-in logger and shows how you can customize loggers
     to fit your logging and monitoring infrastructure.
+  </LinkGridItem>
+  <LinkGridItem title="Testing" href="/concepts/testing">
+    Dagster enables you to build testable and maintainable data applications.
+    This section shows that Dagster enables you to unit-test your data jobs,
+    separate business logic from external dependencies, and run data quality
+    tests.
   </LinkGridItem>
 </LinkGrid>
