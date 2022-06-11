@@ -1,4 +1,3 @@
-from distutils.command.build import build
 from unittest import mock
 
 from pandas import DataFrame
@@ -12,7 +11,6 @@ from dagster import (
     asset,
     build_assets_job,
     repository,
-    GraphIn,
     GraphOut,
     Out,
     Output,
