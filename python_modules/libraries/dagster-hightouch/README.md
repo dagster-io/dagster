@@ -4,4 +4,10 @@
 
 A Dagster library for triggering syncs in Hightouch.
 
-Details to come! 
+TODO: Write a README.
+
+```
+run_ht_sync_accounts = hightouch_sync_op.configured(
+    {"sync_id": 1234}, name="hightouch_sfdc_contacts"
+)
+```
