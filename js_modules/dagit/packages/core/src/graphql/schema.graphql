@@ -69,7 +69,7 @@ type DagitQuery {
     cursor: String
     limit: Int
   ): PartitionBackfillsOrError!
-  permissions: [GraphenePermission!]!
+  permissions: [Permission!]!
   assetsLatestInfo(assetKeys: [AssetKeyInput!]!): [AssetLatestInfo!]!
   logsForRun(runId: ID!, afterCursor: String, limit: Int): EventConnectionOrError!
 }
@@ -1967,7 +1967,7 @@ type PartitionBackfills {
   results: [PartitionBackfill!]!
 }
 
-type GraphenePermission {
+type Permission {
   permission: String!
   value: Boolean!
 }
