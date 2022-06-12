@@ -123,6 +123,8 @@ class GrapheneSensorsOrError(graphene.Union):
 
 
 class GrapheneStartSensorMutation(graphene.Mutation):
+    """Enable a sensor to launch runs for a job based on external state change."""
+
     Output = graphene.NonNull(GrapheneSensorOrError)
 
     class Arguments:
@@ -160,6 +162,8 @@ class GrapheneStopSensorMutationResultOrError(graphene.Union):
 
 
 class GrapheneStopSensorMutation(graphene.Mutation):
+    """Disable a sensor from launching runs for a job."""
+
     Output = graphene.NonNull(GrapheneStopSensorMutationResultOrError)
 
     class Arguments:
@@ -176,6 +180,8 @@ class GrapheneStopSensorMutation(graphene.Mutation):
 
 
 class GrapheneSetSensorCursorMutation(graphene.Mutation):
+    """Set a cursor for a sensor to track state across evaluations."""
+
     Output = graphene.NonNull(GrapheneSensorOrError)
 
     class Arguments:
