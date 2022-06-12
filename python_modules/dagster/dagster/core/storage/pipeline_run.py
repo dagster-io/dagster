@@ -61,16 +61,33 @@ class DagsterRunStatusSerializer(EnumSerializer):
 
 @whitelist_for_serdes(serializer=DagsterRunStatusSerializer)
 class DagsterRunStatus(Enum):
-    """The status of pipeline execution."""
+    """The status of run execution."""
 
+    # Runs waiting to be launched by the Dagster Daemon.
     QUEUED = "QUEUED"
+
+    # Runs that have been launched, but execution has not yet started."""
     NOT_STARTED = "NOT_STARTED"
+
+    # Runs that are managed outside of the Dagster control plane.
     MANAGED = "MANAGED"
+
+    # Runs that have been launched, but execution has not yet started.
     STARTING = "STARTING"
+
+    # Runs that have been launched and execution has started.
     STARTED = "STARTED"
+
+    # Runs that have successfully completed.
     SUCCESS = "SUCCESS"
+
+    # Runs that have failed to complete.
     FAILURE = "FAILURE"
+
+    # Runs that are in-progress and pending to be canceled.
     CANCELING = "CANCELING"
+
+    # Runs that have been canceled before completion.
     CANCELED = "CANCELED"
 
 

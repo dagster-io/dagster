@@ -589,15 +589,53 @@ type RepositoryMetadata {
   value: String!
 }
 
+"""
+The status of run execution.
+"""
 enum RunStatus {
+  """
+  Runs waiting to be launched by the Dagster Daemon.
+  """
   QUEUED
+
+  """
+  Runs that have been created, but not yet submitted for launch.
+  """
   NOT_STARTED
+
+  """
+  Runs that are managed outside of the Dagster control plane.
+  """
   MANAGED
+
+  """
+  Runs that have been launched, but execution has not yet started.
+  """
   STARTING
+
+  """
+  Runs that have been launched and execution has started.
+  """
   STARTED
+
+  """
+  Runs that have successfully completed.
+  """
   SUCCESS
+
+  """
+  Runs that have failed to complete.
+  """
   FAILURE
+
+  """
+  Runs that are in-progress and pending to be canceled.
+  """
   CANCELING
+
+  """
+  Runs that have been canceled before completion.
+  """
   CANCELED
 }
 
