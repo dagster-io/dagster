@@ -2579,9 +2579,23 @@ type LogTelemetrySuccess {
   action: String!
 }
 
+"""
+The root for all subscriptions to retrieve real-time data from the Dagster instance.
+"""
 type DagitSubscription {
+  """
+  Retrieve real-time event logs after applying a filter on run id and cursor.
+  """
   pipelineRunLogs(runId: ID!, cursor: String): PipelineRunLogsSubscriptionPayload!
+
+  """
+  Retrieve real-time compute logs after applying a filter on run id, step name, log type, and cursor.
+  """
   computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
+
+  """
+  Retrieve real-time events when a location in the workspace undergoes a state change.
+  """
   locationStateChangeEvents: LocationStateChangeSubscription!
 }
 
