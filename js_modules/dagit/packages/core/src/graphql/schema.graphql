@@ -4,44 +4,146 @@ schema {
   subscription: DagitSubscription
 }
 
+"""
+The root for all queries to retrieve data from the Dagster instance.
+"""
 type DagitQuery {
+  """
+  Retrieve the version of Dagster running in the Dagster deployment.
+  """
   version: String!
+
+  """
+  Retrieve all the repositories.
+  """
   repositoriesOrError(repositorySelector: RepositorySelector): RepositoriesOrError!
+
+  """
+  Retrieve a repository by its location name and repository name.
+  """
   repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
+
+  """
+  Retrieve the workspace and its locations.
+  """
   workspaceOrError: WorkspaceOrError!
+
+  """
+  Retrieve a job by its location name, repository name, and job name.
+  """
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
+
+  """
+  Retrieve a job snapshot by its id or location name, repository name, and job name.
+  """
   pipelineSnapshotOrError(
     snapshotId: String
     activePipelineSelector: PipelineSelector
   ): PipelineSnapshotOrError!
+
+  """
+  Retrieve a graph by its location name, repository name, and graph name.
+  """
   graphOrError(selector: GraphSelector): GraphOrError!
+
+  """
+  Retrieve the name of the scheduler running in the Dagster deployment.
+  """
   scheduler: SchedulerOrError!
+
+  """
+  Retrieve a schedule by its location name, repository name, and schedule name.
+  """
   scheduleOrError(scheduleSelector: ScheduleSelector!): ScheduleOrError!
+
+  """
+  Retrieve all the schedules.
+  """
   schedulesOrError(repositorySelector: RepositorySelector!): SchedulesOrError!
+
+  """
+  Retrieve a sensor by its location name, repository name, and sensor name.
+  """
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
+
+  """
+  Retrieve all the sensors.
+  """
   sensorsOrError(repositorySelector: RepositorySelector!): SensorsOrError!
+
+  """
+  Retrieve the state for a schedule or sensor by its location name, repository name, and schedule/sensor name.
+  """
   instigationStateOrError(instigationSelector: InstigationSelector!): InstigationStateOrError!
+
+  """
+  Retrieve the running schedules and sensors that are missing from the workspace.
+  """
   unloadableInstigationStatesOrError(instigationType: InstigationType): InstigationStatesOrError!
+
+  """
+  Retrieve the partition sets for a job by its location name, repository name, and job name.
+  """
   partitionSetsOrError(
     repositorySelector: RepositorySelector!
     pipelineName: String!
   ): PartitionSetsOrError!
+
+  """
+  Retrieve a partition set by its location name, repository name, and partition set name.
+  """
   partitionSetOrError(
     repositorySelector: RepositorySelector!
     partitionSetName: String
   ): PartitionSetOrError!
+
+  """
+  Retrieve runs after applying a filter, cursor, and limit.
+  """
   pipelineRunsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
+
+  """
+  Retrieve a run by its run id.
+  """
   pipelineRunOrError(runId: ID!): RunOrError!
+
+  """
+  Retrieve runs after applying a filter, cursor, and limit.
+  """
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
+
+  """
+  Retrieve a run by its run id.
+  """
   runOrError(runId: ID!): RunOrError!
+
+  """
+  Retrieve all the distinct key-value tags from all runs.
+  """
   pipelineRunTags: [PipelineTagAndValues!]!
+
+  """
+  Retrieve a group of runs with the matching root run id.
+  """
   runGroupOrError(runId: ID!): RunGroupOrError!
+
+  """
+  Retrieve groups of runs after applying a filter, cursor, and limit.
+  """
   runGroupsOrError(filter: RunsFilter, cursor: String, limit: Int): RunGroupsOrError!
+
+  """
+  Retrieve whether the run configuration is valid or invalid.
+  """
   isPipelineConfigValid(
     pipeline: PipelineSelector!
     runConfigData: RunConfigData
     mode: String!
   ): PipelineConfigValidationResult!
+
+  """
+  Retrieve the execution plan for a job and its run configuration.
+  """
   executionPlanOrError(
     pipeline: PipelineSelector!
     runConfigData: RunConfigData
@@ -49,28 +151,67 @@ type DagitQuery {
   ): ExecutionPlanOrError!
 
   """
-  Fetch an environment schema given an execution selection and a mode.
-          See the descripton on RunConfigSchema for more information.
+  Retrieve the run configuration schema for a job.
   """
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
+
+  """
+  Retrieve the instance configuration for the Dagster deployment.
+  """
   instance: Instance!
+
+  """
+  Retrieve assets after applying a prefix filter, cursor, and limit.
+  """
   assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
+
+  """
+  Retrieve an asset by asset key.
+  """
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
+
+  """
+  Retrieve asset nodes after applying a filter on asset group, job, and asset keys.
+  """
   assetNodes(
     group: AssetGroupSelector
     pipeline: PipelineSelector
     assetKeys: [AssetKeyInput!]
     loadMaterializations: Boolean = false
   ): [AssetNode!]!
+
+  """
+  Retrieve an asset node by asset key.
+  """
   assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
+
+  """
+  Retrieve a backfill by backfill id.
+  """
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
+
+  """
+  Retrieve backfills after applying a status filter, cursor, and limit.
+  """
   partitionBackfillsOrError(
     status: BulkActionStatus
     cursor: String
     limit: Int
   ): PartitionBackfillsOrError!
+
+  """
+  Retrieve the set of permissions for the Dagster deployment.
+  """
   permissions: [Permission!]!
+
+  """
+  Retrieve the latest materializations for a set of assets by asset keys.
+  """
   assetsLatestInfo(assetKeys: [AssetKeyInput!]!): [AssetLatestInfo!]!
+
+  """
+  Retrieve event logs after applying a run id filter, cursor, and limit.
+  """
   logsForRun(runId: ID!, afterCursor: String, limit: Int): EventConnectionOrError!
 }
 
