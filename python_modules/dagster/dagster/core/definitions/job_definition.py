@@ -431,8 +431,6 @@ class JobDefinition(PipelineDefinition):
         run_key: Optional[str],
         tags: Optional[Dict[str, str]] = None,
     ) -> RunRequest:
-        print(tags)
-        print(run_key)
         partition_set = self.get_partition_set_def()
         if not partition_set:
             check.failed("Called run_request_for_partition on a non-partitioned job")
