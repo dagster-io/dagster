@@ -13,6 +13,7 @@ import matter from "gray-matter";
 import mdx from "remark-mdx";
 import remark from "remark";
 
+const DAGSTER_DIR = path.resolve(__dirname, "../../..");
 const ROOT_DIR = path.resolve(__dirname, "../../");
 const DOCS_DIR = path.resolve(ROOT_DIR, "content");
 interface LinkElement extends Node {
@@ -91,6 +92,12 @@ test("No dead MDX links", async () => {
   expect(linkCount).toBeGreaterThan(0);
 
   expect(deadLinks).toEqual([]);
+});
+
+test("No dead GraphQL schema", async () => {
+  const graphqlSchemaExists = fileExists(path.resolve(DAGSTER_DIR, "js_modules/dagit/packages/core/src/graphql/schema.graphql"))
+
+  expect(graphqlSchemaExists).toBe(true);
 });
 
 function getMatchCandidates(targetPath: string): Array<string> {

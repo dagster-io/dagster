@@ -217,6 +217,14 @@
           {
             "title": "GraphQL Python Client",
             "path": "/concepts/dagit/graphql-client"
+          },
+          {
+            "title": "GraphQL Schema",
+            "pathTemplate": [
+              "https://github.com/dagster-io/dagster/blob/",
+              "/js_modules/dagit/packages/core/src/graphql/schema.graphql"
+            ],
+            "isExternalLink": true
           }
         ]
       },

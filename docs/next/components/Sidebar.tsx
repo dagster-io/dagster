@@ -187,23 +187,42 @@ const SecondaryNavigation = () => {
 };
 
 const ThirdLevelNavigation = ({ section }) => {
-  const { asPathWithoutAnchor } = useVersion();
+  const { version } = useVersion();
+  const path = section.pathTemplate
+    ? section.pathTemplate.join(version)
+    : section.path;
 
-  return (
-    <Link key={section.path} href={section.path}>
-      <a
-        className={cx(
-          "group flex items-center px-3 py-1 text-sm text-gray-700 rounded-md",
-          {
-            "hover:bg-lavender hover:bg-opacity-50 text-blurple":
-              section.path === asPathWithoutAnchor,
-            "hover:text-gray-900 hover:bg-lavender hover:bg-opacity-50":
-              section.path !== asPathWithoutAnchor,
+  const menuItem = (
+    <a
+      className={
+        "group flex justify-between items-center px-3 py-1 text-sm text-gray-700 rounded-md"
+      }
+      href={path}
+      target={section.isExternalLink ? "_blank" : "_self"}
+    >
+      <span>{section.title}</span>
+      {section.isExternalLink && (
+        <svg
+          className={
+            "mr-2 h-4 w-4 text-gray-400 transition flex-shrink-0 group-hover:text-gray-600"
           }
-        )}
-      >
-        <span>{section.title}</span>
-      </a>
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          {Icons["ExternalLink"]}
+        </svg>
+      )}
+    </a>
+  );
+
+  return section.isExternalLink || section.isUnversioned ? (
+    menuItem
+  ) : (
+    <Link key={path} href={path}>
+      {menuItem}
     </Link>
   );
 };
