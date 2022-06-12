@@ -54,9 +54,22 @@ def hightouch_sync_op(context):
         poll_interval=context.op_config["poll_interval"],
         poll_timeout=context.op_config["poll_timeout"],
     )
+    destination_type = hightouch_output.destination_details.get("type")
+    destination_slug = hightouch_output.destination_details.get("slug")
+    sync_object = hightouch_output.sync_details.get("configuration", dict()).get(
+        "object"
+    )
+    if sync_object:
+        asset_name = ["hightouch", destination_type, destination_slug, sync_object]
+    else:
+        # Not all sync configs have a sync configuration object. Until we have a
+        # generic way of fetching more details about the sync config, we omit them
+        # for now.
+        asset_name = ["hightouch", destination_type, destination_slug]
+
     context.log_event(
         AssetMaterialization(
-            ["hightouch", "sync_run"],
+            asset_name,
             description="Hightouch Sync Run Details",
             metadata=generate_metadata_from_parsed_run(
                 parse_sync_run_details(hightouch_output.sync_run_details)
