@@ -32,11 +32,13 @@ A software-defined asset includes the following:
 
 ## Defining assets
 
-Once you've defined a set of assets, you can:
+In this section, we'll walk you through the various ways you can define assets in Dagster:
 
-- [View them in Dagit](#viewing-assets-in-dagit).
-- [Materialize an ad-hoc set of them in Dagit](#materializing-assets-in-dagit).
-- [Build a job](#building-jobs-that-materialize-assets), which materializes a fixed selection of the assets, and can be put on a schedule or sensor.
+- [A basic software-defined asset](#a-basic-software-defined-asset)
+- [Assets with dependencies](#assets-with-dependencies)
+- [Using graphs](#graph-backed-assets)
+- [Assets that use context](#asset-context)
+- [Assets that use configuration](#asset-configuration)
 
 ### A basic software-defined asset
 
@@ -266,6 +268,13 @@ Refer to the [Config schema documentation](/concepts/configuration/config-schema
 ---
 
 ## Viewing and materializing assets in Dagit
+
+Once you've defined a set of assets, you can:
+
+- [Load them into Dagit](#loading-assets-into-dagit)
+- [View them in Dagit](#viewing-assets-in-dagit).
+- [Materialize an ad-hoc set of them in Dagit](#materializing-assets-in-dagit).
+- [Build a job](#building-jobs-that-materialize-assets), which materializes a fixed selection of the assets, and can be put on a schedule or sensor
 
 ### Loading assets into Dagit
 
