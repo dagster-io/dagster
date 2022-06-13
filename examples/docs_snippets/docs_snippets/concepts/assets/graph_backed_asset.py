@@ -4,17 +4,17 @@ from pandas import DataFrame
 
 from dagster import (
     AssetGroup,
+    AssetKey,
     AssetsDefinition,
-    ResourceDefinition,
-    graph,
-    op,
-    asset,
-    build_assets_job,
-    repository,
     GraphOut,
     Out,
     Output,
-    AssetKey,
+    ResourceDefinition,
+    asset,
+    build_assets_job,
+    graph,
+    op,
+    repository,
 )
 
 
@@ -115,7 +115,9 @@ two_assets = AssetsDefinition.from_graph(two_assets_graph)
 
 # end_basic_dependencies_2
 
-second_basic_deps_job = build_assets_job("second_basic_deps_job", [upstream_asset, two_assets])
+second_basic_deps_job = build_assets_job(
+    "second_basic_deps_job", [upstream_asset, two_assets]
+)
 
 # start_explicit_dependencies
 
@@ -129,12 +131,17 @@ def return_one_and_two(zero):
 explicit_deps_asset = AssetsDefinition.from_graph(
     return_one_and_two,
     asset_keys_by_input_name={"zero": AssetKey("upstream_asset")},
-    asset_keys_by_output_name={"one": AssetKey("asset_one"), "two": AssetKey("asset_two")},
+    asset_keys_by_output_name={
+        "one": AssetKey("asset_one"),
+        "two": AssetKey("asset_two"),
+    },
 )
 
 # end_explicit_dependencies
 
-explicit_deps_job = build_assets_job("explicit_deps_job", [upstream_asset, explicit_deps_asset])
+explicit_deps_job = build_assets_job(
+    "explicit_deps_job", [upstream_asset, explicit_deps_asset]
+)
 
 
 @repository
