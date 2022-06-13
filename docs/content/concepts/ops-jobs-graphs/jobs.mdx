@@ -67,7 +67,32 @@ When defining a job, you can provide [resources](/concepts/resources), [configur
 
 ### From assets
 
-<TODO />
+Jobs can materialize a fixed set of assets each time they run. Additionally, multiple jobs in the same repository can target overlapping sets of assets:
+
+```python file=/concepts/assets/build_job.py startafter=start_marker endbefore=end_marker
+from dagster import asset, define_asset_job, repository
+
+
+@asset
+def asset1():
+    return [1, 2, 3]
+
+
+@asset
+def asset2(asset1):
+    return asset1 + [4]
+
+
+all_assets_job = define_asset_job(name="all_assets_job")
+asset1_job = define_asset_job(name="asset1_job", selection="asset1")
+
+
+@repository
+def repo():
+    return [asset1, asset2, all_assets_job, asset1_job]
+```
+
+Like regular jobs, jobs that target assets can be placed on [schedules](/concepts/partitions-schedules-sensors/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors).
 
 ### From a graph
 

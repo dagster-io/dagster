@@ -443,32 +443,7 @@ local_assets = with_resources(
 
 ## Building jobs that materialize assets
 
-You can define a job that materializes a fixed selection of assets each time it runs. Multiple jobs within the same repository can target overlapping sets of assets.
-
-```python file=/concepts/assets/build_job.py startafter=start_marker endbefore=end_marker
-from dagster import asset, define_asset_job, repository
-
-
-@asset
-def asset1():
-    return [1, 2, 3]
-
-
-@asset
-def asset2(asset1):
-    return asset1 + [4]
-
-
-all_assets_job = define_asset_job(name="all_assets_job")
-asset1_job = define_asset_job(name="asset1_job", selection="asset1")
-
-
-@repository
-def repo():
-    return [asset1, asset2, all_assets_job, asset1_job]
-```
-
-Like regular jobs, asset jobs can be placed on [schedules](/concepts/partitions-schedules-sensors/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors).
+Jobs that target assets can materialize a fixed selection of assets each time they run and be placed on schedules and sensors. Refer to the [Jobs documentation](/concepts/ops-jobs-graphs/jobs#from-assets) for more info and examples.
 
 ## Testing
 
