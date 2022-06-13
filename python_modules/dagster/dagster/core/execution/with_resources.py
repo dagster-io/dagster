@@ -16,9 +16,13 @@ def with_resources(
     resource_defs: Mapping[str, ResourceDefinition],
     resource_config_by_key: Optional[Mapping[str, Any]] = None,
 ) -> Sequence[T]:
-    """Function that adds dagster resources to copies of resource-requiring dagster definitions.
+    """Adds dagster resources to copies of resource-requiring dagster definitions.
 
-    An error will be thrown if any provided definitions have a conflicting resource definition provided for a key provided to resource_defs. Resource config can be provided, with keys in the config dictionary corresponding to the keys for each resource definition. If any definition has unsatisfied resource keys after applying with_resources, an error will be thrown.
+    An error will be thrown if any provided definitions have a conflicting
+    resource definition provided for a key provided to resource_defs. Resource
+    config can be provided, with keys in the config dictionary corresponding to
+    the keys for each resource definition. If any definition has unsatisfied
+    resource keys after applying with_resources, an error will be thrown.
 
     Args:
         definitions (Iterable[ResourceAddable]): Dagster definitions to provide resources to.
