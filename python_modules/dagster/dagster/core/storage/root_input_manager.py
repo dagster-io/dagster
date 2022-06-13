@@ -8,7 +8,7 @@ from dagster.core.definitions.definition_config_schema import (
 )
 from dagster.core.definitions.resource_definition import ResourceDefinition, is_context_provided
 from dagster.core.storage.input_manager import InputManager
-from dagster.utils.backcompat import experimental
+from dagster.utils.backcompat import deprecation_warning, experimental
 
 from ..decorator_utils import get_function_params
 
@@ -140,6 +140,11 @@ def root_input_manager(
         def csv_loader(context):
             return read_csv(context.config["path"])
     """
+    deprecation_warning(
+        "root_input_manager",
+        "0.16.0",
+        additional_warn_txt="Use an InputManager instead.",
+    )
 
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
         return _InputManagerDecoratorCallable()(config_schema)

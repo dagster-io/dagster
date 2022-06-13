@@ -196,7 +196,7 @@ def get_inputs_field(
     for name, inp in solid.definition.input_dict.items():
         inp_handle = SolidInputHandle(solid, inp)
         has_upstream = input_has_upstream(dependency_structure, inp_handle, solid, name)
-        if inp.input_manager_key and has_upstream:
+        if inp.input_manager_key:
             input_field = get_input_manager_input_field(solid, inp, resource_defs)
         elif asset_layer.asset_key_for_input(handle, name) and not has_upstream:
             input_field = None

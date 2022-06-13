@@ -10,7 +10,7 @@ from dagster.core.types.dagster_type import (
     DagsterType,
     resolve_dagster_type,
 )
-from dagster.utils.backcompat import experimental_arg_warning
+from dagster.utils.backcompat import deprecation_warning, experimental_arg_warning
 
 from .inference import InferredInputProps
 from .utils import NoValueSentinel, check_valid_name
@@ -96,7 +96,17 @@ class InputDefinition:
         self._default_value = _check_default_value(self._name, self._dagster_type, default_value)
 
         if root_manager_key:
-            experimental_arg_warning("root_manager_key", "InputDefinition.__init__")
+            deprecation_warning(
+                "root_manager_key",
+                "0.16.0",
+                additional_warn_txt="Use an InputManager with input_manager_key instead.",
+            )
+
+        if root_manager_key and input_manager_key:
+            # TODO make real exception
+            raise Exception(
+                f"can't have both root input manager key {root_manager_key} and input manager key {input_manager_key} for input {name}"
+            )
 
         self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
 
@@ -404,6 +414,20 @@ class In(
         asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
         input_manager_key: Optional[str] = None,
     ):
+        if root_manager_key and input_manager_key:
+            # TODO make real exception
+
+            raise Exception(
+                f"can't have both root input manager key {root_manager_key} and input manager key {input_manager_key}"
+            )
+
+        if root_manager_key:
+            deprecation_warning(
+                "root_manager_key",
+                "0.16.0",
+                additional_warn_txt="Use an InputManager with input_manager_key instead.",
+            )
+
         return super(In, cls).__new__(
             cls,
             dagster_type=NoValueSentinel

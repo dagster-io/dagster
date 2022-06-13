@@ -6,6 +6,7 @@ from dagster import (
     DagsterInstance,
     DagsterInvalidDefinitionError,
     IOManager,
+    In,
     InputDefinition,
     MetadataEntry,
     ModeDefinition,
@@ -16,6 +17,8 @@ from dagster import (
     execute_pipeline,
     execute_solid,
     io_manager,
+    job,
+    op,
     pipeline,
     resource,
     root_input_manager,
@@ -23,6 +26,131 @@ from dagster import (
 )
 from dagster.core.definitions.events import Failure, RetryRequested
 from dagster.core.instance import InstanceRef
+
+### input manager tests
+
+
+def test_input_manager_override():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            assert False, "should not be called"
+
+    @io_manager
+    def my_io_manager():
+        return MyIOManager()
+
+    class MyInputManager(MyIOManager):
+        def load_input(self, context):
+            if context.upstream_output is None:
+                assert False, "upstream output should not be None"
+            else:
+                assert True, "should be called"
+                return 4
+
+    @io_manager
+    def my_input_manager():
+        return MyInputManager()
+
+    @op
+    def first_op():
+        return 1
+
+    @op(ins={"an_input": In(input_manager_key="my_input_manager")})
+    def second_op(an_input):
+        assert an_input == 4
+
+    @job(resource_defs={"io_manager": my_io_manager, "my_input_manager": my_input_manager})
+    def check_input_managers():
+        out = first_op()
+        second_op(out)
+
+    check_input_managers.execute_in_process()
+
+
+def test_input_manager_root_input():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            assert False, "should not be called"
+
+    @io_manager
+    def my_io_manager():
+        return MyIOManager()
+
+    class MyInputManager(MyIOManager):
+        def load_input(self, context):
+            if context.upstream_output is None:
+                assert True, "should be called"
+                return 4
+            else:
+                assert False, "upstream output should be None"
+
+    @io_manager
+    def my_input_manager():
+        return MyInputManager()
+
+    @op
+    def first_op():
+        return 1
+
+    @op(ins={"an_input": In(input_manager_key="my_input_manager")})
+    def second_op(an_input):
+        assert an_input == 4
+
+    @job(resource_defs={"io_manager": my_io_manager, "my_input_manager": my_input_manager})
+    def check_input_managers():
+        first_op()
+        second_op()
+
+    check_input_managers.execute_in_process()
+
+
+def test_root_input_and_input_managers():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            assert False, "should not be called"
+
+    @io_manager
+    def my_io_manager():
+        return MyIOManager()
+
+    class MyInputManager(MyIOManager):
+        def load_input(self, context):
+            if context.upstream_output is None:
+                return 4
+            else:
+                return 5
+
+    @io_manager
+    def my_input_manager():
+        return MyInputManager()
+
+    @root_input_manager
+    def my_loader(_):
+        return 6
+
+    with pytest.raises(Exception):
+
+        @op(
+            ins={
+                "an_input": In(
+                    input_manager_key="my_input_manager", root_manager_key="my_root_manager"
+                )
+            }
+        )
+        def first_op(an_input):
+            assert an_input == 4
+
+
+# ### root input manager tests (deprecate in 0.16.0)
 
 
 def test_validate_inputs():
