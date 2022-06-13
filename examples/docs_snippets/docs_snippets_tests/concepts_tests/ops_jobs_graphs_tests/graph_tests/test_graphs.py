@@ -1,10 +1,7 @@
 from docs_snippets.concepts.ops_jobs_graphs.graphs.branching_graph import branching
 from docs_snippets.concepts.ops_jobs_graphs.graphs.fan_in_graph import fan_in
+from docs_snippets.concepts.ops_jobs_graphs.graphs.graphs import alias, one_plus_one
 from docs_snippets.concepts.ops_jobs_graphs.graphs.linear_graph import linear
-from docs_snippets.concepts.ops_jobs_graphs.graphs.graphs import (
-    alias,
-    one_plus_one,
-)
 from docs_snippets.concepts.ops_jobs_graphs.graphs.multiple_io_graph import (
     inputs_and_outputs,
 )
