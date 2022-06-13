@@ -284,9 +284,11 @@ const SectionHeader = styled.button<{
   cursor: pointer;
   display: flex;
   align-items: center;
+  font-size: 14px;
   gap: 12px;
   padding: 0 12px 0 24px;
   text-align: left;
+  user-select: none;
   white-space: nowrap;
 
   height: ${({$showRepoLocation}) =>
