@@ -33,7 +33,6 @@ from dagster.core.definitions.partition import PartitionedConfig, PartitionsDefi
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.execution.with_resources import with_resources
 from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import experimental
@@ -379,7 +378,7 @@ def _ensure_resources_dont_conflict(
             )
 
 
-def _check_resources_satisfy_requirements(
+def check_resources_satisfy_requirements(
     assets: Sequence[AssetsDefinition],
     source_assets: Sequence[SourceAsset],
     resource_defs: Mapping[str, ResourceDefinition],
@@ -405,7 +404,7 @@ def get_all_resource_defs(
 ) -> Dict[str, ResourceDefinition]:
 
     # Ensures that no resource keys conflict, and each asset has its resource requirements satisfied.
-    _check_resources_satisfy_requirements(assets, source_assets, resource_defs)
+    check_resources_satisfy_requirements(assets, source_assets, resource_defs)
 
     all_resource_defs = dict(resource_defs)
     all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]

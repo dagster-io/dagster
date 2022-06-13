@@ -104,7 +104,7 @@ class SourceAssetIOManagerRequirement(
         "_InputManagerRequirement",
         [
             ("key", str),
-            ("asset_key", str),
+            ("asset_key", Optional[str]),
         ],
     ),
     ResourceRequirement,
@@ -116,6 +116,9 @@ class SourceAssetIOManagerRequirement(
         return IOManagerDefinition
 
     def describe_requirement(self) -> str:
+        source_asset_descriptor = (
+            f"SourceAsset with key {self.asset_key}" if self.asset_key else "SourceAsset"
+        )
         return f"io manager with key '{self.key}' required by SourceAsset with key {self.asset_key}"
 
 

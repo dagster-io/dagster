@@ -173,7 +173,7 @@ class SourceAsset(
         )
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
-        SourceAssetIOManagerRequirement(
+        yield SourceAssetIOManagerRequirement(
             key=self.get_io_manager_key(), asset_key=self.key.to_string()
         )
         for source_key, resource_def in self.resource_defs.items():
