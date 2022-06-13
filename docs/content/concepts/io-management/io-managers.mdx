@@ -123,9 +123,9 @@ def my_job():
 
 ### Applying IO managers to assets
 
-By default, materializing an asset will pickle it to a local file named "my_asset", in a temporary directory. You can specify this directory by providing a value for the `local_artifact_storage` property in your dagster.yaml file.
+By default, materializing an asset will pickle it to a local file named `my_asset` in a temporary directory. You can specify this directory by providing a value for the `local_artifact_storage` property in your `dagster.yaml` file.
 
-[IO managers](/concepts/io-management/io-managers) enable fully overriding this behavior and storing asset contents in any way you wish - e.g. writing them as tables in a database or as objects in a cloud object store. Dagster also provides built-in IO managers that pickle assets to AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), and GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />), or you can write your own.
+[IO managers](/concepts/io-management/io-managers) enable fully overriding this behavior and storing asset contents in any way you wish - e.g. writing them as tables in a database or as objects in a cloud object store. You can use one of Dagster's built-in IO managers that pickle assets to popular services - AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), or GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />) - or you can write your own.
 
 To apply an IO manager to a set of assets, you can use <PyObject object="with_resources" />:
 
@@ -151,9 +151,9 @@ assets_with_io_manager = with_resources(
 )
 ```
 
-This example also includes `"s3": s3_resource`, because the `s3_pickle_io_manager` depends on an s3 resource.
+This example also includes `"s3": s3_resource` because the `s3_pickle_io_manager` depends on an S3 resource.
 
-When `upstream_asset` is materialized, the value `[1, 2, 3]` will be will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a different object on S3.
+When `upstream_asset` is materialized, the value `[1, 2, 3]` will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a different object on S3.
 
 ### Per-asset IO manager
 
@@ -185,7 +185,7 @@ assets_with_io_managers = with_resources(
 )
 ```
 
-When `upstream_asset` is materialized, the value `[1, 2, 3]` will be will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a file on the local filesystem.
+When `upstream_asset` is materialized, the value `[1, 2, 3]` will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a file on the local filesystem.
 
 In the multi-asset case, you can customize how each asset is materialized by specifying an `io_manager_key` on each output of the multi-asset.
 
@@ -203,7 +203,7 @@ def my_assets():
     return "store_me_on_s3", "store_me_on_adls2"
 ```
 
-The same assets can be bound to different resources and IO managers in different environments. For example, for local development, you might want to store assets on your local filesystem while, in production, you might want to store the assets in S3.
+The same assets can be bound to different resources and IO managers in different environments. For example, for local development, you might want to store assets on your local filesystem while in production, you might want to store the assets in S3.
 
 ```python file=/concepts/assets/asset_io_manager_prod_local.py startafter=start_marker endbefore=end_marker
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
