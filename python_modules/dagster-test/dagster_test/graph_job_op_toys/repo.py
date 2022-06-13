@@ -39,8 +39,7 @@ from dagster_test.graph_job_op_toys.sleepy import sleepy_job
 from dagster_test.graph_job_op_toys.software_defined_assets import software_defined_assets
 from dagster_test.graph_job_op_toys.unreliable import unreliable_job
 
-from dagster import AssetMaterialization, Output, graph, op, repository
-from dagster import load_assets_from_modules
+from dagster import AssetMaterialization, Output, graph, load_assets_from_modules, op, repository
 
 from .schedules import get_toys_schedules
 from .sensors import get_toys_sensors

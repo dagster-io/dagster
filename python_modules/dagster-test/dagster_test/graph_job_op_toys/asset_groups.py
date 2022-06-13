@@ -1,12 +1,6 @@
-# pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name,unused-argument
 
-from dagster import (
-    AssetKey,
-    IOManager,
-    SourceAsset,
-    asset,
-    io_manager,
-)
+from dagster import AssetKey, IOManager, SourceAsset, asset, io_manager
 
 
 class MyIOManager(IOManager):
@@ -32,7 +26,7 @@ def tree(grass):
     return 1
 
 
-river = SourceAsset(key=AssetKey('river'), group_name="water", io_manager_def=the_manager)
+river = SourceAsset(key=AssetKey("river"), group_name="water", io_manager_def=the_manager)
 
 
 @asset(group_name="water")
