@@ -2,15 +2,15 @@ import pytest
 
 from dagster import (
     AssetKey,
-    AssetsDefinition,
-    op,
-    Out,
     AssetOut,
+    AssetsDefinition,
     IOManager,
+    Out,
     Output,
     ResourceDefinition,
     build_op_context,
     io_manager,
+    op,
 )
 from dagster._check import CheckError
 from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset

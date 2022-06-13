@@ -23,7 +23,7 @@ from dagster import (
 from dagster._check import CheckError
 from dagster.core.asset_defs import asset, multi_asset
 from dagster.core.asset_defs.load_assets_from_modules import prefix_assets
-from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster.core.execution.with_resources import with_resources
 from dagster.core.test_utils import instance_for_test
 
