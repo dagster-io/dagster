@@ -236,7 +236,7 @@ class _Asset:
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
 
-        asset_ins = build_asset_ins(fn, self.key_prefix, self.ins or {}, self.non_argument_deps)
+        asset_ins = build_asset_ins(fn, [], self.ins or {}, self.non_argument_deps)
 
         out_asset_key = AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
         with warnings.catch_warnings():
