@@ -418,7 +418,7 @@ class AssetsDefinition(ResourceAddable):
     def required_resource_keys(self) -> Set[str]:
         return {requirement.key for requirement in self.get_resource_requirements()}
 
-    def to_string(self):
+    def __str__(self):
         if len(self.asset_keys) == 1:
             return f"AssetsDefinition with key {self.asset_key.to_string()}"
         else:
@@ -434,7 +434,7 @@ class AssetsDefinition(ResourceAddable):
         if overlapping_keys:
             overlapping_keys_str = ", ".join(sorted(list(overlapping_keys)))
             raise DagsterInvalidInvocationError(
-                f"{self.to_string()} has conflicting resource "
+                f"{str(self)} has conflicting resource "
                 "definitions with provided resources for the following keys: "
                 f"{overlapping_keys_str}. Either remove the existing "
                 "resources from the asset or change the resource keys so that "
