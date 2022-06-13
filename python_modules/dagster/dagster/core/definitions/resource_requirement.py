@@ -99,6 +99,26 @@ class InputManagerRequirement(
         return f"input manager with key '{self.key}' required by input '{self.input_name}' of {self.node_description}"
 
 
+class SourceAssetIOManagerRequirement(
+    NamedTuple(
+        "_InputManagerRequirement",
+        [
+            ("key", str),
+            ("asset_key", str),
+        ],
+    ),
+    ResourceRequirement,
+):
+    @property
+    def expected_type(self) -> Type:
+        from ..storage.io_manager import IOManagerDefinition
+
+        return IOManagerDefinition
+
+    def describe_requirement(self) -> str:
+        return f"io manager with key '{self.key}' required by SourceAsset with key {self.asset_key}"
+
+
 class OutputManagerRequirement(
     NamedTuple(
         "_OutputManagerRequirement", [("key", str), ("node_description", str), ("output_name", str)]

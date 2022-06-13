@@ -293,7 +293,7 @@ def test_missing_io_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"SourceAsset with asset key AssetKey\(\['source1'\]\) requires IO manager with key 'special_io_manager', but none was provided.",
+        match="input manager with key 'special_io_manager' required by input 'source1' of op 'asset1' was not provided.",
     ):
         build_assets_job(
             "a",
@@ -1595,7 +1595,7 @@ def test_transitive_io_manager_dep_not_provided():
         pass
 
     with pytest.raises(
-        DagsterInvariantViolationError,
-        match="Resource with key 'foo' required by resource with key 'my_source_asset__io_manager', but not provided.",
+        DagsterInvalidDefinitionError,
+        match="resource with key 'foo' required by resource with key 'my_source_asset__io_manager' was not provided.",
     ):
         build_assets_job(name="test", assets=[my_derived_asset], source_assets=[my_source_asset])

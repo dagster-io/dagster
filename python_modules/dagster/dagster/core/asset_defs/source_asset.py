@@ -1,4 +1,4 @@
-from typing import Dict, Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import Dict, Iterator, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey, CoercibleToAssetKey
@@ -13,6 +13,8 @@ from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.resource_requirement import (
     ResourceAddable,
+    ResourceRequirement,
+    SourceAssetIOManagerRequirement,
     get_resource_key_conflicts,
 )
 from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
@@ -169,3 +171,10 @@ class SourceAsset(
             group_name=group_name,
             resource_defs=self.resource_defs,
         )
+
+    def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
+        SourceAssetIOManagerRequirement(
+            key=self.get_io_manager_key(), asset_key=self.key.to_string()
+        )
+        for source_key, resource_def in self.resource_defs.items():
+            yield from resource_def.get_resource_requirements(outer_context=source_key)
