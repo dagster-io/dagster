@@ -187,7 +187,7 @@ def _dbt_nodes_to_assets(
         outs[node_name] = Out(
             description=_get_node_description(node_info),
             io_manager_key=io_manager_key,
-            metadata=_columns_to_metadata(node_info["columns"]),
+            metadata=_get_node_metadata(node_info),
             is_required=False,
         )
         out_name_to_node_info[node_name] = node_info
@@ -284,25 +284,29 @@ def _dbt_nodes_to_assets(
     )
 
 
-def _columns_to_metadata(columns: Mapping[str, Any]) -> Optional[Mapping[str, Any]]:
-    return (
-        {
-            "schema": MetadataValue.table_schema(
-                TableSchema(
-                    columns=[
-                        TableColumn(
-                            name=name,
-                            type=metadata.get("data_type") or "?",
-                            description=metadata.get("description"),
-                        )
-                        for name, metadata in columns.items()
-                    ]
-                )
+def _get_node_metadata(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
+    metadata: Dict[str, Any] = {}
+    columns = node_info.get("columns", [])
+    if len(columns) > 0:
+        metadata["table_schema"] = MetadataValue.table_schema(
+            TableSchema(
+                columns=[
+                    TableColumn(
+                        name=column_name,
+                        type=column_info.get("data_type") or "?",
+                        description=column_info.get("description"),
+                    )
+                    for column_name, column_info in columns.items()
+                ]
             )
-        }
-        if len(columns) > 0
-        else None
-    )
+        )
+    if "database" in node_info:
+        metadata["database"] = node_info["database"]
+    if "schema" in node_info:
+        metadata["schema"] = node_info["schema"]
+    if "name" in node_info:
+        metadata["table"] = node_info["name"]
+    return metadata
 
 
 def load_assets_from_dbt_project(
