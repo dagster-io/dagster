@@ -264,7 +264,7 @@ dagster-user-deployments:
 
 `dagsterApiGrpcArgs` also supports loading repository definitions from a package name. To find the applicable arguments, [read here](/concepts/repositories-workspaces/workspaces#running-your-own-grpc-server).
 
-You can also specify configmaps, secrets, volumes, and labels for individual user code deployments, and use the `includeConfigInLaunchedRuns` key to tell Dagster to include that same configuration on any runs launched from jobs in that user code deployment:
+You can also specify configuration like configmaps, secrets, volumes, resource limits, and labels for individual user code deployments:
 
 ```yaml file=/deploying/kubernetes/user_code_deployment_config.yaml
 dagster-user-deployments:
@@ -302,6 +302,8 @@ dagster-user-deployments:
       includeConfigInLaunchedRuns:
         enabled: true
 ```
+
+By default, this configuration will also be included in the pods for any runs that are launched for the user code deployment. You can disable this behavior for a user code deployment by setting `includeConfigInLaunchedRuns.enabled` to `false` for that deployment.
 
 #### Running `step_isolated_job` (Optional)
 
