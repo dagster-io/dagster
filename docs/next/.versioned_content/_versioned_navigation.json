@@ -32560,62 +32560,71 @@
     {
       "children": [
         {
-          "children": [
-            {
-              "path": "/tutorial/intro-tutorial/setup",
-              "title": "Setup for the Tutorial"
-            },
-            {
-              "path": "/tutorial/intro-tutorial/single-op-job",
-              "title": "A Single-Op Job"
-            },
-            {
-              "path": "/tutorial/intro-tutorial/connecting-ops",
-              "title": "Connecting Ops in Jobs"
-            },
-            {
-              "path": "/tutorial/intro-tutorial/testable",
-              "title": "Testing Ops and Jobs"
-            }
-          ],
-          "title": "Intro Tutorial"
+          "path": "/tutorial/setup",
+          "title": "Setup"
         },
         {
           "children": [
             {
-              "path": "/tutorial/advanced-tutorial/configuring-ops",
-              "title": "Configuring Ops"
+              "path": "/tutorial/assets/defining-an-asset",
+              "title": "Defining an Asset"
             },
             {
-              "path": "/tutorial/advanced-tutorial/types",
-              "title": "Dagster Types"
+              "path": "/tutorial/assets/asset-graph",
+              "title": "Building Graphs of Assets"
             },
             {
-              "path": "/tutorial/advanced-tutorial/resources",
-              "title": "Resources & Built-In Config"
-            },
-            {
-              "path": "/tutorial/advanced-tutorial/materializations",
-              "title": "Materializations"
-            },
-            {
-              "path": "/tutorial/advanced-tutorial/repositories",
-              "title": "Organizing Jobs in Repositories & Workspaces"
-            },
-            {
-              "path": "/tutorial/advanced-tutorial/scheduling",
-              "title": "Scheduling Job Runs"
+              "path": "/tutorial/assets/testing-assets",
+              "title": "Testing Assets"
             }
           ],
-          "title": "Advanced Tutorials"
+          "title": "Assets"
+        },
+        {
+          "children": [
+            {
+              "path": "/tutorial/ops-jobs/single-op-job",
+              "title": "Writing, Executing a Single-Op Job"
+            },
+            {
+              "path": "/tutorial/ops-jobs/connecting-ops",
+              "title": "Connecting Ops In Jobs"
+            },
+            {
+              "path": "/tutorial/ops-jobs/testable",
+              "title": "Testing Ops and Jobs"
+            }
+          ],
+          "title": "Ops and Jobs"
         }
       ],
       "icon": "AcademicCap",
       "path": "/tutorial",
-      "title": "Tutorial"
+      "title": "Tutorials"
     },
     {
       "children": [
+        {
+          "children": [
+            {
+              "path": "/concepts/assets/software-defined-assets",
+              "title": "Software-Defined Assets"
+            },
+            {
+              "path": "/concepts/assets/asset-materializations",
+              "title": "Asset Materializations"
+            },
+            {
+              "path": "/concepts/assets/asset-observations",
+              "title": "Asset Observations"
+            },
+            {
+              "path": "/concepts/assets/multi-assets",
+              "title": "Multi-Assets"
+            }
+          ],
+          "title": "Assets"
+        },
         {
           "children": [
             {
@@ -32931,24 +32940,6 @@
         {
           "path": "/guides/dagster/memoization",
           "title": "Versioning and Memoization (Experimental)"
-        },
-        {
-          "children": [
-            {
-              "path": "/guides/dagster/asset-tutorial/defining-an-asset",
-              "title": "Defining an Asset"
-            },
-            {
-              "path": "/guides/dagster/asset-tutorial/asset-graph",
-              "title": "Building Graphs of Assets"
-            },
-            {
-              "path": "/guides/dagster/asset-tutorial/testing-assets",
-              "title": "Testing Assets"
-            }
-          ],
-          "path": "/guides/dagster/asset-tutorial",
-          "title": "Software-Defined Assets Tutorial (Experimental)"
         },
         {
           "path": "/guides/dagster/software-defined-assets",
