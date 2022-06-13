@@ -201,7 +201,7 @@ Note that when directly invoking ops, io managers specified on inputs and output
 
 ### Testing assets
 
-Similar to ops, <PyObject object="asset" decorator /> decorated functions can be directly invoked. Doing so will invoke the underlying op computation.
+Similar to ops, <PyObject object="asset" decorator /> decorated functions can be directly invoked. Doing so invokes the underlying op computation.
 
 A basic asset, with no dependencies:
 
@@ -235,7 +235,7 @@ def test_asset_with_inputs():
     assert asset_with_inputs(5, 6) == 11
 ```
 
-Any resources defined on your asset (either directly, or using <PyObject object="with_resources" />) will be picked up when invoking the asset. Simply provide a context using <PyObject object="build_op_context" />.
+Any resources defined on your asset - either directly, or using <PyObject object="with_resources" /> - will be picked up when invoking the asset. When using resources, it is required to provide a context using <PyObject object="build_op_context" />.
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_resource_asset endbefore=end_test_resource_asset
 from dagster import asset, resource, build_op_context, with_resources
@@ -263,7 +263,7 @@ def test_asset_with_service():
     ...
 ```
 
-Resources provided on <PyObject object="build_op_context" /> will override any resources provided directly on the asset. This means you can avoid using your prod resources when testing.
+Resources provided on <PyObject object="build_op_context" /> will override any resources provided directly on the asset. This means you can avoid using production resources when testing.
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_resource_override_asset endbefore=end_test_resource_override_asset
 from dagster import resource, asset, build_op_context
