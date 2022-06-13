@@ -14,11 +14,6 @@ export const Table = styled(HTMLTable)<TableProps>`
   border: none;
   width: 100%;
 
-  & tr th,
-  & tr td {
-    box-shadow: inset 0 1px 0 ${Colors.KeylineGray}, inset 1px 0 0 ${Colors.KeylineGray} !important;
-  }
-
   & tr th {
     color: ${Colors.Gray500};
     font-family: ${FontFamily.default};
