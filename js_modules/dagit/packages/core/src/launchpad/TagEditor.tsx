@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Colors,
   DialogBody,
   DialogFooter,
   Dialog,
@@ -182,11 +181,7 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
   );
 };
 
-export const TagContainer = ({
-  tagsFromSession,
-  tagsFromDefinition,
-  onRequestEdit,
-}: ITagContainerProps) => {
+export const TagContainer = ({tagsFromSession, tagsFromDefinition}: ITagContainerProps) => {
   return (
     <Container>
       <TagList>
@@ -210,47 +205,19 @@ export const TagContainer = ({
           <RunTag tag={tag} key={idx} />
         ))}
       </TagList>
-      <TagEditorLink onRequestOpen={onRequestEdit}>
-        <Group direction="row" spacing={4} alignItems="center">
-          <Icon name="edit" color={Colors.Gray500} /> Edit Tags
-        </Group>
-      </TagEditorLink>
     </Container>
   );
 };
-
-interface ITagEditorLinkProps {
-  onRequestOpen: () => void;
-  children: React.ReactNode;
-}
-
-const TagEditorLink = ({onRequestOpen, children}: ITagEditorLinkProps) => (
-  <ShortcutHandler
-    shortcutLabel="⌥T"
-    shortcutFilter={(e) => e.code === 'KeyT' && e.altKey}
-    onShortcut={onRequestOpen}
-  >
-    <Link onClick={onRequestOpen}>{children}</Link>
-  </ShortcutHandler>
-);
 
 const Container = styled.div`
   align-items: flex-start;
   display: flex;
   flex-direction: row;
 `;
+
 const TagList = styled.div`
   display: flex;
   flex: 1;
   flex-wrap: wrap;
   gap: 4px;
-`;
-const Link = styled.div`
-  color: #666;
-  cursor: pointer;
-  margin: 4px 12px;
-  font-size: 12px;
-  &:hover {
-    color: #aaa;
-  }
 `;
