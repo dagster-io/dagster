@@ -7,6 +7,13 @@ Execution
 Executing Jobs
 --------------
 
+.. autofunction:: materialize
+
+.. autofunction:: materialize_in_process
+
+Executing Jobs
+--------------
+
 .. autoclass:: JobDefinition
   :noindex:
   :members: execute_in_process
