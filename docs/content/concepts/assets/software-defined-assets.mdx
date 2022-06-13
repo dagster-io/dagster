@@ -198,7 +198,7 @@ In this example, Dagster doesn’t need to load data from `upstream_asset` to su
 
 ### Graph-backed assets
 
-[Basic software-defined assets](#a-basic-software-defined-asset) are computed using a single op. If generating an asset involves multiple discrete computations, you can use graph-backed assets by separating each computation into an op and building a graph to combine your computations. This allows you can launch re-executions of runs at the op boundaries, but doesn't require you to link each intermediate value to an asset in persistent storage.
+[Basic software-defined assets](#a-basic-software-defined-asset) are computed using a single op. If generating an asset involves multiple discrete computations, you can use graph-backed assets by separating each computation into an op and building a graph to combine your computations. This allows you to launch re-executions of runs at the op boundaries but doesn't require you to link each intermediate value to an asset in persistent storage.
 
 Graph-backed assets are useful if you have an existing graph that produces and consumes assets. Wrapping your graph inside a software-defined asset gives you all the benefits of software-defined assets — like cross-job lineage — without requiring you to change the code inside your graph.
 
