@@ -7,14 +7,6 @@ description: A multi-asset represents a set of assets that are all updated by th
 
 A multi-asset represents a set of assets that are all updated by the same operation.
 
-## Relevant APIs
-
-| Name                                        | Description                              |
-| ------------------------------------------- | ---------------------------------------- |
-| <PyObject object="multi_asset" decorator /> | A decorator used to define multi-assets. |
-
-## Overview
-
 When working with [software-defined assets](/concepts/assets/software-defined-assets), it's sometimes inconvenient or impossible to map each persisted asset to a unique operation. A multi-asset is a way to define a single operation that will produce the contents of multiple data assets at once.
 
 Multi-assets may be useful in the following scenarios:
@@ -22,6 +14,16 @@ Multi-assets may be useful in the following scenarios:
 - A single call to an API results in multiple tables being updated (e.g. Airbyte, Fivetran, dbt)
 - A DataFrame is transformed into multiple assets, and serializing it between separate ops would be prohibitively inefficient
 - The same in-memory object is used to compute multiple assets
+
+---
+
+## Relevant APIs
+
+| Name                                        | Description                              |
+| ------------------------------------------- | ---------------------------------------- |
+| <PyObject object="multi_asset" decorator /> | A decorator used to define multi-assets. |
+
+---
 
 ## Defining multi-assets
 
