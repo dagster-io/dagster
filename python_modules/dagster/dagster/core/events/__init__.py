@@ -668,13 +668,18 @@ class DagsterEvent(
 
     @staticmethod
     def step_failure_event(
-        step_context: IStepContext, step_failure_data: "StepFailureData"
+        step_context: IStepContext,
+        step_failure_data: "StepFailureData",
+        message=None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_FAILURE,
             step_context=step_context,
             event_specific_data=step_failure_data,
-            message='Execution of step "{step_key}" failed.'.format(step_key=step_context.step.key),
+            message=(
+                message
+                or 'Execution of step "{step_key}" failed.'.format(step_key=step_context.step.key)
+            ),
         )
 
     @staticmethod
@@ -974,18 +979,24 @@ class DagsterEvent(
 
     @staticmethod
     def engine_event(
-        pipeline_context: IPlanContext,
+        plan_context: IPlanContext,
         message: str,
         event_specific_data: Optional["EngineEventData"] = None,
-        step_handle: Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]] = None,
     ) -> "DagsterEvent":
-        return DagsterEvent.from_pipeline(
-            DagsterEventType.ENGINE_EVENT,
-            pipeline_context,
-            message,
-            event_specific_data=event_specific_data,
-            step_handle=step_handle,
-        )
+        if isinstance(plan_context, IStepContext):
+            return DagsterEvent.from_step(
+                DagsterEventType.ENGINE_EVENT,
+                step_context=plan_context,
+                event_specific_data=event_specific_data,
+                message=message,
+            )
+        else:
+            return DagsterEvent.from_pipeline(
+                DagsterEventType.ENGINE_EVENT,
+                plan_context,
+                message,
+                event_specific_data=event_specific_data,
+            )
 
     @staticmethod
     def object_store_operation(

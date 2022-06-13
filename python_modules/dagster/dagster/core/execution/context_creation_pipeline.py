@@ -520,8 +520,8 @@ def create_log_manager(
     )
 
 
-def _create_context_free_log_manager(
-    instance: DagsterInstance, pipeline_run: PipelineRun, pipeline_def: PipelineDefinition
+def create_context_free_log_manager(
+    instance: DagsterInstance, pipeline_run: PipelineRun
 ) -> DagsterLogManager:
     """In the event of pipeline initialization failure, we want to be able to log the failure
     without a dependency on the PlanExecutionContext to initialize DagsterLogManager.
@@ -531,7 +531,6 @@ def _create_context_free_log_manager(
     """
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
 
     loggers = []
     # Use the default logger
@@ -541,7 +540,7 @@ def _create_context_free_log_manager(
                 InitLoggerContext(
                     logger_config,
                     logger_def,
-                    pipeline_def=pipeline_def,
+                    pipeline_def=None,
                     run_id=pipeline_run.run_id,
                 )
             )
