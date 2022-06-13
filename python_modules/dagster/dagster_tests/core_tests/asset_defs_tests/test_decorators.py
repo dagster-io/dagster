@@ -45,7 +45,7 @@ def test_asset_with_inputs():
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
-    assert AssetKey("arg1") in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey("arg1") in my_asset.keys_by_input_name.values()
 
 
 def test_asset_with_config_schema():
@@ -261,7 +261,7 @@ def test_asset_with_inputs_and_key_prefix():
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
-    assert AssetKey(["my_prefix", "arg1"]) in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey(["my_prefix", "arg1"]) in my_asset.keys_by_input_name.values()
 
 
 def test_asset_with_context_arg():
@@ -281,7 +281,7 @@ def test_asset_with_context_arg_and_dep():
 
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.input_defs) == 1
-    assert AssetKey("arg1") in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey("arg1") in my_asset.keys_by_input_name.values()
 
 
 def test_input_asset_key():
@@ -289,7 +289,7 @@ def test_input_asset_key():
     def my_asset(arg1):
         assert arg1
 
-    assert AssetKey("foo") in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey("foo") in my_asset.keys_by_input_name.values()
 
 
 def test_input_asset_key_and_key_prefix():
@@ -305,7 +305,7 @@ def test_input_namespace_str():
     def my_asset(arg1):
         assert arg1
 
-    assert AssetKey(["abc", "arg1"]) in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey(["abc", "arg1"]) in my_asset.keys_by_input_name.values()
 
 
 def test_input_namespace_list():
@@ -313,7 +313,7 @@ def test_input_namespace_list():
     def my_asset(arg1):
         assert arg1
 
-    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.keys_by_input_name.values()
 
 
 def test_input_key_prefix_str():
@@ -321,7 +321,7 @@ def test_input_key_prefix_str():
     def my_asset(arg1):
         assert arg1
 
-    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.keys_by_input_name.values()
 
 
 def test_input_key_prefix_list():
@@ -329,7 +329,7 @@ def test_input_key_prefix_list():
     def my_asset(arg1):
         assert arg1
 
-    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.keys_by_input_name.values()
 
 
 def test_input_metadata():
@@ -458,4 +458,4 @@ def test_kwargs():
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
-    assert AssetKey("upstream") in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey("upstream") in my_asset.keys_by_input_name.values()

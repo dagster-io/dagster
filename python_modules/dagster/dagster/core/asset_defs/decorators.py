@@ -285,22 +285,22 @@ class _Asset:
                 },
             )(fn)
 
-        asset_keys_by_input_name = {
+        keys_by_input_name = {
             input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
         }
         return AssetsDefinition(
-            asset_keys_by_input_name=asset_keys_by_input_name,
-            asset_keys_by_output_name={"result": out_asset_key},
+            keys_by_input_name=keys_by_input_name,
+            keys_by_output_name={"result": out_asset_key},
             node_def=op,
             partitions_def=self.partitions_def,
             partition_mappings={
-                asset_keys_by_input_name[input_name]: partition_mapping
+                keys_by_input_name[input_name]: partition_mapping
                 for input_name, partition_mapping in self.partition_mappings.items()
             }
             if self.partition_mappings
             else None,
             resource_defs=self.resource_defs,
-            group_names_by_asset_key={out_asset_key: self.group_name} if self.group_name else None,
+            group_names_by_key={out_asset_key: self.group_name} if self.group_name else None,
         )
 
 
@@ -423,20 +423,20 @@ def multi_asset(
                 },
             )(fn)
 
-        asset_keys_by_input_name = {
+        keys_by_input_name = {
             input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
         }
-        asset_keys_by_output_name = {
+        keys_by_output_name = {
             output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()
         }
         return AssetsDefinition(
-            asset_keys_by_input_name=asset_keys_by_input_name,
-            asset_keys_by_output_name=asset_keys_by_output_name,
+            keys_by_input_name=keys_by_input_name,
+            keys_by_output_name=keys_by_output_name,
             node_def=op,
-            asset_deps={asset_keys_by_output_name[name]: asset_deps[name] for name in asset_deps},
+            asset_deps={keys_by_output_name[name]: asset_deps[name] for name in asset_deps},
             partitions_def=partitions_def,
             partition_mappings={
-                asset_keys_by_input_name[input_name]: partition_mapping
+                keys_by_input_name[input_name]: partition_mapping
                 for input_name, partition_mapping in partition_mappings.items()
             }
             if partition_mappings

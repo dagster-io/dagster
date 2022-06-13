@@ -692,24 +692,24 @@ def test_nasty_nested_graph_asset():
         return sum_plus_one(thirteen, six)
 
     eight_and_five = AssetsDefinition(
-        asset_keys_by_input_name={"zero": AssetKey("zero")},
-        asset_keys_by_output_name={"eight": AssetKey("eight"), "five": AssetKey("five")},
+        keys_by_input_name={"zero": AssetKey("zero")},
+        keys_by_output_name={"eight": AssetKey("eight"), "five": AssetKey("five")},
         node_def=create_eight_and_five,
     )
 
     thirteen_and_six = AssetsDefinition(
-        asset_keys_by_input_name={
+        keys_by_input_name={
             "eight": AssetKey("eight"),
             "five": AssetKey("five"),
             "zero": AssetKey("zero"),
         },
-        asset_keys_by_output_name={"thirteen": AssetKey("thirteen"), "six": AssetKey("six")},
+        keys_by_output_name={"thirteen": AssetKey("thirteen"), "six": AssetKey("six")},
         node_def=create_thirteen_and_six,
     )
 
     twenty = AssetsDefinition(
-        asset_keys_by_input_name={"thirteen": AssetKey("thirteen"), "six": AssetKey("six")},
-        asset_keys_by_output_name={"result": AssetKey("twenty")},
+        keys_by_input_name={"thirteen": AssetKey("thirteen"), "six": AssetKey("six")},
+        keys_by_output_name={"result": AssetKey("twenty")},
         node_def=create_twenty,
     )
 

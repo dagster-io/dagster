@@ -264,17 +264,17 @@ def _dbt_nodes_to_assets(
                     yield event
 
     return AssetsDefinition(
-        asset_keys_by_input_name={
+        keys_by_input_name={
             input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
         },
-        asset_keys_by_output_name={
+        keys_by_output_name={
             output_name: node_info_to_asset_key(out_name_to_node_info[output_name])
             for output_name in outs.keys()
         },
         node_def=dbt_op,
         can_subset=True,
         asset_deps=asset_deps,
-        group_names=group_names,
+        group_names_by_key=group_names,
     )
 
 
