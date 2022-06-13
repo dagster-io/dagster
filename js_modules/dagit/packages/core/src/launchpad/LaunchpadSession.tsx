@@ -587,20 +587,15 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
                 onRequestClose={closeTagEditor}
               />
               <div style={{flex: 1}} />
-              {tagsFromSession.length ? null : (
-                <>
-                  <ShortcutHandler
-                    shortcutLabel="⌥T"
-                    shortcutFilter={(e) => e.code === 'KeyT' && e.altKey}
-                    onShortcut={openTagEditor}
-                  >
-                    <Button onClick={openTagEditor} icon={<Icon name="add_circle" />}>
-                      Add tags
-                    </Button>
-                  </ShortcutHandler>
-                  <SessionSettingsSpacer />
-                </>
-              )}
+              <ShortcutHandler
+                shortcutLabel="⌥T"
+                shortcutFilter={(e) => e.code === 'KeyT' && e.altKey}
+                onShortcut={openTagEditor}
+              >
+                <Button onClick={openTagEditor} icon={<Icon name="edit" />}>
+                  Edit tags
+                </Button>
+              </ShortcutHandler>
               <SessionSettingsSpacer />
               <SecondPanelToggle axis="horizontal" container={editorSplitPanelContainer} />
             </SessionSettingsBar>
