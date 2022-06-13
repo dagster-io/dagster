@@ -86,6 +86,7 @@ export const TextInputStyles = css`
   border-radius: 8px;
   box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px;
   flex-grow: 1;
+  font-size: 14px;
   line-height: 20px;
   padding: 6px 6px 6px 12px;
   margin: 0;
