@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: raw_data
+    schema: raw_data
+    tables:
+      - name: orders
+      - name: users
+  - name: forecasting
+    schema: forecasting
+    tables:
+      - name: predicted_orders
