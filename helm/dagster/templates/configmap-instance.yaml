@@ -96,5 +96,14 @@ data:
       poll_interval_seconds: {{ $runMonitoring.pollIntervalSeconds }}
     {{- end }}
 
+    {{- if and (.Values.dagsterDaemon.enabled) (.Values.dagsterDaemon.runRetries.enabled) }}
+    {{- $runRetries := .Values.dagsterDaemon.runRetries }}
+    run_retries:
+      enabled: {{ $runRetries.enabled }}
+      {{- if $runRetries.maxRetries }}
+      max_retries: {{ $runRetries.maxRetries }}
+      {{- end }}
+    {{- end }}
+
     telemetry:
       enabled: {{ .Values.telemetry.enabled }}

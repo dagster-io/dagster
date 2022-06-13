@@ -2337,6 +2337,10 @@
                 "runMonitoring": {
                     "title": "Runmonitoring",
                     "type": "object"
+                },
+                "runRetries": {
+                    "title": "Runretries",
+                    "type": "object"
                 }
             },
             "required": [
@@ -2359,7 +2363,8 @@
                 "readinessProbe",
                 "startupProbe",
                 "annotations",
-                "runMonitoring"
+                "runMonitoring",
+                "runRetries"
             ],
             "additionalProperties": false
         },

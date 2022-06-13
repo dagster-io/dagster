@@ -999,6 +999,10 @@ dagsterDaemon:
     # run launcher supports resuming runs, otherwise defaults to 0.
     maxResumeRunAttempts: ~
 
+  runRetries:
+    enabled: false
+    maxRetries: 0
+
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:
   # https://kubernetes.io/docs/concepts/configuration/configmap/
