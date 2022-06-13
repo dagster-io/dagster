@@ -22,13 +22,18 @@ DBT_PROFILES_DIR = file_relative_path(__file__, "../dbt_project/config")
 dbt_assets = load_assets_from_dbt_project(
     DBT_PROJECT_DIR,
     DBT_PROFILES_DIR,
-    key_prefix=["duckdb", "dbt_schema"],
+    # prefix the output assets based on the database they live in
+    # plus the name of the schema
+    key_prefix=["duckdb", "dbt"],
+    # prefix the source assets based on just the database
+    # (dagster populates the source schema information automatically)
     source_key_prefix=["duckdb"],
 )
 
 raw_data_assets = load_assets_from_package_module(
     raw_data,
     group_name="raw_data",
+    # all of these assets live in the duckdb database, under the schema raw_data
     key_prefix=["duckdb", "raw_data"],
 )
 
