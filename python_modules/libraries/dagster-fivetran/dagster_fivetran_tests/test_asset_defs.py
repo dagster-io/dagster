@@ -20,7 +20,7 @@ def test_fivetran_asset_keys():
     ft_assets = build_fivetran_assets(
         connector_id=DEFAULT_CONNECTOR_ID, destination_tables=["x.foo", "y.bar"]
     )
-    assert ft_assets[0].asset_keys == {AssetKey(["x", "foo"]), AssetKey(["y", "bar"])}
+    assert ft_assets[0].keys == {AssetKey(["x", "foo"]), AssetKey(["y", "bar"])}
 
 
 @pytest.mark.parametrize("schema_prefix", ["", "the_prefix"])
@@ -51,7 +51,7 @@ def test_fivetran_asset_run(tables, should_error, schema_prefix):
     )
 
     # expect the multi asset to have one asset key and one output for each specified asset key
-    assert fivetran_assets[0].asset_keys == {AssetKey(table.split(".")) for table in tables}
+    assert fivetran_assets[0].keys == {AssetKey(table.split(".")) for table in tables}
     assert len(fivetran_assets[0].op.output_defs) == len(tables)
 
     fivetran_assets_job = build_assets_job(

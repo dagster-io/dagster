@@ -252,7 +252,7 @@ def test_select_from_project(
         prefix = []
     elif isinstance(prefix, str):
         prefix = [prefix]
-    assert dbt_assets[0].asset_keys == {
+    assert dbt_assets[0].keys == {
         AssetKey(prefix + suffix)
         for suffix in (["sort_by_calories"], ["subdir_schema", "least_caloric"])
     }
@@ -522,7 +522,7 @@ def test_dbt_selects(
         )
 
     expected_asset_keys = {AssetKey(key.split("/")) for key in expected_asset_names}
-    assert dbt_assets[0].asset_keys == expected_asset_keys
+    assert dbt_assets[0].keys == expected_asset_keys
 
     result = (
         AssetGroup(

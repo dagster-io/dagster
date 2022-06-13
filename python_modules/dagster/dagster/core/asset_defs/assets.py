@@ -14,6 +14,7 @@ from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster.core.execution.context.compute import OpExecutionContext
 from dagster.utils import merge_dicts
+from dagster.utils.backcompat import deprecation_warning
 
 from ..definitions.resource_requirement import (
     ResourceAddable,
@@ -207,27 +208,41 @@ class AssetsDefinition(ResourceAddable):
         return self._asset_deps
 
     @property
-    def asset_key(self) -> AssetKey:
+    def key(self) -> AssetKey:
         check.invariant(
-            len(self.asset_keys) == 1,
+            len(self.keys) == 1,
             "Tried to retrieve asset key from an assets definition with multiple asset keys: "
             + ", ".join([str(ak.to_string()) for ak in self._asset_keys_by_output_name.values()]),
         )
 
-        return next(iter(self.asset_keys))
+        return next(iter(self.keys))
+
+    @property
+    def asset_key(self) -> AssetKey:
+        deprecation_warning(
+            "AssetsDefinition.asset_key", "0.16.0", "Use AssetsDefinition.key instead."
+        )
+        return self.key
 
     @property
     def resource_defs(self) -> Dict[str, ResourceDefinition]:
         return dict(self._resource_defs)
 
     @property
-    def asset_keys(self) -> AbstractSet[AssetKey]:
+    def keys(self) -> AbstractSet[AssetKey]:
         return self._selected_asset_keys
 
     @property
-    def dependency_asset_keys(self) -> Iterable[AssetKey]:
+    def asset_keys(self) -> AbstractSet[AssetKey]:
+        deprecation_warning(
+            "AssetsDefinition.asset_keys", "0.16.0", "Use AssetsDefinition.keys instead."
+        )
+        return self.keys
+
+    @property
+    def dependency_keys(self) -> Iterable[AssetKey]:
         # the input asset keys that are directly upstream of a selected asset key
-        upstream_keys = set().union(*(self.asset_deps[key] for key in self.asset_keys))
+        upstream_keys = set().union(*(self.asset_deps[key] for key in self.keys))
         input_keys = set(self._asset_keys_by_input_name.values())
         return upstream_keys.intersection(input_keys)
 
@@ -246,12 +261,12 @@ class AssetsDefinition(ResourceAddable):
         return {
             name: key
             for name, key in self.node_asset_keys_by_output_name.items()
-            if key in self.asset_keys
+            if key in self.keys
         }
 
     @property
     def asset_keys_by_input_name(self) -> Mapping[str, AssetKey]:
-        upstream_keys = set().union(*(self.asset_deps[key] for key in self.asset_keys))
+        upstream_keys = set().union(*(self.asset_deps[key] for key in self.keys))
         return {
             name: key
             for name, key in self.node_asset_keys_by_input_name.items()
@@ -367,7 +382,7 @@ class AssetsDefinition(ResourceAddable):
             partition_mappings=self._partition_mappings,
             asset_deps=self._asset_deps,
             can_subset=self.can_subset,
-            selected_asset_keys=selected_asset_keys & self.asset_keys,
+            selected_asset_keys=selected_asset_keys & self.keys,
             resource_defs=self.resource_defs,
         )
 
