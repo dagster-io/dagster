@@ -2,7 +2,7 @@ import logging
 from abc import abstractmethod
 from collections import OrderedDict
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, cast
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Union, cast
 
 import pendulum
 import sqlalchemy as db
@@ -709,6 +709,64 @@ class SqlEventLogStorage(EventLogStorage):
                 logging.warning("Could not parse event record id `%s`.", row_id)
 
         return event_records
+
+    def supports_event_consumer_queries(self):
+        return True
+
+    def get_logs_for_all_runs_by_log_id(
+        self,
+        after_cursor: int = -1,
+        dagster_event_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
+        limit: Optional[int] = None,
+    ) -> Mapping[int, EventLogEntry]:
+        check.int_param(after_cursor, "after_cursor")
+        check.invariant(
+            after_cursor >= -1,
+            f"Don't know what to do with negative cursor {after_cursor}",
+        )
+        dagster_event_types = (
+            {dagster_event_type}
+            if isinstance(dagster_event_type, DagsterEventType)
+            else check.opt_set_param(
+                dagster_event_type, "dagster_event_type", of_type=DagsterEventType
+            )
+        )
+
+        query = (
+            db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
+            .where(SqlEventLogStorageTable.c.id > after_cursor)
+            .order_by(SqlEventLogStorageTable.c.id.asc())
+        )
+
+        if dagster_event_types:
+            query = query.where(
+                SqlEventLogStorageTable.c.dagster_event_type.in_(
+                    [dagster_event_type.value for dagster_event_type in dagster_event_types]
+                )
+            )
+
+        if limit:
+            query = query.limit(limit)
+
+        with self.index_connection() as conn:
+            results = conn.execute(query).fetchall()
+
+        events = {}
+        try:
+            for (
+                record_id,
+                json_str,
+            ) in results:
+                events[record_id] = deserialize_as(json_str, EventLogEntry)
+        except (seven.JSONDecodeError, check.CheckError):
+            logging.warning("Could not parse event record id `%s`.", record_id)
+
+        return events
+
+    def get_maximum_record_id(self) -> Optional[int]:
+        with self.index_connection() as conn:
+            result = conn.execute(db.select([db.func.max(SqlEventLogStorageTable.c.id)])).fetchone()
+            return result[0]
 
     def _construct_asset_record_from_row(self, row, last_materialization: Optional[EventLogEntry]):
         asset_key = AssetKey.from_db_string(row[1])
