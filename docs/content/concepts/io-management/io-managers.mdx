@@ -57,69 +57,11 @@ The default IO manager, <PyObject module="dagster" object="fs_io_manager" />, st
 
 Dagster provides out-of-the-box IO managers that pickle objects and save them. These are <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/> , <PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager"/> , or <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager"/>. These filesystem IO managers, along with <PyObject module="dagster" object="fs_io_manager" />, store op outputs at a unique path identified by the run ID, step key, and output name. These IO managers will output assets at a unique path identified by the asset key.
 
-IO managers are [resources](/concepts/resources), which means users can supply different IOManagers for the same op outputs in different situations. For example, you might use an in-memory IOManager for unit-testing a job and an S3IOManager in production.
+IO managers are [resources](/concepts/resources), which means users can supply different IO managers for the same op outputs in different situations. For example, you might use an in-memory IO manager for unit-testing a job and an S3 IO manager in production.
 
 ---
 
 ## Using an IO manager
-
-### Job-wide IO manager
-
-By default, all the inputs and outputs in a job use the same IOManager. This IOManager is determined by the <PyObject module="dagster" object="ResourceDefinition" /> provided for the `"io_manager"` resource key. `"io_manager"` is a resource key that Dagster reserves specifically for this purpose.
-
-Here’s how to specify that all op outputs are stored using the <PyObject module="dagster" object="fs_io_manager" />, which pickles outputs and stores them on the local filesystem. It stores files in a directory with the run ID in the path, so that outputs from prior runs will never be overwritten.
-
-```python file=/concepts/io_management/default_io_manager.py
-from dagster import fs_io_manager, job, op
-
-
-@op
-def op_1():
-    return 1
-
-
-@op
-def op_2(a):
-    return a + 1
-
-
-@job(resource_defs={"io_manager": fs_io_manager})
-def my_job():
-    op_2(op_1())
-```
-
-### Per-output IO manager
-
-Not all the outputs in a job should necessarily be stored the same way. Maybe some of the outputs should live on the filesystem so they can be inspected, and others can be transiently stored in memory.
-
-To select the IO manager for a particular output, you can set an `io_manager_key` on <PyObject module="dagster" object="Out" />, and then refer to that `io_manager_key` when setting IO managers in your job. In this example, the output of `op_1` will go to `fs_io_manager` and the output of `op_2` will go to `s3_pickle_io_manager`.
-
-```python file=/concepts/io_management/io_manager_per_output.py startafter=start_marker endbefore=end_marker
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
-
-from dagster import Out, fs_io_manager, job, op
-
-
-@op(out=Out(io_manager_key="fs"))
-def op_1():
-    return 1
-
-
-@op(out=Out(io_manager_key="s3_io"))
-def op_2(a):
-    return a + 1
-
-
-@job(
-    resource_defs={
-        "fs": fs_io_manager,
-        "s3_io": s3_pickle_io_manager,
-        "s3": s3_resource,
-    }
-)
-def my_job():
-    op_2(op_1())
-```
 
 ### Applying IO managers to assets
 
@@ -232,6 +174,64 @@ local_assets = with_resources(
 )
 ```
 
+### Job-wide IO manager
+
+By default, all the inputs and outputs in a job use the same IO manager. This IO manager is determined by the <PyObject module="dagster" object="ResourceDefinition" /> provided for the `"io_manager"` resource key. `"io_manager"` is a resource key that Dagster reserves specifically for this purpose.
+
+Here’s how to specify that all op outputs are stored using the <PyObject module="dagster" object="fs_io_manager" />, which pickles outputs and stores them on the local filesystem. It stores files in a directory with the run ID in the path, so that outputs from prior runs will never be overwritten.
+
+```python file=/concepts/io_management/default_io_manager.py
+from dagster import fs_io_manager, job, op
+
+
+@op
+def op_1():
+    return 1
+
+
+@op
+def op_2(a):
+    return a + 1
+
+
+@job(resource_defs={"io_manager": fs_io_manager})
+def my_job():
+    op_2(op_1())
+```
+
+### Per-output IO manager
+
+Not all the outputs in a job should necessarily be stored the same way. Maybe some of the outputs should live on the filesystem so they can be inspected, and others can be transiently stored in memory.
+
+To select the IO manager for a particular output, you can set an `io_manager_key` on <PyObject module="dagster" object="Out" />, and then refer to that `io_manager_key` when setting IO managers in your job. In this example, the output of `op_1` will go to `fs_io_manager` and the output of `op_2` will go to `s3_pickle_io_manager`.
+
+```python file=/concepts/io_management/io_manager_per_output.py startafter=start_marker endbefore=end_marker
+from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+
+from dagster import Out, fs_io_manager, job, op
+
+
+@op(out=Out(io_manager_key="fs"))
+def op_1():
+    return 1
+
+
+@op(out=Out(io_manager_key="s3_io"))
+def op_2(a):
+    return a + 1
+
+
+@job(
+    resource_defs={
+        "fs": fs_io_manager,
+        "s3_io": s3_pickle_io_manager,
+        "s3": s3_resource,
+    }
+)
+def my_job():
+    op_2(op_1())
+```
+
 ## Defining an IO manager
 
 If you have specific requirements for where and how your outputs should be stored and retrieved, you can define your own IO manager. This boils down to implementing two functions: one that stores outputs and one that loads inputs.
@@ -316,7 +316,7 @@ When launching a run, you might want to parameterize how particular outputs are 
 
 For example, if your job produces DataFrames to populate tables in a data warehouse, you might want to specify the table that each output goes to at run launch time.
 
-To accomplish this, you can define an `output_config_schema` on the IO manager definition. The IOManager methods can access this config when storing or loading data, via the <PyObject module="dagster" object="OutputContext" />.
+To accomplish this, you can define an `output_config_schema` on the IO manager definition. The IO manager methods can access this config when storing or loading data, via the <PyObject module="dagster" object="OutputContext" />.
 
 ```python file=/concepts/io_management/output_config.py startafter=io_manager_start_marker endbefore=io_manager_end_marker
 class MyIOManager(IOManager):
@@ -369,7 +369,7 @@ def op_2(_input_dataframe):
     """Return a Pandas DataFrame"""
 ```
 
-The IOManager can then access this metadata when storing or retrieving data, via the <PyObject module="dagster" object="OutputContext" />.
+The IO manager can then access this metadata when storing or retrieving data, via the <PyObject module="dagster" object="OutputContext" />.
 
 In this case, the table names are encoded in the job definition. If, instead, you want to be able to set them at run time, the next section describes how.
 
@@ -436,9 +436,9 @@ def test_my_io_manager_load_input():
     assert manager.load_input(context) == 5
 ```
 
-## Yielding metadata from an IOManager <Experimental />
+## Yielding metadata from an IO Manager <Experimental />
 
-Sometimes, you may want to record some metadata while handling an output in an IOManager. To do this, you can optionally yield <PyObject object="MetadataEntry"/> objects from within the body of the `handle_output` function. Using this, we can modify one of the [above examples](/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables) to now include some helpful metadata in the log:
+Sometimes, you may want to record some metadata while handling an output in an IO manager. To do this, you can optionally yield <PyObject object="MetadataEntry"/> objects from within the body of the `handle_output` function. Using this, we can modify one of the [above examples](/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables) to now include some helpful metadata in the log:
 
 ```python file=/concepts/io_management/custom_io_manager.py startafter=start_metadata_marker endbefore=end_metadata_marker
 class DataframeTableIOManagerWithMetadata(IOManager):

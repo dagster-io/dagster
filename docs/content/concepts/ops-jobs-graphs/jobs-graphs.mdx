@@ -376,7 +376,7 @@ In this example, `create_table_2` has an input of type `Nothing` meaning that it
 
 Note that in most cases, it is usually possible to pass some data dependency. In the example above, even though we probably don't want to pass the table data itself between the ops, we could pass table pointers. For example, `create_table_1` could return a `table_pointer` output of type `str` with a value of `table_1`, and this table name can be used in `create_table_2` to more accurately model the data dependency.
 
-Dagster also provides more advanced abstractions to handle dependencies and IO. If you find that you are finding it difficult to model data dependencies when using external storages, check out [IOManagers](/concepts/io-management/io-managers).
+Dagster also provides more advanced abstractions to handle dependencies and IO. If you find that you are finding it difficult to model data dependencies when using external storages, check out [IO managers](/concepts/io-management/io-managers).
 
 ### Using the Same Op Twice
 
