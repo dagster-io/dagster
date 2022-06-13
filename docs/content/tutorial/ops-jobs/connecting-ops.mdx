@@ -13,7 +13,7 @@ Why split up code into ops instead of splitting it up into regular Python functi
 
 - Dagster can execute sets of ops without executing the entire job. This means that, if we hit a failure in our job, we can re-run just the steps that didn't complete successfully, which often allows us to avoid re-executing expensive steps.
 - When two ops don't depend on each other, Dagster can execute them simultaneously.
-- Dagster can materialize the output of an op to persistent storage. [IOManagers](/concepts/io-management/io-managers) let us separate business logic from IO, which lets us write code that's more testable and portable across environments.
+- Dagster can materialize the output of an op to persistent storage. [IO managers](/concepts/io-management/io-managers) let us separate business logic from IO, which lets us write code that's more testable and portable across environments.
 
 Dagster jobs model a _dataflow_ graph. In data pipelines, the reason that a later step comes after an earlier step is almost always that it uses data produced by the earlier step. Dagster models these dataflow dependencies with _inputs_ and _outputs_.
 

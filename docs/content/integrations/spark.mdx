@@ -23,11 +23,11 @@ This is the easiest approach for migrating existing Spark jobs, and it's the onl
 
 ## Op accepts and produces DataFrames or RDDs
 
-With this approach, the code inside the op consists of pure logical data transformations on Spark DataFrames or RDDs. The op-decorated function accepts DataFrames as parameters and returns DataFrames when it completes. An [IOManager](/concepts/io-management/io-managers) handles writing and reading the DataFrames to and from persistent storage. The [Running PySpark code in op](#running-pyspark-code-in-ops) example below shows what this looks like.
+With this approach, the code inside the op consists of pure logical data transformations on Spark DataFrames or RDDs. The op-decorated function accepts DataFrames as parameters and returns DataFrames when it completes. An [IO manager](/concepts/io-management/io-managers) handles writing and reading the DataFrames to and from persistent storage. The [Running PySpark code in op](#running-pyspark-code-in-ops) example below shows what this looks like.
 
 If you want your Spark driver to run inside a Spark cluster, you use a "step launcher" resource that informs Dagster how to launch the op. The step launcher resource is responsible for invoking `spark-submit` or submitting the job to Databricks or EMR. [Submitting PySpark ops on EMR](#submitting-pyspark-ops-on-emr) shows what this looks like for EMR.
 
-The advantage of this approach is a very clean local testing story. You can run an entire job of Spark ops in a single process. You can use [IOManagers](/concepts/io-management/io-managers) to abstract away IO - storing outputs on the local filesystem during local development and in the cloud in production.
+The advantage of this approach is a very clean local testing story. You can run an entire job of Spark ops in a single process. You can use [IO managers](/concepts/io-management/io-managers) to abstract away IO - storing outputs on the local filesystem during local development and in the cloud in production.
 
 The downside is that this approach only works with PySpark, and setting up a step launcher can be difficult. We currently provide an <PyObject module='dagster_aws.emr' object='emr_pyspark_step_launcher' /> and a <PyObject module='dagster_databricks' object='databricks_pyspark_step_launcher' />, but if you need to submit your Spark job to a different kind of cluster, writing your own can be time consuming ([here are some tips](https://github.com/dagster-io/dagster/discussions/3201)). You also need to install the Dagster library itself on the cluster.
 

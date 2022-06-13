@@ -17,7 +17,7 @@ A software-defined asset includes the following:
 
   **Note**: A crucial distinction between software-defined assets and [ops](/concepts/ops-jobs-graphs/ops) is that software-defined assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/jobs-graphs).
 
-**Materializing** an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [Dagit](/concepts/dagit/dagit) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is [fully customizable](#customizing-how-assets-are-materialized-with-io-managers). It's possible to materialize an asset in multiple storage environments, such as production and staging.
+**Materializing** an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [Dagit](/concepts/dagit/dagit) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is fully customizable, using [IO managers](/concepts/io-management/io-managers#applying-io-managers-to-assets). It's possible to materialize an asset in multiple storage environments, such as production and staging.
 
 ---
 
@@ -347,99 +347,6 @@ There are a couple ways in Dagit to launch a run that materializes assets:
 
 - Navigate to the Asset Details Page for the asset and click the "Materialize" button in the upper right corner.
 - In the graph view of the Asset Catalog page, click the "Materialize" button in the upper right corner. You can click on assets to collect a subset to materialize.
-
-## Customizing how assets are materialized with IO managers
-
-By default, materializing an asset will pickle it to a local file named "my_asset", in a temporary directory. You can specify this directory by providing a value for the `local_artifact_storage` property in your dagster.yaml file.
-
-[IO managers](/concepts/io-management/io-managers) enable fully overriding this behavior and storing asset contents in any way you wish - e.g. writing them as tables in a database or as objects in a cloud object store. Dagster also provides built-in IO managers that pickle assets to AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), and GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />), or you can write your own.
-
-To apply an IO manager to a set of assets, you can use <PyObject object="with_resources" />:
-
-```python file=/concepts/assets/asset_io_manager.py startafter=start_marker endbefore=end_marker
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
-
-from dagster import asset, with_resources
-
-
-@asset
-def upstream_asset():
-    return [1, 2, 3]
-
-
-@asset
-def downstream_asset(upstream_asset):
-    return upstream_asset + [4]
-
-
-assets_with_io_manager = with_resources(
-    [upstream_asset, downstream_asset],
-    resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_resource},
-)
-```
-
-This example also includes `"s3": s3_resource`, because the `s3_pickle_io_manager` depends on an s3 resource.
-
-When `upstream_asset` is materialized, the value `[1, 2, 3]` will be will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a different object on S3.
-
-Different assets can have different IO managers:
-
-```python file=/concepts/assets/asset_different_io_managers.py startafter=start_marker endbefore=end_marker
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
-
-from dagster import asset, fs_io_manager, with_resources
-
-
-@asset(io_manager_key="s3_io_manager")
-def upstream_asset():
-    return [1, 2, 3]
-
-
-@asset(io_manager_key="fs_io_manager")
-def downstream_asset(upstream_asset):
-    return upstream_asset + [4]
-
-
-assets_with_io_managers = with_resources(
-    [upstream_asset, downstream_asset],
-    resource_defs={
-        "s3_io_manager": s3_pickle_io_manager,
-        "s3": s3_resource,
-        "fs_io_manager": fs_io_manager,
-    },
-)
-```
-
-When `upstream_asset` is materialized, the value `[1, 2, 3]` will be will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a file on the local filesystem.
-
-The same assets can be bound to different resources and IO managers in different environments. For example, for local development, you might want to store assets on your local filesystem while, in production, you might want to store the assets in S3.
-
-```python file=/concepts/assets/asset_io_manager_prod_local.py startafter=start_marker endbefore=end_marker
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
-
-from dagster import asset, fs_io_manager, with_resources
-
-
-@asset
-def upstream_asset():
-    return [1, 2, 3]
-
-
-@asset
-def downstream_asset(upstream_asset):
-    return upstream_asset + [4]
-
-
-prod_assets = with_resources(
-    [upstream_asset, downstream_asset],
-    resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_resource},
-)
-
-local_assets = with_resources(
-    [upstream_asset, downstream_asset],
-    resource_defs={"io_manager": fs_io_manager},
-)
-```
 
 ## Building jobs that materialize assets
 
