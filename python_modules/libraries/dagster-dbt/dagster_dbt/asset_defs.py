@@ -379,6 +379,7 @@ def load_assets_from_dbt_project(
 def load_assets_from_dbt_manifest(
     manifest_json: Mapping[str, Any],
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     runtime_metadata_fn: Optional[
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
