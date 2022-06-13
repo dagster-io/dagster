@@ -23,7 +23,7 @@ from dagster import (
 from dagster._check import CheckError
 from dagster.core.asset_defs import asset, multi_asset
 from dagster.core.asset_defs.load_assets_from_modules import prefix_assets
-from dagster.core.errors import DagsterInvalidSubsetError
+from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvalidDefinitionError
 from dagster.core.execution.with_resources import with_resources
 from dagster.core.test_utils import instance_for_test
 
@@ -173,22 +173,22 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         (
             "x",
             False,
-            (DagsterInvalidSubsetError, r"When building job, the AssetKey\(s\) \['x'\]"),
+            (DagsterInvalidSubsetError, r"AssetKey\(s\) {'x'} were selected"),
         ),
         (
             "x",
             True,
-            (DagsterInvalidSubsetError, r"When building job, the AssetKey\(s\) \['x'\]"),
+            (DagsterInvalidSubsetError, r"AssetKey\(s\) {'x'} were selected"),
         ),
         (
             ["start", "x"],
             False,
-            (DagsterInvalidSubsetError, r"When building job, the AssetKey\(s\) \['x'\]"),
+            (DagsterInvalidSubsetError, r"AssetKey\(s\) {'x'} were selected"),
         ),
         (
             ["start", "x"],
             True,
-            (DagsterInvalidSubsetError, r"When building job, the AssetKey\(s\) \['x'\]"),
+            (DagsterInvalidSubsetError, r"AssetKey\(s\) {'x'} were selected"),
         ),
         (["d", "e", "f"], False, None),
         (["d", "e", "f"], True, None),
@@ -413,7 +413,7 @@ def test_source_asset_selection_missing():
     def b(a):
         return a + 1
 
-    with pytest.raises(DagsterInvalidSubsetError, match="SourceAsset"):
+    with pytest.raises(DagsterInvalidDefinitionError, match="sources"):
         define_asset_job("job", selection="*b").resolve(assets=[a, b], source_assets=[])
 
 

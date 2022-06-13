@@ -5,6 +5,7 @@ from typing import AbstractSet, FrozenSet, Optional, Sequence
 
 import dagster._check as check
 from dagster.core.asset_defs.assets import AssetsDefinition
+from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster.core.selector.subset_selector import (
     fetch_connected,
@@ -132,7 +133,15 @@ class Resolver:
                 [_match_groups(assets_def, set(node.children)) for assets_def in self.all_assets],
             )
         elif isinstance(node, KeysAssetSelection):
-            return set([child.to_user_string() for child in node.children])
+            specified_keys = set([child.to_user_string() for child in node.children])
+            invalid_keys = specified_keys - set(self.all_assets_by_name.keys())
+            if invalid_keys:
+                raise DagsterInvalidSubsetError(
+                    f"AssetKey(s) {invalid_keys} were selected, but no AssetDefinition objects supply "
+                    "these keys. Make sure all keys are spelled correctly, and all AssetsDefinitions "
+                    "are correctly added to the repository."
+                )
+            return specified_keys
         elif isinstance(node, OrAssetSelection):
             child_1, child_2 = [self._resolve(child) for child in node.children]
             return child_1 | child_2
