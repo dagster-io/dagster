@@ -307,6 +307,12 @@ run_monitoring:
 
 # end_run_monitoring
 
+# start_run_retries
+run_retries:
+  enabled: true
+  max_retries: 3 # Sets a default for all jobs. 0 if not set
+# end_run_retries
+
 
 # start_marker_telemetry
 
