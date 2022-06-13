@@ -775,12 +775,8 @@ def test_source_assets():
         return [AssetGroup(assets=[], source_assets=[foo, bar])]
 
     assert my_repo.source_assets_by_key == {
-        AssetKey("foo"): SourceAsset(
-            key=AssetKey("foo"), resource_defs={"io_manager": fs_io_manager}
-        ),
-        AssetKey("bar"): SourceAsset(
-            key=AssetKey("bar"), resource_defs={"io_manager": fs_io_manager}
-        ),
+        AssetKey("foo"): SourceAsset(key=AssetKey("foo")),
+        AssetKey("bar"): SourceAsset(key=AssetKey("bar")),
     }
 
 
@@ -876,8 +872,8 @@ def test_source_asset_unsatisfied_resource():
         pass
 
     with pytest.raises(
-        DagsterInvariantViolationError,
-        match="Resource with key 'foo' required by resource with key 'foo__io_manager', but not provided.",
+        DagsterInvalidDefinitionError,
+        match="resource with key 'foo' required by resource with key 'foo__io_manager' was not provided.",
     ):
 
         @repository
@@ -895,8 +891,8 @@ def test_source_asset_unsatisfied_resource_transitive():
         pass
 
     with pytest.raises(
-        DagsterInvariantViolationError,
-        match="Resource with key 'bar' required by resource with key 'foo', but not provided.",
+        DagsterInvalidDefinitionError,
+        match="resource with key 'bar' required by resource with key 'foo' was not provided.",
     ):
 
         @repository
