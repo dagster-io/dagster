@@ -287,7 +287,10 @@ def return_one_and_two(zero):
 explicit_deps_asset = AssetsDefinition.from_graph(
     return_one_and_two,
     asset_keys_by_input_name={"zero": AssetKey("upstream_asset")},
-    asset_keys_by_output_name={"one": AssetKey("asset_one"), "two": AssetKey("asset_two")},
+    asset_keys_by_output_name={
+        "one": AssetKey("asset_one"),
+        "two": AssetKey("asset_two"),
+    },
 )
 ```
 
