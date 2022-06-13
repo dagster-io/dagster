@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface PermissionFragment {
-  __typename: "GraphenePermission";
+  __typename: "Permission";
   permission: string;
   value: boolean;
 }
