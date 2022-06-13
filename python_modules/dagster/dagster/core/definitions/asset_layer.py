@@ -295,7 +295,7 @@ def _asset_key_to_dep_node_handles(
 
     # handle internal_asset_deps
     for node_handle, assets_defs in assets_defs_by_node_handle.items():
-        all_output_asset_keys = assets_defs.asset_keys
+        all_output_asset_keys = assets_defs.keys
         for asset_key, dep_asset_keys in assets_defs.asset_deps.items():
             for dep_asset_key in [key for key in dep_asset_keys if key in all_output_asset_keys]:
                 output_node = dep_nodes_by_asset_key[asset_key][
@@ -441,7 +441,7 @@ class AssetLayer:
         self._assets_defs_by_key = {
             key: assets_def
             for assets_def in check.opt_list_param(assets_defs, "assets_defs")
-            for key in assets_def.asset_keys
+            for key in assets_def.keys
         }
 
         # keep an index from node handle to all keys expected to be generated in that node
@@ -521,7 +521,7 @@ class AssetLayer:
                     asset_key,
                     partitions_fn=partition_fn if assets_def.partitions_def else None,
                     partitions_def=assets_def.partitions_def,
-                    is_required=asset_key in assets_def.asset_keys,
+                    is_required=asset_key in assets_def.keys,
                 )
                 io_manager_by_asset[asset_key] = inner_output_def.io_manager_key
 
@@ -700,10 +700,10 @@ def _subset_assets_defs(
 
     for asset in set(assets):
         # intersection
-        selected_subset = selected_asset_keys & asset.asset_keys
+        selected_subset = selected_asset_keys & asset.keys
         included_keys.update(selected_subset)
         # all assets in this def are selected
-        if selected_subset == asset.asset_keys:
+        if selected_subset == asset.keys:
             included_assets.add(asset)
         # no assets in this def are selected
         elif len(selected_subset) == 0:
@@ -713,23 +713,23 @@ def _subset_assets_defs(
             subset_asset = asset.subset_for(selected_asset_keys)
             included_assets.add(subset_asset)
             # subset of the asset that we don't want
-            excluded_assets.add(asset.subset_for(asset.asset_keys - subset_asset.asset_keys))
+            excluded_assets.add(asset.subset_for(asset.keys - subset_asset.keys))
         else:
             raise DagsterInvalidSubsetError(
                 f"When building job, the AssetsDefinition '{asset.node_def.name}' "
-                f"contains asset keys {sorted(list(asset.asset_keys))}, but "
+                f"contains asset keys {sorted(list(asset.keys))}, but "
                 f"attempted to select only {sorted(list(selected_subset))}. "
                 "This AssetsDefinition does not support subsetting. Please select all "
                 "asset keys produced by this asset."
             )
 
-    missed_keys = selected_asset_keys - included_keys
+    missed_keys = selected_asset_keys - included_keys - {sa.key for sa in source_assets}
     if missed_keys:
         raise DagsterInvalidSubsetError(
             f"When building job, the AssetKey(s) {[key.to_user_string() for key in missed_keys]} "
-            "were selected, but are not produced by any of the provided AssetsDefinitions. Make "
-            "sure that keys are spelled correctly and that all of the expected definitions are "
-            "provided."
+            "were selected, but are not produced by any of the provided AssetsDefinitions or "
+            "SourceAssets. Make sure that keys are spelled correctly and that all of the expected "
+            "definitions are provided."
         )
     all_excluded_assets: Sequence[Union["AssetsDefinition", "SourceAsset"]] = [
         *excluded_assets,

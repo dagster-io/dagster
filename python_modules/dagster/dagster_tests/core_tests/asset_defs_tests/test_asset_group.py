@@ -1118,7 +1118,7 @@ def test_assets_prefixed_single_asset():
         ...
 
     result = AssetGroup([asset1]).prefixed("my_prefix").assets
-    assert result[0].asset_key == AssetKey(["my_prefix", "asset1"])
+    assert result[0].key == AssetKey(["my_prefix", "asset1"])
 
 
 def test_assets_prefixed_internal_dep():
@@ -1131,9 +1131,9 @@ def test_assets_prefixed_internal_dep():
         del asset1
 
     result = AssetGroup([asset1, asset2]).prefixed("my_prefix").assets
-    assert result[0].asset_key == AssetKey(["my_prefix", "asset1"])
-    assert result[1].asset_key == AssetKey(["my_prefix", "asset2"])
-    assert set(result[1].dependency_asset_keys) == {AssetKey(["my_prefix", "asset1"])}
+    assert result[0].key == AssetKey(["my_prefix", "asset1"])
+    assert result[1].key == AssetKey(["my_prefix", "asset2"])
+    assert set(result[1].dependency_keys) == {AssetKey(["my_prefix", "asset1"])}
 
 
 def test_assets_prefixed_disambiguate():
@@ -1155,11 +1155,11 @@ def test_assets_prefixed_disambiguate():
         AssetGroup([asset2, orange, banana], source_assets=[asset1]).prefixed("my_prefix").assets
     )
     assert len(result) == 3
-    assert result[0].asset_key == AssetKey(["my_prefix", "apple"])
-    assert result[1].asset_key == AssetKey(["my_prefix", "orange"])
-    assert set(result[1].dependency_asset_keys) == {AssetKey(["core", "apple"])}
-    assert result[2].asset_key == AssetKey(["my_prefix", "banana"])
-    assert set(result[2].dependency_asset_keys) == {AssetKey(["my_prefix", "apple"])}
+    assert result[0].key == AssetKey(["my_prefix", "apple"])
+    assert result[1].key == AssetKey(["my_prefix", "orange"])
+    assert set(result[1].dependency_keys) == {AssetKey(["core", "apple"])}
+    assert result[2].key == AssetKey(["my_prefix", "banana"])
+    assert set(result[2].dependency_keys) == {AssetKey(["my_prefix", "apple"])}
 
 
 def test_assets_prefixed_source_asset():
@@ -1171,8 +1171,8 @@ def test_assets_prefixed_source_asset():
 
     result = AssetGroup([asset2], source_assets=[asset1]).prefixed("my_prefix").assets
     assert len(result) == 1
-    assert result[0].asset_key == AssetKey(["my_prefix", "asset2"])
-    assert set(result[0].dependency_asset_keys) == {AssetKey(["upstream_prefix", "asset1"])}
+    assert result[0].key == AssetKey(["my_prefix", "asset2"])
+    assert set(result[0].dependency_keys) == {AssetKey(["upstream_prefix", "asset1"])}
 
 
 def test_assets_prefixed_no_matches():
@@ -1181,8 +1181,8 @@ def test_assets_prefixed_no_matches():
         del apple
 
     result = AssetGroup([orange]).prefixed("my_prefix").assets
-    assert result[0].asset_key == AssetKey(["my_prefix", "orange"])
-    assert set(result[0].dependency_asset_keys) == {AssetKey("apple")}
+    assert result[0].key == AssetKey(["my_prefix", "orange"])
+    assert set(result[0].dependency_keys) == {AssetKey("apple")}
 
 
 def test_add_asset_groups():
@@ -1202,7 +1202,7 @@ def test_add_asset_groups():
 
     added_group = group1 + group2
     assert len(added_group.assets) == 2
-    assert sorted([asset.asset_key.to_string() for asset in added_group.assets]) == [
+    assert sorted([asset.key.to_string() for asset in added_group.assets]) == [
         AssetKey(["asset1"]).to_string(),
         AssetKey(["asset2"]).to_string(),
     ]
