@@ -238,7 +238,7 @@ graph_asset = AssetsDefinition.from_graph(store_slack_files_in_sql)
 
 #### Defining basic dependencies
 
-The `from_graph` attribute on the `AssetsDefinition` object will infer upstream and downstream asset dependencies from the graph definition provided. In the most simple case when the graph returns a singular output, Dagster infers the name of the graph to be the outputted asset key.
+The `from_graph` attribute on the `AssetsDefinition` object infers upstream and downstream asset dependencies from the graph definition provided. In the most simple case when the graph returns a singular output, Dagster infers the name of the graph to be the outputted asset key.
 
 In the example below, Dagster creates an asset with key `middle_asset` from the `middle_asset` graph. Just like assets defined via <PyObject object="asset" decorator />, each argument to the decorated graph function is an upstream asset name. `middle_asset` depends on `upstream_asset`, and `downstream_asset` depends on `middle_asset`.
 
