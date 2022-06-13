@@ -14,6 +14,11 @@ export const Table = styled(HTMLTable)<TableProps>`
   border: none;
   width: 100%;
 
+  & tr th,
+  & tr td {
+    box-shadow: inset 0 1px 0 ${Colors.KeylineGray}, inset 1px 0 0 ${Colors.KeylineGray} !important;
+  }
+  
   & tr th {
     color: ${Colors.Gray500};
     font-family: ${FontFamily.default};
@@ -27,11 +32,6 @@ export const Table = styled(HTMLTable)<TableProps>`
 
   & tr th:first-child {
     padding-left: ${({$compact}) => ($compact ? '8px' : ' 24px')};
-  }
-
-  & tr th:last-child,
-  & tr td:last-child {
-    border-right: 1px solid ${Colors.KeylineGray};
   }
 
   & tr td {
