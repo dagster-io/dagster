@@ -1,11 +1,13 @@
 ---
 title: Graphs | Dagster
-description: TODO
+description: Graphs are sets of interconnected ops or sub-graphs and form the core of jobs.
 ---
 
 # Graphs
 
-A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-graphs. While each op should perform a relatively simple task, a collection of ops can be assembled into a graph to accomplish complex tasks.
+A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
+
+Dagster also supports using [graphs to create assets](#to-back-assets), allowing you to produce multiple assets with a single graph and easily track cross-job lineage.
 
 Graphs form the core of [jobs](/concepts/ops-jobs-graphs/jobs).
 
@@ -54,7 +56,7 @@ def linear():
 
 ### To back assets
 
-Graphs can also be used to back [software-defined assets](/concepts/assets/software-defined-assets). Graph-backed assets are useful if you have an existing graph that produces and consumes assets. 
+Graphs can be used to create [software-defined assets](/concepts/assets/software-defined-assets). Graph-backed assets are useful if you have an existing graph that produces and consumes assets. 
 
 Wrapping your graph inside a software-defined asset gives you all the benefits of software-defined assets — like cross-job lineage — without requiring you to change the code inside your graph. Refer to the [Software-defined assets documentation](/concepts/assets/software-defined-assets#graph-backed-assets) for more info and examples.
 
