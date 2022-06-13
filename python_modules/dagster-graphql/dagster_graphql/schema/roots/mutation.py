@@ -596,7 +596,7 @@ class GrapheneLogTelemetryMutation(graphene.Mutation):
 
 
 class GrapheneDagitMutation(graphene.ObjectType):
-    """Mutations to programatically interact with your Dagster instance."""
+    """The root for all mutations to modify data in your Dagster instance."""
 
     class Meta:
         name = "DagitMutation"

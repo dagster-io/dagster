@@ -2,8 +2,8 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetOut,
     IOManager,
-    Out,
     Output,
     ResourceDefinition,
     build_op_context,
@@ -30,11 +30,11 @@ def test_with_replaced_asset_keys():
         },
     )
 
-    assert set(replaced.dependency_asset_keys) == {
+    assert set(replaced.dependency_keys) == {
         AssetKey("input1"),
         AssetKey(["apple", "banana"]),
     }
-    assert replaced.asset_keys == {AssetKey(["prefix1", "asset1_changed"])}
+    assert replaced.keys == {AssetKey(["prefix1", "asset1_changed"])}
 
     assert replaced.asset_keys_by_input_name["input1"] == AssetKey("input1")
 
@@ -57,7 +57,7 @@ def test_with_replaced_asset_keys():
 )
 def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
     @multi_asset(
-        outs={"a": Out(), "b": Out(), "c": Out()},
+        outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()},
         internal_asset_deps={
             "a": {AssetKey("in1"), AssetKey("in2")},
             "b": set(),
@@ -70,7 +70,7 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
 
     subbed = abc_.subset_for({AssetKey(key) for key in subset.split(",")})
 
-    assert subbed.asset_keys == (
+    assert subbed.keys == (
         {AssetKey(key) for key in expected_keys.split(",")} if expected_keys else set()
     )
 
@@ -81,9 +81,20 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
     assert subbed.asset_deps == abc_.asset_deps
 
 
+def test_retain_group():
+    @asset(group_name="foo")
+    def bar():
+        pass
+
+    replaced = bar.with_prefix_or_group(
+        output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
+    )
+    assert replaced.group_names[AssetKey("baz")] == "foo"
+
+
 def test_chain_replace_and_subset_for():
     @multi_asset(
-        outs={"a": Out(), "b": Out(), "c": Out()},
+        outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()},
         internal_asset_deps={
             "a": {AssetKey("in1"), AssetKey("in2")},
             "b": set(),
@@ -99,7 +110,7 @@ def test_chain_replace_and_subset_for():
         input_asset_key_replacements={AssetKey(["in1"]): AssetKey(["foo", "bar_in1"])},
     )
 
-    assert replaced_1.asset_keys == {AssetKey(["foo", "foo_a"]), AssetKey("b"), AssetKey("c")}
+    assert replaced_1.keys == {AssetKey(["foo", "foo_a"]), AssetKey("b"), AssetKey("c")}
     assert replaced_1.asset_deps == {
         AssetKey(["foo", "foo_a"]): {AssetKey(["foo", "bar_in1"]), AssetKey("in2")},
         AssetKey("b"): set(),
@@ -114,7 +125,7 @@ def test_chain_replace_and_subset_for():
     subbed_1 = replaced_1.subset_for(
         {AssetKey(["foo", "bar_in1"]), AssetKey("in3"), AssetKey(["foo", "foo_a"]), AssetKey("b")}
     )
-    assert subbed_1.asset_keys == {AssetKey(["foo", "foo_a"]), AssetKey("b")}
+    assert subbed_1.keys == {AssetKey(["foo", "foo_a"]), AssetKey("b")}
 
     replaced_2 = subbed_1.with_prefix_or_group(
         output_asset_key_replacements={
@@ -127,7 +138,7 @@ def test_chain_replace_and_subset_for():
             AssetKey(["in3"]): AssetKey(["foo", "in3"]),
         },
     )
-    assert replaced_2.asset_keys == {
+    assert replaced_2.keys == {
         AssetKey(["again", "foo", "foo_a"]),
         AssetKey(["something", "bar_b"]),
     }
@@ -152,11 +163,11 @@ def test_chain_replace_and_subset_for():
             AssetKey(["c"]),
         }
     )
-    assert subbed_2.asset_keys == {AssetKey(["again", "foo", "foo_a"])}
+    assert subbed_2.keys == {AssetKey(["again", "foo", "foo_a"])}
 
 
 def test_fail_on_subset_for_nonsubsettable():
-    @multi_asset(outs={"a": Out(), "b": Out(), "c": Out()})
+    @multi_asset(outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()})
     def abc_(context, start):  # pylint: disable=unused-argument
         pass
 
@@ -180,14 +191,14 @@ def test_to_source_assets():
 
     @multi_asset(
         outs={
-            "my_out_name": Out(
-                asset_key=AssetKey("my_asset_name"),
+            "my_out_name": AssetOut(
+                key=AssetKey("my_asset_name"),
                 metadata={"a": "b"},
                 io_manager_key="abc",
                 description="blablabla",
             ),
-            "my_other_out_name": Out(
-                asset_key=AssetKey("my_other_asset"),
+            "my_other_out_name": AssetOut(
+                key=AssetKey("my_other_asset"),
                 metadata={"c": "d"},
                 io_manager_key="def",
                 description="ablablabl",

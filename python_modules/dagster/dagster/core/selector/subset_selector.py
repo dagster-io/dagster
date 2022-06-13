@@ -103,7 +103,7 @@ def generate_asset_dep_graph(assets_defs: Iterable["AssetsDefinition"]) -> Depen
     upstream: Dict[str, Set[str]] = {}
     downstream: Dict[str, Set[str]] = {}
     for assets_def in assets_defs:
-        for asset_key in assets_def.asset_keys:
+        for asset_key in assets_def.keys:
             asset_name = asset_key.to_user_string()
             upstream[asset_name] = set()
             downstream[asset_name] = downstream.get(asset_name, set())
@@ -232,7 +232,7 @@ def generate_asset_name_to_definition_map(
 ) -> Mapping[str, "AssetsDefinition"]:
     asset_name_map = {}
     for assets_def in assets_defs:
-        for asset_key in assets_def.asset_keys:
+        for asset_key in assets_def.keys:
             asset_name = asset_key.to_user_string()
             asset_name_map[asset_name] = assets_def
     return asset_name_map
@@ -247,7 +247,7 @@ def fetch_connected_assets_definitions(
     depth: Optional[int] = MAX_NUM,
 ) -> FrozenSet["AssetsDefinition"]:
     depth = MAX_NUM if depth is None else depth
-    names = [asset_key.to_user_string() for asset_key in asset.asset_keys]
+    names = [asset_key.to_user_string() for asset_key in asset.keys]
     connected_names = [
         n for name in names for n in fetch_connected(name, graph, direction=direction, depth=depth)
     ]
@@ -490,7 +490,7 @@ def parse_asset_selection(
 
     # special case: select *
     if len(asset_selection) == 1 and asset_selection[0] == "*":
-        return frozenset(set().union(*(ad.asset_keys for ad in assets_defs)))
+        return frozenset(set().union(*(ad.keys for ad in assets_defs)))
 
     graph = generate_asset_dep_graph(assets_defs)
     assets_set: Set[str] = set()

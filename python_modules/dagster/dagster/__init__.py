@@ -21,6 +21,7 @@ from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.asset_defs import (
     AssetIn,
+    AssetOut,
     AssetSelection,
     AssetsDefinition,
     SourceAsset,
@@ -396,6 +397,7 @@ __all__ = [
     "AssetIn",
     "AssetMaterialization",
     "AssetObservation",
+    "AssetOut",
     "AssetSelection",
     "AssetSensorDefinition",
     "AssetsDefinition",

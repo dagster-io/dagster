@@ -336,6 +336,7 @@ class TestRunStorage:
         one = make_new_run_id()
         two = make_new_run_id()
         three = make_new_run_id()
+        four = make_new_run_id()
 
         storage.add_run(
             TestRunStorage.build_run(
@@ -360,7 +361,16 @@ class TestRunStorage:
             )
         )
 
-        assert len(storage.get_runs()) == 3
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=four,
+                pipeline_name="some_other_pipeline",
+                tags={"tag": "goodbye"},
+                status=PipelineRunStatus.FAILURE,
+            ),
+        )
+
+        assert len(storage.get_runs()) == 4
 
         some_runs = storage.get_runs(RunsFilter(run_ids=[one]))
         count = storage.get_runs_count(RunsFilter(run_ids=[one]))
@@ -406,6 +416,19 @@ class TestRunStorage:
         assert some_runs[0].run_id == two
         assert some_runs[1].run_id == one
 
+        runs_with_multiple_tag_values = storage.get_runs(
+            RunsFilter(tags={"tag": ["hello", "goodbye", "farewell"]})
+        )
+        assert len(runs_with_multiple_tag_values) == 3
+        assert runs_with_multiple_tag_values[0].run_id == four
+        assert runs_with_multiple_tag_values[1].run_id == two
+        assert runs_with_multiple_tag_values[2].run_id == one
+
+        count_with_multiple_tag_values = storage.get_runs_count(
+            RunsFilter(tags={"tag": ["hello", "goodbye", "farewell"]})
+        )
+        assert count_with_multiple_tag_values == 3
+
         some_runs = storage.get_runs(
             RunsFilter(
                 pipeline_name="some_pipeline",
@@ -447,8 +470,8 @@ class TestRunStorage:
 
         some_runs = storage.get_runs(RunsFilter())
         count = storage.get_runs_count(RunsFilter())
-        assert len(some_runs) == 3
-        assert count == 3
+        assert len(some_runs) == 4
+        assert count == 4
 
     def test_fetch_count_by_tag(self, storage):
         assert storage
@@ -1457,3 +1480,23 @@ class TestRunStorage:
                 record = records[0]
                 assert record.start_time == freeze_datetime.timestamp()
                 assert record.end_time == freeze_datetime.timestamp()
+
+    def test_kvs(self, storage):
+        if not storage.supports_kvs():
+            pytest.skip("storage cannot kvs")
+
+        storage.kvs_set({"key": "value"})
+        assert storage.kvs_get({"key"}) == {"key": "value"}
+
+        storage.kvs_set({"key": "new-value"})
+        assert storage.kvs_get({"key"}) == {"key": "new-value"}
+
+        storage.kvs_set({"foo": "foo", "bar": "bar"})
+        assert storage.kvs_get({"foo", "bar", "key"}) == {
+            "key": "new-value",
+            "foo": "foo",
+            "bar": "bar",
+        }
+
+        storage.kvs_set({"foo": "1", "bar": "2", "key": "3"})
+        assert storage.kvs_get({"foo", "bar", "key"}) == {"foo": "1", "bar": "2", "key": "3"}

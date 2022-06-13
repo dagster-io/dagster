@@ -1,6 +1,5 @@
 import logging
 import time
-import warnings
 from collections import OrderedDict, defaultdict
 from typing import Dict, Iterable, Mapping, Optional, Sequence, Set, cast
 
@@ -184,41 +183,24 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_event_records(
         self,
-        event_records_filter: Optional[EventRecordsFilter] = None,
+        event_records_filter: EventRecordsFilter,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Iterable[EventLogRecord]:
-        if not event_records_filter:
-            warnings.warn(
-                "The use of `get_event_records` without an `EventRecordsFilter` is deprecated and "
-                "will begin erroring starting in 0.15.0"
-            )
-
         after_id = (
-            (
-                event_records_filter.after_cursor.id
-                if isinstance(event_records_filter.after_cursor, RunShardedEventsCursor)
-                else event_records_filter.after_cursor
-            )
-            if event_records_filter
-            else None
+            event_records_filter.after_cursor.id
+            if isinstance(event_records_filter.after_cursor, RunShardedEventsCursor)
+            else event_records_filter.after_cursor
         )
         before_id = (
-            (
-                event_records_filter.before_cursor.id
-                if isinstance(event_records_filter.before_cursor, RunShardedEventsCursor)
-                else event_records_filter.before_cursor
-            )
-            if event_records_filter
-            else None
+            event_records_filter.before_cursor.id
+            if isinstance(event_records_filter.before_cursor, RunShardedEventsCursor)
+            else event_records_filter.before_cursor
         )
 
         filtered_events = []
 
         def _apply_filters(record):
-            if not event_records_filter:
-                return True
-
             if (
                 event_records_filter.event_type
                 and record.dagster_event.event_type_value != event_records_filter.event_type.value

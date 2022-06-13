@@ -20,9 +20,7 @@ class AssetSelection(ABC):
 
     @staticmethod
     def assets(*assets_defs: AssetsDefinition) -> "KeysAssetSelection":
-        return KeysAssetSelection(
-            *(key for assets_def in assets_defs for key in assets_def.asset_keys)
-        )
+        return KeysAssetSelection(*(key for assets_def in assets_defs for key in assets_def.keys))
 
     @staticmethod
     def keys(*asset_keys: CoercibleToAssetKey) -> "KeysAssetSelection":

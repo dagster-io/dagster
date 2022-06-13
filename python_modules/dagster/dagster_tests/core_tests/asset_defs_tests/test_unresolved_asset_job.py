@@ -11,6 +11,7 @@ from dagster import (
     IOManager,
     Out,
     Output,
+    SourceAsset,
     define_asset_job,
     graph,
     in_process_executor,
@@ -387,6 +388,33 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
             # dealing with regular asset
             else:
                 assert result.output_for_node(output, "result") == value
+
+
+def test_source_asset_selection():
+    @asset
+    def a(source):
+        return source + 1
+
+    @asset
+    def b(a):
+        return a + 1
+
+    assert define_asset_job("job", selection="*b").resolve(
+        assets=[a, b], source_assets=[SourceAsset("source")]
+    )
+
+
+def test_source_asset_selection_missing():
+    @asset
+    def a(source):
+        return source + 1
+
+    @asset
+    def b(a):
+        return a + 1
+
+    with pytest.raises(DagsterInvalidSubsetError, match="SourceAsset"):
+        define_asset_job("job", selection="*b").resolve(assets=[a, b], source_assets=[])
 
 
 @asset

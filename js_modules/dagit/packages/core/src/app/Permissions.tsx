@@ -83,7 +83,7 @@ const PERMISSIONS_QUERY = gql`
     }
   }
 
-  fragment PermissionFragment on GraphenePermission {
+  fragment PermissionFragment on Permission {
     permission
     value
   }

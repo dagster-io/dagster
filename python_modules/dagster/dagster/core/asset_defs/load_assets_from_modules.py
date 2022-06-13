@@ -54,7 +54,7 @@ def assets_and_source_assets_from_modules(
         for asset in _find_assets_in_module(module):
             if id(asset) not in asset_ids:
                 asset_ids.add(id(asset))
-                keys = asset.asset_keys if isinstance(asset, AssetsDefinition) else [asset.key]
+                keys = asset.keys if isinstance(asset, AssetsDefinition) else [asset.key]
                 for key in keys:
                     if key in asset_keys:
                         modules_str = ", ".join(set([asset_keys[key].__name__, module.__name__]))
@@ -82,8 +82,10 @@ def load_assets_from_modules(
         modules (Iterable[ModuleType]): The Python modules to look for assets inside.
         group_name (Optional[str]):
             Group name to apply to the loaded assets. The returned assets will be copies of the
-            loaded objects, with the group name added
-        key_prefix (Optional[Union[str, List[str]]]): Asset key prefix for assets within the modules.
+            loaded objects, with the group name added.
+        key_prefix (Optional[Union[str, List[str]]]):
+            Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
+            of the loaded objects, with the prefix prepended.
 
     Returns:
         List[Union[AssetsDefinition, SourceAsset]]:
@@ -98,7 +100,7 @@ def load_assets_from_modules(
     if group_name:
         assets = [
             asset.with_prefix_or_group(
-                group_names={asset_key: group_name for asset_key in asset.asset_keys}
+                group_names={asset_key: group_name for asset_key in asset.keys}
             )
             for asset in assets
         ]
@@ -117,8 +119,10 @@ def load_assets_from_current_module(
     Args:
         group_name (Optional[str]):
             Group name to apply to the loaded assets. The returned assets will be copies of the
-            loaded objects, with the group name added
-        key_prefix (Optional[Union[str, List[str]]]): Asset key prefix for assets within the module.
+            loaded objects, with the group name added.
+        key_prefix (Optional[Union[str, List[str]]]):
+            Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
+            of the loaded objects, with the prefix prepended.
 
     Returns:
         List[Union[AssetsDefinition, SourceAsset]]:
@@ -172,8 +176,10 @@ def load_assets_from_package_module(
         package_module (ModuleType): The package module to looks for assets inside.
         group_name (Optional[str]):
             Group name to apply to the loaded assets. The returned assets will be copies of the
-            loaded objects, with the group name added
-        key_prefix (Optional[Union[str, List[str]]]): Asset key prefix for assets within the modules.
+            loaded objects, with the group name added.
+        key_prefix (Optional[Union[str, List[str]]]):
+            Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
+            of the loaded objects, with the prefix prepended.
 
     Returns:
         List[Union[AssetsDefinition, SourceAsset]]:
@@ -188,7 +194,7 @@ def load_assets_from_package_module(
     if group_name:
         assets = [
             asset.with_prefix_or_group(
-                group_names={asset_key: group_name for asset_key in asset.asset_keys}
+                group_names={asset_key: group_name for asset_key in asset.keys}
             )
             for asset in assets
         ]
@@ -210,8 +216,10 @@ def load_assets_from_package_name(
         package_name (str): The name of a Python package to look for assets inside.
         group_name (Optional[str]):
             Group name to apply to the loaded assets. The returned assets will be copies of the
-            loaded objects, with the group name added
-        key_prefix (Optional[Union[str, List[str]]]): Asset key prefix for assets within the modules.
+            loaded objects, with the group name added.
+        key_prefix (Optional[Union[str, List[str]]]):
+            Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
+            of the loaded objects, with the prefix prepended.
 
     Returns:
         List[Union[AssetsDefinition, SourceAsset]]:
@@ -277,10 +285,10 @@ def prefix_assets(
             result = prefixed_asset_key_replacements([asset1, asset2], "my_prefix")
             assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset1"])
             assert result.assets[1].asset_key == AssetKey(["my_prefix", "asset2"])
-            assert result.assets[1].dependency_asset_keys == {AssetKey(["my_prefix", "asset1"])}
+            assert result.assets[1].dependency_keys == {AssetKey(["my_prefix", "asset1"])}
 
     """
-    asset_keys = {asset_key for assets_def in assets_defs for asset_key in assets_def.asset_keys}
+    asset_keys = {asset_key for assets_def in assets_defs for asset_key in assets_def.keys}
 
     if isinstance(key_prefix, str):
         key_prefix = [key_prefix]
@@ -289,10 +297,10 @@ def prefix_assets(
     result_assets: List[AssetsDefinition] = []
     for assets_def in assets_defs:
         output_asset_key_replacements = {
-            asset_key: AssetKey(key_prefix + asset_key.path) for asset_key in assets_def.asset_keys
+            asset_key: AssetKey(key_prefix + asset_key.path) for asset_key in assets_def.keys
         }
         input_asset_key_replacements = {}
-        for dep_asset_key in assets_def.dependency_asset_keys:
+        for dep_asset_key in assets_def.dependency_keys:
             if dep_asset_key in asset_keys:
                 input_asset_key_replacements[dep_asset_key] = AssetKey(
                     key_prefix + dep_asset_key.path

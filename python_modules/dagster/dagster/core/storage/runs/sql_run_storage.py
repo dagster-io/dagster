@@ -51,6 +51,7 @@ from .schema import (
     BulkActionsTable,
     DaemonHeartbeatsTable,
     InstanceInfo,
+    KeyValueStoreTable,
     RunTagsTable,
     RunsTable,
     SecondaryIndexMigrationTable,
@@ -230,7 +231,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             query = query.where(
                 db.or_(
                     *(
-                        db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
+                        db.and_(
+                            RunTagsTable.c.key == key,
+                            (
+                                RunTagsTable.c.value == value
+                                if isinstance(value, str)
+                                else RunTagsTable.c.value.in_(value)
+                            ),
+                        )
                         for key, value in filters.tags.items()
                     )
                 )
@@ -1059,6 +1067,32 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     body=serialize_dagster_namedtuple(partition_backfill),
                 )
             )
+
+    def supports_kvs(self):
+        return True
+
+    def kvs_get(self, keys: Set[str]) -> Dict[str, str]:
+        check.set_param(keys, "keys", of_type=str)
+
+        with self.connect() as conn:
+            rows = conn.execute(
+                db.select(KeyValueStoreTable.columns).where(KeyValueStoreTable.c.key.in_(keys)),
+            )
+            return {row.key: row.value for row in rows}
+
+    def kvs_set(self, pairs: Dict[str, str]) -> None:
+        check.dict_param(pairs, "pairs", key_type=str, value_type=str)
+        db_values = [{"key": k, "value": v} for k, v in pairs.items()]
+
+        with self.connect() as conn:
+            try:
+                conn.execute(KeyValueStoreTable.insert().values(db_values))
+            except db.exc.IntegrityError:
+                conn.execute(
+                    KeyValueStoreTable.update()  # pylint: disable=no-value-for-parameter
+                    .where(KeyValueStoreTable.c.key.in_(pairs.keys()))
+                    .values(value=db.sql.case(pairs, value=KeyValueStoreTable.c.key))
+                )
 
 
 GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"

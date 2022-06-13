@@ -53,7 +53,7 @@ export const TestProvider: React.FC<Props> = (props) => {
     return Object.keys(PERMISSIONS_ALLOW_ALL).map((permission) => {
       const override = permissionOverrides ? permissionOverrides[permission] : null;
       const value = typeof override === 'boolean' ? override : true;
-      return {__typename: 'GraphenePermission', permission, value};
+      return {__typename: 'Permission', permission, value};
     });
   }, [permissionOverrides]);
 

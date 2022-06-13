@@ -35,7 +35,7 @@ def test_assets(schema_prefix):
         asset_key_prefix=["some", "prefix"],
     )
 
-    assert ab_assets[0].asset_keys == {AssetKey(["some", "prefix", t]) for t in destination_tables}
+    assert ab_assets[0].keys == {AssetKey(["some", "prefix", t]) for t in destination_tables}
     assert len(ab_assets[0].op.output_defs) == 2
 
     responses.add(

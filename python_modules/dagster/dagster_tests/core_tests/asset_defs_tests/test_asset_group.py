@@ -5,6 +5,7 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetOut,
     AssetsDefinition,
     DagsterEventType,
     DagsterInvalidDefinitionError,
@@ -268,9 +269,9 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
 
     @multi_asset(
         outs={
-            "a": Out(is_required=False),
-            "b": Out(is_required=False),
-            "c": Out(is_required=False),
+            "a": AssetOut(is_required=False),
+            "b": AssetOut(is_required=False),
+            "c": AssetOut(is_required=False),
         },
         internal_asset_deps={
             "a": {AssetKey("start")},
@@ -302,9 +303,9 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
 
     @multi_asset(
         outs={
-            "d": Out(is_required=False),
-            "e": Out(is_required=False),
-            "f": Out(is_required=False),
+            "d": AssetOut(is_required=False),
+            "e": AssetOut(is_required=False),
+            "f": AssetOut(is_required=False),
         },
         internal_asset_deps={
             "d": {AssetKey("a"), AssetKey("b")},
@@ -553,7 +554,7 @@ def test_subset_does_not_respect_context():
     def start():
         return 1
 
-    @multi_asset(outs={"a": Out(), "b": Out(), "c": Out()}, can_subset=True)
+    @multi_asset(outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()}, can_subset=True)
     def abc(start):
         # this asset declares that it can subset its computation but will always produce all outputs
         yield Output(1 + start, "a")
@@ -610,7 +611,7 @@ def test_subset_cycle_resolution_embed_assets_in_complex_graph():
         io_manager_obj.db[AssetKey(item)] = None
 
     @multi_asset(
-        outs={name: Out(is_required=False) for name in "a,b,c,d,e,f,g,h".split(",")},
+        outs={name: AssetOut(is_required=False) for name in "a,b,c,d,e,f,g,h".split(",")},
         internal_asset_deps={
             "a": set(),
             "b": set(),
@@ -690,7 +691,7 @@ def test_subset_cycle_resolution_complex():
         io_manager_obj.db[AssetKey(item)] = None
 
     @multi_asset(
-        outs={name: Out(is_required=False) for name in "a,b,c,d,e,f".split(",")},
+        outs={name: AssetOut(is_required=False) for name in "a,b,c,d,e,f".split(",")},
         internal_asset_deps={
             "a": set(),
             "b": {AssetKey("x")},
@@ -754,7 +755,7 @@ def test_subset_cycle_resolution_basic():
     s = SourceAsset("s")
 
     @multi_asset(
-        outs={"a": Out(is_required=False), "b": Out(is_required=False)},
+        outs={"a": AssetOut(is_required=False), "b": AssetOut(is_required=False)},
         internal_asset_deps={
             "a": {AssetKey("s")},
             "b": {AssetKey("a_prime")},
@@ -769,7 +770,7 @@ def test_subset_cycle_resolution_basic():
             yield Output(a_prime + 1, "b")
 
     @multi_asset(
-        outs={"a_prime": Out(is_required=False), "b_prime": Out(is_required=False)},
+        outs={"a_prime": AssetOut(is_required=False), "b_prime": AssetOut(is_required=False)},
         internal_asset_deps={
             "a_prime": {AssetKey("a")},
             "b_prime": {AssetKey("b")},
@@ -1040,7 +1041,7 @@ def test_materialize_with_selection():
     def start_asset():
         return "foo"
 
-    @multi_asset(outs={"o1": Out(asset_key=AssetKey("o1")), "o2": Out(asset_key=AssetKey("o2"))})
+    @multi_asset(outs={"o1": AssetOut(), "o2": AssetOut()})
     def middle_asset(start_asset):
         return (start_asset, start_asset)
 
@@ -1118,7 +1119,7 @@ def test_assets_prefixed_single_asset():
         ...
 
     result = AssetGroup([asset1]).prefixed("my_prefix").assets
-    assert result[0].asset_key == AssetKey(["my_prefix", "asset1"])
+    assert result[0].key == AssetKey(["my_prefix", "asset1"])
 
 
 def test_assets_prefixed_internal_dep():
@@ -1131,9 +1132,9 @@ def test_assets_prefixed_internal_dep():
         del asset1
 
     result = AssetGroup([asset1, asset2]).prefixed("my_prefix").assets
-    assert result[0].asset_key == AssetKey(["my_prefix", "asset1"])
-    assert result[1].asset_key == AssetKey(["my_prefix", "asset2"])
-    assert set(result[1].dependency_asset_keys) == {AssetKey(["my_prefix", "asset1"])}
+    assert result[0].key == AssetKey(["my_prefix", "asset1"])
+    assert result[1].key == AssetKey(["my_prefix", "asset2"])
+    assert set(result[1].dependency_keys) == {AssetKey(["my_prefix", "asset1"])}
 
 
 def test_assets_prefixed_disambiguate():
@@ -1155,11 +1156,11 @@ def test_assets_prefixed_disambiguate():
         AssetGroup([asset2, orange, banana], source_assets=[asset1]).prefixed("my_prefix").assets
     )
     assert len(result) == 3
-    assert result[0].asset_key == AssetKey(["my_prefix", "apple"])
-    assert result[1].asset_key == AssetKey(["my_prefix", "orange"])
-    assert set(result[1].dependency_asset_keys) == {AssetKey(["core", "apple"])}
-    assert result[2].asset_key == AssetKey(["my_prefix", "banana"])
-    assert set(result[2].dependency_asset_keys) == {AssetKey(["my_prefix", "apple"])}
+    assert result[0].key == AssetKey(["my_prefix", "apple"])
+    assert result[1].key == AssetKey(["my_prefix", "orange"])
+    assert set(result[1].dependency_keys) == {AssetKey(["core", "apple"])}
+    assert result[2].key == AssetKey(["my_prefix", "banana"])
+    assert set(result[2].dependency_keys) == {AssetKey(["my_prefix", "apple"])}
 
 
 def test_assets_prefixed_source_asset():
@@ -1171,8 +1172,8 @@ def test_assets_prefixed_source_asset():
 
     result = AssetGroup([asset2], source_assets=[asset1]).prefixed("my_prefix").assets
     assert len(result) == 1
-    assert result[0].asset_key == AssetKey(["my_prefix", "asset2"])
-    assert set(result[0].dependency_asset_keys) == {AssetKey(["upstream_prefix", "asset1"])}
+    assert result[0].key == AssetKey(["my_prefix", "asset2"])
+    assert set(result[0].dependency_keys) == {AssetKey(["upstream_prefix", "asset1"])}
 
 
 def test_assets_prefixed_no_matches():
@@ -1181,8 +1182,8 @@ def test_assets_prefixed_no_matches():
         del apple
 
     result = AssetGroup([orange]).prefixed("my_prefix").assets
-    assert result[0].asset_key == AssetKey(["my_prefix", "orange"])
-    assert set(result[0].dependency_asset_keys) == {AssetKey("apple")}
+    assert result[0].key == AssetKey(["my_prefix", "orange"])
+    assert set(result[0].dependency_keys) == {AssetKey("apple")}
 
 
 def test_add_asset_groups():
@@ -1202,7 +1203,7 @@ def test_add_asset_groups():
 
     added_group = group1 + group2
     assert len(added_group.assets) == 2
-    assert sorted([asset.asset_key.to_string() for asset in added_group.assets]) == [
+    assert sorted([asset.key.to_string() for asset in added_group.assets]) == [
         AssetKey(["asset1"]).to_string(),
         AssetKey(["asset2"]).to_string(),
     ]
@@ -1269,8 +1270,8 @@ def test_to_source_assets():
 
     @multi_asset(
         outs={
-            "my_out_name": Out(asset_key=AssetKey("my_asset_name")),
-            "my_other_out_name": Out(asset_key=AssetKey("my_other_asset")),
+            "my_out_name": AssetOut(key=AssetKey("my_asset_name")),
+            "my_other_out_name": AssetOut(key=AssetKey("my_other_asset")),
         }
     )
     def my_multi_asset():
