@@ -23,6 +23,7 @@ dbt_assets = load_assets_from_dbt_project(
     DBT_PROJECT_DIR,
     DBT_PROFILES_DIR,
     key_prefix=["duckdb", "dbt_schema"],
+    source_key_prefix=["duckdb"],
 )
 
 raw_data_assets = load_assets_from_package_module(
@@ -36,16 +37,11 @@ forecasting_assets = load_assets_from_package_module(
     group_name="forecasting",
 )
 
-from dagster import SourceAsset
-
 
 @repository
 def example_repo():
     return with_resources(
-        dbt_assets
-        + raw_data_assets
-        + forecasting_assets
-        + [SourceAsset("users"), SourceAsset("orders")],
+        dbt_assets + raw_data_assets + forecasting_assets,
         resource_defs={
             "io_manager": duckdb_io_manager.configured(
                 {"duckdb_path": os.path.join(DBT_PROJECT_DIR, "example.duckdb")}
