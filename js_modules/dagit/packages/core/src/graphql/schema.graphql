@@ -1983,7 +1983,7 @@ type AssetLatestInfo {
 union EventConnectionOrError = EventConnection | RunNotFoundError | PythonError
 
 """
-Mutations to programatically interact with your Dagster instance.
+The root for all mutations to modify data in your Dagster instance.
 """
 type DagitMutation {
   """
@@ -2011,13 +2011,33 @@ type DagitMutation {
     executionParams: ExecutionParams
     reexecutionParams: ReexecutionParams
   ): LaunchRunReexecutionResult!
+
+  """
+  Enable a schedule to launch runs for a job at a fixed interval.
+  """
   startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
+
+  """
+  Disable a schedule from launching runs for a job.
+  """
   stopRunningSchedule(
     scheduleOriginId: String!
     scheduleSelectorId: String!
   ): ScheduleMutationResult!
+
+  """
+  Enable a sensor to launch runs for a job based on external state change.
+  """
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
+
+  """
+  Set a cursor for a sensor to track state across evaluations.
+  """
   setSensorCursor(cursor: String, sensorSelector: SensorSelector!): SensorOrError!
+
+  """
+  Disable a sensor from launching runs for a job.
+  """
   stopSensor(jobOriginId: String!, jobSelectorId: String!): StopSensorMutationResultOrError!
 
   """
@@ -2599,10 +2619,16 @@ type ScheduleTickFailureData {
   error: PythonError!
 }
 
+"""
+Enable a schedule to launch runs for a job at a fixed interval.
+"""
 type StartScheduleMutation {
   Output: ScheduleMutationResult!
 }
 
+"""
+Disable a schedule from launching runs for a job.
+"""
 type StopRunningScheduleMutation {
   Output: ScheduleMutationResult!
 }
@@ -3041,10 +3067,16 @@ type RunGroups {
   results: [RunGroup!]!
 }
 
+"""
+Disable a sensor from launching runs for a job.
+"""
 type StopSensorMutation {
   Output: StopSensorMutationResultOrError!
 }
 
+"""
+Set a cursor for a sensor to track state across evaluations.
+"""
 type SetSensorCursorMutation {
   Output: SensorOrError!
 }

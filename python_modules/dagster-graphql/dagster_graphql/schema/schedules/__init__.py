@@ -62,6 +62,8 @@ class GrapheneScheduleMutationResult(graphene.Union):
 
 
 class GrapheneStartScheduleMutation(graphene.Mutation):
+    """Enable a schedule to launch runs for a job at a fixed interval."""
+
     Output = graphene.NonNull(GrapheneScheduleMutationResult)
 
     class Arguments:
@@ -77,6 +79,8 @@ class GrapheneStartScheduleMutation(graphene.Mutation):
 
 
 class GrapheneStopRunningScheduleMutation(graphene.Mutation):
+    """Disable a schedule from launching runs for a job."""
+
     Output = graphene.NonNull(GrapheneScheduleMutationResult)
 
     class Arguments:
