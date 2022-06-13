@@ -1,5 +1,4 @@
 import logging
-import warnings
 from abc import abstractmethod
 from collections import OrderedDict
 from datetime import datetime
@@ -594,18 +593,13 @@ class SqlEventLogStorage(EventLogStorage):
     def _apply_filter_to_query(
         self,
         query,
-        event_records_filter=None,
+        event_records_filter,
         asset_details=None,
         apply_cursor_filters=True,
     ):
-        if not event_records_filter:
-            return query
-
-        if event_records_filter.event_type:
-            query = query.where(
-                SqlEventLogStorageTable.c.dagster_event_type
-                == event_records_filter.event_type.value
-            )
+        query = query.where(
+            SqlEventLogStorageTable.c.dagster_event_type == event_records_filter.event_type.value
+        )
 
         if event_records_filter.asset_key:
             query = query.where(
@@ -667,23 +661,17 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_event_records(
         self,
-        event_records_filter: Optional[EventRecordsFilter] = None,
+        event_records_filter: EventRecordsFilter,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Iterable[EventLogRecord]:
         """Returns a list of (record_id, record)."""
-        check.opt_inst_param(event_records_filter, "event_records_filter", EventRecordsFilter)
+        check.inst_param(event_records_filter, "event_records_filter", EventRecordsFilter)
         check.opt_int_param(limit, "limit")
         check.bool_param(ascending, "ascending")
 
-        if not event_records_filter:
-            warnings.warn(
-                "The use of `get_event_records` without an `EventRecordsFilter` is deprecated and "
-                "will begin erroring starting in 0.15.0"
-            )
-
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
-        if event_records_filter and event_records_filter.asset_key:
+        if event_records_filter.asset_key:
             asset_details = next(iter(self._get_assets_details([event_records_filter.asset_key])))
         else:
             asset_details = None
