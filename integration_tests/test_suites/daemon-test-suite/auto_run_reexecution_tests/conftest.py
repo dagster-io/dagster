@@ -17,6 +17,7 @@ def instance():
                 "module": "dagster.core.test_utils",
                 "class": "MockedRunCoordinator",
             },
+            "run_retries": {"enabled": True},
         },
     ) as instance:
         yield instance

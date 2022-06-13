@@ -10,8 +10,6 @@ from dagster.core.storage.tags import MAX_RETRIES_TAG, RETRY_NUMBER_TAG
 from dagster.core.workspace.workspace import IWorkspace
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-DEFAULT_MAX_RETRIES = 0
-
 
 def filter_runs_to_should_retry(
     runs: List[DagsterRun], instance: DagsterInstance, default_max_retries: int
@@ -147,7 +145,7 @@ def consume_new_runs_for_automatic_reexecution(
     for run, retry_number in filter_runs_to_should_retry(
         [cast(DagsterRun, run_record.pipeline_run) for run_record in run_records],
         instance,
-        DEFAULT_MAX_RETRIES,
+        instance.run_retries_max_retries,
     ):
 
         yield

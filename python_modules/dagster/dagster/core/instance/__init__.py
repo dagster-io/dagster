@@ -341,6 +341,18 @@ class DagsterInstance:
                 "worker will be marked as failed, but will not be resumed.",
             )
 
+        if self.run_retries_enabled:
+            check.invariant(
+                self.run_storage.supports_kvs(),
+                "Run retries are enabled, but the configured run storage does not support them. "
+                "Consider switching to Postgres or Mysql.",
+            )
+            check.invariant(
+                self.event_log_storage.supports_event_consumer_queries(),
+                "Run retries are enabled, but the configured event log storage does not support them. "
+                "Consider switching to Postgres or Mysql.",
+            )
+
     # ctors
 
     @staticmethod
@@ -666,6 +678,14 @@ class DagsterInstance:
         return self.get_settings("run_monitoring").get(
             "cancellation_thread_poll_interval_seconds", 10
         )
+
+    @property
+    def run_retries_enabled(self) -> bool:
+        return self.get_settings("run_retries").get("enabled", False)
+
+    @property
+    def run_retries_max_retries(self) -> int:
+        return self.get_settings("run_retries").get("max_retries")
 
     # python logs
 
@@ -2005,6 +2025,7 @@ class DagsterInstance:
     def get_required_daemon_types(self):
         from dagster.core.run_coordinator import QueuedRunCoordinator
         from dagster.core.scheduler import DagsterDaemonScheduler
+        from dagster.daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
         from dagster.daemon.daemon import (
             BackfillDaemon,
             MonitoringDaemon,
@@ -2025,6 +2046,8 @@ class DagsterInstance:
             daemons.append(QueuedRunCoordinatorDaemon.daemon_type())
         if self.run_monitoring_enabled:
             daemons.append(MonitoringDaemon.daemon_type())
+        if self.run_retries_enabled:
+            daemons.append(EventLogConsumerDaemon.daemon_type())
         return daemons
 
     # backfill
