@@ -119,7 +119,7 @@ class SourceAssetIOManagerRequirement(
         source_asset_descriptor = (
             f"SourceAsset with key {self.asset_key}" if self.asset_key else "SourceAsset"
         )
-        return f"io manager with key '{self.key}' required by SourceAsset with key {self.asset_key}"
+        return f"io manager with key '{self.key}' required by {source_asset_descriptor}"
 
 
 class OutputManagerRequirement(

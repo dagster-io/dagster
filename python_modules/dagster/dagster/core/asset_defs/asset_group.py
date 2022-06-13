@@ -1,5 +1,4 @@
 import inspect
-import itertools
 import warnings
 from collections import defaultdict
 from importlib import import_module
@@ -10,7 +9,6 @@ import dagster._check as check
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster.core.definitions.executor_definition import in_process_executor
-from dagster.core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster.core.selector.subset_selector import AssetSelectionData

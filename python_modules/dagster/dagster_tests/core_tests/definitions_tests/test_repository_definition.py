@@ -20,7 +20,6 @@ from dagster import (
     daily_partitioned_config,
     daily_schedule,
     define_asset_job,
-    fs_io_manager,
     graph,
     in_process_executor,
     io_manager,

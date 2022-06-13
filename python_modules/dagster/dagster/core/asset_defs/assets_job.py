@@ -346,7 +346,7 @@ def _attempt_resolve_cycles(
 
 
 def _ensure_resources_dont_conflict(
-    assets: Sequence[AssetsDefinition],
+    assets: Iterable[AssetsDefinition],
     source_assets: Sequence[SourceAsset],
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> None:
@@ -379,10 +379,10 @@ def _ensure_resources_dont_conflict(
 
 
 def check_resources_satisfy_requirements(
-    assets: Sequence[AssetsDefinition],
+    assets: Iterable[AssetsDefinition],
     source_assets: Sequence[SourceAsset],
     resource_defs: Mapping[str, ResourceDefinition],
-) -> Dict[str, ResourceDefinition]:
+) -> None:
     """Ensures that between the provided resources on an asset and the resource_defs mapping, that all resource requirements are satisfied.
 
     Note that resources provided on assets cannot satisfy resource requirements provided on other assets.
@@ -398,7 +398,7 @@ def check_resources_satisfy_requirements(
 
 
 def get_all_resource_defs(
-    assets: Sequence[AssetsDefinition],
+    assets: Iterable[AssetsDefinition],
     source_assets: Sequence[SourceAsset],
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> Dict[str, ResourceDefinition]:
