@@ -1,3 +1,5 @@
+from typing import Dict
+
 import sqlalchemy as db
 
 import dagster._check as check
@@ -8,6 +10,7 @@ from dagster.core.storage.runs import (
     RunStorageSqlMetadata,
     SqlRunStorage,
 )
+from dagster.core.storage.runs.schema import KeyValueStoreTable
 from dagster.core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -158,6 +161,23 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                     },
                 )
             )
+
+    def kvs_set(self, pairs: Dict[str, str]) -> None:
+        check.dict_param(pairs, "pairs", key_type=str, value_type=str)
+
+        # pg speciic on_conflict_do_update
+        insert_stmt = db.dialects.postgresql.insert(KeyValueStoreTable).values(
+            [{"key": k, "value": v} for k, v in pairs.items()]
+        )
+        upsert_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=[
+                KeyValueStoreTable.c.key,
+            ],
+            set_={"value": insert_stmt.excluded.value},
+        )
+
+        with self.connect() as conn:
+            conn.execute(upsert_stmt)
 
     def alembic_version(self):
         alembic_config = pg_alembic_config(__file__)
