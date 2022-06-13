@@ -377,7 +377,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
             ["start+"],
             True,
             (
-                DagsterInvalidSubsetError,
+                DagsterInvalidDefinitionError,
                 r"When building job, the AssetsDefinition 'abc_' contains asset keys "
                 r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\], but attempted to "
                 r"select only \[AssetKey\(\['a'\]\)\]",
