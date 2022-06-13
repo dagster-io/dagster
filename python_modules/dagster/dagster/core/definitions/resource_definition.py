@@ -58,7 +58,7 @@ ResourceFunction: TypeAlias = Union[
 
 
 def is_context_provided(fn: ResourceFunction) -> TypeGuard[ResourceFunctionWithContext]:
-    return len(get_function_params(fn)) == 1
+    return len(get_function_params(fn)) >= 1
 
 
 class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
