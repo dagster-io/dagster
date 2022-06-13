@@ -23,7 +23,8 @@ def materialize(
     By default, will materialize assets to the local filesystem.
 
     Args:
-        assets (Sequence[Union[AssetsDefinition, SourceAsset]]): The assets to materialize. Can also provide ``SourceAsset``s to fill dependencies for asset defs.
+        assets (Sequence[Union[AssetsDefinition, SourceAsset]]):
+            The assets to materialize. Can also provide :py:class:`SourceAsset` objects to fill dependencies for asset defs.
         run_config (Optional[Any]): The run config to use for the run that materializes the assets.
 
     Returns:
@@ -52,13 +53,19 @@ def materialize_in_process(
     """
     Executes a single-threaded, in-process run which materializes provided assets.
 
-    By default, will materialize assets to memory, meaning results will not be persisted. This behavior can be changed by overriding the default io manager key "io_manager", or providing custom io manager keys to assets.
+    By default, will materialize assets to memory, meaning results will not be
+    persisted. This behavior can be changed by overriding the default io
+    manager key "io_manager", or providing custom io manager keys to assets.
 
     Args:
-        assets (Sequence[Union[AssetsDefinition, SourceAsset]]): The assets to materialize. Can also provide ``SourceAsset``s to fill dependencies for asset defs.
+        assets (Sequence[Union[AssetsDefinition, SourceAsset]]):
+            The assets to materialize. Can also provide :py:class:`SourceAsset` objects to fill dependencies for asset defs.
         run_config (Optional[Any]): The run config to use for the run that materializes the assets.
         resources (Optional[Mapping[str, object]]):
-            The resources needed for execution. Can provide resource instances directly, or resource definitions. Note that if provided resources conflict with resources directly on assets, an error will be thrown.
+            The resources needed for execution. Can provide resource instances
+            directly, or resource definitions. Note that if provided resources
+            conflict with resources directly on assets, an error will be thrown.
+
     Returns:
         ExecuteInProcessResult: The result of the execution.
     """

@@ -1,6 +1,3 @@
-import os
-from tempfile import TemporaryDirectory
-
 import pytest
 
 from dagster import (
@@ -10,7 +7,6 @@ from dagster import (
     DagsterInvalidDefinitionError,
     GraphOut,
     IOManager,
-    MetadataValue,
     Out,
     Output,
     ResourceDefinition,
@@ -23,7 +19,6 @@ from dagster import (
     op,
     with_resources,
 )
-from dagster.core.test_utils import instance_for_test
 
 
 def test_basic_materialize_in_process():

@@ -4,8 +4,8 @@ Execution
 =========
 
 
-Executing Jobs
---------------
+Materializing Assets
+--------------------
 
 .. autofunction:: materialize
 
