@@ -12,6 +12,7 @@ from dagster.core.definitions import (
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
+from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.core.execution.context.compute import OpExecutionContext
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import deprecation_warning
@@ -20,6 +21,7 @@ from ..definitions.resource_requirement import (
     ResourceAddable,
     ResourceRequirement,
     ensure_requirements_satisfied,
+    get_resource_key_conflicts,
 )
 from .partition_mapping import PartitionMapping
 from .source_asset import SourceAsset
@@ -416,8 +418,28 @@ class AssetsDefinition(ResourceAddable):
     def required_resource_keys(self) -> Set[str]:
         return {requirement.key for requirement in self.get_resource_requirements()}
 
+    def __str__(self):
+        if len(self.asset_keys) == 1:
+            return f"AssetsDefinition with key {self.asset_key.to_string()}"
+        else:
+            asset_keys = ", ".join(
+                sorted(list([asset_key.to_string() for asset_key in self.asset_keys]))
+            )
+            return f"AssetsDefinition with keys {asset_keys}"
+
     def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
         from dagster.core.execution.resources_init import get_transitive_required_resource_keys
+
+        overlapping_keys = get_resource_key_conflicts(self.resource_defs, resource_defs)
+        if overlapping_keys:
+            overlapping_keys_str = ", ".join(sorted(list(overlapping_keys)))
+            raise DagsterInvalidInvocationError(
+                f"{str(self)} has conflicting resource "
+                "definitions with provided resources for the following keys: "
+                f"{overlapping_keys_str}. Either remove the existing "
+                "resources from the asset or change the resource keys so that "
+                "they don't overlap."
+            )
 
         merged_resource_defs = merge_dicts(resource_defs, self.resource_defs)
 

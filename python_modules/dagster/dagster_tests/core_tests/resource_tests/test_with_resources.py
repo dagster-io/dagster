@@ -434,3 +434,101 @@ def test_bad_config_provided():
                 "foo": "bad",
             },
         )
+
+
+def test_overlapping_io_manager_asset():
+    @io_manager
+    def the_io_manager():
+        pass
+
+    @asset(io_manager_def=the_io_manager)
+    def the_asset():
+        pass
+
+    # Allow a default io manager to be passed in without causing an error
+    with_resources([the_asset], resource_defs={"io_manager": mem_io_manager})
+
+    # Changing the specific affected key causes an error
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=r"AssetsDefinition with key \[\"the_asset\"\] has conflicting resource definitions with provided resources for the following keys: the_asset__io_manager. Either remove the existing resources from the asset or change the resource keys so that they don't overlap.",
+    ):
+        with_resources([the_asset], resource_defs={"the_asset__io_manager": mem_io_manager})
+
+
+def test_overlapping_resources_asset():
+    foo_resource = ResourceDefinition.hardcoded_resource("blah")
+
+    @asset(resource_defs={"foo": foo_resource})
+    def the_asset():
+        pass
+
+    # Even if resource defs match by reference equality, we error
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=r"AssetsDefinition with key \[\"the_asset\"\] has conflicting resource definitions with provided resources for the following keys: foo. Either remove the existing resources from the asset or change the resource keys so that they don't overlap.",
+    ):
+        with_resources(
+            [the_asset],
+            resource_defs={"foo": foo_resource},
+        )
+
+    # Resource def doesn't match by reference equality, error
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=r"AssetsDefinition with key \[\"the_asset\"\] has conflicting resource definitions with provided resources for the following keys: foo. Either remove the existing resources from the asset or change the resource keys so that they don't overlap.",
+    ):
+        with_resources(
+            [the_asset], resource_defs={"foo": ResourceDefinition.hardcoded_resource("diff_ref")}
+        )
+
+
+def test_overlapping_io_manager_source_asset():
+    @io_manager
+    def the_io_manager():
+        pass
+
+    the_asset = SourceAsset(key=AssetKey("the_asset"), io_manager_def=the_io_manager)
+
+    # Allow a default io manager to be passed in without causing an error
+    with_resources([the_asset], resource_defs={"io_manager": mem_io_manager})
+
+    # Changing the specific affected key causes an error
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=r"SourceAsset with key AssetKey\(\['the_asset'\]\) has conflicting resource definitions with provided resources for the following keys: \['the_asset__io_manager'\]. Either remove the existing resources from the asset or change the resource keys so that they don't overlap.",
+    ):
+        with_resources([the_asset], resource_defs={"the_asset__io_manager": mem_io_manager})
+
+
+def test_overlapping_resources_source_asset():
+    foo_resource = ResourceDefinition.hardcoded_resource("blah")
+
+    @io_manager(required_resource_keys={"foo"})
+    def the_io_manager():
+        pass
+
+    the_asset = SourceAsset(
+        key=AssetKey("the_asset"),
+        io_manager_def=the_io_manager,
+        resource_defs={"foo": foo_resource},
+    )
+
+    # If resource defs match by reference equality, we error
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=r"SourceAsset with key AssetKey\(\['the_asset'\]\) has conflicting resource definitions with provided resources for the following keys: \['foo'\]. Either remove the existing resources from the asset or change the resource keys so that they don't overlap.",
+    ):
+        with_resources(
+            [the_asset],
+            resource_defs={"foo": foo_resource},
+        )
+
+    # Resource def doesn't match by reference equality, error
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=r"SourceAsset with key AssetKey\(\['the_asset'\]\) has conflicting resource definitions with provided resources for the following keys: \['foo'\]. Either remove the existing resources from the asset or change the resource keys so that they don't overlap.",
+    ):
+        with_resources(
+            [the_asset], resource_defs={"foo": ResourceDefinition.hardcoded_resource("diff_ref")}
+        )

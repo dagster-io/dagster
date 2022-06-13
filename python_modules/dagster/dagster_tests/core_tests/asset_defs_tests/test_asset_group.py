@@ -16,7 +16,6 @@ from dagster import (
     Out,
     Output,
     ResourceDefinition,
-    fs_io_manager,
     graph,
     in_process_executor,
     io_manager,
@@ -156,7 +155,7 @@ def test_asset_group_missing_resources():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"SourceAsset with asset key AssetKey\(\['foo'\]\) requires IO manager with key 'foo', but none was provided.",
+        match=r"io manager with key 'foo' required by SourceAsset with key \[\"foo\"\] was not provided.",
     ):
         AssetGroup([], source_assets=[source_asset_io_req])
 
@@ -1282,18 +1281,15 @@ def test_to_source_assets():
         SourceAsset(
             AssetKey(["my_asset"]),
             io_manager_key="io_manager",
-            resource_defs={"io_manager": fs_io_manager},
             group_name="abc",
         ),
         SourceAsset(
             AssetKey(["my_asset_name"]),
             io_manager_key="io_manager",
-            resource_defs={"io_manager": fs_io_manager},
         ),
         SourceAsset(
             AssetKey(["my_other_asset"]),
             io_manager_key="io_manager",
-            resource_defs={"io_manager": fs_io_manager},
         ),
     ]
 
@@ -1326,8 +1322,6 @@ def test_build_job_diff_resource_defs():
     def other_asset():
         pass
 
-    group = AssetGroup([the_asset, other_asset])
-
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Conflicting versions of resource with key 'foo' were provided to "
@@ -1335,35 +1329,7 @@ def test_build_job_diff_resource_defs():
         "provided to assets must match by reference equality for a given key.",
     ):
 
-        group.build_job("some_name", selection="the_asset")
-
-
-def test_repo_asset_group_diff_resource_defs():
-    the_resource = ResourceDefinition.hardcoded_resource("blah")
-    other_resource = ResourceDefinition.hardcoded_resource("baz")
-
-    @asset(resource_defs={"foo": the_resource})
-    def the_asset():
-        pass
-
-    @asset(resource_defs={"foo": other_resource})
-    def other_asset():
-        pass
-
-    group = AssetGroup([the_asset, other_asset])
-
-    # Demonstrate that repository construction with conflicting versions of
-    # same key fails
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Conflicting versions of resource with key 'foo' were provided to "
-        "different assets. When constructing a job, all resource definitions "
-        "provided to assets must match by reference equality for a given key.",
-    ):
-
-        @repository
-        def use_group():
-            return [group]
+        AssetGroup([the_asset, other_asset])
 
 
 def test_graph_backed_asset_resources():
@@ -1394,9 +1360,8 @@ def test_graph_backed_asset_resources():
         resource_defs={"foo": other_resource},
     )
 
-    asset_group = AssetGroup([the_asset, other_asset])
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Conflicting versions of resource with key 'foo' were provided to different assets. When constructing a job, all resource definitions provided to assets must match by reference equality for a given key.",
     ):
-        asset_group.materialize()
+        AssetGroup([the_asset, other_asset])

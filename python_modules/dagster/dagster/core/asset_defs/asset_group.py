@@ -11,8 +11,8 @@ from dagster.core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
-from dagster.core.execution.with_resources import with_resources
 from dagster.core.selector.subset_selector import AssetSelectionData
+from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning
 
 from ..definitions.asset_layer import build_asset_selection_job
@@ -21,8 +21,9 @@ from ..definitions.job_definition import JobDefinition
 from ..definitions.partition import PartitionsDefinition
 from ..definitions.resource_definition import ResourceDefinition
 from ..errors import DagsterInvalidDefinitionError
+from ..storage.fs_io_manager import fs_io_manager
 from .assets import AssetsDefinition
-from .assets_job import build_assets_job
+from .assets_job import build_assets_job, check_resources_satisfy_requirements
 from .load_assets_from_modules import (
     assets_and_source_assets_from_modules,
     assets_and_source_assets_from_package_module,
@@ -104,10 +105,10 @@ class AssetGroup:
         resource_defs = check.opt_mapping_param(
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
+        resource_defs = merge_dicts({"io_manager": fs_io_manager}, resource_defs)
         executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
 
-        assets = with_resources(assets, resource_defs)
-        source_assets = with_resources(source_assets, resource_defs)
+        check_resources_satisfy_requirements(assets, source_assets, resource_defs)
 
         self._assets = assets
         self._source_assets = source_assets
