@@ -444,6 +444,7 @@ class FromStepOutput(
         input_def: InputDefinition,
     ) -> Iterator["DagsterEvent"]:
         from dagster.core.events import DagsterEvent
+        from dagster.core.storage.input_manager import InputManager
 
         source_handle = self.step_output_handle
 
@@ -451,7 +452,7 @@ class FromStepOutput(
             manager_key = input_def.input_manager_key
             input_manager = getattr(step_context.resources, manager_key)
             check.invariant(
-                isinstance(input_manager, IOManager),
+                isinstance(input_manager, InputManager),
                 f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
                 f'the manager "{manager_key}" to load it, but it is not an InputManager. '
                 f"Please ensure that the resource returned for resource key "
