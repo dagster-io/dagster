@@ -1,15 +1,19 @@
 import subprocess
 import time
-from typing import List
 
 from dagster import executor, job, op, reconstructable
 from dagster.config.field_utils import Permissive
 from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import execute_pipeline
 from dagster.core.execution.retries import RetryMode
-from dagster.core.executor.step_delegating import StepDelegatingExecutor, StepHandler
+from dagster.core.executor.step_delegating import (
+    CheckStepHealthResult,
+    StepDelegatingExecutor,
+    StepHandler,
+)
 from dagster.core.test_utils import instance_for_test
+from dagster.utils import merge_dicts
 
 
 class TestStepHandler(StepHandler):
@@ -38,11 +42,11 @@ class TestStepHandler(StepHandler):
         TestStepHandler.processes.append(
             subprocess.Popen(step_handler_context.execute_step_args.get_command_args())
         )
-        return []
+        return iter(())
 
-    def check_step_health(self, step_handler_context) -> List[DagsterEvent]:
+    def check_step_health(self, step_handler_context) -> CheckStepHealthResult:
         TestStepHandler.check_step_health_count += 1
-        return []
+        return CheckStepHealthResult.healthy()
 
     def terminate_step(self, step_handler_context):
         TestStepHandler.terminate_step_count += 1
@@ -69,7 +73,8 @@ class TestStepHandler(StepHandler):
 )
 def test_step_delegating_executor(exc_init):
     return StepDelegatingExecutor(
-        TestStepHandler(), retries=RetryMode.DISABLED, **exc_init.executor_config
+        TestStepHandler(),
+        **(merge_dicts({"retries": RetryMode.DISABLED}, exc_init.executor_config)),
     )
 
 
