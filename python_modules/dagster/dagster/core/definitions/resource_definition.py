@@ -6,22 +6,19 @@ from typing import (
     Callable,
     Dict,
     Iterator,
-    List,
     Optional,
     Union,
     cast,
     overload,
 )
 
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
-from dagster.config.config_schema import ConfigSchemaType
 from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster.seven import funcsigs
 from dagster.utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import (
@@ -31,6 +28,7 @@ from ..decorator_utils import (
     validate_expected_params,
 )
 from .definition_config_schema import (
+    CoercableToConfigSchema,
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
@@ -51,11 +49,16 @@ from .scoped_resources_builder import (  # type: ignore
 if TYPE_CHECKING:
     from dagster.core.execution.resources_init import InitResourceContext
 
-ResourceFunction: TypeAlias = Callable[["InitResourceContext"], Any]
+ResourceFunctionWithContext: TypeAlias = Callable[["InitResourceContext"], Any]
+ResourceFunctionWithoutContext: TypeAlias = Callable[[], Any]
+ResourceFunction: TypeAlias = Union[
+    ResourceFunctionWithContext,
+    ResourceFunctionWithoutContext,
+]
 
 
-def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
-    return len(params) >= 1
+def is_context_provided(fn: ResourceFunction) -> TypeGuard[ResourceFunctionWithContext]:
+    return len(get_function_params(fn)) == 1
 
 
 class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
@@ -90,8 +93,8 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
 
     def __init__(
         self,
-        resource_fn: Callable[["InitResourceContext"], Any],
-        config_schema: Optional[Union[Any, ConfigSchemaType]] = None,
+        resource_fn: ResourceFunction,
+        config_schema: CoercableToConfigSchema = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[AbstractSet[str]] = None,
         version: Optional[str] = None,
@@ -107,7 +110,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
             experimental_arg_warning("version", "ResourceDefinition.__init__")
 
     @property
-    def resource_fn(self) -> Callable[..., Any]:
+    def resource_fn(self) -> ResourceFunction:
         return self._resource_fn
 
     @property
@@ -179,7 +182,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
     def copy_for_configured(
         self,
         description: Optional[str],
-        config_schema: Union[ConfigSchemaType, IDefinitionConfigSchema],
+        config_schema: CoercableToConfigSchema,
         _,
     ) -> "ResourceDefinition":
         return ResourceDefinition(
@@ -193,7 +196,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
     def __call__(self, *args, **kwargs):
         from dagster.core.execution.resources_init import InitResourceContext
 
-        context_provided = is_context_provided(get_function_params(self.resource_fn))
+        context_provided = is_context_provided(self.resource_fn)
 
         if context_provided:
             if len(args) + len(kwargs) == 0:
@@ -248,10 +251,10 @@ class _ResourceDecoratorCallable:
             required_resource_keys, "required_resource_keys"
         )
 
-    def __call__(self, resource_fn: Callable[["InitResourceContext"], Any]):
+    def __call__(self, resource_fn: ResourceFunction) -> ResourceDefinition:
         check.callable_param(resource_fn, "resource_fn")
 
-        any_name = ["*"] if is_context_provided(get_function_params(resource_fn)) else []
+        any_name = ["*"] if is_context_provided(resource_fn) else []
 
         params = get_function_params(resource_fn)
 
@@ -285,28 +288,26 @@ class _ResourceDecoratorCallable:
 
 
 @overload
-def resource(config_schema=Callable[["InitResourceContext"], Any]) -> ResourceDefinition:
+def resource(config_schema: ResourceFunction) -> ResourceDefinition:
     ...
 
 
 @overload
 def resource(
-    config_schema: Optional[ConfigSchemaType] = ...,
+    config_schema: CoercableToConfigSchema = ...,
     description: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
     version: Optional[str] = ...,
-) -> Callable[[Callable[["InitResourceContext"], Any]], "ResourceDefinition"]:
+) -> Callable[[ResourceFunction], "ResourceDefinition"]:
     ...
 
 
 def resource(
-    config_schema: Union[Callable[["InitResourceContext"], Any], Optional[ConfigSchemaType]] = None,
+    config_schema: Union[ResourceFunction, CoercableToConfigSchema] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     version: Optional[str] = None,
-) -> Union[
-    Callable[[Callable[["InitResourceContext"], Any]], "ResourceDefinition"], "ResourceDefinition"
-]:
+) -> Union[Callable[[ResourceFunction], "ResourceDefinition"], "ResourceDefinition"]:
     """Define a resource.
 
     The decorated function should accept an :py:class:`InitResourceContext` and return an instance of
@@ -333,7 +334,7 @@ def resource(
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
         return _ResourceDecoratorCallable()(config_schema)  # type: ignore
 
-    def _wrap(resource_fn: Callable[["InitResourceContext"], Any]) -> "ResourceDefinition":
+    def _wrap(resource_fn: ResourceFunction) -> "ResourceDefinition":
         return _ResourceDecoratorCallable(
             config_schema=cast(Optional[Dict[str, Any]], config_schema),
             description=description,
@@ -372,5 +373,5 @@ def make_values_resource(**kwargs: Any) -> ResourceDefinition:
 
     return ResourceDefinition(
         resource_fn=lambda init_context: init_context.resource_config,
-        config_schema=kwargs or Any,
+        config_schema=kwargs or Any,  # type: ignore
     )

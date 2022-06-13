@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, cast
 
 import dagster._check as check
 from dagster.builtins import BuiltinEnum
-from dagster.config.config_schema import ConfigSchemaType
+from dagster.config.config_schema import UserConfigSchema
 from dagster.serdes import whitelist_for_serdes
 
 
@@ -370,7 +370,7 @@ class ScalarUnion(ConfigType):
     def __init__(
         self,
         scalar_type: typing.Any,
-        non_scalar_schema: ConfigSchemaType,
+        non_scalar_schema: UserConfigSchema,
         _key: Optional[str] = None,
     ):
         from .field import resolve_to_config_type

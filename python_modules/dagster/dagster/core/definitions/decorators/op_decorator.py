@@ -14,7 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster.config.config_schema import ConfigSchemaType
+from dagster.config.config_schema import UserConfigSchema
 from dagster.core.decorator_utils import format_docstring_for_description
 
 from ....seven.typing import get_origin
@@ -192,7 +192,7 @@ def op(
     description: Optional[str] = ...,
     ins: Optional[Dict[str, In]] = ...,
     out: Optional[Union[Out, Dict[str, Out]]] = ...,
-    config_schema: Optional[ConfigSchemaType] = ...,
+    config_schema: Optional[UserConfigSchema] = ...,
     required_resource_keys: Optional[Set[str]] = ...,
     tags: Optional[Dict[str, Any]] = ...,
     version: Optional[str] = ...,
@@ -208,7 +208,7 @@ def op(
     description: Optional[str] = None,
     ins: Optional[Dict[str, In]] = None,
     out: Optional[Union[Out, Mapping[str, Out]]] = None,
-    config_schema: Optional[ConfigSchemaType] = None,
+    config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = None,
     tags: Optional[Dict[str, Any]] = None,
     version: Optional[str] = None,

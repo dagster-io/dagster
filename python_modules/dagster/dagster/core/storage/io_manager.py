@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Set, Uni
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster.config.config_schema import ConfigSchemaType
+from dagster.config.config_schema import UserConfigSchema
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.definition_config_schema import (
+    CoercableToConfigSchema,
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
@@ -43,12 +44,12 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
     def __init__(
         self,
         resource_fn: IOManagerFunction,
-        config_schema: Optional[Union[IDefinitionConfigSchema, ConfigSchemaType]] = None,
+        config_schema: CoercableToConfigSchema = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[AbstractSet[str]] = None,
         version: Optional[str] = None,
-        input_config_schema: Optional[Union[IDefinitionConfigSchema, ConfigSchemaType]] = None,
-        output_config_schema: Optional[Union[IDefinitionConfigSchema, ConfigSchemaType]] = None,
+        input_config_schema: CoercableToConfigSchema = None,
+        output_config_schema: CoercableToConfigSchema = None,
     ):
         self._input_config_schema = convert_user_facing_definition_config_schema(
             input_config_schema
@@ -82,7 +83,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
     def copy_for_configured(
         self,
         description: Optional[str],
-        config_schema: Union[ConfigSchemaType, IDefinitionConfigSchema],
+        config_schema: CoercableToConfigSchema,
         _,
     ) -> "IOManagerDefinition":
         return IOManagerDefinition(
@@ -126,7 +127,7 @@ class IOManager(InputManager, OutputManager):
         """User-defined method that loads an input to an op.
 
         Args:
-            context ("InputContext"): The input context, which describes the input that's being loaded
+            context (InputContext): The input context, which describes the input that's being loaded
                 and the upstream output that's being loaded from.
 
         Returns:
@@ -184,33 +185,30 @@ class IOManager(InputManager, OutputManager):
 
 
 @overload
-def io_manager(config_schema=IOManagerFunction) -> IOManagerDefinition:
+def io_manager(config_schema: IOManagerFunction) -> IOManagerDefinition:
     ...
 
 
 @overload
 def io_manager(
-    config_schema: Optional[ConfigSchemaType] = None,
+    config_schema: CoercableToConfigSchema = None,
     description: Optional[str] = None,
-    output_config_schema: Optional[ConfigSchemaType] = None,
-    input_config_schema: Optional[ConfigSchemaType] = None,
+    output_config_schema: CoercableToConfigSchema = None,
+    input_config_schema: CoercableToConfigSchema = None,
     required_resource_keys: Optional[Set[str]] = None,
     version: Optional[str] = None,
-) -> Callable[[Callable[["InitResourceContext"], IOManager]], IOManagerDefinition]:
+) -> Callable[[IOManagerFunction], IOManagerDefinition]:
     ...
 
 
 def io_manager(
-    config_schema: Union[IOManagerFunction, Optional[ConfigSchemaType]] = None,
+    config_schema: Union[IOManagerFunction, CoercableToConfigSchema] = None,
     description: Optional[str] = None,
-    output_config_schema: Optional[ConfigSchemaType] = None,
-    input_config_schema: Optional[ConfigSchemaType] = None,
+    output_config_schema: CoercableToConfigSchema = None,
+    input_config_schema: CoercableToConfigSchema = None,
     required_resource_keys: Optional[Set[str]] = None,
     version: Optional[str] = None,
-) -> Union[
-    IOManagerDefinition,
-    Callable[[Callable[["InitResourceContext"], IOManager]], IOManagerDefinition],
-]:
+) -> Union[IOManagerDefinition, Callable[[IOManagerFunction], IOManagerDefinition],]:
     """
     Define an IO manager.
 
@@ -264,7 +262,7 @@ def io_manager(
 
     def _wrap(resource_fn: IOManagerFunction) -> IOManagerDefinition:
         return _IOManagerDecoratorCallable(
-            config_schema=cast(Optional[ConfigSchemaType], config_schema),
+            config_schema=cast(Optional[UserConfigSchema], config_schema),
             description=description,
             required_resource_keys=required_resource_keys,
             version=version,
@@ -278,10 +276,10 @@ def io_manager(
 class _IOManagerDecoratorCallable:
     def __init__(
         self,
-        config_schema: Optional[ConfigSchemaType] = None,
+        config_schema: CoercableToConfigSchema = None,
         description: Optional[str] = None,
-        output_config_schema: Optional[ConfigSchemaType] = None,
-        input_config_schema: Optional[ConfigSchemaType] = None,
+        output_config_schema: CoercableToConfigSchema = None,
+        input_config_schema: CoercableToConfigSchema = None,
         required_resource_keys: Optional[Set[str]] = None,
         version: Optional[str] = None,
     ):

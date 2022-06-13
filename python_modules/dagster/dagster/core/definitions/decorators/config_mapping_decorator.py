@@ -1,7 +1,7 @@
 from typing import Any, Callable, Optional, Union, overload
 
 import dagster._check as check
-from dagster.config.config_schema import ConfigSchemaType
+from dagster.config.config_schema import UserConfigSchema
 
 from ..config import ConfigMapping
 
@@ -9,7 +9,7 @@ from ..config import ConfigMapping
 class _ConfigMapping:
     def __init__(
         self,
-        config_schema: Optional[ConfigSchemaType] = None,
+        config_schema: Optional[UserConfigSchema] = None,
         receive_processed_config_values: Optional[bool] = None,
     ):
         self.config_schema = config_schema
@@ -37,7 +37,7 @@ def config_mapping(
 @overload
 def config_mapping(
     config_fn: None = ...,
-    config_schema: ConfigSchemaType = ...,
+    config_schema: UserConfigSchema = ...,
     receive_processed_config_values: Optional[bool] = ...,
 ) -> Union[_ConfigMapping, ConfigMapping]:
     ...
@@ -45,7 +45,7 @@ def config_mapping(
 
 def config_mapping(
     config_fn: Optional[Callable[..., Any]] = None,
-    config_schema: Optional[ConfigSchemaType] = None,
+    config_schema: Optional[UserConfigSchema] = None,
     receive_processed_config_values: Optional[bool] = None,
 ) -> Union[ConfigMapping, _ConfigMapping]:
     """Create a config mapping with the specified parameters from the decorated function.

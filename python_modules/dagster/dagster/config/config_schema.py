@@ -6,14 +6,14 @@ if TYPE_CHECKING:
     from dagster.config.config_type import ConfigType
     from dagster.config.field import Field
 
-# Eventually, the below `ConfigSchemaType` should be renamed to `ConfigSchema` and the class
+# Eventually, the below `UserConfigSchema` should be renamed to `ConfigSchema` and the class
 # definition should be dropped. The reason we don't do this now is that sphinx autodoc doesn't
 # support type aliases, so there is no good way to gracefully attach a docstring to this and have it
 # show up in the docs. See: https://github.com/sphinx-doc/sphinx/issues/8934
 #
 # Unfortunately mypy doesn't support recursive types, which would be used to properly define the
 # List/Dict elements of this union: `Dict[str, ConfigSchema]`, `List[ConfigSchema]`.
-ConfigSchemaType: TypeAlias = Union[
+UserConfigSchema: TypeAlias = Union[
     Type[Union[bool, float, int, str]],
     Type[Union[dict, list]],
     "ConfigType",
