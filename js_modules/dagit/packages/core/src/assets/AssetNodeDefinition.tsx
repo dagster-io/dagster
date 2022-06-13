@@ -63,7 +63,10 @@ export const AssetNodeDefinition: React.FC<{
             <Subheading>Description</Subheading>
             <DefinitionLocation assetNode={assetNode} repoAddress={repoAddress} />
           </Box>
-          <Box padding={{vertical: 16, horizontal: 24}} style={{flex: 1, minHeight: 120}}>
+          <Box
+            padding={{vertical: 16, horizontal: 24}}
+            style={{flex: 1, flexBasis: 'content', flexGrow: 0, minHeight: 120}}
+          >
             <Description
               description={assetNode.description || 'No description provided.'}
               maxHeight={260}

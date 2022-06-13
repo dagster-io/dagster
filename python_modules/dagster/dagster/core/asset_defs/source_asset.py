@@ -1,7 +1,7 @@
 from typing import Dict, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
-from dagster.core.definitions.events import AssetKey, CoerceableToAssetKey
+from dagster.core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster.core.definitions.metadata import (
     MetadataEntry,
     MetadataMapping,
@@ -49,7 +49,7 @@ class SourceAsset(
 
     def __new__(
         cls,
-        key: CoerceableToAssetKey,
+        key: CoercibleToAssetKey,
         metadata: Optional[MetadataUserInput] = None,
         io_manager_key: Optional[str] = None,
         io_manager_def: Optional[IOManagerDefinition] = None,

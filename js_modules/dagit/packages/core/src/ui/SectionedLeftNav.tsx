@@ -102,7 +102,8 @@ export const SectionedLeftNav = () => {
               onToggle={onToggle}
               option={repo}
               repoAddress={repoAddress}
-              expanded={expandedKeys.includes(addressAsString)}
+              expanded={sortedRepos.length === 1 || expandedKeys.includes(addressAsString)}
+              collapsible={sortedRepos.length > 1}
               showRepoLocation={duplicateRepoNames.has(repoName)}
               match={match?.repoAddress === repoAddress ? match : null}
             />
@@ -116,8 +117,14 @@ export const SectionedLeftNav = () => {
 const HEADER_HEIGHT = 48;
 const HEADER_HEIGHT_WITH_LOCATION = 64;
 
+// Note: This component uses React.memo so that it only re-renders when it's props change.
+// This means opening/closing a collapsed section doesn't re-render other sections (a nice
+// perf win) but more importantly opening a section doesn't cause the view to scroll back
+// to the selected item, which could be offscreen.
+//
 interface SectionProps {
   expanded: boolean;
+  collapsible: boolean;
   onToggle: (repoAddress: RepoAddress) => void;
   option: DagsterRepoOption;
   match: {itemName: string; itemType: 'asset-group' | 'job'} | null;
@@ -125,13 +132,14 @@ interface SectionProps {
   showRepoLocation: boolean;
 }
 
-export const Section: React.FC<SectionProps> = (props) => {
-  const {expanded, onToggle, option, match, repoAddress, showRepoLocation} = props;
+export const Section: React.FC<SectionProps> = React.memo((props) => {
+  const {expanded, collapsible, onToggle, option, match, repoAddress, showRepoLocation} = props;
   const matchRef = React.useRef<HTMLDivElement>(null);
 
   const jobItems = React.useMemo(() => getJobItemsForOption(option), [option]);
   const assetGroupItems = React.useMemo(() => getAssetGroupItemsForOption(option), [option]);
   const empty = jobItems.length === 0 && assetGroupItems.length === 0;
+  const showTypeLabels = expanded && jobItems.length > 0 && assetGroupItems.length > 0;
 
   React.useEffect(() => {
     if (match && matchRef.current) {
@@ -147,12 +155,10 @@ export const Section: React.FC<SectionProps> = (props) => {
     if (!shownItems.length) {
       return null;
     }
+
     return (
-      <Box
-        padding={{vertical: 8, horizontal: 12}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
-        {expanded && (
+      <Box padding={{vertical: 8, horizontal: 12}}>
+        {showTypeLabels && (
           <ItemTypeLabel>{type === 'asset-group' ? 'Asset Groups' : 'Jobs'}</ItemTypeLabel>
         )}
         {shownItems.map((item) => (
@@ -168,19 +174,23 @@ export const Section: React.FC<SectionProps> = (props) => {
   };
 
   return (
-    <Box background={Colors.Gray100}>
+    <Box background={Colors.Gray100} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
       <SectionHeader
         $open={expanded && !empty}
+        $showTypeLabels={showTypeLabels}
         $showRepoLocation={showRepoLocation}
         disabled={empty}
-        onClick={() => onToggle(repoAddress)}
+        onClick={collapsible ? () => onToggle(repoAddress) : undefined}
       >
-        <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 8}}>
+        <Box
+          flex={{direction: 'row', alignItems: 'flex-start', gap: 8}}
+          style={{flex: 1, maxWidth: '100%'}}
+        >
           <Box margin={{top: 2}}>
             <Icon name="folder_open" size={16} />
           </Box>
           <RepoNameContainer>
-            <div style={{minWidth: 0}}>
+            <Box flex={{direction: 'column'}} style={{flex: 1, minWidth: 0}}>
               <RepoName style={{fontWeight: 500}} data-tooltip={option.repository.name}>
                 {option.repository.name}
               </RepoName>
@@ -189,7 +199,8 @@ export const Section: React.FC<SectionProps> = (props) => {
                   @{option.repositoryLocation.name}
                 </RepoLocation>
               ) : null}
-            </div>
+            </Box>
+
             {/* Wrapper div to prevent tag from stretching vertically */}
             <div>
               <BaseTag
@@ -199,56 +210,60 @@ export const Section: React.FC<SectionProps> = (props) => {
               />
             </div>
           </RepoNameContainer>
-          <Box margin={{top: 2}}>
-            <Icon name="arrow_drop_down" />
-          </Box>
+          {collapsible && (
+            <Box margin={{top: 2}}>
+              <Icon name="arrow_drop_down" />
+            </Box>
+          )}
         </Box>
       </SectionHeader>
       {visibleItems({type: 'job', items: jobItems})}
       {visibleItems({type: 'asset-group', items: assetGroupItems})}
     </Box>
   );
-};
+});
 
-type PathMatch =
-  | {
-      repoPath: string;
-      pipelinePath: string;
-    }
-  | {
-      repoPath: string;
-      groupName: string;
-    };
+type PathMatch = {
+  repoPath: string;
+  pipelinePath?: string;
+  groupName?: string;
+};
 
 const usePathMatch = () => {
   const match = useRouteMatch<PathMatch>([
     '/workspace/:repoPath/(jobs|pipelines)/:pipelinePath',
     '/workspace/:repoPath/asset-groups/:groupName',
   ]);
-  if (!match) {
-    return null;
-  }
-  const repoAddress = repoAddressFromPath(match.params.repoPath);
-  if (!repoAddress) {
-    return null;
-  }
+  const {groupName, repoPath, pipelinePath} = match?.params || {};
 
-  return 'pipelinePath' in match.params
-    ? {
-        repoAddress,
-        itemName: explorerPathFromString(match.params.pipelinePath).pipelineName,
-        itemType: 'job' as const,
-      }
-    : {
-        repoAddress,
-        itemName: match.params.groupName,
-        itemType: 'asset-group' as const,
-      };
+  return React.useMemo(() => {
+    if (!repoPath) {
+      return null;
+    }
+    const repoAddress = repoAddressFromPath(repoPath);
+    if (!repoAddress) {
+      return null;
+    }
+
+    return pipelinePath
+      ? {
+          repoAddress,
+          itemName: explorerPathFromString(pipelinePath).pipelineName,
+          itemType: 'job' as const,
+        }
+      : groupName
+      ? {
+          repoAddress,
+          itemName: groupName,
+          itemType: 'asset-group' as const,
+        }
+      : null;
+  }, [groupName, repoPath, pipelinePath]);
 };
 
 const ItemTypeLabel = styled.div`
   color: ${Colors.Gray600};
-  padding: 8px 12px 4px;
+  padding: 0 12px 4px;
   font-size: 12px;
 `;
 
@@ -258,23 +273,30 @@ const Container = styled.div`
   overflow-x: hidden;
 `;
 
-const SectionHeader = styled.button<{$open: boolean; $showRepoLocation: boolean}>`
+const SectionHeader = styled.button<{
+  $open: boolean;
+  $showTypeLabels: boolean;
+  $showRepoLocation: boolean;
+}>`
   background: ${Colors.Gray100};
   border: 0;
   border-radius: 4px;
   cursor: pointer;
   display: flex;
   align-items: center;
+  font-size: 14px;
   gap: 12px;
   padding: 0 12px 0 24px;
   text-align: left;
+  user-select: none;
   white-space: nowrap;
 
   height: ${({$showRepoLocation}) =>
     $showRepoLocation ? HEADER_HEIGHT_WITH_LOCATION : HEADER_HEIGHT}px;
   width: 100%;
   margin: 0;
-
+  margin-bottom: ${({$showTypeLabels}) => ($showTypeLabels ? '8px' : 0)};
+  
   box-shadow: inset 0px -1px 0 ${Colors.KeylineGray};
 
   :disabled {
@@ -323,7 +345,8 @@ const RepoNameContainer = styled.div`
   display: flex;
   justify-content: space-between;
   margin-top: 2px;
-  width: 244px;
+  flex: 1;
+  min-width: 0;
 `;
 
 const RepoName = styled.div`

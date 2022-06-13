@@ -1,6 +1,8 @@
 import time
 
-from dagster import job, op, repository, schedule
+from dagster_docker import docker_executor
+
+from dagster import fs_io_manager, graph, job, op, repository, schedule
 
 
 @op
@@ -9,19 +11,32 @@ def hello():
 
 
 @op
-def hanging_solid():
+def goodbye(foo):
+    return foo * 2
+
+
+@op
+def hanging_op():
     while True:
         time.sleep(5)
 
 
 @job
 def hanging_job():
-    hanging_solid()
+    hanging_op()
 
 
-@job
-def my_job():
-    hello()
+@graph
+def my_graph():
+    goodbye(hello())
+
+
+my_job = my_graph.to_job(name="my_job")
+my_step_isolated_job = my_graph.to_job(
+    name="my_step_isolated_job",
+    executor_def=docker_executor,
+    resource_defs={"io_manager": fs_io_manager.configured({"base_dir": "/tmp/io_manager_storage"})},
+)
 
 
 @schedule(cron_schedule="* * * * *", job=my_job, execution_timezone="US/Central")
@@ -31,4 +46,4 @@ def my_schedule(_context):
 
 @repository
 def deploy_docker_repository():
-    return [my_job, hanging_job, my_schedule]
+    return [my_job, hanging_job, my_schedule, my_step_isolated_job]

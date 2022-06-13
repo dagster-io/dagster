@@ -58,7 +58,7 @@ def all_assets():
 
 
 def _asset_keys_of(assets_defs):
-    return reduce(operator.or_, [assets_def.asset_keys for assets_def in assets_defs])
+    return reduce(operator.or_, [assets_def.keys for assets_def in assets_defs])
 
 
 def test_asset_selection_all(all_assets):
@@ -91,6 +91,11 @@ def test_asset_selection_keys(all_assets):
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
 
     sel = AssetSelection.keys("alice", "bob")
+    assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
+
+
+def test_asset_selection_assets(all_assets):
+    sel = AssetSelection.assets(alice, bob)
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
 
 

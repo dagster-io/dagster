@@ -486,7 +486,7 @@
   },
   {
     "source": "/tutorial/intro-tutorial/configuring-solids",
-    "destination": "/tutorial/advanced-tutorial/configuring-ops",
+    "destination": "/concepts/configuration/config-schema",
     "permanent": true
   },
   {
@@ -495,8 +495,38 @@
     "permanent": true
   },
   {
+    "source": "/tutorial/advanced-tutorial/configuring-ops",
+    "destination": "/concepts/configuration/config-schema",
+    "permanent": true
+  },
+  {
     "source": "/tutorial/advanced-tutorial/pipelines",
     "destination": "/tutorial/advanced-tutorial/resources",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced-tutorial/types",
+    "destination": "/concepts/types",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced-tutorial/resources",
+    "destination": "/concepts/resources",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced-tutorial/repositories",
+    "destination": "/concepts/repositories-workspaces/repositories",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced-tutorial/scheduling",
+    "destination": "/concepts/partitions-schedules-sensors/schedules",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced-tutorial/materializations",
+    "destination": "/concepts/assets/asset-materializations",
     "permanent": true
   },
   {

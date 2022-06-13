@@ -7,7 +7,7 @@ from typing import Any, Dict, FrozenSet, Iterable, List, Mapping, Optional, Sequ
 
 import dagster._check as check
 from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
@@ -418,7 +418,7 @@ class AssetGroup:
 
                 return jobs
 
-    def prefixed(self, key_prefix: str):
+    def prefixed(self, key_prefix: CoercibleToAssetKeyPrefix):
         """
         Returns an AssetGroup that's identical to this AssetGroup, but with prefixes on all the
         asset keys. The prefix is not added to source assets.
@@ -435,7 +435,7 @@ class AssetGroup:
                     ...
 
                 result = AssetGroup([asset1]).prefixed("my_prefix")
-                assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset1"])
+                assert result.assets[0].key == AssetKey(["my_prefix", "asset1"])
 
         Example with dependencies within the list of assets:
 
@@ -450,9 +450,9 @@ class AssetGroup:
                     ...
 
                 result = AssetGroup([asset1, asset2]).prefixed("my_prefix")
-                assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset1"])
-                assert result.assets[1].asset_key == AssetKey(["my_prefix", "asset2"])
-                assert result.assets[1].dependency_asset_keys == {AssetKey(["my_prefix", "asset1"])}
+                assert result.assets[0].key == AssetKey(["my_prefix", "asset1"])
+                assert result.assets[1].key == AssetKey(["my_prefix", "asset2"])
+                assert result.assets[1].dependency_keys == {AssetKey(["my_prefix", "asset1"])}
 
         Examples with input prefixes provided by source assets:
 
@@ -466,8 +466,8 @@ class AssetGroup:
 
                 result = AssetGroup([asset2], source_assets=[asset1]).prefixed("my_prefix")
                 assert len(result.assets) == 1
-                assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset2"])
-                assert result.assets[0].dependency_asset_keys == {AssetKey(["upstream_prefix", "asset1"])}
+                assert result.assets[0].key == AssetKey(["my_prefix", "asset2"])
+                assert result.assets[0].dependency_keys == {AssetKey(["upstream_prefix", "asset1"])}
                 assert result.source_assets[0].key == AssetKey(["upstream_prefix", "asset1"])
         """
         prefixed_assets = prefix_assets(self.assets, key_prefix)

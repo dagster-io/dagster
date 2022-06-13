@@ -15,9 +15,15 @@ import {WebSocketStatus} from './WebSocketProvider';
 interface Props {
   searchPlaceholder: string;
   rightOfSearchBar?: React.ReactNode;
+  showStatusWarningIcon?: boolean;
 }
 
-export const AppTopNav: React.FC<Props> = ({children, rightOfSearchBar, searchPlaceholder}) => {
+export const AppTopNav: React.FC<Props> = ({
+  children,
+  rightOfSearchBar,
+  searchPlaceholder,
+  showStatusWarningIcon = true,
+}) => {
   const history = useHistory();
 
   return (
@@ -51,7 +57,7 @@ export const AppTopNav: React.FC<Props> = ({children, rightOfSearchBar, searchPl
             <TopNavLink to="/instance">
               <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                 Status
-                <InstanceWarningIcon />
+                {showStatusWarningIcon ? <InstanceWarningIcon /> : null}
               </Box>
             </TopNavLink>
           </ShortcutHandler>

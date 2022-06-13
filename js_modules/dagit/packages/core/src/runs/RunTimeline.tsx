@@ -557,36 +557,38 @@ interface RunHoverContentProps {
 const RunHoverContent = (props: RunHoverContentProps) => {
   const {jobKey, batch} = props;
   return (
-    <Box padding={4} style={{width: '260px'}}>
-      <Box padding={8} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+    <Box style={{width: '260px'}}>
+      <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
         <HoverContentJobName>{jobKey}</HoverContentJobName>
       </Box>
-      {batch.runs.map((run, ii) => (
-        <Box
-          key={run.id}
-          border={ii > 0 ? {side: 'top', width: 1, color: Colors.KeylineGray} : null}
-          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-          padding={8}
-        >
-          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-            <RunStatusDot status={run.status} size={8} />
-            {run.status === 'SCHEDULED' ? (
-              'Scheduled'
-            ) : (
-              <Link to={`/instance/runs/${run.id}`}>
-                <Mono>{run.id.slice(0, 8)}</Mono>
-              </Link>
-            )}
+      <div style={{maxHeight: '240px', overflowY: 'auto'}}>
+        {batch.runs.map((run, ii) => (
+          <Box
+            key={run.id}
+            border={ii > 0 ? {side: 'top', width: 1, color: Colors.KeylineGray} : null}
+            flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+            padding={{vertical: 8, horizontal: 12}}
+          >
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+              <RunStatusDot status={run.status} size={8} />
+              {run.status === 'SCHEDULED' ? (
+                'Scheduled'
+              ) : (
+                <Link to={`/instance/runs/${run.id}`}>
+                  <Mono>{run.id.slice(0, 8)}</Mono>
+                </Link>
+              )}
+            </Box>
+            <Mono>
+              {run.status === 'SCHEDULED' ? (
+                <TimestampDisplay timestamp={run.startTime / 1000} />
+              ) : (
+                <TimeElapsed startUnix={run.startTime / 1000} endUnix={run.endTime / 1000} />
+              )}
+            </Mono>
           </Box>
-          <Mono>
-            {run.status === 'SCHEDULED' ? (
-              <TimestampDisplay timestamp={run.startTime / 1000} />
-            ) : (
-              <TimeElapsed startUnix={run.startTime / 1000} endUnix={run.endTime / 1000} />
-            )}
-          </Mono>
-        </Box>
-      ))}
+        ))}
+      </div>
     </Box>
   );
 };

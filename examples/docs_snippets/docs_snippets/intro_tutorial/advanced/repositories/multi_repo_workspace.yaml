@@ -1,3 +1,0 @@
-load_from:
-  - python_package: docs_snippets.intro_tutorial.advanced.repositories.repos
-  - python_file: repos.py

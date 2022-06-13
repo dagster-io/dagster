@@ -198,7 +198,7 @@ export interface AssetObservationFragment {
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  label: string;
+  label: string | null;
   description: string | null;
   metadataEntries: AssetObservationFragment_metadataEntries[];
 }

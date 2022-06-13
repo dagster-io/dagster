@@ -1,8 +1,12 @@
+# pylint: disable=print-call
+
 import os
 import subprocess
 import time
 from contextlib import contextmanager
+from pathlib import Path
 
+import docker
 import packaging
 import pytest
 import requests
@@ -74,7 +78,60 @@ def release_test_map(request, dagster_most_recent_release):
 @contextmanager
 def docker_service_up(docker_compose_file, build_args=None):
     if IS_BUILDKITE:
-        yield  # buildkite pipeline handles the service
+        try:
+            yield  # buildkite pipeline handles the service
+        finally:
+
+            # collect logs from the containers and upload to buildkite
+            client = docker.client.from_env()
+            containers = client.containers.list()
+
+            current_test = os.environ.get("PYTEST_CURRENT_TEST").split(":")[-1].split(" ")[0]
+            logs_dir = f".docker_logs/{current_test}"
+
+            # delete any existing logs
+            p = subprocess.Popen(["rm", "-rf", "{dir}".format(dir=logs_dir)])
+            p.communicate()
+            assert p.returncode == 0
+
+            Path(logs_dir).mkdir(parents=True, exist_ok=True)
+
+            for c in containers:
+                with open(
+                    "{dir}/{container}-logs.txt".format(dir=logs_dir, container=c.name),
+                    "w",
+                    encoding="utf8",
+                ) as log:
+                    p = subprocess.Popen(
+                        ["docker", "logs", c.name],
+                        stdout=log,
+                        stderr=log,
+                    )
+                    p.communicate()
+                    print(f"container({c.name}) logs dumped")
+                    if p.returncode != 0:
+                        q = subprocess.Popen(
+                            ["docker", "logs", c.name],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                        )
+                        stdout, stderr = q.communicate()
+                        print(f"{c.name} container log dump failed with stdout: ", stdout)
+                        print(f"{c.name} container logs dump failed with stderr: ", stderr)
+
+            p = subprocess.Popen(
+                [
+                    "buildkite-agent",
+                    "artifact",
+                    "upload",
+                    "{dir}/**/*".format(dir=logs_dir),
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            stdout, stderr = p.communicate()
+            print("Buildkite artifact added with stdout: ", stdout)
+            print("Buildkite artifact added with stderr: ", stderr)
         return
 
     try:

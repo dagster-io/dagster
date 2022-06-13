@@ -952,7 +952,11 @@ class TestEventLogStorage:
                 )
 
                 assert asset_key in set(storage.all_asset_keys())
-                _records = storage.get_event_records(EventRecordsFilter(asset_key=asset_key))
+                _records = storage.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_MATERIALIZATION, asset_key=asset_key
+                    )
+                )
                 assert len(_logs) == 1
                 assert re.match("Could not resolve event record as EventLogEntry", _logs[0])
 
@@ -980,7 +984,11 @@ class TestEventLogStorage:
                     )
                 )
                 assert asset_key in set(storage.all_asset_keys())
-                _records = storage.get_event_records(EventRecordsFilter(asset_key=asset_key))
+                _records = storage.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_MATERIALIZATION, asset_key=asset_key
+                    )
+                )
                 assert len(_logs) == 1
                 assert re.match("Could not parse event record id", _logs[0])
 
@@ -1718,12 +1726,16 @@ class TestEventLogStorage:
                         storage.store_event(event)
 
                 records = storage.get_event_records(
-                    EventRecordsFilter(asset_key=AssetKey("asset_key"))
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                        asset_key=AssetKey("asset_key"),
+                    )
                 )
                 assert len(records) == 4
 
                 records = storage.get_event_records(
                     EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
                         asset_key=AssetKey("asset_key"),
                         asset_partitions=["partition_a", "partition_b"],
                     )

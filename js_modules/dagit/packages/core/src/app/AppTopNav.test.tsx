@@ -1,7 +1,8 @@
-import {render, screen, waitFor} from '@testing-library/react';
+import {act, render, screen, waitFor, within} from '@testing-library/react';
 import * as React from 'react';
 
 import {TestProvider} from '../testing/TestProvider';
+import {InstigationStatus} from '../types/globalTypes';
 
 import {AppTopNav} from './AppTopNav';
 
@@ -64,45 +65,122 @@ describe('AppTopNav', () => {
 
   describe('Repo location errors', () => {
     it('does not show warning icon when no errors', async () => {
-      render(
-        <TestProvider apolloProps={{mocks: [defaultMocks]}}>
-          <AppTopNav searchPlaceholder="Test..." />
-        </TestProvider>,
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText(/workspace/i)).toBeVisible();
-        expect(
-          screen.queryByRole('img', {
-            name: /warning/i,
-          }),
-        ).toBeNull();
+      await act(async () => {
+        render(
+          <TestProvider apolloProps={{mocks: [defaultMocks]}}>
+            <AppTopNav searchPlaceholder="Test..." />
+          </TestProvider>,
+        );
       });
+
+      expect(screen.getByText(/workspace/i)).toBeVisible();
+      expect(
+        screen.queryByRole('img', {
+          name: /warning/i,
+        }),
+      ).toBeNull();
     });
 
-    // todo dish: Figure out what graphql-tools is doing with this mock. 🤪
-    // eslint-disable-next-line jest/no-disabled-tests
-    it.skip('shows the error message when repo location errors are found', async () => {
+    it('shows the error message when repo location errors are found', async () => {
       const mocks = {
         RepositoryLocationOrLoadError: () => ({
           __typename: 'PythonError',
         }),
       };
 
-      render(
-        <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
-          <AppTopNav searchPlaceholder="Test..." />
-        </TestProvider>,
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText(/workspace/i)).toBeVisible();
-        expect(
-          screen.getByRole('img', {
-            name: /warning/i,
-          }),
-        ).toBeVisible();
+      await act(async () => {
+        render(
+          <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
+            <AppTopNav searchPlaceholder="Test..." />
+          </TestProvider>,
+        );
       });
+
+      expect(screen.getByText(/workspace/i)).toBeVisible();
+      expect(
+        screen.getByRole('img', {
+          name: /warning/i,
+        }),
+      ).toBeVisible();
+    });
+  });
+
+  describe('Daemon status errors', () => {
+    const mocksWithDaemonError = {
+      DaemonHealth: () => ({
+        allDaemonStatuses: () => [...new Array(1)],
+      }),
+      DaemonStatus: () => ({
+        id: 'SENSOR',
+        daemonType: 'SENSOR',
+        required: true,
+        healthy: false,
+      }),
+    };
+
+    const mocksWithSensor = {
+      Repository: () => ({
+        sensors: () => [...new Array(1)],
+      }),
+      InstigationState: () => ({
+        status: () => InstigationStatus.RUNNING,
+      }),
+    };
+
+    it('does not show status warning icon if there are sensor daemon errors but no sensors', async () => {
+      const mocksWithoutSensor = {
+        Repository: () => ({
+          sensors: () => [],
+        }),
+      };
+
+      await act(async () => {
+        render(
+          <TestProvider
+            apolloProps={{mocks: [defaultMocks, mocksWithDaemonError, mocksWithoutSensor]}}
+          >
+            <AppTopNav searchPlaceholder="Test..." showStatusWarningIcon={false} />
+          </TestProvider>,
+        );
+      });
+
+      expect(screen.getByText(/workspace/i)).toBeVisible();
+      const link = screen.getByRole('link', {name: /status/i});
+      expect(within(link).queryByText(/warning/i)).toBeNull();
+    });
+
+    it('shows status warning icon by default, if there are errors', async () => {
+      await act(async () => {
+        render(
+          <TestProvider
+            apolloProps={{mocks: [defaultMocks, mocksWithDaemonError, mocksWithSensor]}}
+          >
+            <AppTopNav searchPlaceholder="Test..." />
+          </TestProvider>,
+        );
+      });
+
+      const link = screen.getByRole('link', {
+        name: /status warning/i,
+      });
+
+      expect(within(link).getByText(/status/i)).toBeVisible();
+    });
+
+    it('does not show status warning icon if `showStatusWarningIcon` is false, even with errors', async () => {
+      await act(async () => {
+        render(
+          <TestProvider
+            apolloProps={{mocks: [defaultMocks, mocksWithDaemonError, mocksWithSensor]}}
+          >
+            <AppTopNav searchPlaceholder="Test..." showStatusWarningIcon={false} />
+          </TestProvider>,
+        );
+      });
+
+      expect(screen.getByText(/workspace/i)).toBeVisible();
+      const link = screen.getByRole('link', {name: /status/i});
+      expect(within(link).queryByText(/warning/i)).toBeNull();
     });
   });
 });

@@ -92,26 +92,6 @@ cli_args = [
         1,
         None,
     ),
-    (
-        "advanced/materializations/",
-        "materializations.py",
-        "materialization_job",
-        None,
-        None,
-        None,
-        0,
-        None,
-    ),
-    (
-        "advanced/scheduling/",
-        "scheduler.py",
-        "hello_cereal_job",
-        "inputs_env.yaml",
-        None,
-        None,
-        0,
-        None,
-    ),
 ]
 
 

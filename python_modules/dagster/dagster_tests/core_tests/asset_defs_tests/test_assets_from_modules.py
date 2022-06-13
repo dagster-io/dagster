@@ -104,7 +104,7 @@ def test_load_assets_from_modules_with_group_name():
     def check_asset_group(assets):
         for asset in assets:
             if isinstance(asset, AssetsDefinition):
-                asset_keys = asset.asset_keys
+                asset_keys = asset.keys
                 for asset_key in asset_keys:
                     assert asset.group_names.get(asset_key) == "my_cool_group"
             elif isinstance(asset, SourceAsset):
@@ -127,21 +127,30 @@ def test_respect_existing_groups():
         load_assets_from_current_module(group_name="yay")
 
 
-def test_prefix():
+@pytest.mark.parametrize(
+    "prefix",
+    [
+        "my_cool_prefix",
+        ["foo", "my_cool_prefix"],
+        ["foo", "bar", "baz", "my_cool_prefix"],
+    ],
+)
+def test_prefix(prefix):
     from . import asset_package
     from .asset_package import module_with_assets
 
     def check_asset_prefix(assets):
         for asset in assets:
             if isinstance(asset, AssetsDefinition):
-                asset_keys = asset.asset_keys
+                asset_keys = asset.keys
                 for asset_key in asset_keys:
-                    assert asset_key.path[0] == "my_cool_prefix"
+                    observed_prefix = asset_key.path[:-1]
+                    if len(observed_prefix) == 1:
+                        observed_prefix = observed_prefix[0]
+                    assert observed_prefix == prefix
 
-    assets = load_assets_from_modules(
-        [asset_package, module_with_assets], key_prefix="my_cool_prefix"
-    )
+    assets = load_assets_from_modules([asset_package, module_with_assets], key_prefix=prefix)
     check_asset_prefix(assets)
 
-    assets = load_assets_from_package_module(asset_package, key_prefix="my_cool_prefix")
+    assets = load_assets_from_package_module(asset_package, key_prefix=prefix)
     check_asset_prefix(assets)

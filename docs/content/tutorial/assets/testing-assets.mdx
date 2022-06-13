@@ -24,23 +24,21 @@ def test_nabisco_cereals():
     assert result == [{"name": "cereal1", "mfr": "N"}]
 ```
 
-We'll also write a test for all the assets together. To do that, we need to combine them into an <PyObject object="AssetGroup" />. Then, we can invoke <PyObject object="AssetGroup" method="materialize_in_process" />, which returns an <PyObject module="dagster" object="ExecuteInProcessResult" />, whose methods let us investigate, in detail, the success or failure of execution, the values produced by the computation, and (as we'll see later) other events associated with execution.
+We'll also write a test for all the assets together. To do that, we can put them in a list and then pass it to the <PyObject object="materialize" /> function. That returns an <PyObject object="ExecuteInProcessResult" />, whose methods let us investigate, in detail, the success or failure of execution, the values produced by the computation, and other events associated with execution.
 
-```python file=/guides/dagster/asset_tutorial/complex_asset_graph_tests.py startafter=start_asset_group_test endbefore=end_asset_group_test
-from dagster import AssetGroup
+```python file=/guides/dagster/asset_tutorial/complex_asset_graph_tests.py startafter=start_all_assets_test endbefore=end_all_assets_test
+from dagster import materialize
 
 
-def test_cereal_asset_group():
-    group = AssetGroup(
-        [
-            nabisco_cereals,
-            cereals,
-            cereal_protein_fractions,
-            highest_protein_nabisco_cereal,
-        ]
-    )
+def test_cereal_assets():
+    assets = [
+        nabisco_cereals,
+        cereals,
+        cereal_protein_fractions,
+        highest_protein_nabisco_cereal,
+    ]
 
-    result = group.materialize()
+    result = materialize(assets)
     assert result.success
     assert result.output_for_node("highest_protein_nabisco_cereal") == "100% Bran"
 ```
@@ -57,7 +55,7 @@ Dagster is written to make testing easy in a domain where it has historically be
 
 ## Conclusion
 
-🎉 Congratulations! Having reached this far, you now have a working, tested group of software-defined assets.
+🎉 Congratulations! Having reached this far, you now have a working, tested set of software-defined assets.
 
 What if you want to do more?
 
