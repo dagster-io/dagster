@@ -32,22 +32,9 @@ def pandas_io_manager(init_context):
 
 class NumpyCsvIOManager(PandasCsvIOManager):
     def load_input(self, context) -> np.ndarray:
-        print(context.upstream_output)
-        if context.upstream_output:
-            print("LOADING WITH AN UPSTREAM OUTPUT")
-            file_path = self._get_path(context.upstream_output)
-            df = np.genfromtxt(file_path, delimiter=",", dtype=None)
-            return df
-        else:
-            print("LOADING WITHOUT AN UPSTREAM OUTPUT")
-            df = pd.DataFrame(
-                {
-                    "ints": [10, 20, 30, 40],
-                    "floats": [10.0, 20.0, 30.0, 40.0],
-                    "strings": ["ten", "twenty", "thirty", "forty"],
-                }
-            )
-            return df
+        file_path = self._get_path(context.upstream_output)
+        df = np.genfromtxt(file_path, delimiter=",", dtype=None)
+        return df
 
 
 @io_manager(config_schema={"base_dir": Field(Noneable(str), default_value=None, is_required=False)})
@@ -73,7 +60,7 @@ def avg_ints(context, df):
     context.log.info(f"Dataframe with type {type(df)} has average of the ints is {avg}")
 
 
-@op(ins={"df": In(input_manager_key="numpy_csv_mgr")})
+@op
 def median_floats(context, df):
     med = df["floats"].median().item()
     context.log.info(f"Dataframe with type {type(df)} has median of the floats is {med}")
@@ -91,7 +78,7 @@ def count_rows(context, df: np.ndarray):
 def df_stats():
     df = make_a_df()
     avg_ints(df)
-    median_floats()  # no output passed, will load using input manager
+    median_floats(df)
     count_rows(df)
 
 

@@ -296,16 +296,16 @@ class FromRootInputManager(
         solid_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
         config_data = solid_config.inputs.get(self.input_name) if solid_config else None
 
-        loader = getattr(step_context.resources, input_def.input_manager_key)
+        loader = getattr(step_context.resources, input_def.root_manager_key)
         load_input_context = step_context.for_input_manager(
             input_def.name,
             config_data,
             metadata=input_def.metadata,
             dagster_type=input_def.dagster_type,
             resource_config=step_context.resolved_run_config.resources[
-                input_def.input_manager_key
+                input_def.root_manager_key
             ].config,
-            resources=build_resources_for_manager(input_def.input_manager_key, step_context),
+            resources=build_resources_for_manager(input_def.root_manager_key, step_context),
         )
 
         yield from _load_input_with_input_manager(loader, load_input_context)
@@ -315,7 +315,7 @@ class FromRootInputManager(
         yield DagsterEvent.loaded_input(
             step_context,
             input_name=input_def.name,
-            manager_key=input_def.input_manager_key,
+            manager_key=input_def.root_manager_key,
             metadata_entries=[
                 entry for entry in metadata_entries if isinstance(entry, MetadataEntry)
             ],
@@ -325,7 +325,7 @@ class FromRootInputManager(
         from ..resolve_versions import check_valid_version, resolve_config_version
 
         solid = pipeline_def.get_solid(self.solid_handle)
-        root_manager_key = solid.input_def_named(self.input_name).input_manager_key
+        root_manager_key = solid.input_def_named(self.input_name).root_manager_key
         root_manager_def = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs[
             root_manager_key
         ]
@@ -363,7 +363,7 @@ class FromRootInputManager(
     def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
         input_def = pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
 
-        return {input_def.input_manager_key}
+        return {input_def.root_manager_key}
 
 
 @whitelist_for_serdes
@@ -454,9 +454,9 @@ class FromStepOutput(
             check.invariant(
                 isinstance(input_manager, InputManager),
                 f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
-                f'the manager "{manager_key}" to load it, but it is not an InputManager. '
+                f'the manager "{manager_key}" to load it, but it is not an IOManager. '
                 f"Please ensure that the resource returned for resource key "
-                f'"{manager_key}" is an InputManager.',
+                f'"{manager_key}" is an IOManager.',
             )
         else:
             manager_key = step_context.execution_plan.get_manager_key(
