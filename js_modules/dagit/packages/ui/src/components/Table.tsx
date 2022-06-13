@@ -34,6 +34,11 @@ export const Table = styled(HTMLTable)<TableProps>`
     padding-left: ${({$compact}) => ($compact ? '8px' : ' 24px')};
   }
 
+  & tr th:last-child,
+  & tr td:last-child {
+    border-right: 1px solid ${Colors.KeylineGray};
+  }
+
   & tr td {
     color: ${Colors.Gray900};
     font-family: ${FontFamily.monospace};
