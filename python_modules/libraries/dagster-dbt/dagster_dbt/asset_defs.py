@@ -104,9 +104,15 @@ def _get_node_name(node_info: Mapping[str, Any]):
 
 
 def _get_node_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
-    """By default, a dbt node's key is the union of its model name and any schema configured on
+    """By default:
+
+        dbt sources: a dbt source's key is the union of its source name and its table name
+        dbt models: a dbt model's key is the union of its model name and any schema configured on
     the model itself.
     """
+    print(node_info)
+    if node_info["resource_type"] == "source":
+        pass
     configured_schema = node_info["config"].get("schema")
     if configured_schema is not None:
         components = [configured_schema, node_info["name"]]
@@ -305,6 +311,7 @@ def load_assets_from_dbt_project(
     target_dir: Optional[str] = None,
     select: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     runtime_metadata_fn: Optional[
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
@@ -328,6 +335,8 @@ def load_assets_from_dbt_project(
             to include. Defaults to "*".
         key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all models in the dbt
             project. Does not apply to sources.
+        source_key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all sources in the
+            dbt project. Does not apply to models.
         runtime_metadata_fn: (Optional[Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]]):
             A function that will be run after any of the assets are materialized and returns
             metadata entries for the asset, to be displayed in the asset catalog for that run.
@@ -357,6 +366,7 @@ def load_assets_from_dbt_project(
     return load_assets_from_dbt_manifest(
         manifest_json=manifest_json,
         key_prefix=key_prefix,
+        source_key_prefix=source_key_prefix,
         runtime_metadata_fn=runtime_metadata_fn,
         io_manager_key=io_manager_key,
         selected_unique_ids=selected_unique_ids,
@@ -387,6 +397,10 @@ def load_assets_from_dbt_manifest(
     Args:
         manifest_json (Optional[Mapping[str, Any]]): The contents of a DBT manifest.json, which contains
             a set of models to load into assets.
+        key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all models in the dbt
+            project. Does not apply to sources.
+        source_key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all sources in the
+            dbt project. Does not apply to models.
         runtime_metadata_fn: (Optional[Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]]):
             A function that will be run after any of the assets are materialized and returns
             metadata entries for the asset, to be displayed in the asset catalog for that run.
@@ -417,17 +431,27 @@ def load_assets_from_dbt_manifest(
         # must resolve the selection string using the existing manifest.json data (hacky)
         selected_unique_ids = _select_unique_ids_from_manifest_json(manifest_json, select)
 
-    dbt_assets = [
-        _dbt_nodes_to_assets(
-            dbt_nodes,
-            runtime_metadata_fn=runtime_metadata_fn,
-            io_manager_key=io_manager_key,
-            select=select,
-            selected_unique_ids=selected_unique_ids,
-            node_info_to_asset_key=node_info_to_asset_key,
-            use_build_command=use_build_command,
-        )
-    ]
+    dbt_assets_def = _dbt_nodes_to_assets(
+        dbt_nodes,
+        runtime_metadata_fn=runtime_metadata_fn,
+        io_manager_key=io_manager_key,
+        select=select,
+        selected_unique_ids=selected_unique_ids,
+        node_info_to_asset_key=node_info_to_asset_key,
+        use_build_command=use_build_command,
+    )
+    if source_key_prefix:
+        if isinstance(source_key_prefix, str):
+            source_key_prefix = [source_key_prefix]
+        input_key_replacements = {
+            input_key: AssetKey(source_key_prefix + input_key.path)
+            for input_key in dbt_assets_def.asset_keys_by_input_name.values()
+        }
+        dbt_assets = [
+            dbt_assets_def.with_prefix_or_group(input_asset_key_replacements=input_key_replacements)
+        ]
+    else:
+        dbt_assets = [dbt_assets_def]
 
     if key_prefix:
         dbt_assets = prefix_assets(dbt_assets, key_prefix)
