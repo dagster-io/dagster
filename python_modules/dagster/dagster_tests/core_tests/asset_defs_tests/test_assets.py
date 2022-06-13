@@ -2,8 +2,8 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetOut,
     IOManager,
-    Out,
     Output,
     ResourceDefinition,
     build_op_context,
@@ -57,7 +57,7 @@ def test_with_replaced_asset_keys():
 )
 def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
     @multi_asset(
-        outs={"a": Out(), "b": Out(), "c": Out()},
+        outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()},
         internal_asset_deps={
             "a": {AssetKey("in1"), AssetKey("in2")},
             "b": set(),
@@ -94,7 +94,7 @@ def test_retain_group():
 
 def test_chain_replace_and_subset_for():
     @multi_asset(
-        outs={"a": Out(), "b": Out(), "c": Out()},
+        outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()},
         internal_asset_deps={
             "a": {AssetKey("in1"), AssetKey("in2")},
             "b": set(),
@@ -167,7 +167,7 @@ def test_chain_replace_and_subset_for():
 
 
 def test_fail_on_subset_for_nonsubsettable():
-    @multi_asset(outs={"a": Out(), "b": Out(), "c": Out()})
+    @multi_asset(outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()})
     def abc_(context, start):  # pylint: disable=unused-argument
         pass
 
@@ -191,14 +191,14 @@ def test_to_source_assets():
 
     @multi_asset(
         outs={
-            "my_out_name": Out(
-                asset_key=AssetKey("my_asset_name"),
+            "my_out_name": AssetOut(
+                key=AssetKey("my_asset_name"),
                 metadata={"a": "b"},
                 io_manager_key="abc",
                 description="blablabla",
             ),
-            "my_other_out_name": Out(
-                asset_key=AssetKey("my_other_asset"),
+            "my_other_out_name": AssetOut(
+                key=AssetKey("my_other_asset"),
                 metadata={"c": "d"},
                 io_manager_key="def",
                 description="ablablabl",

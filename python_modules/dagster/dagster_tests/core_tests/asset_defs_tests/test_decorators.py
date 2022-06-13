@@ -4,6 +4,7 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetOut,
     DagsterInvalidDefinitionError,
     OpExecutionContext,
     Out,
@@ -56,7 +57,7 @@ def test_asset_with_config_schema():
 
 
 def test_multi_asset_with_config_schema():
-    @multi_asset(outs={"o1": Out(asset_key=AssetKey("o1"))}, config_schema={"foo": int})
+    @multi_asset(outs={"o1": AssetOut()}, config_schema={"foo": int})
     def my_asset(arg1):
         return arg1
 
@@ -72,7 +73,7 @@ def test_asset_with_compute_kind():
 
 
 def test_multi_asset_with_compute_kind():
-    @multi_asset(outs={"o1": Out(asset_key=AssetKey("o1"))}, compute_kind="sql")
+    @multi_asset(outs={"o1": AssetOut()}, compute_kind="sql")
     def my_asset(arg1):
         return arg1
 
@@ -80,6 +81,37 @@ def test_multi_asset_with_compute_kind():
 
 
 def test_multi_asset_out_name_diff_from_asset_key():
+    @multi_asset(
+        outs={
+            "my_out_name": AssetOut(key=AssetKey("my_asset_name")),
+            "my_other_out_name": AssetOut(key=AssetKey("my_other_asset")),
+        }
+    )
+    def my_asset():
+        yield Output(1, "my_out_name")
+        yield Output(2, "my_other_out_name")
+
+    assert my_asset.keys == {AssetKey("my_asset_name"), AssetKey("my_other_asset")}
+
+
+def test_multi_asset_key_prefix():
+    @multi_asset(
+        outs={
+            "my_asset_name": AssetOut(key_prefix="prefix1"),
+            "my_other_asset": AssetOut(key_prefix="prefix2"),
+        }
+    )
+    def my_asset():
+        yield Output(1, "my_asset_name")
+        yield Output(2, "my_other_asset")
+
+    assert my_asset.keys == {
+        AssetKey(["prefix1", "my_asset_name"]),
+        AssetKey(["prefix2", "my_other_asset"]),
+    }
+
+
+def test_multi_asset_out_backcompat():
     @multi_asset(
         outs={
             "my_out_name": Out(asset_key=AssetKey("my_asset_name")),
@@ -94,7 +126,7 @@ def test_multi_asset_out_name_diff_from_asset_key():
 
 
 def test_multi_asset_infer_from_empty_asset_key():
-    @multi_asset(outs={"my_out_name": Out(), "my_other_out_name": Out()})
+    @multi_asset(outs={"my_out_name": AssetOut(), "my_other_out_name": AssetOut()})
     def my_asset():
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
@@ -105,8 +137,8 @@ def test_multi_asset_infer_from_empty_asset_key():
 def test_multi_asset_internal_asset_deps_metadata():
     @multi_asset(
         outs={
-            "my_out_name": Out(metadata={"foo": "bar"}),
-            "my_other_out_name": Out(metadata={"bar": "foo"}),
+            "my_out_name": AssetOut(metadata={"foo": "bar"}),
+            "my_other_out_name": AssetOut(metadata={"bar": "foo"}),
         },
         internal_asset_deps={
             "my_out_name": {AssetKey("my_other_out_name"), AssetKey("my_in_name")},
@@ -131,7 +163,7 @@ def test_multi_asset_internal_asset_deps_invalid():
     with pytest.raises(check.CheckError, match="Invalid out key"):
 
         @multi_asset(
-            outs={"my_out_name": Out()},
+            outs={"my_out_name": AssetOut()},
             internal_asset_deps={"something_weird": {AssetKey("my_out_name")}},
         )
         def _my_asset():
@@ -140,7 +172,7 @@ def test_multi_asset_internal_asset_deps_invalid():
     with pytest.raises(check.CheckError, match="Invalid asset dependencies"):
 
         @multi_asset(
-            outs={"my_out_name": Out()},
+            outs={"my_out_name": AssetOut()},
             internal_asset_deps={"my_out_name": {AssetKey("something_weird")}},
         )
         def _my_asset():

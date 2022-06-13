@@ -5,6 +5,7 @@ import pytest
 from dagster import (
     AssetGroup,
     AssetKey,
+    AssetOut,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
@@ -1079,8 +1080,8 @@ def test_internal_asset_deps_assets():
 
     @multi_asset(
         outs={
-            "my_out_name": Out(metadata={"foo": "bar"}),
-            "my_other_out_name": Out(metadata={"bar": "foo"}),
+            "my_out_name": AssetOut(metadata={"foo": "bar"}),
+            "my_other_out_name": AssetOut(metadata={"bar": "foo"}),
         },
         internal_asset_deps={
             "my_out_name": {AssetKey("my_other_out_name")},
@@ -1109,7 +1110,9 @@ def test_internal_asset_deps_assets():
     }
 
 
-@multi_asset(outs={"a": Out(is_required=False), "b": Out(is_required=False)}, can_subset=True)
+@multi_asset(
+    outs={"a": AssetOut(is_required=False), "b": AssetOut(is_required=False)}, can_subset=True
+)
 def ab(context, foo):
     if "a" in context.selected_output_names:
         yield Output(foo + 1, "a")
