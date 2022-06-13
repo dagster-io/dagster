@@ -110,8 +110,17 @@ def _get_node_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
         dbt models: a dbt model's key is the union of its model name and any schema configured on
     the model itself.
     """
+<<<<<<< HEAD
     if node_info["resource_type"] == "source":
         components = [node_info["source_name"], node_info["name"]]
+=======
+    print(node_info)
+    if node_info["resource_type"] == "source":
+        pass
+    configured_schema = node_info["config"].get("schema")
+    if configured_schema is not None:
+        components = [configured_schema, node_info["name"]]
+>>>>>>> wip
     else:
         configured_schema = node_info["config"].get("schema")
         if configured_schema is not None:

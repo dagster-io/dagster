@@ -2,6 +2,9 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetsDefinition,
+    op,
+    Out,
     AssetOut,
     AssetsDefinition,
     IOManager,
