@@ -37,7 +37,7 @@ def test_schema_type_names_without_graphene(runner):
     ), f"'Graphene' cannot be included in the GraphQL type name. Violating types: {violations}."
 
 
-@pytest.mark.parametrize("operation_type", ["mutationType"])
+@pytest.mark.parametrize("operation_type", ["queryType", "mutationType"])
 def test_schema_operation_fields_have_descriptions(runner, operation_type):
     query = f"""
     query GetOperationFieldDescriptions {{
