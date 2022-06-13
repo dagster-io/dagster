@@ -530,7 +530,7 @@ def _validate_resource_reqs_for_asset_group(
                 f"Missing resource keys: {missing_resource_keys}"
             )
 
-        for output_name, asset_key in asset_def.asset_keys_by_output_name.items():
+        for output_name, asset_key in asset_def.keys_by_output_name.items():
             output_def, _ = asset_def.node_def.resolve_output_to_origin(
                 output_name, NodeHandle(name=asset_def.node_def.name, parent=None)
             )

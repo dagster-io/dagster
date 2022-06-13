@@ -175,7 +175,7 @@ def build_source_assets_by_key(
         if isinstance(asset_source, SourceAsset):
             source_assets_by_key[asset_source.key] = asset_source
         elif isinstance(asset_source, AssetsDefinition):
-            for output_name, asset_key in asset_source.asset_keys_by_output_name.items():
+            for output_name, asset_key in asset_source.keys_by_output_name.items():
                 if asset_key:
                     source_assets_by_key[asset_key] = asset_source.node_def.output_def_named(
                         output_name
@@ -210,7 +210,7 @@ def build_deps(
 
         # unique handle for each AssetsDefinition
         assets_defs_by_node_handle[NodeHandle(node_alias, parent=None)] = assets_def
-        for output_name, key in assets_def.asset_keys_by_output_name.items():
+        for output_name, key in assets_def.keys_by_output_name.items():
             node_alias_and_output_by_asset_key[key] = (node_alias, output_name)
 
     deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
@@ -224,7 +224,7 @@ def build_deps(
         deps[node_key] = {}
 
         # connect each input of this AssetsDefinition to the proper upstream node
-        for input_name, upstream_asset_key in assets_def.asset_keys_by_input_name.items():
+        for input_name, upstream_asset_key in assets_def.keys_by_input_name.items():
             if upstream_asset_key in node_alias_and_output_by_asset_key:
                 upstream_node_alias, upstream_output_name = node_alias_and_output_by_asset_key[
                     upstream_asset_key

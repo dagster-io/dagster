@@ -1345,8 +1345,8 @@ def test_graph_backed_asset_resources():
     other_resource = ResourceDefinition.hardcoded_resource("baz")
 
     the_asset = AssetsDefinition(
-        asset_keys_by_input_name={},
-        asset_keys_by_output_name={"result": AssetKey("the_asset")},
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey("the_asset")},
         node_def=basic,
         resource_defs={"foo": the_resource},
     )
@@ -1354,8 +1354,8 @@ def test_graph_backed_asset_resources():
     assert no_conflict_group.materialize().success
 
     other_asset = AssetsDefinition(
-        asset_keys_by_input_name={},
-        asset_keys_by_output_name={"result": AssetKey("other_asset")},
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey("other_asset")},
         node_def=basic,
         resource_defs={"foo": other_resource},
     )

@@ -158,6 +158,6 @@ class Resolver:
 def _match_groups(assets_def: AssetsDefinition, groups: AbstractSet[str]) -> AbstractSet[str]:
     return {
         asset_key.to_user_string()
-        for asset_key, group in assets_def.group_names.items()
+        for asset_key, group in assets_def.group_names_by_key.items()
         if group in groups
     }

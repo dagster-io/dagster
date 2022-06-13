@@ -36,11 +36,11 @@ def test_with_replaced_asset_keys():
     }
     assert replaced.keys == {AssetKey(["prefix1", "asset1_changed"])}
 
-    assert replaced.asset_keys_by_input_name["input1"] == AssetKey("input1")
+    assert replaced.keys_by_input_name["input1"] == AssetKey("input1")
 
-    assert replaced.asset_keys_by_input_name["input2"] == AssetKey(["apple", "banana"])
+    assert replaced.keys_by_input_name["input2"] == AssetKey(["apple", "banana"])
 
-    assert replaced.asset_keys_by_output_name["result"] == AssetKey(["prefix1", "asset1_changed"])
+    assert replaced.keys_by_output_name["result"] == AssetKey(["prefix1", "asset1_changed"])
 
 
 @pytest.mark.parametrize(
@@ -74,8 +74,8 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
         {AssetKey(key) for key in expected_keys.split(",")} if expected_keys else set()
     )
 
-    assert len(subbed.asset_keys_by_input_name) == expected_inputs
-    assert len(subbed.asset_keys_by_output_name) == expected_outputs
+    assert len(subbed.keys_by_input_name) == expected_inputs
+    assert len(subbed.keys_by_output_name) == expected_outputs
 
     # the asset dependency structure should stay the same
     assert subbed.asset_deps == abc_.asset_deps
@@ -89,7 +89,7 @@ def test_retain_group():
     replaced = bar.with_prefix_or_group(
         output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
     )
-    assert replaced.group_names[AssetKey("baz")] == "foo"
+    assert replaced.group_names_by_key[AssetKey("baz")] == "foo"
 
 
 def test_chain_replace_and_subset_for():
