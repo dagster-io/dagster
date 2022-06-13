@@ -170,6 +170,7 @@ def test_job_run_request():
         assert run_request_with_tags.run_config == partition_fn(partition_key)
         assert run_request_with_tags.tags
         assert run_request_with_tags.tags.get(PARTITION_NAME_TAG) == partition_key
+        assert run_request_with_tags.tags.get("foo") == "bar"
 
 
 # Datetime is not serializable
