@@ -1,4 +1,4 @@
-from typing import List, Optional, cast
+from typing import Iterator, Optional, cast
 
 import docker
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
@@ -6,13 +6,16 @@ from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, v
 import dagster._check as check
 from dagster import executor
 from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
-from dagster.core.execution.plan.objects import StepFailureData
+from dagster.core.events import DagsterEvent, EngineEventData, MetadataEntry
 from dagster.core.execution.retries import RetryMode, get_retries_config
 from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.executor.step_delegating import StepDelegatingExecutor
-from dagster.core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
+from dagster.core.executor.step_delegating.step_handler.base import (
+    CheckStepHealthResult,
+    StepHandler,
+    StepHandlerContext,
+)
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.utils import parse_env_var
 from dagster.serdes.utils import hash_str
@@ -170,7 +173,7 @@ class DockerStepHandler(StepHandler):
             **container_context.container_kwargs,
         )
 
-    def launch_step(self, step_handler_context: StepHandlerContext) -> List[DagsterEvent]:
+    def launch_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
         container_context = self._get_docker_container_context(step_handler_context)
 
         client = self._get_client(container_context)
@@ -199,26 +202,19 @@ class DockerStepHandler(StepHandler):
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         step_key = step_keys_to_execute[0]
 
-        events = [
-            DagsterEvent(
-                event_type_value=DagsterEventType.ENGINE_EVENT.value,
-                pipeline_name=step_handler_context.pipeline_run.pipeline_name,
-                step_key=step_key,
-                message="Launching step in Docker container",
-                event_specific_data=EngineEventData(
-                    [
-                        MetadataEntry("Step key", value=step_key),
-                        MetadataEntry("Docker container id", value=step_container.id),
-                    ],
-                ),
-            )
-        ]
-
+        yield DagsterEvent.engine_event(
+            step_handler_context.get_step_context(step_key),
+            message="Launching step in Docker container",
+            event_specific_data=EngineEventData(
+                [
+                    MetadataEntry("Step key", value=step_key),
+                    MetadataEntry("Docker container id", value=step_container.id),
+                ],
+            ),
+        )
         step_container.start()
 
-        return events
-
-    def check_step_health(self, step_handler_context: StepHandlerContext) -> List[DagsterEvent]:
+    def check_step_health(self, step_handler_context: StepHandlerContext) -> CheckStepHealthResult:
         step_keys_to_execute = check.not_none(
             step_handler_context.execute_step_args.step_keys_to_execute
         )
@@ -232,97 +228,49 @@ class DockerStepHandler(StepHandler):
             step_key,
         )
 
-        try:
-            container = client.containers.get(container_name)
-
-        except Exception as e:
-            return [
-                DagsterEvent(
-                    event_type_value=DagsterEventType.STEP_FAILURE.value,
-                    pipeline_name=step_handler_context.pipeline_run.pipeline_name,
-                    step_key=step_key,
-                    message=f"Error when checking on step container health: {e}",
-                    event_specific_data=StepFailureData(
-                        error=None,
-                        user_failure_data=None,
-                    ),
-                )
-            ]
+        container = client.containers.get(container_name)
 
         if container.status == "running":
-            return []
+            return CheckStepHealthResult.healthy()
 
         try:
             container_info = container.wait(timeout=0.1)
         except Exception as e:
-            return [
-                DagsterEvent(
-                    event_type_value=DagsterEventType.STEP_FAILURE.value,
-                    pipeline_name=step_handler_context.pipeline_run.pipeline_name,
-                    step_key=step_key,
-                    message=f"Container status is {container.status}. Hit exception attempting to get its return code: {e}",
-                    event_specific_data=StepFailureData(
-                        error=None,
-                        user_failure_data=None,
-                    ),
-                )
-            ]
+            raise Exception(
+                f"Container status is {container.status}. Raised exception attempting to get its return code"
+            ) from e
 
         ret_code = container_info.get("StatusCode")
         if ret_code == 0:
-            return []
+            return CheckStepHealthResult.healthy()
 
-        return [
-            DagsterEvent(
-                event_type_value=DagsterEventType.STEP_FAILURE.value,
-                pipeline_name=step_handler_context.pipeline_run.pipeline_name,
-                step_key=step_key,
-                message=f"Container status is {container.status}. Return code is {str(ret_code)}.",
-                event_specific_data=StepFailureData(
-                    error=None,
-                    user_failure_data=None,
-                ),
-            )
-        ]
+        return CheckStepHealthResult.unhealthy(
+            reason=f"Container status is {container.status}. Return code is {str(ret_code)}."
+        )
 
-    def terminate_step(self, step_handler_context: StepHandlerContext) -> List[DagsterEvent]:
+    def terminate_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
         container_context = self._get_docker_container_context(step_handler_context)
 
         step_keys_to_execute = check.not_none(
             step_handler_context.execute_step_args.step_keys_to_execute
         )
-        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
+        assert (
+            len(step_keys_to_execute) == 1
+        ), "Terminating multiple steps is not currently supported"
         step_key = step_keys_to_execute[0]
 
-        events = [
-            DagsterEvent(
-                event_type_value=DagsterEventType.ENGINE_EVENT.value,
-                pipeline_name=step_handler_context.pipeline_run.pipeline_name,
-                step_key=step_key,
-                message="Stopping Docker container for step",
-                event_specific_data=EngineEventData(),
-            )
-        ]
+        container_name = self._get_container_name(
+            step_handler_context.execute_step_args.pipeline_run_id, step_key
+        )
+
+        yield DagsterEvent.engine_event(
+            step_handler_context.get_step_context(step_key),
+            message=f"Stopping Docker container {container_name} for step",
+            event_specific_data=EngineEventData(),
+        )
 
         client = self._get_client(container_context)
 
-        try:
-            container = client.containers.get(
-                self._get_container_name(
-                    step_handler_context.execute_step_args.pipeline_run_id,
-                    step_keys_to_execute[0],
-                )
-            )
-            container.stop()
-        except Exception as e:
-            events.append(
-                DagsterEvent(
-                    event_type_value=DagsterEventType.ENGINE_EVENT.value,
-                    pipeline_name=step_handler_context.pipeline_run.pipeline_name,
-                    step_key=step_key,
-                    message=f"Hit error while terminating Docker container:\n{e}",
-                    event_specific_data=EngineEventData(),
-                )
-            )
+        container = client.containers.get(container_name)
 
-        return events
+        container.stop()

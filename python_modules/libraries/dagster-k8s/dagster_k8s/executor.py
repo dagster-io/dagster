@@ -1,4 +1,4 @@
-from typing import List, Optional, cast
+from typing import Iterator, List, Optional, cast
 
 import kubernetes
 from dagster_k8s.launcher import K8sRunLauncher
@@ -8,14 +8,16 @@ from dagster import _check as check
 from dagster import executor
 from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
-from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
-from dagster.core.execution.plan.objects import StepFailureData
+from dagster.core.events import DagsterEvent, EngineEventData, MetadataEntry
 from dagster.core.execution.retries import RetryMode, get_retries_config
 from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
-from dagster.core.executor.step_delegating import StepDelegatingExecutor
-from dagster.core.executor.step_delegating.step_handler import StepHandler
-from dagster.core.executor.step_delegating.step_handler.base import StepHandlerContext
+from dagster.core.executor.step_delegating import (
+    CheckStepHealthResult,
+    StepDelegatingExecutor,
+    StepHandler,
+    StepHandlerContext,
+)
 from dagster.utils import frozentags, merge_dicts
 
 from .container_context import K8sContainerContext
@@ -174,9 +176,7 @@ class K8sStepHandler(StepHandler):
 
         return "dagster-step-%s" % (name_key)
 
-    def launch_step(self, step_handler_context: StepHandlerContext):
-        events = []
-
+    def launch_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
         step_keys_to_execute = cast(
             List[str], step_handler_context.execute_step_args.step_keys_to_execute
         )
@@ -220,26 +220,20 @@ class K8sStepHandler(StepHandler):
             },
         )
 
-        events.append(
-            DagsterEvent(
-                event_type_value=DagsterEventType.ENGINE_EVENT.value,
-                pipeline_name=step_handler_context.pipeline_run.pipeline_name,
-                step_key=step_key,
-                message=f"Executing step {step_key} in Kubernetes job {job_name}",
-                event_specific_data=EngineEventData(
-                    [
-                        MetadataEntry("Step key", value=step_key),
-                        MetadataEntry("Kubernetes Job name", value=job_name),
-                    ],
-                ),
-            )
+        yield DagsterEvent.engine_event(
+            step_handler_context.get_step_context(step_key),
+            message=f"Executing step {step_key} in Kubernetes job {job_name}",
+            event_specific_data=EngineEventData(
+                [
+                    MetadataEntry("Step key", value=step_key),
+                    MetadataEntry("Kubernetes Job name", value=job_name),
+                ],
+            ),
         )
 
         self._batch_api.create_namespaced_job(body=job, namespace=container_context.namespace)
 
-        return events
-
-    def check_step_health(self, step_handler_context: StepHandlerContext):
+    def check_step_health(self, step_handler_context: StepHandlerContext) -> CheckStepHealthResult:
         step_keys_to_execute = cast(
             List[str], step_handler_context.execute_step_args.step_keys_to_execute
         )
@@ -254,28 +248,26 @@ class K8sStepHandler(StepHandler):
             namespace=container_context.namespace, name=job_name
         )
         if job.status.failed:
-            return [
-                DagsterEvent(
-                    event_type_value=DagsterEventType.STEP_FAILURE.value,
-                    pipeline_name=step_handler_context.pipeline_run.pipeline_name,
-                    step_key=step_key,
-                    message=f"Discovered failed Kubernetes job {job_name} for step {step_key}",
-                    event_specific_data=StepFailureData(
-                        error=None,
-                        user_failure_data=None,
-                    ),
-                )
-            ]
-        return []
+            return CheckStepHealthResult.unhealthy(
+                reason=f"Discovered failed Kubernetes job {job_name} for step {step_key}",
+            )
 
-    def terminate_step(self, step_handler_context: StepHandlerContext):
+        return CheckStepHealthResult.healthy()
+
+    def terminate_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
         step_keys_to_execute = cast(
             List[str], step_handler_context.execute_step_args.step_keys_to_execute
         )
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
+        step_key = step_keys_to_execute[0]
 
         job_name = self._get_k8s_step_job_name(step_handler_context)
         container_context = self._get_container_context(step_handler_context)
 
+        yield DagsterEvent.engine_event(
+            step_handler_context.get_step_context(step_key),
+            message=f"Deleting Kubernetes job {job_name} for step",
+            event_specific_data=EngineEventData(),
+        )
+
         delete_job(job_name=job_name, namespace=container_context.namespace)
-        return []
