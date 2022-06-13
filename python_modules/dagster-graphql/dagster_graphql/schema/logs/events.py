@@ -31,7 +31,7 @@ class GrapheneMessageEvent(graphene.Interface):
 
 
 class GrapheneDisplayableEvent(graphene.Interface):
-    label = graphene.NonNull(graphene.String)
+    label = graphene.String()
     description = graphene.String()
     metadataEntries = non_null_list(GrapheneMetadataEntry)
 

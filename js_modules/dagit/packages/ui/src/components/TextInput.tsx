@@ -86,6 +86,7 @@ export const TextInputStyles = css`
   border-radius: 8px;
   box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px;
   flex-grow: 1;
+  font-size: 14px;
   line-height: 20px;
   padding: 6px 6px 6px 12px;
   margin: 0;
@@ -124,4 +125,14 @@ const StyledInput = styled.input<StyledInputProps>`
     box-shadow: ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px,
       ${Colors.KeylineGray} inset 2px 2px 1.5px, rgba(58, 151, 212, 0.6) 0 0 0 3px;
   }
+`;
+
+interface TextAreaProps {
+  $resize: React.CSSProperties['resize'];
+}
+
+export const TextArea = styled.textarea<TextAreaProps>`
+  ${TextInputStyles}
+
+  ${({$resize}) => ($resize ? `resize: ${$resize};` : null)}
 `;

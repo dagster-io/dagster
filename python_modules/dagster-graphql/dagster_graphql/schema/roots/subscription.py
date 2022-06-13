@@ -11,6 +11,8 @@ from ..pipelines.subscription import GraphenePipelineRunLogsSubscriptionPayload
 
 
 class GrapheneDagitSubscription(graphene.ObjectType):
+    """The root for all subscriptions to retrieve real-time data from the Dagster instance."""
+
     class Meta:
         name = "DagitSubscription"
 
@@ -18,6 +20,7 @@ class GrapheneDagitSubscription(graphene.ObjectType):
         graphene.NonNull(GraphenePipelineRunLogsSubscriptionPayload),
         runId=graphene.Argument(graphene.NonNull(graphene.ID)),
         cursor=graphene.Argument(graphene.String),
+        description="Retrieve real-time event logs after applying a filter on run id and cursor.",
     )
 
     computeLogs = graphene.Field(
@@ -26,10 +29,12 @@ class GrapheneDagitSubscription(graphene.ObjectType):
         stepKey=graphene.Argument(graphene.NonNull(graphene.String)),
         ioType=graphene.Argument(graphene.NonNull(GrapheneComputeIOType)),
         cursor=graphene.Argument(graphene.String),
+        description="Retrieve real-time compute logs after applying a filter on run id, step name, log type, and cursor.",
     )
 
     locationStateChangeEvents = graphene.Field(
-        graphene.NonNull(GrapheneLocationStateChangeSubscription)
+        graphene.NonNull(GrapheneLocationStateChangeSubscription),
+        description="Retrieve real-time events when a location in the workspace undergoes a state change.",
     )
 
     def resolve_pipelineRunLogs(self, graphene_info, runId, cursor=None):

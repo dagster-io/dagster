@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface PermissionsQuery_permissions {
-  __typename: "GraphenePermission";
+  __typename: "Permission";
   permission: string;
   value: boolean;
 }

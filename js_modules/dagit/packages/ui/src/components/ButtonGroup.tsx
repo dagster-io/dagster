@@ -19,7 +19,7 @@ interface Props<T> {
   onClick: (id: T, e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
-export const ButtonGroup = <T extends string>(props: Props<T>) => {
+export const ButtonGroup = <T extends string | number>(props: Props<T>) => {
   const {activeItems, buttons, onClick} = props;
   return (
     <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>

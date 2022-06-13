@@ -1,22 +1,21 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 
 import {
-  AssetGraphLiveQuery_assetsLatestInfo,
   AssetGraphLiveQuery_assetsLatestInfo_latestRun,
   AssetGraphLiveQuery_assetNodes_assetMaterializations,
+  AssetGraphLiveQuery,
 } from './types/AssetGraphLiveQuery';
 import {
   AssetGraphQuery_assetNodes,
   AssetGraphQuery_assetNodes_assetKey,
 } from './types/AssetGraphQuery';
-import {AssetNodeLiveFragment} from './types/AssetNodeLiveFragment';
 type AssetNode = AssetGraphQuery_assetNodes;
 type AssetKey = AssetGraphQuery_assetNodes_assetKey;
 
-export const __ASSET_GROUP_PREFIX = '__ASSET_GROUP';
+export const __ASSET_JOB_PREFIX = '__ASSET_JOB';
 
 export function isHiddenAssetGroupJob(jobName: string) {
-  return jobName.startsWith(__ASSET_GROUP_PREFIX);
+  return jobName.startsWith(__ASSET_JOB_PREFIX);
 }
 
 // IMPORTANT: We use this, rather than AssetNode.id throughout this file because
@@ -40,8 +39,8 @@ export interface GraphData {
   downstream: {[assetId: GraphId]: {[childAssetId: GraphId]: boolean}};
   upstream: {[assetId: GraphId]: {[parentAssetId: GraphId]: boolean}};
 }
-export const isSourceAsset = (node: {jobNames: string[]; opNames: string[]}) => {
-  return node.jobNames.length === 0 && !node.opNames.length;
+export const isSourceAsset = (node: {graphName: string | null; opNames: string[]}) => {
+  return !node.graphName && !node.opNames.length;
 };
 
 export const buildGraphData = (assetNodes: AssetNode[]) => {
@@ -112,6 +111,7 @@ export const buildSVGPath = pathVerticalDiagonal({
 export type ComputeStatus = 'good' | 'old' | 'none' | 'unknown';
 
 export interface LiveDataForNode {
+  stepKey: string;
   unstartedRunIds: string[]; // run in progress and step not started
   inProgressRunIds: string[]; // run in progress and step in progress
   runWhichFailedToMaterialize: AssetGraphLiveQuery_assetsLatestInfo_latestRun | null;
@@ -180,20 +180,11 @@ export const buildComputeStatusData = (graph: GraphData, liveData: LiveData) => 
   return statuses;
 };
 
-export const buildLiveData = (
-  assets: AssetDefinitionsForLiveData,
-  nodes: AssetNodeLiveFragment[],
-  assetsLatestInfo: AssetGraphLiveQuery_assetsLatestInfo[],
-) => {
+export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQuery) => {
   const data: LiveData = {};
 
-  for (const liveNode of nodes) {
+  for (const liveNode of assetNodes) {
     const graphId = toGraphId(liveNode.assetKey);
-    const definition = assets[graphId]?.definition;
-    if (!definition) {
-      console.warn(`buildLiveData could not find the definition matching ${graphId}`);
-      continue;
-    }
     const lastMaterialization = liveNode.assetMaterializations[0] || null;
 
     const assetLiveRuns = assetsLatestInfo.find(
@@ -210,6 +201,7 @@ export const buildLiveData = (
 
     data[graphId] = {
       lastMaterialization,
+      stepKey: liveNode.opNames[0],
       inProgressRunIds: assetLiveRuns?.inProgressRunIds || [],
       unstartedRunIds: assetLiveRuns?.unstartedRunIds || [],
       runWhichFailedToMaterialize,

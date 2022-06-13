@@ -4,12 +4,14 @@ from dagster_buildkite.steps.tox import build_tox_step
 
 from ..python_version import AvailablePythonVersion
 from ..step_builder import CommandStepBuilder
-from ..utils import BuildkiteLeafStep, GroupStep
+from ..utils import BuildkiteLeafStep, BuildkiteStep, GroupStep
+from .packages import build_example_packages_steps
 
 
-def build_docs_steps() -> List[GroupStep]:
+def build_docs_steps() -> List[BuildkiteStep]:
+    steps: List[BuildkiteStep] = []
 
-    steps: List[BuildkiteLeafStep] = [
+    docs_steps: List[BuildkiteLeafStep] = [
         # Make sure snippets in built docs match source.
         # If this test is failing, it's because you may have either:
         #   (1) Updated the code that is referenced by a literal include in the documentation
@@ -50,10 +52,14 @@ def build_docs_steps() -> List[GroupStep]:
         # pylint for build scripts
         build_tox_step("docs", "pylint", command_type="pylint"),
     ]
-    return [
+    steps += [
         GroupStep(
             group=":book: docs",
             key="docs",
-            steps=steps,
+            steps=docs_steps,
         )
     ]
+
+    steps += build_example_packages_steps()
+
+    return steps

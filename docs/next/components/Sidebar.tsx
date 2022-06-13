@@ -38,9 +38,9 @@ const MenuItem = React.forwardRef<
         {
           "hover:bg-lavender hover:bg-opacity-50 text-blurple": match,
           "hover:text-gray-900 hover:bg-lavender hover:bg-opacity-50": !match,
-          "py-2": lvl <= 2,
           "px-2": lvl === 0,
-          "pl-3 pr-2": lvl === 2,
+          "pl-3 pr-2": lvl <= 1,
+          "py-2": lvl <= 2,
         }
       )}
       href={href}
@@ -64,14 +64,7 @@ const MenuItem = React.forwardRef<
             {Icons[item.icon]}
           </svg>
         )}
-        <span
-          className={cx({
-            "DocSearch-lvl0": lvl === 0 && match,
-            "DocSearch-lvl2": lvl === 2 && match,
-          })}
-        >
-          {item.title}
-        </span>
+        <span>{item.title}</span>
       </div>
 
       {rightIcon && (
@@ -161,11 +154,11 @@ const SecondaryNavigation = () => {
                 href={itemWithPath.path}
                 item={sectionOrItem}
                 match={match}
-                lvl={2}
+                lvl={1}
               />
             ) : (
               <Link href={itemWithPath.path} passHref>
-                <MenuItem item={sectionOrItem} match={match} lvl={2} />
+                <MenuItem item={sectionOrItem} match={match} lvl={1} />
               </Link>
             )}
             {match && sectionOrItem.children && (
@@ -209,13 +202,7 @@ const ThirdLevelNavigation = ({ section }) => {
           }
         )}
       >
-        <span
-          className={cx({
-            "DocSearch-lvl2": section.path === asPathWithoutAnchor,
-          })}
-        >
-          {section.title}
-        </span>
+        <span>{section.title}</span>
       </a>
     </Link>
   );
@@ -226,7 +213,7 @@ const SidebarContents = () => {
     <>
       {/* Sidebar component, swap this element with another sidebar if you like */}
       {/* Search Bar*/}
-      <div className="h-0 flex-1 flex flex-col overflow-y-auto ">
+      <div className="flex-1 flex flex-col">
         <div className="px-3 mt-5">
           <div className="block w-full pl-4 border-gray-300 rounded-full border bg-white">
             <Search />
@@ -235,7 +222,7 @@ const SidebarContents = () => {
         {/* End Search Bar */}
 
         {/* Navigation */}
-        <nav className="px-3 mt-6">
+        <nav className="px-3 mt-6 overflow-y-scroll max-h-(screen-60)">
           <TopLevelNavigation />
         </nav>
       </div>
@@ -317,7 +304,7 @@ const Sidebar = ({ isMobileDocsMenuOpen, closeMobileDocsMenu }) => {
       </Transition>
 
       {/* Static sidebar for desktop */}
-      <div className="hidden lg:block lg:flex-shrink-0">
+      <div className="hidden lg:block fixed left-8 z-50 lg:flex-shrink-0">
         <div className="h-full flex flex-col w-80">
           <SidebarContents />
         </div>

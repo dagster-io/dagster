@@ -24,3 +24,11 @@ A software-defined asset combines:
 .. autoclass:: AssetIn
 
 .. autoclass:: SourceAsset
+
+.. autofunction:: load_assets_from_modules
+
+.. autofunction:: load_assets_from_current_module
+
+.. autofunction:: load_assets_from_package_module
+
+.. autofunction:: load_assets_from_package_name

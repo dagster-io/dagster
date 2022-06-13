@@ -21,7 +21,6 @@ from typing import (
 import dagster._check as check
 import dagster.seven as seven
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
-from dagster.utils.backcompat import experimental_class_param_warning
 
 from .metadata import (
     MetadataEntry,
@@ -37,7 +36,8 @@ if TYPE_CHECKING:
     from dagster.core.execution.context.output import OutputContext
 
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
-ASSET_KEY_STRUCTURED_DELIMITER = "."
+ASSET_KEY_DELIMITER = "/"
+ASSET_KEY_LEGACY_DELIMITER = "."
 
 
 def parse_asset_key_string(s: str) -> List[str]:
@@ -110,18 +110,18 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
         if not self.path:
             return None
         if legacy:
-            return ASSET_KEY_STRUCTURED_DELIMITER.join(self.path)
+            return ASSET_KEY_LEGACY_DELIMITER.join(self.path)
         return seven.json.dumps(self.path)
 
     def to_user_string(self) -> str:
         """
-        E.g. "first_component>second_component"
+        E.g. "first_component/second_component"
         """
-        return ">".join(self.path)
+        return ASSET_KEY_DELIMITER.join(self.path)
 
     @staticmethod
     def from_user_string(asset_key_string: str) -> "AssetKey":
-        return AssetKey(asset_key_string.split(">"))
+        return AssetKey(asset_key_string.split(ASSET_KEY_DELIMITER))
 
     @staticmethod
     def from_db_string(asset_key_string: Optional[str]) -> Optional["AssetKey"]:
@@ -141,7 +141,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
     def get_db_prefix(path: List[str], legacy: Optional[bool] = False):
         check.list_param(path, "path", of_type=str)
         if legacy:
-            return ASSET_KEY_STRUCTURED_DELIMITER.join(path)
+            return ASSET_KEY_LEGACY_DELIMITER.join(path)
         return seven.json.dumps(path)[:-2]  # strip trailing '"]' from json string
 
     @staticmethod
@@ -151,7 +151,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
         return None
 
     @staticmethod
-    def from_coerceable(arg: "CoerceableToAssetKey") -> "AssetKey":
+    def from_coerceable(arg: "CoercibleToAssetKey") -> "AssetKey":
         if isinstance(arg, AssetKey):
             return check.inst_param(arg, "arg", AssetKey)
         elif isinstance(arg, str):
@@ -164,7 +164,8 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
             return AssetKey(arg)
 
 
-CoerceableToAssetKey = Union[AssetKey, str, Sequence[str]]
+CoercibleToAssetKey = Union[AssetKey, str, Sequence[str]]
+CoercibleToAssetKeyPrefix = Union[str, Sequence[str]]
 
 
 DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]
@@ -372,7 +373,6 @@ class AssetMaterialization(
             ("description", Optional[str]),
             ("metadata_entries", List[Union[MetadataEntry, PartitionMetadataEntry]]),
             ("partition", Optional[str]),
-            ("tags", Dict[str, str]),
         ],
     )
 ):
@@ -394,9 +394,6 @@ class AssetMaterialization(
         metadata_entries (Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]]): Arbitrary metadata about the
             materialized value.
         partition (Optional[str]): The name of the partition that was materialized.
-        tags (Optional[Dict[str, str]]): (Experimental) Tag metadata for a given asset
-            materialization.  Used for search and organization of the asset entry in the asset
-            catalog in Dagit.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -405,11 +402,10 @@ class AssetMaterialization(
 
     def __new__(
         cls,
-        asset_key: CoerceableToAssetKey,
+        asset_key: CoercibleToAssetKey,
         description: Optional[str] = None,
         metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         partition: Optional[str] = None,
-        tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         if isinstance(asset_key, AssetKey):
@@ -423,9 +419,6 @@ class AssetMaterialization(
             check.tuple_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
-        if tags:
-            experimental_class_param_warning("tags", "AssetMaterialization")
-
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=(MetadataEntry, PartitionMetadataEntry)
@@ -437,7 +430,6 @@ class AssetMaterialization(
             description=check.opt_str_param(description, "description"),
             metadata_entries=normalize_metadata(metadata, metadata_entries),
             partition=check.opt_str_param(partition, "partition"),
-            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
         )
 
     @property
@@ -484,7 +476,6 @@ class Materialization(
             ("metadata_entries", List[MetadataEntry]),
             ("asset_key", AssetKey),
             ("partition", Optional[str]),
-            ("tags", Dict[str, str]),
         ],
     )
 ):
@@ -506,9 +497,6 @@ class Materialization(
         asset_key (Optional[Union[str, AssetKey]]): An optional parameter to identify the materialized asset
             across runs
         partition (Optional[str]): The name of the partition that was materialized.
-        tags (Optional[Dict[str, str]]): (Experimental) Tag metadata for a given asset
-            materialization.  Used for search and organization of the asset entry in the asset
-            catalog in Dagit.
     """
 
     def __new__(
@@ -518,7 +506,6 @@ class Materialization(
         metadata_entries: Optional[List[MetadataEntry]] = None,
         asset_key: Optional[Union[str, AssetKey]] = None,
         partition: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
         skip_deprecation_warning: Optional[bool] = False,
     ):
         if asset_key and isinstance(asset_key, str):
@@ -551,7 +538,6 @@ class Materialization(
             ),
             asset_key=asset_key,
             partition=check.opt_str_param(partition, "partition"),
-            tags=check.opt_dict_param(tags, "tags"),
         )
 
     @staticmethod

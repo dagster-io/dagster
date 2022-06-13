@@ -22,6 +22,7 @@ const MISSING_LIVE_DATA = {
   inProgressRunIds: [],
   runWhichFailedToMaterialize: null,
   lastMaterialization: null,
+  stepKey: '',
 };
 
 export const AssetNode: React.FC<{
@@ -109,7 +110,7 @@ export const AssetNode: React.FC<{
           <StatsRow>
             <span>Latest Run</span>
             <CaptionMono>
-              <AssetLatestRunWithNotices liveData={liveData} stepKey={stepKey} />
+              <AssetLatestRunWithNotices liveData={liveData} />
             </CaptionMono>
           </StatsRow>
         </Stats>
@@ -312,10 +313,14 @@ const UpstreamNotice = styled.div`
 
 export const AssetLatestRunWithNotices: React.FC<{
   liveData?: LiveDataForNode;
-  stepKey: string;
-}> = ({liveData, stepKey}) => {
-  const {lastMaterialization, unstartedRunIds, inProgressRunIds, runWhichFailedToMaterialize} =
-    liveData || MISSING_LIVE_DATA;
+}> = ({liveData}) => {
+  const {
+    lastMaterialization,
+    unstartedRunIds,
+    inProgressRunIds,
+    runWhichFailedToMaterialize,
+    stepKey,
+  } = liveData || MISSING_LIVE_DATA;
 
   return inProgressRunIds?.length > 0 ? (
     <Box flex={{gap: 4, alignItems: 'center'}}>

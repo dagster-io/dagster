@@ -17,6 +17,8 @@ import SidebarNavigation from "components/mdx/SidebarNavigation";
 import hydrate from "next-mdx-remote/hydrate";
 import { useRouter } from "next/router";
 import GitHubButton from "react-github-btn";
+import cx from "classnames";
+
 const components: MdxRemote.Components = MDXComponents;
 
 export type MDXData = {
@@ -28,6 +30,7 @@ export type MDXData = {
   searchIndex: any;
   tableOfContents: any;
   githubLink: string;
+  asPath: string;
 };
 
 export const VersionNotice = () => {
@@ -74,8 +77,9 @@ export const VersionNotice = () => {
   );
 };
 
-const BreadcrumbNav = () => {
+const BreadcrumbNav = ({ asPath }) => {
   const { asPathWithoutAnchor } = useVersion();
+  const pagePath = asPath ? asPath : asPathWithoutAnchor;
 
   let navigation = useNavigation();
 
@@ -99,7 +103,7 @@ const BreadcrumbNav = () => {
   let breadcrumbItems = [];
 
   for (let i = 0; i < navigation.length; i++) {
-    let matchedStack = traverse(navigation[i], asPathWithoutAnchor, []);
+    let matchedStack = traverse(navigation[i], pagePath, []);
     if (matchedStack) {
       breadcrumbItems = matchedStack;
       break;
@@ -126,7 +130,15 @@ const BreadcrumbNav = () => {
                   )}
                   <a
                     href={item.path}
-                    className="ml-1 lg:ml-2 text-xs lg:text-sm lg:font-medium text-gray-700 hover:text-gray-900 truncate"
+                    className={cx(
+                      "ml-1 lg:ml-2 text-xs lg:text-sm lg:font-medium text-gray-700 hover:text-gray-900 truncate",
+                      {
+                        // Map nav hierarchy to levels for docs search
+                        "DocSearch-lvl0": index === 0,
+                        "DocSearch-lvl1": index === 1,
+                        "DocSearch-lvl2": index === 2,
+                      }
+                    )}
                   >
                     {item.title}
                   </a>
@@ -140,7 +152,84 @@ const BreadcrumbNav = () => {
   );
 };
 
-export const VersionedContentLayout = ({ children }) => {
+const RightSidebar = ({
+  editMode,
+  navigationItems,
+  githubLink,
+  toggleFeedback,
+}) => {
+  return (
+    !editMode && (
+      <aside className="hidden relative xl:block flex-none w-80 flex shrink-0 border-l border-gray-200">
+        {/* Start secondary column (hidden on smaller screens) */}
+        <div className="flex flex-col justify-between sticky top-24 py-6 px-4">
+          <div
+            className="mb-8 px-4 pt-2 pb-10 relative overflow-y-scroll border-b border-gray-200"
+            style={{ maxHeight: "calc(100vh - 300px)" }}
+          >
+            <div className="font-semibold text-gable-green">On This Page</div>
+            <div className="mt-6">
+              {navigationItems && <SidebarNavigation items={navigationItems} />}
+            </div>
+          </div>
+          <div className="py-2 px-4 flex items-center group">
+            <svg
+              className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
+              role="img"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+            </svg>
+            <a
+              className="text-sm ml-2 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
+              href={githubLink}
+            >
+              Edit Page on GitHub
+            </a>
+          </div>
+          <div className="py-2 px-4 flex items-center group">
+            <svg
+              className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
+              role="img"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              fill="none"
+              strokeWidth="2"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+              />
+            </svg>
+            <button
+              className="text-sm ml-2 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
+              onClick={toggleFeedback}
+            >
+              Share Feedback
+            </button>
+          </div>
+          <div className="py-2 px-4 flex items-center group">
+            <GitHubButton
+              href="https://github.com/dagster-io/dagster"
+              data-icon="octicon-star"
+              data-show-count="true"
+              aria-label="Star dagster-io/dagster on GitHub"
+            >
+              Star
+            </GitHubButton>
+          </div>
+        </div>
+        {/* End secondary column */}
+      </aside>
+    )
+  );
+};
+
+export const VersionedContentLayout = ({ children, asPath = null }) => {
   return (
     <div
       className="flex-1 w-full min-w-0 relative z-0 focus:outline-none"
@@ -153,7 +242,7 @@ export const VersionedContentLayout = ({ children }) => {
               <VersionDropdown />
             </div>
             <div className="flex">
-              <BreadcrumbNav />
+              <BreadcrumbNav asPath={asPath} />
             </div>
           </div>
         </div>
@@ -220,76 +309,12 @@ export function UnversionedMDXRenderer({
         </div>
       </div>
 
-      {!editMode && (
-        <aside className="hidden relative xl:block flex-none w-80 flex shrink-0 border-l border-gray-200">
-          {/* Start secondary column (hidden on smaller screens) */}
-          <div className="flex flex-col justify-between sticky top-24 py-6 px-4">
-            <div
-              className="mb-8 px-4 pt-2 pb-10 relative overflow-y-scroll border-b border-gray-200"
-              style={{ maxHeight: "calc(100vh - 300px)" }}
-            >
-              <div className="font-semibold text-gable-green">On This Page</div>
-              <div className="mt-6">
-                {navigationItems && (
-                  <SidebarNavigation items={navigationItems} />
-                )}
-              </div>
-            </div>
-            <div className="py-2 px-4 flex items-center group">
-              <svg
-                className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
-                role="img"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
-              </svg>
-              <a
-                className="text-sm ml-2 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
-                href={githubLink}
-              >
-                Edit Page on GitHub
-              </a>
-            </div>
-
-            <div className="py-2 px-4 flex items-center group">
-              <svg
-                className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
-                role="img"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                fill="none"
-                strokeWidth="2"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-              <button
-                className="text-sm ml-2 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
-                onClick={toggleFeedback}
-              >
-                Share Feedback
-              </button>
-            </div>
-            <div className="py-2 px-4 flex items-center group">
-              <GitHubButton
-                href="https://github.com/dagster-io/dagster"
-                data-icon="octicon-star"
-                data-show-count="true"
-                aria-label="Star dagster-io/dagster on GitHub"
-              >
-                Star
-              </GitHubButton>
-            </div>
-          </div>
-          {/* End secondary column */}
-        </aside>
-      )}
+      <RightSidebar
+        editMode={editMode}
+        navigationItems={navigationItems}
+        githubLink={githubLink}
+        toggleFeedback={toggleFeedback}
+      />
     </>
   );
 }
@@ -304,8 +329,14 @@ function VersionedMDXRenderer({
   const { query } = useRouter();
   const { editMode } = query;
 
-  const { mdxSource, frontMatter, searchIndex, tableOfContents, githubLink } =
-    data;
+  const {
+    mdxSource,
+    frontMatter,
+    searchIndex,
+    tableOfContents,
+    githubLink,
+    asPath,
+  } = data;
 
   const content = hydrate(mdxSource, {
     components,
@@ -327,81 +358,18 @@ function VersionedMDXRenderer({
         }}
       />
 
-      <VersionedContentLayout>
+      <VersionedContentLayout asPath={asPath}>
         <div className="DocSearch-content prose dark:prose-dark max-w-none">
           {content}
         </div>
       </VersionedContentLayout>
 
-      {!editMode && (
-        <aside className="hidden relative xl:block flex-none w-80 flex shrink-0 border-l border-gray-200">
-          {/* Start secondary column (hidden on smaller screens) */}
-          <div className="flex flex-col justify-between sticky top-24 py-6 px-4">
-            <div
-              className="mb-8 px-4 pt-2 pb-10 relative overflow-y-scroll border-b border-gray-200"
-              style={{ maxHeight: "calc(100vh - 300px)" }}
-            >
-              <div className="font-semibold text-gable-green">On This Page</div>
-              <div className="mt-6">
-                {navigationItems && (
-                  <SidebarNavigation items={navigationItems} />
-                )}
-              </div>
-            </div>
-            <div className="py-2 px-4 flex items-center group">
-              <svg
-                className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
-                role="img"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
-              </svg>
-              <a
-                className="text-sm ml-2 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
-                href={githubLink}
-              >
-                Edit Page on GitHub
-              </a>
-            </div>
-            <div className="py-2 px-4 flex items-center group">
-              <svg
-                className="h-4 w-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition transform group-hover:scale-105 group-hover:rotate-6"
-                role="img"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                fill="none"
-                strokeWidth="2"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-              <button
-                className="text-sm ml-2 text-gray-500 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
-                onClick={toggleFeedback}
-              >
-                Share Feedback
-              </button>
-            </div>
-            <div className="py-2 px-4 flex items-center group">
-              <GitHubButton
-                href="https://github.com/dagster-io/dagster"
-                data-icon="octicon-star"
-                data-show-count="true"
-                aria-label="Star dagster-io/dagster on GitHub"
-              >
-                Star
-              </GitHubButton>
-            </div>
-          </div>
-          {/* End secondary column */}
-        </aside>
-      )}
+      <RightSidebar
+        editMode={editMode}
+        navigationItems={navigationItems}
+        githubLink={githubLink}
+        toggleFeedback={toggleFeedback}
+      />
     </>
   );
 }

@@ -89,6 +89,10 @@ class PartitionBackfill(
             check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
+    @property
+    def selector_id(self):
+        return self.partition_set_origin.get_selector_id()
+
     def with_status(self, status):
         check.inst_param(status, "status", BulkActionStatus)
         return PartitionBackfill(

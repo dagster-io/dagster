@@ -30,7 +30,9 @@ export const Item = styled(Link)<{$active: boolean}>`
   text-overflow: ellipsis;
   overflow: hidden;
   padding: 6px 12px;
-  display: block;
+  display: flex;
+  gap: 6px;
+  align-items: center;
   color: ${({$active}) => ($active ? Colors.Blue700 : Colors.Dark)} !important;
   user-select: none;
   transition: background 50ms linear, color 50ms linear;

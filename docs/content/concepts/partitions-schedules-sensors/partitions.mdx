@@ -197,7 +197,7 @@ def antarctica_schedule():
     yield request
 ```
 
-The [Schedules concept page](/concepts/partitions-schedules-sensors/schedules#a-schedule-from-a-partitioned-job) describes how construct both kinds of schedules in more detail.
+Refer to the [Schedules documentation](/concepts/partitions-schedules-sensors/schedules#schedules-from-partitioned-assets-and-jobs) for more info about constructing both schedule types.
 
 ## Testing
 
@@ -315,7 +315,7 @@ from dagster import DailyPartitionsDefinition, asset
 @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
 def my_daily_partitioned_asset(context):
     context.log.info(
-        f"Processing asset partition '{context.output_asset_partition_key()}'"
+        f"Processing asset partition '{context.asset_partition_key_for_output()}'"
     )
 ```
 

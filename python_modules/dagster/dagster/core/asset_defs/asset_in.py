@@ -1,39 +1,45 @@
 from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
-from dagster.core.definitions.events import AssetKey, CoerceableToAssetKey
+from dagster.core.definitions.events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
+from dagster.utils.backcompat import canonicalize_backcompat_args
 
 
 class AssetIn(
     NamedTuple(
         "_AssetIn",
         [
-            ("asset_key", Optional[AssetKey]),
+            ("key", Optional[AssetKey]),
             ("metadata", Optional[Mapping[str, Any]]),
-            ("namespace", Optional[Sequence[str]]),
+            ("key_prefix", Optional[Sequence[str]]),
             ("input_manager_key", Optional[str]),
         ],
     )
 ):
     def __new__(
         cls,
-        asset_key: Optional[CoerceableToAssetKey] = None,
+        key: Optional[CoercibleToAssetKey] = None,
         metadata: Optional[Mapping[str, Any]] = None,
         namespace: Optional[Sequence[str]] = None,
+        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+        asset_key: Optional[CoercibleToAssetKey] = None,
         input_manager_key: Optional[str] = None,
     ):
-        check.invariant(
-            not (asset_key and namespace),
-            ("Asset key and namespace cannot both be set on AssetIn"),
+        key_prefix = canonicalize_backcompat_args(
+            key_prefix, "key_prefix", namespace, "namespace", "0.16.0"
         )
+        key = canonicalize_backcompat_args(key, "key", asset_key, "asset_key", "0.16.0")
+        if isinstance(key_prefix, str):
+            key_prefix = [key_prefix]
 
-        # if user inputs a single string, coerce to list
-        namespace = [namespace] if isinstance(namespace, str) else namespace
+        check.invariant(
+            not (key and key_prefix), "key and key_prefix cannot both be set on AssetIn"
+        )
 
         return super(AssetIn, cls).__new__(
             cls,
-            asset_key=AssetKey.from_coerceable(asset_key) if asset_key is not None else None,
+            key=AssetKey.from_coerceable(key) if key is not None else None,
             metadata=check.opt_inst_param(metadata, "metadata", Mapping),
-            namespace=check.opt_list_param(namespace, "namespace", str),
+            key_prefix=check.opt_list_param(key_prefix, "key_prefix", of_type=str),
             input_manager_key=check.opt_str_param(input_manager_key, "input_manager_key"),
         )

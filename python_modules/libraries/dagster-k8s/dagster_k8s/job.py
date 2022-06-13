@@ -1,7 +1,6 @@
 import copy
 import hashlib
 import json
-import os
 import random
 import string
 from collections import namedtuple
@@ -15,6 +14,7 @@ from dagster import __version__ as dagster_version
 from dagster.config.field_utils import Permissive, Shape
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError
+from dagster.core.utils import parse_env_var
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import frozentags, merge_dicts
 
@@ -416,8 +416,9 @@ class DagsterK8sJobConfig(
             "env_vars": Field(
                 Noneable(Array(str)),
                 is_required=False,
-                description="A list of environment variables to inject into the Job. "
-                "Default: ``[]``. See: "
+                description="A list of environment variables to inject into the Job. Each can be "
+                "of the form KEY=VALUE or just KEY (in which case the value will be pulled from "
+                "the current process). Default: ``[]``. See: "
                 "https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables",
             ),
             "volume_mounts": Field(
@@ -490,7 +491,11 @@ class DagsterK8sJobConfig(
 
     @property
     def env(self) -> List[Dict[str, Optional[str]]]:
-        return [{"name": key, "value": os.getenv(key)} for key in (self.env_vars or [])]
+        parsed_env_vars = [parse_env_var(key) for key in (self.env_vars or [])]
+        return [
+            {"name": parsed_env_var[0], "value": parsed_env_var[1]}
+            for parsed_env_var in parsed_env_vars
+        ]
 
     @property
     def env_from_sources(self) -> List[Dict[str, Any]]:

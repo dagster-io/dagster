@@ -19,6 +19,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent, DagsterEventType
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster.core.execution.bulk_actions import BulkActionType
 from dagster.core.snap import (
     ExecutionPlanSnapshot,
     PipelineSnapshot,
@@ -50,6 +51,7 @@ from .schema import (
     BulkActionsTable,
     DaemonHeartbeatsTable,
     InstanceInfo,
+    KeyValueStoreTable,
     RunTagsTable,
     RunsTable,
     SecondaryIndexMigrationTable,
@@ -229,7 +231,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             query = query.where(
                 db.or_(
                     *(
-                        db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
+                        db.and_(
+                            RunTagsTable.c.key == key,
+                            (
+                                RunTagsTable.c.value == value
+                                if isinstance(value, str)
+                                else RunTagsTable.c.value.in_(value)
+                            ),
+                        )
                         for key, value in filters.tags.items()
                     )
                 )
@@ -941,6 +950,13 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
             return "start_time" in column_names and "end_time" in column_names
 
+    def has_bulk_actions_selector_cols(self):
+        with self.connect() as conn:
+            column_names = [
+                x.get("name") for x in db.inspect(conn).get_columns(BulkActionsTable.name)
+            ]
+            return "selector_id" in column_names
+
     # Daemon heartbeats
 
     def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat):
@@ -1019,14 +1035,20 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def add_backfill(self, partition_backfill: PartitionBackfill):
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
+        values = dict(
+            key=partition_backfill.backfill_id,
+            status=partition_backfill.status.value,
+            timestamp=utc_datetime_from_timestamp(partition_backfill.backfill_timestamp),
+            body=serialize_dagster_namedtuple(partition_backfill),
+        )
+
+        if self.has_bulk_actions_selector_cols():
+            values["selector_id"] = partition_backfill.selector_id
+            values["action_type"] = BulkActionType.PARTITION_BACKFILL.value
+
         with self.connect() as conn:
             conn.execute(
-                BulkActionsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    key=partition_backfill.backfill_id,
-                    status=partition_backfill.status.value,
-                    timestamp=utc_datetime_from_timestamp(partition_backfill.backfill_timestamp),
-                    body=serialize_dagster_namedtuple(partition_backfill),
-                )
+                BulkActionsTable.insert().values(**values)  # pylint: disable=no-value-for-parameter
             )
 
     def update_backfill(self, partition_backfill: PartitionBackfill):
@@ -1045,6 +1067,32 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     body=serialize_dagster_namedtuple(partition_backfill),
                 )
             )
+
+    def supports_kvs(self):
+        return True
+
+    def kvs_get(self, keys: Set[str]) -> Dict[str, str]:
+        check.set_param(keys, "keys", of_type=str)
+
+        with self.connect() as conn:
+            rows = conn.execute(
+                db.select(KeyValueStoreTable.columns).where(KeyValueStoreTable.c.key.in_(keys)),
+            )
+            return {row.key: row.value for row in rows}
+
+    def kvs_set(self, pairs: Dict[str, str]) -> None:
+        check.dict_param(pairs, "pairs", key_type=str, value_type=str)
+        db_values = [{"key": k, "value": v} for k, v in pairs.items()]
+
+        with self.connect() as conn:
+            try:
+                conn.execute(KeyValueStoreTable.insert().values(db_values))
+            except db.exc.IntegrityError:
+                conn.execute(
+                    KeyValueStoreTable.update()  # pylint: disable=no-value-for-parameter
+                    .where(KeyValueStoreTable.c.key.in_(pairs.keys()))
+                    .values(value=db.sql.case(pairs, value=KeyValueStoreTable.c.key))
+                )
 
 
 GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"

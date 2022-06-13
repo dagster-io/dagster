@@ -1,8 +1,17 @@
 import pytest
 
-from dagster import AssetKey, IOManager, Out, Output, io_manager
+from dagster import (
+    AssetKey,
+    IOManager,
+    Out,
+    Output,
+    ResourceDefinition,
+    build_op_context,
+    io_manager,
+)
 from dagster._check import CheckError
 from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
 
 
@@ -12,7 +21,7 @@ def test_with_replaced_asset_keys():
         assert input1
         assert input2
 
-    replaced = asset1.with_replaced_asset_keys(
+    replaced = asset1.with_prefix_or_group(
         output_asset_key_replacements={
             AssetKey(["asset1"]): AssetKey(["prefix1", "asset1_changed"])
         },
@@ -21,11 +30,11 @@ def test_with_replaced_asset_keys():
         },
     )
 
-    assert set(replaced.dependency_asset_keys) == {
+    assert set(replaced.dependency_keys) == {
         AssetKey("input1"),
         AssetKey(["apple", "banana"]),
     }
-    assert replaced.asset_keys == {AssetKey(["prefix1", "asset1_changed"])}
+    assert replaced.keys == {AssetKey(["prefix1", "asset1_changed"])}
 
     assert replaced.asset_keys_by_input_name["input1"] == AssetKey("input1")
 
@@ -61,7 +70,7 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
 
     subbed = abc_.subset_for({AssetKey(key) for key in subset.split(",")})
 
-    assert subbed.asset_keys == (
+    assert subbed.keys == (
         {AssetKey(key) for key in expected_keys.split(",")} if expected_keys else set()
     )
 
@@ -70,6 +79,17 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
 
     # the asset dependency structure should stay the same
     assert subbed.asset_deps == abc_.asset_deps
+
+
+def test_retain_group():
+    @asset(group_name="foo")
+    def bar():
+        pass
+
+    replaced = bar.with_prefix_or_group(
+        output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
+    )
+    assert replaced.group_names[AssetKey("baz")] == "foo"
 
 
 def test_chain_replace_and_subset_for():
@@ -85,12 +105,12 @@ def test_chain_replace_and_subset_for():
     def abc_(context, in1, in2, in3):  # pylint: disable=unused-argument
         pass
 
-    replaced_1 = abc_.with_replaced_asset_keys(
+    replaced_1 = abc_.with_prefix_or_group(
         output_asset_key_replacements={AssetKey(["a"]): AssetKey(["foo", "foo_a"])},
         input_asset_key_replacements={AssetKey(["in1"]): AssetKey(["foo", "bar_in1"])},
     )
 
-    assert replaced_1.asset_keys == {AssetKey(["foo", "foo_a"]), AssetKey("b"), AssetKey("c")}
+    assert replaced_1.keys == {AssetKey(["foo", "foo_a"]), AssetKey("b"), AssetKey("c")}
     assert replaced_1.asset_deps == {
         AssetKey(["foo", "foo_a"]): {AssetKey(["foo", "bar_in1"]), AssetKey("in2")},
         AssetKey("b"): set(),
@@ -105,9 +125,9 @@ def test_chain_replace_and_subset_for():
     subbed_1 = replaced_1.subset_for(
         {AssetKey(["foo", "bar_in1"]), AssetKey("in3"), AssetKey(["foo", "foo_a"]), AssetKey("b")}
     )
-    assert subbed_1.asset_keys == {AssetKey(["foo", "foo_a"]), AssetKey("b")}
+    assert subbed_1.keys == {AssetKey(["foo", "foo_a"]), AssetKey("b")}
 
-    replaced_2 = subbed_1.with_replaced_asset_keys(
+    replaced_2 = subbed_1.with_prefix_or_group(
         output_asset_key_replacements={
             AssetKey(["foo", "foo_a"]): AssetKey(["again", "foo", "foo_a"]),
             AssetKey(["b"]): AssetKey(["something", "bar_b"]),
@@ -118,7 +138,7 @@ def test_chain_replace_and_subset_for():
             AssetKey(["in3"]): AssetKey(["foo", "in3"]),
         },
     )
-    assert replaced_2.asset_keys == {
+    assert replaced_2.keys == {
         AssetKey(["again", "foo", "foo_a"]),
         AssetKey(["something", "bar_b"]),
     }
@@ -143,7 +163,7 @@ def test_chain_replace_and_subset_for():
             AssetKey(["c"]),
         }
     )
-    assert subbed_2.asset_keys == {AssetKey(["again", "foo", "foo_a"])}
+    assert subbed_2.keys == {AssetKey(["again", "foo", "foo_a"])}
 
 
 def test_fail_on_subset_for_nonsubsettable():
@@ -294,3 +314,74 @@ def test_asset_both_io_manager_args_provided():
         @asset(io_manager_key="the_key", io_manager_def=the_io_manager)
         def the_asset():
             pass
+
+
+def test_asset_invocation():
+    @asset
+    def the_asset():
+        return 6
+
+    assert the_asset() == 6
+
+
+def test_asset_invocation_input():
+    @asset
+    def input_asset(x):
+        return x
+
+    assert input_asset(5) == 5
+
+
+def test_asset_invocation_resource_overrides():
+    @asset(required_resource_keys={"foo", "bar"})
+    def asset_reqs_resources(context):
+        assert context.resources.foo == "foo_resource"
+        assert context.resources.bar == "bar_resource"
+
+    asset_reqs_resources(build_op_context(resources={"foo": "foo_resource", "bar": "bar_resource"}))
+
+    @asset(
+        resource_defs={
+            "foo": ResourceDefinition.hardcoded_resource("orig_foo"),
+            "bar": ResourceDefinition.hardcoded_resource("orig_bar"),
+        }
+    )
+    def asset_resource_overrides(context):
+        assert context.resources.foo == "override_foo"
+        assert context.resources.bar == "orig_bar"
+
+    asset_resource_overrides(build_op_context(resources={"foo": "override_foo"}))
+
+
+def test_asset_invocation_resource_errors():
+    @asset(resource_defs={"ignored": ResourceDefinition.hardcoded_resource("not_used")})
+    def asset_doesnt_use_resources():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match='op "asset_doesnt_use_resources" has required resources, but no context was provided.',
+    ):
+        asset_doesnt_use_resources()
+
+    @asset(resource_defs={"used": ResourceDefinition.hardcoded_resource("foo")})
+    def asset_uses_resources(context):
+        assert context.resources.used == "foo"
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match='op "asset_uses_resources" has required resources, but no context was provided',
+    ):
+        asset_uses_resources(None)
+
+    asset_uses_resources(build_op_context())
+
+    @asset(required_resource_keys={"foo"})
+    def required_key_not_provided(_):
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'foo' required by op 'required_key_not_provided' was not provided.",
+    ):
+        required_key_not_provided(build_op_context())

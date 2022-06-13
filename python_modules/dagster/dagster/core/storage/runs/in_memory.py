@@ -48,7 +48,8 @@ def build_run_filter(filters: Optional[RunsFilter]) -> Callable[[PipelineRun], b
             return False
 
         if filters.tags and not all(
-            run.tags.get(key) == value for key, value in filters.tags.items()
+            (run.tags.get(key) == value if isinstance(value, str) else run.tags.get(key) in value)
+            for key, value in filters.tags.items()
         ):
             return False
 
@@ -405,3 +406,12 @@ class InMemoryRunStorage(RunStorage):
     def update_backfill(self, partition_backfill: PartitionBackfill):
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
         self._bulk_actions[partition_backfill.backfill_id] = partition_backfill
+
+    def supports_kvs(self):
+        return False
+
+    def kvs_get(self, keys: Set[str]) -> Dict[str, str]:
+        raise NotImplementedError()
+
+    def kvs_set(self, pairs: Dict[str, str]) -> None:
+        raise NotImplementedError()

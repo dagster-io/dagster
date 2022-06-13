@@ -49,6 +49,16 @@ def my_job():
 basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
 ```
 
+In order to run schedules for assets, you can [build a job that materializes assets](/concepts/assets/software-defined-assets#building-jobs-that-materialize-assets) and construct a <PyObject object="ScheduleDefinition" /> similarly:
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_asset_schedule endbefore=end_basic_asset_schedule
+from dagster import AssetSelection, define_asset_job
+
+asset_job = define_asset_job("asset_job", AssetSelection.groups("some_asset_group"))
+
+basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
+```
+
 ### A schedule that provides custom run config and tags
 
 If you want to vary the behavior of your job based on the time it's scheduled to run, you can use the <PyObject object="schedule" decorator /> decorator, which decorates a function that returns run config based on a provided <PyObject object="ScheduleEvaluationContext" />.
@@ -78,9 +88,9 @@ def configurable_job_schedule(context: ScheduleEvaluationContext):
 
 If you don't need access to the context parameter, you can omit it from the decorated function.
 
-### A schedule from a partitioned job
+### Schedules from partitioned assets and jobs
 
-#### Time partitioned job
+#### Time partitioned assets and jobs
 
 When you have a [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job.
 
@@ -99,6 +109,23 @@ def do_stuff_partitioned():
 
 do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
     do_stuff_partitioned,
+)
+```
+
+The Partitioned Jobs concepts page also includes an [example of a date-partitioned asset](/concepts/partitions-schedules-sensors/partitions#partitioned-assets). You can define a schedule similarly using <PyObject object="build_schedule_from_partitioned_job"/>:
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_partitioned_asset_schedule endbefore=end_partitioned_asset_schedule
+from dagster import define_asset_job
+
+partitioned_asset_job = define_asset_job(
+    "partitioned_job",
+    selection="*",
+    partitions_def=HourlyPartitionsDefinition(start_date="2022-05-31", fmt="%Y-%m-%d"),
+)
+
+
+asset_partitioned_schedule = build_schedule_from_partitioned_job(
+    partitioned_asset_job,
 )
 ```
 

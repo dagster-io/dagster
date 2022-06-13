@@ -4,6 +4,7 @@ from typing import Any, Callable, Optional, Union, overload
 import dagster._check as check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
+from ..executor_definition import ExecutorDefinition
 from ..graph_definition import GraphDefinition
 from ..partition import PartitionSetDefinition
 from ..pipeline_definition import PipelineDefinition
@@ -15,15 +16,24 @@ from ..repository_definition import (
 )
 from ..schedule_definition import ScheduleDefinition
 from ..sensor_definition import SensorDefinition
+from ..unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 
 class _Repository:
-    def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        default_executor_def: Optional[ExecutorDefinition] = None,
+    ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
+        self.default_executor_def = check.opt_inst_param(
+            default_executor_def, "default_executor_def", ExecutorDefinition
+        )
 
     def __call__(self, fn: Callable[[], Any]) -> RepositoryDefinition:
-        from dagster.core.asset_defs import AssetGroup
+        from dagster.core.asset_defs import AssetGroup, AssetsDefinition, SourceAsset
 
         check.callable_param(fn, "fn")
 
@@ -43,6 +53,9 @@ class _Repository:
                     or isinstance(definition, SensorDefinition)
                     or isinstance(definition, GraphDefinition)
                     or isinstance(definition, AssetGroup)
+                    or isinstance(definition, AssetsDefinition)
+                    or isinstance(definition, SourceAsset)
+                    or isinstance(definition, UnresolvedAssetJobDefinition)
                 ):
                     bad_definitions.append((i, type(definition)))
             if bad_definitions:
@@ -55,10 +68,13 @@ class _Repository:
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: all elements of list "
                     "must be of type JobDefinition, GraphDefinition, PipelineDefinition, "
-                    "PartitionSetDefinition, ScheduleDefinition, or SensorDefinition. "
+                    "PartitionSetDefinition, ScheduleDefinition, SensorDefinition, "
+                    "AssetsDefinition, or SourceAsset."
                     f"Got {bad_definitions_str}."
                 )
-            repository_data = CachingRepositoryData.from_list(repository_definitions)
+            repository_data = CachingRepositoryData.from_list(
+                repository_definitions, default_executor_def=self.default_executor_def
+            )
 
         elif isinstance(repository_definitions, dict):
             if not set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS):
@@ -86,7 +102,9 @@ class _Repository:
             )
 
         repository_def = RepositoryDefinition(
-            name=self.name, description=self.description, repository_data=repository_data
+            name=self.name,
+            description=self.description,
+            repository_data=repository_data,
         )
 
         update_wrapper(repository_def, fn)
@@ -104,7 +122,9 @@ def repository(name: Optional[str] = ..., description: Optional[str] = ...) -> _
 
 
 def repository(
-    name: Optional[Union[str, Callable[..., Any]]] = None, description: Optional[str] = None
+    name: Optional[Union[str, Callable[..., Any]]] = None,
+    description: Optional[str] = None,
+    default_executor_def: Optional[ExecutorDefinition] = None,
 ) -> Union[RepositoryDefinition, _Repository]:
     """Create a repository from the decorated function.
 
@@ -237,4 +257,6 @@ def repository(
 
         return _Repository()(name)
 
-    return _Repository(name=name, description=description)
+    return _Repository(
+        name=name, description=description, default_executor_def=default_executor_def
+    )

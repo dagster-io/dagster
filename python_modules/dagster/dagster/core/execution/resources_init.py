@@ -70,17 +70,10 @@ def resolve_resource_dependencies(resource_defs):
     return resource_dependencies
 
 
-def get_dependencies(resource_name, resource_deps):
-    """Get all resources that must be initialized before resource_name can be initialized.
-
-    Uses dfs to get all required dependencies from a particular resource. If dependencies are
-        cyclic, raise a DagsterInvariantViolationError.
-    """
+def ensure_resource_deps_satisfiable(resource_deps):
     path = set()  # resources we are currently checking the dependencies of
-    reqd_resources = set()
 
-    # adds dependencies for a given resource key to reqd_resources
-    def _get_deps_helper(resource_key):
+    def _helper(resource_key):
         path.add(resource_key)
         for reqd_resource_key in resource_deps[resource_key]:
             if reqd_resource_key in path:
@@ -89,12 +82,32 @@ def get_dependencies(resource_name, resource_deps):
                         key=reqd_resource_key
                     )
                 )
-            _get_deps_helper(reqd_resource_key)
+            if reqd_resource_key not in resource_deps:
+                raise DagsterInvariantViolationError(
+                    f"Resource with key '{reqd_resource_key}' required by resource with key '{resource_key}', but not provided."
+                )
+            _helper(reqd_resource_key)
         path.remove(resource_key)
+
+    for resource_key in sorted(list(resource_deps.keys())):
+        _helper(resource_key)
+
+
+def get_dependencies(resource_name, resource_deps):
+    """Get all resources that must be initialized before resource_name can be initialized.
+
+    Uses dfs to get all required dependencies from a particular resource. Assumes that resource dependencies are not cyclic (check performed by a different function).
+    """
+    reqd_resources = set()
+
+    # adds dependencies for a given resource key to reqd_resources
+    def _get_deps_helper(resource_key):
+        for reqd_resource_key in resource_deps[resource_key]:
+            _get_deps_helper(reqd_resource_key)
         reqd_resources.add(resource_key)
 
     _get_deps_helper(resource_name)
-    return set(reqd_resources)
+    return reqd_resources
 
 
 def _core_resource_initialization_event_generator(
@@ -354,6 +367,7 @@ def get_required_resource_keys_to_init(execution_plan, pipeline_def, resolved_ru
 def get_transitive_required_resource_keys(required_resource_keys, resource_defs):
 
     resource_dependencies = resolve_resource_dependencies(resource_defs)
+    ensure_resource_deps_satisfiable(resource_dependencies)
 
     transitive_required_resource_keys = set()
 

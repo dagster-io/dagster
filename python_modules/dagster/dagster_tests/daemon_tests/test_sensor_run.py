@@ -286,7 +286,7 @@ def the_repo():
         the_pipeline,
         the_job,
         config_pipeline,
-        config_graph,
+        config_job,
         foo_pipeline,
         large_sensor,
         simple_sensor,

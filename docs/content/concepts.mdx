@@ -14,58 +14,17 @@ Each page in this section contains:
 ## Sections
 
 <LinkGrid>
+  <LinkGridItem title="Assets" href="/concepts/assets/software-defined-assets">
+    Assets are data objects that you produce during a run. This section walks
+    you through how to inform Dagster about these assets so that they can be
+    tracked over time.
+  </LinkGridItem>
   <LinkGridItem
     title="Ops, Jobs, and Graphs"
     href="/concepts/ops-jobs-graphs/ops"
   >
     Ops, Jobs, and Graphs are the building blocks of Dagster code. This section
     covers how to define and use both ops and jobs.
-  </LinkGridItem>
-  <LinkGridItem title="Resources" href="/concepts/resources">
-    Resources enable you to separate logic from its heavyweight external
-    dependencies. This makes testing and developing data jobs possible in
-    various environments.
-  </LinkGridItem>
-  <LinkGridItem title="Testing" href="/concepts/testing">
-    Dagster enables you to build testable and maintainable data applications.
-    This section shows that Dagster enables you to unit-test your data jobs,
-    separate business logic from external dependencies, and run data quality
-    tests.
-  </LinkGridItem>
-  <LinkGridItem
-    title="Configuration System"
-    href="/concepts/configuration/config-schema"
-  >
-    Dagster provides a configuration system that allows you to document,
-    schematize, and error-check your configuration. This section demonstrates
-    how configurations work with different Dagster entities.
-  </LinkGridItem>
-  <LinkGridItem title="Dagster Types" href="/concepts/types">
-    Dagster includes gradual, opt-in typing for the inputs and outputs of ops.
-    This section explains how to define, use, and test types in Dagster.
-  </LinkGridItem>
-  <LinkGridItem
-    title="IO Management"
-    href="/concepts/io-management/io-managers"
-  >
-    IO Managers are user-provided objects that store op outputs and load them as
-    inputs to downstream ops. This section explains how Dagster thinks about IO
-    management and shows how to define and use IO managers and other IO-related
-    features.
-  </LinkGridItem>
-  <LinkGridItem title="Dagit & GraphQL API" href="/concepts/dagit/dagit">
-    Dagit is a web-based interface for viewing and interacting with Dagster
-    objects. This section walks you through Dagit's functionalities and the
-    GraphQL API used to interact with Dagster programatically.
-  </LinkGridItem>
-  <LinkGridItem
-    title="Repositories and Workspaces"
-    href="/concepts/repositories-workspaces/repositories"
-  >
-    A workspace is a collection of user-defined repositories and information
-    about where to find them. Dagster tools, like Dagit and the Dagster CLI, use
-    workspaces to load user code. This section shows how to define and when to
-    use repositories and workspaces.
   </LinkGridItem>
   <LinkGridItem
     title="Schedules, Sensors, and Partitions"
@@ -76,14 +35,55 @@ Each page in this section contains:
     define them and their convenient capabilities like partitioning and
     backfilling.
   </LinkGridItem>
-  <LinkGridItem title="Assets" href="/concepts/assets/software-defined-assets">
-    Assets are data objects that you produce during a run. This section walks
-    you through how to inform Dagster about these assets so that they can be
-    tracked over time.
+  <LinkGridItem
+    title="IO Management"
+    href="/concepts/io-management/io-managers"
+  >
+    IO Managers are user-provided objects that store op outputs and load them as
+    inputs to downstream ops. This section explains how Dagster thinks about IO
+    management and shows how to define and use IO managers and other IO-related
+    features.
+  </LinkGridItem>
+  <LinkGridItem
+    title="Configuration"
+    href="/concepts/configuration/config-schema"
+  >
+    Dagster provides a configuration system that allows you to document,
+    schematize, and error-check your configuration. This section demonstrates
+    how configurations work with different Dagster entities.
+  </LinkGridItem>
+  <LinkGridItem
+    title="Repositories and Workspaces"
+    href="/concepts/repositories-workspaces/repositories"
+  >
+    A workspace is a collection of user-defined repositories and information
+    about where to find them. Dagster tools, like Dagit and the Dagster CLI, use
+    workspaces to load user code. This section shows how to define and when to
+    use repositories and workspaces.
+  </LinkGridItem>
+  <LinkGridItem title="Resources" href="/concepts/resources">
+    Resources enable you to separate logic from its heavyweight external
+    dependencies. This makes testing and developing data jobs possible in
+    various environments.
+  </LinkGridItem>
+  <LinkGridItem title="Dagit & GraphQL API" href="/concepts/dagit/dagit">
+    Dagit is a web-based interface for viewing and interacting with Dagster
+    objects. This section walks you through Dagit's functionalities and the
+    GraphQL API used to interact with Dagster programatically.
+  </LinkGridItem>
+  <LinkGridItem title="Dagster Types" href="/concepts/types">
+    Dagster includes gradual, opt-in typing for the inputs and outputs of ops.
+    This section explains how to define, use, and test types in Dagster.
   </LinkGridItem>
   <LinkGridItem title="Logging" href="/concepts/logging/loggers">
     Dagster includes a rich and extensible logging system. This section
     showcases Dagster's built-in logger and shows how you can customize loggers
     to fit your logging and monitoring infrastructure.
+  </LinkGridItem>
+  <LinkGridItem title="Testing" href="/concepts/testing">
+    Dagster enables you to build testable and maintainable data applications.
+    This section shows that Dagster enables you to unit-test your data jobs,
+    separate business logic from external dependencies, and run data quality
+    tests.
   </LinkGridItem>
 </LinkGrid>

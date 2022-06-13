@@ -106,7 +106,7 @@ def test_single_asset_group():
     repo_def = repository_def_from_pointer(CodePointer.from_python_file(path, symbol, None))
 
     isinstance(repo_def, RepositoryDefinition)
-    the_job = repo_def.get_job("__ASSET_GROUP")
+    the_job = repo_def.get_job("__ASSET_JOB")
     assert len(the_job.graph.node_defs) == 2
 
 
@@ -134,7 +134,7 @@ def test_multiple_assets():
     repo_def = repository_def_from_pointer(CodePointer.from_python_file(path, symbol, None))
 
     isinstance(repo_def, RepositoryDefinition)
-    the_job = repo_def.get_job("__ASSET_GROUP")
+    the_job = repo_def.get_job("__ASSET_JOB")
     assert len(the_job.graph.node_defs) == 2
 
 

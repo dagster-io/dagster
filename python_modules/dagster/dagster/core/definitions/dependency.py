@@ -246,9 +246,9 @@ class Node:
 
     def get_resource_requirements(
         self,
-        asset_layer: "AssetLayer",
         outer_container: "GraphDefinition",
         parent_handle: Optional["NodeHandle"] = None,
+        asset_layer: Optional["AssetLayer"] = None,
     ) -> Iterator["ResourceRequirement"]:
         from .resource_requirement import InputManagerRequirement
 

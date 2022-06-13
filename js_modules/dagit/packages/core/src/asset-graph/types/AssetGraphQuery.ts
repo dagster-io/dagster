@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineSelector } from "./../../types/globalTypes";
+import { PipelineSelector, AssetGroupSelector } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: AssetGraphQuery
@@ -509,12 +509,12 @@ export interface AssetGraphQuery_assetNodes {
   id: string;
   dependencyKeys: AssetGraphQuery_assetNodes_dependencyKeys[];
   dependedByKeys: AssetGraphQuery_assetNodes_dependedByKeys[];
+  partitionDefinition: string | null;
   configField: AssetGraphQuery_assetNodes_configField | null;
   graphName: string | null;
   jobNames: string[];
   opNames: string[];
   description: string | null;
-  partitionDefinition: string | null;
   computeKind: string | null;
   assetKey: AssetGraphQuery_assetNodes_assetKey;
   repository: AssetGraphQuery_assetNodes_repository;
@@ -526,4 +526,5 @@ export interface AssetGraphQuery {
 
 export interface AssetGraphQueryVariables {
   pipelineSelector?: PipelineSelector | null;
+  groupSelector?: AssetGroupSelector | null;
 }

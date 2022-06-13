@@ -1,6 +1,7 @@
 import faker from 'faker';
 
-export const hyphenatedName = () => faker.random.words(2).replace(/ /g, '-').toLowerCase();
+export const hyphenatedName = (wordCount = 2) =>
+  faker.random.words(wordCount).replace(/ /g, '-').toLowerCase();
 const randomId = () => faker.datatype.uuid();
 
 /**
@@ -18,6 +19,9 @@ export const defaultMocks = {
     id: randomId,
     opName: hyphenatedName,
     metadataEntries: () => [],
+  }),
+  AssetGroup: () => ({
+    groupName: hyphenatedName,
   }),
   ISolidDefinition: () => ({
     __typename: 'SolidDefinition',

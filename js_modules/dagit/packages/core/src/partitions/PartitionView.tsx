@@ -337,7 +337,7 @@ const JobBackfills = ({
       {({partitionSetOrError}) => {
         const {backfills, pipelineName} = partitionSetOrError;
 
-        if (!backfills) {
+        if (backfills.length) {
           return <NonIdealState title={`No backfills for ${pipelineName}`} icon="no-results" />;
         }
 

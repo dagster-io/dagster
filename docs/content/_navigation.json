@@ -23,57 +23,45 @@
     ]
   },
   {
-    "title": "Tutorial",
+    "title": "Tutorials",
     "icon": "AcademicCap",
     "path": "/tutorial",
     "children": [
       {
-        "title": "Intro Tutorial",
+        "title": "Setup",
+        "path": "/tutorial/setup"
+      },
+      {
+        "title": "Assets",
         "children": [
           {
-            "title": "Setup for the Tutorial",
-            "path": "/tutorial/intro-tutorial/setup"
+            "title": "Defining an Asset",
+            "path": "/tutorial/assets/defining-an-asset"
           },
           {
-            "title": "A Single-Op Job",
-            "path": "/tutorial/intro-tutorial/single-op-job"
+            "title": "Building Graphs of Assets",
+            "path": "/tutorial/assets/asset-graph"
           },
           {
-            "title": "Connecting Ops in Jobs",
-            "path": "/tutorial/intro-tutorial/connecting-ops"
-          },
-          {
-            "title": "Testing Ops and Jobs",
-            "path": "/tutorial/intro-tutorial/testable"
+            "title": "Testing Assets",
+            "path": "/tutorial/assets/testing-assets"
           }
         ]
       },
       {
-        "title": "Advanced Tutorials",
+        "title": "Ops and Jobs",
         "children": [
           {
-            "title": "Configuring Ops",
-            "path": "/tutorial/advanced-tutorial/configuring-ops"
+            "title": "Writing, Executing a Single-Op Job",
+            "path": "/tutorial/ops-jobs/single-op-job"
           },
           {
-            "title": "Dagster Types",
-            "path": "/tutorial/advanced-tutorial/types"
+            "title": "Connecting Ops In Jobs",
+            "path": "/tutorial/ops-jobs/connecting-ops"
           },
           {
-            "title": "Resources & Built-In Config",
-            "path": "/tutorial/advanced-tutorial/resources"
-          },
-          {
-            "title": "Materializations",
-            "path": "/tutorial/advanced-tutorial/materializations"
-          },
-          {
-            "title": "Organizing Jobs in Repositories & Workspaces",
-            "path": "/tutorial/advanced-tutorial/repositories"
-          },
-          {
-            "title": "Scheduling Job Runs",
-            "path": "/tutorial/advanced-tutorial/scheduling"
+            "title": "Testing Ops and Jobs",
+            "path": "/tutorial/ops-jobs/testable"
           }
         ]
       }
@@ -84,6 +72,27 @@
     "icon": "Menu",
     "path": "/concepts",
     "children": [
+      {
+        "title": "Assets",
+        "children": [
+          {
+            "title": "Software-Defined Assets",
+            "path": "/concepts/assets/software-defined-assets"
+          },
+          {
+            "title": "Asset Materializations",
+            "path": "/concepts/assets/asset-materializations"
+          },
+          {
+            "title": "Asset Observations",
+            "path": "/concepts/assets/asset-observations"
+          },
+          {
+            "title": "Multi-Assets",
+            "path": "/concepts/assets/multi-assets"
+          }
+        ]
+      },
       {
         "title": "Ops, Jobs, and Graphs",
         "children": [
@@ -126,20 +135,36 @@
         ]
       },
       {
-        "title": "Resources",
+        "title": "Schedules, Sensors, & Partitions",
         "children": [
           {
-            "title": "Resources",
-            "path": "/concepts/resources"
+            "title": "Schedules",
+            "path": "/concepts/partitions-schedules-sensors/schedules"
+          },
+          {
+            "title": "Sensors",
+            "path": "/concepts/partitions-schedules-sensors/sensors"
+          },
+          {
+            "title": "Partitions",
+            "path": "/concepts/partitions-schedules-sensors/partitions"
+          },
+          {
+            "title": "Backfills",
+            "path": "/concepts/partitions-schedules-sensors/backfills"
           }
         ]
       },
       {
-        "title": "Testing",
+        "title": "IO Management",
         "children": [
           {
-            "title": "Testing",
-            "path": "/concepts/testing"
+            "title": "IO Managers",
+            "path": "/concepts/io-management/io-managers"
+          },
+          {
+            "title": "Unconnected Inputs",
+            "path": "/concepts/io-management/unconnected-inputs"
           }
         ]
       },
@@ -157,24 +182,24 @@
         ]
       },
       {
-        "title": "Dagster Types",
+        "title": "Repositories & Workspaces",
         "children": [
           {
-            "title": "Dagster Types",
-            "path": "/concepts/types"
+            "title": "Repositories",
+            "path": "/concepts/repositories-workspaces/repositories"
+          },
+          {
+            "title": "Workspaces",
+            "path": "/concepts/repositories-workspaces/workspaces"
           }
         ]
       },
       {
-        "title": "IO Management",
+        "title": "Resources",
         "children": [
           {
-            "title": "IO Managers",
-            "path": "/concepts/io-management/io-managers"
-          },
-          {
-            "title": "Unconnected Inputs",
-            "path": "/concepts/io-management/unconnected-inputs"
+            "title": "Resources",
+            "path": "/concepts/resources"
           }
         ]
       },
@@ -196,15 +221,11 @@
         ]
       },
       {
-        "title": "Repositories & Workspaces",
+        "title": "Dagster Types",
         "children": [
           {
-            "title": "Repositories",
-            "path": "/concepts/repositories-workspaces/repositories"
-          },
-          {
-            "title": "Workspaces",
-            "path": "/concepts/repositories-workspaces/workspaces"
+            "title": "Dagster Types",
+            "path": "/concepts/types"
           }
         ]
       },
@@ -222,40 +243,11 @@
         ]
       },
       {
-        "title": "Partitions, Schedules, & Sensors",
+        "title": "Testing",
         "children": [
           {
-            "title": "Schedules",
-            "path": "/concepts/partitions-schedules-sensors/schedules"
-          },
-          {
-            "title": "Sensors",
-            "path": "/concepts/partitions-schedules-sensors/sensors"
-          },
-          {
-            "title": "Partitions",
-            "path": "/concepts/partitions-schedules-sensors/partitions"
-          },
-          {
-            "title": "Backfills",
-            "path": "/concepts/partitions-schedules-sensors/backfills"
-          }
-        ]
-      },
-      {
-        "title": "Assets",
-        "children": [
-          {
-            "title": "Software-Defined Assets",
-            "path": "/concepts/assets/software-defined-assets"
-          },
-          {
-            "title": "Asset Materializations",
-            "path": "/concepts/assets/asset-materializations"
-          },
-          {
-            "title": "Asset Observations",
-            "path": "/concepts/assets/asset-observations"
+            "title": "Testing",
+            "path": "/concepts/testing"
           }
         ]
       }
@@ -399,24 +391,6 @@
       {
         "title": "Versioning and Memoization (Experimental)",
         "path": "/guides/dagster/memoization"
-      },
-      {
-        "title": "Software-Defined Assets Tutorial (Experimental)",
-        "path": "/guides/dagster/asset-tutorial",
-        "children": [
-          {
-            "title": "Defining an Asset",
-            "path": "/guides/dagster/asset-tutorial/defining-an-asset"
-          },
-          {
-            "title": "Building Graphs of Assets",
-            "path": "/guides/dagster/asset-tutorial/asset-graph"
-          },
-          {
-            "title": "Testing Assets",
-            "path": "/guides/dagster/asset-tutorial/testing-assets"
-          }
-        ]
       },
       {
         "title": "Software-Defined Assets with Pandas and PySpark (Experimental)",

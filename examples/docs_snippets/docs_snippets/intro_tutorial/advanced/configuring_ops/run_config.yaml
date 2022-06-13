@@ -1,4 +1,0 @@
-ops:
-  download_csv:
-    config:
-      url: "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"

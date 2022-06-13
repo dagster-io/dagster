@@ -90,7 +90,7 @@ def test_multi_asset_out_name_diff_from_asset_key():
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
 
-    assert my_asset.asset_keys == {AssetKey("my_asset_name"), AssetKey("my_other_asset")}
+    assert my_asset.keys == {AssetKey("my_asset_name"), AssetKey("my_other_asset")}
 
 
 def test_multi_asset_infer_from_empty_asset_key():
@@ -99,7 +99,7 @@ def test_multi_asset_infer_from_empty_asset_key():
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
 
-    assert my_asset.asset_keys == {AssetKey("my_out_name"), AssetKey("my_other_out_name")}
+    assert my_asset.keys == {AssetKey("my_out_name"), AssetKey("my_other_out_name")}
 
 
 def test_multi_asset_internal_asset_deps_metadata():
@@ -117,7 +117,7 @@ def test_multi_asset_internal_asset_deps_metadata():
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
 
-    assert my_asset.asset_keys == {AssetKey("my_out_name"), AssetKey("my_other_out_name")}
+    assert my_asset.keys == {AssetKey("my_out_name"), AssetKey("my_other_out_name")}
     assert my_asset.op.output_def_named("my_out_name").metadata == {"foo": "bar"}
     assert my_asset.op.output_def_named("my_other_out_name").metadata == {"bar": "foo"}
     assert my_asset.asset_deps == {
@@ -155,16 +155,55 @@ def test_asset_with_dagster_type():
     assert my_asset.op.output_defs[0].dagster_type.display_name == "String"
 
 
-def test_asset_with_namespace():
-    @asset(namespace="my_namespace")
+def test_asset_with_key_prefix():
+    @asset(key_prefix="my_key_prefix")
     def my_asset():
         pass
 
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 0
+    assert my_asset.op.name == "my_key_prefix__my_asset"
+    assert my_asset.keys == {AssetKey(["my_key_prefix", "my_asset"])}
+
+    @asset(key_prefix=["one", "two", "three"])
+    def multi_component_list_asset():
+        pass
+
+    assert isinstance(multi_component_list_asset, AssetsDefinition)
+    assert len(multi_component_list_asset.op.output_defs) == 1
+    assert len(multi_component_list_asset.op.input_defs) == 0
+    assert multi_component_list_asset.op.name == "one__two__three__multi_component_list_asset"
+    assert multi_component_list_asset.keys == {
+        AssetKey(["one", "two", "three", "multi_component_list_asset"])
+    }
+
+    @asset(key_prefix=["one", "two", "three"])
+    def multi_component_str_asset():
+        pass
+
+    assert isinstance(multi_component_str_asset, AssetsDefinition)
+    assert len(multi_component_str_asset.op.output_defs) == 1
+    assert len(multi_component_str_asset.op.input_defs) == 0
+    assert multi_component_str_asset.op.name == "one__two__three__multi_component_str_asset"
+    assert multi_component_str_asset.keys == {
+        AssetKey(["one", "two", "three", "multi_component_str_asset"])
+    }
+
+
+def test_asset_with_namespace():
+
+    with pytest.warns(DeprecationWarning):
+
+        @asset(namespace="my_namespace")
+        def my_asset():
+            pass
+
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.output_defs) == 1
+    assert len(my_asset.op.input_defs) == 0
     assert my_asset.op.name == "my_namespace__my_asset"
-    assert my_asset.asset_keys == {AssetKey(["my_namespace", "my_asset"])}
+    assert my_asset.keys == {AssetKey(["my_namespace", "my_asset"])}
 
     @asset(namespace=["one", "two", "three"])
     def multi_component_namespace_asset():
@@ -177,20 +216,20 @@ def test_asset_with_namespace():
         multi_component_namespace_asset.op.name
         == "one__two__three__multi_component_namespace_asset"
     )
-    assert multi_component_namespace_asset.asset_keys == {
+    assert multi_component_namespace_asset.keys == {
         AssetKey(["one", "two", "three", "multi_component_namespace_asset"])
     }
 
 
-def test_asset_with_inputs_and_namespace():
-    @asset(namespace="my_namespace")
+def test_asset_with_inputs_and_key_prefix():
+    @asset(key_prefix="my_prefix")
     def my_asset(arg1):
         return arg1
 
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
-    assert AssetKey(["my_namespace", "arg1"]) in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey(["my_prefix", "arg1"]) in my_asset.asset_keys_by_input_name.values()
 
 
 def test_asset_with_context_arg():
@@ -214,17 +253,17 @@ def test_asset_with_context_arg_and_dep():
 
 
 def test_input_asset_key():
-    @asset(ins={"arg1": AssetIn(asset_key=AssetKey("foo"))})
+    @asset(ins={"arg1": AssetIn(key=AssetKey("foo"))})
     def my_asset(arg1):
         assert arg1
 
     assert AssetKey("foo") in my_asset.asset_keys_by_input_name.values()
 
 
-def test_input_asset_key_and_namespace():
-    with pytest.raises(check.CheckError, match="key and namespace cannot both be set"):
+def test_input_asset_key_and_key_prefix():
+    with pytest.raises(check.CheckError, match="key and key_prefix cannot both be set"):
 
-        @asset(ins={"arg1": AssetIn(asset_key=AssetKey("foo"), namespace="bar")})
+        @asset(ins={"arg1": AssetIn(key=AssetKey("foo"), key_prefix="bar")})
         def _my_asset(arg1):
             assert arg1
 
@@ -239,6 +278,22 @@ def test_input_namespace_str():
 
 def test_input_namespace_list():
     @asset(ins={"arg1": AssetIn(namespace=["abc", "xyz"])})
+    def my_asset(arg1):
+        assert arg1
+
+    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.asset_keys_by_input_name.values()
+
+
+def test_input_key_prefix_str():
+    @asset(ins={"arg1": AssetIn(key_prefix=["abc", "xyz"])})
+    def my_asset(arg1):
+        assert arg1
+
+    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.asset_keys_by_input_name.values()
+
+
+def test_input_key_prefix_list():
+    @asset(ins={"arg1": AssetIn(key_prefix=["abc", "xyz"])})
     def my_asset(arg1):
         assert arg1
 

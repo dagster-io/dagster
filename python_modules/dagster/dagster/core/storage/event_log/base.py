@@ -1,5 +1,4 @@
 import base64
-import warnings
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
@@ -131,7 +130,7 @@ class EventRecordsFilter(
     NamedTuple(
         "_EventRecordsFilter",
         [
-            ("event_type", Optional[DagsterEventType]),
+            ("event_type", DagsterEventType),
             ("asset_key", Optional[AssetKey]),
             ("asset_partitions", Optional[List[str]]),
             ("after_cursor", Optional[Union[int, RunShardedEventsCursor]]),
@@ -144,7 +143,7 @@ class EventRecordsFilter(
     """Defines a set of filter fields for fetching a set of event log entries or event log records.
 
     Args:
-        event_type (Optional[DagsterEventType]): Filter argument for dagster event type
+        event_type (DagsterEventType): Filter argument for dagster event type
         asset_key (Optional[AssetKey]): Asset key for which to get asset materialization event
             entries / records.
         asset_partitions (Optional[List[str]]): Filter parameter such that only asset
@@ -166,7 +165,7 @@ class EventRecordsFilter(
 
     def __new__(
         cls,
-        event_type: Optional[DagsterEventType] = None,
+        event_type: DagsterEventType,
         asset_key: Optional[AssetKey] = None,
         asset_partitions: Optional[List[str]] = None,
         after_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
@@ -175,12 +174,7 @@ class EventRecordsFilter(
         before_timestamp: Optional[float] = None,
     ):
         check.opt_list_param(asset_partitions, "asset_partitions", of_type=str)
-        event_type = check.opt_inst_param(event_type, "event_type", DagsterEventType)
-        if not event_type:
-            warnings.warn(
-                "The use of `EventRecordsFilter` without an event type is deprecated and will "
-                "begin erroring starting in 0.15.0"
-            )
+        check.inst_param(event_type, "event_type", DagsterEventType)
 
         return super(EventRecordsFilter, cls).__new__(
             cls,
@@ -316,7 +310,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     @abstractmethod
     def get_event_records(
         self,
-        event_records_filter: Optional[EventRecordsFilter] = None,
+        event_records_filter: EventRecordsFilter,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Iterable[EventLogRecord]:

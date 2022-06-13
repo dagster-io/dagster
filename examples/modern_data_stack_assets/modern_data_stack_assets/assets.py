@@ -6,15 +6,14 @@ from dagster_airbyte import airbyte_resource, build_airbyte_assets
 from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
 from scipy import optimize
 
-from dagster import AssetGroup, AssetIn, asset
+from dagster import AssetIn, asset, load_assets_from_current_module, repository
+from dagster.core.execution.with_resources import with_resources
 
 from .constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
 from .pandas_io_manager import numpy_io_manager, pandas_io_manager
 
 airbyte_assets = build_airbyte_assets(
-    connection_id=AIRBYTE_CONNECTION_ID,
-    destination_tables=["orders", "users"],
-    asset_key_prefix=["public"],
+    connection_id=AIRBYTE_CONNECTION_ID, destination_tables=["orders", "users"]
 )
 
 dbt_assets = load_assets_from_dbt_project(
@@ -24,7 +23,6 @@ dbt_assets = load_assets_from_dbt_project(
 
 @asset(
     compute_kind="python",
-    namespace="public",
     ins={"daily_order_summary": AssetIn(namespace="public", input_manager_key="numpy_io_manager")},
 )
 def order_forecast_model(daily_order_summary: np.ndarray) -> Any:
@@ -37,7 +35,7 @@ def order_forecast_model(daily_order_summary: np.ndarray) -> Any:
     )
 
 
-@asset(compute_kind="python", io_manager_key="pandas_io_manager", namespace="public")
+@asset(compute_kind="python", io_manager_key="pandas_io_manager")
 def predicted_orders(
     daily_order_summary: pd.DataFrame, order_forecast_model: Tuple[float, float]
 ) -> pd.DataFrame:
@@ -49,12 +47,18 @@ def predicted_orders(
     return pd.DataFrame({"order_date": future_dates, "num_orders": predicted_data})
 
 
-analytics_assets = AssetGroup(
-    [*airbyte_assets, *dbt_assets, order_forecast_model, predicted_orders],
-    resource_defs={
-        "airbyte": airbyte_resource.configured(AIRBYTE_CONFIG),
-        "dbt": dbt_cli_resource.configured(DBT_CONFIG),
-        "pandas_io_manager": pandas_io_manager.configured(PANDAS_IO_CONFIG),
-        "numpy_io_manager": numpy_io_manager.configured(PANDAS_IO_CONFIG),
-    },
-).build_job("Assets")
+# all of the resources needed for interacting with our tools
+resource_defs = {
+    "airbyte": airbyte_resource.configured(AIRBYTE_CONFIG),
+    "dbt": dbt_cli_resource.configured(DBT_CONFIG),
+    "pandas_io_manager": pandas_io_manager.configured(PANDAS_IO_CONFIG),
+    "numpy_io_manager": numpy_io_manager.configured(PANDAS_IO_CONFIG),
+}
+
+
+@repository
+def mds_repo():
+    return with_resources(
+        load_assets_from_current_module(),
+        resource_defs=resource_defs,
+    )

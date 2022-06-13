@@ -9,7 +9,7 @@ import {
   isSourceAsset,
   LiveData,
   isHiddenAssetGroupJob,
-  __ASSET_GROUP_PREFIX,
+  __ASSET_JOB_PREFIX,
 } from '../asset-graph/Utils';
 import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
@@ -63,7 +63,10 @@ export const AssetNodeDefinition: React.FC<{
             <Subheading>Description</Subheading>
             <DefinitionLocation assetNode={assetNode} repoAddress={repoAddress} />
           </Box>
-          <Box padding={{vertical: 16, horizontal: 24}} style={{flex: 1, minHeight: 120}}>
+          <Box
+            padding={{vertical: 16, horizontal: 24}}
+            style={{flex: 1, flexBasis: 'content', flexGrow: 0, minHeight: 120}}
+          >
             <Description
               description={assetNode.description || 'No description provided.'}
               maxHeight={260}
@@ -232,12 +235,12 @@ const OpNamesDisplay = (props: {
 
   const graphPath = workspacePathFromAddress(
     repoAddress,
-    `/graphs/${__ASSET_GROUP_PREFIX}/${graphName}/`,
+    `/graphs/${__ASSET_JOB_PREFIX}/${graphName}/`,
   );
 
   return (
     <Box flex={{gap: 4, alignItems: 'center'}}>
-      <Icon name="job" size={16} />
+      <Icon name="schema" size={16} />
       <Mono>
         <Link to={graphPath}>{graphName}</Link> ({opCount === 1 ? '1 op' : `${opCount} ops`})
       </Mono>
