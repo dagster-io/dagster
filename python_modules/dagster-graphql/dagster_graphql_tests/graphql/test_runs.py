@@ -208,8 +208,8 @@ query RepositoryRunsQuery($repositorySelector: RepositorySelector!) {
 
 ASSET_RUNS_QUERY = """
 query AssetRunsQuery($assetKey: AssetKeyInput!) {
-    assetOrError(assetKey: $assetKey) {
-        ... on Asset {
+    materializedKeyOrError(assetKey: $assetKey) {
+        ... on MaterializedKey {
             assetMaterializations {
                 label
                 runOrError {
@@ -900,9 +900,9 @@ def test_asset_batching():
                 context, ASSET_RUNS_QUERY, variables={"assetKey": {"path": ["foo"]}}
             )
             assert result.data
-            assert "assetOrError" in result.data
-            assert "assetMaterializations" in result.data["assetOrError"]
-            materializations = result.data["assetOrError"]["assetMaterializations"]
+            assert "materializedKeyOrError" in result.data
+            assert "assetMaterializations" in result.data["materializedKeyOrError"]
+            materializations = result.data["materializedKeyOrError"]["assetMaterializations"]
             assert len(materializations) == 3
             counter = traced_counter.get()
             counts = counter.counts()

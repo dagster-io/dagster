@@ -1,7 +1,7 @@
 def types():
     from .assets import (
-        GrapheneMaterializedKeysConnection,
         GrapheneMaterializedKeyOrError,
+        GrapheneMaterializedKeysConnection,
         GrapheneMaterializedKeysOrError,
     )
     from .execution_plan import GrapheneExecutionPlanOrError

@@ -22,8 +22,8 @@ def types():
     from .logger import GrapheneLogger
     from .mode import GrapheneMode
     from .pipeline import (
-        GrapheneMaterializedKey,
         GrapheneIPipelineSnapshot,
+        GrapheneMaterializedKey,
         GraphenePipeline,
         GraphenePipelinePreset,
         GraphenePipelineRun,

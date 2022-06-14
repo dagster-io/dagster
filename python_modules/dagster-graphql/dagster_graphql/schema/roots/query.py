@@ -16,9 +16,9 @@ from dagster.core.scheduler.instigation import InstigatorType
 
 from ...implementation.external import fetch_repositories, fetch_repository, fetch_workspace
 from ...implementation.fetch_assets import (
-    get_materialized_key,
     get_asset_node,
     get_asset_nodes,
+    get_materialized_key,
     get_materialized_keys,
 )
 from ...implementation.fetch_backfills import get_backfill, get_backfills
