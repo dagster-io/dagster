@@ -159,7 +159,28 @@ To learn more about assets and how they are surfaced once you send this event, c
 Attaching metadata to Asset Materializations is an important way of tracking aspects of a given asset over time. This functions essentially identically to other events which accept a `metadata` parameter, allowing you to attach a set of structured labels and values to display.
 
 ```python file=concepts/assets/materialization_ops.py startafter=start_materialization_ops_marker_2 endbefore=end_materialization_ops_marker_2
-ENOENT: no such file or directory, open '/Users/smackesey/stm/code/elementl/oss/examples/docs_snippets/docs_snippets/concepts/assets/materialization_ops.py'
+from dagster import op, AssetMaterialization, MetadataValue
+
+
+@op
+def my_metadata_materialization_op(context):
+    df = read_df()
+    remote_storage_path = persist_to_storage(df)
+    context.log_event(
+        AssetMaterialization(
+            asset_key="my_dataset",
+            description="Persisted result to storage",
+            metadata={
+                "text_metadata": "Text-based metadata for this event",
+                "path": MetadataValue.path(remote_storage_path),
+                "dashboard_url": MetadataValue.url(
+                    "http://mycoolsite.com/url_for_my_data"
+                ),
+                "size (bytes)": calculate_bytes(df),
+            },
+        )
+    )
+    return remote_storage_path
 ```
 
 ### Asset Observations

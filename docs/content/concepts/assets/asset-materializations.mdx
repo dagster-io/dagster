@@ -40,13 +40,32 @@ One way of recording materialization events is to log <PyObject module="dagster"
 To make Dagster aware that we materialized an asset in our op, we can log an <PyObject module="dagster" object="AssetMaterialization" /> event using the method <PyObject object="OpExecutionContext" method="log_event" />. This would involve changing the following op:
 
 ```python file=/concepts/assets/materialization_ops.py startafter=start_materialization_ops_marker_0 endbefore=end_materialization_ops_marker_0
-ENOENT: no such file or directory, open '/Users/smackesey/stm/code/elementl/oss/examples/docs_snippets/docs_snippets/concepts/assets/materialization_ops.py'
+from dagster import op
+
+
+@op
+def my_simple_op():
+    df = read_df()
+    remote_storage_path = persist_to_storage(df)
+    return remote_storage_path
 ```
 
 into something like this:
 
 ```python file=/concepts/assets/materialization_ops.py startafter=start_materialization_ops_marker_1 endbefore=end_materialization_ops_marker_1
-ENOENT: no such file or directory, open '/Users/smackesey/stm/code/elementl/oss/examples/docs_snippets/docs_snippets/concepts/assets/materialization_ops.py'
+from dagster import AssetMaterialization, op
+
+
+@op
+def my_materialization_op(context):
+    df = read_df()
+    remote_storage_path = persist_to_storage(df)
+    context.log_event(
+        AssetMaterialization(
+            asset_key="my_dataset", description="Persisted result to storage"
+        )
+    )
+    return remote_storage_path
 ```
 
 We should now see a materialization event in the event log when we execute a job with this op.
@@ -67,7 +86,25 @@ height={2414}
 To record that an <PyObject object ="IOManager"/> has mutated or created an asset, we can log an <PyObject module="dagster" object="AssetMaterialization" /> event from its `handle_output` method. We do this via the method <PyObject object="OutputContext" method="log_event" />.
 
 ```python file=/concepts/assets/materialization_io_managers.py startafter=start_marker_0 endbefore=end_marker_0
-ENOENT: no such file or directory, open '/Users/smackesey/stm/code/elementl/oss/examples/docs_snippets/docs_snippets/concepts/assets/materialization_io_managers.py'
+from dagster import AssetMaterialization, IOManager
+
+
+class PandasCsvIOManager(IOManager):
+    def load_input(self, context):
+        file_path = os.path.join("my_base_dir", context.step_key, context.name)
+        return read_csv(file_path)
+
+    def handle_output(self, context, obj):
+        file_path = os.path.join("my_base_dir", context.step_key, context.name)
+
+        obj.to_csv(file_path)
+
+        context.log_event(
+            AssetMaterialization(
+                asset_key=AssetKey(file_path),
+                description="Persisted result to storage.",
+            )
+        )
 ```
 
 ### Attaching Metadata to an AssetMaterialization
@@ -77,13 +114,56 @@ There are a variety of types of metadata that can be associated with a materiali
 #### Example: Op body
 
 ```python file=concepts/assets/materialization_ops.py startafter=start_materialization_ops_marker_2 endbefore=end_materialization_ops_marker_2
-ENOENT: no such file or directory, open '/Users/smackesey/stm/code/elementl/oss/examples/docs_snippets/docs_snippets/concepts/assets/materialization_ops.py'
+from dagster import op, AssetMaterialization, MetadataValue
+
+
+@op
+def my_metadata_materialization_op(context):
+    df = read_df()
+    remote_storage_path = persist_to_storage(df)
+    context.log_event(
+        AssetMaterialization(
+            asset_key="my_dataset",
+            description="Persisted result to storage",
+            metadata={
+                "text_metadata": "Text-based metadata for this event",
+                "path": MetadataValue.path(remote_storage_path),
+                "dashboard_url": MetadataValue.url(
+                    "http://mycoolsite.com/url_for_my_data"
+                ),
+                "size (bytes)": calculate_bytes(df),
+            },
+        )
+    )
+    return remote_storage_path
 ```
 
 #### Example: IO Manager
 
 ```python file=concepts/assets/materialization_io_managers.py startafter=start_marker_1 endbefore=end_marker_1
-ENOENT: no such file or directory, open '/Users/smackesey/stm/code/elementl/oss/examples/docs_snippets/docs_snippets/concepts/assets/materialization_io_managers.py'
+from dagster import AssetMaterialization, IOManager
+
+
+class PandasCsvIOManagerWithAsset(IOManager):
+    def load_input(self, context):
+        file_path = os.path.join("my_base_dir", context.step_key, context.name)
+        return read_csv(file_path)
+
+    def handle_output(self, context, obj):
+        file_path = os.path.join("my_base_dir", context.step_key, context.name)
+
+        obj.to_csv(file_path)
+
+        context.log_event(
+            AssetMaterialization(
+                asset_key=AssetKey(file_path),
+                description="Persisted result to storage.",
+                metadata={
+                    "number of rows": obj.shape[0],
+                    "some_column mean": obj["some_column"].mean(),
+                },
+            )
+        )
 ```
 
 Check our API docs for <PyObject module="dagster" object="MetadataEntry" /> for more details on they types of event metadata available.
@@ -93,7 +173,18 @@ Check our API docs for <PyObject module="dagster" object="MetadataEntry" /> for 
 If you are materializing a single slice of an asset (e.g. a single day's worth of data on a larger table), rather than mutating or creating it entirely, you can indicate this to Dagster by including the `partition` argument on the object.
 
 ```python file=/concepts/assets/materialization_ops.py startafter=start_partitioned_asset_materialization endbefore=end_partitioned_asset_materialization
-ENOENT: no such file or directory, open '/Users/smackesey/stm/code/elementl/oss/examples/docs_snippets/docs_snippets/concepts/assets/materialization_ops.py'
+from dagster import op, AssetMaterialization
+
+
+@op(config_schema={"date": str})
+def my_partitioned_asset_op(context):
+    partition_date = context.op_config["date"]
+    df = read_df_for_date(partition_date)
+    remote_storage_path = persist_to_storage(df)
+    context.log_event(
+        AssetMaterialization(asset_key="my_dataset", partition=partition_date)
+    )
+    return remote_storage_path
 ```
 
 ## Software-defined assets vs. Asset Materializations
