@@ -97,10 +97,6 @@
     - View the asset details page for "my_dataset"
   vetted: false
 
-- path: concepts/assets/asset-lineage.png
-  url: https://demo.elementl.show/instance/assets/snowflake/hackernews/comments
-  vetted: false
-
 - path: concepts/logging/job-log-dagit.png
   defs_file: examples/docs_snippets/docs_snippets/concepts/logging/builtin_logger.py
   steps:
