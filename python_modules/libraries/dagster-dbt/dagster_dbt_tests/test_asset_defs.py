@@ -24,7 +24,7 @@ from dagster.utils import file_relative_path
 
 
 @pytest.mark.parametrize(
-    "prefix",
+    "prefix,source_prefix",
     [
         None,
         "snowflake",
