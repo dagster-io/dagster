@@ -15,7 +15,7 @@ export interface RunMetadataFragment_assets_key {
 }
 
 export interface RunMetadataFragment_assets {
-  __typename: "Asset";
+  __typename: "MaterializedKey";
   id: string;
   key: RunMetadataFragment_assets_key;
 }

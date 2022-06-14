@@ -22,7 +22,7 @@ def types():
     from .logger import GrapheneLogger
     from .mode import GrapheneMode
     from .pipeline import (
-        GrapheneAsset,
+        GrapheneMaterializedKey,
         GrapheneIPipelineSnapshot,
         GraphenePipeline,
         GraphenePipelinePreset,
@@ -46,7 +46,7 @@ def types():
     )
 
     return [
-        GrapheneAsset,
+        GrapheneMaterializedKey,
         GrapheneEvaluationErrorReason,
         GrapheneEvaluationStack,
         GrapheneEvaluationStackEntry,

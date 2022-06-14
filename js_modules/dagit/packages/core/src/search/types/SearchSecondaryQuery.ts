@@ -7,28 +7,28 @@
 // GraphQL query operation: SearchSecondaryQuery
 // ====================================================
 
-export interface SearchSecondaryQuery_assetsOrError_PythonError {
+export interface SearchSecondaryQuery_materializedKeysOrError_PythonError {
   __typename: "PythonError";
 }
 
-export interface SearchSecondaryQuery_assetsOrError_AssetConnection_nodes_key {
+export interface SearchSecondaryQuery_materializedKeysOrError_MaterializedKeysConnection_nodes_key {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface SearchSecondaryQuery_assetsOrError_AssetConnection_nodes {
-  __typename: "Asset";
+export interface SearchSecondaryQuery_materializedKeysOrError_MaterializedKeysConnection_nodes {
+  __typename: "MaterializedKey";
   id: string;
-  key: SearchSecondaryQuery_assetsOrError_AssetConnection_nodes_key;
+  key: SearchSecondaryQuery_materializedKeysOrError_MaterializedKeysConnection_nodes_key;
 }
 
-export interface SearchSecondaryQuery_assetsOrError_AssetConnection {
-  __typename: "AssetConnection";
-  nodes: SearchSecondaryQuery_assetsOrError_AssetConnection_nodes[];
+export interface SearchSecondaryQuery_materializedKeysOrError_MaterializedKeysConnection {
+  __typename: "MaterializedKeysConnection";
+  nodes: SearchSecondaryQuery_materializedKeysOrError_MaterializedKeysConnection_nodes[];
 }
 
-export type SearchSecondaryQuery_assetsOrError = SearchSecondaryQuery_assetsOrError_PythonError | SearchSecondaryQuery_assetsOrError_AssetConnection;
+export type SearchSecondaryQuery_materializedKeysOrError = SearchSecondaryQuery_materializedKeysOrError_PythonError | SearchSecondaryQuery_materializedKeysOrError_MaterializedKeysConnection;
 
 export interface SearchSecondaryQuery {
-  assetsOrError: SearchSecondaryQuery_assetsOrError;
+  materializedKeysOrError: SearchSecondaryQuery_materializedKeysOrError;
 }

@@ -257,8 +257,8 @@ function useNeighborsFromGraph(graphData: GraphData | null, assetKey: AssetKey) 
 
 const ASSET_QUERY = gql`
   query AssetQuery($assetKey: AssetKeyInput!) {
-    assetOrError(assetKey: $assetKey) {
-      ... on Asset {
+    materializedKeyOrError(assetKey: $assetKey) {
+      ... on MaterializedKey {
         id
         key {
           path

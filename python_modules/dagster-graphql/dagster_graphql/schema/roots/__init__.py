@@ -1,5 +1,9 @@
 def types():
-    from .assets import GrapheneAssetConnection, GrapheneAssetOrError, GrapheneAssetsOrError
+    from .assets import (
+        GrapheneMaterializedKeysConnection,
+        GrapheneMaterializedKeyOrError,
+        GrapheneMaterializedKeysOrError,
+    )
     from .execution_plan import GrapheneExecutionPlanOrError
     from .mutation import (
         GrapheneDeletePipelineRunResult,
@@ -25,9 +29,9 @@ def types():
     from .pipeline import GraphenePipelineOrError
 
     return [
-        GrapheneAssetConnection,
-        GrapheneAssetOrError,
-        GrapheneAssetsOrError,
+        GrapheneMaterializedKeysConnection,
+        GrapheneMaterializedKeyOrError,
+        GrapheneMaterializedKeysOrError,
         GrapheneDeletePipelineRunResult,
         GrapheneDeletePipelineRunSuccess,
         GrapheneDeleteRunMutation,

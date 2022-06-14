@@ -28,9 +28,9 @@ def _normalize_asset_cursor_str(cursor_string):
 
 
 @capture_error
-def get_assets(graphene_info, prefix=None, cursor=None, limit=None):
-    from ..schema.pipelines.pipeline import GrapheneAsset
-    from ..schema.roots.assets import GrapheneAssetConnection
+def get_materialized_keys(graphene_info, prefix=None, cursor=None, limit=None):
+    from ..schema.pipelines.pipeline import GrapheneMaterializedKey
+    from ..schema.roots.assets import GrapheneMaterializedKeysConnection
 
     instance = graphene_info.context.instance
 
@@ -49,9 +49,9 @@ def get_assets(graphene_info, prefix=None, cursor=None, limit=None):
     if limit:
         asset_keys = asset_keys[:limit]
 
-    return GrapheneAssetConnection(
+    return GrapheneMaterializedKeysConnection(
         nodes=[
-            GrapheneAsset(
+            GrapheneMaterializedKey(
                 key=asset_key,
                 definition=asset_nodes_by_asset_key.get(asset_key),
             )
@@ -100,9 +100,9 @@ def get_asset_node(graphene_info, asset_key):
     return node
 
 
-def get_asset(graphene_info, asset_key):
+def get_materialized_key(graphene_info, asset_key):
     from ..schema.errors import GrapheneAssetNotFoundError
-    from ..schema.pipelines.pipeline import GrapheneAsset
+    from ..schema.pipelines.pipeline import GrapheneMaterializedKey
 
     check.inst_param(asset_key, "asset_key", AssetKey)
     instance = graphene_info.context.instance
@@ -113,7 +113,7 @@ def get_asset(graphene_info, asset_key):
     if not asset_node and not instance.has_asset_key(asset_key):
         return GrapheneAssetNotFoundError(asset_key=asset_key)
 
-    return GrapheneAsset(key=asset_key, definition=asset_node)
+    return GrapheneMaterializedKey(key=asset_key, definition=asset_node)
 
 
 def get_asset_materializations(
@@ -174,7 +174,7 @@ def get_asset_run_ids(graphene_info, asset_key):
 
 
 def get_assets_for_run_id(graphene_info, run_id):
-    from ..schema.pipelines.pipeline import GrapheneAsset
+    from ..schema.pipelines.pipeline import GrapheneMaterializedKey
 
     check.str_param(run_id, "run_id")
 
@@ -184,4 +184,4 @@ def get_assets_for_run_id(graphene_info, run_id):
         for record in records
         if record.is_dagster_event and record.dagster_event.asset_key
     ]
-    return [GrapheneAsset(key=asset_key) for asset_key in asset_keys]
+    return [GrapheneMaterializedKey(key=asset_key) for asset_key in asset_keys]

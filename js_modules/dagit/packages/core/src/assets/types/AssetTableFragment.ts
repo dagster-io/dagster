@@ -35,7 +35,7 @@ export interface AssetTableFragment_definition {
 }
 
 export interface AssetTableFragment {
-  __typename: "Asset";
+  __typename: "MaterializedKey";
   id: string;
   key: AssetTableFragment_key;
   definition: AssetTableFragment_definition | null;

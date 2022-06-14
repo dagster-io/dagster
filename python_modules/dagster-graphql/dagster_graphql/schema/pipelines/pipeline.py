@@ -94,7 +94,7 @@ class GrapheneMaterializationCount(graphene.ObjectType):
         name = "MaterializationCountByPartition"
 
 
-class GrapheneAsset(graphene.ObjectType):
+class GrapheneMaterializedKey(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     key = graphene.NonNull(GrapheneAssetKey)
     assetMaterializations = graphene.Field(
@@ -116,7 +116,7 @@ class GrapheneAsset(graphene.ObjectType):
     definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 
     class Meta:
-        name = "Asset"
+        name = "MaterializedKey"
 
     def __init__(self, key, definition=None):
         super().__init__(key=key, definition=definition)
@@ -214,7 +214,7 @@ class GraphenePipelineRun(graphene.Interface):
     rootRunId = graphene.Field(graphene.String)
     parentRunId = graphene.Field(graphene.String)
     canTerminate = graphene.NonNull(graphene.Boolean)
-    assets = non_null_list(GrapheneAsset)
+    assets = non_null_list(GrapheneMaterializedKey)
     eventConnection = graphene.Field(
         graphene.NonNull(GrapheneEventConnection),
         afterCursor=graphene.Argument(graphene.String),
@@ -256,7 +256,7 @@ class GrapheneRun(graphene.ObjectType):
     parentRunId = graphene.Field(graphene.String)
     canTerminate = graphene.NonNull(graphene.Boolean)
     assetMaterializations = non_null_list(GrapheneMaterializationEvent)
-    assets = non_null_list(GrapheneAsset)
+    assets = non_null_list(GrapheneMaterializedKey)
     eventConnection = graphene.Field(
         graphene.NonNull(GrapheneEventConnection),
         afterCursor=graphene.Argument(graphene.String),

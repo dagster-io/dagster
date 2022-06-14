@@ -15,7 +15,12 @@ from dagster.core.host_representation import (
 from dagster.core.scheduler.instigation import InstigatorType
 
 from ...implementation.external import fetch_repositories, fetch_repository, fetch_workspace
-from ...implementation.fetch_assets import get_asset, get_asset_node, get_asset_nodes, get_assets
+from ...implementation.fetch_assets import (
+    get_materialized_key,
+    get_asset_node,
+    get_asset_nodes,
+    get_materialized_keys,
+)
 from ...implementation.fetch_backfills import get_backfill, get_backfills
 from ...implementation.fetch_instigators import (
     get_instigator_state_or_error,
@@ -93,7 +98,7 @@ from ..schedules import GrapheneScheduleOrError, GrapheneSchedulerOrError, Graph
 from ..sensors import GrapheneSensorOrError, GrapheneSensorsOrError
 from ..tags import GraphenePipelineTagAndValues
 from ..util import non_null_list
-from .assets import GrapheneAssetOrError, GrapheneAssetsOrError
+from .assets import GrapheneMaterializedKeyOrError, GrapheneMaterializedKeysOrError
 from .execution_plan import GrapheneExecutionPlanOrError
 from .pipeline import GrapheneGraphOrError, GraphenePipelineOrError
 
@@ -275,16 +280,16 @@ class GrapheneDagitQuery(graphene.ObjectType):
         description="Retrieve the instance configuration for the Dagster deployment.",
     )
 
-    assetsOrError = graphene.Field(
-        graphene.NonNull(GrapheneAssetsOrError),
+    materializedKeysOrError = graphene.Field(
+        graphene.NonNull(GrapheneMaterializedKeysOrError),
         prefix=graphene.List(graphene.NonNull(graphene.String)),
         cursor=graphene.String(),
         limit=graphene.Int(),
         description="Retrieve assets after applying a prefix filter, cursor, and limit.",
     )
 
-    assetOrError = graphene.Field(
-        graphene.NonNull(GrapheneAssetOrError),
+    materializedKeyOrError = graphene.Field(
+        graphene.NonNull(GrapheneMaterializedKeyOrError),
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
         description="Retrieve an asset by asset key.",
     )
@@ -572,16 +577,16 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_assetNodeOrError(self, graphene_info, **kwargs):
         return get_asset_node(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))
 
-    def resolve_assetsOrError(self, graphene_info, **kwargs):
-        return get_assets(
+    def resolve_materializedKeysOrError(self, graphene_info, **kwargs):
+        return get_materialized_keys(
             graphene_info,
             prefix=kwargs.get("prefix"),
             cursor=kwargs.get("cursor"),
             limit=kwargs.get("limit"),
         )
 
-    def resolve_assetOrError(self, graphene_info, **kwargs):
-        return get_asset(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))
+    def resolve_materializedKeyOrError(self, graphene_info, **kwargs):
+        return get_materialized_key(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))
 
     def resolve_partitionBackfillOrError(self, graphene_info, backfillId):
         return get_backfill(graphene_info, backfillId)

@@ -213,9 +213,9 @@ const SEARCH_BOOTSTRAP_QUERY = gql`
 
 const SEARCH_SECONDARY_QUERY = gql`
   query SearchSecondaryQuery {
-    assetsOrError {
+    materializedKeysOrError {
       __typename
-      ... on AssetConnection {
+      ... on MaterializedKeysConnection {
         nodes {
           id
           key {

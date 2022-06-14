@@ -1,24 +1,24 @@
 import graphene
 
 from ..errors import GrapheneAssetNotFoundError, GraphenePythonError
-from ..pipelines.pipeline import GrapheneAsset
+from ..pipelines.pipeline import GrapheneMaterializedKey
 from ..util import non_null_list
 
 
-class GrapheneAssetConnection(graphene.ObjectType):
-    nodes = non_null_list(GrapheneAsset)
+class GrapheneMaterializedKeysConnection(graphene.ObjectType):
+    nodes = non_null_list(GrapheneMaterializedKey)
 
     class Meta:
-        name = "AssetConnection"
+        name = "MaterializedKeysConnection"
 
 
-class GrapheneAssetsOrError(graphene.Union):
+class GrapheneMaterializedKeysOrError(graphene.Union):
     class Meta:
-        types = (GrapheneAssetConnection, GraphenePythonError)
-        name = "AssetsOrError"
+        types = (GrapheneMaterializedKeysConnection, GraphenePythonError)
+        name = "MaterializedKeysOrError"
 
 
-class GrapheneAssetOrError(graphene.Union):
+class GrapheneMaterializedKeyOrError(graphene.Union):
     class Meta:
-        types = (GrapheneAsset, GrapheneAssetNotFoundError)
-        name = "AssetOrError"
+        types = (GrapheneMaterializedKey, GrapheneAssetNotFoundError)
+        name = "MaterializedKeyOrError"

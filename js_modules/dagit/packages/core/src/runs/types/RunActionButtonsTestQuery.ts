@@ -25,7 +25,7 @@ export interface RunActionButtonsTestQuery_pipelineRunOrError_Run_assets_key {
 }
 
 export interface RunActionButtonsTestQuery_pipelineRunOrError_Run_assets {
-  __typename: "Asset";
+  __typename: "MaterializedKey";
   id: string;
   key: RunActionButtonsTestQuery_pipelineRunOrError_Run_assets_key;
 }

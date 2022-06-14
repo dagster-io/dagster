@@ -40,9 +40,9 @@ const Container = styled.div`
 
 const OMITTED_ASSET_COUNT_QUERY = gql`
   query OmittedAssetCountQuery {
-    assetsOrError {
+    materializedKeysOrError {
       __typename
-      ... on AssetConnection {
+      ... on MaterializedKeysConnection {
         nodes {
           id
           key {

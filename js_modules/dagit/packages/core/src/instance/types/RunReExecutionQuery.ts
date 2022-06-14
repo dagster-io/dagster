@@ -25,7 +25,7 @@ export interface RunReExecutionQuery_pipelineRunOrError_Run_assets_key {
 }
 
 export interface RunReExecutionQuery_pipelineRunOrError_Run_assets {
-  __typename: "Asset";
+  __typename: "MaterializedKey";
   id: string;
   key: RunReExecutionQuery_pipelineRunOrError_Run_assets_key;
 }

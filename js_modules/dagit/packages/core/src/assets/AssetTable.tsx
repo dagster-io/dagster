@@ -413,7 +413,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
 `;
 
 export const ASSET_TABLE_FRAGMENT = gql`
-  fragment AssetTableFragment on Asset {
+  fragment AssetTableFragment on MaterializedKey {
     __typename
     id
     key {

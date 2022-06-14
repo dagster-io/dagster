@@ -65,9 +65,9 @@ export const AssetsCatalogRoot = () => {
 
 const ASSETS_CATALOG_ROOT_QUERY = gql`
   query AssetsCatalogRootQuery($assetKey: AssetKeyInput!) {
-    assetOrError(assetKey: $assetKey) {
+    materializedKeyOrError(assetKey: $assetKey) {
       __typename
-      ... on Asset {
+      ... on MaterializedKey {
         id
         key {
           path

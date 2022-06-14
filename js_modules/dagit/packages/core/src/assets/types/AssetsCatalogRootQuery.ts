@@ -9,25 +9,25 @@ import { AssetKeyInput } from "./../../types/globalTypes";
 // GraphQL query operation: AssetsCatalogRootQuery
 // ====================================================
 
-export interface AssetsCatalogRootQuery_assetOrError_AssetNotFoundError {
+export interface AssetsCatalogRootQuery_materializedKeyOrError_AssetNotFoundError {
   __typename: "AssetNotFoundError";
 }
 
-export interface AssetsCatalogRootQuery_assetOrError_Asset_key {
+export interface AssetsCatalogRootQuery_materializedKeyOrError_MaterializedKey_key {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetsCatalogRootQuery_assetOrError_Asset {
-  __typename: "Asset";
+export interface AssetsCatalogRootQuery_materializedKeyOrError_MaterializedKey {
+  __typename: "MaterializedKey";
   id: string;
-  key: AssetsCatalogRootQuery_assetOrError_Asset_key;
+  key: AssetsCatalogRootQuery_materializedKeyOrError_MaterializedKey_key;
 }
 
-export type AssetsCatalogRootQuery_assetOrError = AssetsCatalogRootQuery_assetOrError_AssetNotFoundError | AssetsCatalogRootQuery_assetOrError_Asset;
+export type AssetsCatalogRootQuery_materializedKeyOrError = AssetsCatalogRootQuery_materializedKeyOrError_AssetNotFoundError | AssetsCatalogRootQuery_materializedKeyOrError_MaterializedKey;
 
 export interface AssetsCatalogRootQuery {
-  assetOrError: AssetsCatalogRootQuery_assetOrError;
+  materializedKeyOrError: AssetsCatalogRootQuery_materializedKeyOrError;
 }
 
 export interface AssetsCatalogRootQueryVariables {

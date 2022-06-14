@@ -9,42 +9,42 @@ import { AssetKeyInput } from "./../../types/globalTypes";
 // GraphQL query operation: AssetForNavigationQuery
 // ====================================================
 
-export interface AssetForNavigationQuery_assetOrError_AssetNotFoundError {
+export interface AssetForNavigationQuery_materializedKeyOrError_AssetNotFoundError {
   __typename: "AssetNotFoundError";
 }
 
-export interface AssetForNavigationQuery_assetOrError_Asset_definition_repository_location {
+export interface AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_definition_repository_location {
   __typename: "RepositoryLocation";
   id: string;
   name: string;
 }
 
-export interface AssetForNavigationQuery_assetOrError_Asset_definition_repository {
+export interface AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_definition_repository {
   __typename: "Repository";
   id: string;
   name: string;
-  location: AssetForNavigationQuery_assetOrError_Asset_definition_repository_location;
+  location: AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_definition_repository_location;
 }
 
-export interface AssetForNavigationQuery_assetOrError_Asset_definition {
+export interface AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_definition {
   __typename: "AssetNode";
   id: string;
   opNames: string[];
   jobNames: string[];
   groupName: string | null;
-  repository: AssetForNavigationQuery_assetOrError_Asset_definition_repository;
+  repository: AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_definition_repository;
 }
 
-export interface AssetForNavigationQuery_assetOrError_Asset {
-  __typename: "Asset";
+export interface AssetForNavigationQuery_materializedKeyOrError_MaterializedKey {
+  __typename: "MaterializedKey";
   id: string;
-  definition: AssetForNavigationQuery_assetOrError_Asset_definition | null;
+  definition: AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_definition | null;
 }
 
-export type AssetForNavigationQuery_assetOrError = AssetForNavigationQuery_assetOrError_AssetNotFoundError | AssetForNavigationQuery_assetOrError_Asset;
+export type AssetForNavigationQuery_materializedKeyOrError = AssetForNavigationQuery_materializedKeyOrError_AssetNotFoundError | AssetForNavigationQuery_materializedKeyOrError_MaterializedKey;
 
 export interface AssetForNavigationQuery {
-  assetOrError: AssetForNavigationQuery_assetOrError;
+  materializedKeyOrError: AssetForNavigationQuery_materializedKeyOrError;
 }
 
 export interface AssetForNavigationQueryVariables {

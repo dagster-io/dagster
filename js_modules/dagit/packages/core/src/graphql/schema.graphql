@@ -163,12 +163,12 @@ type DagitQuery {
   """
   Retrieve assets after applying a prefix filter, cursor, and limit.
   """
-  assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
+  materializedKeysOrError(prefix: [String!], cursor: String, limit: Int): MaterializedKeysOrError!
 
   """
   Retrieve an asset by asset key.
   """
-  assetOrError(assetKey: AssetKeyInput!): AssetOrError!
+  materializedKeyOrError(assetKey: AssetKeyInput!): MaterializedKeyOrError!
 
   """
   Retrieve asset nodes after applying a filter on asset group, job, and asset keys.
@@ -537,7 +537,7 @@ type Run implements PipelineRun {
   rootRunId: String
   parentRunId: String
   canTerminate: Boolean!
-  assets: [Asset!]!
+  assets: [MaterializedKey!]!
   eventConnection(afterCursor: String): EventConnection!
   assetSelection: [AssetKey!]
   resolvedOpSelection: [String!]
@@ -573,7 +573,7 @@ interface PipelineRun {
   rootRunId: String
   parentRunId: String
   canTerminate: Boolean!
-  assets: [Asset!]!
+  assets: [MaterializedKey!]!
   eventConnection(afterCursor: String): EventConnection!
 }
 
@@ -802,7 +802,7 @@ type PipelineTag {
   value: String!
 }
 
-type Asset {
+type MaterializedKey {
   id: String!
   key: AssetKey!
   assetMaterializations(
@@ -2110,13 +2110,13 @@ type DaemonStatus {
   lastHeartbeatErrors: [PythonError!]!
 }
 
-union AssetsOrError = AssetConnection | PythonError
+union MaterializedKeysOrError = MaterializedKeysConnection | PythonError
 
-type AssetConnection {
-  nodes: [Asset!]!
+type MaterializedKeysConnection {
+  nodes: [MaterializedKey!]!
 }
 
-union AssetOrError = Asset | AssetNotFoundError
+union MaterializedKeyOrError = MaterializedKey | AssetNotFoundError
 
 type AssetNotFoundError implements Error {
   message: String!

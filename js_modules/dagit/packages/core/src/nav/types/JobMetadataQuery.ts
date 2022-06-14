@@ -72,7 +72,7 @@ export interface JobMetadataQuery_pipelineRunsOrError_Runs_results_assets_key {
 }
 
 export interface JobMetadataQuery_pipelineRunsOrError_Runs_results_assets {
-  __typename: "Asset";
+  __typename: "MaterializedKey";
   id: string;
   key: JobMetadataQuery_pipelineRunsOrError_Runs_results_assets_key;
 }

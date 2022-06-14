@@ -294,9 +294,9 @@ const Wrapper = styled.div`
 
 const ASSET_CATALOG_TABLE_QUERY = gql`
   query AssetCatalogTableQuery {
-    assetsOrError {
+    materializedKeysOrError {
       __typename
-      ... on AssetConnection {
+      ... on MaterializedKeysConnection {
         nodes {
           id
           ...AssetTableFragment

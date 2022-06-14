@@ -286,8 +286,8 @@ const ASSET_EVENTS_QUERY = gql`
     $before: String
     $partitionInLast: Int
   ) {
-    assetOrError(assetKey: $assetKey) {
-      ... on Asset {
+    materializedKeyOrError(assetKey: $assetKey) {
+      ... on MaterializedKey {
         id
         key {
           path

@@ -21,7 +21,7 @@ export interface RunFragment_assets_key {
 }
 
 export interface RunFragment_assets {
-  __typename: "Asset";
+  __typename: "MaterializedKey";
   id: string;
   key: RunFragment_assets_key;
 }
