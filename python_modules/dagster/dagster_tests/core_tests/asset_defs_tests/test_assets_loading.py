@@ -1,6 +1,4 @@
-import pytest
-
-from dagster import AssetIn, IOManager, asset, io_manager, materialize
+from dagster import AssetIn, IOManager, asset, io_manager, materialize, with_resources
 
 
 def test_input_manager_override():
@@ -20,7 +18,6 @@ def test_input_manager_override():
             if context.upstream_output is None:
                 assert False, "upstream output should not be None"
             else:
-                assert True, "should be called"
                 return 4
 
     @io_manager
@@ -31,8 +28,13 @@ def test_input_manager_override():
     def first_asset():
         return 1
 
-    @asset(ins={"upstream": AssetIn(input_manager_key="my_input_manager")})
+    @asset(ins={"upstream": AssetIn(key="first_asset", input_manager_key="my_input_manager")})
     def second_asset(upstream):
         assert upstream == 4
 
-    assert materialize([first_asset, second_asset]).success
+    assert materialize(
+        with_resources(
+            [first_asset, second_asset],
+            resource_defs={"my_input_manager": my_input_manager, "io_manager": my_io_manager},
+        )
+    ).success
