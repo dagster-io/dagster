@@ -178,7 +178,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         if len(self._external_asset_node.job_names) >= 1:
             pipeline_name = self._external_asset_node.job_names[0]
             pipeline = self._external_repository.get_full_external_pipeline(pipeline_name)
-            op_key = self._external_asset_node.node_definition_name or self._external_asset_node.op_name
+            op_key = (
+                self._external_asset_node.node_definition_name or self._external_asset_node.op_name
+            )
             return build_solid_definition(pipeline, op_key)
         else:
             return None
