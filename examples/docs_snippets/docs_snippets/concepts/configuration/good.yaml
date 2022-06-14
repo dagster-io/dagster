@@ -1,4 +1,4 @@
 ops:
-  uses_config:
+  op_using_config:
     config:
-      iterations: 1
+      person_name: Alice
