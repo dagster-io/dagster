@@ -163,6 +163,81 @@ class MyPartitionedIOManager(IOManager):
     def load_input(self, context):
         return read_csv(self.path_for_partition(context.asset_partition_key))
 ```
+## Per-input IO Manager
+
+In some cases you may find that you need to load an input in a way other than the `load_input` function of the corresponding output's IO Manager. For example, let's say Team A has an op that returns an output as a pandas Dataframe and specifies an IO manager that knows how to store and load pandas DataFrames. Your team is interested in using this output for a new op, but you are required to use PySpark to analyze the data. Unfortunately, you don't have permission to modify Team A's IO Manager to support this case. Instead, you can specify an input manager on your op that will override some of the behavior of Team A's IO Manager.
+
+Since the method for loading an input is directly affected by the way the corresponding output was stored, we recommend defining your input managers as subclasses of existing IO Managers and just updating the `load_input` method. For example, to load an input as a NumPy array rather than a Pandas DataFrame, you could do the following
+
+```python file=/concepts/io_management/input_managers.py startafter=start_plain_input_manager endbefore=end_plain_input_manager
+# in this case PandasIOManager is an existing IO Manager
+class MyNumpyLoader(PandasIOManager):
+    def load_input(self, context):
+        file_path = "path/to/dataframe"
+        array = np.genfromtxt(file_path, delimiter=",", dtype=None)
+        return array
+
+@io_manager
+def numpy_io_manager():
+    return MyNumpyLoader()
+
+@op(
+    ins={"np_array_input": In(input_manager_key="numpy_manager")}
+)
+def analyze_as_numpy(np_array_input: np.ndarray):
+    assert isinstance(np_array_input, np.ndarray)
+
+@job(
+    resource_defs={"numpy_manager": numpy_io_manager, "io_manager": pandas_io_manager}
+)
+def my_job():
+    df = produce_pandas_output()
+    analyze_as_numpy(df)
+```
+
+This may quickly run into issues if the owner of `PandasIOManager` changes the path at which they store outputs. We recommend splitting out path defining logic into new methods that are called when needed.
+
+```python file=/concepts/io_management/input_managers.py startafter=start_better_input_manager endbefore=end_better_input_manager
+# this IO Manager is owned by a different team
+class BetterPandasIOManager(IOManager):
+    def _get_path(self, output_context):
+        return os.path.join(
+            self.base_dir, "storage", f"{output_context.step_key}_{output_context.name}.csv"
+        )
+
+    def handle_output(self, context, obj: pd.DataFrame):
+        file_path = self._get_path(context)
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        if obj is not None:
+            obj.to_csv(file_path, index=False)
+
+    def load_input(self, context) -> pd.DataFrame:
+        return pd.read_csv(self._get_path(context.upstream_output))  # type: ignore
+
+# write a subclass that uses _get_path for your custom loading logic
+class MyBetterNumpyLoader(PandasIOManager):
+    def load_input(self, context):
+        file_path = self._get_path(context.upstream_output)
+        array = np.genfromtxt(file_path, delimiter=",", dtype=None)
+        return array
+
+@io_manager
+def better_numpy_io_manager():
+    return MyBetterNumpyLoader()
+
+@op(
+    ins={"np_array_input": In(input_manager_key="better_numpy_manager")}
+)
+def better_analyze_as_numpy(np_array_input: np.ndarray):
+    assert isinstance(np_array_input, np.ndarray)
+
+@job(
+    resource_defs={"numpy_manager": better_numpy_io_manager, "io_manager": pandas_io_manager}
+)
+def my_better_job():
+    df = produce_pandas_output()
+    better_analyze_as_numpy(df)
+```
 
 ## Examples
 
