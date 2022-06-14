@@ -24,7 +24,7 @@ from dagster.utils import file_relative_path
 
 
 @pytest.mark.parametrize(
-    "prefix,source_prefix",
+    "prefix",
     [
         None,
         "snowflake",
@@ -557,6 +557,27 @@ def test_static_select_invalid_selection(select, error_match):
 
     with pytest.raises(Exception, match=error_match):
         load_assets_from_dbt_manifest(manifest_json, select=select)
+
+
+def test_source_key_prefix(
+    conn_string, test_python_project_dir, dbt_python_config_dir
+):  # pylint: disable=unused-argument
+    dbt_assets = load_assets_from_dbt_project(
+        test_python_project_dir, dbt_python_config_dir, key_prefix="dbt", source_key_prefix="source"
+    )
+    assert dbt_assets[0].keys_by_input_name == {
+        "source_dagster_dbt_python_test_project_dagster_bot_labeled_users": AssetKey(
+            ["source", "dagster", "bot_labeled_users"]
+        ),
+        "source_dagster_dbt_python_test_project_raw_data_events": AssetKey(
+            ["source", "raw_data", "events"]
+        ),
+        "source_dagster_dbt_python_test_project_raw_data_users": AssetKey(
+            ["source", "raw_data", "users"]
+        ),
+    }
+
+    assert dbt_assets[0].keys_by_output_name["cleaned_users"] == AssetKey(["dbt", "cleaned_users"])
 
 
 def test_python_interleaving(

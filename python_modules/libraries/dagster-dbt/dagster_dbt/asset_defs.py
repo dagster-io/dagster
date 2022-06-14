@@ -445,7 +445,7 @@ def load_assets_from_dbt_manifest(
         source_key_prefix = check.list_param(source_key_prefix, "source_key_prefix", of_type=str)
         input_key_replacements = {
             input_key: AssetKey(source_key_prefix + input_key.path)
-            for input_key in dbt_assets_def.asset_keys_by_input_name.values()
+            for input_key in dbt_assets_def.keys_by_input_name.values()
         }
         dbt_assets = [
             dbt_assets_def.with_prefix_or_group(input_asset_key_replacements=input_key_replacements)
