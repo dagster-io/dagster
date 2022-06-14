@@ -145,6 +145,13 @@ class SensorLaunchContext:
 
         self._write()
 
+        # delete all ticks older than 30 days
+        self._instance.purge_ticks(
+            self._external_sensor.get_external_origin_id(),
+            selector_id=self._external_sensor.selector_id,
+            before=pendulum.now("UTC").subtract(days=30).timestamp(),
+        )
+        # delete skipped ticks older than 7 days
         self._instance.purge_ticks(
             self._external_sensor.get_external_origin_id(),
             selector_id=self._external_sensor.selector_id,
