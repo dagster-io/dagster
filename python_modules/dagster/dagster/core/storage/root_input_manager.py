@@ -10,8 +10,6 @@ from dagster.core.definitions.resource_definition import ResourceDefinition, is_
 from dagster.core.storage.input_manager import InputManager
 from dagster.utils.backcompat import experimental
 
-from ..decorator_utils import get_function_params
-
 
 class IInputManagerDefinition:
     @property
@@ -161,11 +159,7 @@ class RootInputManagerWrapper(RootInputManager):
         self._load_fn = load_fn
 
     def load_input(self, context):
-        return (
-            self._load_fn(context)
-            if is_context_provided(get_function_params(self._load_fn))
-            else self._load_fn()
-        )
+        return self._load_fn(context) if is_context_provided(self._load_fn) else self._load_fn()
 
 
 class _InputManagerDecoratorCallable:
