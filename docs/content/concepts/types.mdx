@@ -1,11 +1,11 @@
 ---
 title: Types | Dagster
-description: The Dagster type system helps you describe what kind of values your ops accept and produce.
+description: The Dagster type system helps you describe what kind of values your assets and ops accept and produce.
 ---
 
 # Dagster Types
 
-The Dagster type system helps you describe what kind of values your ops accept and produce.
+The Dagster type system helps you describe what kind of values your software-defined assets and ops accept and produce.
 
 ## Relevant APIs
 
@@ -19,7 +19,7 @@ The Dagster type system helps you describe what kind of values your ops accept a
 
 ## Overview
 
-Each op input and output can be given a Dagster Type.
+Op inputs and outputs can be given Dagster Types. Assets can be given Dagster Types to validate their output types.
 
 The type system:
 
@@ -31,7 +31,7 @@ The type system:
 
 ### DagsterTypes vs Python Types (mypy type-checking)
 
-You should not use manually-defined <PyObject module="dagster" object="DagsterType" /> objects in your python type annotations. The simple rule of thumb is to annotate op bodies just as you would a regular function, and if you wish to use a <PyObject module="dagster" object="DagsterType" /> alongside your annotations (to perform more complex validation than the default runtime typechecks), you should include this information in the relevant <PyObject module="dagster" object="InputDefinition" /> or <PyObject module="dagster" object="OutputDefinition" />.
+You should not use manually-defined <PyObject module="dagster" object="DagsterType" /> objects in your python type annotations. The simple rule of thumb is to annotate op and asset bodies just as you would a regular function, and if you wish to use a <PyObject module="dagster" object="DagsterType" /> alongside your annotations (to perform more complex validation than the default runtime typechecks), you should include this information in the relevant <PyObject module="dagster" object="InputDefinition" /> or <PyObject module="dagster" object="OutputDefinition" />.
 
 You can see an example of this pattern [below](#using-dagster-types-with-pep-484-type-annotations).
 
@@ -56,6 +56,14 @@ Once created, types can be attached to op <PyObject module="dagster" object="Inp
     out=Out(EvenDagsterType),
 )
 def double_even(num):
+    return num
+```
+
+Types can be passed into <PyObject object="asset" decorator /> decorated functions. Dagster will validate the outputted asset type after execution:
+
+```python file=/concepts/types/types.py startafter=start_asset_type endbefore=end_asset_type
+@asset(dagster_type=EvenDagsterType)
+def even_asset(num):
     return num
 ```
 

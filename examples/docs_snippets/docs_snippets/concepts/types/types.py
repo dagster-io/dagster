@@ -1,6 +1,6 @@
 # isort: skip_file
 
-from dagster import DagsterType, In, Out, op
+from dagster import DagsterType, In, Out, op, asset
 
 
 # start_basic_even_type
@@ -21,6 +21,16 @@ def double_even(num):
 
 
 # end_basic_even_type_no_annotations
+
+# start_asset_type
+
+
+@asset(dagster_type=EvenDagsterType)
+def even_asset(num):
+    return num
+
+
+# end_asset_type
 
 # start_basic_even_type_with_annotations
 @op(
