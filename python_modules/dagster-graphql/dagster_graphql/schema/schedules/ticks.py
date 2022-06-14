@@ -1,4 +1,3 @@
-# pylint: disable=missing-graphene-docstring
 import graphene
 
 from dagster.core.scheduler.instigation import TickStatus

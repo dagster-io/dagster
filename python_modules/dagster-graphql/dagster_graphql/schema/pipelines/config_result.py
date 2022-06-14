@@ -1,4 +1,3 @@
-# pylint: disable=missing-graphene-docstring
 import graphene
 
 from ..errors import GrapheneInvalidSubsetError, GraphenePipelineNotFoundError, GraphenePythonError

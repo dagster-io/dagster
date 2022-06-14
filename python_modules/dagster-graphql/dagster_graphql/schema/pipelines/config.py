@@ -1,4 +1,3 @@
-# pylint: disable=missing-graphene-docstring
 from collections import namedtuple
 
 import graphene
