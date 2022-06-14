@@ -112,19 +112,21 @@ class Table1IOManager(IOManager):
     def load_input(self, context):
         return read_dataframe_from_table(name="table1")
 
-    def handle_output(self, context, object):
+    def handle_output(self, context, obj):
         # if you wish to have custom output handling logic you can put it here and also use
         # this IO manager like any other IO Manager
         pass
+
 
 @io_manager
 def table_1_manager():
     return Table1IOManager()
 
+
 @op(ins={"dataframe": In(input_manager_key="load_input_manager")})
 def my_op(dataframe):
     """Do some stuff"""
-
+    dataframe.head()
 
 
 @job(resource_defs={"load_input_manager": table_1_manager})
@@ -138,18 +140,29 @@ Setting the `input_manager_key` on an `In` controls how that input is loaded.
 
 When launching a run, you might want to parameterize how particular inputs are loaded.
 
-To accomplish this, you can define an `input_config_schema` on the input manager definition. The load function can access this config when storing or loading data, via the <PyObject module="dagster" object="InputContext" />.
+To accomplish this, you can define an `input_config_schema` on the IO manager definition. The `load_input` function can access this config when storing or loading data, via the <PyObject module="dagster" object="InputContext" />.
 
-```python file=/concepts/io_management/config_input_manager.py startafter=def_start_marker endbefore=def_end_marker
-@root_input_manager(input_config_schema={"table_name": str})
-def table_loader(context):
-    return read_dataframe_from_table(name=context.config["table_name"])
+```python file=/concepts/io_management/input_managers.py startafter=start_per_input_config endbefore=end_per_input_config
+class MyConfigurableInputLoader(MyIOManager):
+    def load_input(self, context):
+        return read_dataframe_from_table(name=context.config["table"])
+
+
+@io_manager(
+    input_config_schema={"table": str}
+)
+def my_configurable_input_loader():
+    return MyConfigurableInputLoader()
 ```
 
 Then, when executing a job, you can pass in this per-input config.
 
-```python file=/concepts/io_management/input_managers.py startafter=execute_start_marker endbefore=execute_end_marker
-No match for startAfter value "execute_start_marker"
+```python file=/concepts/io_management/input_managers.py startafter=start_per_input_config_exec endbefore=end_per_input_config_exec
+load_table_job.execute_in_process(
+        run_config={
+            "ops": {"my_op": {"inputs": {"dataframe": {"table": "table1"}}}}
+        },
+    )
 ```
 
 ### Using a input manager with subselection
@@ -169,18 +182,21 @@ class MyIOManager(IOManager):
     def load_input(self, context):
         return read_dataframe_from_table(name=context.upstream_output.name)
 
+
 @io_manager
 def my_io_manager(_):
     return MyIOManager()
 
 
 class MyInputLoader(MyIOManager):
-     def load_input(self, context):
+    def load_input(self, context):
         return read_dataframe_from_table(name="table_1")
+
 
 @io_manager
 def my_input_loader():
     return MyInputLoader()
+
 
 @op
 def op1():
@@ -190,6 +206,7 @@ def op1():
 @op(ins={"dataframe": In(input_manager_key="my_input_manager")})
 def op2(dataframe):
     """Do stuff"""
+    dataframe.head()
 
 
 @job(
@@ -206,7 +223,7 @@ So far, this is set up so that `op2` always loads `table_1` even if you execute 
 
 ```python file=/concepts/io_management/input_managers.py startafter=start_better_load_input_subset endbefore=end_better_load_input_subset
 class MyNewInputLoader(MyIOManager):
-     def load_input(self, context):
+    def load_input(self, context):
         if context.upstream_output is None:
             return read_dataframe_from_table(name="table_1")
         else:
@@ -217,8 +234,8 @@ Now, when running the full job, `op2`'s input will be loaded using the IO manage
 
 ```python file=/concepts/io_management/input_managers.py startafter=start_execute_subselection endbefore=end_execute_subselection
 my_subselection_job.execute_in_process(
-        op_selection=["op2"],
-    )
+    op_selection=["op2"],
+)
 ```
 
 ## Root Input Managers

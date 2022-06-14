@@ -37,17 +37,26 @@ class NumpyCsvIOManager(PandasCsvIOManager):
             df = np.genfromtxt(file_path, delimiter=",", dtype=None)
             return df
         else:
+            multiplier = context.config["multiplier"]
             df = pd.DataFrame(
                 {
-                    "ints": [10, 20, 30, 40],
-                    "floats": [10.0, 20.0, 30.0, 40.0],
+                    "ints": [10 * multiplier, 20 * multiplier, 30 * multiplier, 40 * multiplier],
+                    "floats": [
+                        10.0 * multiplier,
+                        20.0 * multiplier,
+                        30.0 * multiplier,
+                        40.0 * multiplier,
+                    ],
                     "strings": ["ten", "twenty", "thirty", "forty"],
                 }
             )
             return df
 
 
-@io_manager(config_schema={"base_dir": Field(Noneable(str), default_value=None, is_required=False)})
+@io_manager(
+    config_schema={"base_dir": Field(Noneable(str), default_value=None, is_required=False)},
+    input_config_schema={"multiplier": Field(int, is_required=False, default_value=1)},
+)
 def numpy_io_manager(init_context):
     return NumpyCsvIOManager(base_dir=init_context.resource_config["base_dir"])
 

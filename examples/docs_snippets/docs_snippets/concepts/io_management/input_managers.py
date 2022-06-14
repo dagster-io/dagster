@@ -213,3 +213,26 @@ my_subselection_job.execute_in_process(
 )
 
 # end_execute_subselection
+
+
+# start_per_input_config
+
+
+class MyConfigurableInputLoader(MyIOManager):
+    def load_input(self, context):
+        return read_dataframe_from_table(name=context.config["table"])
+
+
+@io_manager(input_config_schema={"table": str})
+def my_configurable_input_loader():
+    return MyConfigurableInputLoader()
+
+
+# end_per_input_config
+
+# start_per_input_config_exec
+
+load_table_job.execute_in_process(
+    run_config={"ops": {"my_op": {"inputs": {"dataframe": {"table": "table1"}}}}},
+)
+# end_per_input_config_exec
