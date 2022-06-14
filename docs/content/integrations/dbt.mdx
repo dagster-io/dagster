@@ -141,7 +141,7 @@ def run_models(context, some_condition: bool):
 
 #### Using a different dbt profile for different dagster modes
 
-Dagster supports creating [multiple jobs from the same graph](/concepts/ops-jobs-graphs/jobs-graphs#from-a-graph). dbt has a similar concept, [profiles](https://docs.getdbt.com/dbt-cli/configure-your-profile). You might want to run a dev version of your graph that targets the development-specific dbt profile, and then have a prod version that runs using the prod dbt profile. This example shows how to accomplish this.
+Dagster supports creating [multiple jobs from the same graph](/concepts/ops-jobs-graphs/jobs#from-a-graph). dbt has a similar concept, [profiles](https://docs.getdbt.com/dbt-cli/configure-your-profile). You might want to run a dev version of your graph that targets the development-specific dbt profile, and then have a prod version that runs using the prod dbt profile. This example shows how to accomplish this.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_profile_modes endbefore=end_marker_dbt_cli_profile_modes dedent=4
 from dagster_dbt import dbt_cli_resource, dbt_run_op

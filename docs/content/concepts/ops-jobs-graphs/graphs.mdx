@@ -1,0 +1,375 @@
+---
+title: Graphs | Dagster
+description: Graphs are sets of interconnected ops or sub-graphs and form the core of jobs.
+---
+
+# Graphs
+
+A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
+
+Dagster also supports using [graphs to create assets](#to-back-assets), allowing you to produce multiple assets with a single graph and easily track cross-job lineage.
+
+Graphs form the core of [jobs](/concepts/ops-jobs-graphs/jobs).
+
+---
+
+## Relevant APIs
+
+| Name                                                   | Description                                                                                                                                                                                                                   |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="graph" decorator /> | The decorator used to define a graph, which can form the basis for multiple jobs.                                                                                                                                             |
+| <PyObject module="dagster" object="GraphDefinition" /> | A graph definition, which is a set of ops (or [sub-graphs](/concepts/ops-jobs-graphs/nesting-graphs)) wired together. Forms the core of a job. Typically constructed using the <PyObject object="job" decorator /> decorator. |
+|                                                        |                                                                                                                                                                                                                               |
+
+---
+
+## Creating graphs
+
+- [Using the @graph decorator](#using-the-graph-decorator)
+- [To back assets](#to-back-assets)
+- [With graph patterns](#with-graph-patterns)
+
+### Using the @graph decorator
+
+To create a graph, use the <PyObject module="dagster" object="graph" decorator /> decorator.
+
+In the following example, we return one output from the root op (`return_one`) and pass data along through single inputs and outputs:
+
+```python file=/concepts/ops_jobs_graphs/graphs/linear_graph.py startafter=start_marker endbefore=end_marker
+from dagster import graph, op
+
+
+@op
+def return_one(context) -> int:
+    return 1
+
+
+@op
+def add_one(context, number: int) -> int:
+    return number + 1
+
+
+@graph
+def linear():
+    add_one(add_one(add_one(return_one())))
+```
+
+### To back assets
+
+Graphs can be used to create [software-defined assets](/concepts/assets/software-defined-assets). Graph-backed assets are useful if you have an existing graph that produces and consumes assets.
+
+Wrapping your graph inside a software-defined asset gives you all the benefits of software-defined assets — like cross-job lineage — without requiring you to change the code inside your graph. Refer to the [Software-defined assets documentation](/concepts/assets/software-defined-assets#graph-backed-assets) for more info and examples.
+
+### With graph patterns
+
+Need some inspiration? Using these patterns, you can build graphs:
+
+- [That re-use ops](#that-re-use-ops)
+- [With multiple inputs](#with-multiple-inputs)
+- [With conditional branching](#with-conditional-branching)
+- [With a fixed fan-in](#with-a-fixed-fan-in)
+- [That contain other graphs](#that-contain-other-graphs)
+- [That use dynamic outputs](#using-dynamic-outputs)
+
+#### That re-use ops
+
+You can use the same op definition multiple times in the same graph. Note that this approach can also apply to [jobs](/concepts/ops-jobs-graphs/jobs).
+
+```python file=/concepts/ops_jobs_graphs/graphs/graphs.py startafter=start_multiple_usage_graph endbefore=end_multiple_usage_graph
+@graph
+def multiple_usage():
+    add_one(add_one(return_one()))
+```
+
+To differentiate between the two invocations of `add_one`, Dagster automatically aliases the op names to be `add_one` and `add_one_2`.
+
+You can also manually define the alias by using the `.alias` method on the op invocation:
+
+```python file=/concepts/ops_jobs_graphs/graphs/graphs.py startafter=start_alias_graph endbefore=end_alias_graph
+@graph
+def alias():
+    add_one.alias("second_addition")(add_one(return_one()))
+```
+
+#### With multiple inputs
+
+<Image
+alt="Multiple Inputs"
+src="/images/concepts/pipelines/multi-inputs.png"
+width={1000}
+height={250}
+/>
+
+A single output can be passed to multiple inputs on downstream ops. In this example, the output from the first op is passed to two different ops. The outputs of those ops are combined and passed to the final op:
+
+```python file=/concepts/ops_jobs_graphs/graphs/multiple_io_graph.py startafter=start_marker endbefore=end_marker
+from dagster import graph, op
+
+
+@op
+def return_one(context) -> int:
+    return 1
+
+
+@op
+def add_one(context, number: int):
+    return number + 1
+
+
+@op
+def adder(context, a: int, b: int) -> int:
+    return a + b
+
+
+@graph
+def inputs_and_outputs():
+    value = return_one()
+    a = add_one(value)
+    b = add_one(value)
+    adder(a, b)
+```
+
+#### With conditional branching
+
+<Image
+alt="Conditional Branch"
+src="/images/concepts/pipelines/conditional.png"
+width={1000}
+height={250}
+/>
+
+As an op only starts to execute once all its inputs have been resolved, you can use this behavior to model conditional execution.
+
+In this example, the `branching_op` outputs either the `branch_1` result or `branch_2` result. Since op execution is skipped for ops that have unresolved inputs, only one of the downstream ops will execute:
+
+```python file=/concepts/ops_jobs_graphs/graphs/branching_graph.py startafter=start_marker endbefore=end_marker
+import random
+
+from dagster import Out, Output, graph, op
+
+
+@op(out={"branch_1": Out(is_required=False), "branch_2": Out(is_required=False)})
+def branching_op():
+    num = random.randint(0, 1)
+    if num == 0:
+        yield Output(1, "branch_1")
+    else:
+        yield Output(2, "branch_2")
+
+
+@op
+def branch_1_op(_input):
+    pass
+
+
+@op
+def branch_2_op(_input):
+    pass
+
+
+@graph
+def branching():
+    branch_1, branch_2 = branching_op()
+    branch_1_op(branch_1)
+    branch_2_op(branch_2)
+```
+
+**Note**: When using conditional branching, <PyObject object="Output" /> objects must be yielded instead of returned.
+
+#### With a fixed fan-in
+
+<Image
+alt="Fixed Fan-in"
+src="/images/concepts/pipelines/fixed-fan-in.png"
+width={1000}
+height={250}
+/>
+
+If you have a fixed set of ops that all return the same output type, you can collect the outputs into a list and pass them into a single downstream op.
+
+The downstream op executes only if all of the outputs were successfully created by the upstream op:
+
+```python file=/concepts/ops_jobs_graphs/graphs/fan_in_graph.py startafter=start_marker endbefore=end_marker
+from typing import List
+
+from dagster import graph, op
+
+
+@op
+def return_one() -> int:
+    return 1
+
+
+@op
+def sum_fan_in(nums: List[int]) -> int:
+    return sum(nums)
+
+
+@graph
+def fan_in():
+    fan_outs = []
+    for i in range(0, 10):
+        fan_outs.append(return_one.alias(f"return_one_{i}")())
+    sum_fan_in(fan_outs)
+```
+
+In this example, we have 10 ops that all output the number `1`. The `sum_fan_in` op takes all of these outputs as a list and sums them.
+
+#### That contain other graphs
+
+Graphs can contain other graphs, or sub-graphs. Refer to the [Nesting graphs documentation](/concepts/ops-jobs-graphs/nesting-graphs) for more info and examples.
+
+#### Using dynamic outputs
+
+Using dynamic outputs, you can duplicate portions of a graph at runtime. Refer to the [Dynamic graphs documentation](/concepts/ops-jobs-graphs/dynamic-graphs) for more info and examples.
+
+---
+
+## Defining and constructing dependencies
+
+- [Defining nothing dependencies](#defining-nothing-dependencies)
+- [Constructing dependencies](#constructing-dependencies)
+
+### Defining nothing dependencies
+
+Dependencies in Dagster are primarily _data dependencies_. Using data dependencies means each input of an op depends on the output of an upstream op.
+
+If you have an op, say `Op A`, that does not depend on any outputs of another op, say `Op B`, there theoretically shouldn't be a reason for `Op A` to run after `Op B`. In most cases, these two ops should be parallelizable. However, there are some cases where an explicit ordering is required, but it doesn't make sense to pass data through inputs and outputs to model the dependency.
+
+If you need to model an explicit ordering dependency, you can use the <PyObject object="Nothing"/> Dagster type on the input definition of the downstream op. This type specifies that you are passing "nothing" via Dagster between the ops, while still using inputs and outputs to model the dependency between the two ops.
+
+```python file=/concepts/ops_jobs_graphs/graphs/order_based_dependency.py startafter=start_marker endbefore=end_marker
+from dagster import In, Nothing, graph, op
+
+
+@op
+def create_table_1():
+    get_database_connection().execute(
+        "create table_1 as select * from some_source_table"
+    )
+
+
+@op(ins={"start": In(Nothing)})
+def create_table_2():
+    get_database_connection().execute("create table_2 as select * from table_1")
+
+
+@graph
+def nothing_dependency():
+    create_table_2(start=create_table_1())
+```
+
+In this example, `create_table_2` has an input of type `Nothing` meaning that it doesn't expect any data to be provided by the upstream op. This lets us connect them in the graph definition so that `create_table_2` executes only after `create_table_1` successfully executes.
+
+`Nothing` type inputs do not have a corresponding parameter in the function since there is no data to pass. When connecting the dependencies, it is recommended to use keyword args to prevent mix-ups with other positional inputs.
+
+Note that in most cases, it is usually possible to pass some data dependency. In the example above, even though we probably don't want to pass the table data itself between the ops, we could pass table pointers. For example, `create_table_1` could return a `table_pointer` output of type `str` with a value of `table_1`, and this table name can be used in `create_table_2` to more accurately model the data dependency.
+
+Dagster also provides more advanced abstractions to handle dependencies and IO. If you find that you are finding it difficult to model data dependencies when using external storage, check out [IO managers](/concepts/io-management/io-managers).
+
+### Constructing dependencies
+
+- [Using GraphDefinitions](#using-graphdefinitions)
+- [Using YAML (GraphDSL)](#using-yaml-graphdsl)
+
+#### Using GraphDefinitions
+
+You may run into a situation where you need to programmatically construct the dependencies for a graph. In that case, you can directly define the <PyObject module="dagster" object="GraphDefinition"/> object.
+
+To construct a GraphDefinition, you need to pass the constructor a graph name, a list of op or graph definitions, and a dictionary defining the dependency structure. The dependency structure declares the dependencies of each op’s inputs on the outputs of other ops in the graph. The top-level keys of the dependency dictionary are the string names of ops or graphs. If you are using op aliases, be sure to use the aliased name. Values of the top-level keys are also dictionary, which maps input names to a <PyObject object="DependencyDefinition"/>.
+
+```python file=/concepts/ops_jobs_graphs/jobs.py startafter=start_pipeline_definition_marker endbefore=end_pipeline_definition_marker
+one_plus_one_from_constructor = GraphDefinition(
+    name="one_plus_one",
+    node_defs=[return_one, add_one],
+    dependencies={"add_one": {"number": DependencyDefinition("return_one")}},
+).to_job()
+```
+
+#### Using YAML (GraphDSL)
+
+Sometimes you may want to construct the dependencies of a graph definition from a YAML file or similar. This is useful when migrating to Dagster from other workflow systems.
+
+For example, you can have a YAML like this:
+
+```YAML file=/concepts/ops_jobs_graphs/my_graph.yaml
+name: some_example
+description: blah blah blah
+ops:
+  - def: add_one
+    alias: A
+  - def: add_one
+    alias: B
+    deps:
+      num:
+        op: A
+  - def: add_two
+    alias: C
+    deps:
+      num:
+        op: A
+  - def: subtract
+    deps:
+      left:
+        op: B
+      right:
+        op: C
+```
+
+You can programmatically generate a GraphDefinition from this YAML:
+
+```python file=/concepts/ops_jobs_graphs/dep_dsl.py
+import os
+
+from dagster import DependencyDefinition, GraphDefinition, NodeInvocation, op
+from dagster.utils.yaml_utils import load_yaml_from_path
+
+
+@op
+def add_one(num: int) -> int:
+    return num + 1
+
+
+@op
+def add_two(num: int) -> int:
+    return num + 2
+
+
+@op
+def subtract(left: int, right: int) -> int:
+    return left + right
+
+
+def construct_graph_with_yaml(yaml_file, op_defs) -> GraphDefinition:
+    yaml_data = load_yaml_from_path(yaml_file)
+
+    deps = {}
+
+    for op_yaml_data in yaml_data["ops"]:
+        def_name = op_yaml_data["def"]
+        alias = op_yaml_data.get("alias", def_name)
+        op_deps_entry = {}
+        for input_name, input_data in op_yaml_data.get("deps", {}).items():
+            op_deps_entry[input_name] = DependencyDefinition(
+                solid=input_data["op"], output=input_data.get("output", "result")
+            )
+        deps[NodeInvocation(name=def_name, alias=alias)] = op_deps_entry
+
+    return GraphDefinition(
+        name=yaml_data["name"],
+        description=yaml_data.get("description"),
+        node_defs=op_defs,
+        dependencies=deps,
+    )
+
+
+def define_dep_dsl_graph() -> GraphDefinition:
+    path = os.path.join(os.path.dirname(__file__), "my_graph.yaml")
+    return construct_graph_with_yaml(path, [add_one, add_two, subtract])
+```
+
+---
+
+## Building jobs
+
+Ready to start using your graphs in Dagster jobs? Refer to the [Jobs documentation](/concepts/ops-jobs-graphs/jobs) for detailed info and examples.
