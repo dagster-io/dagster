@@ -29,17 +29,7 @@ from dagster.serdes import whitelist_for_serdes
 from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
 
-
-@whitelist_for_serdes
-class BulkActionStatus(Enum):
-    REQUESTED = "REQUESTED"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    CANCELED = "CANCELED"
-
-    @staticmethod
-    def from_graphql_input(graphql_str):
-        return BulkActionStatus(graphql_str)
+from .bulk_actions import BulkActionStatus
 
 
 @whitelist_for_serdes
