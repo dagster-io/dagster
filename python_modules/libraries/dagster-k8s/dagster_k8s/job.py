@@ -692,6 +692,9 @@ def construct_dagster_k8s_job(
         {"template": template},
     )
 
+    user_defined_job_metadata = copy.deepcopy(user_defined_k8s_config.job_metadata)
+    user_defined_job_labels = user_defined_job_metadata.pop("labels", {})
+
     job = k8s_model_from_dict(
         kubernetes.client.V1Job,
         merge_dicts(
@@ -700,8 +703,13 @@ def construct_dagster_k8s_job(
                 "api_version": "batch/v1",
                 "kind": "Job",
                 "metadata": merge_dicts(
-                    user_defined_k8s_config.job_metadata,
-                    {"name": job_name, "labels": dagster_labels},
+                    user_defined_job_metadata,
+                    {
+                        "name": job_name,
+                        "labels": merge_dicts(
+                            dagster_labels, user_defined_job_labels, job_config.labels
+                        ),
+                    },
                 ),
                 "spec": job_spec_config,
             },
