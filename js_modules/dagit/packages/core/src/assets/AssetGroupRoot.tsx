@@ -1,17 +1,23 @@
-import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui';
+import {Page, PageHeader, Heading, Box, Tag, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
+import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {explorerPathFromString, explorerPathToString} from '../pipelines/PipelinePathUtils';
+import {
+  ExplorerPath,
+  explorerPathFromString,
+  explorerPathToString,
+} from '../pipelines/PipelinePathUtils';
 import {TabLink} from '../ui/TabLink';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetsCatalogTable} from './AssetsCatalogTable';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
 interface AssetGroupRootParams {
   groupName: string;
@@ -36,6 +42,31 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress; tab: 'lineage' 
       repositoryName: repoAddress.name,
     }),
     [groupName, repoAddress],
+  );
+
+  const onChangeExplorerPath = React.useCallback(
+    (path: ExplorerPath, mode: 'push' | 'replace') => {
+      history[mode](`${groupPath}/${explorerPathToString(path)}`);
+    },
+    [groupPath, history],
+  );
+
+  const onNavigateToForeignNode = React.useCallback(
+    (node: AssetLocation) => {
+      if (node.groupName && node.repoAddress) {
+        history.replace(
+          workspacePathFromAddress(
+            node.repoAddress,
+            `/asset-groups/${node.groupName}/lineage/${node.assetKey.path
+              .map(encodeURIComponent)
+              .join('/')}`,
+          ),
+        );
+      } else {
+        history.push(assetDetailsPathForKey(node.assetKey, {view: 'definition'}));
+      }
+    },
+    [history],
   );
 
   return (
@@ -66,9 +97,8 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress; tab: 'lineage' 
           fetchOptions={{groupSelector}}
           options={{preferAssetRendering: true, explodeComposites: true}}
           explorerPath={explorerPathFromString(path || 'lineage/')}
-          onChangeExplorerPath={(path, mode) => {
-            history[mode](`${groupPath}/${explorerPathToString(path)}`);
-          }}
+          onChangeExplorerPath={onChangeExplorerPath}
+          onNavigateToForeignNode={onNavigateToForeignNode}
         />
       ) : (
         <AssetsCatalogTable

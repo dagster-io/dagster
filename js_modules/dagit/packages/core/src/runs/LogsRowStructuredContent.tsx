@@ -8,6 +8,7 @@ import {Link, useLocation} from 'react-router-dom';
 import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
 import {
   LogRowStructuredContentTable,
@@ -425,8 +426,7 @@ const AssetMetadataContent: React.FC<{
     );
   }
 
-  const asOf = qs.stringify({asOf: timestamp});
-  const to = `/instance/assets/${assetKey.path.map(encodeURIComponent).join('/')}?${asOf}`;
+  const to = assetDetailsPathForKey(assetKey, {asOf: timestamp});
 
   const assetDashboardLink = (
     <span style={{marginLeft: 10}}>

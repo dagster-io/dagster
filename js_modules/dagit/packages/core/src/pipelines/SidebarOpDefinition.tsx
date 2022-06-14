@@ -6,6 +6,7 @@ import styled from 'styled-components/macro';
 
 import {breakOnUnderscores} from '../app/Util';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignature';
 import {pluginForMetadata} from '../plugins';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
@@ -152,10 +153,7 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
       {definition.assetNodes.length > 0 && (
         <SidebarSection title="Yielded Assets">
           {definition.assetNodes.map((node) => (
-            <AssetNodeListItem
-              key={node.id}
-              to={`/instance/assets/${node.assetKey.path.join('/')}`}
-            >
+            <AssetNodeListItem key={node.id} to={assetDetailsPathForKey(node.assetKey)}>
               <Icon name="asset" /> {displayNameForAssetKey(node.assetKey)}
             </AssetNodeListItem>
           ))}

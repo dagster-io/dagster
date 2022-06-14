@@ -12,6 +12,7 @@ import {
   metadataForAssetNode,
 } from '../assets/AssetMetadata';
 import {PartitionHealthSummary, usePartitionHealthData} from '../assets/PartitionHealthSummary';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterTypeFragment';
@@ -145,7 +146,7 @@ const Header: React.FC<{assetKey: AssetKey; opName?: string}> = ({assetKey, opNa
           </Box>
         ) : undefined}
       </SidebarTitle>
-      <AssetCatalogLink to={`/instance/assets/${assetKey.path.join('/')}`}>
+      <AssetCatalogLink to={assetDetailsPathForKey(assetKey)}>
         {'View in Asset Catalog '}
         <Icon name="open_in_new" color={Colors.Link} />
       </AssetCatalogLink>
