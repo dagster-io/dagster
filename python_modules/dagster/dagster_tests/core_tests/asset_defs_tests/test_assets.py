@@ -370,7 +370,11 @@ def test_asset_invocation_resource_overrides():
         assert context.resources.foo == "override_foo"
         assert context.resources.bar == "orig_bar"
 
-    asset_resource_overrides(build_op_context(resources={"foo": "override_foo"}))
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="resource 'foo' provided on both the definition and invocation context.",
+    ):
+        asset_resource_overrides(build_op_context(resources={"foo": "override_foo"}))
 
 
 def test_asset_invocation_resource_errors():
