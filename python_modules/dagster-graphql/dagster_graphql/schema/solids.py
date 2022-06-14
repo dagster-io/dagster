@@ -1,4 +1,3 @@
-# pylint: disable=missing-graphene-docstring
 from functools import lru_cache
 
 import graphene

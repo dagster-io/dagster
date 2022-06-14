@@ -1,4 +1,3 @@
-# pylint: disable=missing-graphene-docstring
 import graphene
 
 import dagster._check as check

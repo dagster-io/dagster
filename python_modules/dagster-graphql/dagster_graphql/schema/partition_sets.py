@@ -1,4 +1,3 @@
-# pylint: disable=missing-graphene-docstring
 import graphene
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_by_name,
