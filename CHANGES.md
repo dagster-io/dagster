@@ -1,5 +1,236 @@
 # Changelog
 
+# 0.15.0 "Cool for the Summer"
+
+## Major Changes
+
+* Software-defined assets are now marked fully stable and are ready for prime time - we recommend using them whenever your goal using Dagster is to build and maintain data assets.
+* You can now organize software defined assets into groups by providing a group_name on your asset definition. These assets will be grouped together in Dagit.
+* Software-defined assets now accept configuration, similar to ops. E.g.
+  ```
+  from dagster import asset
+
+  @asset(config_schema={"iterations": int})
+  def my_asset(context):
+      for i in range(context.op_config["iterations"]):
+          ...
+  ```
+* Asset definitions can now be created from graphs via `AssetsDefinition.from_graph`:
+  ```
+  @graph(out={"asset_one": GraphOut(), "asset_two": GraphOut()})
+  def my_graph(input_asset):
+      ...
+
+  graph_asset = AssetsDefinition.from_graph(my_graph)
+  ```
+* `execute_in_process` and `GraphDefinition.to_job` now both accept an `input_values` argument, so you can pass arbitrary Python objects to the root inputs of your graphs and jobs.
+* Ops that return Outputs and DynamicOutputs now work well with Python type annotations. You no longer need to sacrifice static type checking just because you want to include metadata on an output. E.g.
+  ```
+  from dagster import Output, op
+
+  @op
+  def my_op() -> Output[int]:
+      return Output(5, metadata={"a": "b"})
+  ```
+* You can now automatically re-execute runs from failure. This is analogous to op-level retries, except at the job level.
+* You can now supply arbitrary structured metadata on jobs, which will be displayed in Dagit.
+* The partitions and backfills pages in Dagit have been redesigned to be faster and show the status of all partitions, instead of just the last 30 or so.
+* The left navigation pane in Dagit is now grouped by repository, which makes it easier to work with when you have large numbers of jobs, especially when jobs in different repositories have the same name.
+* The Asset Details page for a software-defined asset now includes a Lineage tab, which makes it easy to see all the assets that are upstream or downstream of an asset.
+
+## Breaking Changes and Deprecations
+
+### Software-defined assets
+
+This release marks the official transition of software-defined assets from experimental to stable. We made some final changes to incorporate feedback and make the APIs as consistent as possible:
+
+- Support for adding tags to asset materializations, which was previously marked as experimental, has been removed.
+- Some of the properties of the previously-experimental AssetsDefinition class have been renamed. group_names is now group_names_by_key, asset_keys_by_input_name is now keys_by_input_name, and asset_keys_by_output_name is now keys_by_output_name, asset_key is now key, and asset_keys is now keys.
+- `fs_asset_io_manager` has been removed in favor of merging its functionality with fs_io_manager. `fs_io_manager` is now the default IO manager for asset jobs, and will store asset outputs in a directory named with the asset key.  Similarly, removed `adls2_pickle_asset_io_manager`, `gcs_pickle_asset_io_manager` , and `s3_pickle_asset_io_manager`. Instead, `adls2_pickle_io_manager`, `gcs_pickle_io_manager`, and `s3_pickle_io_manager` now support software-defined assets.
+- *(deprecation)* The namespace argument on the `@asset` decorator and AssetIn has been deprecated. Users should use key_prefix instead.
+- *(deprecation)* AssetGroup has been deprecated. Users should instead place assets directly on repositories, optionally attaching resources using with_resources. Asset jobs should be defined using `define_assets_job` (replacing `AssetGroup.build_job`), and arbitrary sets of assets can be materialized using the standalone function materialize (replacing `AssetGroup.materialize`).
+- *(deprecation)* The `outs` property of the previously-experimental `@multi_asset` decorator now prefers a dictionary whose values are `AssetOut` objects instead of a dictionary whose values are `Out` objects. The latter still works, but is deprecated.
+
+### Event records
+
+- The `get_event_records` method on DagsterInstance now requires a non-None argument `event_records_filter`.  Passing a `None` value for the `event_records_filter` argument will now raise an exception where previously it generated a deprecation warning.
+- Removed methods `events_for_asset_key` and `get_asset_events`, which have been deprecated since 0.12.0.
+
+### Extension libraries
+
+- [dagster-dbt] (breaks previously-experimental API) When using the load_assets_from_dbt_project or load_assets_from_dbt_manifest , the AssetKeys generated for dbt sources are now the union of the source name and the table name, and the AssetKeys generated for models are now the union of the configured schema name for a given model (if any), and the model name. To revert to the old behavior: `dbt_assets = load_assets_from_dbt_project(..., node_info_to_asset_key=lambda node_info: AssetKey(node_info["name"])`.
+- [dagster-k8s] In the Dagster Helm chart, user code deployment configuration (like secrets, configmaps, or volumes) is now automatically included in any runs launched from that code. Previously, this behavior was opt-in. In most cases, this will not be a breaking change, but in less common cases where a user code deployment was running in a different kubernetes namespace or using a different service account, this could result in missing secrets or configmaps in a launched run that previously worked. You can return to the previous behavior where config on the user code deployment was not applied to any runs by setting the includeConfigInLaunchedRuns.enabled field to false for the user code deployment. See the [Kubernetes Deployment docs](https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm#configure-your-user-deployment) for more details. 
+- [dagster-snowflake] dagster-snowflake has dropped support for python 3.6. The library it is currently built on, snowflake-connector-python, dropped 3.6 support in their recent 2.7.5 release.
+
+### Other
+
+- The `prior_attempts_count` parameter is now removed from step-launching APIs. This parameter was not being used, as the information it held was stored elsewhere in all cases. It can safely be removed from invocations without changing behavior.
+- The `FileCache` class has been removed.
+- Previously, when schedules/sensors targeted jobs with the same name as other jobs in the repo, the jobs on the sensor/schedule would silently overwrite the other jobs. Now, this will cause an error.
+
+## New since 0.14.20
+
+* A new `define_asset_job` function allows you to define a selection of assets that should be executed together. The selection can be a simple string, or an AssetSelection object. This selection will be resolved into a set of assets once placed on the repository.
+  ```
+  from dagster import repository, define_asset_job, AssetSelection
+      
+  string_selection_job = define_asset_job(
+      name="foo_job", selection="*foo"
+  )
+  object_selection_job = define_asset_job(
+      name="bar_job", selection=AssetSelection.groups("some_group")
+  )
+
+  @repository
+  def my_repo():
+      return [
+          *my_list_of_assets,
+          string_selection_job,
+          object_selection_job,
+      ]
+  ```
+* [dagster-dbt] Assets loaded with `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` will now be sorted into groups based on the subdirectory of the project that each model resides in.
+* `@asset` and `@multi_asset` are no longer considered experimental.
+* Adds new utility methods `load_assets_from_modules`, `assets_from_current_module`, `assets_from_package_module`, and `assets_from_package_name` to fetch and return a list of assets from within the specified python modules.
+* Resources and io managers can now be provided directly on assets and source assets.
+  ```
+  from dagster import asset, SourceAsset, resource, io_manager
+        
+  @resource
+  def foo_resource():
+      pass
+      
+  @asset(resource_defs={"foo": foo_resource})
+  def the_resource(context):
+      foo = context.resources.foo
+      
+  @io_manager
+  def the_manager():
+      ...
+      
+  @asset(io_manager_def=the_manager)
+  def the_asset():
+      ...
+    ```
+  Note that assets provided to a job must not have conflicting resource for the same key. For a given job, all resource definitions must match by reference equality for a given key.
+* A `materialize_to_memory` method which will load the materializations of a provided list of assets into memory:
+  ```
+  from dagster import asset, materialize_to_memory
+        
+  @asset
+  def the_asset():
+      return 5
+      
+  result = materialize_to_memory([the_asset])
+  output = result.output_for_node("the_asset")
+  ```
+* A `with_resources` method, which allows resources to be added to multiple assets / source assets at once:
+  ```
+  from dagster import asset, with_resources, resource
+      
+  @asset(required_resource_keys={"foo"})
+  def requires_foo(context):
+      ...
+      
+  @asset(required_resource_keys={"foo"})
+  def also_requires_foo(context):
+      ...
+      
+  @resource
+  def foo_resource():
+      ...
+      
+  requires_foo, also_requires_foo = with_resources(
+      [requires_foo, also_requires_foo], 
+      {"foo": foo_resource},
+  ) 
+  ```
+* You can now include asset definitions directly on repositories. A `default_executor_def` property has been added to the repository, which will be used on any materializations of assets provided directly to the repository.
+  ```
+  from dagster import asset, repository, multiprocess_executor
+
+  @asset
+  def my_asset():
+    ...
+
+  @repository(default_executor_def=multiprocess_executor)
+  def repo():
+      return [my_asset]
+  ```
+* The `run_storage`, `event_log_storage`, and `schedule_storage` configuration sections of the `dagster.yaml` can now be replaced by a unified `storage` configuration section. This should avoid duplicate configuration blocks with your `dagster.yaml`.  For example, instead of:  
+
+  ```
+  # dagster.yaml
+  run_storage:
+  module: dagster_postgres.run_storage
+  class: PostgresRunStorage
+  config:
+      postgres_url: { PG_DB_CONN_STRING }
+  event_log_storage:
+  module: dagster_postgres.event_log
+  class: PostgresEventLogStorage
+  config:
+      postgres_url: { PG_DB_CONN_STRING }
+  schedule_storage:
+  module: dagster_postgres.schedule_storage
+  class: PostgresScheduleStorage
+  config:
+      postgres_url: { PG_DB_CONN_STRING }
+  ```
+
+  You can now write:
+
+  ```
+  storage:
+    postgres:
+      postgres_url: { PG_DB_CONN_STRING }
+  ```
+
+* All assets where a `group_name` is not provided are now part of a group called `default`.
+* The group_name parameter value for `@asset` is now restricted to only allow letters, numbers and underscore.
+* You can now [set policies to automatically retry Job runs](https://docs.dagster.io/master/deployment/run-retries). This is analogous to op-level retries, except at the job level. By default the retries pick up from failure, meaning only failed ops and their dependents are executed.
+* [dagit] The new repository-grouped left navigation is fully launched, and is no longer behind a feature flag.
+* [dagit] The left navigation can now be collapsed even when the viewport window is wide. Previously, the navigation was collapsible only for small viewports, but kept in a fixed, visible state for wide viewports. This visible/collapsed state for wide viewports is now tracked in localStorage, so your preference will persist across sessions.
+* [dagit] Queued runs can now be terminated from the Run page.
+* [dagit] The log filter on a Run page now shows counts for each filter type, and the filters have higher contrast and a switch to indicate when they are on or off.
+* [dagit] The partitions and backfill pages have been redesigned to focus on easily viewing the last run state by partition.  These redesigned pages were previously gated behind a feature flag — they are now loaded by default.
+* [dagster-k8s] Overriding labels in the K8sRunLauncher will now apply to both the Kubernetes job and the Kubernetes pod created for each run, instead of just the Kubernetes pod.
+
+### Bugfixes
+
+* [dagster-dbt] In some cases, if Dagster attempted to rematerialize a dbt asset, but dbt failed to start execution, asset materialization events would still be emitted. This has been fixed.
+* [dagit] On the Instance Overview page, the popover showing details of overlapping batches of runs is now scrollable.
+* [dagit] When viewing Instance Overview, reloading a repository via controls in the left navigation could lead to an error that would crash the page due to a bug in client-side cache state. This has been fixed.
+* [dagit] When scrolling through a list of runs, scrolling would sometimes get stuck on certain tags, specifically those with content overflowing the width of the tag. This has been fixed.
+* [dagit] While viewing a job page, the left navigation item corresponding to that job will be highlighted, and the navigation pane will scroll to bring it into view.
+* [dagit] Fixed a bug where the “Scaffold config” button was always enabled.
+
+### Breaking Changes
+
+* [dagster-k8s] In the Dagster Helm chart, user code deployment configuration (like secrets, configmaps, or volumes) is now automatically included in any runs launched from that code. Previously, this behavior was opt-in. In most cases, this will not be a breaking change, but in less common cases where a user code deployment was running in a different kubernetes namespace or using a different service account, this could result in missing secrets or configmaps in a launched run that previously worked. You can return to the previous behavior where config on the user code deployment was not applied to any runs by setting the `includeConfigInLaunchedRuns.enabled` field to `false` for the user code deployment. See the [Kubernetes Deployment docs](https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm#configure-your-user-deployment) for more details. 
+* [dagster-dbt] (breaks previously-experimental API) The AssetKeys generated for sources are now the union of the source name and the table name, and the AssetKeys generated for models are now the union of the configured schema name for a given model (if any), and the model name.
+* Support for adding tags to asset materializations, which was previously marked as experimental, has been removed.
+* Some of the properties of the previously-experimental `AssetsDefinition` class have been renamed. `group_names` is now `group_names_by_key`, `asset_keys_by_input_name` is now `keys_by_input_name`, and `asset_keys_by_output_name` is now `keys_by_output_name`, `asset_key` is now `key`, and `asset_keys` is now `keys`.
+* The previously-experimental property on `OpExecutionContext` called `output_asset_partition_key` is now deprecated in favor of `asset_partition_key_for_output`
+* Previously, when schedules/sensors targeted jobs with the same name as other jobs in the repo, the jobs on the sensor/schedule would silently overwrite the other jobs. Now, this will cause an error.
+
+### Deprecations
+
+* The `namespace` argument on the `@asset` decorator and `AssetIn` has been deprecated. Users should use `key_prefix` instead.
+* `AssetGroup` has been deprecated. Users should instead place assets directly on repositories, optionally attaching resources using `with_resources`. Asset jobs should be defined using `define_assets_job` (replacing `AssetGroup.build_job`), and arbitrary sets of `assets` can be materialized using the standalone function `materialize` (replacing `AssetGroup.materialize`).
+* The `outs` property of the previously-experimental `@multi_asset` decorator now prefers a dictionary whose values are `AssetOut` objects instead of a dictionary whose values are `Out` objects. The latter still works, but is deprecated.
+
+### Community Contributions
+
+* Provide dagster-mlflow configuration parameters as environment variables, thanks @chasleslr!
+
+### Documentation
+
+* Added a guide that helps users who are familiar with ops and graphs understand how and when to use software-defined assets.
+* Updated and reorganized docs to document software-defined assets changes since 0.14.0.
+* The Deploying in Docker example now includes an example of using the `docker_executor` to run each step of a job in a different Docker container. 
+* Descriptions for the top-level fields of Dagit GraphQL queries, mutations, and subscriptions have been added.
+
 # 0.14.20
 
 
