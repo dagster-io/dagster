@@ -48,7 +48,6 @@ def test_input_manager_override():
             if context.upstream_output is None:
                 assert False, "upstream output should not be None"
             else:
-                assert True, "should be called"
                 return 4
 
     @io_manager
@@ -86,7 +85,6 @@ def test_input_manager_root_input():
     class MyInputManager(MyIOManager):
         def load_input(self, context):
             if context.upstream_output is None:
-                assert True, "should be called"
                 return 4
             else:
                 assert False, "upstream output should be None"
@@ -157,7 +155,6 @@ def test_input_manager_calls_super():
             pass
 
         def load_input(self, context):
-            assert True, "should be called"
             return 6
 
     @io_manager
