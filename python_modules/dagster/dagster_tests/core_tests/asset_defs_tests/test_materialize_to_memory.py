@@ -14,19 +14,19 @@ from dagster import (
     asset,
     graph,
     io_manager,
-    materialize_in_process,
+    materialize_to_memory,
     multi_asset,
     op,
     with_resources,
 )
 
 
-def test_basic_materialize_in_process():
+def test_basic_materialize_to_memory():
     @asset
     def the_asset():
         return 5
 
-    result = materialize_in_process([the_asset])
+    result = materialize_to_memory([the_asset])
     assert result.success
     assert len(result.asset_materializations_for_node("the_asset")[0].metadata_entries) == 0
 
@@ -36,7 +36,7 @@ def test_materialize_config():
     def the_asset_reqs_config(context):
         assert context.op_config["foo_str"] == "foo"
 
-    assert materialize_in_process(
+    assert materialize_to_memory(
         [the_asset_reqs_config],
         run_config={"ops": {"the_asset_reqs_config": {"config": {"foo_str": "foo"}}}},
     ).success
@@ -48,7 +48,7 @@ def test_materialize_bad_config():
         assert context.op_config["foo_str"] == "foo"
 
     with pytest.raises(DagsterInvalidConfigError, match="Error in config for job"):
-        materialize_in_process(
+        materialize_to_memory(
             [the_asset_reqs_config],
             run_config={"ops": {"the_asset_reqs_config": {"config": {"bad": "foo"}}}},
         )
@@ -59,7 +59,7 @@ def test_materialize_resources():
     def the_asset(context):
         assert context.resources.foo == "blah"
 
-    assert materialize_in_process([the_asset]).success
+    assert materialize_to_memory([the_asset]).success
 
 
 def test_materialize_resource_instances():
@@ -68,7 +68,7 @@ def test_materialize_resource_instances():
         assert context.resources.foo == "blah"
         assert context.resources.bar == "baz"
 
-    assert materialize_in_process(
+    assert materialize_to_memory(
         [the_asset], resources={"foo": ResourceDefinition.hardcoded_resource("blah"), "bar": "baz"}
     ).success
 
@@ -82,9 +82,9 @@ def test_materialize_resources_not_satisfied():
         DagsterInvalidDefinitionError,
         match="resource with key 'foo' required by op 'the_asset' was not provided",
     ):
-        materialize_in_process([the_asset])
+        materialize_to_memory([the_asset])
 
-    assert materialize_in_process(
+    assert materialize_to_memory(
         with_resources([the_asset], {"foo": ResourceDefinition.hardcoded_resource("blah")})
     ).success
 
@@ -102,13 +102,13 @@ def test_materialize_conflicting_resources():
         DagsterInvalidDefinitionError,
         match="Conflicting versions of resource with key 'foo' were provided to different assets.",
     ):
-        materialize_in_process([first, second])
+        materialize_to_memory([first, second])
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="resource with key 'foo' provided to job conflicts with resource provided to assets. When constructing a job, all resource definitions provided must match by reference equality for a given key.",
     ):
-        materialize_in_process(
+        materialize_to_memory(
             [first], resources={"foo": ResourceDefinition.hardcoded_resource("2")}
         )
 
@@ -131,7 +131,7 @@ def test_materialize_source_assets():
     def the_asset(the_source):
         return the_source + 1
 
-    result = materialize_in_process([the_asset, the_source])
+    result = materialize_to_memory([the_asset, the_source])
     assert result.success
     assert result.output_for_node("the_asset") == 6
 
@@ -155,19 +155,19 @@ def test_materialize_source_asset_conflicts():
         DagsterInvalidDefinitionError,
         match="Conflicting versions of resource with key 'foo' were provided to different assets.",
     ):
-        materialize_in_process([the_asset, the_source])
+        materialize_to_memory([the_asset, the_source])
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="resource with key 'foo' provided to job conflicts with resource provided to assets.",
     ):
-        materialize_in_process(
+        materialize_to_memory(
             [the_source], resources={"foo": ResourceDefinition.hardcoded_resource("2")}
         )
 
 
 def test_materialize_no_assets():
-    assert materialize_in_process([]).success
+    assert materialize_to_memory([]).success
 
 
 def test_materialize_graph_backed_asset():
@@ -199,7 +199,7 @@ def test_materialize_graph_backed_asset():
         node_def=create_cool_thing,
     )
 
-    result = materialize_in_process([cool_thing_asset, a, b])
+    result = materialize_to_memory([cool_thing_asset, a, b])
     assert result.success
     assert result.output_for_node("create_cool_thing.combine_strings") == "aaaabb"
 
@@ -241,7 +241,7 @@ def test_materialize_multi_asset():
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
 
-    result = materialize_in_process([thing_asset, multi_asset_with_internal_deps])
+    result = materialize_to_memory([thing_asset, multi_asset_with_internal_deps])
     assert result.success
     assert result.output_for_node("multi_asset_with_internal_deps", "my_out_name") == 1
     assert result.output_for_node("multi_asset_with_internal_deps", "my_other_out_name") == 2

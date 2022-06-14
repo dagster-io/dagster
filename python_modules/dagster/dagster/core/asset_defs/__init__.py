@@ -11,5 +11,5 @@ from .load_assets_from_modules import (
     load_assets_from_package_module,
     load_assets_from_package_name,
 )
-from .materialize import materialize, materialize_in_process
+from .materialize import materialize, materialize_to_memory
 from .source_asset import SourceAsset

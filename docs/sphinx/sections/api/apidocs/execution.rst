@@ -9,7 +9,7 @@ Materializing Assets
 
 .. autofunction:: materialize
 
-.. autofunction:: materialize_in_process
+.. autofunction:: materialize_to_memory
 
 Executing Jobs
 --------------
