@@ -286,8 +286,12 @@
             "path": "/deployment/run-coordinator"
           },
           {
-            "title": "Run Monitoring - Handling Failures",
+            "title": "Run Monitoring - Detecting Failures",
             "path": "/deployment/run-monitoring"
+          },
+          {
+            "title": "Run Retries",
+            "path": "/deployment/run-retries"
           }
         ]
       },
