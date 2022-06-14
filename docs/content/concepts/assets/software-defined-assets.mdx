@@ -377,6 +377,73 @@ def repo():
 
 Like regular jobs, asset jobs can be placed on [schedules](/concepts/partitions-schedules-sensors/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors).
 
+---
+
+## Grouping assets
+
+To help keep your assets tidy, you can organize them into groups. Grouping assets by project, concept, and so on simplifies [keeping track of them in Dagit](#viewing-asset-groups-in-dagit).
+
+- [Assigning assets to groups](#assigning-assets-to-groups)
+- [Viewing asset groups in Dagit](#viewing-asset-groups-in-dagit)
+
+### Assigning assets to groups
+
+In Dagster, there are two ways to assign assets to groups:
+
+- [By using the `load_assets_from_package_module` function](#from-assets-in-a-sub-module) (**recommended**)
+- [By specifying a group name on an individual asset](#on-individual-assets)
+
+By default, assets that aren't assigned to a group will be placed in a group named `default`. Use Dagit to [view these assets](#viewing-asset-groups-in-dagit).
+
+#### From assets in a sub-module
+
+**This recommended approach** constructs a group of assets from a specified module in your project. Using the `load_assets_from_package_module` function, you can import all assets in a module and apply a grouping:
+
+```python file=/concepts/assets/asset_group_module.py startafter=start_example endbefore=end_example
+cereal_assets = load_assets_from_package_module(
+    cereal,
+    group_name="cereal_assets",
+)
+```
+
+#### On individual assets
+
+Assets can also be grouped on an individual basis by specifying an argument when creating the asset:
+
+```python file=/concepts/assets/asset_group_argument.py startafter=start_example endbefore=end_example
+@asset(group_name="cereal_assets")
+def nabisco_cereals():
+    return [1, 2, 3]
+```
+
+#### To multiple groups
+
+**Assets can only be assigned to one group at a time**. Attempting to place a grouped asset in a second group will result in an error:
+
+```bash
+Group name already exists on assets [list_of_asset_keys] 
+```
+
+### Viewing asset groups in Dagit
+
+To view your asset groups in Dagit, open the left navigation ([todo-menu path]). As asset groups are grouped in repositories, you may need to open a repository to view its asset groups.
+
+For example, in the following image, the `hacker_news_assets_prod` repository is open and the `default` asset group is visible:
+
+<img
+alt="Asset Groups in Dagit left navigation"
+src="/images/concepts/assets/asset-groups-in-sidenav.png"
+/>
+
+Click the asset group to open a dependency graph. This graph includes all assets in the group:
+
+<img
+alt="Asset Groups in Dagit left navigation"
+src="/images/concepts/assets/asset-group-dependency-graph.png"
+/>
+
+---
+
 ## Testing
 
 When writing unit tests, you can treat the function decorated by `@asset` as a regular python function.
