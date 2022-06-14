@@ -15,15 +15,15 @@ Run configuration allows providing parameters to jobs at the time they're execut
 
 ## Overview
 
-It's often useful to configure Dagster jobs or software-defined assets at runtime. For example, you might want to choose what dataset an op runs against, or provide a connection URL for a database resource. In general, you should use Dagster's config system when you want to modulate a computation at runtime without needing to modify the definition.
+It's often useful to provide user-chosen values to Dagster jobs or software-defined assets at runtime. For example, you might want to choose what dataset an op runs against, or provide a connection URL for a database resource. Dagster exposes this functionality through a configuration API.
 
-Various Dagster entities (ops, assets, resources) can have an attached _configuration schema_ that specifies the configurable parameters for that entity. When launching a job that executes (ops), materializes (assets), or instantiates (resources) a configurable entity, you can provide values for the parameters specified in the schema. Dagster validates this _run configuration_ against the schema and proceeds only if validation is successful. Within the function that defines the entity, you can access the passed-in configuration off of the `context`.
+Various Dagster entities (ops, assets, resources) can be individually configured. When launching a job that executes (ops), materializes (assets), or instantiates (resources) a configurable entity, you can provide _run configuration_ for each entity. Within the function that defines the entity, you can access the passed-in configuration off of the `context`. Typically, the provided run configuration values correspond to a  _configuration schema_ attached to the op/asset/resource definition. Dagster validates the run configuration against the schema and proceeds only if validation is successful.
 
 A common use of configuration is for a [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/schedules) to provide configuration to the job run it is launching. For example, a daily schedule might provide the day it's running on to one of the ops as a config value, and that op might use that config value to decide what day's data to read.
 
 ## Defining and accessing configuration for an op, asset, or resource
 
-Configurable parameters accepted by an op, asset, or resource are specified by providing a `config_schema` to the corresponding decorator. The structure of a `config_schema` is very flexible and [fully documented in the API Reference](/\_apidocs/config). However, most of the time you will want to provide a Python dictionary, with keys the names of parameters and values the types of those parameters.
+Configurable parameters accepted by an op, asset, or resource are specified by providing a `config_schema` to the corresponding decorator. The structure of a `config_schema` is flexible and [fully documented in the API Reference](/\_apidocs/config). However, most of the time you will want to provide a Python dictionary, with keys the names of parameters and values the types of those parameters.
 
 During execution, the specified parameters are accessible within the body of the op/asset/resource under `context.op_config` (for ops/assets) or `context.resource_config` (for resources). It might seem confusing that asset config is accessed under `context.op_config` instead of `context.asset_config`. However, assets are wrappers for ops, so when we access asset config we are literally just accessing config for the underlying op.
 
@@ -47,20 +47,23 @@ def resource_using_config(context):
 ```
 
 <Note>
-  It is technically possible to access `context.op_config` inside ops (not
-  assets) without defining a `config_schema`. However, this is not recommended
-  and will likely be deprecated in the future.
+  It is technically possible to access <code>context.op_config</code> inside ops (not
+  assets) without defining a <code>config_schema</code>. However, this is not recommended.
 </Note>
 
-You can also build config into jobs, as described in [this section of the Jobs concept page](/concepts/ops-jobs-graphs/jobs#configuring-jobs).
+You can also build config into jobs, as described in [the Jobs documentation](/concepts/ops-jobs-graphs/jobs-graphs#advanced-job-configuration).
 
-## Specifying Runtime Configuration
+## Specifying runtime configuration
 
-If we want to execute `op_using_config` or materialize `asset_using_config`, we'll need to provide values for the parameters specified in `config_schema`. How we provide these values depends on the interface we are using.
+If you want to execute `op_using_config` or materialize `asset_using_config`, we'll need to provide values for the parameters specified in `config_schema`. How we provide these values depends on the interface we are using:
+
+- [Python](#python)
+- [Dagit](#dagit)
+- [Command line](#command-line)
 
 ### Python
 
-From the Python API, we can use the `run_config` argument for <PyObject object="JobDefinition" method="execute_in_process"/> or <PyObject module="materialize"/>. This takes a dictionary where configuration values for ops/assets are specified under `ops.<op_or_asset_name>.config` (for resources under `resources.<resource_name>.config`):
+From the Python API, we can use the `run_config` argument for <PyObject object="JobDefinition" method="execute_in_process"/> or <PyObject object="materialize"/>. This takes a dictionary where configuration values for ops/assets are specified under `ops.<op_or_asset_name>.config` (for resources under `resources.<resource_name>.config`):
 
 ```python file=/concepts/configuration/execute_with_config.py startafter=start_execute_with_config endbefore=end_execute_with_config dedent=4
 @job
