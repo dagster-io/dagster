@@ -1,5 +1,6 @@
 import {gql, useApolloClient} from '@apollo/client';
 import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui';
+import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React from 'react';
 
@@ -235,28 +236,35 @@ function stateForLaunchingAssets(
   }
   return {
     type: 'single-run',
-    executionParams: {
-      mode: 'default',
-      executionMetadata: {
-        tags: [
-          {
-            key: DagsterTag.StepSelection,
-            value: assets
-              .map((o) => o.opNames)
-              .flat()
-              .join(','),
-          },
-        ],
-      },
-      runConfigData: {},
-      selector: {
-        repositoryLocationName: repoAddress.location,
-        repositoryName: repoAddress.name,
-        pipelineName: jobName,
-        assetSelection: assets.map((asset) => ({
-          path: asset.assetKey.path,
-        })),
-      },
+    executionParams: executionParamsForAssetJob(repoAddress, jobName, assets, []),
+  };
+}
+
+export function executionParamsForAssetJob(
+  repoAddress: RepoAddress,
+  jobName: string,
+  assets: {assetKey: AssetKey; opNames: string[]}[],
+  tags: {key: string; value: string}[],
+): LaunchPipelineExecutionVariables['executionParams'] {
+  return {
+    mode: 'default',
+    executionMetadata: {
+      tags: [
+        ...tags.map((t) => pick(t, ['key', 'value'])),
+        {
+          key: DagsterTag.StepSelection,
+          value: assets.flatMap((o) => o.opNames).join(','),
+        },
+      ],
+    },
+    runConfigData: {},
+    selector: {
+      repositoryLocationName: repoAddress.location,
+      repositoryName: repoAddress.name,
+      pipelineName: jobName,
+      assetSelection: assets.map((asset) => ({
+        path: asset.assetKey.path,
+      })),
     },
   };
 }
