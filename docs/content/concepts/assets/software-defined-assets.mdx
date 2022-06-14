@@ -15,9 +15,9 @@ A software-defined asset includes the following:
 - A set of upstream asset keys, which refer to assets that the contents of the software-defined asset are derived from.
 - An [op](/concepts/ops-jobs-graphs/ops), which is a function responsible for computing the contents of the asset from its upstream dependencies.
 
-  **Note**: A crucial distinction between software-defined assets and [ops](/concepts/ops-jobs-graphs/ops) is that software-defined assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/jobs-graphs).
+  **Note**: A crucial distinction between software-defined assets and [ops](/concepts/ops-jobs-graphs/ops) is that software-defined assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/graphs).
 
-**Materializing** an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [Dagit](/concepts/dagit/dagit) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is fully customizable, using [IO managers](/concepts/io-management/io-managers#applying-io-managers-to-assets). It's possible to materialize an asset in multiple storage environments, such as production and staging.
+**Materializing** an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [Dagit](/concepts/dagit/dagit) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is fully customizable using [IO managers](/concepts/io-management/io-managers#applying-io-managers-to-assets). It's possible to materialize an asset in multiple storage environments, such as production and staging.
 
 ---
 
@@ -32,11 +32,11 @@ A software-defined asset includes the following:
 
 ## Defining assets
 
-Once you've defined a set of assets, you can:
-
-- [View them in Dagit](#viewing-assets-in-dagit).
-- [Materialize an ad-hoc set of them in Dagit](#materializing-assets-in-dagit).
-- [Build a job](#building-jobs-that-materialize-assets), which materializes a fixed selection of the assets, and can be put on a schedule or sensor.
+- [Basic software-defined assets](#a-basic-software-defined-asset)
+- [Assets with dependencies](#assets-with-dependencies)
+- [Creating assets from graphs](#graph-backed-assets)
+- [Accessing asset context](#asset-context)
+- [Configuring assets](#asset-configuration)
 
 ### A basic software-defined asset
 
@@ -51,17 +51,19 @@ def my_asset():
     return [1, 2, 3]
 ```
 
-By default, the name of the decorated function, `my_asset`, is used as the asset key. The decorated function forms the asset's op: it's responsible for producing the asset's contents. This asset doesn't depend on any other assets.
+By default, the name of the decorated function, `my_asset`, is used as the asset key. The decorated function forms the asset's op: it's responsible for producing the asset's contents. The asset in this example doesn't depend on any other assets.
 
 ### Assets with dependencies
 
-- [Basic dependencies](#defining-basic-dependencies)
-- [Explicit dependencies](#defining-explicit-dependencies)
+Software-defined assets can depend on other software-defined assets. In this section, we'll show you how to define:
+
+- [Basic asset dependencies](#defining-basic-dependencies)
+- [Explicit asset dependencies](#defining-explicit-dependencies)
 - [External asset dependencies](#defining-external-asset-dependencies)
 
 #### Defining basic dependencies
 
-Software-defined assets can depend on other software-defined assets. The easiest way to define an asset dependency is to include an upstream asset name as an argument to the decorated function.
+The easiest way to define an asset dependency is to include an upstream asset name as an argument to the decorated function.
 
 In the following example, `downstream_asset` depends on `upstream_asset`. That means that the contents of `upstream_asset` are provided to the function that computes the contents of `downstream_asset`.
 
@@ -173,7 +175,7 @@ Using source assets has a few advantages over having the code inside of an asset
 
 #### Non-argument dependencies
 
-Alternatively, you can define dependencies where data from an upstream asset doesn’t need to be loaded by Dagster to compute the output of a downstream asset. When used, `non_argument_deps` defines the dependency between assets but doesn’t pass data through Dagster.
+Alternatively, you can define dependencies where data from an upstream asset doesn’t need to be loaded by Dagster to compute a downstream asset's output. When used, `non_argument_deps` defines the dependency between assets but doesn’t pass data through Dagster.
 
 Consider the following example:
 
@@ -236,11 +238,11 @@ graph_asset = AssetsDefinition.from_graph(store_slack_files_in_sql)
 
 **Note**: All output assets must be selected when using a graph-backed asset to create a job. Dagster will select all graph output automatically upon creating a job.
 
-#### Defining basic dependencies
+#### Defining basic dependencies for graph-backed assets
 
 The `from_graph` attribute on the `AssetsDefinition` object infers upstream and downstream asset dependencies from the graph definition provided. In the most simple case when the graph returns a singular output, Dagster infers the name of the graph to be the outputted asset key.
 
-In the example below, Dagster creates an asset with key `middle_asset` from the `middle_asset` graph. Just like assets defined via <PyObject object="asset" decorator />, each argument to the decorated graph function is an upstream asset name. `middle_asset` depends on `upstream_asset`, and `downstream_asset` depends on `middle_asset`.
+In the example below, Dagster creates an asset with key `middle_asset` from the `middle_asset` graph. Just like assets defined via <PyObject object="asset" decorator />, each argument to the decorated graph function is an upstream asset name. `middle_asset` depends on `upstream_asset`, and `downstream_asset` depends on `middle_asset`:
 
 ```python file=/concepts/assets/graph_backed_asset.py startafter=start_basic_dependencies endbefore=end_basic_dependencies
 @asset
@@ -261,7 +263,7 @@ def downstream_asset(middle_asset):
     return middle_asset + 1
 ```
 
-When your graph returns multiple outputs, Dagster infers each output name to be the outputted asset key. In the below example, `two_assets_graph` accepts `upstream_asset` and outputs two assets, `first_asset` and `second_asset`.
+When your graph returns multiple outputs, Dagster infers each output name to be the outputted asset key. In the below example, `two_assets_graph` accepts `upstream_asset` and outputs two assets, `first_asset` and `second_asset`:
 
 ```python file=/concepts/assets/graph_backed_asset.py startafter=start_basic_dependencies_2 endbefore=end_basic_dependencies_2
 @graph(out={"first_asset": GraphOut(), "second_asset": GraphOut()})
@@ -273,7 +275,7 @@ def two_assets_graph(upstream_asset):
 two_assets = AssetsDefinition.from_graph(two_assets_graph)
 ```
 
-#### Defining explicit dependencies
+#### Defining explicit dependencies for graph-backed assets
 
 You can also define dependencies for graph-backed assets explicitly via the `asset_keys_by_input_name` and `asset_keys_by_output_name` arguments to `from_graph`:
 
@@ -325,13 +327,20 @@ Refer to the [Config schema documentation](/concepts/configuration/config-schema
 
 ## Viewing and materializing assets in Dagit
 
+Once you've defined a set of assets, you can:
+
+- [Load them into Dagit](#loading-assets-into-dagit)
+- [View them in Dagit](#viewing-assets-in-dagit)
+- [Materialize an ad-hoc set of them in Dagit](#materializing-assets-in-dagit)
+- [Build a job](#building-jobs-that-materialize-assets), which materializes a fixed selection of the assets, and can be put on a schedule or sensor
+
 ### Loading assets into Dagit
 
 To view and materialize assets in Dagit, you can point it at a module that contains asset definitions or lists of asset definitions as module-level attributes:
 
     dagit -m module_with_assets
 
-If you want Dagit to contain both assets and [jobs](/concepts/ops-jobs-graphs/jobs-graphs) that target the assets, you can place the assets and jobs together inside a [repository](/concepts/repositories-workspaces/repositories).
+If you want Dagit to contain both assets and [jobs](/concepts/ops-jobs-graphs/jobs) that target the assets, you can place the assets and jobs together inside a [repository](/concepts/repositories-workspaces/repositories).
 
 ### Viewing assets in Dagit
 
@@ -342,14 +351,14 @@ If you want Dagit to contain both assets and [jobs](/concepts/ops-jobs-graphs/jo
 
 #### All assets
 
-To view a list of all your assets, click **Assets** in the top-right corner of the page. This opens the Asset Catalog:
+To view a list of all your assets, click **Assets** in the top-right corner of the page. This opens the Assets page:
 
 <img
-alt="Asset Catalog"
+alt="Assets page"
 src="/images/concepts/assets/software-defined-assets/catalog.png"
 />
 
-#### Asset details
+#### Asset Details
 
 View the Asset Details page for an asset by clicking on its name:
 
@@ -401,39 +410,18 @@ You can resolve this issue by re-materializing the downstream asset. This will r
 
 ### Materializing assets in Dagit
 
-There are a couple ways in Dagit to launch a run that materializes assets:
+In Dagit, you can launch runs that materialize assets by:
 
-- Navigate to the Asset Details Page for the asset and click the "Materialize" button in the upper right corner.
-- In the graph view of the Asset Catalog page, click the "Materialize" button in the upper right corner. You can click on assets to collect a subset to materialize.
+- Navigating to the [**Asset Details** page](#asset-details) for the asset and click the **Materialize** button in the upper right corner.
+- Navigating to the graph view of the [**Assets** page](#all-assets) and clicking the **Materialize** button in the upper right corner. You can also click on assets to collect a subset to materialize.
+
+---
 
 ## Building jobs that materialize assets
 
-You can define a job that materializes a fixed selection of assets each time it runs. Multiple jobs within the same repository can target overlapping sets of assets.
+Jobs that target assets can materialize a fixed selection of assets each time they run and be placed on schedules and sensors. Refer to the [Jobs documentation](/concepts/ops-jobs-graphs/jobs#from-software-defined-assets) for more info and examples.
 
-```python file=/concepts/assets/build_job.py startafter=start_marker endbefore=end_marker
-from dagster import asset, define_asset_job, repository
-
-
-@asset
-def asset1():
-    return [1, 2, 3]
-
-
-@asset
-def asset2(asset1):
-    return asset1 + [4]
-
-
-all_assets_job = define_asset_job(name="all_assets_job")
-asset1_job = define_asset_job(name="asset1_job", selection="asset1")
-
-
-@repository
-def repo():
-    return [asset1, asset2, all_assets_job, asset1_job]
-```
-
-Like regular jobs, asset jobs can be placed on [schedules](/concepts/partitions-schedules-sensors/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors).
+---
 
 ---
 
@@ -504,7 +492,7 @@ src="/images/concepts/assets/asset-group-dependency-graph.png"
 
 ## Testing
 
-When writing unit tests, you can treat the function decorated by `@asset` as a regular python function.
+When writing unit tests, you can treat the function decorated by `@asset` as a regular Python function.
 
 Consider a simple asset with no upstream dependencies:
 
@@ -514,7 +502,7 @@ def my_simple_asset():
     return [1, 2, 3]
 ```
 
-When writing a unit test, you can directly invoke the decorated function.
+When writing a unit test, you can directly invoke the decorated function:
 
 ```python file=/concepts/assets/asset_testing.py startafter=start_test_simple_asset endbefore=end_test_simple_asset
 def test_my_simple_asset():
@@ -530,7 +518,7 @@ def more_complex_asset(my_simple_asset):
     return my_simple_asset + [4, 5, 6]
 ```
 
-You can manually provide values for those dependencies in your unit test. This allows you to test assets in isolation from one another.
+You can manually provide values for those dependencies in your unit test. This allows you to test assets in isolation from one another:
 
 ```python file=/concepts/assets/asset_testing.py startafter=start_test_more_complex_asset endbefore=end_test_more_complex_asset
 def test_more_complex_asset():
@@ -548,7 +536,7 @@ def uses_context(context):
     return context.resources.foo
 ```
 
-When writing a unit test, use <PyObject object="build_op_context" /> to mock the `context` and provide values for testing.
+When writing a unit test, use <PyObject object="build_op_context" /> to mock the `context` and provide values for testing:
 
 ```python file=/concepts/assets/asset_testing.py startafter=start_test_with_context_asset endbefore=end_test_with_context_asset
 def test_uses_context():
@@ -557,7 +545,12 @@ def test_uses_context():
     assert result == "bar"
 ```
 
+---
+
 ## Examples
+
+- [Multi-component asset keys](#multi-component-asset-keys)
+- [Attaching metadata](#attaching-metadata)
 
 ### Multi-component asset keys
 
@@ -589,23 +582,29 @@ def cereal_asset():
 
 Asset metadata can be viewed in Dagit on the [Asset Detail page](/concepts/dagit/dagit#asset-details).
 
-## Further Reading
+---
+
+## Further reading
 
 Interested in learning more about software-defined assets and working through a more complex example? Check out our [guide on software-defined assets](/guides/dagster/software-defined-assets) and our [example project](https://github.com/dagster-io/dagster/tree/master/examples/modern_data_stack_assets) that integrates software-defined assets with other Modern Data Stack tools.
 
+---
+
 ## See it in action
 
-For more examples of software-defined assets, check out the following in our [SDA Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news_assets):
+For more examples of software-defined assets, check out these examples:
 
-- [Defining an asset](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/activity_analytics/assets/activity_forecast.py)
-- [Loading assets from dbt](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/activity_analytics/\__init\_\_.py)
-- [Per-asset IO manager](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/core/assets/items.py)
-- [Partitioned assets](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/core/assets/items.py)
+- In the [SDA Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news_assets):
 
-Our [Modern Data Stack example](https://github.com/dagster-io/dagster/tree/master/examples/modern_data_stack_assets) also covers:
+  - [Defining an asset](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/activity_analytics/assets/activity_forecast.py)
+  - [Loading assets from dbt](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/activity_analytics/\__init\_\_.py)
+  - [Per-asset IO manager](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/core/assets/items.py)
+  - [Partitioned assets](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/core/assets/items.py)
 
-- [Defining assets](https://github.com/dagster-io/dagster/blob/master/examples/modern_data_stack_assets/modern_data_stack_assets/assets.py)
-- [Loading assets from dbt](https://github.com/dagster-io/dagster/blob/master/examples/modern_data_stack_assets/modern_data_stack_assets/assets.py)
-- [Loading assets from Airbyte](https://github.com/dagster-io/dagster/blob/master/examples/modern_data_stack_assets/modern_data_stack_assets/assets.py)
+- In the [Modern Data Stack example](https://github.com/dagster-io/dagster/tree/master/examples/modern_data_stack_assets):
 
-Our [Bollinger example](https://github.com/dagster-io/dagster/tree/master/examples/bollinger) also covers software-defined assets
+  - [Defining assets](https://github.com/dagster-io/dagster/blob/master/examples/modern_data_stack_assets/modern_data_stack_assets/assets.py)
+  - [Loading assets from dbt](https://github.com/dagster-io/dagster/blob/master/examples/modern_data_stack_assets/modern_data_stack_assets/assets.py)
+  - [Loading assets from Airbyte](https://github.com/dagster-io/dagster/blob/master/examples/modern_data_stack_assets/modern_data_stack_assets/assets.py)
+
+- The [Bollinger example](https://github.com/dagster-io/dagster/tree/master/examples/bollinger)

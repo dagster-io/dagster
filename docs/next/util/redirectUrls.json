@@ -536,7 +536,7 @@
   },
   {
     "source": "/concepts/solids-pipelines/pipelines",
-    "destination": "/concepts/ops-jobs-graphs/jobs-graphs",
+    "destination": "/concepts/ops-jobs-graphs/jobs",
     "permanent": true
   },
   {
