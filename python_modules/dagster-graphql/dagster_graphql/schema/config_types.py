@@ -1,4 +1,3 @@
-# pylint: disable=missing-graphene-docstring
 from typing import List, Optional, Union
 
 import graphene
