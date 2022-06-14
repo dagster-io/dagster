@@ -12,7 +12,7 @@ def model_func(x, a, b):
 
 
 @asset(
-    ins={"daily_order_summary": AssetIn(key_prefix=["duckdb", "dbt_schema"])},
+    ins={"daily_order_summary": AssetIn(key_prefix=["duckdb", "dbt"])},
     compute_kind="ml_tool",
     io_manager_key="model_io_manager",
 )
@@ -29,10 +29,11 @@ def order_forecast_model(daily_order_summary: pd.DataFrame) -> Any:
 '''
 @asset(
     ins={
-        "daily_order_summary": AssetIn(key_prefix=["duckdb", "analytics"]),
+        "daily_order_summary": AssetIn(key_prefix=["duckdb", "dbt"]),
         "order_forecast_model": AssetIn(),
     },
     compute_kind="ml",
+    key_prefix=["duckdb", "forecasting"],
 )
 def predicted_orders(
     daily_order_summary: pd.DataFrame, order_forecast_model: Tuple[float, float]

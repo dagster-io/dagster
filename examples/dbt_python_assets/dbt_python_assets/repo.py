@@ -42,11 +42,25 @@ forecasting_assets = load_assets_from_package_module(
     group_name="forecasting",
 )
 
+from dagster import asset, AssetIn
+
+
+@asset(
+    ins={
+        "daily_order_summary": AssetIn(key_prefix=["duckdb", "dbt"]),
+    },
+    group_name="analytics",
+    key_prefix=["s3", "analysis_bucket"],
+    compute_kind="python",
+)
+def report(daily_order_summary):
+    pass
+
 
 @repository
 def example_repo():
     return with_resources(
-        dbt_assets + raw_data_assets + forecasting_assets,
+        dbt_assets + raw_data_assets + forecasting_assets + [report],
         resource_defs={
             "io_manager": duckdb_io_manager.configured(
                 {"duckdb_path": os.path.join(DBT_PROJECT_DIR, "example.duckdb")}
@@ -57,6 +71,6 @@ def example_repo():
             ),
         },
     ) + [
-        define_asset_job("everything_everywhere", selection="*"),
-        define_asset_job("refresh_forecast_model", selection="*order_forecast_model"),
+        define_asset_job("everything_everywhere_job", selection="*"),
+        define_asset_job("refresh_forecast_model_job", selection="*order_forecast_model"),
     ]
