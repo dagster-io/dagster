@@ -9,6 +9,8 @@ from dagster import (
     Output,
     Out,
     op,
+    io_manager,
+    IOManager,
     graph,
 )
 
@@ -130,7 +132,9 @@ def my_foo_resource(context):
 
 
 def test_op_resource_def():
-    context = build_op_context(resources={"foo": my_foo_resource.configured({"my_str": "bar"})})
+    context = build_op_context(
+        resources={"foo": my_foo_resource.configured({"my_str": "bar"})}
+    )
     assert op_requires_foo(context) == "found bar"
 
 
@@ -291,3 +295,100 @@ def test_asset_mock_service():
 
 
 # end_test_resource_override_asset
+
+
+def get_data_from_source():
+    pass
+
+
+def extract_structured_data(_):
+    pass
+
+
+# start_materialize_asset
+from dagster import asset, materialize_in_process
+
+
+@asset
+def data_source():
+    return get_data_from_source()
+
+
+@asset
+def structured_data(data_source):
+    return extract_structured_data(data_source)
+
+
+# An example unit test using materialize_in_process
+def test_data_assets():
+    result = materialize_in_process([data_source, structured_data])
+    assert result.success
+    # Materialized objects can be accessed in terms of the underlying op
+    materialized_data = result.output_for_node("structured_data")
+    ...
+
+
+# end_materialize_asset
+
+
+@io_manager
+def source_io_manager():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return "foo"
+
+    return MyIOManager()
+
+
+# start_materialize_source_asset
+from dagster import asset, SourceAsset, materialize_in_process, AssetKey
+
+the_source = SourceAsset(
+    key=AssetKey("repository_a_asset"), io_manager_def=source_io_manager
+)
+
+
+@asset
+def repository_b_asset(repository_a_asset):
+    ...
+
+
+@asset
+def other_repository_b_asset(repository_a_asset):
+    ...
+
+
+def test_repository_b_assets():
+    result = materialize_in_process(
+        [the_source, repository_b_asset, other_repository_b_asset]
+    )
+    assert result.success
+    ...
+
+
+# end_materialize_source_asset
+
+# start_materialize_resources
+from dagster import asset, resource, materialize_in_process
+import mock
+
+
+@asset(required_resource_keys={"service"})
+def asset_uses_service(context):
+    service = context.resources.service
+    ...
+
+
+def test_asset_uses_service():
+    # Mock objects can be provided directly.
+    result = materialize_in_process(
+        [asset_uses_service], resources={"service": mock.MagicMock()}
+    )
+    assert result.success
+    ...
+
+
+# end_materialize_resources
