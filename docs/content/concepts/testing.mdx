@@ -13,7 +13,7 @@ Dagster enables you to build testable and maintainable data applications. It pro
 | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
 | <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts.          |
 | <PyObject object="build_op_context"  />                            | A method to construct an `OpExecutionContext`, typically to provide to the invocation of an op or asset for testing. |
-| <PyObject object="materialize_in_process"  />                      | Ephemerally materializes a provided list of software defined assets for testing.                                     |
+| <PyObject object="materialize_to_memory"  />                       | Ephemerally materializes a provided list of software defined assets for testing.                                     |
 
 ## Overview
 
@@ -202,9 +202,9 @@ def test_op_resource_def():
 
 Note that when directly invoking ops, io managers specified on inputs and outputs are not used.
 
-### Testing assets
+### Testing software-defined assets
 
-Similar to ops, <PyObject object="asset" decorator /> decorated functions can be directly invoked. Doing so invokes the underlying op computation.
+Similar to ops, <PyObject object="asset" decorator />-decorated functions can be directly invoked. Doing so invokes the underlying op computation.
 
 A basic asset, with no dependencies:
 
@@ -222,7 +222,7 @@ def test_basic_asset():
     assert basic_asset() == 5
 ```
 
-An asset with input dependencies:
+An asset with dependencies:
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_input_asset endbefore=end_test_input_asset
 from dagster import asset
@@ -266,40 +266,14 @@ def test_asset_with_service():
     ...
 ```
 
-Resources provided on <PyObject object="build_op_context" /> will override any resources provided directly on the asset. This means you can avoid using production resources when testing.
+Note that resources provided on <PyObject object="build_op_context" /> should not conflict with the resources provided directly on the asset. If a resource key is provided both to the context and the asset, an error will occur.
 
-```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_resource_override_asset endbefore=end_test_resource_override_asset
-from dagster import resource, asset, build_op_context
+### Testing multiple software-defined assets together
 
-
-@resource
-def prod_resource():
-    return "i am prod"
-
-
-# asset_uses_service has the prod resource hardcoded to the definition.
-@asset(resource_defs={"service": prod_resource})
-def asset_uses_service(context):
-    service = context.resources.service
-    ...
-
-
-def test_asset_mock_service():
-    @resource
-    def mock_resource():
-        return "i am mock"
-
-    # When testing, we override prod_resource with mock_resource.
-    result = asset_uses_service(build_op_context(resources={"service": mock_resource}))
-    ...
-```
-
-### Testing multiple assets together
-
-You may want to test multiple assets together, to more closely mirror actual materialization. This can be done using the <PyObject object="materialize_in_process" /> method, which loads the materialized results of assets into memory:
+You may want to test multiple assets together, to more closely mirror actual materialization. This can be done using the <PyObject object="materialize_to_memory" /> method, which loads the materialized results of assets into memory:
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_materialize_asset endbefore=end_materialize_asset
-from dagster import asset, materialize_in_process
+from dagster import asset, materialize_to_memory
 
 
 @asset
@@ -312,9 +286,9 @@ def structured_data(data_source):
     return extract_structured_data(data_source)
 
 
-# An example unit test using materialize_in_process
+# An example unit test using materialize_to_memory
 def test_data_assets():
-    result = materialize_in_process([data_source, structured_data])
+    result = materialize_to_memory([data_source, structured_data])
     assert result.success
     # Materialized objects can be accessed in terms of the underlying op
     materialized_data = result.output_for_node("structured_data")
@@ -324,7 +298,7 @@ def test_data_assets():
 In addition to providing <PyObject object="AssetsDefinition" /> objects, <PyObject object="SourceAsset" /> objects can also be provided:
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_materialize_source_asset endbefore=end_materialize_source_asset
-from dagster import asset, SourceAsset, materialize_in_process, AssetKey
+from dagster import asset, SourceAsset, materialize_to_memory, AssetKey
 
 the_source = SourceAsset(
     key=AssetKey("repository_a_asset"), io_manager_def=source_io_manager
@@ -342,30 +316,30 @@ def other_repository_b_asset(repository_a_asset):
 
 
 def test_repository_b_assets():
-    result = materialize_in_process(
+    result = materialize_to_memory(
         [the_source, repository_b_asset, other_repository_b_asset]
     )
     assert result.success
     ...
 ```
 
-Mock resources can be provided directly using `materialize_in_process`:
+Mock resources can be provided directly using `materialize_to_memory`:
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_materialize_resources endbefore=end_materialize_resources
-from dagster import asset, resource, materialize_in_process
+from dagster import asset, resource, materialize_to_memory
 import mock
 
 
 @asset(required_resource_keys={"service"})
-def asset_uses_service(context):
+def asset_requires_service(context):
     service = context.resources.service
     ...
 
 
-def test_asset_uses_service():
+def test_asset_requires_service():
     # Mock objects can be provided directly.
-    result = materialize_in_process(
-        [asset_uses_service], resources={"service": mock.MagicMock()}
+    result = materialize_to_memory(
+        [asset_requires_service], resources={"service": mock.MagicMock()}
     )
     assert result.success
     ...

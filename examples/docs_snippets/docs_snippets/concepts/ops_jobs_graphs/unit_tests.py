@@ -132,7 +132,9 @@ def my_foo_resource(context):
 
 
 def test_op_resource_def():
-    context = build_op_context(resources={"foo": my_foo_resource.configured({"my_str": "bar"})})
+    context = build_op_context(
+        resources={"foo": my_foo_resource.configured({"my_str": "bar"})}
+    )
     assert op_requires_foo(context) == "found bar"
 
 
@@ -266,34 +268,6 @@ def test_asset_with_service():
 
 # end_test_resource_asset
 
-# start_test_resource_override_asset
-from dagster import resource, asset, build_op_context
-
-
-@resource
-def prod_resource():
-    return "i am prod"
-
-
-# asset_uses_service has the prod resource hardcoded to the definition.
-@asset(resource_defs={"service": prod_resource})
-def asset_uses_service(context):
-    service = context.resources.service
-    ...
-
-
-def test_asset_mock_service():
-    @resource
-    def mock_resource():
-        return "i am mock"
-
-    # When testing, we override prod_resource with mock_resource.
-    result = asset_uses_service(build_op_context(resources={"service": mock_resource}))
-    ...
-
-
-# end_test_resource_override_asset
-
 
 def get_data_from_source():
     pass
@@ -304,7 +278,7 @@ def extract_structured_data(_):
 
 
 # start_materialize_asset
-from dagster import asset, materialize_in_process
+from dagster import asset, materialize_to_memory
 
 
 @asset
@@ -317,9 +291,9 @@ def structured_data(data_source):
     return extract_structured_data(data_source)
 
 
-# An example unit test using materialize_in_process
+# An example unit test using materialize_to_memory
 def test_data_assets():
-    result = materialize_in_process([data_source, structured_data])
+    result = materialize_to_memory([data_source, structured_data])
     assert result.success
     # Materialized objects can be accessed in terms of the underlying op
     materialized_data = result.output_for_node("structured_data")
@@ -342,9 +316,11 @@ def source_io_manager():
 
 
 # start_materialize_source_asset
-from dagster import asset, SourceAsset, materialize_in_process, AssetKey
+from dagster import asset, SourceAsset, materialize_to_memory, AssetKey
 
-the_source = SourceAsset(key=AssetKey("repository_a_asset"), io_manager_def=source_io_manager)
+the_source = SourceAsset(
+    key=AssetKey("repository_a_asset"), io_manager_def=source_io_manager
+)
 
 
 @asset
@@ -358,7 +334,9 @@ def other_repository_b_asset(repository_a_asset):
 
 
 def test_repository_b_assets():
-    result = materialize_in_process([the_source, repository_b_asset, other_repository_b_asset])
+    result = materialize_to_memory(
+        [the_source, repository_b_asset, other_repository_b_asset]
+    )
     assert result.success
     ...
 
@@ -366,7 +344,7 @@ def test_repository_b_assets():
 # end_materialize_source_asset
 
 # start_materialize_resources
-from dagster import asset, resource, materialize_in_process
+from dagster import asset, resource, materialize_to_memory
 import mock
 
 
@@ -378,7 +356,9 @@ def asset_requires_service(context):
 
 def test_asset_requires_service():
     # Mock objects can be provided directly.
-    result = materialize_in_process([asset_requires_service], resources={"service": mock.MagicMock()})
+    result = materialize_to_memory(
+        [asset_requires_service], resources={"service": mock.MagicMock()}
+    )
     assert result.success
     ...
 
