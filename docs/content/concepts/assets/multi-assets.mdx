@@ -47,24 +47,6 @@ def my_function():
 
 By default, the names of the outputs will be used to form the asset keys of the multi-asset. The decorated function will be used to create the op for these assets and must emit an output for each of them. In this case, we can emit multiple outputs by returning a tuple of values, one for each asset.
 
-### Customizing how assets are materialized with IO managers
-
-As with regular assets, you can customize how each asset is materialized with [IO managers](/concepts/io-management/io-managers). To do this, specify an `io_manager_key` on each output of the multi-asset.
-
-```python file=/concepts/assets/multi_assets.py startafter=start_io_manager_multi_asset endbefore=end_io_manager_multi_asset
-from dagster import Out, multi_asset
-
-
-@multi_asset(
-    outs={
-        "s3_asset": Out(io_manager_key="s3_io_manager"),
-        "adls_asset": Out(io_manager_key="adls2_io_manager"),
-    },
-)
-def my_assets():
-    return "store_me_on_s3", "store_me_on_adls2"
-```
-
 ### Subsetting multi-assets
 
 By default, it is assumed that the computation inside of a multi-asset will always produce the contents all of the associated assets. This means that attempting to execute a set of assets that produces some, but not all, of the assets defined by a given multi-asset will result in an error.

@@ -2,15 +2,20 @@ import pytest
 
 from dagster import (
     AssetKey,
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
     IOManager,
     ResourceDefinition,
+    build_op_context,
     io_manager,
     mem_io_manager,
     resource,
 )
 from dagster.core.asset_defs import AssetsDefinition, SourceAsset, asset, build_assets_job
+from dagster.core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+)
 from dagster.core.execution.with_resources import with_resources
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
 
@@ -344,3 +349,186 @@ def test_asset_circular_resource_dependency():
         DagsterInvariantViolationError, match='Resource key "bar" transitively depends on itself.'
     ):
         with_resources([the_asset], resource_defs={"foo": foo, "bar": bar})
+
+
+def get_resource_and_asset_for_config_tests():
+    @asset(required_resource_keys={"foo", "bar"})
+    def the_asset(context):
+        assert context.resources.foo == "blah"
+        assert context.resources.bar == "baz"
+
+    @resource(config_schema=str)
+    def the_resource(context):
+        return context.resource_config
+
+    return the_asset, the_resource
+
+
+def test_config():
+    the_asset, the_resource = get_resource_and_asset_for_config_tests()
+
+    transformed_asset = with_resources(
+        [the_asset],
+        resource_defs={"foo": the_resource, "bar": the_resource},
+        resource_config_by_key={"foo": {"config": "blah"}, "bar": {"config": "baz"}},
+    )[0]
+
+    transformed_asset(build_op_context())
+
+
+def test_config_not_satisfied():
+    the_asset, the_resource = get_resource_and_asset_for_config_tests()
+
+    transformed_asset = with_resources(
+        [the_asset],
+        resource_defs={"foo": the_resource, "bar": the_resource},
+    )[0]
+
+    result = build_assets_job(
+        "test",
+        [transformed_asset],
+        config={"resources": {"foo": {"config": "blah"}, "bar": {"config": "baz"}}},
+    ).execute_in_process()
+
+    assert result.success
+
+
+def test_bad_key_provided():
+
+    the_asset, the_resource = get_resource_and_asset_for_config_tests()
+
+    transformed_asset = with_resources(
+        [the_asset],
+        resource_defs={"foo": the_resource, "bar": the_resource},
+        resource_config_by_key={
+            "foo": {"config": "blah"},
+            "bar": {"config": "baz"},
+            "bad": "whatever",
+        },
+    )[0]
+
+    transformed_asset(build_op_context())
+
+
+def test_bad_config_provided():
+    the_asset, the_resource = get_resource_and_asset_for_config_tests()
+
+    with pytest.raises(
+        DagsterInvalidConfigError, match="Error when applying config for resource with key 'foo'"
+    ):
+        with_resources(
+            [the_asset],
+            resource_defs={"foo": the_resource, "bar": the_resource},
+            resource_config_by_key={
+                "foo": {"config": object()},
+            },
+        )
+
+    with pytest.raises(
+        DagsterInvalidInvocationError, match="Error with config for resource key 'foo'"
+    ):
+        with_resources(
+            [the_asset],
+            resource_defs={"foo": the_resource, "bar": the_resource},
+            resource_config_by_key={
+                "foo": "bad",
+            },
+        )
+
+
+def test_overlapping_io_manager_asset():
+    @io_manager
+    def the_io_manager():
+        pass
+
+    @asset(io_manager_def=the_io_manager)
+    def the_asset():
+        pass
+
+    # Allow a default io manager to be passed in without causing an error
+    with_resources([the_asset], resource_defs={"io_manager": mem_io_manager})
+
+    # Changing the specific affected key causes an error
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=r"AssetsDefinition with key \[\"the_asset\"\] has conflicting resource definitions with provided resources for the following keys: the_asset__io_manager. Either remove the existing resources from the asset or change the resource keys so that they don't overlap.",
+    ):
+        with_resources([the_asset], resource_defs={"the_asset__io_manager": mem_io_manager})
+
+
+def test_overlapping_resources_asset():
+    foo_resource = ResourceDefinition.hardcoded_resource("blah")
+
+    @asset(resource_defs={"foo": foo_resource})
+    def the_asset():
+        pass
+
+    # Even if resource defs match by reference equality, we error
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=r"AssetsDefinition with key \[\"the_asset\"\] has conflicting resource definitions with provided resources for the following keys: foo. Either remove the existing resources from the asset or change the resource keys so that they don't overlap.",
+    ):
+        with_resources(
+            [the_asset],
+            resource_defs={"foo": foo_resource},
+        )
+
+    # Resource def doesn't match by reference equality, error
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=r"AssetsDefinition with key \[\"the_asset\"\] has conflicting resource definitions with provided resources for the following keys: foo. Either remove the existing resources from the asset or change the resource keys so that they don't overlap.",
+    ):
+        with_resources(
+            [the_asset], resource_defs={"foo": ResourceDefinition.hardcoded_resource("diff_ref")}
+        )
+
+
+def test_overlapping_io_manager_source_asset():
+    @io_manager
+    def the_io_manager():
+        pass
+
+    the_asset = SourceAsset(key=AssetKey("the_asset"), io_manager_def=the_io_manager)
+
+    # Allow a default io manager to be passed in without causing an error
+    with_resources([the_asset], resource_defs={"io_manager": mem_io_manager})
+
+    # Changing the specific affected key causes an error
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=r"SourceAsset with key AssetKey\(\['the_asset'\]\) has conflicting resource definitions with provided resources for the following keys: \['the_asset__io_manager'\]. Either remove the existing resources from the asset or change the resource keys so that they don't overlap.",
+    ):
+        with_resources([the_asset], resource_defs={"the_asset__io_manager": mem_io_manager})
+
+
+def test_overlapping_resources_source_asset():
+    foo_resource = ResourceDefinition.hardcoded_resource("blah")
+
+    @io_manager(required_resource_keys={"foo"})
+    def the_io_manager():
+        pass
+
+    the_asset = SourceAsset(
+        key=AssetKey("the_asset"),
+        io_manager_def=the_io_manager,
+        resource_defs={"foo": foo_resource},
+    )
+
+    # If resource defs match by reference equality, we error
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=r"SourceAsset with key AssetKey\(\['the_asset'\]\) has conflicting resource definitions with provided resources for the following keys: \['foo'\]. Either remove the existing resources from the asset or change the resource keys so that they don't overlap.",
+    ):
+        with_resources(
+            [the_asset],
+            resource_defs={"foo": foo_resource},
+        )
+
+    # Resource def doesn't match by reference equality, error
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=r"SourceAsset with key AssetKey\(\['the_asset'\]\) has conflicting resource definitions with provided resources for the following keys: \['foo'\]. Either remove the existing resources from the asset or change the resource keys so that they don't overlap.",
+    ):
+        with_resources(
+            [the_asset], resource_defs={"foo": ResourceDefinition.hardcoded_resource("diff_ref")}
+        )

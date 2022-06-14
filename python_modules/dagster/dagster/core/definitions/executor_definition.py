@@ -7,7 +7,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster.builtins import Int
 from dagster.config import Field, Selector
-from dagster.config.config_schema import ConfigSchemaType
+from dagster.config.config_schema import UserConfigSchema
 from dagster.core.definitions.configurable import (
     ConfiguredDefinitionConfigSchema,
     NamedConfigurableDefinition,
@@ -78,7 +78,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     def __init__(
         self,
         name: str,
-        config_schema: Optional[ConfigSchemaType] = None,
+        config_schema: Optional[UserConfigSchema] = None,
         requirements: Union[
             ExecutorRequirementsFunction, Optional[List[ExecutorRequirement]]
         ] = None,
@@ -178,7 +178,7 @@ def executor(name: ExecutorCreationFunction) -> ExecutorDefinition:
 @overload
 def executor(
     name: Optional[str] = ...,
-    config_schema: Optional[ConfigSchemaType] = ...,
+    config_schema: Optional[UserConfigSchema] = ...,
     requirements: Optional[Union[ExecutorRequirementsFunction, List[ExecutorRequirement]]] = ...,
 ) -> "_ExecutorDecoratorCallable":
     ...
@@ -186,7 +186,7 @@ def executor(
 
 def executor(
     name: Union[ExecutorCreationFunction, Optional[str]] = None,
-    config_schema: Optional[ConfigSchemaType] = None,
+    config_schema: Optional[UserConfigSchema] = None,
     requirements: Optional[Union[ExecutorRequirementsFunction, List[ExecutorRequirement]]] = None,
 ) -> Union[ExecutorDefinition, "_ExecutorDecoratorCallable"]:
     """Define an executor.

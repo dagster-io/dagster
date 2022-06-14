@@ -5,6 +5,7 @@ import pytest
 from dagster import (
     AssetGroup,
     AssetKey,
+    AssetOut,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
@@ -292,7 +293,7 @@ def test_missing_io_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"SourceAsset with asset key AssetKey\(\['source1'\]\) requires IO manager with key 'special_io_manager', but none was provided.",
+        match=r"io manager with key 'special_io_manager' required by SourceAsset with key \[\"source1\"\] was not provided.",
     ):
         build_assets_job(
             "a",
@@ -421,8 +422,8 @@ def test_basic_graph_asset():
         return add_one(add_one(return_one()))
 
     cool_thing_asset = AssetsDefinition(
-        asset_keys_by_input_name={},
-        asset_keys_by_output_name={"result": AssetKey("cool_thing")},
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey("cool_thing")},
         node_def=create_cool_thing,
     )
     job = build_assets_job("graph_asset_job", [cool_thing_asset])
@@ -455,8 +456,8 @@ def test_input_mapped_graph_asset():
         return combine_strings(da, db)
 
     cool_thing_asset = AssetsDefinition(
-        asset_keys_by_input_name={"a": AssetKey("a"), "b": AssetKey("b")},
-        asset_keys_by_output_name={"result": AssetKey("cool_thing")},
+        keys_by_input_name={"a": AssetKey("a"), "b": AssetKey("b")},
+        keys_by_output_name={"result": AssetKey("cool_thing")},
         node_def=create_cool_thing,
     )
 
@@ -504,8 +505,8 @@ def test_output_mapped_same_op_graph_asset():
         return out_asset2 + "one"
 
     complex_asset = AssetsDefinition(
-        asset_keys_by_input_name={"a": AssetKey("a"), "b": AssetKey("b")},
-        asset_keys_by_output_name={"o1": AssetKey("out_asset1"), "o2": AssetKey("out_asset2")},
+        keys_by_input_name={"a": AssetKey("a"), "b": AssetKey("b")},
+        keys_by_output_name={"o1": AssetKey("out_asset1"), "o2": AssetKey("out_asset2")},
         node_def=create_cool_things,
     )
 
@@ -561,8 +562,8 @@ def test_output_mapped_different_op_graph_asset():
         return out_asset2 + "one"
 
     complex_asset = AssetsDefinition(
-        asset_keys_by_input_name={"a": AssetKey("a"), "b": AssetKey("b")},
-        asset_keys_by_output_name={"o1": AssetKey("out_asset1"), "o2": AssetKey("out_asset2")},
+        keys_by_input_name={"a": AssetKey("a"), "b": AssetKey("b")},
+        keys_by_output_name={"o1": AssetKey("out_asset1"), "o2": AssetKey("out_asset2")},
         node_def=create_cool_things,
     )
 
@@ -625,24 +626,24 @@ def test_nasty_nested_graph_assets():
         return sum_plus_one(thirteen, six)
 
     eight_and_five = AssetsDefinition(
-        asset_keys_by_input_name={"zero": AssetKey("zero")},
-        asset_keys_by_output_name={"eight": AssetKey("eight"), "five": AssetKey("five")},
+        keys_by_input_name={"zero": AssetKey("zero")},
+        keys_by_output_name={"eight": AssetKey("eight"), "five": AssetKey("five")},
         node_def=create_eight_and_five,
     )
 
     thirteen_and_six = AssetsDefinition(
-        asset_keys_by_input_name={
+        keys_by_input_name={
             "eight": AssetKey("eight"),
             "five": AssetKey("five"),
             "zero": AssetKey("zero"),
         },
-        asset_keys_by_output_name={"thirteen": AssetKey("thirteen"), "six": AssetKey("six")},
+        keys_by_output_name={"thirteen": AssetKey("thirteen"), "six": AssetKey("six")},
         node_def=create_thirteen_and_six,
     )
 
     twenty = AssetsDefinition(
-        asset_keys_by_input_name={"thirteen": AssetKey("thirteen"), "six": AssetKey("six")},
-        asset_keys_by_output_name={"result": AssetKey("twenty")},
+        keys_by_input_name={"thirteen": AssetKey("thirteen"), "six": AssetKey("six")},
+        keys_by_output_name={"result": AssetKey("twenty")},
         node_def=create_twenty,
     )
 
@@ -723,11 +724,11 @@ def test_asset_def_from_graph_inputs():
 
     assets_def = AssetsDefinition.from_graph(
         graph_def=my_graph,
-        asset_keys_by_input_name={"x": AssetKey("x_asset"), "y": AssetKey("y_asset")},
+        keys_by_input_name={"x": AssetKey("x_asset"), "y": AssetKey("y_asset")},
     )
 
-    assert assets_def.asset_keys_by_input_name["x"] == AssetKey("x_asset")
-    assert assets_def.asset_keys_by_input_name["y"] == AssetKey("y_asset")
+    assert assets_def.keys_by_input_name["x"] == AssetKey("x_asset")
+    assert assets_def.keys_by_input_name["y"] == AssetKey("y_asset")
 
 
 def test_asset_def_from_graph_outputs():
@@ -745,11 +746,11 @@ def test_asset_def_from_graph_outputs():
 
     assets_def = AssetsDefinition.from_graph(
         graph_def=my_graph,
-        asset_keys_by_output_name={"y": AssetKey("y_asset"), "x": AssetKey("x_asset")},
+        keys_by_output_name={"y": AssetKey("y_asset"), "x": AssetKey("x_asset")},
     )
 
-    assert assets_def.asset_keys_by_output_name["y"] == AssetKey("y_asset")
-    assert assets_def.asset_keys_by_output_name["x"] == AssetKey("x_asset")
+    assert assets_def.keys_by_output_name["y"] == AssetKey("y_asset")
+    assert assets_def.keys_by_output_name["x"] == AssetKey("x_asset")
 
 
 def test_graph_asset_decorator_no_args():
@@ -765,9 +766,9 @@ def test_graph_asset_decorator_no_args():
         graph_def=my_graph,
     )
 
-    assert assets_def.asset_keys_by_input_name["x"] == AssetKey("x")
-    assert assets_def.asset_keys_by_input_name["y"] == AssetKey("y")
-    assert assets_def.asset_keys_by_output_name["result"] == AssetKey("my_graph")
+    assert assets_def.keys_by_input_name["x"] == AssetKey("x")
+    assert assets_def.keys_by_input_name["y"] == AssetKey("y")
+    assert assets_def.keys_by_output_name["result"] == AssetKey("my_graph")
 
 
 def test_execute_graph_asset():
@@ -783,7 +784,7 @@ def test_execute_graph_asset():
 
     assets_def = AssetsDefinition.from_graph(
         graph_def=my_graph,
-        asset_keys_by_output_name={"y": AssetKey("y_asset"), "x": AssetKey("x_asset")},
+        keys_by_output_name={"y": AssetKey("y_asset"), "x": AssetKey("x_asset")},
     )
 
     assert AssetGroup([assets_def]).build_job("abc").execute_in_process().success
@@ -848,8 +849,8 @@ def test_basic_graph():
         return out_asset2 + "one"
 
     complex_asset = AssetsDefinition(
-        asset_keys_by_input_name={},
-        asset_keys_by_output_name={"o1": AssetKey("out_asset1")},
+        keys_by_input_name={},
+        keys_by_output_name={"o1": AssetKey("out_asset1")},
         node_def=thing,
     )
 
@@ -886,8 +887,8 @@ def test_hanging_op_graph():
         return {"o1": o1, "o2": o2}
 
     complex_asset = AssetsDefinition(
-        asset_keys_by_input_name={},
-        asset_keys_by_output_name={"o1": AssetKey("out_asset1"), "o2": AssetKey("out_asset2")},
+        keys_by_input_name={},
+        keys_by_output_name={"o1": AssetKey("out_asset1"), "o2": AssetKey("out_asset2")},
         node_def=thing,
     )
     job = build_assets_job("graph_asset_job", [complex_asset])
@@ -929,8 +930,8 @@ def test_nested_graph():
         return o1
 
     thing_asset = AssetsDefinition(
-        asset_keys_by_input_name={},
-        asset_keys_by_output_name={"o1": AssetKey("thing")},
+        keys_by_input_name={},
+        keys_by_output_name={"o1": AssetKey("thing")},
         node_def=thing,
     )
 
@@ -971,8 +972,8 @@ def test_asset_in_nested_graph():
         return (o1, o3)
 
     thing_asset = AssetsDefinition(
-        asset_keys_by_input_name={},
-        asset_keys_by_output_name={"o1": AssetKey("thing"), "o3": AssetKey("thing_2")},
+        keys_by_input_name={},
+        keys_by_output_name={"o1": AssetKey("thing"), "o3": AssetKey("thing_2")},
         node_def=thing,
     )
 
@@ -1026,8 +1027,8 @@ def test_twice_nested_graph():
         return "foo"
 
     thing_asset = AssetsDefinition(
-        asset_keys_by_input_name={},
-        asset_keys_by_output_name={"n1": AssetKey("thing"), "n2": AssetKey("thing_2")},
+        keys_by_input_name={},
+        keys_by_output_name={"n1": AssetKey("thing"), "n2": AssetKey("thing_2")},
         node_def=outer_thing,
     )
 
@@ -1071,16 +1072,16 @@ def test_internal_asset_deps_assets():
         return (o1, o2)
 
     thing_asset = AssetsDefinition(
-        asset_keys_by_input_name={},
-        asset_keys_by_output_name={"o1": AssetKey("thing"), "o2": AssetKey("thing_2")},
+        keys_by_input_name={},
+        keys_by_output_name={"o1": AssetKey("thing"), "o2": AssetKey("thing_2")},
         node_def=thing,
         asset_deps={AssetKey("thing"): set(), AssetKey("thing_2"): {AssetKey("thing")}},
     )
 
     @multi_asset(
         outs={
-            "my_out_name": Out(metadata={"foo": "bar"}),
-            "my_other_out_name": Out(metadata={"bar": "foo"}),
+            "my_out_name": AssetOut(metadata={"foo": "bar"}),
+            "my_other_out_name": AssetOut(metadata={"bar": "foo"}),
         },
         internal_asset_deps={
             "my_out_name": {AssetKey("my_other_out_name")},
@@ -1109,7 +1110,9 @@ def test_internal_asset_deps_assets():
     }
 
 
-@multi_asset(outs={"a": Out(is_required=False), "b": Out(is_required=False)}, can_subset=True)
+@multi_asset(
+    outs={"a": AssetOut(is_required=False), "b": AssetOut(is_required=False)}, can_subset=True
+)
 def ab(context, foo):
     if "a" in context.selected_output_names:
         yield Output(foo + 1, "a")
@@ -1592,7 +1595,7 @@ def test_transitive_io_manager_dep_not_provided():
         pass
 
     with pytest.raises(
-        DagsterInvariantViolationError,
-        match="Resource with key 'foo' required by resource with key 'my_source_asset__io_manager', but not provided.",
+        DagsterInvalidDefinitionError,
+        match="resource with key 'foo' required by resource with key 'my_source_asset__io_manager' was not provided.",
     ):
         build_assets_job(name="test", assets=[my_derived_asset], source_assets=[my_source_asset])

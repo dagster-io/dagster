@@ -12,6 +12,7 @@ from dagster.core.definitions import (
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
+from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.core.execution.context.compute import OpExecutionContext
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import deprecation_warning
@@ -20,6 +21,7 @@ from ..definitions.resource_requirement import (
     ResourceAddable,
     ResourceRequirement,
     ensure_requirements_satisfied,
+    get_resource_key_conflicts,
 )
 from .partition_mapping import PartitionMapping
 from .source_asset import SourceAsset
@@ -28,8 +30,8 @@ from .source_asset import SourceAsset
 class AssetsDefinition(ResourceAddable):
     def __init__(
         self,
-        asset_keys_by_input_name: Mapping[str, AssetKey],
-        asset_keys_by_output_name: Mapping[str, AssetKey],
+        keys_by_input_name: Mapping[str, AssetKey],
+        keys_by_output_name: Mapping[str, AssetKey],
         node_def: NodeDefinition,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]] = None,
@@ -37,19 +39,19 @@ class AssetsDefinition(ResourceAddable):
         selected_asset_keys: Optional[AbstractSet[AssetKey]] = None,
         can_subset: bool = False,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        group_names: Optional[Mapping[AssetKey, str]] = None,
+        group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         # if adding new fields, make sure to handle them in the with_prefix_or_group method
     ):
         self._node_def = node_def
-        self._asset_keys_by_input_name = check.dict_param(
-            asset_keys_by_input_name,
-            "asset_keys_by_input_name",
+        self._keys_by_input_name = check.dict_param(
+            keys_by_input_name,
+            "keys_by_input_name",
             key_type=str,
             value_type=AssetKey,
         )
-        self._asset_keys_by_output_name = check.dict_param(
-            asset_keys_by_output_name,
-            "asset_keys_by_output_name",
+        self._keys_by_output_name = check.dict_param(
+            keys_by_output_name,
+            "keys_by_output_name",
             key_type=str,
             value_type=AssetKey,
         )
@@ -58,10 +60,9 @@ class AssetsDefinition(ResourceAddable):
         self._partition_mappings = partition_mappings or {}
 
         # if not specified assume all output assets depend on all input assets
-        all_asset_keys = set(asset_keys_by_output_name.values())
+        all_asset_keys = set(keys_by_output_name.values())
         self._asset_deps = asset_deps or {
-            out_asset_key: set(asset_keys_by_input_name.values())
-            for out_asset_key in all_asset_keys
+            out_asset_key: set(keys_by_input_name.values()) for out_asset_key in all_asset_keys
         }
         check.invariant(
             set(self._asset_deps.keys()) == all_asset_keys,
@@ -72,12 +73,16 @@ class AssetsDefinition(ResourceAddable):
         )
         self._resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
 
-        group_names = check.mapping_param(group_names, "group_names") if group_names else {}
-        self._group_names = {}
+        group_names_by_key = (
+            check.mapping_param(group_names_by_key, "group_names_by_key")
+            if group_names_by_key
+            else {}
+        )
+        self._group_names_by_key = {}
         # assets that don't have a group name get a DEFAULT_GROUP_NAME
         for key in all_asset_keys:
-            group_name = group_names.get(key)
-            self._group_names[key] = validate_group_name(group_name)
+            group_name = group_names_by_key.get(key)
+            self._group_names_by_key[key] = validate_group_name(group_name)
 
         if selected_asset_keys is not None:
             self._selected_asset_keys = selected_asset_keys
@@ -87,7 +92,7 @@ class AssetsDefinition(ResourceAddable):
 
         self._metadata_by_asset_key = {
             asset_key: node_def.resolve_output_to_origin(output_name, None)[0].metadata
-            for output_name, asset_key in asset_keys_by_output_name.items()
+            for output_name, asset_key in keys_by_output_name.items()
         }
 
     def __call__(self, *args, **kwargs):
@@ -121,8 +126,8 @@ class AssetsDefinition(ResourceAddable):
     @staticmethod
     def from_graph(
         graph_def: GraphDefinition,
-        asset_keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
-        asset_keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
+        keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
+        keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
     ) -> "AssetsDefinition":
@@ -131,10 +136,10 @@ class AssetsDefinition(ResourceAddable):
 
         Args:
             graph_def (GraphDefinition): The GraphDefinition that is an asset.
-            asset_keys_by_input_name (Optional[Mapping[str, AssetKey]]): A mapping of the input
+            keys_by_input_name (Optional[Mapping[str, AssetKey]]): A mapping of the input
                 names of the decorated graph to their corresponding asset keys. If not provided,
                 the input asset keys will be created from the graph input names.
-            asset_keys_by_output_name (Optional[Mapping[str, AssetKey]]): A mapping of the output
+            keys_by_output_name (Optional[Mapping[str, AssetKey]]): A mapping of the output
                 names of the decorated graph to their corresponding asset keys. If not provided,
                 the output asset keys will be created from the graph output names.
             internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
@@ -146,12 +151,12 @@ class AssetsDefinition(ResourceAddable):
                 compose the assets.
         """
         graph_def = check.inst_param(graph_def, "graph_def", GraphDefinition)
-        asset_keys_by_input_name = check.opt_dict_param(
-            asset_keys_by_input_name, "asset_keys_by_input_name", key_type=str, value_type=AssetKey
+        keys_by_input_name = check.opt_dict_param(
+            keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
         )
-        asset_keys_by_output_name = check.opt_dict_param(
-            asset_keys_by_output_name,
-            "asset_keys_by_output_name",
+        keys_by_output_name = check.opt_dict_param(
+            keys_by_output_name,
+            "keys_by_output_name",
             key_type=str,
             value_type=AssetKey,
         )
@@ -163,19 +168,17 @@ class AssetsDefinition(ResourceAddable):
         if internal_asset_deps:
             for output_name, asset_keys in internal_asset_deps.items():
                 check.invariant(
-                    output_name in asset_keys_by_output_name,
+                    output_name in keys_by_output_name,
                     f"output_name {output_name} specified in internal_asset_deps does not exist in the decorated function",
                 )
-                transformed_internal_asset_deps[asset_keys_by_output_name[output_name]] = asset_keys
+                transformed_internal_asset_deps[keys_by_output_name[output_name]] = asset_keys
 
         return AssetsDefinition(
-            asset_keys_by_input_name=_infer_asset_keys_by_input_names(
+            keys_by_input_name=_infer_keys_by_input_names(
                 graph_def,
-                asset_keys_by_input_name or {},
+                keys_by_input_name or {},
             ),
-            asset_keys_by_output_name=_infer_asset_keys_by_output_names(
-                graph_def, asset_keys_by_output_name or {}
-            ),
+            keys_by_output_name=_infer_keys_by_output_names(graph_def, keys_by_output_name or {}),
             node_def=graph_def,
             asset_deps=transformed_internal_asset_deps or None,
             partitions_def=check.opt_inst_param(
@@ -188,8 +191,8 @@ class AssetsDefinition(ResourceAddable):
         return self._can_subset
 
     @property
-    def group_names(self) -> Mapping[AssetKey, str]:
-        return self._group_names
+    def group_names_by_key(self) -> Mapping[AssetKey, str]:
+        return self._group_names_by_key
 
     @property
     def op(self) -> OpDefinition:
@@ -212,7 +215,7 @@ class AssetsDefinition(ResourceAddable):
         check.invariant(
             len(self.keys) == 1,
             "Tried to retrieve asset key from an assets definition with multiple asset keys: "
-            + ", ".join([str(ak.to_string()) for ak in self._asset_keys_by_output_name.values()]),
+            + ", ".join([str(ak.to_string()) for ak in self._keys_by_output_name.values()]),
         )
 
         return next(iter(self.keys))
@@ -243,34 +246,30 @@ class AssetsDefinition(ResourceAddable):
     def dependency_keys(self) -> Iterable[AssetKey]:
         # the input asset keys that are directly upstream of a selected asset key
         upstream_keys = set().union(*(self.asset_deps[key] for key in self.keys))
-        input_keys = set(self._asset_keys_by_input_name.values())
+        input_keys = set(self._keys_by_input_name.values())
         return upstream_keys.intersection(input_keys)
 
     @property
-    def node_asset_keys_by_output_name(self) -> Mapping[str, AssetKey]:
+    def node_keys_by_output_name(self) -> Mapping[str, AssetKey]:
         """AssetKey for each output on the underlying NodeDefinition"""
-        return self._asset_keys_by_output_name
+        return self._keys_by_output_name
 
     @property
-    def node_asset_keys_by_input_name(self) -> Mapping[str, AssetKey]:
+    def node_keys_by_input_name(self) -> Mapping[str, AssetKey]:
         """AssetKey for each input on the underlying NodeDefinition"""
-        return self._asset_keys_by_input_name
+        return self._keys_by_input_name
 
     @property
-    def asset_keys_by_output_name(self) -> Mapping[str, AssetKey]:
+    def keys_by_output_name(self) -> Mapping[str, AssetKey]:
         return {
-            name: key
-            for name, key in self.node_asset_keys_by_output_name.items()
-            if key in self.keys
+            name: key for name, key in self.node_keys_by_output_name.items() if key in self.keys
         }
 
     @property
-    def asset_keys_by_input_name(self) -> Mapping[str, AssetKey]:
+    def keys_by_input_name(self) -> Mapping[str, AssetKey]:
         upstream_keys = set().union(*(self.asset_deps[key] for key in self.keys))
         return {
-            name: key
-            for name, key in self.node_asset_keys_by_input_name.items()
-            if key in upstream_keys
+            name: key for name, key in self.node_keys_by_input_name.items() if key in upstream_keys
         }
 
     @property
@@ -294,7 +293,7 @@ class AssetsDefinition(ResourceAddable):
         self,
         output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
-        group_names: Optional[Mapping[AssetKey, str]] = None,
+        group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
     ) -> "AssetsDefinition":
         from dagster import DagsterInvalidDefinitionError
 
@@ -310,33 +309,34 @@ class AssetsDefinition(ResourceAddable):
             key_type=AssetKey,
             value_type=AssetKey,
         )
-        group_names = check.opt_dict_param(
-            group_names, "group_names", key_type=AssetKey, value_type=str
+        group_names_by_key = check.opt_dict_param(
+            group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
         )
 
         defined_group_names = [
             asset_key.to_user_string()
-            for asset_key in group_names
-            if asset_key in self.group_names and self.group_names[asset_key] != DEFAULT_GROUP_NAME
+            for asset_key in group_names_by_key
+            if asset_key in self.group_names_by_key
+            and self.group_names_by_key[asset_key] != DEFAULT_GROUP_NAME
         ]
         if defined_group_names:
             raise DagsterInvalidDefinitionError(
                 f"Group name already exists on assets {', '.join(defined_group_names)}"
             )
 
-        replaced_group_names = {
+        replaced_group_names_by_key = {
             output_asset_key_replacements.get(key, key): group_name
-            for key, group_name in self.group_names.items()
+            for key, group_name in self.group_names_by_key.items()
         }
 
         return self.__class__(
-            asset_keys_by_input_name={
+            keys_by_input_name={
                 input_name: input_asset_key_replacements.get(key, key)
-                for input_name, key in self._asset_keys_by_input_name.items()
+                for input_name, key in self._keys_by_input_name.items()
             },
-            asset_keys_by_output_name={
+            keys_by_output_name={
                 output_name: output_asset_key_replacements.get(key, key)
-                for output_name, key in self._asset_keys_by_output_name.items()
+                for output_name, key in self._keys_by_output_name.items()
             },
             node_def=self.node_def,
             partitions_def=self.partitions_def,
@@ -357,7 +357,10 @@ class AssetsDefinition(ResourceAddable):
                 output_asset_key_replacements.get(key, key) for key in self._selected_asset_keys
             },
             resource_defs=self.resource_defs,
-            group_names={**replaced_group_names, **group_names},
+            group_names_by_key={
+                **replaced_group_names_by_key,
+                **group_names_by_key,
+            },
         )
 
     def subset_for(self, selected_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
@@ -374,8 +377,8 @@ class AssetsDefinition(ResourceAddable):
         )
         return AssetsDefinition(
             # keep track of the original mapping
-            asset_keys_by_input_name=self._asset_keys_by_input_name,
-            asset_keys_by_output_name=self._asset_keys_by_output_name,
+            keys_by_input_name=self._keys_by_input_name,
+            keys_by_output_name=self._keys_by_output_name,
             # TODO: subset this properly for graph-backed-assets
             node_def=self.node_def,
             partitions_def=self.partitions_def,
@@ -384,11 +387,12 @@ class AssetsDefinition(ResourceAddable):
             can_subset=self.can_subset,
             selected_asset_keys=selected_asset_keys & self.keys,
             resource_defs=self.resource_defs,
+            group_names_by_key=self.group_names_by_key,
         )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
         result = []
-        for output_name, asset_key in self.asset_keys_by_output_name.items():
+        for output_name, asset_key in self.keys_by_output_name.items():
             # This could maybe be sped up by batching
             output_def = self.node_def.resolve_output_to_origin(
                 output_name, NodeHandle(self.node_def.name, parent=None)
@@ -401,7 +405,7 @@ class AssetsDefinition(ResourceAddable):
                     description=output_def.description,
                     resource_defs=self.resource_defs,
                     partitions_def=self.partitions_def,
-                    group_name=self.group_names[asset_key],
+                    group_name=self.group_names_by_key[asset_key],
                 )
             )
 
@@ -416,8 +420,28 @@ class AssetsDefinition(ResourceAddable):
     def required_resource_keys(self) -> Set[str]:
         return {requirement.key for requirement in self.get_resource_requirements()}
 
+    def __str__(self):
+        if len(self.asset_keys) == 1:
+            return f"AssetsDefinition with key {self.asset_key.to_string()}"
+        else:
+            asset_keys = ", ".join(
+                sorted(list([asset_key.to_string() for asset_key in self.asset_keys]))
+            )
+            return f"AssetsDefinition with keys {asset_keys}"
+
     def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
         from dagster.core.execution.resources_init import get_transitive_required_resource_keys
+
+        overlapping_keys = get_resource_key_conflicts(self.resource_defs, resource_defs)
+        if overlapping_keys:
+            overlapping_keys_str = ", ".join(sorted(list(overlapping_keys)))
+            raise DagsterInvalidInvocationError(
+                f"{str(self)} has conflicting resource "
+                "definitions with provided resources for the following keys: "
+                f"{overlapping_keys_str}. Either remove the existing "
+                "resources from the asset or change the resource keys so that "
+                "they don't overlap."
+            )
 
         merged_resource_defs = merge_dicts(resource_defs, self.resource_defs)
 
@@ -436,8 +460,8 @@ class AssetsDefinition(ResourceAddable):
         }
 
         return AssetsDefinition(
-            asset_keys_by_input_name=self._asset_keys_by_input_name,
-            asset_keys_by_output_name=self._asset_keys_by_output_name,
+            keys_by_input_name=self._keys_by_input_name,
+            keys_by_output_name=self._keys_by_output_name,
             node_def=self.node_def,
             partitions_def=self._partitions_def,
             partition_mappings=self._partition_mappings,
@@ -445,64 +469,64 @@ class AssetsDefinition(ResourceAddable):
             selected_asset_keys=self._selected_asset_keys,
             can_subset=self._can_subset,
             resource_defs=relevant_resource_defs,
-            group_names=self._group_names,
+            group_names_by_key=self.group_names_by_key,
         )
 
 
-def _infer_asset_keys_by_input_names(
-    graph_def: GraphDefinition, asset_keys_by_input_name: Mapping[str, AssetKey]
+def _infer_keys_by_input_names(
+    graph_def: GraphDefinition, keys_by_input_name: Mapping[str, AssetKey]
 ) -> Mapping[str, AssetKey]:
     all_input_names = {graph_input.definition.name for graph_input in graph_def.input_mappings}
 
-    if asset_keys_by_input_name:
+    if keys_by_input_name:
         check.invariant(
-            set(asset_keys_by_input_name.keys()) == all_input_names,
-            "The set of input names keys specified in the asset_keys_by_input_name argument must "
+            set(keys_by_input_name.keys()) == all_input_names,
+            "The set of input names keys specified in the keys_by_input_name argument must "
             "equal the set of asset keys inputted by this GraphDefinition. \n"
-            f"asset_keys_by_input_name keys: {set(asset_keys_by_input_name.keys())} \n"
+            f"keys_by_input_name keys: {set(keys_by_input_name.keys())} \n"
             f"expected keys: {all_input_names}",
         )
 
-    # If asset key is not supplied in asset_keys_by_input_name, create asset key
+    # If asset key is not supplied in keys_by_input_name, create asset key
     # from input name
     inferred_input_names_by_asset_key: Dict[str, AssetKey] = {
-        input_name: asset_keys_by_input_name.get(input_name, AssetKey([input_name]))
+        input_name: keys_by_input_name.get(input_name, AssetKey([input_name]))
         for input_name in all_input_names
     }
 
     return inferred_input_names_by_asset_key
 
 
-def _infer_asset_keys_by_output_names(
-    graph_def: GraphDefinition, asset_keys_by_output_name: Mapping[str, AssetKey]
+def _infer_keys_by_output_names(
+    graph_def: GraphDefinition, keys_by_output_name: Mapping[str, AssetKey]
 ) -> Mapping[str, AssetKey]:
     output_names = [output_def.name for output_def in graph_def.output_defs]
-    if asset_keys_by_output_name:
+    if keys_by_output_name:
         check.invariant(
-            set(asset_keys_by_output_name.keys()) == set(output_names),
-            "The set of output names keys specified in the asset_keys_by_output_name argument must "
+            set(keys_by_output_name.keys()) == set(output_names),
+            "The set of output names keys specified in the keys_by_output_name argument must "
             "equal the set of asset keys outputted by this GraphDefinition. \n"
-            f"asset_keys_by_input_name keys: {set(asset_keys_by_output_name.keys())} \n"
+            f"keys_by_input_name keys: {set(keys_by_output_name.keys())} \n"
             f"expected keys: {set(output_names)}",
         )
 
-    inferred_asset_keys_by_output_names: Dict[str, AssetKey] = {
-        output_name: asset_key for output_name, asset_key in asset_keys_by_output_name.items()
+    inferred_keys_by_output_names: Dict[str, AssetKey] = {
+        output_name: asset_key for output_name, asset_key in keys_by_output_name.items()
     }
 
     if (
         len(output_names) == 1
-        and output_names[0] not in asset_keys_by_output_name
+        and output_names[0] not in keys_by_output_name
         and output_names[0] == "result"
     ):
         # If there is only one output and the name is the default "result", generate asset key
         # from the name of the node
-        inferred_asset_keys_by_output_names[output_names[0]] = AssetKey([graph_def.name])
+        inferred_keys_by_output_names[output_names[0]] = AssetKey([graph_def.name])
 
     for output_name in output_names:
-        if output_name not in inferred_asset_keys_by_output_names:
-            inferred_asset_keys_by_output_names[output_name] = AssetKey([output_name])
-    return inferred_asset_keys_by_output_names
+        if output_name not in inferred_keys_by_output_names:
+            inferred_keys_by_output_names[output_name] = AssetKey([output_name])
+    return inferred_keys_by_output_names
 
 
 def _build_invocation_context_with_included_resources(

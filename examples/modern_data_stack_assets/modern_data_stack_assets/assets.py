@@ -13,7 +13,9 @@ from .constants import *  # pylint: disable=wildcard-import,unused-wildcard-impo
 from .pandas_io_manager import pandas_io_manager
 
 airbyte_assets = build_airbyte_assets(
-    connection_id=AIRBYTE_CONNECTION_ID, destination_tables=["orders", "users"]
+    connection_id=AIRBYTE_CONNECTION_ID,
+    destination_tables=["orders", "users"],
+    asset_key_prefix=["postgres_replica"],
 )
 
 dbt_assets = load_assets_from_dbt_project(

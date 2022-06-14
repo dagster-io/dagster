@@ -217,6 +217,22 @@ def test_run_monitoring(
     assert instance["run_monitoring"]["enabled"] == True
 
 
+def test_run_retries(
+    instance_template: HelmTemplate,
+):  # pylint: disable=redefined-outer-name
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(runRetries={"enabled": True})
+    )
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["run_retries"]["enabled"] == True
+
+
 def test_daemon_labels(template: HelmTemplate):
     deployment_labels = {"deployment_label": "label"}
     pod_labels = {"pod_label": "label"}

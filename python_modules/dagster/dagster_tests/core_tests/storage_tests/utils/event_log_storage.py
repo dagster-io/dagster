@@ -4,7 +4,7 @@ import re
 import time
 from collections import Counter
 from contextlib import ExitStack, contextmanager
-from typing import List, Optional
+from typing import List, Optional, cast
 
 import mock
 import pendulum
@@ -2089,3 +2089,162 @@ class TestEventLogStorage:
                     records = storage.get_asset_records([asset_key])
                     assert len(records) == 1
                     assert result.run_id == records[0].asset_entry.last_run_id
+
+    def test_get_logs_for_all_runs_by_log_id_of_type(self, storage):
+        if not storage.supports_event_consumer_queries():
+            pytest.skip("storage does not support event consumer queries")
+
+        @op
+        def return_one(_):
+            return 1
+
+        def _ops():
+            return_one()
+
+        for _ in range(2):
+            events, _ = _synthesize_events(_ops)
+            for event in events:
+                storage.store_event(event)
+
+        assert _event_types(
+            storage.get_logs_for_all_runs_by_log_id(
+                dagster_event_type=DagsterEventType.PIPELINE_SUCCESS,
+            ).values()
+        ) == [DagsterEventType.PIPELINE_SUCCESS, DagsterEventType.PIPELINE_SUCCESS]
+
+        assert _event_types(
+            storage.get_logs_for_all_runs_by_log_id(
+                dagster_event_type=DagsterEventType.STEP_SUCCESS,
+            ).values()
+        ) == [DagsterEventType.STEP_SUCCESS, DagsterEventType.STEP_SUCCESS]
+
+        assert _event_types(
+            storage.get_logs_for_all_runs_by_log_id(
+                dagster_event_type={
+                    DagsterEventType.STEP_SUCCESS,
+                    DagsterEventType.PIPELINE_SUCCESS,
+                },
+            ).values()
+        ) == [
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.PIPELINE_SUCCESS,
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.PIPELINE_SUCCESS,
+        ]
+
+    def test_get_logs_for_all_runs_by_log_id_cursor(self, storage):
+        if not storage.supports_event_consumer_queries():
+            pytest.skip("storage does not support event consumer queries")
+
+        @op
+        def return_one(_):
+            return 1
+
+        def _ops():
+            return_one()
+
+        for _ in range(2):
+            events, _ = _synthesize_events(_ops)
+            for event in events:
+                storage.store_event(event)
+
+        events_by_log_id = storage.get_logs_for_all_runs_by_log_id(
+            dagster_event_type={
+                DagsterEventType.STEP_SUCCESS,
+                DagsterEventType.PIPELINE_SUCCESS,
+            },
+        )
+
+        assert _event_types(events_by_log_id.values()) == [
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.PIPELINE_SUCCESS,
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.PIPELINE_SUCCESS,
+        ]
+
+        after_cursor_events_by_log_id = storage.get_logs_for_all_runs_by_log_id(
+            after_cursor=min(events_by_log_id.keys()),
+            dagster_event_type={
+                DagsterEventType.STEP_SUCCESS,
+                DagsterEventType.PIPELINE_SUCCESS,
+            },
+        )
+
+        assert _event_types(after_cursor_events_by_log_id.values()) == [
+            DagsterEventType.PIPELINE_SUCCESS,
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.PIPELINE_SUCCESS,
+        ]
+
+    def test_get_logs_for_all_runs_by_log_id_limit(self, storage):
+        if not storage.supports_event_consumer_queries():
+            pytest.skip("storage does not support event consumer queries")
+
+        @op
+        def return_one(_):
+            return 1
+
+        def _ops():
+            return_one()
+
+        for _ in range(2):
+            events, _ = _synthesize_events(_ops)
+            for event in events:
+                storage.store_event(event)
+
+        events_by_log_id = storage.get_logs_for_all_runs_by_log_id(
+            dagster_event_type={
+                DagsterEventType.STEP_SUCCESS,
+                DagsterEventType.PIPELINE_SUCCESS,
+            },
+            limit=3,
+        )
+
+        assert _event_types(events_by_log_id.values()) == [
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.PIPELINE_SUCCESS,
+            DagsterEventType.STEP_SUCCESS,
+        ]
+
+    def test_get_maximum_record_id(self, storage):
+        if not storage.supports_event_consumer_queries():
+            pytest.skip("storage does not support event consumer queries")
+
+        storage.wipe()
+        assert storage.get_maximum_record_id() == None
+
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id="foo_run",
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ENGINE_EVENT.value,
+                    "nonce",
+                    event_specific_data=EngineEventData.in_process(999),
+                ),
+            )
+        )
+
+        index = cast(int, storage.get_maximum_record_id())
+        assert isinstance(index, int)
+
+        for i in range(10):
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=f"foo_run_{i}",
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ENGINE_EVENT.value,
+                        "nonce",
+                        event_specific_data=EngineEventData.in_process(999),
+                    ),
+                )
+            )
+
+        assert storage.get_maximum_record_id() == index + 10

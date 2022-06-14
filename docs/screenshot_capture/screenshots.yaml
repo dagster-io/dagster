@@ -40,6 +40,8 @@
   url: http://127.0.0.1:3000/
   width: 1536
   height: 1152
+  steps:
+    - open left sidebar
 
 - path: concepts/assets/software-defined-assets/catalog.png
   defs_file: examples/docs_snippets/docs_snippets/concepts/assets/asset_group.py

@@ -14,7 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster.config.config_schema import ConfigSchemaType
+from dagster.config.config_schema import UserConfigSchema
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
@@ -105,7 +105,7 @@ class SolidDefinition(NodeDefinition):
         input_defs: Sequence[InputDefinition],
         compute_fn: Union[Callable[..., Any], "DecoratedSolidFunction"],
         output_defs: Sequence[OutputDefinition],
-        config_schema: Optional[Union[ConfigSchemaType, IDefinitionConfigSchema]] = None,
+        config_schema: Optional[Union[UserConfigSchema, IDefinitionConfigSchema]] = None,
         description: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
         required_resource_keys: Optional[AbstractSet[str]] = None,

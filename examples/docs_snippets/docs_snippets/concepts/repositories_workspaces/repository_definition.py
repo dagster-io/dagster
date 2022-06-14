@@ -1,4 +1,19 @@
-from dagster import RunRequest, ScheduleDefinition, job, op, repository, sensor
+from dagster import RunRequest, ScheduleDefinition, asset, job, op, repository, sensor
+
+
+@asset
+def asset1():
+    pass
+
+
+@asset
+def asset2():
+    pass
+
+
+@asset(group_name="mygroup")
+def asset3():
+    pass
 
 
 @op
@@ -34,6 +49,9 @@ def job2_sensor():
 @repository
 def my_repository():
     return [
+        asset1,
+        asset2,
+        asset3,
         job1_schedule,
         job2_sensor,
         job3,

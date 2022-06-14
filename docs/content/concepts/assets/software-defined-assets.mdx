@@ -17,7 +17,7 @@ A software-defined asset includes the following:
 
   **Note**: A crucial distinction between software-defined assets and [ops](/concepts/ops-jobs-graphs/ops) is that software-defined assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/graphs).
 
-**Materializing** an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [Dagit](/concepts/dagit/dagit) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is [fully customizable](#customizing-how-assets-are-materialized-with-io-managers). It's possible to materialize an asset in multiple storage environments, such as production and staging.
+**Materializing** an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [Dagit](/concepts/dagit/dagit) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is fully customizable, using [IO managers](/concepts/io-management/io-managers#applying-io-managers-to-assets). It's possible to materialize an asset in multiple storage environments, such as production and staging.
 
 ---
 
@@ -198,9 +198,9 @@ In this example, Dagster doesn’t need to load data from `upstream_asset` to su
 
 ### Graph-backed assets
 
-[Basic software-defined assets](#a-basic-software-defined-asset) can only produce one data artifact. If generating an asset involves multiple discrete computations, you can use graph-backed assets by separating each computation into an op and building a graph to combine your computations. This way, each discrete computation can be reused in other assets and jobs.
+[Basic software-defined assets](#a-basic-software-defined-asset) are computed using a single op. If generating an asset involves multiple discrete computations, you can use graph-backed assets by separating each computation into an op and building a graph to combine your computations. This allows you to launch re-executions of runs at the op boundaries but doesn't require you to link each intermediate value to an asset in persistent storage.
 
-This approach to asset creation allows you to define a graph of ops which can produce one or multiple assets. **Note**: To use graphs to create an asset, the graph **must return an output**.
+Graph-backed assets are useful if you have an existing graph that produces and consumes assets. Wrapping your graph inside a software-defined asset gives you all the benefits of software-defined assets — like cross-job lineage — without requiring you to change the code inside your graph.
 
 To define a graph-backed asset, use the `from_graph` attribute on the `AssetsDefinition` object:
 
@@ -235,6 +235,64 @@ graph_asset = AssetsDefinition.from_graph(store_slack_files_in_sql)
 ```
 
 **Note**: All output assets must be selected when using a graph-backed asset to create a job. Dagster will select all graph output automatically upon creating a job.
+
+#### Defining basic dependencies
+
+The `from_graph` attribute on the `AssetsDefinition` object infers upstream and downstream asset dependencies from the graph definition provided. In the most simple case when the graph returns a singular output, Dagster infers the name of the graph to be the outputted asset key.
+
+In the example below, Dagster creates an asset with key `middle_asset` from the `middle_asset` graph. Just like assets defined via <PyObject object="asset" decorator />, each argument to the decorated graph function is an upstream asset name. `middle_asset` depends on `upstream_asset`, and `downstream_asset` depends on `middle_asset`.
+
+```python file=/concepts/assets/graph_backed_asset.py startafter=start_basic_dependencies endbefore=end_basic_dependencies
+@asset
+def upstream_asset():
+    return 1
+
+
+@graph
+def middle_asset(upstream_asset):
+    return add_one(upstream_asset)
+
+
+middle_asset = AssetsDefinition.from_graph(middle_asset)
+
+
+@asset
+def downstream_asset(middle_asset):
+    return middle_asset + 1
+```
+
+When your graph returns multiple outputs, Dagster infers each output name to be the outputted asset key. In the below example, `two_assets_graph` accepts `upstream_asset` and outputs two assets, `first_asset` and `second_asset`.
+
+```python file=/concepts/assets/graph_backed_asset.py startafter=start_basic_dependencies_2 endbefore=end_basic_dependencies_2
+@graph(out={"first_asset": GraphOut(), "second_asset": GraphOut()})
+def two_assets_graph(upstream_asset):
+    one, two = two_outputs(upstream_asset)
+    return {"first_asset": one, "second_asset": two}
+
+
+two_assets = AssetsDefinition.from_graph(two_assets_graph)
+```
+
+#### Defining explicit dependencies
+
+You can also define dependencies for graph-backed assets explicitly via the `asset_keys_by_input_name` and `asset_keys_by_output_name` arguments to `from_graph`:
+
+```python file=/concepts/assets/graph_backed_asset.py startafter=start_explicit_dependencies endbefore=end_explicit_dependencies
+@graph(out={"one": GraphOut(), "two": GraphOut()})
+def return_one_and_two(zero):
+    one, two = two_outputs(zero)
+    return {"one": one, "two": two}
+
+
+explicit_deps_asset = AssetsDefinition.from_graph(
+    return_one_and_two,
+    asset_keys_by_input_name={"zero": AssetKey("upstream_asset")},
+    asset_keys_by_output_name={
+        "one": AssetKey("asset_one"),
+        "two": AssetKey("asset_two"),
+    },
+)
+```
 
 ### Asset context
 
@@ -347,99 +405,6 @@ There are a couple ways in Dagit to launch a run that materializes assets:
 
 - Navigate to the Asset Details Page for the asset and click the "Materialize" button in the upper right corner.
 - In the graph view of the Asset Catalog page, click the "Materialize" button in the upper right corner. You can click on assets to collect a subset to materialize.
-
-## Customizing how assets are materialized with IO managers
-
-By default, materializing an asset will pickle it to a local file named "my_asset", in a temporary directory. You can specify this directory by providing a value for the `local_artifact_storage` property in your dagster.yaml file.
-
-[IO managers](/concepts/io-management/io-managers) enable fully overriding this behavior and storing asset contents in any way you wish - e.g. writing them as tables in a database or as objects in a cloud object store. Dagster also provides built-in IO managers that pickle assets to AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), and GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />), or you can write your own.
-
-To apply an IO manager to a set of assets, you can use <PyObject object="with_resources" />:
-
-```python file=/concepts/assets/asset_io_manager.py startafter=start_marker endbefore=end_marker
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
-
-from dagster import asset, with_resources
-
-
-@asset
-def upstream_asset():
-    return [1, 2, 3]
-
-
-@asset
-def downstream_asset(upstream_asset):
-    return upstream_asset + [4]
-
-
-assets_with_io_manager = with_resources(
-    [upstream_asset, downstream_asset],
-    resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_resource},
-)
-```
-
-This example also includes `"s3": s3_resource`, because the `s3_pickle_io_manager` depends on an s3 resource.
-
-When `upstream_asset` is materialized, the value `[1, 2, 3]` will be will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a different object on S3.
-
-Different assets can have different IO managers:
-
-```python file=/concepts/assets/asset_different_io_managers.py startafter=start_marker endbefore=end_marker
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
-
-from dagster import asset, fs_io_manager, with_resources
-
-
-@asset(io_manager_key="s3_io_manager")
-def upstream_asset():
-    return [1, 2, 3]
-
-
-@asset(io_manager_key="fs_io_manager")
-def downstream_asset(upstream_asset):
-    return upstream_asset + [4]
-
-
-assets_with_io_managers = with_resources(
-    [upstream_asset, downstream_asset],
-    resource_defs={
-        "s3_io_manager": s3_pickle_io_manager,
-        "s3": s3_resource,
-        "fs_io_manager": fs_io_manager,
-    },
-)
-```
-
-When `upstream_asset` is materialized, the value `[1, 2, 3]` will be will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a file on the local filesystem.
-
-The same assets can be bound to different resources and IO managers in different environments. For example, for local development, you might want to store assets on your local filesystem while, in production, you might want to store the assets in S3.
-
-```python file=/concepts/assets/asset_io_manager_prod_local.py startafter=start_marker endbefore=end_marker
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
-
-from dagster import asset, fs_io_manager, with_resources
-
-
-@asset
-def upstream_asset():
-    return [1, 2, 3]
-
-
-@asset
-def downstream_asset(upstream_asset):
-    return upstream_asset + [4]
-
-
-prod_assets = with_resources(
-    [upstream_asset, downstream_asset],
-    resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_resource},
-)
-
-local_assets = with_resources(
-    [upstream_asset, downstream_asset],
-    resource_defs={"io_manager": fs_io_manager},
-)
-```
 
 ## Building jobs that materialize assets
 

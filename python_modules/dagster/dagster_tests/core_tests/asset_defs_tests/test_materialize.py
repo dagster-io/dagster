@@ -177,8 +177,8 @@ def test_materialize_graph_backed_asset():
         return combine_strings(da, db)
 
     cool_thing_asset = AssetsDefinition(
-        asset_keys_by_input_name={"a": AssetKey("a"), "b": AssetKey("b")},
-        asset_keys_by_output_name={"result": AssetKey("cool_thing")},
+        keys_by_input_name={"a": AssetKey("a"), "b": AssetKey("b")},
+        keys_by_output_name={"result": AssetKey("cool_thing")},
         node_def=create_cool_thing,
     )
 
@@ -204,8 +204,8 @@ def test_materialize_multi_asset():
         return (o1, o2)
 
     thing_asset = AssetsDefinition(
-        asset_keys_by_input_name={},
-        asset_keys_by_output_name={"o1": AssetKey("thing"), "o2": AssetKey("thing_2")},
+        keys_by_input_name={},
+        keys_by_output_name={"o1": AssetKey("thing"), "o2": AssetKey("thing_2")},
         node_def=thing,
         asset_deps={AssetKey("thing"): set(), AssetKey("thing_2"): {AssetKey("thing")}},
     )

@@ -81,6 +81,7 @@ class Daemon(BaseModel):
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations
     runMonitoring: Dict[str, Any]
+    runRetries: Dict[str, Any]
 
     class Config:
         extra = Extra.forbid

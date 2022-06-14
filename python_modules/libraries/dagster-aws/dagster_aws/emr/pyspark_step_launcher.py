@@ -189,7 +189,7 @@ def emr_pyspark_step_launcher(context):
 
 emr_pyspark_step_launcher.__doc__ = "\n".join(
     "- **" + option + "**: " + (field.description or "")
-    for option, field in emr_pyspark_step_launcher.config_schema.config_type.fields.items()
+    for option, field in emr_pyspark_step_launcher.config_schema.config_type.fields.items()  # type: ignore
 )
 
 

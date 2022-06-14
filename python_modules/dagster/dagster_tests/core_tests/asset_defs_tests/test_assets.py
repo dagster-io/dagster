@@ -2,12 +2,15 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetOut,
+    AssetsDefinition,
     IOManager,
     Out,
     Output,
     ResourceDefinition,
     build_op_context,
     io_manager,
+    op,
 )
 from dagster._check import CheckError
 from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
@@ -36,11 +39,11 @@ def test_with_replaced_asset_keys():
     }
     assert replaced.keys == {AssetKey(["prefix1", "asset1_changed"])}
 
-    assert replaced.asset_keys_by_input_name["input1"] == AssetKey("input1")
+    assert replaced.keys_by_input_name["input1"] == AssetKey("input1")
 
-    assert replaced.asset_keys_by_input_name["input2"] == AssetKey(["apple", "banana"])
+    assert replaced.keys_by_input_name["input2"] == AssetKey(["apple", "banana"])
 
-    assert replaced.asset_keys_by_output_name["result"] == AssetKey(["prefix1", "asset1_changed"])
+    assert replaced.keys_by_output_name["result"] == AssetKey(["prefix1", "asset1_changed"])
 
 
 @pytest.mark.parametrize(
@@ -57,7 +60,7 @@ def test_with_replaced_asset_keys():
 )
 def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
     @multi_asset(
-        outs={"a": Out(), "b": Out(), "c": Out()},
+        outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()},
         internal_asset_deps={
             "a": {AssetKey("in1"), AssetKey("in2")},
             "b": set(),
@@ -74,8 +77,8 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
         {AssetKey(key) for key in expected_keys.split(",")} if expected_keys else set()
     )
 
-    assert len(subbed.asset_keys_by_input_name) == expected_inputs
-    assert len(subbed.asset_keys_by_output_name) == expected_outputs
+    assert len(subbed.keys_by_input_name) == expected_inputs
+    assert len(subbed.keys_by_output_name) == expected_outputs
 
     # the asset dependency structure should stay the same
     assert subbed.asset_deps == abc_.asset_deps
@@ -89,12 +92,29 @@ def test_retain_group():
     replaced = bar.with_prefix_or_group(
         output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
     )
-    assert replaced.group_names[AssetKey("baz")] == "foo"
+    assert replaced.group_names_by_key[AssetKey("baz")] == "foo"
+
+
+def test_retain_group_subset():
+    @op(out={"a": Out(), "b": Out()})
+    def ma_op():
+        return 1
+
+    ma = AssetsDefinition(
+        node_def=ma_op,
+        keys_by_input_name={},
+        keys_by_output_name={"a": AssetKey("a"), "b": AssetKey("b")},
+        group_names_by_key={AssetKey("a"): "foo", AssetKey("b"): "bar"},
+        can_subset=True,
+    )
+
+    subset = ma.subset_for({AssetKey("b")})
+    assert subset.group_names_by_key[AssetKey("b")] == "bar"
 
 
 def test_chain_replace_and_subset_for():
     @multi_asset(
-        outs={"a": Out(), "b": Out(), "c": Out()},
+        outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()},
         internal_asset_deps={
             "a": {AssetKey("in1"), AssetKey("in2")},
             "b": set(),
@@ -167,7 +187,7 @@ def test_chain_replace_and_subset_for():
 
 
 def test_fail_on_subset_for_nonsubsettable():
-    @multi_asset(outs={"a": Out(), "b": Out(), "c": Out()})
+    @multi_asset(outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()})
     def abc_(context, start):  # pylint: disable=unused-argument
         pass
 
@@ -191,14 +211,14 @@ def test_to_source_assets():
 
     @multi_asset(
         outs={
-            "my_out_name": Out(
-                asset_key=AssetKey("my_asset_name"),
+            "my_out_name": AssetOut(
+                key=AssetKey("my_asset_name"),
                 metadata={"a": "b"},
                 io_manager_key="abc",
                 description="blablabla",
             ),
-            "my_other_out_name": Out(
-                asset_key=AssetKey("my_other_asset"),
+            "my_other_out_name": AssetOut(
+                key=AssetKey("my_other_asset"),
                 metadata={"c": "d"},
                 io_manager_key="def",
                 description="ablablabl",

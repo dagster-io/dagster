@@ -5,6 +5,7 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetOut,
     AssetsDefinition,
     DagsterEventType,
     DagsterInvalidDefinitionError,
@@ -15,7 +16,6 @@ from dagster import (
     Out,
     Output,
     ResourceDefinition,
-    fs_io_manager,
     graph,
     in_process_executor,
     io_manager,
@@ -155,7 +155,7 @@ def test_asset_group_missing_resources():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"SourceAsset with asset key AssetKey\(\['foo'\]\) requires IO manager with key 'foo', but none was provided.",
+        match=r"io manager with key 'foo' required by SourceAsset with key \[\"foo\"\] was not provided.",
     ):
         AssetGroup([], source_assets=[source_asset_io_req])
 
@@ -268,9 +268,9 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
 
     @multi_asset(
         outs={
-            "a": Out(is_required=False),
-            "b": Out(is_required=False),
-            "c": Out(is_required=False),
+            "a": AssetOut(is_required=False),
+            "b": AssetOut(is_required=False),
+            "c": AssetOut(is_required=False),
         },
         internal_asset_deps={
             "a": {AssetKey("start")},
@@ -302,9 +302,9 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
 
     @multi_asset(
         outs={
-            "d": Out(is_required=False),
-            "e": Out(is_required=False),
-            "f": Out(is_required=False),
+            "d": AssetOut(is_required=False),
+            "e": AssetOut(is_required=False),
+            "f": AssetOut(is_required=False),
         },
         internal_asset_deps={
             "d": {AssetKey("a"), AssetKey("b")},
@@ -553,7 +553,7 @@ def test_subset_does_not_respect_context():
     def start():
         return 1
 
-    @multi_asset(outs={"a": Out(), "b": Out(), "c": Out()}, can_subset=True)
+    @multi_asset(outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()}, can_subset=True)
     def abc(start):
         # this asset declares that it can subset its computation but will always produce all outputs
         yield Output(1 + start, "a")
@@ -610,7 +610,7 @@ def test_subset_cycle_resolution_embed_assets_in_complex_graph():
         io_manager_obj.db[AssetKey(item)] = None
 
     @multi_asset(
-        outs={name: Out(is_required=False) for name in "a,b,c,d,e,f,g,h".split(",")},
+        outs={name: AssetOut(is_required=False) for name in "a,b,c,d,e,f,g,h".split(",")},
         internal_asset_deps={
             "a": set(),
             "b": set(),
@@ -690,7 +690,7 @@ def test_subset_cycle_resolution_complex():
         io_manager_obj.db[AssetKey(item)] = None
 
     @multi_asset(
-        outs={name: Out(is_required=False) for name in "a,b,c,d,e,f".split(",")},
+        outs={name: AssetOut(is_required=False) for name in "a,b,c,d,e,f".split(",")},
         internal_asset_deps={
             "a": set(),
             "b": {AssetKey("x")},
@@ -754,7 +754,7 @@ def test_subset_cycle_resolution_basic():
     s = SourceAsset("s")
 
     @multi_asset(
-        outs={"a": Out(is_required=False), "b": Out(is_required=False)},
+        outs={"a": AssetOut(is_required=False), "b": AssetOut(is_required=False)},
         internal_asset_deps={
             "a": {AssetKey("s")},
             "b": {AssetKey("a_prime")},
@@ -769,7 +769,7 @@ def test_subset_cycle_resolution_basic():
             yield Output(a_prime + 1, "b")
 
     @multi_asset(
-        outs={"a_prime": Out(is_required=False), "b_prime": Out(is_required=False)},
+        outs={"a_prime": AssetOut(is_required=False), "b_prime": AssetOut(is_required=False)},
         internal_asset_deps={
             "a_prime": {AssetKey("a")},
             "b_prime": {AssetKey("b")},
@@ -1040,7 +1040,7 @@ def test_materialize_with_selection():
     def start_asset():
         return "foo"
 
-    @multi_asset(outs={"o1": Out(asset_key=AssetKey("o1")), "o2": Out(asset_key=AssetKey("o2"))})
+    @multi_asset(outs={"o1": AssetOut(), "o2": AssetOut()})
     def middle_asset(start_asset):
         return (start_asset, start_asset)
 
@@ -1269,8 +1269,8 @@ def test_to_source_assets():
 
     @multi_asset(
         outs={
-            "my_out_name": Out(asset_key=AssetKey("my_asset_name")),
-            "my_other_out_name": Out(asset_key=AssetKey("my_other_asset")),
+            "my_out_name": AssetOut(key=AssetKey("my_asset_name")),
+            "my_other_out_name": AssetOut(key=AssetKey("my_other_asset")),
         }
     )
     def my_multi_asset():
@@ -1281,18 +1281,15 @@ def test_to_source_assets():
         SourceAsset(
             AssetKey(["my_asset"]),
             io_manager_key="io_manager",
-            resource_defs={"io_manager": fs_io_manager},
             group_name="abc",
         ),
         SourceAsset(
             AssetKey(["my_asset_name"]),
             io_manager_key="io_manager",
-            resource_defs={"io_manager": fs_io_manager},
         ),
         SourceAsset(
             AssetKey(["my_other_asset"]),
             io_manager_key="io_manager",
-            resource_defs={"io_manager": fs_io_manager},
         ),
     ]
 
@@ -1325,8 +1322,6 @@ def test_build_job_diff_resource_defs():
     def other_asset():
         pass
 
-    group = AssetGroup([the_asset, other_asset])
-
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Conflicting versions of resource with key 'foo' were provided to "
@@ -1334,35 +1329,7 @@ def test_build_job_diff_resource_defs():
         "provided to assets must match by reference equality for a given key.",
     ):
 
-        group.build_job("some_name", selection="the_asset")
-
-
-def test_repo_asset_group_diff_resource_defs():
-    the_resource = ResourceDefinition.hardcoded_resource("blah")
-    other_resource = ResourceDefinition.hardcoded_resource("baz")
-
-    @asset(resource_defs={"foo": the_resource})
-    def the_asset():
-        pass
-
-    @asset(resource_defs={"foo": other_resource})
-    def other_asset():
-        pass
-
-    group = AssetGroup([the_asset, other_asset])
-
-    # Demonstrate that repository construction with conflicting versions of
-    # same key fails
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Conflicting versions of resource with key 'foo' were provided to "
-        "different assets. When constructing a job, all resource definitions "
-        "provided to assets must match by reference equality for a given key.",
-    ):
-
-        @repository
-        def use_group():
-            return [group]
+        AssetGroup([the_asset, other_asset])
 
 
 def test_graph_backed_asset_resources():
@@ -1378,8 +1345,8 @@ def test_graph_backed_asset_resources():
     other_resource = ResourceDefinition.hardcoded_resource("baz")
 
     the_asset = AssetsDefinition(
-        asset_keys_by_input_name={},
-        asset_keys_by_output_name={"result": AssetKey("the_asset")},
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey("the_asset")},
         node_def=basic,
         resource_defs={"foo": the_resource},
     )
@@ -1387,15 +1354,14 @@ def test_graph_backed_asset_resources():
     assert no_conflict_group.materialize().success
 
     other_asset = AssetsDefinition(
-        asset_keys_by_input_name={},
-        asset_keys_by_output_name={"result": AssetKey("other_asset")},
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey("other_asset")},
         node_def=basic,
         resource_defs={"foo": other_resource},
     )
 
-    asset_group = AssetGroup([the_asset, other_asset])
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Conflicting versions of resource with key 'foo' were provided to different assets. When constructing a job, all resource definitions provided to assets must match by reference equality for a given key.",
     ):
-        asset_group.materialize()
+        AssetGroup([the_asset, other_asset])

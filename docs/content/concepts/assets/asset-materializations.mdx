@@ -27,7 +27,7 @@ Dagster lets you track the interactions between ops, outputs, and assets over ti
 There are two general patterns for dealing with assets when using Dagster:
 
 - Put the logic to write/store assets inside the body of an op.
-- Focus the op purely on business logic, and delegate the logic to write/store assets to an [IOManager](/concepts/io-management/io-managers).
+- Focus the op purely on business logic, and delegate the logic to write/store assets to an [IO manager](/concepts/io-management/io-managers).
 
 Regardless of which pattern you are using, <PyObject module="dagster" object="AssetMaterialization" /> events are used to communicate to Dagster that a materialization has occurred. You can create these events either by explicitly logging them at runtime, or (using an experimental interface), have Dagster automatically generate them by defining that a given op output corresponds to a given <PyObject module="dagster" object="AssetKey" />.
 
@@ -81,7 +81,7 @@ width={3808}
 height={2414}
 />
 
-### Logging an AssetMaterialization from an IOManager
+### Logging an AssetMaterialization from an IO Manager
 
 To record that an <PyObject object ="IOManager"/> has mutated or created an asset, we can log an <PyObject module="dagster" object="AssetMaterialization" /> event from its `handle_output` method. We do this via the method <PyObject object="OutputContext" method="log_event" />.
 
@@ -138,7 +138,7 @@ def my_metadata_materialization_op(context):
     return remote_storage_path
 ```
 
-#### Example: IOManager
+#### Example: IO Manager
 
 ```python file=concepts/assets/materialization_io_managers.py startafter=start_marker_1 endbefore=end_marker_1
 from dagster import AssetMaterialization, IOManager
@@ -205,7 +205,7 @@ def my_asset_op(context):
 
 In this case, the <PyObject object="AssetMaterialization" /> and the <PyObject object="Output" /> events both correspond to the same data, the dataframe that we have created. With this in mind, we can simplify the above code, and provide useful information to the Dagster framework, by making this link between the `my_dataset` asset and the output of this op explicit.
 
-Just as there are two places in which you can log runtime <PyObject object="AssetMaterialization" /> events (within an op body and within an IOManager), we provide two different interfaces for linking an op output to to an asset. Regardless of which you choose, every time the op runs and logs that output, an <PyObject object="AssetMaterialization" /> event will automatically be created to record this information.
+Just as there are two places in which you can log runtime <PyObject object="AssetMaterialization" /> events (within an op body and within an IO manager), we provide two different interfaces for linking an op output to to an asset. Regardless of which you choose, every time the op runs and logs that output, an <PyObject object="AssetMaterialization" /> event will automatically be created to record this information.
 
 If you use an <PyObject object="Output" /> event to yield your output, and specified any metadata entries on it, (see: [Op Event Docs](/concepts/ops-jobs-graphs/op-events#attaching-metadata-to-outputs)), these entries will automatically be attached to the materialization event for this asset.
 
@@ -228,7 +228,7 @@ def my_constant_asset_op(context):
 
 If you've defined a custom <PyObject object="IOManager"/> to handle storing your op's outputs, the <PyObject object="IOManager"/> will likely be the most natural place to define which asset a particular output will be written to. To do this, you can implement the `get_output_asset_key` function on your <PyObject object="IOManager"/>.
 
-Similar to the above interface, this function takes an <PyObject object="OutputContext"/> and returns an <PyObject object="AssetKey"/>. The following example functions nearly identically to `PandasCsvIOManagerWithMetadata` from the [runtime example](/concepts/assets/asset-materializations#example-iomanager) above.
+Similar to the above interface, this function takes an <PyObject object="OutputContext"/> and returns an <PyObject object="AssetKey"/>. The following example functions nearly identically to `PandasCsvIOManagerWithMetadata` from the [runtime example](/concepts/assets/asset-materializations#example-io-manager) above.
 
 ```python file=/concepts/assets/materialization_io_managers.py startafter=start_asset_def endbefore=end_asset_def
 from dagster import AssetKey, IOManager, MetadataEntry
@@ -254,11 +254,11 @@ class PandasCsvIOManagerWithOutputAsset(IOManager):
 
 When an output is linked to an asset in this way, the generated <PyObject object="AssetMaterialization" /> event will contain any <PyObject object="MetadataEntry" /> information yielded from the `handle_output` function (in addiition to all of the `metadata` specified on the corresponding <PyObject object="Output" /> event).
 
-See the [IOManager docs](/concepts/io-management/io-managers#yielding-metadata-from-an-iomanager) for more information on yielding these entries from an IOManager.
+See the [IO manager docs](/concepts/io-management/io-managers#yielding-metadata-from-an-io-manager) for more information on yielding these entries from an IO manager.
 
 #### Specifying partitions for an output-linked asset
 
-If you are already specifying a `get_output_asset_key` function on your <PyObject object="IOManager" />, you can optionally specify a set of partitions that this manager will be updating or creating by also defining a `get_output_asset_partitions` function. If you do this, an <PyObject object="AssetMaterialization" /> will be created for each of the specified partitions. One useful pattern to pass this partition information (which will likely vary each run) to the manager, is to specify the set of partitions on the configuration of the output. You can do this by providing [per-output configuration](/concepts/io-management/io-managers#providing-per-output-config-to-an-io-manager) on the IOManager.
+If you are already specifying a `get_output_asset_key` function on your <PyObject object="IOManager" />, you can optionally specify a set of partitions that this manager will be updating or creating by also defining a `get_output_asset_partitions` function. If you do this, an <PyObject object="AssetMaterialization" /> will be created for each of the specified partitions. One useful pattern to pass this partition information (which will likely vary each run) to the manager, is to specify the set of partitions on the configuration of the output. You can do this by providing [per-output configuration](/concepts/io-management/io-managers#providing-per-output-config-to-an-io-manager) on the IO manager.
 
 Then, you can calculate the asset partitions that a particular output will correspond to by reading this output configuration in `get_output_asset_partitions`:
 

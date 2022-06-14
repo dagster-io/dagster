@@ -316,6 +316,22 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     ) -> Iterable[EventLogRecord]:
         pass
 
+    def supports_event_consumer_queries(self) -> bool:
+        return False
+
+    def get_logs_for_all_runs_by_log_id(
+        self,
+        after_cursor: int = -1,
+        dagster_event_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
+        limit: Optional[int] = None,
+    ) -> Mapping[int, EventLogEntry]:
+        """Get event records across all runs. Only supported for non sharded sql storage"""
+        raise NotImplementedError()
+
+    def get_maximum_record_id(self) -> Optional[int]:
+        """Get the current greatest record id in the event log. Only supported for non sharded sql storage"""
+        raise NotImplementedError()
+
     @abstractmethod
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None

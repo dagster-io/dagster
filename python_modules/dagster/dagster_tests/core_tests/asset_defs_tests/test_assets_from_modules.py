@@ -106,7 +106,7 @@ def test_load_assets_from_modules_with_group_name():
             if isinstance(asset, AssetsDefinition):
                 asset_keys = asset.keys
                 for asset_key in asset_keys:
-                    assert asset.group_names.get(asset_key) == "my_cool_group"
+                    assert asset.group_names_by_key.get(asset_key) == "my_cool_group"
             elif isinstance(asset, SourceAsset):
                 assert asset.group_name == "my_cool_group"
 
@@ -121,7 +121,7 @@ def test_load_assets_from_modules_with_group_name():
 
 def test_respect_existing_groups():
     assets = load_assets_from_current_module()
-    assert assets[0].group_names.get(AssetKey("asset_in_current_module")) == "my_group"
+    assert assets[0].group_names_by_key.get(AssetKey("asset_in_current_module")) == "my_group"
 
     with pytest.raises(DagsterInvalidDefinitionError):
         load_assets_from_current_module(group_name="yay")
