@@ -470,9 +470,9 @@ class FromStepOutput(
             check.invariant(
                 isinstance(input_manager, InputManager),
                 f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
-                f'the manager "{manager_key}" to load it, but it is not an IOManager. '
+                f'the manager "{manager_key}" to load it, but it is not an InputManager. '
                 f"Please ensure that the resource returned for resource key "
-                f'"{manager_key}" is an IOManager.',
+                f'"{manager_key}" is an InputManager.',
             )
         else:
             manager_key = step_context.execution_plan.get_manager_key(
