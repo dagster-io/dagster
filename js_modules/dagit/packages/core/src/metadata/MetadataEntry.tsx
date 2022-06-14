@@ -19,6 +19,7 @@ import styled from 'styled-components/macro';
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 
 import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
@@ -159,9 +160,7 @@ export const MetadataEntry: React.FC<{
       );
     case 'AssetMetadataEntry':
       return (
-        <MetadataEntryLink
-          to={`/instance/assets/${entry.assetKey.path.map(encodeURIComponent).join('/')}`}
-        >
+        <MetadataEntryLink to={assetDetailsPathForKey(entry.assetKey)}>
           {displayNameForAssetKey(entry.assetKey)}
         </MetadataEntryLink>
       );

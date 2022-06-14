@@ -11,6 +11,7 @@ import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {
   AssetsCatalogRootQuery,
   AssetsCatalogRootQueryVariables,
@@ -54,9 +55,7 @@ export const AssetsCatalogRoot = () => {
       />
       <AssetsCatalogTable
         prefixPath={currentPath}
-        setPrefixPath={(prefixPath) =>
-          history.push(`/instance/assets/${prefixPath.map(encodeURIComponent).join('/')}`)
-        }
+        setPrefixPath={(prefixPath) => history.push(assetDetailsPathForKey({path: prefixPath}))}
       />
     </Page>
   ) : (

@@ -60,6 +60,7 @@ export const AssetNodeLineage: React.FC<{
         assetNode={assetNode}
         liveDataByNode={liveDataByNode}
         assetGraphData={assetGraphData}
+        params={params}
       />
     </>
   );

@@ -4,6 +4,8 @@ import {useHistory, useParams} from 'react-router-dom';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
+import {AssetLocation} from '../asset-graph/useFindAssetLocation';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {Loading} from '../ui/Loading';
@@ -39,6 +41,9 @@ export const PipelineExplorerSnapshotRoot = () => {
       onChangeExplorerPath={(path, mode) => {
         history[mode](`/instance/snapshots/${explorerPathToString(path)}`);
       }}
+      onNavigateToForeignNode={({assetKey}) => {
+        history.push(assetDetailsPathForKey(assetKey));
+      }}
     />
   );
 };
@@ -46,9 +51,16 @@ export const PipelineExplorerSnapshotRoot = () => {
 export const PipelineExplorerContainer: React.FC<{
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
+  onNavigateToForeignNode: (node: AssetLocation) => void;
   repoAddress?: RepoAddress;
   isGraph?: boolean;
-}> = ({explorerPath, repoAddress, onChangeExplorerPath, isGraph = false}) => {
+}> = ({
+  explorerPath,
+  repoAddress,
+  onChangeExplorerPath,
+  onNavigateToForeignNode,
+  isGraph = false,
+}) => {
   const [options, setOptions] = React.useState<GraphExplorerOptions>({
     explodeComposites: explorerPath.explodeComposites ?? false,
     preferAssetRendering: true,
@@ -91,6 +103,7 @@ export const PipelineExplorerContainer: React.FC<{
               fetchOptions={{pipelineSelector}}
               explorerPath={explorerPath}
               onChangeExplorerPath={onChangeExplorerPath}
+              onNavigateToForeignNode={onNavigateToForeignNode}
             />
           );
         }

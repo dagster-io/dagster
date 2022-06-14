@@ -2,13 +2,15 @@ import {Box, Colors, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+
 export const AssetLink: React.FC<{
   path: string[];
   icon?: 'asset' | 'asset_non_sda' | 'folder';
   url?: string;
   isGroup?: boolean;
 }> = ({path, icon, url, isGroup}) => {
-  const linkUrl = url ? url : `/instance/assets/${path.map(encodeURIComponent).join('/')}`;
+  const linkUrl = url ? url : assetDetailsPathForKey({path});
 
   return (
     <Box flex={{direction: 'row', alignItems: 'center', display: 'inline-flex'}}>
