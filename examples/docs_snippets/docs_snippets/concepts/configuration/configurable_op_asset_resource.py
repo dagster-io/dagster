@@ -1,4 +1,4 @@
-from dagster import asset, op, resource
+from dagster import asset, job, op, repository, resource
 
 
 class MyDatabaseConnection:
@@ -24,3 +24,13 @@ def resource_using_config(context):
 
 
 # end_marker
+
+
+@job
+def job_using_config():
+    op_using_config()
+
+
+@repository
+def repo():
+    return [job_using_config]
