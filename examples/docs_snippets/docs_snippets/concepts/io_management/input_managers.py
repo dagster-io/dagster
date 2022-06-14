@@ -202,7 +202,7 @@ class MyNewInputLoader(MyIOManager):
         if context.upstream_output is None:
             return read_dataframe_from_table(name="table_1")
         else:
-            return super.load_input(self, context)
+            return super().load_input(context)
 
 
 # end_better_load_input_subset
