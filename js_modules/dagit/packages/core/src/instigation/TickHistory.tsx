@@ -2,6 +2,7 @@ import 'chartjs-adapter-date-fns';
 
 import {gql, useQuery} from '@apollo/client';
 import {
+  Alert,
   Box,
   Checkbox,
   Colors,
@@ -166,68 +167,75 @@ export const TicksTable = ({
         </Box>
       </Box>
       {ticks.length ? (
-        <Table>
-          <thead>
-            <tr>
-              <th style={{width: 120}}>Timestamp</th>
-              <th style={{width: 90}}>Status</th>
-              {instigationType === InstigationType.SENSOR ? (
-                <th style={{width: 120}}>Cursor</th>
-              ) : null}
-              <th style={{width: 180}}>Runs</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ticks.map((tick) => (
-              <tr key={tick.id}>
-                <td>
-                  <TimestampDisplay
-                    timestamp={tick.timestamp}
-                    timeFormat={{showTimezone: false, showSeconds: true}}
-                  />
-                </td>
-                <td>
-                  <TickTag tick={tick} />
-                </td>
+        <>
+          {instigationType === InstigationType.SENSOR ? (
+            <Box margin={{vertical: 8, horizontal: 24}}>
+              <Alert intent="info" description="Showing ticks from the last 30 days" />
+            </Box>
+          ) : null}
+          <Table>
+            <thead>
+              <tr>
+                <th style={{width: 120}}>Timestamp</th>
+                <th style={{width: 90}}>Status</th>
                 {instigationType === InstigationType.SENSOR ? (
-                  <td style={{width: 120}}>
-                    {tick.cursor ? (
-                      <Box flex={{direction: 'row', alignItems: 'center'}}>
-                        <Box style={{fontFamily: FontFamily.monospace, marginRight: 10}}>
-                          <>{truncate(tick.cursor || '')}</>
+                  <th style={{width: 120}}>Cursor</th>
+                ) : null}
+                <th style={{width: 180}}>Runs</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ticks.map((tick) => (
+                <tr key={tick.id}>
+                  <td>
+                    <TimestampDisplay
+                      timestamp={tick.timestamp}
+                      timeFormat={{showTimezone: false, showSeconds: true}}
+                    />
+                  </td>
+                  <td>
+                    <TickTag tick={tick} />
+                  </td>
+                  {instigationType === InstigationType.SENSOR ? (
+                    <td style={{width: 120}}>
+                      {tick.cursor ? (
+                        <Box flex={{direction: 'row', alignItems: 'center'}}>
+                          <Box style={{fontFamily: FontFamily.monospace, marginRight: 10}}>
+                            <>{truncate(tick.cursor || '')}</>
+                          </Box>
+                          <CopyButton
+                            onClick={() => {
+                              copyToClipboard(tick.cursor || '');
+                              SharedToaster.show({
+                                message: <div>Copied value</div>,
+                                intent: 'success',
+                              });
+                            }}
+                          >
+                            <Icon name="assignment" />
+                          </CopyButton>
                         </Box>
-                        <CopyButton
-                          onClick={() => {
-                            copyToClipboard(tick.cursor || '');
-                            SharedToaster.show({
-                              message: <div>Copied value</div>,
-                              intent: 'success',
-                            });
-                          }}
-                        >
-                          <Icon name="assignment" />
-                        </CopyButton>
-                      </Box>
+                      ) : (
+                        <>&mdash;</>
+                      )}
+                    </td>
+                  ) : null}
+                  <td>
+                    {tick.runIds.length ? (
+                      tick.runs.map((run: RunStatusFragment) => (
+                        <>
+                          <RunStatusLink key={run.id} run={run} />
+                        </>
+                      ))
                     ) : (
                       <>&mdash;</>
                     )}
                   </td>
-                ) : null}
-                <td>
-                  {tick.runIds.length ? (
-                    tick.runs.map((run: RunStatusFragment) => (
-                      <>
-                        <RunStatusLink key={run.id} run={run} />
-                      </>
-                    ))
-                  ) : (
-                    <>&mdash;</>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </>
       ) : (
         <Box padding={{vertical: 32}} flex={{justifyContent: 'center'}}>
           <NonIdealState icon="no-results" title="No ticks to display" />

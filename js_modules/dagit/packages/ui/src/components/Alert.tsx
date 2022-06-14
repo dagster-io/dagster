@@ -10,7 +10,7 @@ export type AlertIntent = 'info' | 'warning' | 'error' | 'success';
 
 interface Props {
   intent: AlertIntent;
-  title: React.ReactNode;
+  title?: React.ReactNode;
   description?: React.ReactNode;
   onClose?: () => void;
 }
@@ -67,7 +67,7 @@ export const Alert: React.FC<Props> = (props) => {
         <Group direction="row" spacing={12} alignItems="flex-start">
           <Icon name={icon as IconName} color={iconColor} />
           <Group direction="column" spacing={8}>
-            <AlertTitle>{title}</AlertTitle>
+            {title ? <AlertTitle>{title}</AlertTitle> : null}
             {description ? <AlertDescription>{description}</AlertDescription> : null}
           </Group>
         </Group>
