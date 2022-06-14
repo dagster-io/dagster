@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Optional, cast
+from typing import Any, Dict, Generator, Mapping, Optional, cast
 
 import dagster._check as check
 from dagster.config.validate import process_config
@@ -116,9 +116,9 @@ def build_resources(
 
 
 def wrap_resources_for_execution(
-    resources: Optional[Dict[str, Any]] = None
+    resources: Optional[Mapping[str, Any]] = None
 ) -> Dict[str, ResourceDefinition]:
-    resources = check.opt_dict_param(resources, "resources", key_type=str)
+    resources = check.opt_mapping_param(resources, "resources", key_type=str)
     resource_defs = {}
     # Wrap instantiated resource values in a resource definition.
     # If an instantiated IO manager is provided, wrap it in an IO manager definition.

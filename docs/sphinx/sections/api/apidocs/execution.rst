@@ -4,6 +4,13 @@ Execution
 =========
 
 
+Materializing Assets
+--------------------
+
+.. autofunction:: materialize
+
+.. autofunction:: materialize_in_process
+
 Executing Jobs
 --------------
 
