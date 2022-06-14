@@ -122,7 +122,8 @@ def asset(
         metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
         io_manager_key (Optional[str]): The resource key of the IOManager used
-            for storing the output of the op as an asset, and for loading it in downstream ops (default: "io_manager"). Only one of io_manager_key and io_manager_def can be provided.
+            for storing the output of the op as an asset, and for loading it in downstream ops
+            (default: "io_manager"). Only one of io_manager_key and io_manager_def can be provided.
         io_manager_def (Optional[IOManagerDefinition]): The definition of the IOManager used for
             storing the output of the op as an asset,  and for loading it in
             downstream ops. Only one of io_manager_def and io_manager_key can be provided.
@@ -157,7 +158,15 @@ def asset(
         return _Asset()(name)
 
     key_prefix = canonicalize_backcompat_args(
-        key_prefix, "key_prefix", namespace, "namespace", "0.16.0"
+        key_prefix,
+        "key_prefix",
+        namespace,
+        "namespace",
+        "0.16.0",
+        additional_warn_txt="key_prefix applies only to the output AssetKey. If you want to modify "
+        "the prefix of the input AssetKeys as well, you can do this by explicitly setting the ins "
+        "parameter of this asset to a dictionary of the form "
+        "'input_name': AssetIn(key_prefix=...).",
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
@@ -168,6 +177,7 @@ def asset(
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             key_prefix=key_prefix,
+            namespace=namespace,
             ins=ins,
             non_argument_deps=_make_asset_keys(non_argument_deps),
             metadata=metadata,
@@ -191,6 +201,7 @@ class _Asset:
     def __init__(
         self,
         name: Optional[str] = None,
+        namespace: Optional[Sequence[str]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         ins: Optional[Mapping[str, AssetIn]] = None,
         non_argument_deps: Optional[Set[AssetKey]] = None,
@@ -209,6 +220,7 @@ class _Asset:
     ):
         self.name = name
 
+        self.namespace = namespace
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
         self.key_prefix = key_prefix
@@ -236,7 +248,8 @@ class _Asset:
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
 
-        asset_ins = build_asset_ins(fn, self.key_prefix, self.ins or {}, self.non_argument_deps)
+        # for backcompat, we prefix input asset keys with the namespace
+        asset_ins = build_asset_ins(fn, self.namespace, self.ins or {}, self.non_argument_deps)
 
         out_asset_key = AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
         with warnings.catch_warnings():

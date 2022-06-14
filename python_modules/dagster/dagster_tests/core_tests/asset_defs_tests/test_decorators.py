@@ -261,7 +261,9 @@ def test_asset_with_inputs_and_key_prefix():
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
-    assert AssetKey(["my_prefix", "arg1"]) in my_asset.keys_by_input_name.values()
+    # this functions differently than the namespace arg in this scenario
+    assert AssetKey(["my_prefix", "arg1"]) not in my_asset.keys_by_input_name.values()
+    assert AssetKey(["arg1"]) in my_asset.keys_by_input_name.values()
 
 
 def test_asset_with_context_arg():

@@ -559,10 +559,33 @@ def test_static_select_invalid_selection(select, error_match):
         load_assets_from_dbt_manifest(manifest_json, select=select)
 
 
+def test_source_key_prefix(
+    conn_string, test_python_project_dir, dbt_python_config_dir
+):  # pylint: disable=unused-argument
+    dbt_assets = load_assets_from_dbt_project(
+        test_python_project_dir, dbt_python_config_dir, key_prefix="dbt", source_key_prefix="source"
+    )
+    assert dbt_assets[0].keys_by_input_name == {
+        "source_dagster_dbt_python_test_project_dagster_bot_labeled_users": AssetKey(
+            ["source", "dagster", "bot_labeled_users"]
+        ),
+        "source_dagster_dbt_python_test_project_raw_data_events": AssetKey(
+            ["source", "raw_data", "events"]
+        ),
+        "source_dagster_dbt_python_test_project_raw_data_users": AssetKey(
+            ["source", "raw_data", "users"]
+        ),
+    }
+
+    assert dbt_assets[0].keys_by_output_name["cleaned_users"] == AssetKey(["dbt", "cleaned_users"])
+
+
 def test_python_interleaving(
     conn_string, dbt_python_sources, test_python_project_dir, dbt_python_config_dir
 ):  # pylint: disable=unused-argument
-    dbt_assets = load_assets_from_dbt_project(test_python_project_dir, dbt_python_config_dir)
+    dbt_assets = load_assets_from_dbt_project(
+        test_python_project_dir, dbt_python_config_dir, key_prefix="dbt"
+    )
 
     @io_manager
     def test_io_manager(_context):
@@ -607,7 +630,7 @@ def test_python_interleaving(
 
         return TestIOManager()
 
-    @asset
+    @asset(key_prefix="dagster", ins={"cleaned_users": AssetIn(key_prefix="dbt")})
     def bot_labeled_users(cleaned_users):
         # super advanced bot labeling algorithm
         return [(uid, uid % 5 == 0) for _, uid in cleaned_users]
@@ -630,12 +653,12 @@ def test_python_interleaving(
         if event.event_type_value == "ASSET_MATERIALIZATION"
     }
     expected_asset_names = [
-        "cleaned_events",
-        "cleaned_users",
-        "daily_aggregated_events",
-        "daily_aggregated_users",
-        "bot_labeled_users",
-        "bot_labeled_events",
+        "dbt.cleaned_events",
+        "dbt.cleaned_users",
+        "dbt.daily_aggregated_events",
+        "dbt.daily_aggregated_users",
+        "dagster.bot_labeled_users",
+        "dbt.bot_labeled_events",
     ]
-    expected_keys = {AssetKey([name]) for name in expected_asset_names}
+    expected_keys = {AssetKey(name.split(".")) for name in expected_asset_names}
     assert all_keys == expected_keys

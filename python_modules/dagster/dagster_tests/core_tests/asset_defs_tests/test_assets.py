@@ -3,11 +3,14 @@ import pytest
 from dagster import (
     AssetKey,
     AssetOut,
+    AssetsDefinition,
     IOManager,
+    Out,
     Output,
     ResourceDefinition,
     build_op_context,
     io_manager,
+    op,
 )
 from dagster._check import CheckError
 from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
@@ -90,6 +93,23 @@ def test_retain_group():
         output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
     )
     assert replaced.group_names_by_key[AssetKey("baz")] == "foo"
+
+
+def test_retain_group_subset():
+    @op(out={"a": Out(), "b": Out()})
+    def ma_op():
+        return 1
+
+    ma = AssetsDefinition(
+        node_def=ma_op,
+        keys_by_input_name={},
+        keys_by_output_name={"a": AssetKey("a"), "b": AssetKey("b")},
+        group_names_by_key={AssetKey("a"): "foo", AssetKey("b"): "bar"},
+        can_subset=True,
+    )
+
+    subset = ma.subset_for({AssetKey("b")})
+    assert subset.group_names_by_key[AssetKey("b")] == "bar"
 
 
 def test_chain_replace_and_subset_for():
