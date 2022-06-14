@@ -427,6 +427,10 @@
         "title": "Core",
         "children": [
           {
+            "title": "Software-Defined Assets",
+            "path": "/_apidocs/assets"
+          },
+          {
             "title": "Jobs",
             "path": "/_apidocs/jobs"
           },
@@ -493,10 +497,6 @@
           {
             "title": "Versioning & Memoization",
             "path": "/_apidocs/memoization"
-          },
-          {
-            "title": "Software-Defined Assets",
-            "path": "/_apidocs/assets"
           },
           {
             "title": "Utilities",
