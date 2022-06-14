@@ -46,11 +46,11 @@ This release marks the official transition of software-defined assets from exper
 
 - Support for adding tags to asset materializations, which was previously marked as experimental, has been removed.
 - Some of the properties of the previously-experimental AssetsDefinition class have been renamed. group_names is now group_names_by_key, asset_keys_by_input_name is now keys_by_input_name, and asset_keys_by_output_name is now keys_by_output_name, asset_key is now key, and asset_keys is now keys.
-- `fs_asset_io_manager` has been removed in favor of merging its functionality with fs_io_manager. `fs_io_manager` is now the default IO manager for asset jobs, and will store asset outputs in a directory named with the asset key.  Similarly, removed `adls2_pickle_asset_io_manager`, `gcs_pickle_asset_io_manager` , and `s3_pickle_asset_io_manager`. Instead, `adls2_pickle_io_manager`, `gcs_pickle_io_manager`, and `s3_pickle_io_manager` now support software-defined assets.
+- Removes previously experimental IO manager `fs_asset_io_manager` in favor of merging its functionality with `fs_io_manager`. `fs_io_manager` is now the default IO manager for asset jobs, and will store asset outputs in a directory named with the asset key.  Similarly, removed `adls2_pickle_asset_io_manager`, `gcs_pickle_asset_io_manager` , and `s3_pickle_asset_io_manager`. Instead, `adls2_pickle_io_manager`, `gcs_pickle_io_manager`, and `s3_pickle_io_manager` now support software-defined assets.
 - *(deprecation)* The namespace argument on the `@asset` decorator and AssetIn has been deprecated. Users should use key_prefix instead.
 - *(deprecation)* AssetGroup has been deprecated. Users should instead place assets directly on repositories, optionally attaching resources using with_resources. Asset jobs should be defined using `define_assets_job` (replacing `AssetGroup.build_job`), and arbitrary sets of assets can be materialized using the standalone function materialize (replacing `AssetGroup.materialize`).
 - *(deprecation)* The `outs` property of the previously-experimental `@multi_asset` decorator now prefers a dictionary whose values are `AssetOut` objects instead of a dictionary whose values are `Out` objects. The latter still works, but is deprecated.
-* The previously-experimental property on `OpExecutionContext` called `output_asset_partition_key` is now deprecated in favor of `asset_partition_key_for_output`
+- The previously-experimental property on `OpExecutionContext` called `output_asset_partition_key` is now deprecated in favor of `asset_partition_key_for_output`
 
 ### Event records
 
@@ -208,7 +208,7 @@ This release marks the official transition of software-defined assets from exper
 
 ### Community Contributions
 
-* Provide dagster-mlflow configuration parameters as environment variables, thanks @chasleslr!
+* You can now provide dagster-mlflow configuration parameters as environment variables, thanks @chasleslr!
 
 ### Documentation
 
