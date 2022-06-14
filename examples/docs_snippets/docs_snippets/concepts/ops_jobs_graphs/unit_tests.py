@@ -1,5 +1,5 @@
 # isort: skip_file
-# pylint: disable=reimported,unnecessary-ellipsis,unused-variable
+# pylint: disable=reimported,unnecessary-ellipsis,unused-variable,unused-argument
 from dagster import (
     AssetMaterialization,
     DagsterEventType,
@@ -132,9 +132,7 @@ def my_foo_resource(context):
 
 
 def test_op_resource_def():
-    context = build_op_context(
-        resources={"foo": my_foo_resource.configured({"my_str": "bar"})}
-    )
+    context = build_op_context(resources={"foo": my_foo_resource.configured({"my_str": "bar"})})
     assert op_requires_foo(context) == "found bar"
 
 
@@ -346,9 +344,7 @@ def source_io_manager():
 # start_materialize_source_asset
 from dagster import asset, SourceAsset, materialize_in_process, AssetKey
 
-the_source = SourceAsset(
-    key=AssetKey("repository_a_asset"), io_manager_def=source_io_manager
-)
+the_source = SourceAsset(key=AssetKey("repository_a_asset"), io_manager_def=source_io_manager)
 
 
 @asset
@@ -362,9 +358,7 @@ def other_repository_b_asset(repository_a_asset):
 
 
 def test_repository_b_assets():
-    result = materialize_in_process(
-        [the_source, repository_b_asset, other_repository_b_asset]
-    )
+    result = materialize_in_process([the_source, repository_b_asset, other_repository_b_asset])
     assert result.success
     ...
 
@@ -377,16 +371,14 @@ import mock
 
 
 @asset(required_resource_keys={"service"})
-def asset_uses_service(context):
+def asset_requires_service(context):
     service = context.resources.service
     ...
 
 
-def test_asset_uses_service():
+def test_asset_requires_service():
     # Mock objects can be provided directly.
-    result = materialize_in_process(
-        [asset_uses_service], resources={"service": mock.MagicMock()}
-    )
+    result = materialize_in_process([asset_requires_service], resources={"service": mock.MagicMock()})
     assert result.success
     ...
 

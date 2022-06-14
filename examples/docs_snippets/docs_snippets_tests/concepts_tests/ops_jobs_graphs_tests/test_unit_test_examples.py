@@ -1,6 +1,6 @@
 from docs_snippets.concepts.ops_jobs_graphs.unit_tests import (
     test_asset_mock_service,
-    test_asset_uses_service,
+    test_asset_requires_service,
     test_asset_with_inputs,
     test_asset_with_service,
     test_basic_asset,
@@ -30,4 +30,4 @@ def test_unit_tests():
     test_asset_mock_service()
     test_data_assets()
     test_repository_b_assets()
-    test_asset_uses_service()
+    test_asset_requires_service()
