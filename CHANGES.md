@@ -50,6 +50,7 @@ This release marks the official transition of software-defined assets from exper
 - *(deprecation)* The namespace argument on the `@asset` decorator and AssetIn has been deprecated. Users should use key_prefix instead.
 - *(deprecation)* AssetGroup has been deprecated. Users should instead place assets directly on repositories, optionally attaching resources using with_resources. Asset jobs should be defined using `define_assets_job` (replacing `AssetGroup.build_job`), and arbitrary sets of assets can be materialized using the standalone function materialize (replacing `AssetGroup.materialize`).
 - *(deprecation)* The `outs` property of the previously-experimental `@multi_asset` decorator now prefers a dictionary whose values are `AssetOut` objects instead of a dictionary whose values are `Out` objects. The latter still works, but is deprecated.
+* The previously-experimental property on `OpExecutionContext` called `output_asset_partition_key` is now deprecated in favor of `asset_partition_key_for_output`
 
 ### Event records
 
@@ -204,21 +205,6 @@ This release marks the official transition of software-defined assets from exper
 * [dagit] When scrolling through a list of runs, scrolling would sometimes get stuck on certain tags, specifically those with content overflowing the width of the tag. This has been fixed.
 * [dagit] While viewing a job page, the left navigation item corresponding to that job will be highlighted, and the navigation pane will scroll to bring it into view.
 * [dagit] Fixed a bug where the “Scaffold config” button was always enabled.
-
-### Breaking Changes
-
-* [dagster-k8s] In the Dagster Helm chart, user code deployment configuration (like secrets, configmaps, or volumes) is now automatically included in any runs launched from that code. Previously, this behavior was opt-in. In most cases, this will not be a breaking change, but in less common cases where a user code deployment was running in a different kubernetes namespace or using a different service account, this could result in missing secrets or configmaps in a launched run that previously worked. You can return to the previous behavior where config on the user code deployment was not applied to any runs by setting the `includeConfigInLaunchedRuns.enabled` field to `false` for the user code deployment. See the [Kubernetes Deployment docs](https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm#configure-your-user-deployment) for more details. 
-* [dagster-dbt] (breaks previously-experimental API) The AssetKeys generated for sources are now the union of the source name and the table name, and the AssetKeys generated for models are now the union of the configured schema name for a given model (if any), and the model name.
-* Support for adding tags to asset materializations, which was previously marked as experimental, has been removed.
-* Some of the properties of the previously-experimental `AssetsDefinition` class have been renamed. `group_names` is now `group_names_by_key`, `asset_keys_by_input_name` is now `keys_by_input_name`, and `asset_keys_by_output_name` is now `keys_by_output_name`, `asset_key` is now `key`, and `asset_keys` is now `keys`.
-* The previously-experimental property on `OpExecutionContext` called `output_asset_partition_key` is now deprecated in favor of `asset_partition_key_for_output`
-* Previously, when schedules/sensors targeted jobs with the same name as other jobs in the repo, the jobs on the sensor/schedule would silently overwrite the other jobs. Now, this will cause an error.
-
-### Deprecations
-
-* The `namespace` argument on the `@asset` decorator and `AssetIn` has been deprecated. Users should use `key_prefix` instead.
-* `AssetGroup` has been deprecated. Users should instead place assets directly on repositories, optionally attaching resources using `with_resources`. Asset jobs should be defined using `define_assets_job` (replacing `AssetGroup.build_job`), and arbitrary sets of `assets` can be materialized using the standalone function `materialize` (replacing `AssetGroup.materialize`).
-* The `outs` property of the previously-experimental `@multi_asset` decorator now prefers a dictionary whose values are `AssetOut` objects instead of a dictionary whose values are `Out` objects. The latter still works, but is deprecated.
 
 ### Community Contributions
 
