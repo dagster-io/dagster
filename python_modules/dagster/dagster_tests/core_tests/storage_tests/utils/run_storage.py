@@ -1,5 +1,6 @@
 import sys
 import tempfile
+import time
 from datetime import datetime
 
 import pendulum
@@ -14,6 +15,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster.core.execution.bulk_actions import BulkAction, BulkActionType
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
@@ -1208,6 +1210,18 @@ class TestRunStorage:
         storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED))
         assert len(storage.get_backfills()) == 1
         assert len(storage.get_backfills(status=BulkActionStatus.REQUESTED)) == 0
+
+    def test_bulk_actions(self, storage):
+        action = BulkAction(
+            "foo", BulkActionType.RUN_TERMINATION, BulkActionStatus.REQUESTED, time.time()
+        )
+        storage.add_bulk_action(action)
+        assert storage.get_bulk_action("foo") == action
+        action2 = BulkAction(
+            "foo", BulkActionType.RUN_TERMINATION, BulkActionStatus.REQUESTED, time.time() + 1000
+        )
+        storage.update_bulk_action(action2)
+        assert storage.get_bulk_action("foo") == action2
 
     def test_secondary_index(self, storage):
         if not isinstance(storage, SqlRunStorage):
