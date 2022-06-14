@@ -1,5 +1,5 @@
 # isort: skip_file
-# pylint: disable=
+# pylint: disable=import-error
 
 from dagster import (
     load_assets_from_package_module,
