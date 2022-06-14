@@ -7,6 +7,8 @@ import {AssetNode} from '../asset-graph/AssetNode';
 import {LiveData, toGraphId} from '../asset-graph/Utils';
 import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+
 export const AssetNodeList: React.FC<{
   items: AssetGraphQuery_assetNodes[] | null;
   liveDataByNode: LiveData;
@@ -28,7 +30,7 @@ export const AssetNodeList: React.FC<{
           key={asset.id}
           onClick={(e) => {
             e.stopPropagation();
-            history.push(`/instance/assets/${asset.assetKey.path.join('/')}?view=definition`);
+            history.push(assetDetailsPathForKey(asset.assetKey, {view: 'definition'}));
           }}
         >
           <AssetNode

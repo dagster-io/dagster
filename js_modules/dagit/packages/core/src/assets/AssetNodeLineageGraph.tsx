@@ -12,6 +12,8 @@ import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {getJSONForKey} from '../hooks/useStateWithStorage';
 
+import {AssetViewParams} from './AssetView';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
@@ -23,7 +25,8 @@ export const AssetNodeLineageGraph: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
   assetGraphData: GraphData;
   liveDataByNode: LiveData;
-}> = ({assetNode, assetGraphData, liveDataByNode}) => {
+  params: AssetViewParams;
+}> = ({assetNode, assetGraphData, liveDataByNode, params}) => {
   const assetGraphId = toGraphId(assetNode.assetKey);
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
@@ -33,7 +36,7 @@ export const AssetNodeLineageGraph: React.FC<{
   const history = useHistory();
 
   const onClickAsset = (key: AssetKey) => {
-    history.push(`/instance/assets/${key.path.join('/')}?view=lineage`);
+    history.push(assetDetailsPathForKey(key, {...params, lineageScope: 'neighbors'}));
   };
 
   React.useEffect(() => {

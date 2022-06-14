@@ -13,6 +13,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
 
 export const RunAssetKeyTags: React.FC<{
@@ -32,10 +33,7 @@ export const RunAssetKeyTags: React.FC<{
     return (
       <>
         {displayed.map((assetKey) => (
-          <Link
-            to={`/instance/assets/${assetKey.path.map(encodeURIComponent).join('/')}`}
-            key={tokenForAssetKey(assetKey)}
-          >
+          <Link to={assetDetailsPathForKey(assetKey)} key={tokenForAssetKey(assetKey)}>
             <Tag intent="none" interactive icon="asset">
               {displayNameForAssetKey(assetKey)}
             </Tag>
@@ -72,7 +70,7 @@ export const RunAssetKeyTags: React.FC<{
                     <tr key={tokenForAssetKey(assetKey)}>
                       <td>
                         <Link
-                          to={`/instance/assets/${assetKey.path.map(encodeURIComponent).join('/')}`}
+                          to={assetDetailsPathForKey(assetKey)}
                           key={tokenForAssetKey(assetKey)}
                         >
                           {displayNameForAssetKey(assetKey)}
