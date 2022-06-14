@@ -7,7 +7,7 @@ description: Graphs are sets of interconnected ops or sub-graphs and form the co
 
 A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
 
-Dagster also supports using [graphs to create assets](/concepts/ops-jobs-graphs/graphs#to-back-assets), allowing you to produce multiple assets with a single graph and easily track cross-job lineage.
+Dagster also supports using [graphs to create assets](#to-back-assets), allowing you to produce multiple assets with a single graph and easily track cross-job lineage.
 
 Graphs form the core of [jobs](/concepts/ops-jobs-graphs/jobs).
 
@@ -69,7 +69,7 @@ Need some inspiration? Using these patterns, you can build graphs:
 - [With conditional branching](#with-conditional-branching)
 - [With a fixed fan-in](#with-a-fixed-fan-in)
 - [That contain other graphs](#that-contain-other-graphs)
-- [That use dynamic outputs](#that-use-dynamic-outputs)
+- [That use dynamic outputs](#using-dynamic-outputs)
 
 #### That re-use ops
 
@@ -269,8 +269,8 @@ Dagster also provides more advanced abstractions to handle dependencies and IO. 
 
 ### Constructing dependencies
 
-- [Using GraphDefinitions]()
-- [Using YAML (GraphDSL)]()
+- [Using GraphDefinitions](#using-graphdefinitions)
+- [Using YAML (GraphDSL)](#using-yaml-graphdsl)
 
 #### Using GraphDefinitions
 
