@@ -1,5 +1,5 @@
 # isort: skip_file
-# pylint: disable=reimported
+# pylint: disable=
 
 from dagster import (
     load_assets_from_package_module,
@@ -10,6 +10,8 @@ from dagster import (
 )
 
 # start_example
+
+import my_package.cereal as cereal
 
 cereal_assets = load_assets_from_package_module(
     cereal,

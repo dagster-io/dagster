@@ -390,7 +390,7 @@ To help keep your assets tidy, you can organize them into groups. Grouping asset
 
 In Dagster, there are two ways to assign assets to groups:
 
-- [By using the `load_assets_from_package_module` function](#from-assets-in-a-sub-module) (**recommended**)
+- [By using the group_name argument when calling `load_assets_from_package_module`](#from-assets-in-a-sub-module) (**recommended**)
 - [By specifying a group name on an individual asset](#on-individual-assets)
 
 By default, assets that aren't assigned to a group will be placed in a group named `default`. Use Dagit to [view these assets](#viewing-asset-groups-in-dagit).
@@ -400,6 +400,8 @@ By default, assets that aren't assigned to a group will be placed in a group nam
 **This recommended approach** constructs a group of assets from a specified module in your project. Using the `load_assets_from_package_module` function, you can import all assets in a module and apply a grouping:
 
 ```python file=/concepts/assets/asset_group_module.py startafter=start_example endbefore=end_example
+import my_package.cereal as cereal
+
 cereal_assets = load_assets_from_package_module(
     cereal,
     group_name="cereal_assets",
@@ -408,7 +410,7 @@ cereal_assets = load_assets_from_package_module(
 
 #### On individual assets
 
-Assets can also be grouped on an individual basis by specifying an argument when creating the asset:
+Assets can also be given groups on an individual basis by specifying an argument when creating the asset:
 
 ```python file=/concepts/assets/asset_group_argument.py startafter=start_example endbefore=end_example
 @asset(group_name="cereal_assets")
