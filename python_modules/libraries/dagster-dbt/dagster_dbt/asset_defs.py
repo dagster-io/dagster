@@ -300,12 +300,6 @@ def _get_node_metadata(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
                 ]
             )
         )
-    if "database" in node_info:
-        metadata["database"] = node_info["database"]
-    if "schema" in node_info:
-        metadata["schema"] = node_info["schema"]
-    if "name" in node_info:
-        metadata["table"] = node_info["name"]
     return metadata
 
 
@@ -448,6 +442,7 @@ def load_assets_from_dbt_manifest(
     if source_key_prefix:
         if isinstance(source_key_prefix, str):
             source_key_prefix = [source_key_prefix]
+        source_key_prefix = check.list_param(source_key_prefix, "source_key_prefix", of_type=str)
         input_key_replacements = {
             input_key: AssetKey(source_key_prefix + input_key.path)
             for input_key in dbt_assets_def.asset_keys_by_input_name.values()
