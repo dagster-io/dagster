@@ -60,8 +60,11 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     notifyOnNetworkStatusChange: true,
   });
 
-  const {assetOrError} = queryResult.data || queryResult.previousData || {};
-  const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
+  const {materializedKeyOrError} = queryResult.data || queryResult.previousData || {};
+  const asset =
+    materializedKeyOrError && materializedKeyOrError.__typename === 'MaterializedKey'
+      ? materializedKeyOrError
+      : null;
   const lastMaterializedAt = asset?.assetMaterializations[0]?.timestamp;
   const viewingMostRecent = !params.asOf || Number(lastMaterializedAt) <= Number(params.asOf);
 

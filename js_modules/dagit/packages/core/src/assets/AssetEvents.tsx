@@ -69,7 +69,10 @@ function useRecentAssetEvents(
   );
 
   return React.useMemo(() => {
-    const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
+    const asset =
+      data?.materializedKeyOrError.__typename === 'MaterializedKey'
+        ? data?.materializedKeyOrError
+        : null;
     const materializations = asset?.assetMaterializations || [];
     const observations = asset?.assetObservations || [];
 

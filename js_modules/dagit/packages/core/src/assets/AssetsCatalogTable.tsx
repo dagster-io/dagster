@@ -36,14 +36,14 @@ import {
 } from './types/AssetCatalogGroupTableQuery';
 import {
   AssetCatalogTableQuery,
-  AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes,
+  AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection_nodes,
 } from './types/AssetCatalogTableQuery';
 import {AssetTableFragment} from './types/AssetTableFragment';
 import {AssetViewType, useAssetView} from './useAssetView';
 
 const PAGE_SIZE = 50;
 
-type Asset = AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes;
+type Asset = AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection_nodes;
 
 function useAllAssets(
   groupSelector?: AssetGroupSelector,
@@ -74,11 +74,14 @@ function useAllAssets(
         assets: assetNodes?.map(definitionToAssetTableFragment),
       };
     } else {
-      const assetsOrError = assetsQuery.data?.assetsOrError;
+      const assetsOrError = assetsQuery.data?.materializedKeysOrError;
       return {
         query: assetsQuery,
         error: assetsOrError?.__typename === 'PythonError' ? assetsOrError : undefined,
-        assets: assetsOrError?.__typename === 'AssetConnection' ? assetsOrError.nodes : undefined,
+        assets:
+          assetsOrError?.__typename === 'MaterializedKeysConnection'
+            ? assetsOrError.nodes
+            : undefined,
       };
     }
   }, [assetsQuery, groupQuery, groupSelector]);
@@ -329,7 +332,7 @@ const ASSET_CATALOG_GROUP_TABLE_QUERY = gql`
 function definitionToAssetTableFragment(
   definition: AssetCatalogGroupTableQuery_assetNodes,
 ): AssetTableFragment {
-  return {__typename: 'Asset', id: definition.id, key: definition.assetKey, definition};
+  return {__typename: 'MaterializedKey', id: definition.id, key: definition.assetKey, definition};
 }
 
 function buildAssetGroupSelector(a: Asset) {

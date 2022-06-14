@@ -109,11 +109,11 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
 };
 
 const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
-  if (!data?.assetsOrError || data.assetsOrError.__typename === 'PythonError') {
+  if (!data?.materializedKeysOrError || data.materializedKeysOrError.__typename === 'PythonError') {
     return new Fuse([]);
   }
 
-  const {nodes} = data.assetsOrError;
+  const {nodes} = data.materializedKeysOrError;
   const allEntries = nodes.map(({key}) => {
     return {
       label: displayNameForAssetKey(key),

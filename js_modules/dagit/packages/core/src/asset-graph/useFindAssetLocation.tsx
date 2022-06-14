@@ -29,8 +29,11 @@ export function useFindAssetLocation() {
         query: ASSET_FOR_NAVIGATION_QUERY,
         variables: {key},
       });
-      if (data?.assetOrError.__typename === 'Asset' && data?.assetOrError.definition) {
-        const def = data.assetOrError.definition;
+      if (
+        data?.materializedKeyOrError.__typename === 'MaterializedKey' &&
+        data?.materializedKeyOrError.definition
+      ) {
+        const def = data.materializedKeyOrError.definition;
         return {
           assetKey: key,
           opNames: def.opNames,

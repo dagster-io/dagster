@@ -10,8 +10,8 @@ import {OmittedAssetCountQuery} from './types/OmittedAssetCountQuery';
 export const OmittedAssetsNotice: React.FC<{assetKeys: AssetKey[]}> = ({assetKeys}) => {
   const result = useQuery<OmittedAssetCountQuery>(OMITTED_ASSET_COUNT_QUERY);
   const allMaterializationKeys =
-    (result.data?.assetsOrError.__typename === 'AssetConnection' &&
-      result.data.assetsOrError.nodes) ||
+    (result.data?.materializedKeysOrError.__typename === 'MaterializedKeysConnection' &&
+      result.data.materializedKeysOrError.nodes) ||
     [];
   if (allMaterializationKeys.length === 0) {
     return <span />;

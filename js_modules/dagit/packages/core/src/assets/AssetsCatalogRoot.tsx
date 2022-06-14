@@ -47,7 +47,7 @@ export const AssetsCatalogRoot = () => {
       </Box>
     </Page>
   ) : currentPath.length === 0 ||
-    queryResult.data?.assetOrError.__typename === 'AssetNotFoundError' ? (
+    queryResult.data?.materializedKeyOrError.__typename === 'AssetNotFoundError' ? (
     <Page>
       <AssetPageHeader
         assetKey={{path: currentPath}}
