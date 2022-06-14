@@ -233,7 +233,7 @@ const ConfigJSON = styled.pre`
 export const ConfigTypeSchema = React.memo((props: ConfigTypeSchemaProps) => {
   const {type, typesInScope} = props;
 
-  const typeLookup = {};
+  const typeLookup: Record<string, TypeData> = {};
   for (const typeInScope of typesInScope) {
     typeLookup[typeInScope.key] = typeInScope;
   }
