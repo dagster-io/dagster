@@ -148,9 +148,7 @@ class MyConfigurableInputLoader(MyIOManager):
         return read_dataframe_from_table(name=context.config["table"])
 
 
-@io_manager(
-    input_config_schema={"table": str}
-)
+@io_manager(input_config_schema={"table": str})
 def my_configurable_input_loader():
     return MyConfigurableInputLoader()
 ```
@@ -159,10 +157,8 @@ Then, when executing a job, you can pass in this per-input config.
 
 ```python file=/concepts/io_management/input_managers.py startafter=start_per_input_config_exec endbefore=end_per_input_config_exec
 load_table_job.execute_in_process(
-        run_config={
-            "ops": {"my_op": {"inputs": {"dataframe": {"table": "table1"}}}}
-        },
-    )
+    run_config={"ops": {"my_op": {"inputs": {"dataframe": {"table": "table1"}}}}},
+)
 ```
 
 ### Using a input manager with subselection
@@ -227,7 +223,7 @@ class MyNewInputLoader(MyIOManager):
         if context.upstream_output is None:
             return read_dataframe_from_table(name="table_1")
         else:
-            return super.load_input(self, context)
+            return super().load_input(context)
 ```
 
 Now, when running the full job, `op2`'s input will be loaded using the IO manager on the output of `op1`. When running the job subset, `op2`'s input has no upstream output, so `table_1` will be loaded.
