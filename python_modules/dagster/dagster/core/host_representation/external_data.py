@@ -690,6 +690,7 @@ class ExternalAssetNode(
             ("compute_kind", Optional[str]),
             ("op_name", Optional[str]),
             ("op_names", Optional[Sequence[str]]),
+            ("node_definition_name", Optional[str]),
             ("graph_name", Optional[str]),
             ("op_description", Optional[str]),
             ("job_names", Sequence[str]),
@@ -714,6 +715,7 @@ class ExternalAssetNode(
         compute_kind: Optional[str] = None,
         op_name: Optional[str] = None,
         op_names: Optional[Sequence[str]] = None,
+        node_definition_name: Optional[str] = None,
         graph_name: Optional[str] = None,
         op_description: Optional[str] = None,
         job_names: Optional[Sequence[str]] = None,
@@ -738,6 +740,7 @@ class ExternalAssetNode(
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             op_name=check.opt_str_param(op_name, "op_name"),
             op_names=check.opt_list_param(op_names, "op_names"),
+            node_definition_name=check.opt_str_param(node_definition_name, "node_definition_name"),
             graph_name=check.opt_str_param(graph_name, "graph_name"),
             op_description=check.opt_str_param(
                 op_description or output_description, "op_description"
@@ -910,6 +913,7 @@ def external_asset_graph_from_defs(
                 graph_name=graph_name,
                 op_names=op_names_by_asset_key[asset_key],
                 op_description=node_def.description,
+                node_definition_name=node_def.name,
                 job_names=job_names,
                 partitions_def_data=partitions_def_data,
                 output_name=output_def.name,
