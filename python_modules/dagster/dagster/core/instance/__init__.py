@@ -1970,8 +1970,8 @@ class DagsterInstance:
     def update_tick(self, tick):
         return self._schedule_storage.update_tick(tick)
 
-    def purge_ticks(self, origin_id, selector_id, tick_status, before):
-        self._schedule_storage.purge_ticks(origin_id, selector_id, tick_status, before)
+    def purge_ticks(self, origin_id, selector_id, before, tick_statuses=None):
+        self._schedule_storage.purge_ticks(origin_id, selector_id, before, tick_statuses)
 
     def wipe_all_schedules(self):
         if self._scheduler:
