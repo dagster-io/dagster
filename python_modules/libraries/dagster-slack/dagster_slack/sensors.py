@@ -22,17 +22,13 @@ def _build_slack_blocks_and_text(
     dagit_base_url: Optional[str],
 ) -> Tuple[List[Dict[str, Any]], str]:
     blocks: List[Dict[str, Any]] = [
-        # {
-        #     "type": "section",
-        #     "text": {
-        #         "type": "mrkdwn",
-        #         "text": f'*Job "{context.pipeline_run.pipeline_name}" failed. `{context.pipeline_run.run_id.split("-")[0]}`*',
-        #     },
-        # },
         {
             "type": "section",
-            "text": {"type": "plain_text", "text": "ya"},
-        }
+            "text": {
+                "type": "mrkdwn",
+                "text": f'*Job "{context.pipeline_run.pipeline_name}" failed. `{context.pipeline_run.run_id.split("-")[0]}`*',
+            },
+        },
     ]
     main_body_text = text_fn(context)
 
