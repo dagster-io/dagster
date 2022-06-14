@@ -23,11 +23,13 @@ class AssetOut(
     )
 ):
     """
-    Args:
+    Defines one of the assets produced by a :py:func:`@multi_asset <multi_asset>`.
+
+    Attributes:
         key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the
-            concatenation of the key_prefix and the asset's name, which defaults to the name of
-            the decorated function. Only one of the "key_prefix" and "key" arguments should be
-            provided.
+            concatenation of the key_prefix and the asset's name. When using ``@multi_asset``, the
+            asset name defaults to the key of the "outs" dictionary Only one of the "key_prefix" and
+            "key" arguments should be provided.
         key (Optional[Union[str, Sequence[str], AssetKey]]): The asset's key. Only one of the
             "key_prefix" and "key" arguments should be provided.
         dagster_type (Optional[Union[Type, DagsterType]]]):
