@@ -4,7 +4,6 @@ from contextlib import ContextDecorator
 from typing import AbstractSet, Any, Callable, Deque, Dict, Optional, cast
 
 import dagster._check as check
-from dagster.core.decorator_utils import get_function_params
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.resource_definition import (
     ResourceDefinition,
@@ -309,7 +308,7 @@ def single_resource_event_generator(context, resource_name, resource_def):
                 with time_execution_scope() as timer_result:
                     resource_or_gen = (
                         resource_def.resource_fn(context)
-                        if is_context_provided(get_function_params(resource_def.resource_fn))
+                        if is_context_provided(resource_def.resource_fn)
                         else resource_def.resource_fn()
                     )
 

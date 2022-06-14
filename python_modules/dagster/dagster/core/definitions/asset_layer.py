@@ -273,7 +273,7 @@ def _asset_key_to_dep_node_handles(
         dep_node_handles_by_node: Dict[
             NodeHandle, List[NodeHandle]
         ] = {}  # memoized map of nodehandle to all node handle dependencies that are ops
-        for output_name, asset_key in assets_defs.node_asset_keys_by_output_name.items():
+        for output_name, asset_key in assets_defs.node_keys_by_output_name.items():
             output_def = assets_defs.node_def.output_def_named(output_name)
             output_name = output_def.name
 
@@ -501,7 +501,7 @@ class AssetLayer:
         for node_handle, assets_def in assets_defs_by_node_handle.items():
             asset_deps.update(assets_def.asset_deps)
 
-            for input_name, asset_key in assets_def.node_asset_keys_by_input_name.items():
+            for input_name, asset_key in assets_def.node_keys_by_input_name.items():
                 asset_key_by_input[NodeInputHandle(node_handle, input_name)] = asset_key
                 # resolve graph input to list of op inputs that consume it
                 node_input_handles = _resolve_input_to_destinations(
@@ -510,7 +510,7 @@ class AssetLayer:
                 for node_input_handle in node_input_handles:
                     asset_key_by_input[node_input_handle] = asset_key
 
-            for output_name, asset_key in assets_def.node_asset_keys_by_output_name.items():
+            for output_name, asset_key in assets_def.node_keys_by_output_name.items():
                 # resolve graph output to the op output it comes from
                 inner_output_def, inner_node_handle = assets_def.node_def.resolve_output_to_origin(
                     output_name, handle=node_handle
@@ -606,9 +606,9 @@ class AssetLayer:
 
     def group_names_by_assets(self) -> Mapping[AssetKey, str]:
         group_names: Dict[AssetKey, str] = {
-            key: assets_def.group_names[key]
+            key: assets_def.group_names_by_key[key]
             for key, assets_def in self._assets_defs_by_key.items()
-            if key in assets_def.group_names
+            if key in assets_def.group_names_by_key
         }
 
         group_names.update(
@@ -723,14 +723,6 @@ def _subset_assets_defs(
                 "asset keys produced by this asset."
             )
 
-    missed_keys = selected_asset_keys - included_keys - {sa.key for sa in source_assets}
-    if missed_keys:
-        raise DagsterInvalidSubsetError(
-            f"When building job, the AssetKey(s) {[key.to_user_string() for key in missed_keys]} "
-            "were selected, but are not produced by any of the provided AssetsDefinitions or "
-            "SourceAssets. Make sure that keys are spelled correctly and that all of the expected "
-            "definitions are provided."
-        )
     all_excluded_assets: Sequence[Union["AssetsDefinition", "SourceAsset"]] = [
         *excluded_assets,
         *source_assets,

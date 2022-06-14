@@ -16,6 +16,21 @@ class AssetIn(
         ],
     )
 ):
+    """
+    Defines an asset dependency.
+
+    Attributes:
+        key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the
+            concatenation of the key_prefix and the input name. Only one of the "key_prefix" and
+            "key" arguments should be provided.
+        key (Optional[Union[str, Sequence[str], AssetKey]]): The asset's key. Only one of the
+            "key_prefix" and "key" arguments should be provided.
+        metadata (Optional[Dict[str, Any]]): A dict of the metadata for the input.
+            For example, if you only need a subset of columns from an upstream table, you could
+            include that in metadata and the IO manager that loads the upstream table could use the
+            metadata to determine which columns to load.
+    """
+
     def __new__(
         cls,
         key: Optional[CoercibleToAssetKey] = None,

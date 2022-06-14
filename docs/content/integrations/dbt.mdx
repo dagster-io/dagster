@@ -141,7 +141,7 @@ def run_models(context, some_condition: bool):
 
 #### Using a different dbt profile for different dagster modes
 
-Dagster supports creating [multiple jobs from the same graph](/concepts/ops-jobs-graphs/jobs-graphs#from-a-graph). dbt has a similar concept, [profiles](https://docs.getdbt.com/dbt-cli/configure-your-profile). You might want to run a dev version of your graph that targets the development-specific dbt profile, and then have a prod version that runs using the prod dbt profile. This example shows how to accomplish this.
+Dagster supports creating [multiple jobs from the same graph](/concepts/ops-jobs-graphs/jobs#from-a-graph). dbt has a similar concept, [profiles](https://docs.getdbt.com/dbt-cli/configure-your-profile). You might want to run a dev version of your graph that targets the development-specific dbt profile, and then have a prod version that runs using the prod dbt profile. This example shows how to accomplish this.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_profile_modes endbefore=end_marker_dbt_cli_profile_modes dedent=4
 from dagster_dbt import dbt_cli_resource, dbt_run_op
@@ -374,34 +374,6 @@ For more details, [visit the official documentation on using variables in dbt](h
 from dagster_dbt import dbt_rpc_resource
 
 custom_resource = dbt_rpc_resource.configured({"host": HOST, "post": PORT})
-```
-
-**dbt RPC: Select specific models to run**
-
-```python file=/integrations/dbt.py startafter=start_marker_dbt_rpc_config_select_models endbefore=end_marker_dbt_rpc_config_select_models dedent=4
-No match for startAfter value "start_marker_dbt_rpc_config_select_models"
-```
-
-For more details, [visit the official documentation on dbt's node selection syntax](https://docs.getdbt.com/reference/node-selection/syntax).
-
-**dbt RPC: Exclude specific models**
-
-```python file=/integrations/dbt.py startafter=start_marker_dbt_rpc_config_exclude_models endbefore=end_marker_dbt_rpc_config_exclude_models dedent=4
-No match for startAfter value "start_marker_dbt_rpc_config_exclude_models"
-```
-
-For more details, [visit the official documentation on dbt's node selection syntax](https://docs.getdbt.com/reference/node-selection/syntax).
-
-**dbt RPC: Configure polling interval when using a `dbt_rpc_*_and_wait` op**
-
-```python file=/integrations/dbt.py startafter=start_marker_dbt_rpc_and_wait_config_polling_interval endbefore=end_marker_dbt_rpc_and_wait_config_polling_interval dedent=4
-No match for startAfter value "start_marker_dbt_rpc_and_wait_config_polling_interval"
-```
-
-**dbt RPC: Disable default asset materializations**
-
-```python file=/integrations/dbt.py startafter=start_marker_dbt_rpc_config_disable_assets endbefore=end_marker_dbt_rpc_config_disable_assets dedent=4
-No match for endBefore value "end_marker_dbt_rpc_config_disable_assets"
 ```
 
 ## Conclusion

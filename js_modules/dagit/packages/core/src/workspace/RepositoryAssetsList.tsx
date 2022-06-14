@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {RepositoryLink} from '../nav/RepositoryLink';
 
 import {repoAddressAsString} from './repoAddressAsString';
@@ -111,7 +112,7 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
           <tr key={asset.id}>
             <td>
               <Box flex={{direction: 'column', gap: 4}}>
-                <Link to={`/instance/assets/${asset.assetKey.path.join('/')}`}>
+                <Link to={assetDetailsPathForKey(asset.assetKey)}>
                   {displayNameForAssetKey(asset.assetKey)}
                 </Link>
                 <Description>{asset.description}</Description>

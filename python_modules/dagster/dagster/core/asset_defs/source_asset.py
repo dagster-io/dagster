@@ -1,4 +1,4 @@
-from typing import Dict, Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import Dict, Iterator, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey, CoercibleToAssetKey
@@ -11,9 +11,14 @@ from dagster.core.definitions.metadata import (
 )
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
-from dagster.core.definitions.resource_requirement import ResourceAddable
+from dagster.core.definitions.resource_requirement import (
+    ResourceAddable,
+    ResourceRequirement,
+    SourceAssetIOManagerRequirement,
+    get_resource_key_conflicts,
+)
 from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster.core.storage.io_manager import IOManagerDefinition
 from dagster.utils import merge_dicts
 
@@ -110,6 +115,16 @@ class SourceAsset(
     def with_resources(self, resource_defs) -> "SourceAsset":
         from dagster.core.execution.resources_init import get_transitive_required_resource_keys
 
+        overlapping_keys = get_resource_key_conflicts(self.resource_defs, resource_defs)
+        if overlapping_keys:
+            raise DagsterInvalidInvocationError(
+                f"SourceAsset with key {self.key} has conflicting resource "
+                "definitions with provided resources for the following keys: "
+                f"{sorted(list(overlapping_keys))}. Either remove the existing "
+                "resources from the asset or change the resource keys so that "
+                "they don't overlap."
+            )
+
         merged_resource_defs = merge_dicts(resource_defs, self.resource_defs)
 
         io_manager_def = merged_resource_defs.get(self.get_io_manager_key())
@@ -156,3 +171,10 @@ class SourceAsset(
             group_name=group_name,
             resource_defs=self.resource_defs,
         )
+
+    def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
+        yield SourceAssetIOManagerRequirement(
+            key=self.get_io_manager_key(), asset_key=self.key.to_string()
+        )
+        for source_key, resource_def in self.resource_defs.items():
+            yield from resource_def.get_resource_requirements(outer_context=source_key)

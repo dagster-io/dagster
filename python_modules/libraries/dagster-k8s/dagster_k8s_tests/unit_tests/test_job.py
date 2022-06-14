@@ -14,7 +14,6 @@ from dagster_k8s.utils import sanitize_k8s_label
 from dagster import __version__ as dagster_version
 from dagster import graph
 from dagster.core.test_utils import environ, remove_none_recursively
-from dagster.utils import merge_dicts
 
 
 def test_job_serialization():
@@ -629,6 +628,7 @@ def test_construct_dagster_k8s_job_with_labels():
     ).to_dict()
     expected_labels1 = dict(
         **common_labels,
+        **job_config_labels,
         **{
             "dagster/job": "some_job",
             "dagster/op": "some_op",
@@ -637,10 +637,7 @@ def test_construct_dagster_k8s_job_with_labels():
     )
 
     assert job1["metadata"]["labels"] == expected_labels1
-    assert job1["spec"]["template"]["metadata"]["labels"] == merge_dicts(
-        expected_labels1,
-        job_config_labels,
-    )
+    assert job1["spec"]["template"]["metadata"]["labels"] == expected_labels1
 
     job2 = construct_dagster_k8s_job(
         cfg,
@@ -654,6 +651,7 @@ def test_construct_dagster_k8s_job_with_labels():
     ).to_dict()
     expected_labels2 = dict(
         **common_labels,
+        **job_config_labels,
         **{
             # The last character should be truncated.
             "dagster/job": "long_job_name_64____0123456789012345678901234567890123456789012",
@@ -662,10 +660,7 @@ def test_construct_dagster_k8s_job_with_labels():
         },
     )
     assert job2["metadata"]["labels"] == expected_labels2
-    assert job2["spec"]["template"]["metadata"]["labels"] == merge_dicts(
-        expected_labels2,
-        job_config_labels,
-    )
+    assert job2["spec"]["template"]["metadata"]["labels"] == expected_labels2
 
 
 def test_sanitize_labels():

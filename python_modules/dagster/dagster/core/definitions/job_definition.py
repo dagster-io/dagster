@@ -425,15 +425,25 @@ class JobDefinition(PipelineDefinition):
 
         return mode.partitioned_config.partitions_def
 
-    def run_request_for_partition(self, partition_key: str, run_key: Optional[str]) -> RunRequest:
+    def run_request_for_partition(
+        self,
+        partition_key: str,
+        run_key: Optional[str],
+        tags: Optional[Dict[str, str]] = None,
+    ) -> RunRequest:
         partition_set = self.get_partition_set_def()
         if not partition_set:
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
         partition = partition_set.get_partition(partition_key)
         run_config = partition_set.run_config_for_partition(partition)
-        tags = partition_set.tags_for_partition(partition)
-        return RunRequest(run_key=run_key, run_config=run_config, tags=tags)
+        run_request_tags = (
+            {**tags, **partition_set.tags_for_partition(partition)}
+            if tags
+            else partition_set.tags_for_partition(partition)
+        )
+
+        return RunRequest(run_key=run_key, run_config=run_config, tags=run_request_tags)
 
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "JobDefinition":
         """Apply a set of hooks to all op instances within the job."""

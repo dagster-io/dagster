@@ -4,6 +4,7 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetOut,
     DagsterInvalidDefinitionError,
     OpExecutionContext,
     Out,
@@ -44,7 +45,7 @@ def test_asset_with_inputs():
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
-    assert AssetKey("arg1") in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey("arg1") in my_asset.keys_by_input_name.values()
 
 
 def test_asset_with_config_schema():
@@ -56,7 +57,7 @@ def test_asset_with_config_schema():
 
 
 def test_multi_asset_with_config_schema():
-    @multi_asset(outs={"o1": Out(asset_key=AssetKey("o1"))}, config_schema={"foo": int})
+    @multi_asset(outs={"o1": AssetOut()}, config_schema={"foo": int})
     def my_asset(arg1):
         return arg1
 
@@ -72,7 +73,7 @@ def test_asset_with_compute_kind():
 
 
 def test_multi_asset_with_compute_kind():
-    @multi_asset(outs={"o1": Out(asset_key=AssetKey("o1"))}, compute_kind="sql")
+    @multi_asset(outs={"o1": AssetOut()}, compute_kind="sql")
     def my_asset(arg1):
         return arg1
 
@@ -80,6 +81,37 @@ def test_multi_asset_with_compute_kind():
 
 
 def test_multi_asset_out_name_diff_from_asset_key():
+    @multi_asset(
+        outs={
+            "my_out_name": AssetOut(key=AssetKey("my_asset_name")),
+            "my_other_out_name": AssetOut(key=AssetKey("my_other_asset")),
+        }
+    )
+    def my_asset():
+        yield Output(1, "my_out_name")
+        yield Output(2, "my_other_out_name")
+
+    assert my_asset.keys == {AssetKey("my_asset_name"), AssetKey("my_other_asset")}
+
+
+def test_multi_asset_key_prefix():
+    @multi_asset(
+        outs={
+            "my_asset_name": AssetOut(key_prefix="prefix1"),
+            "my_other_asset": AssetOut(key_prefix="prefix2"),
+        }
+    )
+    def my_asset():
+        yield Output(1, "my_asset_name")
+        yield Output(2, "my_other_asset")
+
+    assert my_asset.keys == {
+        AssetKey(["prefix1", "my_asset_name"]),
+        AssetKey(["prefix2", "my_other_asset"]),
+    }
+
+
+def test_multi_asset_out_backcompat():
     @multi_asset(
         outs={
             "my_out_name": Out(asset_key=AssetKey("my_asset_name")),
@@ -94,7 +126,7 @@ def test_multi_asset_out_name_diff_from_asset_key():
 
 
 def test_multi_asset_infer_from_empty_asset_key():
-    @multi_asset(outs={"my_out_name": Out(), "my_other_out_name": Out()})
+    @multi_asset(outs={"my_out_name": AssetOut(), "my_other_out_name": AssetOut()})
     def my_asset():
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
@@ -105,8 +137,8 @@ def test_multi_asset_infer_from_empty_asset_key():
 def test_multi_asset_internal_asset_deps_metadata():
     @multi_asset(
         outs={
-            "my_out_name": Out(metadata={"foo": "bar"}),
-            "my_other_out_name": Out(metadata={"bar": "foo"}),
+            "my_out_name": AssetOut(metadata={"foo": "bar"}),
+            "my_other_out_name": AssetOut(metadata={"bar": "foo"}),
         },
         internal_asset_deps={
             "my_out_name": {AssetKey("my_other_out_name"), AssetKey("my_in_name")},
@@ -131,7 +163,7 @@ def test_multi_asset_internal_asset_deps_invalid():
     with pytest.raises(check.CheckError, match="Invalid out key"):
 
         @multi_asset(
-            outs={"my_out_name": Out()},
+            outs={"my_out_name": AssetOut()},
             internal_asset_deps={"something_weird": {AssetKey("my_out_name")}},
         )
         def _my_asset():
@@ -140,7 +172,7 @@ def test_multi_asset_internal_asset_deps_invalid():
     with pytest.raises(check.CheckError, match="Invalid asset dependencies"):
 
         @multi_asset(
-            outs={"my_out_name": Out()},
+            outs={"my_out_name": AssetOut()},
             internal_asset_deps={"my_out_name": {AssetKey("something_weird")}},
         )
         def _my_asset():
@@ -229,7 +261,9 @@ def test_asset_with_inputs_and_key_prefix():
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
-    assert AssetKey(["my_prefix", "arg1"]) in my_asset.asset_keys_by_input_name.values()
+    # this functions differently than the namespace arg in this scenario
+    assert AssetKey(["my_prefix", "arg1"]) not in my_asset.keys_by_input_name.values()
+    assert AssetKey(["arg1"]) in my_asset.keys_by_input_name.values()
 
 
 def test_asset_with_context_arg():
@@ -249,7 +283,7 @@ def test_asset_with_context_arg_and_dep():
 
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.input_defs) == 1
-    assert AssetKey("arg1") in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey("arg1") in my_asset.keys_by_input_name.values()
 
 
 def test_input_asset_key():
@@ -257,7 +291,7 @@ def test_input_asset_key():
     def my_asset(arg1):
         assert arg1
 
-    assert AssetKey("foo") in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey("foo") in my_asset.keys_by_input_name.values()
 
 
 def test_input_asset_key_and_key_prefix():
@@ -273,7 +307,7 @@ def test_input_namespace_str():
     def my_asset(arg1):
         assert arg1
 
-    assert AssetKey(["abc", "arg1"]) in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey(["abc", "arg1"]) in my_asset.keys_by_input_name.values()
 
 
 def test_input_namespace_list():
@@ -281,7 +315,7 @@ def test_input_namespace_list():
     def my_asset(arg1):
         assert arg1
 
-    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.keys_by_input_name.values()
 
 
 def test_input_key_prefix_str():
@@ -289,7 +323,7 @@ def test_input_key_prefix_str():
     def my_asset(arg1):
         assert arg1
 
-    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.keys_by_input_name.values()
 
 
 def test_input_key_prefix_list():
@@ -297,7 +331,7 @@ def test_input_key_prefix_list():
     def my_asset(arg1):
         assert arg1
 
-    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.keys_by_input_name.values()
 
 
 def test_input_metadata():
@@ -426,4 +460,4 @@ def test_kwargs():
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
-    assert AssetKey("upstream") in my_asset.asset_keys_by_input_name.values()
+    assert AssetKey("upstream") in my_asset.keys_by_input_name.values()

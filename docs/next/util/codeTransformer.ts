@@ -21,6 +21,12 @@ interface CodeTransformerOptions {
   setSnapshotStats?: (newStats: SnapshotStats) => void;
 }
 
+const normalizeOptionValue = (value: string): string | boolean => {
+  if (value === 'true') { return true; }
+  else if (value === 'false') { return false; }
+  else { return value; }
+}
+
 export default ({ setSnapshotStats }: CodeTransformerOptions) => async (
   tree: Node
 ) => {
@@ -57,7 +63,7 @@ export default ({ setSnapshotStats }: CodeTransformerOptions) => async (
       const needle = `${option}=`;
       const value = meta.find((m) => m.startsWith(needle));
       if (value) {
-        metaOptions[option] = value.slice(needle.length);
+        metaOptions[option] = normalizeOptionValue(value.slice(needle.length));
       }
     }
 

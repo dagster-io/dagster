@@ -31,8 +31,8 @@ from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.partition import PartitionedConfig, PartitionsDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
+from dagster.core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.execution.with_resources import with_resources
 from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import experimental
@@ -102,9 +102,6 @@ def build_assets_job(
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
     resource_defs = merge_dicts({"io_manager": default_job_io_manager}, resource_defs)
 
-    assets = with_resources(assets, resource_defs)
-    source_assets = with_resources(source_assets, resource_defs)
-
     source_assets_by_key = build_source_assets_by_key(source_assets)
     deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
 
@@ -135,7 +132,7 @@ def build_assets_job(
         graph, assets_defs_by_node_handle, resolved_source_assets
     )
 
-    all_resource_defs = get_all_resource_defs(assets, resolved_source_assets)
+    all_resource_defs = get_all_resource_defs(assets, resolved_source_assets, resource_defs)
 
     return graph.to_job(
         resource_defs=all_resource_defs,
@@ -178,7 +175,7 @@ def build_source_assets_by_key(
         if isinstance(asset_source, SourceAsset):
             source_assets_by_key[asset_source.key] = asset_source
         elif isinstance(asset_source, AssetsDefinition):
-            for output_name, asset_key in asset_source.asset_keys_by_output_name.items():
+            for output_name, asset_key in asset_source.keys_by_output_name.items():
                 if asset_key:
                     source_assets_by_key[asset_key] = asset_source.node_def.output_def_named(
                         output_name
@@ -213,7 +210,7 @@ def build_deps(
 
         # unique handle for each AssetsDefinition
         assets_defs_by_node_handle[NodeHandle(node_alias, parent=None)] = assets_def
-        for output_name, key in assets_def.asset_keys_by_output_name.items():
+        for output_name, key in assets_def.keys_by_output_name.items():
             node_alias_and_output_by_asset_key[key] = (node_alias, output_name)
 
     deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
@@ -227,7 +224,7 @@ def build_deps(
         deps[node_key] = {}
 
         # connect each input of this AssetsDefinition to the proper upstream node
-        for input_name, upstream_asset_key in assets_def.asset_keys_by_input_name.items():
+        for input_name, upstream_asset_key in assets_def.keys_by_input_name.items():
             if upstream_asset_key in node_alias_and_output_by_asset_key:
                 upstream_node_alias, upstream_output_name = node_alias_and_output_by_asset_key[
                     upstream_asset_key
@@ -348,20 +345,69 @@ def _attempt_resolve_cycles(
     return ret
 
 
-def get_all_resource_defs(
-    assets: Sequence[AssetsDefinition], source_assets: Sequence[SourceAsset]
-) -> Dict[str, ResourceDefinition]:
-    all_resource_defs = {}
+def _ensure_resources_dont_conflict(
+    assets: Iterable[AssetsDefinition],
+    source_assets: Sequence[SourceAsset],
+    resource_defs: Mapping[str, ResourceDefinition],
+) -> None:
+    """Ensures that resources between assets, source assets, and provided resource dictionary do not conflict."""
+    resource_defs_from_assets = {}
     all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]
     for asset in all_assets:
         for resource_key, resource_def in asset.resource_defs.items():
-            if resource_key not in all_resource_defs:
-                all_resource_defs[resource_key] = resource_def
-            if all_resource_defs[resource_key] != resource_def:
+            if resource_key not in resource_defs_from_assets:
+                resource_defs_from_assets[resource_key] = resource_def
+            if resource_defs_from_assets[resource_key] != resource_def:
                 raise DagsterInvalidDefinitionError(
                     f"Conflicting versions of resource with key '{resource_key}' "
                     "were provided to different assets. When constructing a "
                     "job, all resource definitions provided to assets must "
                     "match by reference equality for a given key."
                 )
+    for resource_key, resource_def in resource_defs.items():
+        if (
+            resource_key != "io_manager"
+            and resource_key in resource_defs_from_assets
+            and resource_defs_from_assets[resource_key] != resource_def
+        ):
+            raise DagsterInvalidDefinitionError(
+                f"resource with key '{resource_key}' provided to job "
+                "conflicts with resource provided to assets. When constructing a "
+                "job, all resource definitions provided must "
+                "match by reference equality for a given key."
+            )
+
+
+def check_resources_satisfy_requirements(
+    assets: Iterable[AssetsDefinition],
+    source_assets: Sequence[SourceAsset],
+    resource_defs: Mapping[str, ResourceDefinition],
+) -> None:
+    """Ensures that between the provided resources on an asset and the resource_defs mapping, that all resource requirements are satisfied.
+
+    Note that resources provided on assets cannot satisfy resource requirements provided on other assets.
+    """
+
+    _ensure_resources_dont_conflict(assets, source_assets, resource_defs)
+
+    all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]
+    for asset in all_assets:
+        ensure_requirements_satisfied(
+            merge_dicts(resource_defs, asset.resource_defs), list(asset.get_resource_requirements())
+        )
+
+
+def get_all_resource_defs(
+    assets: Iterable[AssetsDefinition],
+    source_assets: Sequence[SourceAsset],
+    resource_defs: Mapping[str, ResourceDefinition],
+) -> Dict[str, ResourceDefinition]:
+
+    # Ensures that no resource keys conflict, and each asset has its resource requirements satisfied.
+    check_resources_satisfy_requirements(assets, source_assets, resource_defs)
+
+    all_resource_defs = dict(resource_defs)
+    all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]
+    for asset in all_assets:
+        all_resource_defs = merge_dicts(all_resource_defs, asset.resource_defs)
     return all_resource_defs

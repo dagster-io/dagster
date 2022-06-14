@@ -342,6 +342,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         return event_records[:limit]
 
+    def supports_event_consumer_queries(self):
+        return False
+
     def delete_events(self, run_id):
         with self.run_connection(run_id) as conn:
             self.delete_events_for_run(conn, run_id)

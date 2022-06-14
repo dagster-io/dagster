@@ -73,6 +73,12 @@ class InputDefinition:
             partitions from the InputContext) which should be associated with this InputDefinition.
     """
 
+    _name: Optional[str]
+    _type_not_set: bool
+    _dagster_type: DagsterType
+    _description: Optional[str]
+    _default_value: Any
+
     def __init__(
         self,
         name=None,

@@ -100,6 +100,29 @@ class InputManagerRequirement(
         return f"input manager with key '{self.key}' required by input '{self.input_name}' of {self.node_description}"
 
 
+class SourceAssetIOManagerRequirement(
+    NamedTuple(
+        "_InputManagerRequirement",
+        [
+            ("key", str),
+            ("asset_key", Optional[str]),
+        ],
+    ),
+    ResourceRequirement,
+):
+    @property
+    def expected_type(self) -> Type:
+        from ..storage.io_manager import IOManagerDefinition
+
+        return IOManagerDefinition
+
+    def describe_requirement(self) -> str:
+        source_asset_descriptor = (
+            f"SourceAsset with key {self.asset_key}" if self.asset_key else "SourceAsset"
+        )
+        return f"io manager with key '{self.key}' required by {source_asset_descriptor}"
+
+
 class OutputManagerRequirement(
     NamedTuple(
         "_OutputManagerRequirement", [("key", str), ("node_description", str), ("output_name", str)]
@@ -206,3 +229,12 @@ def ensure_requirements_satisfied(
             raise DagsterInvalidDefinitionError(
                 f"{requirement.describe_requirement()} was not provided{mode_descriptor}. Please provide a {str(requirement.expected_type)} to key '{requirement.key}', or change the required key to one of the following keys which points to an {str(requirement.expected_type)}: {requirement.keys_of_expected_type(resource_defs)}"
             )
+
+
+def get_resource_key_conflicts(
+    resource_defs: Mapping[str, "ResourceDefinition"],
+    other_resource_defs: Mapping[str, "ResourceDefinition"],
+) -> AbstractSet[str]:
+    overlapping_keys = set(resource_defs.keys()).intersection(set(other_resource_defs.keys()))
+    overlapping_keys = {key for key in overlapping_keys if key != "io_manager"}
+    return overlapping_keys

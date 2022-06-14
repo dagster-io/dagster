@@ -1,4 +1,3 @@
-# pylint: disable=missing-graphene-docstring
 import graphene
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import capture_error, check_permission

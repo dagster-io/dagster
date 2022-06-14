@@ -40,6 +40,8 @@
   url: http://127.0.0.1:3000/
   width: 1536
   height: 1152
+  steps:
+    - open left sidebar
 
 - path: concepts/assets/software-defined-assets/catalog.png
   defs_file: examples/docs_snippets/docs_snippets/concepts/assets/asset_group.py
@@ -54,7 +56,10 @@
   url: http://127.0.0.1:3000/instance/asset-graph
 
 - path: concepts/config-dagit.png
-  vetted: false
+  defs_file: examples/docs_snippets/docs_snippets/concepts/configuration/configurable_op_asset_resource.py
+  url: http://localhost:3000/workspace/repo@configurable_op_asset_resource.py/jobs/job_using_config/playground
+  steps:
+    - Paste the content of `docs_snippets/concepts/configuration/good.yaml` into the launchpad
 
 - path: concepts/solids-pipelines/pipeline-def.png
   defs_file: examples/docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py
@@ -93,10 +98,6 @@
   steps:
     - run my_dataset_job
     - View the asset details page for "my_dataset"
-  vetted: false
-
-- path: concepts/assets/asset-lineage.png
-  url: https://demo.elementl.show/instance/assets/snowflake/hackernews/comments
   vetted: false
 
 - path: concepts/logging/job-log-dagit.png

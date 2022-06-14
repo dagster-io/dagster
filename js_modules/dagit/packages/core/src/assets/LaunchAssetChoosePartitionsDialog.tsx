@@ -10,7 +10,6 @@ import {
   DialogFooter,
   Alert,
 } from '@dagster-io/ui';
-import pick from 'lodash/pick';
 import reject from 'lodash/reject';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
@@ -27,6 +26,7 @@ import {
   LaunchPartitionBackfillVariables,
 } from '../instance/types/LaunchPartitionBackfill';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
+import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
 import {
   ConfigPartitionSelectionQuery,
   ConfigPartitionSelectionQueryVariables,
@@ -37,14 +37,9 @@ import {
   stringForSpan,
 } from '../partitions/PartitionRangeInput';
 import {showBackfillErrorToast, showBackfillSuccessToast} from '../partitions/PartitionsBackfill';
-import {DagsterTag} from '../runs/RunTag';
-import {handleLaunchResult, LAUNCH_PIPELINE_EXECUTION_MUTATION} from '../runs/RunUtils';
-import {
-  LaunchPipelineExecution,
-  LaunchPipelineExecutionVariables,
-} from '../runs/types/LaunchPipelineExecution';
 import {RepoAddress} from '../workspace/types';
 
+import {executionParamsForAssetJob} from './LaunchAssetExecutionButton';
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
 import {
   AssetJobPartitionSetsQuery,
@@ -116,6 +111,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   const client = useApolloClient();
   const history = useHistory();
+  const launchWithTelemetry = useLaunchWithTelemetry();
 
   // Find the partition set name. This seems like a bit of a hack, unclear
   // how it would work if there were two different partition spaces in the asset job
@@ -199,37 +195,20 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
       const tags = [...partition.tagsOrError.results];
       const runConfigData = yaml.parse(partition.runConfigOrError.yaml || '') || {};
-      const stepKeys = assets.map((a) => a.opNames).flat();
 
-      const launchResult = await client.mutate<
-        LaunchPipelineExecution,
-        LaunchPipelineExecutionVariables
-      >({
-        mutation: LAUNCH_PIPELINE_EXECUTION_MUTATION,
-        variables: {
+      const result = await launchWithTelemetry(
+        {
           executionParams: {
+            ...executionParamsForAssetJob(repoAddress, assetJobName, assets, tags),
             runConfigData,
             mode: partition.mode,
-            stepKeys,
-            selector: {
-              repositoryLocationName: repoAddress.location,
-              repositoryName: repoAddress.name,
-              jobName: assetJobName,
-            },
-            executionMetadata: {
-              tags: [
-                ...tags.map((t) => pick(t, ['key', 'value'])),
-                {key: DagsterTag.StepSelection, value: stepKeys.join(',')},
-              ],
-            },
           },
         },
-      });
+        'toast',
+      );
 
       setLaunching(false);
-      handleLaunchResult(assetJobName, launchResult, history, {behavior: 'toast'});
-
-      if (launchResult.data?.launchPipelineExecution.__typename === 'LaunchRunSuccess') {
+      if (result?.launchPipelineExecution.__typename === 'LaunchRunSuccess') {
         setOpen(false);
       }
     } else {

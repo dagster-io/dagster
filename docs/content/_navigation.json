@@ -94,27 +94,11 @@
         ]
       },
       {
-        "title": "Ops, Jobs, and Graphs",
+        "title": "Ops",
         "children": [
           {
             "title": "Ops",
             "path": "/concepts/ops-jobs-graphs/ops"
-          },
-          {
-            "title": "Jobs & Graphs",
-            "path": "/concepts/ops-jobs-graphs/jobs-graphs"
-          },
-          {
-            "title": "Job Execution",
-            "path": "/concepts/ops-jobs-graphs/job-execution"
-          },
-          {
-            "title": "Nesting Graphs",
-            "path": "/concepts/ops-jobs-graphs/nesting-graphs"
-          },
-          {
-            "title": "Dynamic Graphs",
-            "path": "/concepts/ops-jobs-graphs/dynamic-graphs"
           },
           {
             "title": "Op Events",
@@ -131,6 +115,36 @@
           {
             "title": "Metadata & Tags",
             "path": "/concepts/ops-jobs-graphs/metadata-tags"
+          }
+        ]
+      },
+      {
+        "title": "Graphs",
+        "children": [
+          {
+            "title": "Graphs",
+            "path": "/concepts/ops-jobs-graphs/graphs"
+          },
+          {
+            "title": "Nesting Graphs",
+            "path": "/concepts/ops-jobs-graphs/nesting-graphs"
+          },
+          {
+            "title": "Dynamic Graphs",
+            "path": "/concepts/ops-jobs-graphs/dynamic-graphs"
+          }
+        ]
+      },
+      {
+        "title": "Jobs",
+        "children": [
+          {
+            "title": "Jobs",
+            "path": "/concepts/ops-jobs-graphs/jobs"
+          },
+          {
+            "title": "Job Execution",
+            "path": "/concepts/ops-jobs-graphs/job-execution"
           }
         ]
       },
@@ -286,8 +300,12 @@
             "path": "/deployment/run-coordinator"
           },
           {
-            "title": "Run Monitoring - Handling Failures",
+            "title": "Run Monitoring - Detecting Failures",
             "path": "/deployment/run-monitoring"
+          },
+          {
+            "title": "Run Retries",
+            "path": "/deployment/run-retries"
           }
         ]
       },
@@ -427,6 +445,10 @@
         "title": "Core",
         "children": [
           {
+            "title": "Software-Defined Assets",
+            "path": "/_apidocs/assets"
+          },
+          {
             "title": "Jobs",
             "path": "/_apidocs/jobs"
           },
@@ -493,10 +515,6 @@
           {
             "title": "Versioning & Memoization",
             "path": "/_apidocs/memoization"
-          },
-          {
-            "title": "Software-Defined Assets",
-            "path": "/_apidocs/assets"
           },
           {
             "title": "Utilities",

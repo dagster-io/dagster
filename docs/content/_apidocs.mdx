@@ -12,6 +12,8 @@ Dagster follows [SemVer](https://semver.org/). We attempt to isolate breaking ch
 
 APIs from the core `dagster` package, divided roughly by topic:
 
+- [Software-Defined Assets](/\_apidocs/assets). An asset is an object in persistent storage, such as a table, file, or persisted machine learning model. A software-defined asset is a Dagster object that couples an asset to the function and upstream assets that are used to produce its contents.
+
 - [Jobs](/\_apidocs/jobs) APIs to define jobs that execute a set of ops with specific parameters.
 
 - [Ops](/\_apidocs/ops) APIs to define or decorate functions as ops, declare their inputs and outputs, compose ops with each other, as well as the datatypes that op execution can return or yield.
@@ -45,8 +47,6 @@ APIs from the core `dagster` package, divided roughly by topic:
 - [Dynamic Mapping & Collect](/\_apidocs/dynamic) APIs that allow graph structures to be determined at run time.
 
 - [Versioning & Memoization](/\_apidocs/memoization) (Experimental) Code versioning and memoization of previous outputs based upon that versioning.
-
-- [Software-Defined Assets](/\_apidocs/assets) (Experimental). Software-defined assets sit on top of the graph/job/op APIs and enable a novel way of constructing Dagster jobs that puts assets at the forefront.
 
 - [Utilities](/\_apidocs/utilities) Miscellaneous helpers used by Dagster that may be useful to users.
 

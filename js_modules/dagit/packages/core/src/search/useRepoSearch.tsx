@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
@@ -116,9 +117,9 @@ const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
   const allEntries = nodes.map(({key}) => {
     return {
       label: displayNameForAssetKey(key),
+      href: assetDetailsPathForKey(key),
       segments: key.path,
       description: 'Asset',
-      href: `/instance/assets/${key.path.map(encodeURIComponent).join('/')}`,
       type: SearchResultType.Asset,
     };
   });

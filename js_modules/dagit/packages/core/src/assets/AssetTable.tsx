@@ -32,6 +32,7 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetTableFragment as Asset} from './types/AssetTableFragment';
 import {AssetViewType} from './useAssetView';
 
@@ -190,7 +191,7 @@ const AssetEntryRow: React.FC<{
 }> = React.memo(
   ({prefixPath, path, assets, isSelected, onToggleChecked, onWipe, canWipe, liveDataByNode}) => {
     const fullPath = [...prefixPath, ...path];
-    const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
+    const linkUrl = assetDetailsPathForKey({path: fullPath});
 
     const isGroup = assets.length > 1 || fullPath.join('/') !== assets[0].key.path.join('/');
     const asset = !isGroup ? assets[0] : null;
@@ -281,7 +282,7 @@ const AssetEntryRow: React.FC<{
         <td>
           {asset ? (
             <Box flex={{gap: 8, alignItems: 'center'}}>
-              <AnchorButton to={`/instance/assets/${path.join('/')}`}>View details</AnchorButton>
+              <AnchorButton to={assetDetailsPathForKey({path})}>View details</AnchorButton>
               <Popover
                 position="bottom-right"
                 content={
@@ -301,19 +302,28 @@ const AssetEntryRow: React.FC<{
                     />
                     <MenuLink
                       text="View neighbors"
-                      to={`/instance/assets/${path.join('/')}?view=lineage&lineageScope=neighbors`}
+                      to={assetDetailsPathForKey(
+                        {path},
+                        {view: 'lineage', lineageScope: 'neighbors'},
+                      )}
                       disabled={!asset?.definition}
                       icon="graph_neighbors"
                     />
                     <MenuLink
                       text="View upstream assets"
-                      to={`/instance/assets/${path.join('/')}?view=lineage&lineageScope=upstream`}
+                      to={assetDetailsPathForKey(
+                        {path},
+                        {view: 'lineage', lineageScope: 'upstream'},
+                      )}
                       disabled={!asset?.definition}
                       icon="graph_upstream"
                     />
                     <MenuLink
                       text="View downstream assets"
-                      to={`/instance/assets/${path.join('/')}?view=lineage&lineageScope=downstream`}
+                      to={assetDetailsPathForKey(
+                        {path},
+                        {view: 'lineage', lineageScope: 'downstream'},
+                      )}
                       disabled={!asset?.definition}
                       icon="graph_downstream"
                     />

@@ -81,13 +81,7 @@ def core_execute_in_process(
             ),
         )
 
-        event_list = []
-
-        for event in execute_run_iterable:
-            event_list.append(event)
-
-            if event.is_pipeline_event:
-                execute_instance.handle_run_event(run_id, event)
+        event_list = list(execute_run_iterable)
 
     return ExecuteInProcessResult(
         node, event_list, execute_instance.get_run_by_id(run_id), output_capture

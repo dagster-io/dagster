@@ -1,4 +1,3 @@
-# pylint: disable=missing-graphene-docstring
 import graphene
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader

@@ -13,11 +13,26 @@ export interface AssetForNavigationQuery_assetOrError_AssetNotFoundError {
   __typename: "AssetNotFoundError";
 }
 
+export interface AssetForNavigationQuery_assetOrError_Asset_definition_repository_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
+export interface AssetForNavigationQuery_assetOrError_Asset_definition_repository {
+  __typename: "Repository";
+  id: string;
+  name: string;
+  location: AssetForNavigationQuery_assetOrError_Asset_definition_repository_location;
+}
+
 export interface AssetForNavigationQuery_assetOrError_Asset_definition {
   __typename: "AssetNode";
   id: string;
   opNames: string[];
   jobNames: string[];
+  groupName: string | null;
+  repository: AssetForNavigationQuery_assetOrError_Asset_definition_repository;
 }
 
 export interface AssetForNavigationQuery_assetOrError_Asset {

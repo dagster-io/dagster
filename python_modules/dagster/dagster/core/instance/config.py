@@ -161,18 +161,20 @@ def dagster_instance_config_schema():
         "python_logs": python_logs_config_schema(),
         "run_monitoring": Field(
             {
-                "enabled": Field(
-                    Bool,
-                    is_required=False,
-                ),
+                "enabled": Field(Bool, is_required=False),
                 "start_timeout_seconds": Field(int, is_required=False),
                 "max_resume_run_attempts": Field(int, is_required=False),
                 "poll_interval_seconds": Field(int, is_required=False),
                 "cancellation_thread_poll_interval_seconds": Field(int, is_required=False),
             },
         ),
+        "run_retries": Field(
+            {
+                "enabled": Field(bool, is_required=False, default_value=False),
+                "max_retries": Field(int, is_required=False, default_value=0),
+            }
+        ),
         "code_servers": Field(
-            {"local_startup_timeout": Field(int, is_required=False)},
-            is_required=False,
+            {"local_startup_timeout": Field(int, is_required=False)}, is_required=False
         ),
     }

@@ -49,50 +49,6 @@ def my_materialization_op(context):
 
 # end_materialization_ops_marker_1
 
-# start_simple_asset_op
-from dagster import op, Output, AssetMaterialization
-
-
-@op
-def my_asset_op(context):
-    df = read_df()
-    persist_to_storage(df)
-    context.log_event(AssetMaterialization(asset_key="my_dataset"))
-    return df
-
-
-# end_simple_asset_op
-
-# start_output_def_mat_op_0
-from dagster import op, Output, Out, AssetKey
-
-
-@op(out=Out(asset_key=AssetKey("my_dataset")))
-def my_constant_asset_op(context):
-    df = read_df()
-    persist_to_storage(df)
-    return df
-
-
-# end_output_def_mat_op_0
-
-# start_output_def_mat_op_1
-from dagster import op, OutputContext, Out, Output
-
-
-def get_asset_key(context: OutputContext):
-    job_name = context.step_context.job_name
-    return AssetKey(f"my_dataset_{job_name}")
-
-
-@op(out=Out(asset_key=get_asset_key))
-def my_variable_asset_op(context):
-    df = read_df()
-    persist_to_storage(df)
-    yield Output(df)
-
-
-# end_output_def_mat_op_1
 
 # start_partitioned_asset_materialization
 from dagster import op, AssetMaterialization
@@ -141,7 +97,7 @@ def my_metadata_materialization_op(context):
 
 
 # start_materialization_ops_marker_3
-from dagster import op, AssetMaterialization, job
+from dagster import op, AssetKey, AssetMaterialization, job, Output
 
 
 @op

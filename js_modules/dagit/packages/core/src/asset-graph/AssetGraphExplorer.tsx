@@ -3,7 +3,6 @@ import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import React from 'react';
-import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
@@ -54,7 +53,7 @@ import {
 import {AssetGraphLayout} from './layout';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
 import {AssetGraphFetchScope, useAssetGraphData} from './useAssetGraphData';
-import {useFindJobForAsset} from './useFindJobForAsset';
+import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {useLiveDataForAssetKeys} from './useLiveDataForAssetKeys';
 
 type AssetNode = AssetGraphQuery_assetNodes;
@@ -67,6 +66,7 @@ interface Props {
 
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
+  onNavigateToForeignNode: (node: AssetLocation) => void;
 }
 
 export const EXPERIMENTAL_MINI_SCALE = 0.5;
@@ -137,6 +137,7 @@ export const AssetGraphExplorerWithData: React.FC<
     setOptions,
     explorerPath,
     onChangeExplorerPath,
+    onNavigateToForeignNode,
     liveDataRefreshState,
     liveDataByNode,
     assetGraphData,
@@ -145,8 +146,7 @@ export const AssetGraphExplorerWithData: React.FC<
     fetchOptions,
   } = props;
 
-  const history = useHistory();
-  const findJobForAsset = useFindJobForAsset();
+  const findAssetLocation = useFindAssetLocation();
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
@@ -171,33 +171,10 @@ export const AssetGraphExplorerWithData: React.FC<
       const token = tokenForAssetKey(assetKey);
       const nodeIsInDisplayedGraph = node?.definition;
 
-      let clicked: {opNames: string[]; jobName: string | null} = {opNames: [], jobName: null};
-
-      if (nodeIsInDisplayedGraph) {
-        // The asset's defintion was provided in our job.assetNodes query. Show it in the current graph.
-        clicked = {opNames: node.definition.opNames, jobName: explorerPath.pipelineName};
-      } else {
+      if (!nodeIsInDisplayedGraph) {
         // The asset's definition was not provided in our query for job.assetNodes. It's either
         // in another job or asset group, or is a source asset not defined in any repository.
-        clicked = await findJobForAsset(assetKey);
-      }
-
-      if (!clicked.jobName || !clicked.opNames.length) {
-        // This op has no definition in any loaded repository (source asset).
-        // The best we can do is show the asset page. This will still be mostly empty,
-        // but there can be a description.
-        history.push(`/instance/assets/${assetKey.path.join('/')}?view=definition`);
-        return;
-      }
-
-      // This asset is in different job (and we're in the job explorer),
-      // go to the other job.
-      if (clicked.jobName !== explorerPath.pipelineName) {
-        onChangeExplorerPath(
-          {...explorerPath, opNames: [token], opsQuery: '', pipelineName: clicked.jobName!},
-          'replace',
-        );
-        return;
+        return onNavigateToForeignNode(await findAssetLocation(assetKey));
       }
 
       // This asset is in a job and we can stay in the job graph explorer!
@@ -237,8 +214,8 @@ export const AssetGraphExplorerWithData: React.FC<
     [
       explorerPath,
       onChangeExplorerPath,
-      findJobForAsset,
-      history,
+      onNavigateToForeignNode,
+      findAssetLocation,
       lastSelectedNode,
       assetGraphData,
       layout,

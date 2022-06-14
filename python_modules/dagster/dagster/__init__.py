@@ -21,6 +21,7 @@ from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.asset_defs import (
     AssetIn,
+    AssetOut,
     AssetSelection,
     AssetsDefinition,
     SourceAsset,
@@ -31,6 +32,7 @@ from dagster.core.asset_defs import (
     load_assets_from_package_module,
     load_assets_from_package_name,
     materialize,
+    materialize_to_memory,
     multi_asset,
 )
 from dagster.core.definitions import (
@@ -396,6 +398,7 @@ __all__ = [
     "AssetIn",
     "AssetMaterialization",
     "AssetObservation",
+    "AssetOut",
     "AssetSelection",
     "AssetSensorDefinition",
     "AssetsDefinition",
@@ -575,6 +578,7 @@ __all__ = [
     "load_assets_from_package_module",
     "load_assets_from_package_name",
     "materialize",
+    "materialize_to_memory",
     # types
     "Any",
     "Bool",

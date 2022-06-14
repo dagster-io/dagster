@@ -2,6 +2,38 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
+## Migrating to 0.15.0
+
+All items below are breaking changes unless marked with *(deprecation)*.
+
+### Software-defined assets
+
+This release marks the official transition of software-defined assets from experimental to stable. We made some final changes to incorporate feedback and make the APIs as consistent as possible:
+
+- Support for adding tags to asset materializations, which was previously marked as experimental, has been removed.
+- Some of the properties of the previously-experimental AssetsDefinition class have been renamed. group_names is now group_names_by_key, asset_keys_by_input_name is now keys_by_input_name, and asset_keys_by_output_name is now keys_by_output_name, asset_key is now key, and asset_keys is now keys.
+- fs_asset_io_manager has been removed in favor of merging its functionality with fs_io_manager. fs_io_manager is now the default IO manager for asset jobs, and will store asset outputs in a directory named with the asset key.  Similarly, removed adls2_pickle_asset_io_manager, gcs_pickle_asset_io_manager , and s3_pickle_asset_io_manager. Instead, adls2_pickle_io_manager, gcs_pickle_io_manager , and s3_pickle_io_manager now support software-defined assets.
+- *(deprecation)* The namespace argument on the @asset decorator and AssetIn has been deprecated. Users should use key_prefix instead.
+- *(deprecation)* AssetGroup has been deprecated. Users should instead place assets directly on repositories, optionally attaching resources using with_resources. Asset jobs should be defined using define_assets_job (replacing AssetGroup.build_job), and arbitrary sets of assets can be materialized using the standalone function materialize (replacing AssetGroup.materialize).
+- *(deprecation)* The outs property of the previously-experimental @multi_asset decorator now prefers a dictionary whose values are AssetOut objects instead of a dictionary whose values are Out objects. The latter still works, but is deprecated.
+
+### Event records
+
+- The get_event_records method on DagsterInstance now requires a non-None argument event_records_filter.  Passing a None value for the event_records_filter argument will now raise an exception where previously it generated a deprecation warning.
+- Removed methods events_for_asset_key and get_asset_events, which have been deprecated since 0.12.0.
+
+### Extension libraries
+
+- [dagster-dbt] (breaks previously-experimental API) When using the load_assets_from_dbt_project or load_assets_from_dbt_manifest , the AssetKeys generated for dbt sources are now the union of the source name and the table name, and the AssetKeys generated for models are now the union of the configured schema name for a given model (if any), and the model name. To revert to the old behavior: dbt_assets = load_assets_from_dbt_project(..., node_info_to_asset_key=lambda node_info: AssetKey(node_info["name"]).
+- [dagster-k8s] In the Dagster Helm chart, user code deployment configuration (like secrets, configmaps, or volumes) is now automatically included in any runs launched from that code. Previously, this behavior was opt-in. In most cases, this will not be a breaking change, but in less common cases where a user code deployment was running in a different kubernetes namespace or using a different service account, this could result in missing secrets or configmaps in a launched run that previously worked. You can return to the previous behavior where config on the user code deployment was not applied to any runs by setting the includeConfigInLaunchedRuns.enabled field to false for the user code deployment. See the Kubernetes Deployment docs (https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm#configure-your-user-deployment) for more details. 
+- [dagster-snowflake] dagster-snowflake has dropped support for python 3.6. The library it is currently built on, snowflake-connector-python, dropped 3.6 support in their recent 2.7.5 release.
+
+### Other
+
+- The prior_attempts_count parameter is now removed from step-launching APIs. This parameter was not being used, as the information it held was stored elsewhere in all cases. It can safely be removed from invocations without changing behavior.
+- The FileCache class has been removed.
+- Previously, when schedules/sensors targeted jobs with the same name as other jobs in the repo, the jobs on the sensor/schedule would silently overwrite the other jobs. Now, this will cause an error.
+
 ## Migrating to 0.14.0
 
 If migrating from below 0.13.17, you can run
@@ -11,6 +43,7 @@ dagster instance migrate
 This optional migration makes performance improvements to the runs page in Dagit.
 
 ### Breaking Changes
+
 - The Dagster Daemon now uses the same workspace.yaml file as Dagit to locate your Dagster code. You should ensure that if you make any changes to your workspace.yaml file, they are included in both Dagit’s copy and the Dagster Daemon’s copy. When you make changes to the workspace.yaml file, you don’t need to restart either Dagit or the Dagster Daemon - in Dagit, you can reload the workspace from the Workspace tab, and the Dagster Daemon will periodically check the workspace.yaml file for changes every 60 seconds. If you are using the Dagster Helm chart, no changes are required to include the workspace in the Dagster Daemon.
 - In previous releases, it was possible to supply either an AssetKey, or a function that produced an AssetKey from an OutputContext as the asset_key argument to an Out/OutputDefinition. The latter behavior makes it impossible to gain information about these relationships without running a job, and has been deprecated. However, we still support supplying a static AssetKey as an argument.
 - We have renamed many of the core APIs that interact with ScheduleStorage, which keeps track of sensor/schedule state and ticks.  The old term for the generic schedule/sensor “job” has been replaced by the term “instigator” in order to avoid confusion with the execution API introduced in 0.12.0.  If you have implemented your own schedule storage, you may need to change your method signatures appropriately.

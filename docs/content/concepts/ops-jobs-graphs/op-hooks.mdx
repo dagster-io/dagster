@@ -163,7 +163,7 @@ Hooks use resource keys to access resources. After including the resource key in
 
 It also enables you to switch resource values in different jobs so that, for example, you can send slack messages only while executing a production job and mock the slack resource while testing.
 
-Because executing a production job and a testing job share the same core of business logic, we can build these jobs from a shared [graph](/concepts/ops-jobs-graphs/jobs-graphs#from-a-graph). In the <PyObject object="GraphDefinition" method="to_job" /> method, which builds a job from a graph, you can specify environment-specific hooks and resources.
+Because executing a production job and a testing job share the same core of business logic, we can build these jobs from a shared [graph](/concepts/ops-jobs-graphs/jobs#from-a-graph). In the <PyObject object="GraphDefinition" method="to_job" /> method, which builds a job from a graph, you can specify environment-specific hooks and resources.
 
 In this case, we can mock the `slack_resource` using a helper function <PyObject module="dagster" object="ResourceDefinition" displayText="ResourceDefinition.hardcoded_resource()"/>, so it won't send slack messages during development.
 
