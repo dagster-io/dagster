@@ -15,15 +15,13 @@ Run configuration allows providing parameters to jobs at the time they're execut
 
 ## Overview
 
-It's often useful to configure Dagster jobs at runtime. For example, you might want to choose what dataset an op runs against, or provide a connection URL for a database resource. In general, you should use Dagster's config system when you want to modulate a computation at runtime without needing to modify the definition.
+It's often useful to configure Dagster jobs or software-defined assets at runtime. For example, you might want to choose what dataset an op runs against, or provide a connection URL for a database resource. In general, you should use Dagster's config system when you want to modulate a computation at runtime without needing to modify the definition.
 
 Various Dagster entities (ops, assets, resources) can have an attached _configuration schema_ that specifies the configurable parameters for that entity. When launching a job that executes (ops), materializes (assets), or instantiates (resources) a configurable entity, you can provide values for the parameters specified in the schema. Dagster validates this _run configuration_ against the schema and proceeds only if validation is successful. Within the function that defines the entity, you can access the passed-in configuration off of the `context`.
 
 A common use of configuration is for a [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/schedules) to provide configuration to the job run it is launching. For example, a daily schedule might provide the day it's running on to one of the ops as a config value, and that op might use that config value to decide what day's data to read.
 
-Dagster includes a system for gradually-typed configuration schemas. These make it easy to catch configuration errors before job execution, as well as to learn what configuration is required to execute a job.
-
-## Defining and Accessing Configuration for an Op, Asset, or Resource
+## Defining and accessing configuration for an op, asset, or resource
 
 Configurable parameters accepted by an op, asset, or resource are specified by providing a `config_schema` to the corresponding decorator. The structure of a `config_schema` is very flexible and [fully documented in the API Reference](/\_apidocs/config). However, most of the time you will want to provide a Python dictionary, with keys the names of parameters and values the types of those parameters.
 
