@@ -102,14 +102,14 @@ def test_retain_group_subset():
 
     ma = AssetsDefinition(
         node_def=ma_op,
-        asset_keys_by_input_name={},
-        asset_keys_by_output_name={"a": AssetKey("a"), "b": AssetKey("b")},
-        group_names={AssetKey("a"): "foo", AssetKey("b"): "bar"},
+        keys_by_input_name={},
+        keys_by_output_name={"a": AssetKey("a"), "b": AssetKey("b")},
+        group_names_by_key={AssetKey("a"): "foo", AssetKey("b"): "bar"},
         can_subset=True,
     )
 
     subset = ma.subset_for({AssetKey("b")})
-    assert subset.group_names[AssetKey("b")] == "bar"
+    assert subset.group_names_by_key[AssetKey("b")] == "bar"
 
 
 def test_chain_replace_and_subset_for():
