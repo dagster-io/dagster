@@ -58,7 +58,9 @@ U = TypeVar("U")
 # ########################
 
 
-def bool_param(obj: object, param_name: str, additional_message: Optional[str] = None) -> bool:
+def bool_param(
+    obj: object, param_name: Optional[str] = None, additional_message: Optional[str] = None
+) -> bool:
     if not isinstance(obj, bool):
         raise _param_type_mismatch_exception(obj, bool, param_name, additional_message)
     return obj
@@ -1515,10 +1517,16 @@ def _element_check_error(
 def _param_type_mismatch_exception(
     obj: object,
     ttype: TypeOrTupleOfTypes,
-    param_name: str,
+    param_name: Optional[str],
     additional_message: Optional[str] = None,
 ) -> ParameterCheckError:
     additional_message = " " + additional_message if additional_message else ""
+
+    if param_name is None:
+        local_vars_at_callsite = inspect.currentframe().f_back.f_back.f_locals.items()
+        possible_names = [name for name, value in local_vars_at_callsite if value is obj]
+        param_name = possible_names[0] if possible_names else "<unknown>"
+
     if isinstance(ttype, tuple):
         type_names = sorted([t.__name__ for t in ttype])
         return ParameterCheckError(

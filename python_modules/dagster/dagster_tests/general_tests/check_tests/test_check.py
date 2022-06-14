@@ -52,6 +52,14 @@ def test_bool_param():
         check.bool_param("val", "b")
 
 
+def test_bool_param_no_param_name():
+    my_value = 42
+    with pytest.raises(ParameterCheckError) as e:
+        check.bool_param(my_value)
+
+    assert str(e.value) == "Param \"my_value\" is not a bool. Got 42 which is type <class 'int'>."
+
+
 def test_opt_bool_param():
     assert check.opt_bool_param(True, "b") is True
     assert check.opt_bool_param(False, "b") is False
