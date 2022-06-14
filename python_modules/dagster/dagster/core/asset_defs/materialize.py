@@ -44,7 +44,7 @@ def materialize(
     ).execute_in_process(run_config=run_config, instance=instance)
 
 
-def materialize_in_process(
+def materialize_to_memory(
     assets: Sequence[Union[AssetsDefinition, SourceAsset]],
     run_config: Any = None,
     instance: Optional[DagsterInstance] = None,

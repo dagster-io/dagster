@@ -32,7 +32,7 @@ from dagster.core.asset_defs import (
     load_assets_from_package_module,
     load_assets_from_package_name,
     materialize,
-    materialize_in_process,
+    materialize_to_memory,
     multi_asset,
 )
 from dagster.core.definitions import (
@@ -578,7 +578,7 @@ __all__ = [
     "load_assets_from_package_module",
     "load_assets_from_package_name",
     "materialize",
-    "materialize_in_process",
+    "materialize_to_memory",
     # types
     "Any",
     "Bool",
