@@ -365,21 +365,23 @@ class SqlScheduleStorage(ScheduleStorage):
 
         return tick
 
-    def purge_ticks(self, origin_id, selector_id, tick_status, before):
+    def purge_ticks(self, origin_id, selector_id, before, tick_statuses=None):
         check.str_param(origin_id, "origin_id")
-        check.inst_param(tick_status, "tick_status", TickStatus)
         check.float_param(before, "before")
+        check.opt_list_param(tick_statuses, "tick_statuses", of_type=TickStatus)
 
         utc_before = utc_datetime_from_timestamp(before)
 
-        base_query = (
-            JobTickTable.delete()  # pylint: disable=no-value-for-parameter
-            .where(JobTickTable.c.status == tick_status.value)
-            .where(JobTickTable.c.timestamp < utc_before)
+        query = JobTickTable.delete().where(  # pylint: disable=no-value-for-parameter
+            JobTickTable.c.timestamp < utc_before
         )
+        if tick_statuses:
+            query = query.where(
+                JobTickTable.c.status.in_([tick_status.value for tick_status in tick_statuses])
+            )
 
         if self.has_instigators_table():
-            query = base_query.where(
+            query = query.where(
                 db.or_(
                     JobTickTable.c.selector_id == selector_id,
                     db.and_(
@@ -389,7 +391,7 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
             )
         else:
-            query = base_query.where(JobTickTable.c.job_origin_id == origin_id)
+            query = query.where(JobTickTable.c.job_origin_id == origin_id)
 
         with self.connect() as conn:
             conn.execute(query)
