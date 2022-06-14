@@ -17,7 +17,7 @@ Run configuration allows providing parameters to jobs at the time they're execut
 
 It's often useful to provide user-chosen values to Dagster jobs or software-defined assets at runtime. For example, you might want to choose what dataset an op runs against, or provide a connection URL for a database resource. Dagster exposes this functionality through a configuration API.
 
-Various Dagster entities (ops, assets, resources) can be individually configured. When launching a job that executes (ops), materializes (assets), or instantiates (resources) a configurable entity, you can provide _run configuration_ for each entity. Within the function that defines the entity, you can access the passed-in configuration off of the `context`. Typically, the provided run configuration values correspond to a  _configuration schema_ attached to the op/asset/resource definition. Dagster validates the run configuration against the schema and proceeds only if validation is successful.
+Various Dagster entities (ops, assets, resources) can be individually configured. When launching a job that executes (ops), materializes (assets), or instantiates (resources) a configurable entity, you can provide _run configuration_ for each entity. Within the function that defines the entity, you can access the passed-in configuration off of the `context`. Typically, the provided run configuration values correspond to a _configuration schema_ attached to the op/asset/resource definition. Dagster validates the run configuration against the schema and proceeds only if validation is successful.
 
 A common use of configuration is for a [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/schedules) to provide configuration to the job run it is launching. For example, a daily schedule might provide the day it's running on to one of the ops as a config value, and that op might use that config value to decide what day's data to read.
 
@@ -47,8 +47,9 @@ def resource_using_config(context):
 ```
 
 <Note>
-  It is technically possible to access <code>context.op_config</code> inside ops (not
-  assets) without defining a <code>config_schema</code>. However, this is not recommended.
+  It is technically possible to access <code>context.op_config</code> inside ops
+  (not assets) without defining a <code>config_schema</code>. However, this is
+  not recommended.
 </Note>
 
 You can also build config into jobs, as described in [the Jobs documentation](/concepts/ops-jobs-graphs/jobs-graphs#advanced-job-configuration).
