@@ -5,7 +5,7 @@ description: A repository is a collection of jobs, schedules, and sensor definit
 
 # Repositories
 
-A repository is a collection of assets, jobs, schedules, and sensor definitions. Repositories are loaded as a unit by the Dagster CLI, Dagit and the Dagster Daemon.
+A repository is a collection of software-defined assets, jobs, schedules, and sensors. Repositories are loaded as a unit by the Dagster CLI, Dagit and the Dagster Daemon.
 
 ## Relevant APIs
 
@@ -18,7 +18,7 @@ A repository is a collection of assets, jobs, schedules, and sensor definitions.
 
 A repository is a convenient way to organize your job and other definitions. Each repository:
 
-- Includes various definitions: [Assets](/concepts/assets/software-defined-assets), [Jobs](/concepts/ops-jobs-graphs/jobs-graphs), [Schedules](/concepts/partitions-schedules-sensors/schedules), and [Sensors](/concepts/partitions-schedules-sensors/sensors).
+- Includes various definitions: [Software-defined assets](/concepts/assets/software-defined-assets), [Jobs](/concepts/ops-jobs-graphs/jobs-graphs), [Schedules](/concepts/partitions-schedules-sensors/schedules), and [Sensors](/concepts/partitions-schedules-sensors/sensors).
 - Is loaded in a different process than Dagster system processes like Dagit. Any communication between the Dagster system and repository code occurs over an RPC mechanism, ensuring that problems in repository code can't affect Dagster or other repositories.
 - Can be loaded in its own Python environment, so you can manage your dependencies (or even your own Python versions) separately.
 
@@ -101,7 +101,7 @@ If you save the code above as `repo.py`, you can then run the Dagster command li
 dagit -f repo.py
 ```
 
-Now you can see that all the assets and jobs in this repository are listed in the left sidebar. Assets are organized in groups. In our example, `asset1` and `asset2` are placed in the `default` group (because they were not explicitly assigned a group). `asset3` is in `mygroup`.
+Now you can see that all the assets and jobs in this repository are listed in the left sidebar. Assets are organized in groups. In our example, `asset1` and `asset2` are placed in the `default` group because they were not explicitly assigned a group. `asset3` is in `mygroup`.
 
 <Image
 alt="repo-dagit"
