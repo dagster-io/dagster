@@ -239,6 +239,9 @@ const RunWithData: React.FC<RunWithDataProps> = ({
       } else {
         // select the step otherwise
         newSelected = [filterForExactStep];
+
+        // When only one step is selected, set the compute log key as well.
+        setComputeLogKey(stepKey);
       }
     }
 
