@@ -3,6 +3,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster.core.execution.bulk_actions import BulkRunAction
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 from dagster.core.storage.pipeline_run import (
@@ -384,6 +385,18 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     @abstractmethod
     def update_backfill(self, partition_backfill: PartitionBackfill):
         """Update a partition backfill in run storage"""
+
+    @abstractmethod
+    def get_bulk_run_action(self, action_id: str) -> Optional[BulkRunAction]:
+        """Get the bulk action with the given id."""
+
+    @abstractmethod
+    def add_bulk_run_action(self, bulk_action: BulkRunAction):
+        """Add bulk action to run storage"""
+
+    @abstractmethod
+    def update_bulk_run_action(self, bulk_action: BulkRunAction):
+        """Update a bulk action in run storage"""
 
     def alembic_version(self):
         return None
