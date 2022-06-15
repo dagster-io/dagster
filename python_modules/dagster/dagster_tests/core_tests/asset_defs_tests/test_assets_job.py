@@ -771,6 +771,27 @@ def test_graph_asset_decorator_no_args():
     assert assets_def.keys_by_output_name["result"] == AssetKey("my_graph")
 
 
+def test_graph_asset_group_name():
+    @op
+    def my_op1(x):  # pylint: disable=unused-argument
+        return x
+
+    @op
+    def my_op2(y):
+        return y
+
+    @graph
+    def my_graph(x):
+        return my_op2(my_op1(x))
+
+    assets_def = AssetsDefinition.from_graph(
+        graph_def=my_graph,
+        group_name="group1",
+    )
+
+    assert assets_def.group_names_by_key[AssetKey("my_graph")] == "group1"
+
+
 def test_execute_graph_asset():
     @op(out={"x": Out(), "y": Out()})
     def x_op(context):

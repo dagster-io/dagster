@@ -40,7 +40,8 @@ class AssetsDefinition(ResourceAddable):
         can_subset: bool = False,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
-        # if adding new fields, make sure to handle them in the with_prefix_or_group method
+        # if adding new fields, make sure to handle them in the with_prefix_or_group
+        # and from_graph methods
     ):
         self._node_def = node_def
         self._keys_by_input_name = check.dict_param(
@@ -128,6 +129,7 @@ class AssetsDefinition(ResourceAddable):
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+        group_name: Optional[str] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from a GraphDefinition.
@@ -147,6 +149,8 @@ class AssetsDefinition(ResourceAddable):
                 either used as input to the asset or produced within the graph.
             partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
                 compose the assets.
+            group_name (Optional[str]): A group name for the constructed asset. Assets without a
+                group name are assigned to a group called "default".
         """
         graph_def = check.inst_param(graph_def, "graph_def", GraphDefinition)
         keys_by_input_name = check.opt_dict_param(
@@ -180,8 +184,11 @@ class AssetsDefinition(ResourceAddable):
             node_def=graph_def,
             asset_deps=transformed_internal_asset_deps or None,
             partitions_def=check.opt_inst_param(
-                partitions_def, "partitions_def", PartitionsDefinition
+                partitions_def,
+                "partitions_def",
+                PartitionsDefinition,
             ),
+            group_names_by_key={AssetKey(graph_def.name): group_name} if group_name else None,
         )
 
     @property
