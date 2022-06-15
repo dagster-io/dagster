@@ -16,6 +16,7 @@ import {
   Spinner,
   Table,
   Subheading,
+  DagitReadOnlyCodeMirror,
 } from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
@@ -28,7 +29,6 @@ import {useCopyToClipboard} from '../app/browser';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';
 import {InstigationStatus} from '../types/globalTypes';
-import {DagitReadOnlyCodeMirror} from '../ui/DagitCodeMirror';
 import {MenuLink} from '../ui/MenuLink';
 import {
   findRepositoryAmongOptions,

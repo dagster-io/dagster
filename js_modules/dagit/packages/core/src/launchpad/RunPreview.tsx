@@ -13,6 +13,7 @@ import {
   Code,
   Tooltip,
   FontFamily,
+  errorStackToYamlPath,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -20,12 +21,11 @@ import styled from 'styled-components/macro';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {errorStackToYamlPath} from '../configeditor/ConfigEditorUtils';
+
 import {
   ConfigEditorRunConfigSchemaFragment,
   ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType,
-} from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
-
+} from './types/ConfigEditorRunConfigSchemaFragment';
 import {
   RunPreviewValidationFragment,
   RunPreviewValidationFragment_RunConfigValidationInvalid_errors,

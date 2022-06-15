@@ -1,7 +1,9 @@
-import {gql} from '@apollo/client';
-import {Colors, FontFamily, Popover} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
+
+import {Colors} from '../Colors';
+import {Popover} from '../Popover';
+import {FontFamily} from '../styles';
 
 type ConfigTypeSchemaTheme = 'dark' | 'light';
 
@@ -67,14 +69,14 @@ export type TypeData =
   | CompositeTypeData
   | ListTypeData
   | MapTypeData
-  | NullableTypeData
   | RegularTypeData
   | EnumTypeData
-  | ScalarUnionTypeData;
+  | ScalarUnionTypeData
+  | NullableTypeData;
 
 function renderTypeRecursive(
   type: TypeData,
-  typeLookup: {[typeName: string]: TypeData},
+  typeLookup: Record<string, TypeData>,
   depth: number,
   props: ConfigTypeSchemaProps,
 ): React.ReactElement<HTMLElement> {
@@ -125,7 +127,7 @@ function renderTypeRecursive(
               {!fieldData.isRequired && Optional}
               {`: `}
               {renderTypeRecursive(
-                typeLookup[fieldData.configTypeKey],
+                typeLookup[fieldData.configTypeKey]!,
                 typeLookup,
                 depth + 1,
                 props,
@@ -139,7 +141,7 @@ function renderTypeRecursive(
   }
   if (type.__typename === 'ArrayConfigType') {
     const ofTypeKey = type.typeParamKeys[0];
-    return <>[{renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props)}]</>;
+    return <>[{renderTypeRecursive(typeLookup[ofTypeKey!]!, typeLookup, depth, props)}]</>;
   }
   if (type.__typename === 'MapConfigType') {
     // e.g.
@@ -154,8 +156,8 @@ function renderTypeRecursive(
         {`{`}
         <DictEntry>
           {innerIndent}[{type.keyLabelName ? `${type.keyLabelName}: ` : null}
-          {renderTypeRecursive(typeLookup[keyTypeKey], typeLookup, depth + 1, props)}]{`: `}
-          {renderTypeRecursive(typeLookup[valueTypeKey], typeLookup, depth + 1, props)}
+          {renderTypeRecursive(typeLookup[keyTypeKey!]!, typeLookup, depth + 1, props)}]{`: `}
+          {renderTypeRecursive(typeLookup[valueTypeKey!]!, typeLookup, depth + 1, props)}
         </DictEntry>
         {'  '.repeat(depth) + '}'}
       </>
@@ -165,7 +167,7 @@ function renderTypeRecursive(
     const ofTypeKey = type.typeParamKeys[0];
     return (
       <>
-        {renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props)}
+        {renderTypeRecursive(typeLookup[ofTypeKey!]!, typeLookup, depth, props)}
         {Optional}
       </>
     );
@@ -173,13 +175,13 @@ function renderTypeRecursive(
 
   if (type.__typename === 'ScalarUnionConfigType') {
     const nonScalarTypeMarkup = renderTypeRecursive(
-      typeLookup[type.nonScalarTypeKey],
+      typeLookup[type.nonScalarTypeKey]!,
       typeLookup,
       depth,
       props,
     );
     const scalarTypeMarkup = renderTypeRecursive(
-      typeLookup[type.scalarTypeKey],
+      typeLookup[type.scalarTypeKey]!,
       typeLookup,
       depth,
       props,
@@ -192,6 +194,8 @@ function renderTypeRecursive(
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore typescript thinks this can be an ArrayConfigType for some reason even though we checked above if it was
   return <span>{type.givenName}</span>;
 }
 
@@ -245,38 +249,6 @@ export const ConfigTypeSchema = React.memo((props: ConfigTypeSchemaProps) => {
     </TypeSchemaContainer>
   );
 });
-
-export const CONFIG_TYPE_SCHEMA_FRAGMENT = gql`
-  fragment ConfigTypeSchemaFragment on ConfigType {
-    __typename
-    ... on EnumConfigType {
-      givenName
-    }
-    ... on RegularConfigType {
-      givenName
-    }
-    key
-    description
-    isSelector
-    typeParamKeys
-    ... on CompositeConfigType {
-      fields {
-        name
-        description
-        isRequired
-        configTypeKey
-        defaultValueAsJson
-      }
-    }
-    ... on ScalarUnionConfigType {
-      scalarTypeKey
-      nonScalarTypeKey
-    }
-    ... on MapConfigType {
-      keyLabelName
-    }
-  }
-`;
 
 const TypeSchemaContainer = styled.code`
   color: ${Colors.Gray400};

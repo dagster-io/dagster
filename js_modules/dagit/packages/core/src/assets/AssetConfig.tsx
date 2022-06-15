@@ -4,7 +4,7 @@ import {
   SidebarAssetQuery_assetNodeOrError_AssetNode_configField as ConfigField,
   SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType_CompositeConfigType as AssetConfigSchema,
 } from '../asset-graph/types/SidebarAssetQuery';
-import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
+import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchemaFragment';
 
 export interface HasConfigField {
   configField: ConfigField | null;

@@ -39,7 +39,7 @@ interface IParseState {
 // Helper methods that mutate parser state. These must return new JavaScript objects.
 //
 function parentsPoppingItemsDeeperThan(parents: IParseStateParent[], indent: number) {
-  while (parents.length > 0 && parents[parents.length - 1].indent >= indent) {
+  while (parents.length > 0 && parents[parents.length - 1]!.indent >= indent) {
     parents = parents.slice(0, parents.length - 1);
   }
   return parents;
@@ -50,7 +50,7 @@ function parentsAddingChildKeyToLast(parents: IParseStateParent[], key: string) 
     return [];
   }
 
-  const immediateParent = parents[parents.length - 1];
+  const immediateParent = parents[parents.length - 1]!;
   return [
     ...parents.slice(0, parents.length - 1),
     {
@@ -235,7 +235,7 @@ CodeMirror.defineMode('yaml', () => {
       if (!state.inValue) {
         const match = stream.match(RegExps.DICT_KEY);
         if (match) {
-          const key = match[0];
+          const key = match[0]!;
           const keyIndent = stream.pos - key.length;
           state.parents = parentsAddingChildKeyAtIndent(state.parents, key, keyIndent);
           return 'atom';
@@ -250,7 +250,7 @@ CodeMirror.defineMode('yaml', () => {
         // be followed by the end-of-line or whitespace.
         const match = !stream.string.match(/[^\s]:[^\s]/) ? stream.match(RegExps.DICT_KEY) : false;
         if (match) {
-          const key = match[0];
+          const key = match[0]!;
           const keyIndent = stream.pos - key.length;
           state.inValue = false;
           state.parents = parentsAddingChildKeyAtIndent(state.parents, key, keyIndent);
@@ -277,7 +277,7 @@ CodeMirror.defineMode('yaml', () => {
                 ? stream.match(/^[^,\}]+/)
                 : stream.match(/^.+$/);
           }
-          const value = match ? match[0] : '';
+          const value = match ? match[0]! : '';
           if (value.match(RegExps.VARIABLE)) {
             result = 'variable-2';
           } else if (value.match(RegExps.NUMBER)) {
@@ -592,7 +592,7 @@ function findAutocompletionContext(
   // Tracks the type key to be used for the next depth level
   // Used for Map config types, which specify the type key for their values, otherwise is null
   let nextTypeKey: string | null =
-    type.__typename === 'MapConfigType' ? type.typeParamKeys[1] : null;
+    type.__typename === 'MapConfigType' ? type.typeParamKeys[1]! : null;
 
   if ((available || type.__typename === 'MapConfigType') && parents.length > 0) {
     for (const parent of parents) {
@@ -615,14 +615,14 @@ function findAutocompletionContext(
 
       inArray = parentConfigType.__typename === 'ArrayConfigType';
       if (inArray) {
-        childTypeKey = parentConfigType.typeParamKeys[0];
+        childTypeKey = parentConfigType.typeParamKeys[0]!;
         childEntriesUnique = false;
       }
 
       // Maps provide no direct autocompletions, but they do act as the closestMappingType,
       // meaning they show up in the schema sidebar
       if (parentConfigType.__typename === 'MapConfigType') {
-        nextTypeKey = parentConfigType.typeParamKeys[1];
+        nextTypeKey = parentConfigType.typeParamKeys[1]!;
         closestMappingType = parentConfigType;
         available = [];
         continue;
@@ -861,7 +861,7 @@ export function findRangeInDocumentFromPath(
 function nodeAtPath(doc: yaml.Document, path: Array<string>) {
   let node: any = doc.contents;
   for (let i = 0; i < path.length; i++) {
-    const part = path[i];
+    const part = path[i]!;
     if (node && node.type && node.type === 'PAIR') {
       node = node.value;
     }

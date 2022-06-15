@@ -9,7 +9,7 @@ import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {TableSchema} from '../metadata/TableSchema';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
 import {Description} from '../pipelines/Description';
-import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
+import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchemaFragment';
 
 import {DagsterTypeFragment} from './types/DagsterTypeFragment';
 

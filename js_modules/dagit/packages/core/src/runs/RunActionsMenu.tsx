@@ -10,6 +10,7 @@ import {
   Tooltip,
   DialogFooter,
   Dialog,
+  DagitReadOnlyCodeMirror,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
@@ -20,7 +21,6 @@ import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {ReexecutionStrategy} from '../types/globalTypes';
-import {DagitReadOnlyCodeMirror} from '../ui/DagitCodeMirror';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';

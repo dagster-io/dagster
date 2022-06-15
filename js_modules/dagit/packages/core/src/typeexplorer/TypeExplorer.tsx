@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box} from '@dagster-io/ui';
+import {Box, ConfigTypeSchema} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -9,8 +9,8 @@ import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {TableSchema} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
+import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchemaFragment';
 
-import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from './ConfigTypeSchema';
 import {TypeExplorerFragment} from './types/TypeExplorerFragment';
 
 interface ITypeExplorerProps {

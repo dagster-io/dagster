@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, FontFamily, Icon} from '@dagster-io/ui';
+import {Box, Colors, ConfigTypeSchema, FontFamily, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -9,7 +9,7 @@ import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Util
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignature';
 import {pluginForMetadata} from '../plugins';
-import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
+import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchemaFragment';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
 import {RepoAddress} from '../workspace/types';
 

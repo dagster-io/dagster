@@ -1,6 +1,11 @@
-import {Button, DialogFooter, Dialog, Tooltip, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {Button} from '../Button';
+import {Dialog, DialogFooter} from '../Dialog';
+import {Icon} from '../Icon';
+import {Tooltip} from '../Tooltip';
+
+import type {ConfigSchema} from './ConfigEditor';
 import {ConfigEditorWithSchema} from './ConfigEditorWithSchema';
 
 interface Props {
@@ -8,7 +13,7 @@ interface Props {
   onSave: () => void;
   onClose: () => void;
   config: string | undefined;
-  configSchema: any | undefined;
+  configSchema: ConfigSchema;
   isLoading: boolean;
   saveText: string;
   identifier: string;

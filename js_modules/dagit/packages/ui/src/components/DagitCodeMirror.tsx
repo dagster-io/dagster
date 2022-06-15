@@ -1,11 +1,14 @@
 import 'codemirror/lib/codemirror.css';
 
-import '../configeditor/codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
+import './configeditor/codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
 
-import {Colors, FontFamily, Icons} from '@dagster-io/ui';
 import * as React from 'react';
 import {Controlled, UnControlled as Uncontrolled} from 'react-codemirror2';
 import {createGlobalStyle} from 'styled-components/macro';
+
+import {Colors} from './Colors';
+import {Icons} from './Icon';
+import {FontFamily} from './styles';
 
 export const DagitCodeMirrorStyle = createGlobalStyle`
   .react-codemirror2 .CodeMirror {

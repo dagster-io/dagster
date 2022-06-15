@@ -1,17 +1,20 @@
-import {Box, SplitPanelContainer, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {createGlobalStyle} from 'styled-components/macro';
 
-import {ConfigEditorHelp} from '../launchpad/ConfigEditorHelp';
+import {Box} from '../Box';
+import {Spinner} from '../Spinner';
+import {SplitPanelContainer} from '../SplitPanelContainer';
 
+import type {ConfigSchema} from './ConfigEditor';
 import {ConfigEditor} from './ConfigEditor';
+import {ConfigEditorHelp} from './ConfigEditorHelp';
 import {ConfigEditorHelpContext} from './ConfigEditorHelpContext';
 import {isHelpContextEqual} from './isHelpContextEqual';
 
 interface Props {
   onConfigChange: (config: string) => void;
   config: string | undefined;
-  configSchema: any | undefined;
+  configSchema: ConfigSchema;
   isLoading: boolean;
   identifier: string;
 }
@@ -60,7 +63,7 @@ export const ConfigEditorWithSchema: React.FC<Props> = ({
               checkConfig={async (_j) => {
                 return {isValid: true};
               }}
-              runConfigSchema={configSchema}
+              configSchema={configSchema}
             />
           ) : (
             <Box style={{height: '100%'}} flex={{alignItems: 'center', justifyContent: 'center'}}>
@@ -72,7 +75,7 @@ export const ConfigEditorWithSchema: React.FC<Props> = ({
           <Box style={{height: 500}}>
             <ConfigEditorHelp
               context={editorHelpContext}
-              allInnerTypes={configSchema?.allConfigTypes || []}
+              allInnerTypes={(configSchema?.allConfigTypes as any) || []}
             />
           </Box>
         }

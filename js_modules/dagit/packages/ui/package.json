@@ -13,7 +13,8 @@
   "scripts": {
     "prepack": "yarn build",
     "prepublish": "yarn lint && yarn ts && yarn jest",
-    "build": "rm -rf lib && tsc -p ./tsconfig.build.json && yarn rollup -c rollup.config.js",
+    "build": "rm -rf lib && tsc -p ./tconfig.build.json && yarn rollup -c rollup.config.js",
+    "generate-graphql": "cp -r ../core/src/scripts/generateGraphQLTypes.ts ./src/scripts/generateGraphQLTypes.ts && ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateGraphQLTypes.ts",
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
     "jest": "jest",
     "ts": "tsc -p .",
@@ -30,6 +31,7 @@
     "styled-components": "^5.3.3"
   },
   "dependencies": {
+    "@apollo/client": "^3.6.8",
     "deepmerge": "^4.2.2",
     "react-markdown": "^6.0.3",
     "react-virtualized": "^9.22.3",
@@ -71,6 +73,7 @@
     "@types/rollup-plugin-node-globals": "^1",
     "@types/styled-components": "^5",
     "@types/testing-library__jest-dom": "^5.14.2",
+    "apollo": "^2.34.0",
     "babel-jest": "^27.4.6",
     "babel-loader": "^8.2.4",
     "babel-plugin-macros": "^3.1.0",
@@ -85,6 +88,7 @@
     "rollup-plugin-node-globals": "^1.4.0",
     "rollup-plugin-polyfill-node": "^0.8.0",
     "rollup-plugin-styles": "^4.0.0",
+    "ts-node": "^10.8.1",
     "typescript": "^4.6.4",
     "webpack": "^5.0.0"
   },

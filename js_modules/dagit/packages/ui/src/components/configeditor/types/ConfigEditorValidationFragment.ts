@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { EvaluationErrorReason } from "./../../types/globalTypes";
+import { EvaluationErrorReason } from "./../../../../../../../../../src/types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: ConfigEditorValidationFragment

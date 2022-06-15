@@ -33,7 +33,6 @@
   ],
   "include": [
     "src",
-    "types"
+    "types",
   ]
 }
-  

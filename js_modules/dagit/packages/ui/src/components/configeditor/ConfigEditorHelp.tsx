@@ -1,10 +1,11 @@
-import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {Colors} from '../Colors';
 import {ConfigEditorHelpContext} from '../configeditor/ConfigEditorHelpContext';
 import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
-import {ConfigTypeSchema, TypeData} from '../typeexplorer/ConfigTypeSchema';
+
+import {ConfigTypeSchema, TypeData} from './ConfigTypeSchema';
 
 interface ConfigEditorHelpProps {
   context: ConfigEditorHelpContext | null;
@@ -19,7 +20,7 @@ export const ConfigEditorHelp: React.FC<ConfigEditorHelpProps> = React.memo(
     return (
       <Container>
         <ConfigScrollWrap>
-          <ConfigTypeSchema type={context.type} typesInScope={allInnerTypes} maxDepth={2} />
+          <ConfigTypeSchema type={context.type as any} typesInScope={allInnerTypes} maxDepth={2} />
         </ConfigScrollWrap>
         <AutocompletionsNote>Use Ctrl+Space to show auto-completions inline.</AutocompletionsNote>
       </Container>

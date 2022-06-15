@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, Icon, Caption, Subheading, Mono} from '@dagster-io/ui';
+import {Box, Colors, ConfigTypeSchema, Icon, Caption, Subheading, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -15,7 +15,6 @@ import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {ConfigTypeSchema} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';

@@ -3,6 +3,11 @@ import {
   Box,
   Button,
   Colors,
+  ConfigEditor,
+  ConfigEditorHelp,
+  ConfigEditorHelpContext,
+  responseToYamlValidationResult,
+  isHelpContextEqual,
   Group,
   Icon,
   SecondPanelToggle,
@@ -23,14 +28,6 @@ import {
 } from '../app/ExecutionSessionStorage';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {ConfigEditor} from '../configeditor/ConfigEditor';
-import {ConfigEditorHelpContext} from '../configeditor/ConfigEditorHelpContext';
-import {
-  CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT,
-  CONFIG_EDITOR_VALIDATION_FRAGMENT,
-  responseToYamlValidationResult,
-} from '../configeditor/ConfigEditorUtils';
-import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
 import {DagsterTag} from '../runs/RunTag';
 import {RepositorySelector} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -40,7 +37,6 @@ import {
   ConfigEditorConfigPicker,
   CONFIG_PARTITION_SELECTION_QUERY,
 } from './ConfigEditorConfigPicker';
-import {ConfigEditorHelp} from './ConfigEditorHelp';
 import {ConfigEditorModePicker} from './ConfigEditorModePicker';
 import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
 import {LaunchpadType} from './LaunchpadRoot';
@@ -643,7 +639,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
                 <ConfigEditor
                   ref={editor}
                   readOnly={false}
-                  runConfigSchema={runConfigSchema}
+                  configSchema={runConfigSchema}
                   configCode={currentSession.runConfigYaml}
                   onConfigChange={onConfigChange}
                   onHelpContextChange={(next) => {
@@ -728,12 +724,35 @@ const PREVIEW_CONFIG_QUERY = gql`
     $mode: String!
   ) {
     isPipelineConfigValid(pipeline: $pipeline, runConfigData: $runConfigData, mode: $mode) {
-      ...ConfigEditorValidationFragment
+      __typename
+      ... on RunConfigValidationInvalid {
+        errors {
+          __typename
+          reason
+          message
+          stack {
+            entries {
+              __typename
+              ... on EvaluationStackPathEntry {
+                fieldName
+              }
+              ... on EvaluationStackListItemEntry {
+                listIndex
+              }
+              ... on EvaluationStackMapKeyEntry {
+                mapKey
+              }
+              ... on EvaluationStackMapValueEntry {
+                mapKey
+              }
+            }
+          }
+        }
+      }
       ...RunPreviewValidationFragment
     }
   }
   ${RUN_PREVIEW_VALIDATION_FRAGMENT}
-  ${CONFIG_EDITOR_VALIDATION_FRAGMENT}
 `;
 
 const SessionSettingsSpacer = styled.div`
@@ -744,13 +763,48 @@ const RUN_CONFIG_SCHEMA_OR_ERROR_FRAGMENT = gql`
   fragment LaunchpadSessionRunConfigSchemaFragment on RunConfigSchemaOrError {
     __typename
     ... on RunConfigSchema {
-      ...ConfigEditorRunConfigSchemaFragment
+      rootConfigType {
+        key
+      }
+      allConfigTypes {
+        __typename
+        key
+        description
+        isSelector
+        typeParamKeys
+        ... on RegularConfigType {
+          givenName
+        }
+        ... on MapConfigType {
+          keyLabelName
+        }
+        ... on EnumConfigType {
+          givenName
+          values {
+            value
+            description
+          }
+        }
+        ... on CompositeConfigType {
+          fields {
+            name
+            description
+            isRequired
+            configTypeKey
+            defaultValueAsJson
+          }
+        }
+        ... on ScalarUnionConfigType {
+          key
+          scalarTypeKey
+          nonScalarTypeKey
+        }
+      }
     }
     ... on ModeNotFoundError {
       message
     }
   }
-  ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
 `;
 
 export const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`

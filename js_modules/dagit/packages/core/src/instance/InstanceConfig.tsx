@@ -1,13 +1,21 @@
 import 'codemirror/addon/search/searchcursor';
 
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, PageHeader, Spinner, Code, Heading, Subheading} from '@dagster-io/ui';
+import {
+  Box,
+  Colors,
+  DagitReadOnlyCodeMirror,
+  PageHeader,
+  Spinner,
+  Code,
+  Heading,
+  Subheading,
+} from '@dagster-io/ui';
 import * as codemirror from 'codemirror';
 import * as React from 'react';
 import {createGlobalStyle} from 'styled-components/macro';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
-import {DagitReadOnlyCodeMirror} from '../ui/DagitCodeMirror';
 
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceConfigQuery} from './types/InstanceConfigQuery';

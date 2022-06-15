@@ -20,7 +20,7 @@ import * as React from 'react';
 import {createGlobalStyle} from 'styled-components/macro';
 import * as yaml from 'yaml';
 
-import {DagitCodeMirror} from '../ui/DagitCodeMirror';
+import {DagitCodeMirror} from '../DagitCodeMirror';
 
 import {ConfigEditorHelpContext} from './ConfigEditorHelpContext';
 import {
@@ -30,10 +30,19 @@ import {
 } from './codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
 import {ConfigEditorRunConfigSchemaFragment} from './types/ConfigEditorRunConfigSchemaFragment';
 
+export type ConfigSchema =
+  | {
+      __typename: string;
+      allConfigTypes: ConfigEditorRunConfigSchemaFragment['allConfigTypes'];
+      rootConfigType: ConfigEditorRunConfigSchemaFragment['rootConfigType'];
+    }
+  | undefined
+  | null;
+
 interface ConfigEditorProps {
   configCode: string;
   readOnly: boolean;
-  runConfigSchema?: ConfigEditorRunConfigSchemaFragment;
+  configSchema?: ConfigSchema;
 
   checkConfig: YamlModeValidateFunction;
   onConfigChange: (newValue: string) => void;
@@ -60,7 +69,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     if (!this._editor) {
       return;
     }
-    if (prevProps.runConfigSchema === this.props.runConfigSchema) {
+    if (prevProps.configSchema === this.props.configSchema) {
       return;
     }
     this.performInitialPass();
@@ -73,7 +82,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     return (
       prevProps.configCode !== this.props.configCode ||
       prevProps.readOnly !== this.props.readOnly ||
-      prevProps.runConfigSchema !== this.props.runConfigSchema
+      prevProps.configSchema !== this.props.configSchema
     );
   }
 
@@ -153,7 +162,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
               hintOptions: {
                 completeSingle: false,
                 closeOnUnfocus: false,
-                schema: this.props.runConfigSchema,
+                schema: this.props.configSchema,
               },
               keyMap: 'sublime',
               extraKeys: {
