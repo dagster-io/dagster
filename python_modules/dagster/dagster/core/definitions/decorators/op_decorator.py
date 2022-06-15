@@ -214,7 +214,7 @@ def op(
     retry_policy: Optional[RetryPolicy] = None,
     input_defs: Optional[List[InputDefinition]] = None,
     output_defs: Optional[List[OutputDefinition]] = None,
-) -> Union[OpDefinition, _Op]:
+) -> Union["OpDefinition", _Op]:
     """
     Create an op with the specified parameters from the decorated function.
 
