@@ -15,7 +15,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster.core.execution.bulk_actions import BulkAction, BulkActionType
+from dagster.core.execution.bulk_actions import BulkAction, BulkActionType, RunTerminationAction
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
@@ -1213,15 +1213,34 @@ class TestRunStorage:
 
     def test_bulk_actions(self, storage):
         action = BulkAction(
-            "foo", BulkActionType.RUN_TERMINATION, BulkActionStatus.REQUESTED, time.time()
+            "foo",
+            BulkActionType.RUN_TERMINATION,
+            BulkActionStatus.REQUESTED,
+            time.time(),
+            RunTerminationAction(RunsFilter()),
         )
         storage.add_bulk_action(action)
         assert storage.get_bulk_action("foo") == action
         action2 = BulkAction(
-            "foo", BulkActionType.RUN_TERMINATION, BulkActionStatus.REQUESTED, time.time() + 1000
+            "foo",
+            BulkActionType.RUN_TERMINATION,
+            BulkActionStatus.REQUESTED,
+            time.time() + 1000,
+            RunTerminationAction(RunsFilter()),
         )
         storage.update_bulk_action(action2)
         assert storage.get_bulk_action("foo") == action2
+
+        action3 = BulkAction(
+            "bar",
+            BulkActionType.RUN_TERMINATION,
+            BulkActionStatus.REQUESTED,
+            time.time() + 4000,
+            RunTerminationAction(RunsFilter()),
+        )
+        storage.add_bulk_action(action3)
+
+        assert storage.get_bulk_actions(BulkActionType.RUN_TERMINATION) == [action3, action2]
 
     def test_secondary_index(self, storage):
         if not isinstance(storage, SqlRunStorage):
