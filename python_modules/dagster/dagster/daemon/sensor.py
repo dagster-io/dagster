@@ -155,8 +155,8 @@ class SensorLaunchContext:
         self._instance.purge_ticks(
             self._external_sensor.get_external_origin_id(),
             selector_id=self._external_sensor.selector_id,
-            tick_status=TickStatus.SKIPPED,
             before=pendulum.now("UTC").subtract(days=7).timestamp(),  #  keep the last 7 days
+            tick_statuses=[TickStatus.SKIPPED],
         )
 
 
