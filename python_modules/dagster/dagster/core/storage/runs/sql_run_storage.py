@@ -1073,6 +1073,35 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
             )
 
+    def get_bulk_actions(
+        self,
+        type: BulkActionType,
+        status: Optional[BulkActionStatus] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> List[BulkAction]:
+        check.inst_param(type, "type", BulkActionType)
+        check.opt_inst_param(status, "status", BulkActionStatus)
+        check.invariant(
+            type != BulkActionType.PARTITION_BACKFILL,
+            "Backfills should use the get_backfills method",
+        )
+        query = db.select([BulkActionsTable.c.body]).where(
+            BulkActionsTable.c.action_type == type.value
+        )
+        if status:
+            query = query.where(BulkActionsTable.c.status == status.value)
+        if cursor:
+            cursor_query = db.select([BulkActionsTable.c.id]).where(
+                BulkActionsTable.c.key == cursor
+            )
+            query = query.where(BulkActionsTable.c.id < cursor_query)
+        if limit:
+            query = query.limit(limit)
+        query = query.order_by(BulkActionsTable.c.id.desc())
+        rows = self.fetchall(query)
+        return [deserialize_as(row[0], BulkAction) for row in rows]
+
     def get_bulk_action(self, action_id: str) -> Optional[BulkAction]:
         check.str_param(action_id, "action_id")
         query = db.select([BulkActionsTable.c.body]).where(BulkActionsTable.c.key == action_id)

@@ -409,6 +409,26 @@ class InMemoryRunStorage(RunStorage):
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
         self._backfills[partition_backfill.backfill_id] = partition_backfill
 
+    def get_bulk_actions(
+        self,
+        type: BulkActionType,
+        status: Optional[BulkActionStatus] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> List[BulkAction]:
+        check.inst_param(type, "type", BulkActionType)
+        check.opt_inst_param(status, "status", BulkActionStatus)
+        check.invariant(
+            type != BulkActionType.PARTITION_BACKFILL,
+            "Backfills should use the get_backfills method",
+        )
+        actions = [
+            action
+            for action in self._bulk_actions.values()
+            if type == action.type and (not status or status == action.status)
+        ]
+        return self._slice(actions[::-1], cursor, limit, key_fn=lambda _: _.action_id)
+
     def get_bulk_action(self, action_id: str) -> Optional[BulkAction]:
         check.str_param(action_id, "action_id")
         return self._bulk_actions.get(action_id)

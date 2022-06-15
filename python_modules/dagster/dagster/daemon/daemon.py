@@ -21,6 +21,8 @@ from dagster.daemon.types import DaemonHeartbeat
 from dagster.scheduler.scheduler import execute_scheduler_iteration_loop
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
+from .bulk_action import execute_bulk_action_iteration
+
 
 def get_default_daemon_logger(daemon_name):
     return logging.getLogger(f"dagster.daemon.{daemon_name}")
@@ -235,6 +237,7 @@ class BackfillDaemon(IntervalDaemon):
 
     def run_iteration(self, instance, workspace):
         yield from execute_backfill_iteration(instance, workspace, self._logger)
+        yield from execute_bulk_action_iteration(instance, self._logger)
 
 
 class MonitoringDaemon(IntervalDaemon):

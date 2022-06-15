@@ -387,6 +387,16 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """Update a partition backfill in run storage"""
 
     @abstractmethod
+    def get_bulk_actions(
+        self,
+        type: BulkActionType,
+        status: Optional[BulkActionStatus] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> List[BulkAction]:
+        """Get a list of partition backfills"""
+
+    @abstractmethod
     def get_bulk_action(self, action_id: str) -> Optional[BulkAction]:
         """Get the bulk action with the given id."""
 
