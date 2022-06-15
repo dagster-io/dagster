@@ -173,6 +173,12 @@ export interface DagsterTypeFragment_inputSchemaType_ArrayConfigType_recursiveCo
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -180,6 +186,7 @@ export interface DagsterTypeFragment_inputSchemaType_ArrayConfigType_recursiveCo
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -239,12 +246,24 @@ export interface DagsterTypeFragment_inputSchemaType_ArrayConfigType {
   recursiveConfigTypes: DagsterTypeFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface DagsterTypeFragment_inputSchemaType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface DagsterTypeFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface DagsterTypeFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -254,6 +273,7 @@ export interface DagsterTypeFragment_inputSchemaType_EnumConfigType_recursiveCon
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -311,6 +331,7 @@ export interface DagsterTypeFragment_inputSchemaType_EnumConfigType {
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_inputSchemaType_EnumConfigType_values[];
   recursiveConfigTypes: DagsterTypeFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -322,6 +343,12 @@ export interface DagsterTypeFragment_inputSchemaType_RegularConfigType_recursive
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -329,6 +356,7 @@ export interface DagsterTypeFragment_inputSchemaType_RegularConfigType_recursive
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -406,6 +434,12 @@ export interface DagsterTypeFragment_inputSchemaType_CompositeConfigType_recursi
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -413,6 +447,7 @@ export interface DagsterTypeFragment_inputSchemaType_CompositeConfigType_recursi
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -481,6 +516,12 @@ export interface DagsterTypeFragment_inputSchemaType_ScalarUnionConfigType_recur
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -488,6 +529,7 @@ export interface DagsterTypeFragment_inputSchemaType_ScalarUnionConfigType_recur
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -557,6 +599,12 @@ export interface DagsterTypeFragment_inputSchemaType_MapConfigType_recursiveConf
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -564,6 +612,7 @@ export interface DagsterTypeFragment_inputSchemaType_MapConfigType_recursiveConf
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -634,6 +683,12 @@ export interface DagsterTypeFragment_outputSchemaType_ArrayConfigType_recursiveC
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -641,6 +696,7 @@ export interface DagsterTypeFragment_outputSchemaType_ArrayConfigType_recursiveC
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -700,12 +756,24 @@ export interface DagsterTypeFragment_outputSchemaType_ArrayConfigType {
   recursiveConfigTypes: DagsterTypeFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface DagsterTypeFragment_outputSchemaType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface DagsterTypeFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface DagsterTypeFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -715,6 +783,7 @@ export interface DagsterTypeFragment_outputSchemaType_EnumConfigType_recursiveCo
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -772,6 +841,7 @@ export interface DagsterTypeFragment_outputSchemaType_EnumConfigType {
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_outputSchemaType_EnumConfigType_values[];
   recursiveConfigTypes: DagsterTypeFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -783,6 +853,12 @@ export interface DagsterTypeFragment_outputSchemaType_RegularConfigType_recursiv
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -790,6 +866,7 @@ export interface DagsterTypeFragment_outputSchemaType_RegularConfigType_recursiv
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -867,6 +944,12 @@ export interface DagsterTypeFragment_outputSchemaType_CompositeConfigType_recurs
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -874,6 +957,7 @@ export interface DagsterTypeFragment_outputSchemaType_CompositeConfigType_recurs
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -942,6 +1026,12 @@ export interface DagsterTypeFragment_outputSchemaType_ScalarUnionConfigType_recu
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -949,6 +1039,7 @@ export interface DagsterTypeFragment_outputSchemaType_ScalarUnionConfigType_recu
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1018,6 +1109,12 @@ export interface DagsterTypeFragment_outputSchemaType_MapConfigType_recursiveCon
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1025,6 +1122,7 @@ export interface DagsterTypeFragment_outputSchemaType_MapConfigType_recursiveCon
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1253,6 +1351,12 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_ArrayConfigType_
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1260,6 +1364,7 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_ArrayConfigType_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1319,12 +1424,24 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_ArrayConfigType 
   recursiveConfigTypes: DagsterTypeFragment_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface DagsterTypeFragment_innerTypes_inputSchemaType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface DagsterTypeFragment_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -1334,6 +1451,7 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_EnumConfigType_r
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1391,6 +1509,7 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_EnumConfigType {
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_innerTypes_inputSchemaType_EnumConfigType_values[];
   recursiveConfigTypes: DagsterTypeFragment_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -1402,6 +1521,12 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_RegularConfigTyp
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1409,6 +1534,7 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_RegularConfigTyp
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1486,6 +1612,12 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_CompositeConfigT
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1493,6 +1625,7 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_CompositeConfigT
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1561,6 +1694,12 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_ScalarUnionConfi
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1568,6 +1707,7 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_ScalarUnionConfi
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1637,6 +1777,12 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_MapConfigType_re
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1644,6 +1790,7 @@ export interface DagsterTypeFragment_innerTypes_inputSchemaType_MapConfigType_re
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1714,6 +1861,12 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_ArrayConfigType
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1721,6 +1874,7 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_ArrayConfigType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1780,12 +1934,24 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_ArrayConfigType
   recursiveConfigTypes: DagsterTypeFragment_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface DagsterTypeFragment_innerTypes_outputSchemaType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface DagsterTypeFragment_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -1795,6 +1961,7 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_EnumConfigType_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1852,6 +2019,7 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_EnumConfigType 
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_innerTypes_outputSchemaType_EnumConfigType_values[];
   recursiveConfigTypes: DagsterTypeFragment_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -1863,6 +2031,12 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_RegularConfigTy
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1870,6 +2044,7 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_RegularConfigTy
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1947,6 +2122,12 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_CompositeConfig
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1954,6 +2135,7 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_CompositeConfig
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -2022,6 +2204,12 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_ScalarUnionConf
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -2029,6 +2217,7 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_ScalarUnionConf
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -2098,6 +2287,12 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_MapConfigType_r
   typeParamKeys: string[];
 }
 
+export interface DagsterTypeFragment_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -2105,6 +2300,7 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_MapConfigType_r
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: DagsterTypeFragment_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface DagsterTypeFragment_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {

@@ -140,6 +140,12 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDe
   typeParamKeys: string[];
 }
 
+export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -147,6 +153,7 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDe
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -206,12 +213,24 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDe
   recursiveConfigTypes: SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -221,6 +240,7 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDe
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -278,6 +298,7 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDe
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_values[];
   recursiveConfigTypes: SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -289,6 +310,12 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDe
   typeParamKeys: string[];
 }
 
+export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -296,6 +323,7 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDe
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -373,6 +401,12 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDe
   typeParamKeys: string[];
 }
 
+export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -380,6 +414,7 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDe
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -448,6 +483,12 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDe
   typeParamKeys: string[];
 }
 
+export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -455,6 +496,7 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDe
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -524,6 +566,12 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDe
   typeParamKeys: string[];
 }
 
+export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -531,6 +579,7 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDe
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType {

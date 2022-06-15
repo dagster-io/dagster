@@ -331,6 +331,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSche
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -338,6 +344,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSche
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -397,12 +404,24 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSche
   recursiveConfigTypes: AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -412,6 +431,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSche
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -469,6 +489,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSche
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_values[];
   recursiveConfigTypes: AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -480,6 +501,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSche
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -487,6 +514,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSche
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -564,6 +592,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSche
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -571,6 +605,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSche
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -639,6 +674,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSche
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -646,6 +687,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSche
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -715,6 +757,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSche
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -722,6 +770,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSche
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -792,6 +841,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSch
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -799,6 +854,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSch
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -858,12 +914,24 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSch
   recursiveConfigTypes: AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -873,6 +941,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSch
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -930,6 +999,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSch
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_values[];
   recursiveConfigTypes: AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -941,6 +1011,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSch
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -948,6 +1024,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSch
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1025,6 +1102,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSch
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1032,6 +1115,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSch
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1100,6 +1184,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSch
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1107,6 +1197,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSch
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1176,6 +1267,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSch
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1183,6 +1280,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSch
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1411,6 +1509,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1418,6 +1522,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1477,12 +1582,24 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   recursiveConfigTypes: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -1492,6 +1609,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1549,6 +1667,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_values[];
   recursiveConfigTypes: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -1560,6 +1679,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1567,6 +1692,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1644,6 +1770,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1651,6 +1783,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1719,6 +1852,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1726,6 +1865,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1795,6 +1935,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1802,6 +1948,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1872,6 +2019,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1879,6 +2032,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1938,12 +2092,24 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   recursiveConfigTypes: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -1953,6 +2119,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -2010,6 +2177,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_values[];
   recursiveConfigTypes: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -2021,6 +2189,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -2028,6 +2202,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -2105,6 +2280,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -2112,6 +2293,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -2180,6 +2362,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -2187,6 +2375,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -2256,6 +2445,12 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
+export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -2263,6 +2458,7 @@ export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeOpMetadataFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {

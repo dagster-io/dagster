@@ -146,6 +146,12 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   typeParamKeys: string[];
 }
 
+export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -153,6 +159,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -212,12 +219,24 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   recursiveConfigTypes: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -227,6 +246,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -284,6 +304,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_values[];
   recursiveConfigTypes: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -295,6 +316,12 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   typeParamKeys: string[];
 }
 
+export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -302,6 +329,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -379,6 +407,12 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   typeParamKeys: string[];
 }
 
+export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -386,6 +420,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -454,6 +489,12 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   typeParamKeys: string[];
 }
 
+export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -461,6 +502,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -530,6 +572,12 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   typeParamKeys: string[];
 }
 
+export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -537,6 +585,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType {

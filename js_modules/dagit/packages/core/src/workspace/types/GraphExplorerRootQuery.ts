@@ -17,6 +17,12 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   typeParamKeys: string[];
 }
 
+export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -24,6 +30,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -83,12 +90,24 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   recursiveConfigTypes: GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -98,6 +117,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -155,6 +175,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_EnumConfigType_values[];
   recursiveConfigTypes: GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -166,6 +187,12 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   typeParamKeys: string[];
 }
 
+export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -173,6 +200,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -250,6 +278,12 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   typeParamKeys: string[];
 }
 
+export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -257,6 +291,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -325,6 +360,12 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   typeParamKeys: string[];
 }
 
+export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -332,6 +373,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -401,6 +443,12 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   typeParamKeys: string[];
 }
 
+export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -408,6 +456,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -490,6 +539,12 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   typeParamKeys: string[];
 }
 
+export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -497,6 +552,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -556,12 +612,24 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   recursiveConfigTypes: GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -571,6 +639,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -628,6 +697,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_EnumConfigType_values[];
   recursiveConfigTypes: GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -639,6 +709,12 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   typeParamKeys: string[];
 }
 
+export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -646,6 +722,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -723,6 +800,12 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   typeParamKeys: string[];
 }
 
+export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -730,6 +813,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -798,6 +882,12 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   typeParamKeys: string[];
 }
 
+export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -805,6 +895,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -874,6 +965,12 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   typeParamKeys: string[];
 }
 
+export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -881,6 +978,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType {

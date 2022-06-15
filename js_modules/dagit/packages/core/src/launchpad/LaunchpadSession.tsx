@@ -3,10 +3,14 @@ import {
   Box,
   Button,
   Colors,
+  ConfigEditor,
+  ConfigEditorHelpContext,
   Group,
   Icon,
   SecondPanelToggle,
   SplitPanelContainer,
+  isHelpContextEqual,
+  ConfigEditorHelp,
 } from '@dagster-io/ui';
 import merge from 'deepmerge';
 import uniqBy from 'lodash/uniqBy';
@@ -23,14 +27,11 @@ import {
 } from '../app/ExecutionSessionStorage';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {ConfigEditor} from '../configeditor/ConfigEditor';
-import {ConfigEditorHelpContext} from '../configeditor/ConfigEditorHelpContext';
 import {
   CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT,
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
   responseToYamlValidationResult,
 } from '../configeditor/ConfigEditorUtils';
-import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
 import {DagsterTag} from '../runs/RunTag';
 import {RepositorySelector} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -40,7 +41,6 @@ import {
   ConfigEditorConfigPicker,
   CONFIG_PARTITION_SELECTION_QUERY,
 } from './ConfigEditorConfigPicker';
-import {ConfigEditorHelp} from './ConfigEditorHelp';
 import {ConfigEditorModePicker} from './ConfigEditorModePicker';
 import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
 import {LaunchpadType} from './LaunchpadRoot';
@@ -643,7 +643,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
                 <ConfigEditor
                   ref={editor}
                   readOnly={false}
-                  runConfigSchema={runConfigSchema}
+                  configSchema={runConfigSchema}
                   configCode={currentSession.runConfigYaml}
                   onConfigChange={onConfigChange}
                   onHelpContextChange={(next) => {

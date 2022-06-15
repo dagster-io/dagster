@@ -15,6 +15,12 @@ export interface SidebarModeInfoFragment_resources_configField_configType_ArrayC
   typeParamKeys: string[];
 }
 
+export interface SidebarModeInfoFragment_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarModeInfoFragment_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -22,6 +28,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_ArrayC
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarModeInfoFragment_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -81,12 +88,24 @@ export interface SidebarModeInfoFragment_resources_configField_configType_ArrayC
   recursiveConfigTypes: SidebarModeInfoFragment_resources_configField_configType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface SidebarModeInfoFragment_resources_configField_configType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarModeInfoFragment_resources_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface SidebarModeInfoFragment_resources_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -96,6 +115,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_EnumCo
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarModeInfoFragment_resources_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -153,6 +173,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_EnumCo
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarModeInfoFragment_resources_configField_configType_EnumConfigType_values[];
   recursiveConfigTypes: SidebarModeInfoFragment_resources_configField_configType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -164,6 +185,12 @@ export interface SidebarModeInfoFragment_resources_configField_configType_Regula
   typeParamKeys: string[];
 }
 
+export interface SidebarModeInfoFragment_resources_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarModeInfoFragment_resources_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -171,6 +198,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_Regula
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarModeInfoFragment_resources_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -248,6 +276,12 @@ export interface SidebarModeInfoFragment_resources_configField_configType_Compos
   typeParamKeys: string[];
 }
 
+export interface SidebarModeInfoFragment_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarModeInfoFragment_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -255,6 +289,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_Compos
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarModeInfoFragment_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -323,6 +358,12 @@ export interface SidebarModeInfoFragment_resources_configField_configType_Scalar
   typeParamKeys: string[];
 }
 
+export interface SidebarModeInfoFragment_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarModeInfoFragment_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -330,6 +371,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_Scalar
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarModeInfoFragment_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -399,6 +441,12 @@ export interface SidebarModeInfoFragment_resources_configField_configType_MapCon
   typeParamKeys: string[];
 }
 
+export interface SidebarModeInfoFragment_resources_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarModeInfoFragment_resources_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -406,6 +454,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_MapCon
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarModeInfoFragment_resources_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -488,6 +537,12 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_ArrayCon
   typeParamKeys: string[];
 }
 
+export interface SidebarModeInfoFragment_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarModeInfoFragment_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -495,6 +550,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_ArrayCon
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarModeInfoFragment_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -554,12 +610,24 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_ArrayCon
   recursiveConfigTypes: SidebarModeInfoFragment_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface SidebarModeInfoFragment_loggers_configField_configType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarModeInfoFragment_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface SidebarModeInfoFragment_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -569,6 +637,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_EnumConf
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarModeInfoFragment_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -626,6 +695,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_EnumConf
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarModeInfoFragment_loggers_configField_configType_EnumConfigType_values[];
   recursiveConfigTypes: SidebarModeInfoFragment_loggers_configField_configType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -637,6 +707,12 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_RegularC
   typeParamKeys: string[];
 }
 
+export interface SidebarModeInfoFragment_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarModeInfoFragment_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -644,6 +720,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_RegularC
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarModeInfoFragment_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -721,6 +798,12 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_Composit
   typeParamKeys: string[];
 }
 
+export interface SidebarModeInfoFragment_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarModeInfoFragment_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -728,6 +811,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_Composit
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarModeInfoFragment_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -796,6 +880,12 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_ScalarUn
   typeParamKeys: string[];
 }
 
+export interface SidebarModeInfoFragment_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarModeInfoFragment_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -803,6 +893,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_ScalarUn
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarModeInfoFragment_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -872,6 +963,12 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_MapConfi
   typeParamKeys: string[];
 }
 
+export interface SidebarModeInfoFragment_loggers_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarModeInfoFragment_loggers_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -879,6 +976,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_MapConfi
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarModeInfoFragment_loggers_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType {
