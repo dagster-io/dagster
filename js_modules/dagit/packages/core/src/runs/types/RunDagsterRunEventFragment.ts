@@ -10,7 +10,7 @@ import { LogLevel, DagsterEventType, ErrorSource, ObjectStoreOperationType } fro
 // ====================================================
 
 export interface RunDagsterRunEventFragment_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent" | "AlertFailureEvent" | "AssetMaterializationPlannedEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent" | "AssetMaterializationPlannedEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
@@ -1614,7 +1614,7 @@ export interface RunDagsterRunEventFragment_ExecutionStepUpForRetryEvent_error {
 }
 
 export interface RunDagsterRunEventFragment_ExecutionStepUpForRetryEvent {
-  __typename: "ExecutionStepUpForRetryEvent" | "RunFailureEvent" | "HookErroredEvent";
+  __typename: "ExecutionStepUpForRetryEvent" | "RunFailureEvent" | "HookErroredEvent" | "AlertFailureEvent";
   message: string;
   timestamp: string;
   level: LogLevel;

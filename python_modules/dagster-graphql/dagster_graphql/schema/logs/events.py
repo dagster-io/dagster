@@ -135,7 +135,7 @@ class GrapheneAlertSuccessEvent(graphene.ObjectType):
 
 class GrapheneAlertFailureEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent, GrapheneErrorEvent)
         name = "AlertFailureEvent"
 
 

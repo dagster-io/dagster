@@ -673,6 +673,11 @@ class DagsterEvent(
         return self.event_specific_data
 
     @property
+    def alert_failure_data(self) -> "AlertFailureData":
+        _assert_type("alert_failure_data", DagsterEventType.ALERT_FAILURE, self.event_type)
+        return cast(AlertFailureData, self.event_specific_data)
+
+    @property
     def logs_captured_data(self):
         _assert_type("logs_captured_data", DagsterEventType.LOGS_CAPTURED, self.event_type)
         return self.event_specific_data
@@ -1541,6 +1546,21 @@ class HookErroredData(
 ):
     def __new__(cls, error: SerializableErrorInfo):
         return super(HookErroredData, cls).__new__(
+            cls, error=check.inst_param(error, "error", SerializableErrorInfo)
+        )
+
+
+@whitelist_for_serdes
+class AlertFailureData(
+    NamedTuple(
+        "_AlertFailureData",
+        [
+            ("error", SerializableErrorInfo),
+        ],
+    )
+):
+    def __new__(cls, error: SerializableErrorInfo):
+        return super(AlertFailureData, cls).__new__(
             cls, error=check.inst_param(error, "error", SerializableErrorInfo)
         )
 

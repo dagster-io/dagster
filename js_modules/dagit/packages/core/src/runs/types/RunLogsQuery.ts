@@ -28,7 +28,7 @@ export interface RunLogsQuery_logsForRun_RunNotFoundError {
 }
 
 export interface RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent" | "AlertFailureEvent" | "AssetMaterializationPlannedEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent" | "AssetMaterializationPlannedEvent";
   runId: string;
   message: string;
   timestamp: string;
@@ -1641,7 +1641,7 @@ export interface RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepUpF
 }
 
 export interface RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepUpForRetryEvent {
-  __typename: "ExecutionStepUpForRetryEvent" | "RunFailureEvent" | "HookErroredEvent";
+  __typename: "ExecutionStepUpForRetryEvent" | "RunFailureEvent" | "HookErroredEvent" | "AlertFailureEvent";
   runId: string;
   message: string;
   timestamp: string;

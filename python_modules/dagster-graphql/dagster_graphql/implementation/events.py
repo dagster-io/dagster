@@ -312,7 +312,11 @@ def from_dagster_event_record(event_record, pipeline_name):
     elif dagster_event.event_type == DagsterEventType.ALERT_SUCCESS:
         return GrapheneAlertSuccessEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.ALERT_FAILURE:
-        return GrapheneAlertFailureEvent(pipelineName=pipeline_name, **basic_params)
+        return GrapheneAlertFailureEvent(
+            pipelineName=pipeline_name,
+            error=GraphenePythonError(dagster_event.alert_failure_data.error),
+            **basic_params,
+        )
     elif dagster_event.event_type == DagsterEventType.HANDLED_OUTPUT:
         return GrapheneHandledOutputEvent(
             output_name=dagster_event.event_specific_data.output_name,

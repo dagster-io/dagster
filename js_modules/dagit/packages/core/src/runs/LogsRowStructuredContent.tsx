@@ -177,6 +177,9 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
     case 'AlertSuccessEvent':
       return <DefaultContent eventType={eventType} message={node.message} eventIntent="success" />;
     case 'AlertFailureEvent':
+      if (node.error) {
+        return <FailureContent message={node.message} error={node.error} eventType={eventType} />;
+      }
       return <DefaultContent eventType={eventType} message={node.message} eventIntent="warning" />;
     case 'ResourceInitFailureEvent':
     case 'ResourceTeardownFailureEvent':
