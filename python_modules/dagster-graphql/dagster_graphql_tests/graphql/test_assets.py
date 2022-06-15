@@ -24,9 +24,9 @@ from .graphql_context_test_suite import (
 
 GET_ASSET_KEY_QUERY = """
     query AssetKeyQuery {
-        assetsOrError {
+        materializedKeysOrError {
             __typename
-            ...on AssetConnection {
+            ...on MaterializedKeysConnection {
                 nodes {
                     key {
                         path
@@ -39,8 +39,8 @@ GET_ASSET_KEY_QUERY = """
 
 GET_ASSET_MATERIALIZATION = """
     query AssetQuery($assetKey: AssetKeyInput!) {
-        assetOrError(assetKey: $assetKey) {
-            ... on Asset {
+        materializedKeyOrError(assetKey: $assetKey) {
+            ... on MaterializedKey {
                 assetMaterializations(limit: 1) {
                     label
                     assetLineage {
@@ -60,8 +60,8 @@ GET_ASSET_MATERIALIZATION = """
 
 GET_ASSET_MATERIALIZATION_WITH_PARTITION = """
     query AssetQuery($assetKey: AssetKeyInput!) {
-        assetOrError(assetKey: $assetKey) {
-            ... on Asset {
+        materializedKeyOrError(assetKey: $assetKey) {
+            ... on MaterializedKey {
                 assetMaterializations(limit: 1) {
                     partition
                     label
@@ -82,8 +82,8 @@ WIPE_ASSETS = """
 
 GET_ASSET_MATERIALIZATION_TIMESTAMP = """
     query AssetQuery($assetKey: AssetKeyInput!, $asOf: String) {
-        assetOrError(assetKey: $assetKey) {
-            ... on Asset {
+        materializedKeyOrError(assetKey: $assetKey) {
+            ... on MaterializedKey {
                 assetMaterializations(beforeTimestampMillis: $asOf) {
                     timestamp
                 }
@@ -163,8 +163,8 @@ GET_LATEST_MATERIALIZATION_PER_PARTITION = """
 
 GET_ASSET_OBSERVATIONS = """
     query AssetGraphQuery($assetKey: AssetKeyInput!) {
-        assetOrError(assetKey: $assetKey) {
-            ... on Asset {
+        materializedKeyOrError(assetKey: $assetKey) {
+            ... on MaterializedKey {
                 assetObservations {
                     label
                     description
@@ -205,8 +205,8 @@ GET_MATERIALIZATION_COUNT_BY_PARTITION = """
 
 GET_ASSET_MATERIALIZATION_AFTER_TIMESTAMP = """
     query AssetQuery($assetKey: AssetKeyInput!, $afterTimestamp: String) {
-        assetOrError(assetKey: $assetKey) {
-            ... on Asset {
+        materializedKeyOrError(assetKey: $assetKey) {
+            ... on MaterializedKey {
                 assetMaterializations(afterTimestampMillis: $afterTimestamp) {
                     timestamp
                 }
@@ -217,8 +217,8 @@ GET_ASSET_MATERIALIZATION_AFTER_TIMESTAMP = """
 
 GET_ASSET_OP = """
     query AssetQuery($assetKey: AssetKeyInput!) {
-        assetOrError(assetKey: $assetKey) {
-            ... on Asset {
+        materializedKeyOrError(assetKey: $assetKey) {
+            ... on MaterializedKey {
                 definition {
                     op {
                         name
@@ -340,11 +340,11 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         _create_run(graphql_context, "multi_asset_pipeline")
         result = execute_dagster_graphql(graphql_context, GET_ASSET_KEY_QUERY)
         assert result.data
-        assert result.data["assetsOrError"]
-        assert result.data["assetsOrError"]["nodes"]
+        assert result.data["materializedKeysOrError"]
+        assert result.data["materializedKeysOrError"]["nodes"]
 
         # sort by materialization asset key to keep list order is consistent for snapshot
-        result.data["assetsOrError"]["nodes"].sort(key=lambda e: e["key"]["path"][0])
+        result.data["materializedKeysOrError"]["nodes"].sort(key=lambda e: e["key"]["path"][0])
 
         snapshot.assert_match(result.data)
 
@@ -443,8 +443,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["a"]}},
         )
         assert result.data
-        assert result.data["assetOrError"]
-        materializations = result.data["assetOrError"]["assetMaterializations"]
+        assert result.data["materializedKeyOrError"]
+        materializations = result.data["materializedKeyOrError"]["assetMaterializations"]
         assert len(materializations) == 1
         first_timestamp = int(materializations[0]["timestamp"])
 
@@ -458,8 +458,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["a"]}},
         )
         assert result.data
-        assert result.data["assetOrError"]
-        materializations = result.data["assetOrError"]["assetMaterializations"]
+        assert result.data["materializedKeyOrError"]
+        materializations = result.data["materializedKeyOrError"]["assetMaterializations"]
         assert len(materializations) == 2
         second_timestamp = int(materializations[0]["timestamp"])
 
@@ -471,8 +471,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["a"]}, "asOf": as_of_timestamp},
         )
         assert result.data
-        assert result.data["assetOrError"]
-        materializations = result.data["assetOrError"]["assetMaterializations"]
+        assert result.data["materializedKeyOrError"]
+        materializations = result.data["materializedKeyOrError"]["assetMaterializations"]
         assert len(materializations) == 1
         assert first_timestamp == int(materializations[0]["timestamp"])
 
@@ -485,8 +485,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["a"]}, "afterTimestamp": after_timestamp},
         )
         assert result.data
-        assert result.data["assetOrError"]
-        materializations = result.data["assetOrError"]["assetMaterializations"]
+        assert result.data["materializedKeyOrError"]
+        materializations = result.data["materializedKeyOrError"]["assetMaterializations"]
         assert len(materializations) == 2
 
         # Test afterTimestamp between the two timestamps, which should only return the first result
@@ -498,8 +498,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["a"]}, "afterTimestamp": after_timestamp},
         )
         assert result.data
-        assert result.data["assetOrError"]
-        materializations = result.data["assetOrError"]["assetMaterializations"]
+        assert result.data["materializedKeyOrError"]
+        materializations = result.data["materializedKeyOrError"]["assetMaterializations"]
         assert len(materializations) == 1
         assert second_timestamp == int(materializations[0]["timestamp"])
 
@@ -716,8 +716,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         )
 
         assert result.data
-        assert result.data["assetOrError"]
-        observations = result.data["assetOrError"]["assetObservations"]
+        assert result.data["materializedKeyOrError"]
+        observations = result.data["materializedKeyOrError"]["assetObservations"]
 
         assert observations
         assert observations[0]["runOrError"]["jobName"] == "observation_job"
