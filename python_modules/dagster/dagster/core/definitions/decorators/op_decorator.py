@@ -181,7 +181,7 @@ def _resolve_output_defs_from_outs(
 
 
 @overload
-def op(name: Callable[..., Any]) -> OpDefinition:
+def op(name: Callable[..., Any]) -> "OpDefinition":
     ...
 
 
