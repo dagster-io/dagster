@@ -68,7 +68,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   const lastMaterializedAt = asset?.assetMaterializations[0]?.timestamp;
   const viewingMostRecent = !params.asOf || Number(lastMaterializedAt) <= Number(params.asOf);
 
-  const definition = asset?.definition;
+  const definition = asset?.assetNode;
   const repoAddress = definition
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;
@@ -271,7 +271,7 @@ const ASSET_QUERY = gql`
           timestamp
         }
 
-        definition {
+        assetNode {
           id
           groupName
           partitionDefinition

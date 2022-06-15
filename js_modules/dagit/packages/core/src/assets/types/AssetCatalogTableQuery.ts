@@ -12,33 +12,33 @@ export interface AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeys
   path: string[];
 }
 
-export interface AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection_nodes_definition_repository_location {
+export interface AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection_nodes_assetNode_repository_location {
   __typename: "RepositoryLocation";
   id: string;
   name: string;
 }
 
-export interface AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection_nodes_definition_repository {
+export interface AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection_nodes_assetNode_repository {
   __typename: "Repository";
   id: string;
   name: string;
-  location: AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection_nodes_definition_repository_location;
+  location: AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection_nodes_assetNode_repository_location;
 }
 
-export interface AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection_nodes_definition {
+export interface AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection_nodes_assetNode {
   __typename: "AssetNode";
   id: string;
   groupName: string | null;
   partitionDefinition: string | null;
   description: string | null;
-  repository: AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection_nodes_definition_repository;
+  repository: AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection_nodes_assetNode_repository;
 }
 
 export interface AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection_nodes {
   __typename: "MaterializedKey";
   id: string;
   key: AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection_nodes_key;
-  definition: AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection_nodes_definition | null;
+  assetNode: AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection_nodes_assetNode | null;
 }
 
 export interface AssetCatalogTableQuery_materializedKeysOrError_MaterializedKeysConnection {

@@ -95,7 +95,7 @@ export const AssetTable = ({
         <QueryRefreshCountdown refreshState={refreshState} />
 
         <Box flex={{alignItems: 'center', gap: 8}}>
-          {checkedAssets.some((c) => !c.definition) ? (
+          {checkedAssets.some((c) => !c.assetNode) ? (
             <Tooltip content="One or more selected assets are not software-defined and cannot be launched directly.">
               <Button intent="primary" icon={<Icon name="materialization" />} disabled>
                 {checkedAssets.length > 1 ? `Materialize (${checkedAssets.length})` : 'Materialize'}
@@ -206,11 +206,8 @@ const AssetEntryRow: React.FC<{
     };
 
     const liveData = asset && liveDataByNode[toGraphId(asset.key)];
-    const repoAddress = asset?.definition
-      ? buildRepoAddress(
-          asset.definition.repository.name,
-          asset.definition.repository.location.name,
-        )
+    const repoAddress = asset?.assetNode
+      ? buildRepoAddress(asset.assetNode.repository.name, asset.assetNode.repository.location.name)
       : null;
 
     return (
@@ -223,27 +220,27 @@ const AssetEntryRow: React.FC<{
             path={path}
             url={linkUrl}
             isGroup={isGroup}
-            icon={isGroup ? 'folder' : asset?.definition ? 'asset' : 'asset_non_sda'}
+            icon={isGroup ? 'folder' : asset?.assetNode ? 'asset' : 'asset_non_sda'}
           />
           <Description>
-            {asset?.definition &&
-              asset.definition.description &&
-              markdownToPlaintext(asset.definition.description).split('\n')[0]}
+            {asset?.assetNode &&
+              asset.assetNode.description &&
+              markdownToPlaintext(asset.assetNode.description).split('\n')[0]}
           </Description>
         </td>
         <td>
           {repoAddress && (
             <Box flex={{direction: 'column', gap: 4}}>
               <RepositoryLink showIcon showRefresh={false} repoAddress={repoAddress} />
-              {asset?.definition && asset?.definition.groupName ? (
+              {asset?.assetNode && asset?.assetNode.groupName ? (
                 <Link
                   to={workspacePathFromAddress(
                     repoAddress,
-                    `/asset-groups/${asset.definition.groupName}`,
+                    `/asset-groups/${asset.assetNode.groupName}`,
                   )}
                 >
                   <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                    <Icon color={Colors.Gray400} name="asset_group" /> {asset.definition.groupName}
+                    <Icon color={Colors.Gray400} name="asset_group" /> {asset.assetNode.groupName}
                   </Box>
                 </Link>
               ) : undefined}
@@ -290,14 +287,14 @@ const AssetEntryRow: React.FC<{
                     <MenuLink
                       text="Show in group"
                       to={
-                        repoAddress && asset.definition?.groupName
+                        repoAddress && asset.assetNode?.groupName
                           ? workspacePathFromAddress(
                               repoAddress,
-                              `/asset-groups/${asset.definition.groupName}`,
+                              `/asset-groups/${asset.assetNode.groupName}`,
                             )
                           : ''
                       }
-                      disabled={!asset?.definition}
+                      disabled={!asset?.assetNode}
                       icon="asset_group"
                     />
                     <MenuLink
@@ -306,7 +303,7 @@ const AssetEntryRow: React.FC<{
                         {path},
                         {view: 'lineage', lineageScope: 'neighbors'},
                       )}
-                      disabled={!asset?.definition}
+                      disabled={!asset?.assetNode}
                       icon="graph_neighbors"
                     />
                     <MenuLink
@@ -315,7 +312,7 @@ const AssetEntryRow: React.FC<{
                         {path},
                         {view: 'lineage', lineageScope: 'upstream'},
                       )}
-                      disabled={!asset?.definition}
+                      disabled={!asset?.assetNode}
                       icon="graph_upstream"
                     />
                     <MenuLink
@@ -324,7 +321,7 @@ const AssetEntryRow: React.FC<{
                         {path},
                         {view: 'lineage', lineageScope: 'downstream'},
                       )}
-                      disabled={!asset?.definition}
+                      disabled={!asset?.assetNode}
                       icon="graph_downstream"
                     />
                     <MenuItem
@@ -419,7 +416,7 @@ export const ASSET_TABLE_FRAGMENT = gql`
     key {
       path
     }
-    definition {
+    assetNode {
       id
       ...AssetTableDefinitionFragment
     }

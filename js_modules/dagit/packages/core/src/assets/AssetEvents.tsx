@@ -76,7 +76,7 @@ function useRecentAssetEvents(
     const materializations = asset?.assetMaterializations || [];
     const observations = asset?.assetObservations || [];
 
-    const allPartitionKeys = asset?.definition?.partitionKeys;
+    const allPartitionKeys = asset?.assetNode?.partitionKeys;
     const loadedPartitionKeys =
       loadUsingPartitionKeys && allPartitionKeys
         ? allPartitionKeys.slice(allPartitionKeys.length - 120)
@@ -310,7 +310,7 @@ const ASSET_EVENTS_QUERY = gql`
           ...AssetMaterializationFragment
         }
 
-        definition {
+        assetNode {
           id
           partitionKeys
         }

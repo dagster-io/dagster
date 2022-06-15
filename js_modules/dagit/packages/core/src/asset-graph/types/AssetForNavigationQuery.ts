@@ -13,32 +13,32 @@ export interface AssetForNavigationQuery_materializedKeyOrError_AssetNotFoundErr
   __typename: "AssetNotFoundError";
 }
 
-export interface AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_definition_repository_location {
+export interface AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_assetNode_repository_location {
   __typename: "RepositoryLocation";
   id: string;
   name: string;
 }
 
-export interface AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_definition_repository {
+export interface AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_assetNode_repository {
   __typename: "Repository";
   id: string;
   name: string;
-  location: AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_definition_repository_location;
+  location: AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_assetNode_repository_location;
 }
 
-export interface AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_definition {
+export interface AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_assetNode {
   __typename: "AssetNode";
   id: string;
   opNames: string[];
   jobNames: string[];
   groupName: string | null;
-  repository: AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_definition_repository;
+  repository: AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_assetNode_repository;
 }
 
 export interface AssetForNavigationQuery_materializedKeyOrError_MaterializedKey {
   __typename: "MaterializedKey";
   id: string;
-  definition: AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_definition | null;
+  assetNode: AssetForNavigationQuery_materializedKeyOrError_MaterializedKey_assetNode | null;
 }
 
 export type AssetForNavigationQuery_materializedKeyOrError = AssetForNavigationQuery_materializedKeyOrError_AssetNotFoundError | AssetForNavigationQuery_materializedKeyOrError_MaterializedKey;

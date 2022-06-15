@@ -113,14 +113,14 @@ class GrapheneMaterializedKey(graphene.ObjectType):
         afterTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
-    definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
+    assetNode = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 
     class Meta:
         name = "MaterializedKey"
 
-    def __init__(self, key, definition=None):
-        super().__init__(key=key, definition=definition)
-        self._definition = definition
+    def __init__(self, key, asset_node=None):
+        super().__init__(key=key, assetNode=asset_node)
+        self._asset_node = asset_node
 
     def resolve_id(self, _):
         return self.key
@@ -132,8 +132,8 @@ class GrapheneMaterializedKey(graphene.ObjectType):
         limit = kwargs.get("limit")
         partitions = kwargs.get("partitions")
         partitionInLast = kwargs.get("partitionInLast")
-        if partitionInLast and self._definition:
-            partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
+        if partitionInLast and self._asset_node:
+            partitions = self._asset_node.get_partition_keys()[-int(partitionInLast) :]
 
         events = get_asset_materializations(
             graphene_info,
@@ -154,8 +154,8 @@ class GrapheneMaterializedKey(graphene.ObjectType):
         limit = kwargs.get("limit")
         partitions = kwargs.get("partitions")
         partitionInLast = kwargs.get("partitionInLast")
-        if partitionInLast and self._definition:
-            partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
+        if partitionInLast and self._asset_node:
+            partitions = self._asset_node.get_partition_keys()[-int(partitionInLast) :]
 
         return [
             GrapheneObservationEvent(event=event)

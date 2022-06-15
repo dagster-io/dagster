@@ -418,7 +418,7 @@ export interface AssetEventsQuery_materializedKeyOrError_MaterializedKey_assetMa
   assetLineage: AssetEventsQuery_materializedKeyOrError_MaterializedKey_assetMaterializations_assetLineage[];
 }
 
-export interface AssetEventsQuery_materializedKeyOrError_MaterializedKey_definition {
+export interface AssetEventsQuery_materializedKeyOrError_MaterializedKey_assetNode {
   __typename: "AssetNode";
   id: string;
   partitionKeys: string[];
@@ -430,7 +430,7 @@ export interface AssetEventsQuery_materializedKeyOrError_MaterializedKey {
   key: AssetEventsQuery_materializedKeyOrError_MaterializedKey_key;
   assetObservations: AssetEventsQuery_materializedKeyOrError_MaterializedKey_assetObservations[];
   assetMaterializations: AssetEventsQuery_materializedKeyOrError_MaterializedKey_assetMaterializations[];
-  definition: AssetEventsQuery_materializedKeyOrError_MaterializedKey_definition | null;
+  assetNode: AssetEventsQuery_materializedKeyOrError_MaterializedKey_assetNode | null;
 }
 
 export type AssetEventsQuery_materializedKeyOrError = AssetEventsQuery_materializedKeyOrError_AssetNotFoundError | AssetEventsQuery_materializedKeyOrError_MaterializedKey;

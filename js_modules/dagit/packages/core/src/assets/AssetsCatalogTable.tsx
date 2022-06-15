@@ -332,15 +332,20 @@ const ASSET_CATALOG_GROUP_TABLE_QUERY = gql`
 function definitionToAssetTableFragment(
   definition: AssetCatalogGroupTableQuery_assetNodes,
 ): AssetTableFragment {
-  return {__typename: 'MaterializedKey', id: definition.id, key: definition.assetKey, definition};
+  return {
+    __typename: 'MaterializedKey',
+    id: definition.id,
+    key: definition.assetKey,
+    assetNode: definition,
+  };
 }
 
 function buildAssetGroupSelector(a: Asset) {
-  return a.definition && a.definition.groupName
+  return a.assetNode && a.assetNode.groupName
     ? {
-        groupName: a.definition.groupName,
-        repositoryName: a.definition.repository.name,
-        repositoryLocationName: a.definition.repository.location.name,
+        groupName: a.assetNode.groupName,
+        repositoryName: a.assetNode.repository.name,
+        repositoryLocationName: a.assetNode.repository.location.name,
       }
     : null;
 }

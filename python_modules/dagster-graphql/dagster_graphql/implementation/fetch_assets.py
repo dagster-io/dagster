@@ -53,7 +53,7 @@ def get_materialized_keys(graphene_info, prefix=None, cursor=None, limit=None):
         nodes=[
             GrapheneMaterializedKey(
                 key=asset_key,
-                definition=asset_nodes_by_asset_key.get(asset_key),
+                asset_node=asset_nodes_by_asset_key.get(asset_key),
             )
             for asset_key in asset_keys
         ]
@@ -113,7 +113,7 @@ def get_materialized_key(graphene_info, asset_key):
     if not asset_node and not instance.has_asset_key(asset_key):
         return GrapheneAssetNotFoundError(asset_key=asset_key)
 
-    return GrapheneMaterializedKey(key=asset_key, definition=asset_node)
+    return GrapheneMaterializedKey(key=asset_key, asset_node=asset_node)
 
 
 def get_asset_materializations(

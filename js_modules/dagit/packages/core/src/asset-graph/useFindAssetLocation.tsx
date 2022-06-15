@@ -31,9 +31,9 @@ export function useFindAssetLocation() {
       });
       if (
         data?.materializedKeyOrError.__typename === 'MaterializedKey' &&
-        data?.materializedKeyOrError.definition
+        data?.materializedKeyOrError.assetNode
       ) {
-        const def = data.materializedKeyOrError.definition;
+        const def = data.materializedKeyOrError.assetNode;
         return {
           assetKey: key,
           opNames: def.opNames,
@@ -56,7 +56,7 @@ const ASSET_FOR_NAVIGATION_QUERY = gql`
       __typename
       ... on MaterializedKey {
         id
-        definition {
+        assetNode {
           id
           opNames
           jobNames

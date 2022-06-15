@@ -819,7 +819,7 @@ type MaterializedKey {
     afterTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
-  definition: AssetNode
+  assetNode: AssetNode
 }
 
 type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {

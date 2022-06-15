@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
-
 snapshots = Snapshot()
 
 snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_launcher_deployed_grpc_env] 1'] = {
