@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import {Colors} from './Colors';
-import {StyledButton, StyledButtonText, ButtonJoinedSide} from './StyledButton';
+import {StyledButton, StyledButtonText} from './StyledButton';
 
 interface CommonButtonProps {
   icon?: React.ReactNode;
@@ -11,7 +11,6 @@ interface CommonButtonProps {
   fillColor?: string;
   strokeColor?: string;
   textColor?: string;
-  joinedSide?: ButtonJoinedSide;
 }
 
 interface BaseButtonProps extends CommonButtonProps, React.ComponentPropsWithRef<'button'> {}
@@ -27,7 +26,6 @@ export const BaseButton = React.forwardRef(
       rightIcon,
       textColor = Colors.Dark,
       strokeColor = Colors.Gray300,
-      joinedSide,
       ...rest
     } = props;
 
@@ -39,7 +37,6 @@ export const BaseButton = React.forwardRef(
         $fillColor={fillColor}
         $strokeColor={strokeColor}
         $textColor={textColor}
-        $joinedSide={joinedSide}
         ref={ref}
       >
         {icon || null}

@@ -1,11 +1,12 @@
 // eslint-disable-next-line no-restricted-imports
-import {Button as BlueprintButton, AnchorButton as BlueprintAnchorButton} from '@blueprintjs/core';
+import {AnchorButton as BlueprintAnchorButton, Button as BlueprintButton} from '@blueprintjs/core';
 import * as React from 'react';
+import styled from 'styled-components/macro';
 
 import {BaseButton} from './BaseButton';
 import {Colors} from './Colors';
 import {Spinner} from './Spinner';
-import {ButtonJoinedSide, StyledButton, StyledButtonText} from './StyledButton';
+import {StyledButton, StyledButtonText} from './StyledButton';
 
 type BlueprintIntent = React.ComponentProps<typeof BlueprintButton>['intent'];
 type BlueprintOutlined = React.ComponentProps<typeof BlueprintButton>['outlined'];
@@ -87,12 +88,11 @@ export const intentToSpinnerColor = (intent: BlueprintIntent, outlined: Blueprin
   return !intent || intent === 'none' ? Colors.Gray600 : Colors.White;
 };
 
-interface ButtonProps extends React.ComponentProps<typeof BlueprintButton> {
-  joinedSide?: ButtonJoinedSide;
-}
-
 export const Button = React.forwardRef(
-  (props: ButtonProps, ref: React.ForwardedRef<HTMLButtonElement>) => {
+  (
+    props: React.ComponentProps<typeof BlueprintButton>,
+    ref: React.ForwardedRef<HTMLButtonElement>,
+  ) => {
     const {children, icon, intent, loading, outlined, rightIcon, ...rest} = props;
 
     let iconOrSpinner = icon;
@@ -122,6 +122,21 @@ export const Button = React.forwardRef(
 );
 
 Button.displayName = 'Button';
+
+export const JoinedButtons = styled.div`
+  display: flex;
+  align-items: center;
+
+  ${StyledButton}:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  ${StyledButton}:not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: 1px;
+  }
+`;
 
 export const ExternalAnchorButton = React.forwardRef(
   (
