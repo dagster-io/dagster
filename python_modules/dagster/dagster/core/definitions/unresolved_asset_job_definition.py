@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional, Sequence, Uni
 import dagster._check as check
 from dagster.core.definitions.asset_layer import build_asset_selection_job
 from dagster.core.definitions.config import ConfigMapping
+from dagster.core.definitions.run_request import RunRequest
 from dagster.core.selector.subset_selector import parse_clause
 
 if TYPE_CHECKING:
@@ -66,6 +67,26 @@ class UnresolvedAssetJobDefinition(
             name=f"{self.name}_partition_set",
             partitions_def=self.partitions_def,
         )
+
+    def run_request_for_partition(
+        self,
+        partition_key: str,
+        run_key: Optional[str],
+        tags: Optional[Dict[str, str]] = None,
+    ) -> RunRequest:
+        partition_set = self.get_partition_set_def()
+        if not partition_set:
+            check.failed("Called run_request_for_partition on a non-partitioned job")
+
+        partition = partition_set.get_partition(partition_key)
+        run_config = partition_set.run_config_for_partition(partition)
+        run_request_tags = (
+            {**tags, **partition_set.tags_for_partition(partition)}
+            if tags
+            else partition_set.tags_for_partition(partition)
+        )
+
+        return RunRequest(run_key=run_key, run_config=run_config, tags=run_request_tags)
 
     def resolve(
         self, assets: Sequence["AssetsDefinition"], source_assets: Sequence["SourceAsset"]
