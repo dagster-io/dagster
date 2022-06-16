@@ -1,3 +1,19 @@
+## 1.0.5 (June 16, 2022)
+
+- Add `ConfigEditor`, `StyledCodeMirror`, and associated components
+- Add `JoinedButtons`
+- Allow `ButtonGroup` to accept number IDs
+- Repair `TextInput` font size in Safari
+- Add `TextArea`
+- Expose `StyledTagInput`
+- Fix blocked scroll behavior on `BaseTag`
+- Add new icons for assets, graphs
+- Make disabled and checked states more obvious for `Switch`
+- Fix header alignment on `Dialog`
+- Allow `TextInput` to have type `"number"`
+- Update tsconfig to `es2022`
+- Add a default title to `Spinner`
+
 ## 1.0.4 (April 28, 2022)
 
 - Create a build-specific `tsconfig` that excludes `stories` and `test` files
