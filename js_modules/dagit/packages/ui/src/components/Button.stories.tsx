@@ -4,6 +4,8 @@ import * as React from 'react';
 import {Button, JoinedButtons} from './Button';
 import {Group} from './Group';
 import {Icon} from './Icon';
+import {Menu, MenuItem} from './Menu';
+import {Popover} from './Popover';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -132,7 +134,18 @@ export const Joined = () => {
     <Group direction="column" spacing={8}>
       <JoinedButtons>
         <Button>Main Action</Button>
-        <Button icon={<Icon name="expand_more" />}></Button>
+        <Popover
+          position="bottom-left"
+          content={
+            <Menu>
+              <MenuItem icon="layers" text="Act fast" />
+              <MenuItem icon="history" text="Act slow" />
+              <MenuItem icon="delete" intent="danger" text="Delete it all" />
+            </Menu>
+          }
+        >
+          <Button icon={<Icon name="expand_more" />}></Button>
+        </Popover>
       </JoinedButtons>
       <JoinedButtons>
         <Button>Left</Button>

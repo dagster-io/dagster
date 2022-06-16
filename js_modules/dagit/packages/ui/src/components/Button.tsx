@@ -127,11 +127,13 @@ export const JoinedButtons = styled.div`
   display: flex;
   align-items: center;
 
-  ${StyledButton}:not(:last-child) {
+  ${StyledButton}:not(:last-child),
+  & > *:not(:last-child) ${StyledButton} {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
   }
-  ${StyledButton}:not(:first-child) {
+  ${StyledButton}:not(:first-child),
+  & > *:not(:first-child) ${StyledButton} {
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
     margin-left: 1px;
