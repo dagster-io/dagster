@@ -43,7 +43,11 @@ interface TokenizingFieldProps {
   className?: string;
   small?: boolean;
 
-  suggestionProviders: SuggestionProvider[];
+  tokens?: string[];
+  tokensFilter?: (query: string, token: string) => boolean;
+
+  suggestionProviders?: SuggestionProvider[];
+  suggestionRenderer?: (suggestion: Suggestion) => React.ReactNode;
   suggestionProvidersFilter?: (
     suggestionProvider: SuggestionProvider[],
     values: TokenizingFieldValue[],
@@ -96,12 +100,18 @@ export const stringFromValue = (value: TokenizingFieldValue[]) =>
 const isEqual = (a: TokenizingFieldValue, b?: TokenizingFieldValue) =>
   b && a.token === b.token && a.value === b.value;
 
-/** Provides a text field with typeahead autocompletion for key value pairs,
-where the key is one of a known set of "suggestion provider tokens". Provide
-one or more SuggestionProviders to build the tree of autocompletions. The
-input also allows for freeform typing (`value` items with no token value) */
+/** Provides a text field with typeahead autocompletion.
+ *  This completion either provides a list of standalone tokens
+ *  sourced from the `tokens` param, or a set of key value pairs,
+ *  sourced from the `suggestionProviders` param. In the latter case, the
+ *  key is one of a known set of "suggestion provider tokens".
+ *
+ *  Provide one or more SuggestionProviders or a list of tokens
+ *  to build the tree of autocompletions.
+ *
+ *  The input also allows for freeform typing (`value` items with no token value) */
 export const TokenizingField: React.FC<TokenizingFieldProps> = ({
-  suggestionProviders,
+  suggestionProviders: rawSuggesetionProviders,
   suggestionProvidersFilter,
   values: externalValues,
   maxValues,
@@ -111,7 +121,11 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   placeholder,
   loading,
   className,
+  tokens,
+  tokensFilter,
+  suggestionRenderer,
 }) => {
+  const suggestionProviders = rawSuggesetionProviders || [];
   const [open, setOpen] = React.useState<boolean>(false);
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
   const [typed, setTyped] = React.useState<string>('');
@@ -161,9 +175,22 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
 
     if (parts.length === 1) {
       // Suggest providers (eg: `pipeline:`) so users can discover the search space
+      const actualTokenFilter = tokensFilter
+        ? tokensFilter
+        : (query: string, token: string) => token.toLowerCase().includes(query.toLowerCase());
+
+      const filteredTokens = tokens
+        ? tokens
+            .filter(
+              (token) =>
+                !values.some((e) => e.value === token) && actualTokenFilter(lastPart, token),
+            )
+            .map((token) => ({text: token, final: true}))
+        : [];
       suggestionsArr = filteredSuggestionProviders
         .map((s) => ({text: `${s.token}:`, final: false}))
-        .filter(suggestionMatchesTypedText);
+        .filter(suggestionMatchesTypedText)
+        .concat(filteredTokens);
 
       // Suggest value completions so users can type "airline_" without the "pipeline"
       // prefix and get the correct suggestion.
@@ -329,6 +356,8 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
     }
   }, [menuRef, active]);
 
+  const renderSuggestion = suggestionRenderer || ((suggestion) => suggestion.text);
+
   return (
     <Popover
       isOpen={open && suggestions.length > 0 && !atMaxValues}
@@ -341,9 +370,9 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
                 <MenuItem
                   data-idx={idx}
                   key={suggestion.text}
-                  text={suggestion.text}
+                  text={renderSuggestion(suggestion)}
                   shouldDismissPopover={false}
-                  active={active ? active.idx === idx : false}
+                  active={active?.idx === idx}
                   onMouseDown={(e: React.MouseEvent<any>) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -398,6 +427,7 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
           ) : undefined
         }
       />
+      <StyledTagInput />
     </Popover>
   );
 };
