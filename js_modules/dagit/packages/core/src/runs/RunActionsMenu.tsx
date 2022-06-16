@@ -14,7 +14,6 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
-import * as yaml from 'yaml';
 
 import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
@@ -136,10 +135,9 @@ export const RunActionsMenu: React.FC<{
                   icon="refresh"
                   onClick={async () => {
                     if (repoMatch && runConfigYaml) {
-                      const runConfig = yaml.parse(runConfigYaml);
                       const result = await reexecute({
                         variables: getReexecutionVariables({
-                          run: {...run, runConfig},
+                          run: {...run, runConfigYaml},
                           style: {type: 'all'},
                           repositoryLocationName: repoMatch.match.repositoryLocation.name,
                           repositoryName: repoMatch.match.repository.name,

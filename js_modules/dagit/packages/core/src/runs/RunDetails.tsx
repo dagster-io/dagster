@@ -16,7 +16,6 @@ import {
   StyledReadOnlyCodeMirror,
 } from '@dagster-io/ui';
 import * as React from 'react';
-import * as yaml from 'yaml';
 
 import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
@@ -123,7 +122,7 @@ export const RunDetails: React.FC<{
 export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({run, isJob}) => {
   const [showDialog, setShowDialog] = React.useState(false);
   const {rootServerURI} = React.useContext(AppContext);
-  const runConfigYaml = yaml.stringify(run.runConfig) || '';
+  const {runConfigYaml} = run;
   const copy = useCopyToClipboard();
 
   const copyConfig = () => {

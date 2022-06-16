@@ -1,5 +1,6 @@
 import {gql} from '@apollo/client';
 import {YamlModeValidationResult} from '@dagster-io/ui';
+import yaml from 'yaml';
 
 import {ConfigEditorValidationFragment} from './types/ConfigEditorValidationFragment';
 
@@ -108,7 +109,7 @@ export function errorStackToYamlPath(entries: StackEntry[]) {
 }
 
 export function responseToYamlValidationResult(
-  configJSON: Record<string, unknown>,
+  configYaml: string,
   response: ConfigEditorValidationFragment,
 ): YamlModeValidationResult {
   if (response.__typename !== 'RunConfigValidationInvalid') {
@@ -124,7 +125,8 @@ export function responseToYamlValidationResult(
   // Errors at the top level have no stack path because they are not within any
   // dicts. To avoid highlighting the entire editor, associate them with the first
   // element of the top dict.
-  const topLevelKey = Object.keys(configJSON);
+  const parsed = yaml.parse(configYaml);
+  const topLevelKey = Object.keys(parsed);
   errors.forEach((error) => {
     if (error.path.length === 0 && topLevelKey.length) {
       error.path = [topLevelKey[0]];
