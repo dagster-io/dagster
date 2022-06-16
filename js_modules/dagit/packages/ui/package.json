@@ -30,10 +30,13 @@
     "styled-components": "^5.3.3"
   },
   "dependencies": {
+    "codemirror": "^5.65.2",
     "deepmerge": "^4.2.2",
+    "react-codemirror2": "^7.2.1",
     "react-markdown": "^6.0.3",
     "react-virtualized": "^9.22.3",
-    "remark-gfm": "1.0.0"
+    "remark-gfm": "1.0.0",
+    "yaml": "2.0.0-10"
   },
   "devDependencies": {
     "@babel/core": "^7.16.7",
@@ -64,6 +67,7 @@
     "@testing-library/user-event": "^13.5.0",
     "@types/babel__core": "^7",
     "@types/babel__preset-env": "^7",
+    "@types/codemirror": "^5.60.5",
     "@types/jest": "^27.4.0",
     "@types/lru-cache": "^7",
     "@types/mdx-js__react": "^1",

@@ -13,6 +13,7 @@ import {
   Tooltip,
   Subheading,
   Box,
+  StyledReadOnlyCodeMirror,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import * as yaml from 'yaml';
@@ -23,7 +24,6 @@ import {useCopyToClipboard} from '../app/browser';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
 import {AnchorButton} from '../ui/AnchorButton';
-import {DagitReadOnlyCodeMirror} from '../ui/DagitCodeMirror';
 import {workspacePathFromRunDetails} from '../workspace/workspacePath';
 
 import {RunTags} from './RunTags';
@@ -194,7 +194,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
             >
               <Subheading>Config</Subheading>
             </Box>
-            <DagitReadOnlyCodeMirror
+            <StyledReadOnlyCodeMirror
               value={runConfigYaml}
               options={{lineNumbers: true, mode: 'yaml'}}
             />

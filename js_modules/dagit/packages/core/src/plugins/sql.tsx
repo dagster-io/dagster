@@ -1,8 +1,7 @@
-import {Button, DialogFooter, Dialog, Icon} from '@dagster-io/ui';
+import {Button, DialogFooter, Dialog, Icon, StyledReadOnlyCodeMirror} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {IPluginSidebarProps} from '../plugins';
-import {DagitReadOnlyCodeMirror} from '../ui/DagitCodeMirror';
 
 export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
   const [open, setOpen] = React.useState(false);
@@ -31,7 +30,7 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
         title={`SQL: ${props.definition.name}`}
         isOpen={open}
       >
-        <DagitReadOnlyCodeMirror options={{lineNumbers: true, mode: 'sql'}} value={sql.value} />
+        <StyledReadOnlyCodeMirror options={{lineNumbers: true, mode: 'sql'}} value={sql.value} />
         <DialogFooter topBorder>
           <Button intent="primary" onClick={() => setOpen(false)}>
             Close
