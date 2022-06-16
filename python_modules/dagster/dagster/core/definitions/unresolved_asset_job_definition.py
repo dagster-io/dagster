@@ -9,14 +9,13 @@ from dagster.core.definitions.run_request import RunRequest
 from dagster.core.selector.subset_selector import parse_clause
 
 if TYPE_CHECKING:
-    from dagster.core.asset_defs import AssetsDefinition, SourceAsset
-    from dagster.core.asset_defs.asset_selection import AssetSelection
     from dagster.core.definitions import (
         JobDefinition,
         PartitionSetDefinition,
         PartitionedConfig,
         PartitionsDefinition,
     )
+    from dagster.core.definitions.assets import AssetSelection, AssetsDefinition, SourceAsset
 
 
 class UnresolvedAssetJobDefinition(
@@ -41,8 +40,8 @@ class UnresolvedAssetJobDefinition(
         tags: Optional[Dict[str, Any]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
     ):
-        from dagster.core.asset_defs.asset_selection import AssetSelection
         from dagster.core.definitions import PartitionsDefinition
+        from dagster.core.definitions.assets import AssetSelection
 
         return super(UnresolvedAssetJobDefinition, cls).__new__(
             cls,
@@ -121,7 +120,7 @@ class UnresolvedAssetJobDefinition(
 
 
 def _selection_from_string(string: str) -> "AssetSelection":
-    from dagster.core.asset_defs.asset_selection import AssetSelection
+    from dagster.core.definitions.assets import AssetSelection
 
     if string == "*":
         return AssetSelection.all()
@@ -221,7 +220,7 @@ def define_asset_job(
                     define_asset_job("all_assets"),
                 ]
     """
-    from dagster.core.asset_defs.asset_selection import AssetSelection
+    from dagster.core.definitions.assets import AssetSelection
 
     selection = check.opt_inst_param(
         selection, "selection", (str, list, AssetSelection), default=AssetSelection.all()

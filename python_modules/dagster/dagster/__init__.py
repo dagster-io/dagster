@@ -19,27 +19,15 @@ from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
 from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
-from dagster.core.asset_defs import (
-    AssetIn,
-    AssetOut,
-    AssetSelection,
-    AssetsDefinition,
-    SourceAsset,
-    asset,
-    build_assets_job,
-    load_assets_from_current_module,
-    load_assets_from_modules,
-    load_assets_from_package_module,
-    load_assets_from_package_name,
-    materialize,
-    materialize_to_memory,
-    multi_asset,
-)
 from dagster.core.definitions import (
+    AssetIn,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    AssetOut,
+    AssetSelection,
     AssetSensorDefinition,
+    AssetsDefinition,
     BoolMetadataValue,
     CompositeSolidDefinition,
     ConfigMapping,
@@ -110,6 +98,7 @@ from dagster.core.definitions import (
     SkipReason,
     SolidDefinition,
     SolidInvocation,
+    SourceAsset,
     StaticPartitionsDefinition,
     TableColumn,
     TableColumnConstraints,
@@ -124,7 +113,9 @@ from dagster.core.definitions import (
     TypeCheck,
     UrlMetadataValue,
     WeeklyPartitionsDefinition,
+    asset,
     asset_sensor,
+    build_assets_job,
     build_init_logger_context,
     build_reconstructable_job,
     build_schedule_from_partitioned_job,
@@ -142,8 +133,14 @@ from dagster.core.definitions import (
     in_process_executor,
     job,
     lambda_solid,
+    load_assets_from_current_module,
+    load_assets_from_modules,
+    load_assets_from_package_module,
+    load_assets_from_package_name,
     logger,
     make_values_resource,
+    materialize,
+    materialize_to_memory,
     monthly_partitioned_config,
     monthly_schedule,
     multi_or_in_process_executor,
@@ -306,9 +303,8 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 # in `_DEPRECATED` is required  for us to generate the deprecation warning.
 
 if typing.TYPE_CHECKING:
-    from dagster.core.asset_defs import AssetGroup
-
     # pylint:disable=reimported
+    from dagster.core.definitions import AssetGroup
     from dagster.core.definitions import DagsterAssetMetadataValue as DagsterAssetMetadataEntryData
     from dagster.core.definitions import (
         DagsterPipelineRunMetadataValue as DagsterPipelineRunMetadataEntryData,
@@ -332,7 +328,7 @@ if typing.TYPE_CHECKING:
 
 _DEPRECATED = {
     "AssetGroup": (
-        "dagster.core.asset_defs",
+        "dagster.core.definitions",
         "0.16.0",
         "Instead, place a set of assets wrapped with `with_resources` directly on a repository.",
     ),

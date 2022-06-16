@@ -16,7 +16,6 @@ from .assets import AssetsDefinition
 from .assets_job import build_assets_job
 from .source_asset import SourceAsset
 
-
 def materialize(
     assets: Sequence[Union[AssetsDefinition, SourceAsset]],
     run_config: Any = None,
@@ -44,6 +43,7 @@ def materialize(
     Returns:
         ExecuteInProcessResult: The result of the execution.
     """
+    from dagster.core.execution.with_resources import with_resources
 
     assets = check.sequence_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
     assets = with_resources(assets, {DEFAULT_IO_MANAGER_KEY: fs_io_manager})
@@ -90,6 +90,7 @@ def materialize_to_memory(
     Returns:
         ExecuteInProcessResult: The result of the execution.
     """
+    from dagster.core.execution.build_resources import wrap_resources_for_execution
 
     assets = check.sequence_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
     resource_defs = wrap_resources_for_execution(resources)

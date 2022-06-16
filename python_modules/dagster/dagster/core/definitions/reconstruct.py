@@ -28,7 +28,7 @@ from dagster.utils.backcompat import experimental
 from .pipeline_base import IPipeline
 
 if TYPE_CHECKING:
-    from dagster.core.asset_defs.asset_group import AssetGroup
+    from dagster.core.definitions.assets import AssetGroup
 
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
@@ -569,7 +569,7 @@ def bootstrap_standalone_recon_pipeline(pointer):
 
 
 def _check_is_loadable(definition):
-    from dagster.core.asset_defs import AssetGroup
+    from dagster.core.definitions.assets import AssetGroup
 
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
@@ -606,7 +606,7 @@ def def_from_pointer(
 ) -> Union["PipelineDefinition", "RepositoryDefinition", "GraphDefinition"]:
     target = pointer.load_target()
 
-    from dagster.core.asset_defs.asset_group import AssetGroup
+    from dagster.core.definitions.assets import AssetGroup
 
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
@@ -659,7 +659,7 @@ def repository_def_from_target_def(target: object) -> None:
 
 
 def repository_def_from_target_def(target: object) -> Optional["RepositoryDefinition"]:
-    from dagster.core.asset_defs.asset_group import AssetGroup
+    from dagster.core.definitions.assets import AssetGroup
 
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition

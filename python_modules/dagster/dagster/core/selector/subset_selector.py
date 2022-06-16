@@ -26,7 +26,8 @@ from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvali
 from dagster.utils import check
 
 if TYPE_CHECKING:
-    from dagster.core.asset_defs import AssetsDefinition, SourceAsset
+    from dagster.core.definitions.assets import AssetsDefinition
+    from dagster.core.definitions.source_asset import SourceAsset
     from dagster.core.definitions.job_definition import JobDefinition
     from dagster.core.definitions.pipeline_definition import PipelineDefinition
 

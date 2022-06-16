@@ -1,7 +1,13 @@
 import pytest
 
 from dagster import AssetKey, AssetsDefinition, GraphOut, In, Out, define_asset_job, graph, job, op
-from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
+from dagster.core.definitions.assets import (
+    AssetIn,
+    SourceAsset,
+    asset,
+    build_assets_job,
+    multi_asset,
+)
 from dagster.core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.host_representation.external_data import (

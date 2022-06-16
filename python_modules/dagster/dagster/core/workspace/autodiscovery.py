@@ -9,8 +9,8 @@ from dagster import (
     PipelineDefinition,
     RepositoryDefinition,
 )
-from dagster.core.asset_defs import AssetGroup
 from dagster.core.code_pointer import load_python_file, load_python_module
+from dagster.core.definitions.assets import AssetGroup
 
 LOAD_ALL_ASSETS = "<<LOAD_ALL_ASSETS>>"
 

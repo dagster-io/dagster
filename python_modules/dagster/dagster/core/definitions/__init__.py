@@ -1,5 +1,12 @@
+from .asset_group import AssetGroup
+from .asset_in import AssetIn
+from .asset_out import AssetOut
+from .asset_selection import AssetSelection
+from .assets import AssetsDefinition
+from .assets_job import build_assets_job
 from .config import ConfigMapping
 from .decorators import (
+    asset,
     asset_sensor,
     composite_solid,
     config_mapping,
@@ -11,6 +18,7 @@ from .decorators import (
     job,
     lambda_solid,
     monthly_schedule,
+    multi_asset,
     op,
     pipeline,
     repository,
@@ -57,7 +65,14 @@ from .graph_definition import GraphDefinition
 from .hook_definition import HookDefinition
 from .input import GraphIn, In, InputDefinition, InputMapping
 from .job_definition import JobDefinition
+from .load_assets_from_modules import (
+    load_assets_from_current_module,
+    load_assets_from_modules,
+    load_assets_from_package_module,
+    load_assets_from_package_name,
+)
 from .logger_definition import LoggerDefinition, build_init_logger_context, logger
+from .materialize import materialize, materialize_to_memory
 from .metadata import (
     BoolMetadataValue,
     DagsterAssetMetadataValue,
@@ -139,6 +154,7 @@ from .sensor_definition import (
 )
 from .solid_container import create_execution_structure
 from .solid_definition import CompositeSolidDefinition, NodeDefinition, SolidDefinition
+from .source_asset import SourceAsset
 from .time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
