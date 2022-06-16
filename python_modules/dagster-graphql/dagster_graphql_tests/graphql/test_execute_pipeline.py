@@ -90,7 +90,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
 
         assert result.data["launchPipelineExecution"]["__typename"] == "PythonError"
-        assert "JSONDecodeError" in result.data["launchPipelineExecution"]["message"]
+        assert "yaml.parser.ParserError" in result.data["launchPipelineExecution"]["message"]
 
     def test_basic_start_pipeline_execution_with_preset(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
