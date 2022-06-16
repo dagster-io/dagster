@@ -33,7 +33,7 @@ def _build_slack_blocks_and_text(
     main_body_text = text_fn(context)
 
     if blocks_fn:
-        blocks.extend(blocks_fn(context))
+        blocks: List[Dict[str, Any]] = blocks_fn(context)
     else:
         blocks.append(
             {
