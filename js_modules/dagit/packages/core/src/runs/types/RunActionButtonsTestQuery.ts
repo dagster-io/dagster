@@ -91,7 +91,7 @@ export interface RunActionButtonsTestQuery_pipelineRunOrError_Run_stepStats {
 export interface RunActionButtonsTestQuery_pipelineRunOrError_Run {
   __typename: "Run";
   id: string;
-  runConfig: any;
+  runConfigYaml: string;
   runId: string;
   canTerminate: boolean;
   status: RunStatus;

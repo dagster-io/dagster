@@ -709,9 +709,7 @@ export type YamlModeValidationResult =
       errors: YamlModeValidationError[];
     };
 
-export type YamlModeValidateFunction = (
-  configJSON: Record<string, unknown>,
-) => Promise<YamlModeValidationResult>;
+export type YamlModeValidateFunction = (configYaml: string) => Promise<YamlModeValidationResult>;
 
 export type YamlModeValidationError = {
   message: string;
@@ -793,8 +791,7 @@ CodeMirror.registerHelper(
     }
 
     if (yamlDoc.errors.length === 0) {
-      const json = yamlDoc.toJSON() || {};
-      const validationResult = await checkConfig(json);
+      const validationResult = await checkConfig(text);
       if (!validationResult.isValid) {
         validationResult.errors.forEach((error) => {
           const lint = validationErrorToCodemirrorError(error, yamlDoc, codeMirrorDoc);
