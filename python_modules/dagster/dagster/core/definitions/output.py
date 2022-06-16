@@ -104,7 +104,7 @@ class OutputDefinition:
         if callable(asset_key):
             warnings.warn(
                 "Passing a function as the `asset_key` argument to `Out` or `OutputDefinition` is "
-                "deprecated behavior and will be removed in version 0.15.0."
+                "deprecated behavior and will be removed in version 0.16.0."
             )
         else:
             check.opt_inst_param(asset_key, "asset_key", AssetKey)
