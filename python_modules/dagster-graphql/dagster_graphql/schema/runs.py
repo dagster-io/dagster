@@ -1,7 +1,7 @@
-import json
 import sys
 
 import graphene
+import yaml
 from graphene.types.generic import GenericScalar
 
 import dagster._check as check
@@ -140,7 +140,7 @@ class GrapheneRunConfigData(GenericScalar, graphene.Scalar):
     class Meta:
         description = """This type is used when passing in a configuration object
         for pipeline configuration. Can either be passed in as a string (the
-        JSON-serialized configuration object) or as the configuration object itself. In
+        YAML configuration object) or as the configuration object itself. In
         either case, the object must conform to the constraints of the dagster config type system.
         """
         name = "RunConfigData"
@@ -149,8 +149,8 @@ class GrapheneRunConfigData(GenericScalar, graphene.Scalar):
 def parse_run_config_input(run_config, raise_on_error: bool):
     if run_config and isinstance(run_config, str):
         try:
-            return json.loads(run_config)
-        except json.JSONDecodeError:
+            return yaml.safe_load(run_config)
+        except yaml.YAMLError:
             if raise_on_error:
                 raise UserFacingGraphQLError(
                     GraphenePythonError(serializable_error_info_from_exc_info(sys.exc_info()))
