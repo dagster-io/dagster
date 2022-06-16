@@ -60,8 +60,8 @@ def slack_notif_all():
     b()
 
 
-notif_all_prod = slack_notif_all.to_job(
-    name="notif_all_prod",
+notif_all_dev = slack_notif_all.to_job(
+    name="notif_all_dev",
     resource_defs={
         "slack": ResourceDefinition.hardcoded_resource(
             slack_resource_mock, "do not send messages in dev"
@@ -70,8 +70,8 @@ notif_all_prod = slack_notif_all.to_job(
     hooks={slack_message_on_failure},
 )
 
-notif_all_dev = slack_notif_all.to_job(
-    name="notif_all_dev",
+notif_all_prod = slack_notif_all.to_job(
+    name="notif_all_prod",
     resource_defs={"slack": slack_resource},
     hooks={slack_message_on_failure},
 )
@@ -99,15 +99,11 @@ def repo():
 
 # start_repo_main
 if __name__ == "__main__":
-    with open(
-        file_relative_path(__file__, "prod_op_hooks.yaml"),
-        "r",
-        encoding="utf8",
-    ) as fd:
+    prod_op_hooks_run_config_yaml = file_relative_path(__file__, "prod_op_hooks.yaml")
+    with open(prod_op_hooks_run_config_yaml, "r", encoding="utf8") as fd:
         run_config = yaml.safe_load(fd.read())
-    result = notif_all_dev.execute_in_process(
-        run_config=run_config, raise_on_error=False
-    )
+
+    notif_all_prod.execute_in_process(run_config=run_config, raise_on_error=False)
 # end_repo_main
 
 
