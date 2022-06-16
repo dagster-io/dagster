@@ -327,37 +327,39 @@ function LintState(cm, options, hasGutter) {
   this.waitingFor = 0;
 }
 
-CodeMirror.defineOption('lint', false, function (cm, val, old) {
-  if (old && old !== CodeMirror.Init) {
-    clearMarks(cm);
-    if (cm.state.lint.options.lintOnChange !== false) {
-      cm.off('change', onChange);
+export const patchLint = () => {
+  CodeMirror.defineOption('lint', false, function (cm, val, old) {
+    if (old && old !== CodeMirror.Init) {
+      clearMarks(cm);
+      if (cm.state.lint.options.lintOnChange !== false) {
+        cm.off('change', onChange);
+      }
+      CodeMirror.off(cm.getWrapperElement(), 'mouseover', cm.state.lint.onMouseOver);
+      clearTimeout(cm.state.lint.timeout);
+      delete cm.state.lint;
     }
-    CodeMirror.off(cm.getWrapperElement(), 'mouseover', cm.state.lint.onMouseOver);
-    clearTimeout(cm.state.lint.timeout);
-    delete cm.state.lint;
-  }
 
-  if (val) {
-    const gutters = cm.getOption('gutters');
-    let hasLintGutter = false;
-    for (let i = 0; i < gutters.length; ++i) {
-      if (gutters[i] === GUTTER_ID) {
-        hasLintGutter = true;
+    if (val) {
+      const gutters = cm.getOption('gutters');
+      let hasLintGutter = false;
+      for (let i = 0; i < gutters.length; ++i) {
+        if (gutters[i] === GUTTER_ID) {
+          hasLintGutter = true;
+        }
+      }
+      const state = (cm.state.lint = new LintState(cm, parseOptions(cm, val), hasLintGutter));
+      if (state.options.lintOnChange !== false) {
+        cm.on('change', onChange);
+      }
+      if (state.options.tooltips !== false && state.options.tooltips !== 'gutter') {
+        CodeMirror.on(cm.getWrapperElement(), 'mouseover', state.onMouseOver);
       }
     }
-    const state = (cm.state.lint = new LintState(cm, parseOptions(cm, val), hasLintGutter));
-    if (state.options.lintOnChange !== false) {
-      cm.on('change', onChange);
-    }
-    if (state.options.tooltips !== false && state.options.tooltips !== 'gutter') {
-      CodeMirror.on(cm.getWrapperElement(), 'mouseover', state.onMouseOver);
-    }
-  }
-});
+  });
 
-CodeMirror.defineExtension('performLint', function () {
-  if (this.state.lint) {
-    startLinting(this);
-  }
-});
+  CodeMirror.defineExtension('performLint', function () {
+    if (this.state.lint) {
+      startLinting(this);
+    }
+  });
+};

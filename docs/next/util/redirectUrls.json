@@ -540,6 +540,11 @@
     "permanent": true
   },
   {
+    "source": "/concepts/ops-jobs-graphs/jobs-graphs",
+    "destination": "/concepts/ops-jobs-graphs/jobs",
+    "permanent": true
+  },
+  {
     "source": "/concepts/solids-pipelines/pipeline-execution",
     "destination": "/concepts/ops-jobs-graphs/job-execution",
     "permanent": true

@@ -15,6 +15,12 @@ export interface SidebarAssetFragment_configField_configType_ArrayConfigType_rec
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -22,6 +28,7 @@ export interface SidebarAssetFragment_configField_configType_ArrayConfigType_rec
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -81,12 +88,24 @@ export interface SidebarAssetFragment_configField_configType_ArrayConfigType {
   recursiveConfigTypes: SidebarAssetFragment_configField_configType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface SidebarAssetFragment_configField_configType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface SidebarAssetFragment_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface SidebarAssetFragment_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -96,6 +115,7 @@ export interface SidebarAssetFragment_configField_configType_EnumConfigType_recu
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -153,6 +173,7 @@ export interface SidebarAssetFragment_configField_configType_EnumConfigType {
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_configField_configType_EnumConfigType_values[];
   recursiveConfigTypes: SidebarAssetFragment_configField_configType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -164,6 +185,12 @@ export interface SidebarAssetFragment_configField_configType_RegularConfigType_r
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -171,6 +198,7 @@ export interface SidebarAssetFragment_configField_configType_RegularConfigType_r
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -248,6 +276,12 @@ export interface SidebarAssetFragment_configField_configType_CompositeConfigType
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -255,6 +289,7 @@ export interface SidebarAssetFragment_configField_configType_CompositeConfigType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -323,6 +358,12 @@ export interface SidebarAssetFragment_configField_configType_ScalarUnionConfigTy
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -330,6 +371,7 @@ export interface SidebarAssetFragment_configField_configType_ScalarUnionConfigTy
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -399,6 +441,12 @@ export interface SidebarAssetFragment_configField_configType_MapConfigType_recur
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -406,6 +454,7 @@ export interface SidebarAssetFragment_configField_configType_MapConfigType_recur
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -809,6 +858,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -816,6 +871,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -875,12 +931,24 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   recursiveConfigTypes: SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -890,6 +958,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -947,6 +1016,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_values[];
   recursiveConfigTypes: SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -958,6 +1028,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -965,6 +1041,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1042,6 +1119,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1049,6 +1132,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1117,6 +1201,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1124,6 +1214,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1193,6 +1284,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1200,6 +1297,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1270,6 +1368,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1277,6 +1381,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1336,12 +1441,24 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   recursiveConfigTypes: SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -1351,6 +1468,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1408,6 +1526,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_values[];
   recursiveConfigTypes: SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -1419,6 +1538,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1426,6 +1551,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1503,6 +1629,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1510,6 +1642,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1578,6 +1711,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1585,6 +1724,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1654,6 +1794,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1661,6 +1807,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1889,6 +2036,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1896,6 +2049,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1955,12 +2109,24 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   recursiveConfigTypes: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -1970,6 +2136,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -2027,6 +2194,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_values[];
   recursiveConfigTypes: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -2038,6 +2206,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -2045,6 +2219,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -2122,6 +2297,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -2129,6 +2310,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -2197,6 +2379,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -2204,6 +2392,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -2273,6 +2462,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -2280,6 +2475,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_input
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -2350,6 +2546,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -2357,6 +2559,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -2416,12 +2619,24 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   recursiveConfigTypes: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -2431,6 +2646,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -2488,6 +2704,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_values[];
   recursiveConfigTypes: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -2499,6 +2716,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -2506,6 +2729,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -2583,6 +2807,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -2590,6 +2820,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -2658,6 +2889,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -2665,6 +2902,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -2734,6 +2972,12 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   typeParamKeys: string[];
 }
 
+export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -2741,6 +2985,7 @@ export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outpu
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {

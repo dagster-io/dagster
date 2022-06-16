@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
 import 'codemirror/addon/comment/comment';
 import 'codemirror/addon/dialog/dialog';
 import 'codemirror/addon/fold/foldgutter';
@@ -11,8 +10,6 @@ import 'codemirror/addon/search/jump-to-line';
 import 'codemirror/addon/search/search';
 import 'codemirror/addon/search/searchcursor';
 import 'codemirror/keymap/sublime';
-import './codemirror-yaml/lint'; // Patch lint
-import './codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
 
 import {Editor} from 'codemirror';
 import debounce from 'lodash/debounce';
@@ -20,20 +17,28 @@ import * as React from 'react';
 import {createGlobalStyle} from 'styled-components/macro';
 import * as yaml from 'yaml';
 
-import {DagitCodeMirror} from '../ui/DagitCodeMirror';
-
-import {ConfigEditorHelpContext} from './ConfigEditorHelpContext';
+import {StyledCodeMirror} from './CodeMirror';
+import {patchLint} from './configeditor/codemirror-yaml/lint';
 import {
   YamlModeValidateFunction,
   expandAutocompletionContextAtCursor,
   findRangeInDocumentFromPath,
-} from './codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
-import {ConfigEditorRunConfigSchemaFragment} from './types/ConfigEditorRunConfigSchemaFragment';
+  YamlModeValidationResult,
+} from './configeditor/codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
+import {ConfigEditorHelpContext} from './configeditor/types/ConfigEditorHelpContext';
+import {ConfigSchema} from './configeditor/types/ConfigSchema';
+
+export {isHelpContextEqual} from './configeditor/isHelpContextEqual';
+export {ConfigEditorHelp} from './configeditor/ConfigEditorHelp';
+
+export type {ConfigEditorHelpContext, ConfigSchema, YamlModeValidationResult};
+
+patchLint();
 
 interface ConfigEditorProps {
   configCode: string;
   readOnly: boolean;
-  runConfigSchema?: ConfigEditorRunConfigSchemaFragment;
+  configSchema?: ConfigSchema | null;
 
   checkConfig: YamlModeValidateFunction;
   onConfigChange: (newValue: string) => void;
@@ -60,7 +65,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     if (!this._editor) {
       return;
     }
-    if (prevProps.runConfigSchema === this.props.runConfigSchema) {
+    if (prevProps.configSchema === this.props.configSchema) {
       return;
     }
     this.performInitialPass();
@@ -73,7 +78,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     return (
       prevProps.configCode !== this.props.configCode ||
       prevProps.readOnly !== this.props.readOnly ||
-      prevProps.runConfigSchema !== this.props.runConfigSchema
+      prevProps.configSchema !== this.props.configSchema
     );
   }
 
@@ -117,7 +122,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     // update the gutter and redlining
     performLint(this._editor);
 
-    // update the contextual help based on the runConfigSchema and content
+    // update the contextual help based on the configSchema and content
     const {context} = expandAutocompletionContextAtCursor(this._editor);
     this.props.onHelpContextChange(context ? {type: context.closestMappingType} : null);
   }
@@ -133,7 +138,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     return (
       <div style={{flex: 1, position: 'relative'}}>
         <ConfigEditorStyle />
-        <DagitCodeMirror
+        <StyledCodeMirror
           value={this.props.configCode}
           theme={['config-editor']}
           options={
@@ -153,7 +158,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
               hintOptions: {
                 completeSingle: false,
                 closeOnUnfocus: false,
-                schema: this.props.runConfigSchema,
+                schema: this.props.configSchema,
               },
               keyMap: 'sublime',
               extraKeys: {
@@ -189,10 +194,10 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
               this.props.onHelpContextChange(context ? {type: context.closestMappingType} : null);
             }
           }}
-          onChange={(editor: any) => {
+          onChange={(editor: Editor) => {
             performLint(editor);
           }}
-          onBlur={(editor: any) => {
+          onBlur={(editor: Editor) => {
             performLint(editor);
           }}
           onKeyUp={(editor, event: KeyboardEvent) => {

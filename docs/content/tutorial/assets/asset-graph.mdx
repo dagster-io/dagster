@@ -4,7 +4,7 @@ Software-defined assets can depend on other software-defined assets. An asset de
 
 Why split up code into multiple assets? There are a few reasons:
 
-- Dagster can materialize assets without re-materialize all the upstream assets. This means that, if we hit a failure, we can re-materialize just the assets that didn't materialize successfully, which often allows us to avoid re-executing expensive computation.
+- Dagster can materialize assets without re-materializing all the upstream assets. This means that, if we hit a failure, we can re-materialize just the assets that didn't materialize successfully, which often allows us to avoid re-executing expensive computation.
 - When two assets don't depend on each other, Dagster can materialize them simultaneously.
 
 ## Let's Get Serial

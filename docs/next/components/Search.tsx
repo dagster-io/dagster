@@ -10,6 +10,14 @@ const ACTION_KEY_DEFAULT = ["Ctrl ", "Control"];
 const ACTION_KEY_APPLE = ["⌘", "Command"];
 
 function Hit({ hit, children }) {
+  if (hit.url.startsWith("https://github.com/dagster-io/dagster/discussions")) {
+    // don't need to use Link and open in a new tab, because this is an external link
+    return (
+      <a target="_blank" href={hit.url} rel="noopener noreferrer">
+        {children}
+      </a>
+    );
+  }
   return (
     <Link href={hit.url}>
       <a>{children}</a>

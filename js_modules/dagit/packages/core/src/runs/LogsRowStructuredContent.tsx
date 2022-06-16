@@ -326,16 +326,23 @@ const FailureContent: React.FC<{
 
     // omit the outer stack for user code errors with a cause
     // as the outer stack is just framework code
-    if (!(errorSource === ErrorSource.USER_CODE_ERROR && error.cause)) {
+    if (error.stack.length && !(errorSource === ErrorSource.USER_CODE_ERROR && error.cause)) {
       errorStack = <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>;
     }
 
     if (error.cause) {
+      let errorCauseStack = null;
+      if (error.cause.stack.length) {
+        errorCauseStack = (
+          <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
+        );
+      }
+
       errorCause = (
         <>
           {`The above exception was caused by the following exception:\n`}
           <span style={{color: Colors.Red500}}>{`${error.cause.message}`}</span>
-          <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
+          {errorCauseStack}
         </>
       );
     }

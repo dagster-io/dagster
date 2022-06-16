@@ -23,6 +23,7 @@ from dagster.core.storage.pipeline_run import (
     RunsFilter,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster.serdes import deserialize_as, serialize_dagster_namedtuple
 
 
 def test_queued_pipeline_origin_check():
@@ -83,3 +84,7 @@ def test_runs_filter_supports_nonempty_run_ids():
 
     with pytest.raises(CheckError):
         RunsFilter(run_ids=[])
+
+
+def test_serialize_runs_filter():
+    deserialize_as(serialize_dagster_namedtuple(RunsFilter()), RunsFilter)

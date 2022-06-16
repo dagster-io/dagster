@@ -7,10 +7,10 @@ import 'codemirror/addon/dialog/dialog.css';
 import * as yaml from 'yaml';
 
 import {
-  ConfigEditorRunConfigSchemaFragment,
-  ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType as CompositeConfigType,
-  ConfigEditorRunConfigSchemaFragment_allConfigTypes_MapConfigType as MapConfigType,
-} from '../types/ConfigEditorRunConfigSchemaFragment';
+  ConfigSchema,
+  ConfigSchema_allConfigTypes_CompositeConfigType as CompositeConfigType,
+  ConfigSchema_allConfigTypes_MapConfigType as MapConfigType,
+} from '../types/ConfigSchema';
 
 // Example YAML for testing this parser:
 // https://gist.github.com/bengotow/0b700e7d0367750cb31eaf697f865d70
@@ -39,7 +39,7 @@ interface IParseState {
 // Helper methods that mutate parser state. These must return new JavaScript objects.
 //
 function parentsPoppingItemsDeeperThan(parents: IParseStateParent[], indent: number) {
-  while (parents.length > 0 && parents[parents.length - 1].indent >= indent) {
+  while (parents.length > 0 && parents[parents.length - 1]!.indent >= indent) {
     parents = parents.slice(0, parents.length - 1);
   }
   return parents;
@@ -50,7 +50,7 @@ function parentsAddingChildKeyToLast(parents: IParseStateParent[], key: string) 
     return [];
   }
 
-  const immediateParent = parents[parents.length - 1];
+  const immediateParent = parents[parents.length - 1]!;
   return [
     ...parents.slice(0, parents.length - 1),
     {
@@ -235,7 +235,7 @@ CodeMirror.defineMode('yaml', () => {
       if (!state.inValue) {
         const match = stream.match(RegExps.DICT_KEY);
         if (match) {
-          const key = match[0];
+          const key = match[0]!;
           const keyIndent = stream.pos - key.length;
           state.parents = parentsAddingChildKeyAtIndent(state.parents, key, keyIndent);
           return 'atom';
@@ -250,7 +250,7 @@ CodeMirror.defineMode('yaml', () => {
         // be followed by the end-of-line or whitespace.
         const match = !stream.string.match(/[^\s]:[^\s]/) ? stream.match(RegExps.DICT_KEY) : false;
         if (match) {
-          const key = match[0];
+          const key = match[0]!;
           const keyIndent = stream.pos - key.length;
           state.inValue = false;
           state.parents = parentsAddingChildKeyAtIndent(state.parents, key, keyIndent);
@@ -277,7 +277,7 @@ CodeMirror.defineMode('yaml', () => {
                 ? stream.match(/^[^,\}]+/)
                 : stream.match(/^.+$/);
           }
-          const value = match ? match[0] : '';
+          const value = match ? match[0]! : '';
           if (value.match(RegExps.VARIABLE)) {
             result = 'variable-2';
           } else if (value.match(RegExps.NUMBER)) {
@@ -335,7 +335,7 @@ CodeMirror.registerHelper(
   (
     editor: any,
     options: {
-      schema?: ConfigEditorRunConfigSchemaFragment;
+      schema?: ConfigSchema;
     },
   ): {list: Array<CodemirrorHint>; from: CodemirrorLocation; to: CodemirrorLocation} => {
     const {
@@ -564,7 +564,7 @@ CodeMirror.registerHelper(
  * if it is a composite type.
  */
 function findAutocompletionContext(
-  schema: ConfigEditorRunConfigSchemaFragment | null,
+  schema: ConfigSchema | null,
   parents: IParseStateParent[],
   currentIndent: number,
 ) {
@@ -592,7 +592,7 @@ function findAutocompletionContext(
   // Tracks the type key to be used for the next depth level
   // Used for Map config types, which specify the type key for their values, otherwise is null
   let nextTypeKey: string | null =
-    type.__typename === 'MapConfigType' ? type.typeParamKeys[1] : null;
+    type.__typename === 'MapConfigType' ? type.typeParamKeys[1]! : null;
 
   if ((available || type.__typename === 'MapConfigType') && parents.length > 0) {
     for (const parent of parents) {
@@ -615,14 +615,14 @@ function findAutocompletionContext(
 
       inArray = parentConfigType.__typename === 'ArrayConfigType';
       if (inArray) {
-        childTypeKey = parentConfigType.typeParamKeys[0];
+        childTypeKey = parentConfigType.typeParamKeys[0]!;
         childEntriesUnique = false;
       }
 
       // Maps provide no direct autocompletions, but they do act as the closestMappingType,
       // meaning they show up in the schema sidebar
       if (parentConfigType.__typename === 'MapConfigType') {
-        nextTypeKey = parentConfigType.typeParamKeys[1];
+        nextTypeKey = parentConfigType.typeParamKeys[1]!;
         closestMappingType = parentConfigType;
         available = [];
         continue;
@@ -660,7 +660,7 @@ function findAutocompletionContext(
 
 // Find context for a fully- or partially- typed key or value in the YAML document
 export function expandAutocompletionContextAtCursor(editor: any) {
-  const schema: ConfigEditorRunConfigSchemaFragment = editor.options.hintOptions.schema;
+  const schema: ConfigSchema = editor.options.hintOptions.schema;
 
   const cursor = editor.getCursor();
   const token: CodemirrorToken = editor.getTokenAt(cursor);
@@ -709,9 +709,7 @@ export type YamlModeValidationResult =
       errors: YamlModeValidationError[];
     };
 
-export type YamlModeValidateFunction = (
-  configJSON: Record<string, unknown>,
-) => Promise<YamlModeValidationResult>;
+export type YamlModeValidateFunction = (configYaml: string) => Promise<YamlModeValidationResult>;
 
 export type YamlModeValidationError = {
   message: string;
@@ -722,7 +720,7 @@ export type YamlModeValidationError = {
 CodeMirror.registerHelper('dagster-docs', 'yaml', (editor: any, pos: CodeMirror.Position) => {
   const token = editor.getTokenAt(pos);
 
-  const schema: ConfigEditorRunConfigSchemaFragment = editor.options.hintOptions.schema;
+  const schema: ConfigSchema = editor.options.hintOptions.schema;
 
   if (token.type !== 'atom') {
     return null;
@@ -793,8 +791,7 @@ CodeMirror.registerHelper(
     }
 
     if (yamlDoc.errors.length === 0) {
-      const json = yamlDoc.toJSON() || {};
-      const validationResult = await checkConfig(json);
+      const validationResult = await checkConfig(text);
       if (!validationResult.isValid) {
         validationResult.errors.forEach((error) => {
           const lint = validationErrorToCodemirrorError(error, yamlDoc, codeMirrorDoc);
@@ -861,7 +858,7 @@ export function findRangeInDocumentFromPath(
 function nodeAtPath(doc: yaml.Document, path: Array<string>) {
   let node: any = doc.contents;
   for (let i = 0; i < path.length; i++) {
-    const part = path[i];
+    const part = path[i]!;
     if (node && node.type && node.type === 'PAIR') {
       node = node.value;
     }

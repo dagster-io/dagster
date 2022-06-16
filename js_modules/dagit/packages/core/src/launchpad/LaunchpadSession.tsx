@@ -3,10 +3,14 @@ import {
   Box,
   Button,
   Colors,
+  ConfigEditor,
+  ConfigEditorHelpContext,
   Group,
   Icon,
   SecondPanelToggle,
   SplitPanelContainer,
+  isHelpContextEqual,
+  ConfigEditorHelp,
 } from '@dagster-io/ui';
 import merge from 'deepmerge';
 import uniqBy from 'lodash/uniqBy';
@@ -23,14 +27,11 @@ import {
 } from '../app/ExecutionSessionStorage';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {ConfigEditor} from '../configeditor/ConfigEditor';
-import {ConfigEditorHelpContext} from '../configeditor/ConfigEditorHelpContext';
 import {
   CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT,
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
   responseToYamlValidationResult,
 } from '../configeditor/ConfigEditorUtils';
-import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
 import {DagsterTag} from '../runs/RunTag';
 import {RepositorySelector} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -40,7 +41,6 @@ import {
   ConfigEditorConfigPicker,
   CONFIG_PARTITION_SELECTION_QUERY,
 } from './ConfigEditorConfigPicker';
-import {ConfigEditorHelp} from './ConfigEditorHelp';
 import {ConfigEditorModePicker} from './ConfigEditorModePicker';
 import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
 import {LaunchpadType} from './LaunchpadRoot';
@@ -96,7 +96,7 @@ type Action =
       payload: {
         preview: PreviewConfigQuery | null;
         previewLoading: boolean;
-        previewedDocument: any | null;
+        previewedDocument: string | null;
       };
     }
   | {type: 'toggle-tag-editor'; payload: boolean}
@@ -231,7 +231,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   };
 
   const onRemoveExtraPaths = (paths: string[]) => {
-    let runConfigData = {};
+    let runConfigData = '';
     try {
       // Note: parsing `` returns null rather than an empty object,
       // which is preferable for representing empty config.
@@ -272,11 +272,10 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
       return;
     }
 
-    let runConfigData = {};
     try {
       // Note: parsing `` returns null rather than an empty object,
       // which is preferable for representing empty config.
-      runConfigData = yaml.parse(currentSession.runConfigYaml || '') || {};
+      yaml.parse(currentSession.runConfigYaml || '') || {};
     } catch (err) {
       showCustomAlert({title: 'Invalid YAML', body: YAML_SYNTAX_INVALID});
       return;
@@ -284,7 +283,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
 
     return {
       executionParams: {
-        runConfigData,
+        runConfigData: currentSession.runConfigYaml,
         selector: pipelineSelector,
         mode: currentSession.mode || 'default',
         executionMetadata: {
@@ -334,7 +333,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     onSaveSession({tags: toSave});
   };
 
-  const checkConfig = async (configJSON: Record<string, unknown>) => {
+  const checkConfig = async (configYaml: string) => {
     // Another request to preview a newer document may be made while this request
     // is in flight, in which case completion of this async method should not set loading=false.
     previewCounter.current += 1;
@@ -346,7 +345,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
       fetchPolicy: 'no-cache',
       query: PREVIEW_CONFIG_QUERY,
       variables: {
-        runConfigData: configJSON,
+        runConfigData: configYaml,
         pipeline: pipelineSelector,
         mode: currentSession.mode || 'default',
       },
@@ -358,13 +357,13 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
         type: 'set-preview',
         payload: {
           preview: data,
-          previewedDocument: configJSON,
+          previewedDocument: configYaml,
           previewLoading: isLatestRequest ? false : state.previewLoading,
         },
       });
     }
 
-    return responseToYamlValidationResult(configJSON, data.isPipelineConfigValid);
+    return responseToYamlValidationResult(configYaml, data.isPipelineConfigValid);
   };
 
   const tagsApplyingNewBaseTags = (newBaseTags: PipelineRunTag[]) => {
@@ -643,7 +642,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
                 <ConfigEditor
                   ref={editor}
                   readOnly={false}
-                  runConfigSchema={runConfigSchema}
+                  configSchema={runConfigSchema}
                   configCode={currentSession.runConfigYaml}
                   onConfigChange={onConfigChange}
                   onHelpContextChange={(next) => {

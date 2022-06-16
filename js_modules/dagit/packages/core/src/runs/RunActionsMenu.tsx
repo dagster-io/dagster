@@ -10,17 +10,16 @@ import {
   Tooltip,
   DialogFooter,
   Dialog,
+  StyledReadOnlyCodeMirror,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
-import * as yaml from 'yaml';
 
 import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {ReexecutionStrategy} from '../types/globalTypes';
-import {DagitReadOnlyCodeMirror} from '../ui/DagitCodeMirror';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
@@ -136,10 +135,9 @@ export const RunActionsMenu: React.FC<{
                   icon="refresh"
                   onClick={async () => {
                     if (repoMatch && runConfigYaml) {
-                      const runConfig = yaml.parse(runConfigYaml);
                       const result = await reexecute({
                         variables: getReexecutionVariables({
-                          run: {...run, runConfig},
+                          run: {...run, runConfigYaml},
                           style: {type: 'all'},
                           repositoryLocationName: repoMatch.match.repositoryLocation.name,
                           repositoryName: repoMatch.match.repository.name,
@@ -210,7 +208,7 @@ export const RunActionsMenu: React.FC<{
         canEscapeKeyClose
         onClose={closeDialogs}
       >
-        <DagitReadOnlyCodeMirror
+        <StyledReadOnlyCodeMirror
           value={runConfigYaml || ''}
           options={{lineNumbers: true, mode: 'yaml'}}
         />
