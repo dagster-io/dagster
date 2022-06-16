@@ -43,6 +43,8 @@ interface TokenizingFieldProps {
   className?: string;
   small?: boolean;
 
+  fullwidth?: boolean;
+
   tokens?: string[];
   tokensFilter?: (query: string, token: string) => boolean;
 
@@ -123,6 +125,7 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   className,
   tokens,
   tokensFilter,
+  fullwidth,
   suggestionRenderer,
 }) => {
   const suggestionProviders = rawSuggesetionProviders || [];
@@ -424,6 +427,7 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
           },
           onBlur: () => setOpen(false),
         }}
+        $maxWidth={fullwidth ? '100%' : undefined}
         onAdd={() => false}
         onKeyDown={onKeyDown}
         tagProps={{minimal: true}}
@@ -441,12 +445,12 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   );
 };
 
-export const StyledTagInput = styled(TagInput)`
+export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
   border: none;
   border-radius: 8px;
   box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px;
   min-width: 400px;
-  max-width: 600px;
+  max-width: ${(p) => (p.$maxWidth ? p.$maxWidth : '600px')};
   transition: box-shadow 150ms;
 
   &.bp3-active {
