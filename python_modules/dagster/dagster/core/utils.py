@@ -4,13 +4,18 @@ import string
 import uuid
 import warnings
 from collections import OrderedDict
-from typing import Tuple, Union, cast
+from typing import TYPE_CHECKING, Iterator, Optional, Tuple, Union, cast
 
 import toposort as toposort_
 
 import dagster._check as check
 from dagster.utils import frozendict
 from dagster.version import __version__
+
+if TYPE_CHECKING:
+    from dagster import DagsterInstance
+    from dagster.core.storage.pipeline_run import JobBucket, PipelineRun, RunsFilter, TagBucket
+
 
 BACKFILL_TAG_LENGTH = 8
 
@@ -92,3 +97,28 @@ def parse_env_var(env_var_str: str) -> Tuple[str, str]:
         if env_var_value == None:
             raise Exception(f"Tried to load environment variable {env_var_str}, but it was not set")
         return (env_var_str, cast(str, env_var_value))
+
+
+def get_runs_iterator(
+    instance: "DagsterInstance",
+    batch_size: int = 100,
+    filters: Optional["RunsFilter"] = None,
+    bucket_by: Optional[Union["JobBucket", "TagBucket"]] = None,
+) -> Iterator["PipelineRun"]:
+    """
+    Util for fetching all runs for a query without worrying about cursoring. Not recommended to call
+    list() on the result unless you're certain it would fit in memory.
+    """
+
+    cursor = None
+
+    while True:
+        runs = instance.get_runs(
+            filters=filters, cursor=cursor, limit=batch_size, bucket_by=bucket_by
+        )
+        if not runs:
+            break
+
+        yield from (r for r in runs)
+
+        cursor = runs[-1].run_id
