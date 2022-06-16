@@ -46,7 +46,13 @@ def resource_invocation_result(
 def _check_invocation_requirements(
     resource_def: "ResourceDefinition", init_context: Optional["UnboundInitResourceContext"]
 ) -> "InitResourceContext":
-    from dagster.core.execution.context.init import InitResourceContext, build_init_resource_context
+    from dagster.core.execution.context.init import (
+        InitResourceContext,
+        UnboundInitResourceContext,
+        build_init_resource_context,
+    )
+
+    check.opt_inst_param(init_context, "init_context", UnboundInitResourceContext)
 
     if resource_def.required_resource_keys and init_context is None:
         raise DagsterInvalidInvocationError(
