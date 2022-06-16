@@ -16,6 +16,7 @@ describe('TokenizingField', () => {
       values: () => ['QUEUED', 'NOT_STARTED', 'STARTED', 'SUCCESS', 'FAILURE', 'MANAGED'],
     },
   ];
+  const tokens = ['all_sensors'];
 
   const getItems = () => {
     const items = screen.getAllByRole('listitem');
@@ -31,6 +32,25 @@ describe('TokenizingField', () => {
 
     await waitFor(() => {
       expect(getItems()).toEqual(['pipeline:', 'status:']);
+    });
+  });
+
+  it('shows available autocompletion options when clicked, with raw tokens', async () => {
+    render(
+      <TokenizingField
+        values={[]}
+        onChange={onChange}
+        suggestionProviders={suggestions}
+        tokens={tokens}
+      />,
+    );
+
+    const input = screen.getByRole('textbox');
+    expect(input).toBeVisible();
+    userEvent.click(input);
+
+    await waitFor(() => {
+      expect(getItems()).toEqual(['all_sensors', 'pipeline:', 'status:']);
     });
   });
 
@@ -86,6 +106,25 @@ describe('TokenizingField', () => {
         'pipeline:airline_demo_ingest',
         'pipeline:airline_demo_warehouse',
       ]);
+    });
+  });
+
+  it('filters properly when typing a value with raw tokens', async () => {
+    render(
+      <TokenizingField
+        values={[]}
+        onChange={onChange}
+        suggestionProviders={suggestions}
+        tokens={tokens}
+      />,
+    );
+
+    const input = screen.getByRole('textbox');
+    userEvent.click(input);
+    userEvent.type(input, 'all');
+
+    await waitFor(() => {
+      expect(getItems()).toEqual(['all_sensors']);
     });
   });
 });

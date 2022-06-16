@@ -215,7 +215,16 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
     suggestionsArr.sort((a, b) => a.text.localeCompare(b.text));
 
     return suggestionsArr;
-  }, [atMaxValues, filteredSuggestionProviders, lastPart, parts, typed.length, values]);
+  }, [
+    atMaxValues,
+    filteredSuggestionProviders,
+    lastPart,
+    parts,
+    typed.length,
+    values,
+    tokens,
+    tokensFilter,
+  ]);
 
   // We need to manage selection in the dropdown by ourselves. To ensure the
   // best behavior we store the active item's index and text (the text allows
