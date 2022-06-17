@@ -22,7 +22,6 @@ from ..inference import InferredOutputProps, infer_output_props
 from ..input import In, InputDefinition
 from ..output import Out, OutputDefinition
 from ..policy import RetryPolicy
-from ..solid_definition import SolidDefinition
 from .solid_decorator import (
     DecoratedSolidFunction,
     NoContextDecoratedSolidFunction,
