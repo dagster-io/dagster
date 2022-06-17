@@ -26,5 +26,6 @@ def execute_bulk_action_iteration(instance: DagsterInstance, logger):
 
         for run in instance.get_runs(filters=filter):
             instance.run_coordinator.cancel_run(run.run_id)
+            yield
 
         instance.run_storage.update_bulk_action(action.with_status(BulkActionStatus.COMPLETED))

@@ -1,4 +1,5 @@
 import graphene
+from dagster_graphql.implementation.execution.bulk_action import add_termination_request
 
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey
@@ -47,6 +48,7 @@ from ..inputs import (
     GrapheneExecutionParams,
     GrapheneLaunchBackfillParams,
     GrapheneReexecutionParams,
+    GrapheneRunsFilter,
 )
 from ..pipelines.pipeline import GrapheneRun
 from ..runs import (
@@ -254,6 +256,21 @@ class GrapheneLaunchRunMutation(graphene.Mutation):
         return create_execution_params_and_launch_pipeline_exec(
             graphene_info, kwargs["executionParams"]
         )
+
+
+class GrapheneRequestBulkRunTermination(graphene.Mutation):
+    """Add a bulk termination request"""
+
+    ok = graphene.NonNull(graphene.Boolean)
+
+    class Arguments:
+        runsFilter = graphene.NonNull(GrapheneRunsFilter)
+
+    @capture_error
+    @check_permission(Permissions.TERMINATE_PIPELINE_EXECUTION)
+    def mutate(self, graphene_info, **kwargs):
+        add_termination_request(graphene_info, kwargs["runsFilter"])
+        return GrapheneRequestBulkRunTermination(ok=True)
 
 
 class GrapheneLaunchBackfillMutation(graphene.Mutation):
@@ -618,6 +635,7 @@ class GrapheneDagitMutation(graphene.ObjectType):
     reload_workspace = GrapheneReloadWorkspaceMutation.Field()
     shutdown_repository_location = GrapheneShutdownRepositoryLocationMutation.Field()
     wipe_assets = GrapheneAssetWipeMutation.Field()
+    request_bulk_termination = GrapheneRequestBulkRunTermination.Field()
     launch_partition_backfill = GrapheneLaunchBackfillMutation.Field()
     resume_partition_backfill = GrapheneResumeBackfillMutation.Field()
     cancel_partition_backfill = GrapheneCancelBackfillMutation.Field()
