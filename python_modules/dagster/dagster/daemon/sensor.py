@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+from collections import defaultdict
 from typing import Dict, NamedTuple, Optional
 
 import pendulum
@@ -43,13 +44,15 @@ class SkippedSensorRun(
 
 
 class SensorLaunchContext:
-    def __init__(self, external_sensor, tick, instance, logger):
+    def __init__(self, external_sensor, tick, instance, logger, tick_retention_settings):
         self._external_sensor = external_sensor
         self._instance = instance
         self._logger = logger
         self._tick = tick
-
         self._should_update_cursor_on_failure = False
+        self._purge_settings = defaultdict(set)
+        for status, day_offset in tick_retention_settings.items():
+            self._purge_settings[day_offset].add(status)
 
     @property
     def status(self):
@@ -145,19 +148,15 @@ class SensorLaunchContext:
 
         self._write()
 
-        # delete all ticks older than 30 days
-        self._instance.purge_ticks(
-            self._external_sensor.get_external_origin_id(),
-            selector_id=self._external_sensor.selector_id,
-            before=pendulum.now("UTC").subtract(days=30).timestamp(),
-        )
-        # delete skipped ticks older than 7 days
-        self._instance.purge_ticks(
-            self._external_sensor.get_external_origin_id(),
-            selector_id=self._external_sensor.selector_id,
-            before=pendulum.now("UTC").subtract(days=7).timestamp(),  #  keep the last 7 days
-            tick_statuses=[TickStatus.SKIPPED],
-        )
+        for day_offset, statuses in self._purge_settings.items():
+            if day_offset <= 0:
+                continue
+            self._instance.purge_ticks(
+                self._external_sensor.get_external_origin_id(),
+                selector_id=self._external_sensor.selector_id,
+                before=pendulum.now("UTC").subtract(days=day_offset).timestamp(),
+                tick_statuses=list(statuses),
+            )
 
 
 def _check_for_debug_crash(debug_crash_flags, key):
@@ -199,7 +198,10 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
             workspace_iteration = 0
 
         yield from execute_sensor_iteration(
-            instance, logger, workspace, log_verbose_checks=(workspace_iteration == 0)
+            instance,
+            logger,
+            workspace,
+            log_verbose_checks=(workspace_iteration == 0),
         )
 
         loop_duration = pendulum.now("UTC").timestamp() - start_time
@@ -210,7 +212,11 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
 
 
 def execute_sensor_iteration(
-    instance, logger, workspace, log_verbose_checks=True, debug_crash_flags=None
+    instance,
+    logger,
+    workspace,
+    log_verbose_checks=True,
+    debug_crash_flags=None,
 ):
     check.inst_param(workspace, "workspace", IWorkspace)
     check.inst_param(instance, "instance", DagsterInstance)
@@ -224,6 +230,8 @@ def execute_sensor_iteration(
         sensor_state.selector_id: sensor_state
         for sensor_state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
     }
+
+    tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SENSOR)
 
     sensors = {}
     for location_entry in workspace_snapshot.values():
@@ -319,7 +327,9 @@ def execute_sensor_iteration(
 
             _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
 
-            with SensorLaunchContext(external_sensor, tick, instance, logger) as tick_context:
+            with SensorLaunchContext(
+                external_sensor, tick, instance, logger, tick_retention_settings
+            ) as tick_context:
                 _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
                 yield from _evaluate_sensor(
                     tick_context,

@@ -374,6 +374,7 @@ class InstanceRef(
             "run_monitoring",
             "run_retries",
             "code_servers",
+            "tick_retention",
         }
         settings = {key: config_value.get(key) for key in settings_keys if config_value.get(key)}
 

@@ -2340,3 +2340,108 @@ def test_run_request_list_sensor():
                 external_sensor.get_external_origin_id(), external_sensor.selector_id
             )
             assert len(ticks) == 1
+
+
+def test_sensor_purge():
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors() as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            external_sensor = external_repo.get_external_sensor("simple_sensor")
+            instance.add_instigator_state(
+                InstigatorState(
+                    external_sensor.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.RUNNING,
+                )
+            )
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
+            assert len(ticks) == 0
+
+            # create a tick
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
+            assert len(ticks) == 1
+            freeze_datetime = freeze_datetime.add(days=6)
+
+        with pendulum.test(freeze_datetime):
+            # create another tick
+            evaluate_sensors(instance, workspace)
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
+            assert len(ticks) == 2
+
+            freeze_datetime = freeze_datetime.add(days=2)
+
+        with pendulum.test(freeze_datetime):
+            # create another tick, but the first tick should be purged
+            evaluate_sensors(instance, workspace)
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
+            assert len(ticks) == 2
+
+
+def test_sensor_custom_purge():
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(
+        overrides={
+            "tick_retention": {"sensor": {"purge_after_days": {"skipped": 14}}},
+        },
+    ) as (instance, workspace, external_repo):
+        with pendulum.test(freeze_datetime):
+            external_sensor = external_repo.get_external_sensor("simple_sensor")
+            instance.add_instigator_state(
+                InstigatorState(
+                    external_sensor.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.RUNNING,
+                )
+            )
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
+            assert len(ticks) == 0
+
+            # create a tick
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
+            assert len(ticks) == 1
+            freeze_datetime = freeze_datetime.add(days=8)
+
+        with pendulum.test(freeze_datetime):
+            # create another tick, and the first tick should not be purged despite the fact that the
+            # default purge day offset is 7
+            evaluate_sensors(instance, workspace)
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
+            assert len(ticks) == 2
+
+            freeze_datetime = freeze_datetime.add(days=7)
+
+        with pendulum.test(freeze_datetime):
+            # create another tick, but the first tick should be purged
+            evaluate_sensors(instance, workspace)
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
+            assert len(ticks) == 2

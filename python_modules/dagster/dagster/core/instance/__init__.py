@@ -80,6 +80,7 @@ IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 
 if TYPE_CHECKING:
     from dagster.core.debug import DebugRunPayload
+    from dagster.core.definitions.run_request import InstigatorType
     from dagster.core.events import DagsterEvent, DagsterEventType
     from dagster.core.events.log import EventLogEntry
     from dagster.core.execution.plan.resume_retry import ReexecutionStrategy
@@ -2069,6 +2070,58 @@ class DagsterInstance:
         Gate on an experimental feature to start a thread that monitors for if the run should be canceled.
         """
         return False
+
+    def get_tick_retention_settings(
+        self, instigator_type: "InstigatorType"
+    ) -> Dict["TickStatus", int]:
+        from dagster.core.definitions.run_request import InstigatorType
+        from dagster.core.scheduler.instigation import TickStatus
+
+        settings = self.get_settings("tick_retention")
+        DEFAULT_RETENTION_SETTINGS = {
+            InstigatorType.SCHEDULE: {
+                TickStatus.STARTED: -1,
+                TickStatus.SKIPPED: -1,
+                TickStatus.SUCCESS: -1,
+                TickStatus.FAILURE: -1,
+            },
+            InstigatorType.SENSOR: {
+                TickStatus.STARTED: -1,
+                TickStatus.SKIPPED: 7,
+                TickStatus.SUCCESS: -1,
+                TickStatus.FAILURE: -1,
+            },
+        }
+
+        default_value_by_status = cast(
+            Dict[TickStatus, int], DEFAULT_RETENTION_SETTINGS.get(instigator_type)
+        )
+
+        if not settings:
+            return default_value_by_status
+
+        value = (
+            settings.get("schedule")
+            if instigator_type == InstigatorType.SCHEDULE
+            else settings.get("sensor")
+        )
+        default_value_by_status = DEFAULT_RETENTION_SETTINGS[instigator_type]
+        if not value or not value.get("purge_after_days"):
+            return default_value_by_status
+
+        purge_value = value["purge_after_days"]
+        if isinstance(purge_value, int):
+            # set a number of days retention value for all tick types
+            return {status: purge_value for status, _ in default_value_by_status.items()}
+
+        elif isinstance(purge_value, dict):
+            return {
+                # override the number of days retention value for tick types that are specified
+                status: purge_value.get(status.value.lower(), default_value)
+                for status, default_value in default_value_by_status.items()
+            }
+        else:
+            return default_value_by_status
 
 
 def is_dagit_telemetry_enabled(instance):

@@ -3,7 +3,7 @@ import warnings
 
 from dagster import Array, Bool
 from dagster import _check as check
-from dagster.config import Field, Permissive, Selector
+from dagster.config import Field, Permissive, ScalarUnion, Selector
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.storage.config import mysql_config, pg_config
@@ -140,6 +140,23 @@ def python_logs_config_schema():
 DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT = 60
 
 
+def tick_retention_config_schema():
+    return Field(
+        {
+            "purge_after_days": ScalarUnion(
+                scalar_type=int,
+                non_scalar_schema={
+                    "skipped": Field(int, is_required=False),
+                    "success": Field(int, is_required=False),
+                    "failure": Field(int, is_required=False),
+                    "started": Field(int, is_required=False),
+                },
+            )
+        },
+        is_required=False,
+    )
+
+
 def dagster_instance_config_schema():
     return {
         "local_artifact_storage": config_field_for_configurable_class(),
@@ -176,5 +193,12 @@ def dagster_instance_config_schema():
         ),
         "code_servers": Field(
             {"local_startup_timeout": Field(int, is_required=False)}, is_required=False
+        ),
+        "tick_retention": Field(
+            {
+                "schedule": tick_retention_config_schema(),
+                "sensor": tick_retention_config_schema(),
+            },
+            is_required=False,
         ),
     }
