@@ -1,5 +1,3 @@
-import os
-
 import duckdb
 import pandas as pd
 
@@ -51,14 +49,13 @@ class DuckDBCSVIOManager(IOManager):
         return f"{self._base_path}/{'_'.join(context.asset_key.path)}.csv"
 
     def _schema(self, context):
-        # if the asset provides a schema value in the metadata, we can use that
-        # otherwise, assume that the schema is the second to last component of the asset key, e.g.
+        # assume that the schema is the second to last component of the asset key, e.g.
         # AssetKey([database, schema, tablename])
-        return context.metadata.get("schema") or context.asset_key.path[-2]
+        return context.asset_key.path[-2]
 
     def _table(self, context):
         # same as above, but for table
-        return context.metadata.get("table") or context.asset_key.path[-1]
+        return context.asset_key.path[-1]
 
     def _table_path(self, context):
         return f"{self._schema(context)}.{self._table(context)}"

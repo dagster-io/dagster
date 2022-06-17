@@ -2,9 +2,6 @@ import pytest
 
 from dagster import (
     AssetKey,
-    AssetsDefinition,
-    op,
-    Out,
     AssetOut,
     AssetsDefinition,
     IOManager,
@@ -113,23 +110,6 @@ def test_retain_group_subset():
 
     subset = ma.subset_for({AssetKey("b")})
     assert subset.group_names_by_key[AssetKey("b")] == "bar"
-
-
-def test_retain_group_subset():
-    @op(out={"a": Out(), "b": Out()})
-    def ma_op():
-        return 1
-
-    ma = AssetsDefinition(
-        node_def=ma_op,
-        asset_keys_by_input_name={},
-        asset_keys_by_output_name={"a": AssetKey("a"), "b": AssetKey("b")},
-        group_names={AssetKey("a"): "foo", AssetKey("b"): "bar"},
-        can_subset=True,
-    )
-
-    subset = ma.subset_for({AssetKey("b")})
-    assert subset.group_names[AssetKey("b")] == "bar"
 
 
 def test_chain_replace_and_subset_for():

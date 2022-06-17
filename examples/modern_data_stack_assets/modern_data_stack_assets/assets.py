@@ -56,7 +56,9 @@ resource_defs = {
 
 @repository
 def mds_repo():
+    from dagster import define_asset_job
+
     return with_resources(
         load_assets_from_current_module(),
         resource_defs=resource_defs,
-    )
+    ) + [define_asset_job("all")]
