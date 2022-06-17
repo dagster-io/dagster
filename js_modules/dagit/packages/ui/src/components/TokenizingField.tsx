@@ -36,6 +36,7 @@ interface TokenizingFieldProps {
   maxValues?: number;
   onChange: (values: TokenizingFieldValue[]) => void;
   onChangeBeforeCommit?: boolean;
+  addOnBlur?: boolean;
   onFocus?: () => void;
 
   placeholder?: string;
@@ -121,6 +122,7 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   onChangeBeforeCommit,
   onFocus,
   placeholder,
+  addOnBlur,
   loading,
   className,
   tokens,
@@ -425,7 +427,14 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
             setOpen(true);
             onFocus && onFocus();
           },
-          onBlur: () => setOpen(false),
+          onBlur: () => {
+            // Emulate behavior of addOnBlur for TagInput
+            // When a user clicks outside of the input, finish the current token
+            if (addOnBlur) {
+              onConfirmText(typed);
+            }
+            setOpen(false);
+          },
         }}
         $maxWidth={fullwidth ? '100%' : undefined}
         onAdd={() => false}
