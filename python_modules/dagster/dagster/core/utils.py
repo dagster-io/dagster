@@ -12,7 +12,7 @@ import dagster._check as check
 from dagster.utils import frozendict
 from dagster.version import __version__
 
-BACKFILL_TAG_LENGTH = 8
+BULK_ACTION_TAG_LENGTH = 8
 
 PYTHON_LOGGING_LEVELS_MAPPING = frozendict(
     OrderedDict({"CRITICAL": 50, "ERROR": 40, "WARNING": 30, "INFO": 20, "DEBUG": 10})
@@ -64,6 +64,10 @@ def make_new_run_id() -> str:
 
 
 def make_new_backfill_id():
+    return "".join(random.choice(string.ascii_lowercase) for x in range(BACKFILL_TAG_LENGTH))
+
+
+def make_new_bulk_action_id():
     return "".join(random.choice(string.ascii_lowercase) for x in range(BACKFILL_TAG_LENGTH))
 
 
