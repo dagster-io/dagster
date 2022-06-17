@@ -1,6 +1,7 @@
 import io
 import os.path
 import pickle
+import sys
 import tempfile
 import time
 
@@ -194,10 +195,8 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         stderr = self.databricks_runner.client.read_file(
             self._dbfs_path(run_id, step_key, "stderr")
         ).decode()
-        log.info(f"Captured stdout for step {step_key}:")
-        log.info(stdout)
-        log.info(f"Captured stderr for step {step_key}:")
-        log.info(stderr)
+        sys.stdout.write(f"Captured stdout for step {step_key}:\n" + stdout + "\n")
+        sys.stderr.write(f"Captured stderr for step {step_key}:\n" + stderr + "\n")
 
     def step_events_iterator(self, step_context, step_key: str, databricks_run_id: int):
         """The launched Databricks job writes all event records to a specific dbfs file. This iterator
