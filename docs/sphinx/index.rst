@@ -43,6 +43,7 @@
    sections/api/apidocs/libraries/dagster-gcp
    sections/api/apidocs/libraries/dagster-ge
    sections/api/apidocs/libraries/dagster-github
+   sections/api/apidocs/libraries/dagster-hashicorp
    sections/api/apidocs/libraries/dagster-k8s
    sections/api/apidocs/libraries/dagster-mlflow
    sections/api/apidocs/libraries/dagster-msteams

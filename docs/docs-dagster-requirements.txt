@@ -12,6 +12,7 @@
 -e ../python_modules/libraries/dagster-docker
 -e ../python_modules/libraries/dagster-fivetran
 -e ../python_modules/libraries/dagster-github
+-e ../python_modules/libraries/dagster-hashicorp
 -e ../python_modules/libraries/dagster-k8s
 -e ../python_modules/libraries/dagster-mlflow
 -e ../python_modules/libraries/dagster-msteams
