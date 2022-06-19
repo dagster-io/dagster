@@ -302,21 +302,21 @@ export function extractMetadataFromLogs(
     step.transitions = step.transitions.sort((a, b) => a.time - b.time);
 
     // Build step "attempts" from transitions
-    let start = null;
+    // - Each time we see a "RUNNING" step transition, we create a new attempt box unless one is open already.
+    // - Each time we see a final step transition, we set it as the end state of the current attempt.
+
+    let attempt: IStepAttempt | null = null;
     for (const t of step.transitions) {
-      if (t.state === IStepState.RUNNING) {
-        start = t.time;
+      if ((!attempt || attempt.end) && t.state === IStepState.RUNNING) {
+        attempt = {start: t.time};
+        step.attempts.push(attempt);
       }
-      if (start && BOX_EXIT_STATES.includes(t.state)) {
-        step.attempts.push({start, end: t.time, exitState: t.state});
-        start = null;
+      if (attempt && BOX_EXIT_STATES.includes(t.state)) {
+        attempt.end = t.time;
+        attempt.exitState = t.state;
       }
-    }
-    if (start !== null) {
-      step.attempts.push({start});
     }
   }
-
   return metadata;
 }
 
