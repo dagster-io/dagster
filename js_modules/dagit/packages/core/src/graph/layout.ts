@@ -4,7 +4,7 @@ import {titleOfIO} from '../app/titleOfIO';
 
 import {IBounds, IPoint} from './common';
 
-type OpLayoutEdgeSide = {
+export type OpLayoutEdgeSide = {
   point: IPoint;
   opName: string;
   edgeName: string;
@@ -22,18 +22,15 @@ export interface OpLayout {
   // Frames of specific components - These need to be computed during layout
   // (rather than at render time) to position edges into inputs/outputs.
   op: IBounds;
-  inputs: {
-    [inputName: string]: {
-      layout: IBounds;
-      port: IPoint;
-    };
-  };
-  outputs: {
-    [outputName: string]: {
-      layout: IBounds;
-      port: IPoint;
-    };
-  };
+  inputs: {[inputName: string]: OpLayoutIO};
+  outputs: {[outputName: string]: OpLayoutIO};
+}
+
+export interface OpLayoutIO {
+  layout: IBounds;
+  label: boolean;
+  collapsed: string[];
+  port: IPoint;
 }
 
 export type OpGraphLayout = {
@@ -277,6 +274,8 @@ function layoutParentGraphOp(layout: OpGraphLayout, op: ILayoutOp, parentIOPaddi
         width: 0,
         height: IO_HEIGHT,
       },
+      collapsed: [],
+      label: true,
       port: {
         x: result.bounds.x + PORT_INSET_X,
         y: result.bounds.y - idx * IO_HEIGHT - IO_HEIGHT / 2,
@@ -292,6 +291,8 @@ function layoutParentGraphOp(layout: OpGraphLayout, op: ILayoutOp, parentIOPaddi
         width: 0,
         height: IO_HEIGHT,
       },
+      collapsed: [],
+      label: true,
       port: {
         x: result.bounds.x + PORT_INSET_X,
         y: boundingBottom + idx * IO_HEIGHT + IO_HEIGHT / 2,
@@ -322,54 +323,97 @@ function layoutExternalConnections(links: OpLinkInfo[], y: number, layoutWidth: 
 }
 
 export function layoutOp(op: ILayoutOp, root: IPoint): OpLayout {
-  // Starting at the root (top left) X,Y, return the layout information for a solid with
-  // input blocks, then the main block, then output blocks (arranged vertically)
+  // Starting at the root (top left) X,Y, return the layout information for an op with
+  // input blocks, then the main block, then output blocks (arranged vertically).
+  //
+  // This code "appends" boxes vertically, advancing accY as it goes.
   let accY = root.y;
 
-  const inputsLayouts: {
-    [inputName: string]: {layout: IBounds; port: IPoint};
-  } = {};
+  const appendMiniIODots = <T extends ILayoutOp['inputs'][0] | ILayoutOp['outputs'][0]>(
+    ios: T[],
+    sortKey: (io: T) => string,
+    clusteringKey: (io: T) => string,
+  ) => {
+    // Sort both input and output boxes displayed on the graph alphabetically based on the input name.
+    // This means that if two ops are connected to each other multiple times, the lines do not cross.
+    const sorted = [...ios].sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
 
-  const buildIOSmallLayout = (idx: number, count: number) => {
-    const centeringOffsetX = (OP_WIDTH - IO_MINI_WIDTH * count) / 2;
-    const x = root.x + IO_MINI_WIDTH * idx + centeringOffsetX;
-    return {
-      port: {
-        x: x + PORT_INSET_X,
-        y: accY + PORT_INSET_Y,
-      },
-      layout: {
-        x,
-        y: accY,
-        width: IO_MINI_WIDTH,
-        height: IO_HEIGHT,
-      },
-    };
+    let x = 0;
+    let last: OpLayoutIO;
+    let lastKey: string | null = null;
+    const layouts: {[name: string]: OpLayoutIO} = {};
+    const spacing = Math.min(IO_MINI_WIDTH, OP_WIDTH / (sorted.length + 1));
+
+    // Add "port" layouts, collapsing the dots if they are connected to the same opposing solid
+    // (eg: two inputs connected to the same upstream output) with a "[O] + 2" style.
+    sorted.forEach((io, _idx) => {
+      const key = clusteringKey(io);
+      if (key !== lastKey) {
+        lastKey = key;
+        last = {
+          port: {
+            x: root.x + x + PORT_INSET_X,
+            y: accY + PORT_INSET_Y,
+          },
+          collapsed: [],
+          label: false,
+          layout: {
+            x: root.x + x,
+            y: accY,
+            width: IO_MINI_WIDTH,
+            height: IO_HEIGHT,
+          },
+        };
+        layouts[io.definition.name] = last;
+        x += spacing;
+      } else {
+        if (last.collapsed.length === 0) {
+          x += 15;
+        }
+        last.collapsed.push(io.definition.name);
+      }
+    });
+
+    // Center the items on the op rather than left justifying them
+    const centeringAdjustment = (OP_WIDTH - (x - PORT_INSET_X + IO_MINI_WIDTH)) / 2;
+    Object.values(layouts).forEach((l) => {
+      l.layout.x += centeringAdjustment;
+      l.port.x += centeringAdjustment;
+    });
+
+    // Place the next box beneath the
+    accY += IO_HEIGHT;
+
+    return layouts;
   };
 
-  const buildIOLayout = () => {
-    const layout: {layout: IBounds; port: IPoint} = {
-      port: {x: root.x + PORT_INSET_X, y: accY + PORT_INSET_Y},
-      layout: {
-        x: root.x,
-        y: accY,
-        width: 0,
-        height: IO_HEIGHT,
-      },
-    };
-    accY += IO_HEIGHT;
-    return layout;
+  const appendStackedIOBoxes = (ios: ILayoutOp['inputs'] | ILayoutOp['outputs']) => {
+    const layouts: {[name: string]: OpLayoutIO} = {};
+    ios.forEach((io) => {
+      layouts[io.definition.name] = {
+        port: {x: root.x + PORT_INSET_X, y: accY + PORT_INSET_Y},
+        label: true,
+        collapsed: [],
+        layout: {
+          x: root.x,
+          y: accY,
+          width: 0,
+          height: IO_HEIGHT,
+        },
+      };
+      accY += IO_HEIGHT;
+    });
+    return layouts;
   };
 
-  op.inputs.forEach((input, idx) => {
-    inputsLayouts[input.definition.name] =
-      op.inputs.length > IO_THRESHOLD_FOR_MINI
-        ? buildIOSmallLayout(idx, op.inputs.length)
-        : buildIOLayout();
-  });
-  if (op.inputs.length > IO_THRESHOLD_FOR_MINI) {
-    accY += IO_HEIGHT;
-  }
+  const inputLayouts =
+    op.inputs.length > IO_THRESHOLD_FOR_MINI
+      ? appendMiniIODots(
+          op.inputs,
+          (input) => input.definition.name,
+          (input) => input.dependsOn[0]?.solid.name || '',
+        )
+      : appendStackedIOBoxes(op.inputs);
 
   const opLayout: IBounds = {
     x: root.x,
@@ -385,22 +429,14 @@ export function layoutOp(op: ILayoutOp, root: IPoint): OpLayout {
     accY += OP_ASSETS_ROW_HEIGHT;
   }
 
-  const outputLayouts: {
-    [outputName: string]: {
-      layout: IBounds;
-      port: IPoint;
-    };
-  } = {};
-
-  op.outputs.forEach((output, idx) => {
-    outputLayouts[output.definition.name] =
-      op.outputs.length > IO_THRESHOLD_FOR_MINI
-        ? buildIOSmallLayout(idx, op.outputs.length)
-        : buildIOLayout();
-  });
-  if (op.outputs.length > IO_THRESHOLD_FOR_MINI) {
-    accY += IO_HEIGHT;
-  }
+  const outputLayouts =
+    op.outputs.length > IO_THRESHOLD_FOR_MINI
+      ? appendMiniIODots(
+          op.outputs,
+          (o) => o.dependedBy[0]?.definition.name || '',
+          (o) => o.dependedBy[0]?.solid.name || '',
+        )
+      : appendStackedIOBoxes(op.outputs);
 
   return {
     bounds: {
@@ -410,7 +446,7 @@ export function layoutOp(op: ILayoutOp, root: IPoint): OpLayout {
       height: accY - root.y + 10,
     },
     op: opLayout,
-    inputs: inputsLayouts,
+    inputs: inputLayouts,
     outputs: outputLayouts,
   };
 }
