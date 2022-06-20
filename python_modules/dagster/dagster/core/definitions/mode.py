@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Dict, List, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster.core.definitions.executor_definition import ExecutorDefinition, default_executors

@@ -1,5 +1,5 @@
 import warnings
-from typing import AbstractSet, Any, Dict, Optional, Set, Union
+from typing import AbstractSet, Any, Dict, Mapping, Optional, Set, Union
 
 import dagster._check as check
 

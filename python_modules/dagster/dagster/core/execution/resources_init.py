@@ -1,7 +1,7 @@
 import inspect
 from collections import deque
 from contextlib import ContextDecorator
-from typing import AbstractSet, Any, Callable, Deque, Dict, Optional, cast
+from typing import AbstractSet, Any, Callable, Deque, Dict, Mapping, Optional, cast
 
 import dagster._check as check
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
