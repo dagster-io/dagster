@@ -56,6 +56,7 @@ from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
 from .run_request import RunRequest
+from .utils import DEFAULT_IO_MANAGER_KEY
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -501,11 +502,11 @@ def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: Pipel
 
     if (
         # pylint: disable=comparison-with-callable
-        resources.get("io_manager") in [default_job_io_manager]
+        resources.get(DEFAULT_IO_MANAGER_KEY) in [default_job_io_manager]
         and job.version_strategy is None
     ):
         updated_resources = dict(resources)
-        updated_resources["io_manager"] = mem_io_manager
+        updated_resources[DEFAULT_IO_MANAGER_KEY] = mem_io_manager
         return updated_resources
 
     return resources

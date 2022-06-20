@@ -9,6 +9,7 @@ import dagster._check as check
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster.core.definitions.executor_definition import in_process_executor
+from dagster.core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster.core.selector.subset_selector import AssetSelectionData
@@ -105,7 +106,7 @@ class AssetGroup:
         resource_defs = check.opt_mapping_param(
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
-        resource_defs = merge_dicts({"io_manager": fs_io_manager}, resource_defs)
+        resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: fs_io_manager}, resource_defs)
         executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
 
         check_resources_satisfy_requirements(assets, source_assets, resource_defs)

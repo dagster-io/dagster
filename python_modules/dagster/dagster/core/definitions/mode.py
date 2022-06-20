@@ -8,7 +8,7 @@ from dagster.utils.merger import merge_dicts
 from .config import ConfigMapping
 from .logger_definition import LoggerDefinition
 from .resource_definition import ResourceDefinition
-from .utils import check_valid_name
+from .utils import DEFAULT_IO_MANAGER_KEY, check_valid_name
 
 DEFAULT_MODE_NAME = "default"
 
@@ -72,13 +72,13 @@ class ModeDefinition(
             if not key.isidentifier():
                 check.failed(f"Resource key '{key}' must be a valid Python identifier.")
 
-        if resource_defs and "io_manager" in resource_defs:
+        if resource_defs and DEFAULT_IO_MANAGER_KEY in resource_defs:
             resource_defs_with_defaults = resource_defs
         else:
             from dagster.core.storage.mem_io_manager import mem_io_manager
 
             resource_defs_with_defaults = merge_dicts(
-                {"io_manager": mem_io_manager}, resource_defs or {}
+                {DEFAULT_IO_MANAGER_KEY: mem_io_manager}, resource_defs or {}
             )
 
         return super(ModeDefinition, cls).__new__(
