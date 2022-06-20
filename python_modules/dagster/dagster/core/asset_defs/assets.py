@@ -39,6 +39,19 @@ from .source_asset import SourceAsset
 
 
 class AssetsDefinition(ResourceAddable):
+    """
+    Defines a set of assets that are produced by the same op or graph.
+
+    AssetsDefinitions are typically not instantiated directly, but rather produced using the
+    :py:func:`@asset <asset>` or :py:func:`@multi_asset <multi_asset>` decorators.
+
+    Attributes:
+        asset_deps (Mapping[AssetKey, AbstractSet[AssetKey]]): Maps assets that are produced by this
+            definition to assets that they depend on. The dependencies can be either "internal",
+            meaning that they refer to other assets that are produced by this definition, or
+            "external", meaning that they refer to assets that aren't produced by this definition.
+    """
+
     def __init__(
         self,
         keys_by_input_name: Mapping[str, AssetKey],

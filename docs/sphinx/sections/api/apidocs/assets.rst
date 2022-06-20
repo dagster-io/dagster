@@ -7,13 +7,13 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 
 .. autodecorator:: asset
 
-.. autodecorator:: multi_asset
-
 .. autoclass:: AssetIn
 
 .. autoclass:: SourceAsset
 
 .. autofunction:: define_asset_job
+
+.. autoclass:: AssetSelection
 
 .. autofunction:: load_assets_from_modules
 
@@ -22,3 +22,7 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 .. autofunction:: load_assets_from_package_module
 
 .. autofunction:: load_assets_from_package_name
+
+.. autoclass:: AssetsDefinition
+
+.. autodecorator:: multi_asset
