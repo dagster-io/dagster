@@ -20,7 +20,7 @@ Executors are responsible for executing steps within a job run. Once a run has l
 
 Every job has an executor. The default executor is the <PyObject object="multi_or_in_process_executor" />, which by default executes each step in its own process, but can be configured to execute each step within the same process.
 
-The executor can be specified directly on the job by supplying an <PyObject object="ExecutorDefinition" /> to the `executor_def` parameter of <PyObject object="job" decorator /> or <PyObject object="GraphDefinition" method="to_job" />.
+An executor can be specified directly on the job by supplying an <PyObject object="ExecutorDefinition" /> to the `executor_def` parameter of <PyObject object="job" decorator /> or <PyObject object="GraphDefinition" method="to_job" />.
 
 A default executor can be specified for all jobs and assets provided to a repository using the `default_executor_def` argument of <PyObject object="repository" decorator />. All jobs that don't specify an executor will use this default executor, but if a job explicitly specifies an executor, then the default provided to the repository will not be used.
 
