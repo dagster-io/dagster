@@ -86,6 +86,7 @@ class JobDefinition(PipelineDefinition):
         asset_layer: Optional[AssetLayer] = None,
         _input_values: Optional[Mapping[str, object]] = None,
         _metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        _executor_def_specified: bool = False,
     ):
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
@@ -97,6 +98,7 @@ class JobDefinition(PipelineDefinition):
             _partitioned_config=partitioned_config,
         )
 
+        self._executor_def_specified = _executor_def_specified
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
         self._subset_selection_data = check.opt_inst_param(
             _subset_selection_data,
@@ -237,6 +239,7 @@ class JobDefinition(PipelineDefinition):
             version_strategy=self.version_strategy,
             asset_layer=self.asset_layer,
             _input_values=input_values,
+            _executor_def_specified=self._executor_def_specified,
         )
 
         ephemeral_job = ephemeral_job.get_job_def_for_subset_selection(
@@ -378,6 +381,7 @@ class JobDefinition(PipelineDefinition):
                 op_retry_policy=self._solid_retry_policy,
                 graph_def=sub_graph,
                 version_strategy=self.version_strategy,
+                _executor_def_specified=self._executor_def_specified,
                 _subset_selection_data=OpSelectionData(
                     op_selection=op_selection,
                     resolved_op_selection=set(
@@ -468,6 +472,7 @@ class JobDefinition(PipelineDefinition):
             op_retry_policy=self._solid_retry_policy,
             asset_layer=self.asset_layer,
             _subset_selection_data=self._subset_selection_data,
+            _executor_def_specified=self._executor_def_specified,
         )
 
         update_wrapper(job_def, self, updated=())
@@ -511,6 +516,7 @@ class JobDefinition(PipelineDefinition):
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self.asset_layer,
             _input_values=self._input_values,
+            _executor_def_specified=True,
         )
 
 

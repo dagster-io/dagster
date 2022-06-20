@@ -49,9 +49,9 @@ from .executor_definition import (
     default_executors,
     executor,
     in_process_executor,
+    multi_or_in_process_executor,
     multiple_process_executor_requirements,
     multiprocess_executor,
-    multi_or_in_process_executor,
 )
 from .graph_definition import GraphDefinition
 from .hook_definition import HookDefinition

@@ -791,7 +791,7 @@ class CachingRepositoryData(RepositoryData):
 
         if default_executor_def:
             for name, job_def in jobs.items():
-                if job_def.executor_def == multi_or_in_process_executor:
+                if not job_def._executor_def_specified:
                     jobs[name] = job_def.with_executor_def(default_executor_def)
 
         return CachingRepositoryData(

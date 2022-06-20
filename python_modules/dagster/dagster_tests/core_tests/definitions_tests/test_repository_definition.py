@@ -1287,13 +1287,24 @@ def test_default_executor_jobs_and_pipelines():
     def op_job_no_executor():
         pass
 
+    @job(executor_def=multi_or_in_process_executor)
+    def job_explicitly_specifies_default_executor():
+        pass
+
     @pipeline
     def the_pipeline():
         pass
 
     @repository(default_executor_def=other_custom_executor)
     def the_repo():
-        return [the_asset, op_job_with_executor, op_job_no_executor, unresolved_job, the_pipeline]
+        return [
+            the_asset,
+            op_job_with_executor,
+            op_job_no_executor,
+            unresolved_job,
+            the_pipeline,
+            job_explicitly_specifies_default_executor,
+        ]
 
     assert (
         the_repo.get_pipeline("the_pipeline").mode_definitions[0].executor_defs == default_executors
@@ -1304,3 +1315,8 @@ def test_default_executor_jobs_and_pipelines():
     assert the_repo.get_job("op_job_with_executor").executor_def == custom_executor
 
     assert the_repo.get_job("op_job_no_executor").executor_def == other_custom_executor
+
+    assert (
+        the_repo.get_job("job_explicitly_specifies_default_executor").executor_def
+        == multi_or_in_process_executor
+    )
