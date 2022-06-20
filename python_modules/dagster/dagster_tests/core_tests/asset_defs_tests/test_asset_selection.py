@@ -4,7 +4,7 @@ from functools import reduce
 
 import pytest
 
-from dagster.core.definitions.assets import AssetSelection, asset
+from dagster.core.definitions import AssetSelection, asset
 from dagster.core.definitions.events import AssetKey
 
 

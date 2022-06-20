@@ -6,7 +6,7 @@ from dagster import (
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
 )
-from dagster.core.definitions.assets import PartitionKeyRange
+from dagster.core.definitions import PartitionKeyRange
 from dagster.core.definitions.partition import ScheduleType
 from dagster.core.definitions.time_window_partition_mapping import (
     TimeWindowPartitionMapping,

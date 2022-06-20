@@ -18,7 +18,7 @@ from dagster import (
     graph,
     op,
 )
-from dagster.core.definitions.assets import (
+from dagster.core.definitions import (
     PartitionMapping,
     asset,
     build_assets_job,

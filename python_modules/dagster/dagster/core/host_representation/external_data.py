@@ -21,7 +21,7 @@ from dagster.core.definitions import (
     ScheduleDefinition,
 )
 from dagster.core.definitions.asset_layer import AssetOutputInfo
-from dagster.core.definitions.assets import SourceAsset
+from dagster.core.definitions import SourceAsset
 from dagster.core.definitions.dependency import NodeOutputHandle
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.metadata import MetadataEntry

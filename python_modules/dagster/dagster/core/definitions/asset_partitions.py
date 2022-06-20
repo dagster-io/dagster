@@ -1,5 +1,5 @@
 import dagster._check as check
-from dagster.core.definitions.assets import AssetsDefinition
+from dagster.core.definitions import AssetsDefinition
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange

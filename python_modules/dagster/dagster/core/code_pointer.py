@@ -188,7 +188,7 @@ class FileCodePointer(
 
 
 def _load_target_from_module(module: ModuleType, fn_name: str, error_suffix: str) -> object:
-    from dagster.core.definitions.assets import AssetGroup
+    from dagster.core.definitions import AssetGroup
     from dagster.core.workspace.autodiscovery import LOAD_ALL_ASSETS
 
     if fn_name == LOAD_ALL_ASSETS:

@@ -17,7 +17,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster.core.definitions.assets import SourceAsset
+from dagster.core.definitions import SourceAsset
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.utils import merge_dicts
 
@@ -33,7 +33,7 @@ from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
-    from dagster.core.definitions.assets import AssetGroup, AssetsDefinition
+    from dagster.core.definitions import AssetGroup, AssetsDefinition
 
 VALID_REPOSITORY_DATA_DICT_KEYS = {
     "pipelines",
@@ -640,7 +640,7 @@ class CachingRepositoryData(RepositoryData):
                 Use this constructor when you have no need to lazy load pipelines/jobs or other
                 definitions.
         """
-        from dagster.core.definitions.assets import AssetGroup, AssetsDefinition
+        from dagster.core.definitions import AssetGroup, AssetsDefinition
 
         pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
         coerced_graphs: Dict[str, JobDefinition] = {}

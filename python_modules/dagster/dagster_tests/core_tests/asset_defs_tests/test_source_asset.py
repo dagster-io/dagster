@@ -1,4 +1,4 @@
-from dagster.core.definitions.assets import SourceAsset
+from dagster.core.definitions import SourceAsset
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
 

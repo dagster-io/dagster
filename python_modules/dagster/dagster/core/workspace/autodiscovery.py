@@ -10,7 +10,7 @@ from dagster import (
     RepositoryDefinition,
 )
 from dagster.core.code_pointer import load_python_file, load_python_module
-from dagster.core.definitions.assets import AssetGroup
+from dagster.core.definitions import AssetGroup
 
 LOAD_ALL_ASSETS = "<<LOAD_ALL_ASSETS>>"
 

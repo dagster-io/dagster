@@ -3,7 +3,6 @@ from typing import Any, Mapping, Optional, Sequence, Set, Union
 import dagster._check as check
 from dagster.utils import merge_dicts
 
-from ..definitions.utils import DEFAULT_IO_MANAGER_KEY
 from ..errors import DagsterInvariantViolationError
 from ..execution.build_resources import wrap_resources_for_execution
 from ..execution.execute_in_process_result import ExecuteInProcessResult
@@ -15,6 +14,7 @@ from ..storage.mem_io_manager import mem_io_manager
 from .assets import AssetsDefinition
 from .assets_job import build_assets_job
 from .source_asset import SourceAsset
+from .utils import DEFAULT_IO_MANAGER_KEY
 
 def materialize(
     assets: Sequence[Union[AssetsDefinition, SourceAsset]],

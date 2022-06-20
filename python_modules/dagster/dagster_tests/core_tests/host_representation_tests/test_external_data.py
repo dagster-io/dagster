@@ -1,7 +1,7 @@
 import pytest
 
 from dagster import AssetKey, AssetsDefinition, GraphOut, In, Out, define_asset_job, graph, job, op
-from dagster.core.definitions.assets import (
+from dagster.core.definitions import (
     AssetIn,
     SourceAsset,
     asset,

@@ -408,7 +408,7 @@ class AssetLayer:
         source_asset_defs: Optional[Sequence["SourceAsset"]] = None,
         io_manager_keys_by_asset_key: Optional[Mapping[AssetKey, str]] = None,
     ):
-        from dagster.core.definitions.assets import SourceAsset
+        from dagster.core.definitions import SourceAsset
 
         self._asset_keys_by_node_input_handle = check.opt_dict_param(
             asset_keys_by_node_input_handle,
@@ -653,7 +653,7 @@ def build_asset_selection_job(
     asset_selection: Optional[FrozenSet[AssetKey]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
 ):
-    from dagster.core.definitions.assets import build_assets_job
+    from dagster.core.definitions import build_assets_job
 
     if asset_selection:
         included_assets, excluded_assets = _subset_assets_defs(
@@ -698,7 +698,7 @@ def _subset_assets_defs(
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
     """
-    from dagster.core.definitions.assets import AssetsDefinition
+    from dagster.core.definitions import AssetsDefinition
 
     included_assets: Set[AssetsDefinition] = set()
     excluded_assets: Set[AssetsDefinition] = set()
