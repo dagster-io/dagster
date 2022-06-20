@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: orders_cleaned
+    description: "Cleaned version of raw orders data"
+    columns:
+      - name: user_id
+        description: "Platform id of the user that placed this order."
+        data_type: "int"
+      - name: quantity
+        description: "The quantity of items purchased in this order."
+      - name: purchase_price
+        description: "The price of this item at the time the user placed the order."
+        data_type: "float"
+      - name: sku
+        description: "The identifier of the item purched in this order."
+        data_type: "str"
+      - name: dt
+        description: "The UTC time when this order was placed."
+        data_type: "timestamp"
+      - name: date
+        description: "The UTC day when this order was placed."
+        data_type: "timestamp"
+      - name: order_total
+        description: "The total purchase price for this order"
+        data_type: "float"
+  - name: users_cleaned
+    description: "Raw users data with test accounts removed"
+    columns:
+      - name: "user_id"
+        description: "Platform id of the user."
+        data_type: "int"
+      - name: "company"
+        description: "The name of the company that this user belongs to."
+        data_type: "str"
