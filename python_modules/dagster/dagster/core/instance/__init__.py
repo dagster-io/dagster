@@ -2077,6 +2077,7 @@ class DagsterInstance:
         self, instigator_type: "InstigatorType"
     ) -> Dict["TickStatus", int]:
         from dagster.core.definitions.run_request import InstigatorType
+
         settings = self.get_settings("tick_retention")
         value = (
             settings.get("schedule")

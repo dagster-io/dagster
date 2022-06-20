@@ -144,9 +144,13 @@ def python_logs_config_schema():
 
 DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT = 60
 
-def get_default_tick_retention_settings(instigator_type: "InstigatorType") -> Dict["TickStatus", int]:
+
+def get_default_tick_retention_settings(
+    instigator_type: "InstigatorType",
+) -> Dict["TickStatus", int]:
     from dagster.core.definitions.run_request import InstigatorType
     from dagster.core.scheduler.instigation import TickStatus
+
     if instigator_type == InstigatorType.SCHEDULE:
         return {
             TickStatus.STARTED: -1,
