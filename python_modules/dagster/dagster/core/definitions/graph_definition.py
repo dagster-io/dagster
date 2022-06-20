@@ -494,7 +494,7 @@ class GraphDefinition(NodeDefinition):
         config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
         tags: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, RawMetadataValue]] = None,
-        logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
+        logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
@@ -651,7 +651,7 @@ class GraphDefinition(NodeDefinition):
         self,
         resource_defs: Optional[Mapping[str, ResourceDefinition]],
         executor_def: "ExecutorDefinition",
-        logger_defs: Optional[Dict[str, LoggerDefinition]],
+        logger_defs: Optional[Mapping[str, LoggerDefinition]],
     ) -> ConfigType:
         from .job_definition import JobDefinition
 

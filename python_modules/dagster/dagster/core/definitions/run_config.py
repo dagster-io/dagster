@@ -70,7 +70,7 @@ class RunConfigSchemaCreationData(NamedTuple):
     graph_def: GraphDefinition
     dependency_structure: DependencyStructure
     mode_definition: ModeDefinition
-    logger_defs: Dict[str, LoggerDefinition]
+    logger_defs: Mapping[str, LoggerDefinition]
     ignored_solids: List[Node]
     required_resources: Set[str]
     is_using_graph_job_op_apis: bool

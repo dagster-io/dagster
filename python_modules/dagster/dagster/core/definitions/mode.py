@@ -55,7 +55,7 @@ class ModeDefinition(
         cls,
         name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
+        logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_defs: Optional[List[ExecutorDefinition]] = None,
         description: Optional[str] = None,
         _config_mapping: Optional[ConfigMapping] = None,
