@@ -66,7 +66,7 @@ def build_assets_job(
             decorator.
         source_assets (Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]): A list of
             assets that are not materialized by this job, but that assets in this job depend on.
-        resource_defs (Optional[Dict[str, ResourceDefinition]]): Resource defs to be included in
+        resource_defs (Optional[Mapping[str, ResourceDefinition]]): Resource defs to be included in
             this job.
         description (Optional[str]): A description of the job.
 

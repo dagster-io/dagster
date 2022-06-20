@@ -36,7 +36,7 @@ class _Job:
         description: Optional[str] = None,
         tags: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, RawMetadataValue]] = None,
-        resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
@@ -124,7 +124,7 @@ def job(name: Callable[..., Any]) -> JobDefinition:
 def job(
     name: Optional[str] = ...,
     description: Optional[str] = ...,
-    resource_defs: Optional[Dict[str, ResourceDefinition]] = ...,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
     config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = ...,
     tags: Optional[Dict[str, Any]] = ...,
     metadata: Optional[Dict[str, RawMetadataValue]] = ...,
@@ -142,7 +142,7 @@ def job(
 def job(
     name: Optional[Union[Callable[..., Any], str]] = None,
     description: Optional[str] = None,
-    resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
     tags: Optional[Dict[str, Any]] = None,
     metadata: Optional[Dict[str, RawMetadataValue]] = None,
@@ -162,7 +162,7 @@ def job(
     Args:
         name (Optional[str]):
             The name for the Job. Defaults to the name of the this graph.
-        resource_defs (Optional[Dict[str, ResourceDefinition]]):
+        resource_defs (Optional[Mapping[str, ResourceDefinition]]):
             Resources that are required by this graph for execution.
             If not defined, `io_manager` will default to filesystem.
         config:

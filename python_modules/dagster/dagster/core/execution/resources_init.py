@@ -37,7 +37,7 @@ from .context.init import InitResourceContext
 
 
 def resource_initialization_manager(
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
     resource_configs: Dict[str, ResourceConfig],
     log_manager: DagsterLogManager,
     execution_plan: Optional[ExecutionPlan],
@@ -110,7 +110,7 @@ def get_dependencies(resource_name, resource_deps):
 
 
 def _core_resource_initialization_event_generator(
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
     resource_configs: Dict[str, ResourceConfig],
     resource_log_manager: DagsterLogManager,
     resource_managers: Deque[EventGenerationManager],
@@ -209,7 +209,7 @@ def _core_resource_initialization_event_generator(
 
 
 def resource_initialization_event_generator(
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
     resource_configs: Dict[str, ResourceConfig],
     log_manager: DagsterLogManager,
     execution_plan: Optional[ExecutionPlan],

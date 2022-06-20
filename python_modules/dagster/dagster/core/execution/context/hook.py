@@ -190,7 +190,7 @@ class HookContext:
 class UnboundHookContext(HookContext):
     def __init__(
         self,
-        resources: Dict[str, Any],
+        resources: Mapping[str, Any],
         mode_def: Optional[ModeDefinition],
         op: Optional[Union[SolidDefinition, PendingNodeInvocation]],
         run_id: Optional[str],

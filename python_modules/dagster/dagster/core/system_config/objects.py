@@ -257,7 +257,7 @@ def config_map_executor(
 
 
 def config_map_resources(
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
     resource_configs: Dict[str, Any],
 ) -> Dict[str, ResourceConfig]:
     """This function executes the config mappings for resources with respect to ConfigurableDefinition.

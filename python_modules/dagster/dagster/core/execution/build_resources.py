@@ -22,7 +22,7 @@ from .context_creation_pipeline import initialize_console_manager
 
 
 def _get_mapped_resource_config(
-    resource_defs: Dict[str, ResourceDefinition], resource_config: Dict[str, Any]
+    resource_defs: Mapping[str, ResourceDefinition], resource_config: Dict[str, Any]
 ) -> Dict[str, ResourceConfig]:
     resource_config_schema = define_resource_dictionary_cls(
         resource_defs, set(resource_defs.keys())
@@ -40,9 +40,9 @@ def _get_mapped_resource_config(
 
 @contextmanager
 def build_resources(
-    resources: Dict[str, Any],
+    resources: Mapping[str, Any],
     instance: Optional[DagsterInstance] = None,
-    resource_config: Optional[Dict[str, Any]] = None,
+    resource_config: Optional[Mapping[str, Any]] = None,
     pipeline_run: Optional[PipelineRun] = None,
     log_manager: Optional[DagsterLogManager] = None,
 ) -> Generator[Resources, None, None]:
