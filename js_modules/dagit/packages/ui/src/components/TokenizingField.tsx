@@ -47,7 +47,7 @@ interface TokenizingFieldProps {
 
   fullwidth?: boolean;
 
-  suggestionProviders?: SuggestionProvider[];
+  suggestionProviders: SuggestionProvider[];
   suggestionRenderer?: (suggestion: Suggestion) => React.ReactNode;
   suggestionProvidersFilter?: (
     suggestionProvider: SuggestionProvider[],
@@ -112,7 +112,7 @@ const isEqual = (a: TokenizingFieldValue, b?: TokenizingFieldValue) =>
  *
  *  The input also allows for freeform typing (`value` items with no token value) */
 export const TokenizingField: React.FC<TokenizingFieldProps> = ({
-  suggestionProviders: rawSuggestionProviders,
+  suggestionProviders,
   suggestionProvidersFilter,
   values: externalValues,
   maxValues,
@@ -126,7 +126,6 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   fullwidth,
   suggestionRenderer,
 }) => {
-  const suggestionProviders = rawSuggestionProviders || [];
   const [open, setOpen] = React.useState<boolean>(false);
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
   const [typed, setTyped] = React.useState<string>('');
