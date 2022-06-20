@@ -1,3 +1,4 @@
+import memoize from 'lodash/memoize';
 import moment from 'moment-timezone';
 
 import {TimeFormat, DEFAULT_TIME_FORMAT} from './TimestampFormat';
@@ -30,6 +31,4 @@ export const timestampToString = (config: Config) => {
   });
 };
 
-export const timeZoneAbbr = (tzIn: string) => {
-  return moment().tz(tzIn).zoneAbbr();
-};
+export const timeZoneAbbr = memoize((tzIn: string) => moment().tz(tzIn).zoneAbbr());

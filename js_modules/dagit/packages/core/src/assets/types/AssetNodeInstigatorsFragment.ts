@@ -21,6 +21,7 @@ export interface AssetNodeInstigatorsFragment_jobs_schedules {
   id: string;
   name: string;
   cronSchedule: string;
+  executionTimezone: string | null;
   scheduleState: AssetNodeInstigatorsFragment_jobs_schedules_scheduleState;
 }
 

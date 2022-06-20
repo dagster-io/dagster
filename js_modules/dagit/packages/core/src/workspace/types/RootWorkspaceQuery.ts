@@ -42,6 +42,7 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_l
   __typename: "Schedule";
   id: string;
   cronSchedule: string;
+  executionTimezone: string | null;
   mode: string;
   name: string;
   pipelineName: string;
