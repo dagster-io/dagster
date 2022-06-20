@@ -50,6 +50,9 @@ class TestScheduleStorage:
     def can_delete(self):
         return True
 
+    def can_purge(self):
+        return True
+
     @staticmethod
     def fake_repo_target():
         return ExternalRepositoryOrigin(
@@ -559,6 +562,9 @@ class TestScheduleStorage:
 
     def test_purge_ticks(self, storage):
         assert storage
+
+        if not self.can_purge():
+            pytest.skip("Storage cannot purge")
 
         now = pendulum.now()
         five_minutes_ago = now.subtract(minutes=5).timestamp()
