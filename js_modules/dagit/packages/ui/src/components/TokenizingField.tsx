@@ -12,11 +12,12 @@ import {Spinner} from './Spinner';
 const MAX_SUGGESTIONS = 100;
 
 export interface SuggestionProvider {
-  token: string;
+  token?: string;
   values: () => string[];
+  suggestionFilter?: (query: string, suggestion: Suggestion) => boolean;
 }
 
-interface Suggestion {
+export interface Suggestion {
   text: string;
   final: boolean;
 }
@@ -46,9 +47,6 @@ interface TokenizingFieldProps {
 
   fullwidth?: boolean;
 
-  tokens?: string[];
-  tokensFilter?: (query: string, token: string) => boolean;
-
   suggestionProviders?: SuggestionProvider[];
   suggestionRenderer?: (suggestion: Suggestion) => React.ReactNode;
   suggestionProvidersFilter?: (
@@ -58,7 +56,7 @@ interface TokenizingFieldProps {
 }
 
 function findProviderByToken(token: string, providers: SuggestionProvider[]) {
-  return providers.find((p) => p.token.toLowerCase() === token.toLowerCase());
+  return providers.find((p) => p.token && p.token.toLowerCase() === token.toLowerCase());
 }
 
 export const tokenizedValuesFromString = (str: string, providers: SuggestionProvider[]) => {
@@ -125,8 +123,6 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   addOnBlur,
   loading,
   className,
-  tokens,
-  tokensFilter,
   fullwidth,
   suggestionRenderer,
 }) => {
@@ -159,48 +155,42 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
 
     let suggestionsArr: Suggestion[] = [];
 
-    const suggestionMatchesTypedText = (s: Suggestion) =>
-      !lastPart ||
+    const matchesTypedText = (query: string, s: Suggestion) =>
+      !query ||
       s.text
         .toLowerCase()
         .split(':')
-        .some((c) => c.includes(lastPart));
+        .some((c) => c.includes(query));
 
     const availableSuggestionsForProvider = (provider: SuggestionProvider) => {
       const suggestionNotUsed = (v: string) =>
         !values.some((e) => e.token === provider.token && e.value === v);
 
+      const suggestionFilter = provider.suggestionFilter || matchesTypedText;
+
       return provider
         .values()
         .filter(suggestionNotUsed)
-        .map((v) => ({text: `${provider.token}:${v}`, final: true}))
-        .filter(suggestionMatchesTypedText)
+        .map((v) => ({text: provider?.token ? `${provider.token}:${v}` : v, final: true}))
+        .filter((s) => suggestionFilter(lastPart, s))
         .slice(0, MAX_SUGGESTIONS); // never show too many suggestions for one provider
     };
 
     if (parts.length === 1) {
       // Suggest providers (eg: `pipeline:`) so users can discover the search space
-      const actualTokenFilter = tokensFilter
-        ? tokensFilter
-        : (query: string, token: string) => token.toLowerCase().includes(query.toLowerCase());
 
-      const filteredTokens = tokens
-        ? tokens
-            .filter(
-              (token) =>
-                !values.some((e) => e.value === token) && actualTokenFilter(lastPart, token),
-            )
-            .map((token) => ({text: token, final: true}))
-        : [];
       suggestionsArr = filteredSuggestionProviders
-        .map((s) => ({text: `${s.token}:`, final: false}))
-        .filter(suggestionMatchesTypedText)
-        .concat(filteredTokens);
+        .reduce(
+          (accum: Suggestion[], s) =>
+            s.token ? [...accum, {text: `${s.token}:`, final: false}] : accum,
+          [],
+        )
+        .filter((s) => matchesTypedText(lastPart, s));
 
       // Suggest value completions so users can type "airline_" without the "pipeline"
       // prefix and get the correct suggestion.
-      if (typed.length > 0) {
-        for (const p of filteredSuggestionProviders) {
+      for (const p of filteredSuggestionProviders) {
+        if (!p.token || typed.length > 0) {
           suggestionsArr.push(...availableSuggestionsForProvider(p));
         }
       }
@@ -220,16 +210,7 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
     suggestionsArr.sort((a, b) => a.text.localeCompare(b.text));
 
     return suggestionsArr;
-  }, [
-    atMaxValues,
-    filteredSuggestionProviders,
-    lastPart,
-    parts,
-    typed.length,
-    values,
-    tokens,
-    tokensFilter,
-  ]);
+  }, [atMaxValues, filteredSuggestionProviders, lastPart, parts, typed.length, values]);
 
   // We need to manage selection in the dropdown by ourselves. To ensure the
   // best behavior we store the active item's index and text (the text allows

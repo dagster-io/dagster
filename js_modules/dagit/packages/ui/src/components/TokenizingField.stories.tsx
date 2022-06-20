@@ -4,7 +4,12 @@ import styled from 'styled-components/macro';
 
 import {Colors} from './Colors';
 import {Group} from './Group';
-import {TokenizingField, TokenizingFieldValue} from './TokenizingField';
+import {
+  Suggestion,
+  SuggestionProvider,
+  TokenizingField,
+  TokenizingFieldValue,
+} from './TokenizingField';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -42,7 +47,9 @@ export const TokenProvider = () => {
     <TokenizingField
       values={value}
       onChange={(values) => setValue(values)}
-      tokens={['ben@elementl.com', 'dish@elementl.com', 'marco@elementl.com']}
+      suggestionProviders={[
+        {values: () => ['ben@elementl.com', 'dish@elementl.com', 'marco@elementl.com']},
+      ]}
     />
   );
 };
@@ -50,10 +57,21 @@ export const TokenProvider = () => {
 export const TokenAndSuggestionProviders = () => {
   const [value, setValue] = React.useState<TokenizingFieldValue[]>([]);
 
-  const suggestions = [
+  const users = {
+    'ben@elementl.com': 'Ben Pankow',
+    'dish@elementl.com': 'Isaac Hellendag',
+    'marco@elementl.com': 'Marco Salazar',
+  };
+  const suggestions: SuggestionProvider[] = [
     {
       token: 'group',
       values: () => ['core@elementl.com', 'cloud@elementl.com'],
+    },
+    {
+      values: () => Object.keys(users),
+      suggestionFilter: (typed: string, s: Suggestion) =>
+        s.text.toLowerCase().includes(typed.toLowerCase()) ||
+        users[s.text].toLowerCase().includes(typed.toLowerCase()),
     },
   ];
 
@@ -61,7 +79,6 @@ export const TokenAndSuggestionProviders = () => {
     <TokenizingField
       values={value}
       onChange={(values) => setValue(values)}
-      tokens={['ben@elementl.com', 'dish@elementl.com', 'marco@elementl.com']}
       suggestionProviders={suggestions}
     />
   );
@@ -76,11 +93,13 @@ export const CustomSuggestionRenderer = () => {
     Yellow: Colors.Yellow500,
   };
 
+  const suggestionProviders: SuggestionProvider[] = [{values: () => Object.keys(colors)}];
+
   return (
     <TokenizingField
       values={value}
       onChange={(values) => setValue(values)}
-      tokens={Object.keys(colors)}
+      suggestionProviders={suggestionProviders}
       suggestionRenderer={(suggestion) => (
         <Group direction="row" spacing={8} alignItems="center">
           <ColorSwatch $color={colors[suggestion.text]} />
