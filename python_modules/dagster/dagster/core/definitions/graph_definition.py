@@ -490,7 +490,7 @@ class GraphDefinition(NodeDefinition):
         self,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
         tags: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, RawMetadataValue]] = None,
@@ -511,7 +511,7 @@ class GraphDefinition(NodeDefinition):
         Args:
             name (Optional[str]):
                 The name for the Job. Defaults to the name of the this graph.
-            resource_defs (Optional[Dict[str, ResourceDefinition]]):
+            resource_defs (Optional[Mapping [str, ResourceDefinition]]):
                 Resources that are required by this graph for execution.
                 If not defined, `io_manager` will default to filesystem.
             config:
@@ -649,7 +649,7 @@ class GraphDefinition(NodeDefinition):
 
     def _get_config_schema(
         self,
-        resource_defs: Optional[Dict[str, ResourceDefinition]],
+        resource_defs: Optional[Mapping[str, ResourceDefinition]],
         executor_def: "ExecutorDefinition",
         logger_defs: Optional[Dict[str, LoggerDefinition]],
     ) -> ConfigType:

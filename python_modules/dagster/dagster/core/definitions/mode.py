@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Dict, List, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster.core.definitions.executor_definition import ExecutorDefinition, default_executors
@@ -38,7 +38,7 @@ class ModeDefinition(
     Args:
         name (Optional[str]): The name of the mode. Must be unique within the
             :py:class:`PipelineDefinition` to which the mode is attached. (default: "default").
-        resource_defs (Optional[Dict[str, ResourceDefinition]]): A dictionary of string resource
+        resource_defs (Optional[Mapping [str, ResourceDefinition]]): A dictionary of string resource
             keys to their implementations. Individual solids may require resources to be present by
             these keys.
         logger_defs (Optional[Dict[str, LoggerDefinition]]): A dictionary of string logger
@@ -54,7 +54,7 @@ class ModeDefinition(
     def __new__(
         cls,
         name: Optional[str] = None,
-        resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         executor_defs: Optional[List[ExecutorDefinition]] = None,
         description: Optional[str] = None,
