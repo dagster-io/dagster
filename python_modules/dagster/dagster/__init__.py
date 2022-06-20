@@ -147,6 +147,7 @@ from dagster.core.definitions import (
     monthly_schedule,
     multiple_process_executor_requirements,
     multiprocess_executor,
+    multi_or_in_process_executor,
     op,
     pipeline,
     pipeline_failure_sensor,
