@@ -66,6 +66,7 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 from .config import (
     DAGSTER_CONFIG_YAML_FILENAME,
     DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
+    get_tick_retention_settings_for_type,
     is_dagster_home_set,
 )
 from .ref import InstanceRef
@@ -2074,54 +2075,8 @@ class DagsterInstance:
     def get_tick_retention_settings(
         self, instigator_type: "InstigatorType"
     ) -> Dict["TickStatus", int]:
-        from dagster.core.definitions.run_request import InstigatorType
-        from dagster.core.scheduler.instigation import TickStatus
-
         settings = self.get_settings("tick_retention")
-        DEFAULT_RETENTION_SETTINGS = {
-            InstigatorType.SCHEDULE: {
-                TickStatus.STARTED: -1,
-                TickStatus.SKIPPED: -1,
-                TickStatus.SUCCESS: -1,
-                TickStatus.FAILURE: -1,
-            },
-            InstigatorType.SENSOR: {
-                TickStatus.STARTED: -1,
-                TickStatus.SKIPPED: 7,
-                TickStatus.SUCCESS: -1,
-                TickStatus.FAILURE: -1,
-            },
-        }
-
-        default_value_by_status = cast(
-            Dict[TickStatus, int], DEFAULT_RETENTION_SETTINGS.get(instigator_type)
-        )
-
-        if not settings:
-            return default_value_by_status
-
-        value = (
-            settings.get("schedule")
-            if instigator_type == InstigatorType.SCHEDULE
-            else settings.get("sensor")
-        )
-        default_value_by_status = DEFAULT_RETENTION_SETTINGS[instigator_type]
-        if not value or not value.get("purge_after_days"):
-            return default_value_by_status
-
-        purge_value = value["purge_after_days"]
-        if isinstance(purge_value, int):
-            # set a number of days retention value for all tick types
-            return {status: purge_value for status, _ in default_value_by_status.items()}
-
-        elif isinstance(purge_value, dict):
-            return {
-                # override the number of days retention value for tick types that are specified
-                status: purge_value.get(status.value.lower(), default_value)
-                for status, default_value in default_value_by_status.items()
-            }
-        else:
-            return default_value_by_status
+        return get_tick_retention_settings_for_type(settings, instigator_type)
 
 
 def is_dagit_telemetry_enabled(instance):
