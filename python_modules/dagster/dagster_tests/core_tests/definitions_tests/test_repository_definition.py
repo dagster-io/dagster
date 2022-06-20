@@ -42,6 +42,8 @@ from dagster.core.definitions.executor_definition import (
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster.core.errors import DagsterInvalidSubsetError
 
+# pylint: disable=comparison-with-callable
+
 
 def create_single_node_pipeline(name, called):
     called[name] = called[name] + 1

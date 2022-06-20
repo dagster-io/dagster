@@ -500,9 +500,9 @@ class JobDefinition(PipelineDefinition):
     def with_executor_def(self, executor_def: ExecutorDefinition) -> "JobDefinition":
         return JobDefinition(
             graph_def=self.graph,
-            resource_defs=self.resource_defs,
+            resource_defs=dict(self.resource_defs),
             executor_def=executor_def,
-            logger_defs=self.loggers,
+            logger_defs=dict(self.loggers),
             config_mapping=self.config_mapping,
             partitioned_config=self.partitioned_config,
             name=self.name,
