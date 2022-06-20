@@ -22,6 +22,22 @@
 # Asset tutorial
 #################
 
+- path: guides/asset-tutorial/defining_an_asset.png
+  defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
+  url: http://127.0.0.1:3000/instance/asset-graph
+
+- path: guides/asset-tutorial/asset_run.png
+  defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
+  url: http://127.0.0.1:3000/
+  steps:
+    - launch a run and click on the run
+
+- path: guides/asset-tutorial/asset_details.png
+  defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
+  url: http://127.0.0.1:3000/instance/assets/cereals
+  steps:
+    - hit the materialize button and then close the run toast
+
 - path: guides/asset-tutorial/serial_asset_graph.png
   defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/serial_asset_graph.py
   url: http://127.0.0.1:3000/
