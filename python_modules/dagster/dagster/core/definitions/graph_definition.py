@@ -71,8 +71,8 @@ if TYPE_CHECKING:
 def _check_node_defs_arg(graph_name: str, node_defs: Optional[Sequence[NodeDefinition]]):
     node_defs = node_defs or []
 
-    check.sequence_param(node_defs, "node_defs")
-    for node_def in node_defs:
+    _node_defs = check.opt_sequence_param(node_defs, "node_defs")
+    for node_def in _node_defs:
         if isinstance(node_def, NodeDefinition):
             continue
         elif callable(node_def):
