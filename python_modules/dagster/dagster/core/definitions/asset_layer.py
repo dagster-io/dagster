@@ -476,6 +476,7 @@ class AssetLayer:
         graph_def: GraphDefinition,
         assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
         source_assets: Sequence[Union["SourceAsset"]],
+        asset_keys_by_input_handle: Mapping[NodeInputHandle, AssetKey],
     ) -> "AssetLayer":
         """
         Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
@@ -502,13 +503,15 @@ class AssetLayer:
             asset_deps.update(assets_def.asset_deps)
 
             for input_name, asset_key in assets_def.node_keys_by_input_name.items():
-                asset_key_by_input[NodeInputHandle(node_handle, input_name)] = asset_key
+                node_input_handle = NodeInputHandle(node_handle, input_name)
+                resolved_asset_key = asset_keys_by_input_handle[node_input_handle]
+                asset_key_by_input[node_input_handle] = resolved_asset_key
                 # resolve graph input to list of op inputs that consume it
                 node_input_handles = _resolve_input_to_destinations(
                     input_name, assets_def.node_def, node_handle
                 )
                 for node_input_handle in node_input_handles:
-                    asset_key_by_input[node_input_handle] = asset_key
+                    asset_key_by_input[node_input_handle] = resolved_asset_key
 
             for output_name, asset_key in assets_def.node_keys_by_output_name.items():
                 # resolve graph output to the op output it comes from
@@ -533,6 +536,7 @@ class AssetLayer:
                         )
                     }
                 )
+
         return AssetLayer(
             asset_keys_by_node_input_handle=asset_key_by_input,
             asset_info_by_node_output_handle=asset_info_by_output,

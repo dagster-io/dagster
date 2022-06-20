@@ -196,36 +196,6 @@ def test_asset_key_and_inferred():
     assert _asset_keys_for_node(result, "asset_baz") == {AssetKey("asset_baz")}
 
 
-def test_asset_key_for_asset_with_key_prefix_list():
-    @asset(key_prefix=["hell", "o"])
-    def asset_foo():
-        return "foo"
-
-    @asset(
-        ins={"foo": AssetIn(asset_key=AssetKey("asset_foo"))}
-    )  # Should fail because asset_foo is defined with key_prefix, so has asset key ["hello", "asset_foo"]
-    def failing_asset(foo):  # pylint: disable=unused-argument
-        pass
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-    ):
-        build_assets_job("lol", [asset_foo, failing_asset])
-
-    @asset(ins={"foo": AssetIn(asset_key=AssetKey(["hell", "o", "asset_foo"]))})
-    def success_asset(foo):
-        return foo
-
-    job = build_assets_job("lol", [asset_foo, success_asset])
-
-    result = job.execute_in_process()
-    assert result.success
-    assert result.output_for_node("success_asset") == "foo"
-    assert _asset_keys_for_node(result, "hell__o__asset_foo") == {
-        AssetKey(["hell", "o", "asset_foo"])
-    }
-
-
 def test_asset_key_for_asset_with_key_prefix_str():
     @asset(key_prefix="hello")
     def asset_foo():
@@ -1700,3 +1670,33 @@ def test_transitive_io_manager_dep_not_provided():
         match="resource with key 'foo' required by resource with key 'my_source_asset__io_manager' was not provided.",
     ):
         build_assets_job(name="test", assets=[my_derived_asset], source_assets=[my_source_asset])
+
+
+def test_resolve_dependency_in_group():
+    @asset(key_prefix="abc")
+    def asset1():
+        ...
+
+    @asset
+    def asset2(context, asset1):
+        del asset1
+        assert context.asset_key_for_input("asset1") == AssetKey(["abc", "asset1"])
+
+    the_job = build_assets_job(name="test", assets=[asset1, asset2])
+    assert the_job.execute_in_process().success
+
+
+def test_resolve_dependency_multi_asset_different_groups():
+    @asset(key_prefix="abc")
+    def asset1():
+        ...
+
+    @asset
+    def asset2(asset1):
+        del asset1
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'foo' required by resource with key 'my_source_asset__io_manager' was not provided.",
+    ):
+        build_assets_job(name="test", assets=[asset1, asset2])
