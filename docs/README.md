@@ -154,7 +154,9 @@ Install Selenium's chrome driver:
 
 #### Capturing a screenshot
 
-Having written a screenshot spec, you can (re-)generate the screenshot by running the capture-screenshot script and providing the `path` value that you want to regenerate the screenshot for. E.g.
+Having written a screenshot spec, you can (re-)generate the screenshot by running the capture-screenshot script and providing the `path` value that you want to regenerate the screenshot for.
+
+From the repository root, run:
 
 ```
 python docs/screenshot_capture/capture-screenshot.py concepts/dagit/runs-tab.png
