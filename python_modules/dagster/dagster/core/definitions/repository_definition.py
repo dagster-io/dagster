@@ -642,6 +642,7 @@ class CachingRepositoryData(RepositoryData):
                 definitions.
         """
         from dagster.core.asset_defs import AssetGroup, AssetsDefinition
+        from dagster.core.definitions.executor_definition import multi_or_in_process_executor
 
         pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
         coerced_graphs: Dict[str, JobDefinition] = {}
@@ -787,6 +788,11 @@ class CachingRepositoryData(RepositoryData):
                 jobs[name] = pipeline_or_job
             else:
                 pipelines[name] = pipeline_or_job
+
+        if default_executor_def:
+            for name, job_def in jobs.items():
+                if job_def.executor_def == multi_or_in_process_executor:
+                    jobs[name] = job_def.with_executor_def(default_executor_def)
 
         return CachingRepositoryData(
             pipelines=pipelines,
